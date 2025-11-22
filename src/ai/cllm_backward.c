@@ -45,12 +45,12 @@ void cllm_layer_norm_backward(CLLMLayerNorm* ln, float* input,
     float std = prime_sqrt(variance + epsilon);
     float inv_std = 1.0f / std;
     
-    // Compute gradients for gamma and beta
+    // Accumulate gradients for gamma and beta
     if (grad_gamma && grad_beta) {
         for (uint32_t i = 0; i < dim; i++) {
             float normalized = (input[i] - mean) * inv_std;
-            grad_gamma[i] = grad_output[i] * normalized;
-            grad_beta[i] = grad_output[i];
+            grad_gamma[i] += grad_output[i] * normalized;
+            grad_beta[i] += grad_output[i];
         }
     }
     
@@ -108,17 +108,19 @@ void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hid
         }
     }
     
-    // Compute gradients for W2 and b2
+    // Accumulate gradients for W2 and b2
     if (grad_w2) {
         for (uint32_t i = 0; i < output_dim; i++) {
             for (uint32_t j = 0; j < hidden_dim; j++) {
-                grad_w2[i * hidden_dim + j] = grad_output[i] * hidden[j];
+                grad_w2[i * hidden_dim + j] += grad_output[i] * hidden[j];
             }
         }
     }
     
     if (grad_b2) {
-        memcpy(grad_b2, grad_output, output_dim * sizeof(float));
+        for (uint32_t i = 0; i < output_dim; i++) {
+            grad_b2[i] += grad_output[i];
+        }
     }
     
     // Backward through GELU activation
@@ -139,17 +141,19 @@ void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hid
         }
     }
     
-    // Compute gradients for W1 and b1
+    // Accumulate gradients for W1 and b1
     if (grad_w1) {
         for (uint32_t i = 0; i < hidden_dim; i++) {
             for (uint32_t j = 0; j < input_dim; j++) {
-                grad_w1[i * input_dim + j] = grad_hidden[i] * input[j];
+                grad_w1[i * input_dim + j] += grad_hidden[i] * input[j];
             }
         }
     }
     
     if (grad_b1) {
-        memcpy(grad_b1, grad_hidden, hidden_dim * sizeof(float));
+        for (uint32_t i = 0; i < hidden_dim; i++) {
+            grad_b1[i] += grad_hidden[i];
+        }
     }
     
     free(grad_hidden);
@@ -278,10 +282,15 @@ static void scaled_dot_product_attention_backward(
  * @param input Original input [seq_len x embedding_dim]
  * @param grad_output Gradient from next layer [seq_len x embedding_dim]
  * @param grad_input Output gradient for previous layer [seq_len x embedding_dim]
+ * @param grad_query_weights Gradient accumulator for query weights (can be NULL)
+ * @param grad_key_weights Gradient accumulator for key weights (can be NULL)
+ * @param grad_value_weights Gradient accumulator for value weights (can be NULL)
  * @param seq_len Sequence length
  */
 void cllm_attention_backward(AttentionLayer* layer, float* input,
-                            float* grad_output, float* grad_input, int seq_len) {
+                            float* grad_output, float* grad_input,
+                            float* grad_query_weights, float* grad_key_weights, float* grad_value_weights,
+                            int seq_len) {
     if (!layer || !input || !grad_output || !grad_input || seq_len <= 0) return;
     
     uint32_t num_heads = layer->num_heads;
@@ -456,8 +465,51 @@ void cllm_attention_backward(AttentionLayer* layer, float* input,
         }
     }
     
-    // TODO: Accumulate gradients for query_lattice, key_lattice, value_lattice weights
-    // This would require passing gradient buffers for the weights
+    // Accumulate gradients for weight matrices
+    if (grad_query_weights || grad_key_weights || grad_value_weights) {
+        for (int pos = 0; pos < seq_len; pos++) {
+            float* input_vec = &input[pos * embedding_dim];
+            
+            // Accumulate query weight gradients: dL/dW_Q = input^T × dL/dQ
+            if (grad_query_weights) {
+                for (uint32_t h = 0; h < num_heads; h++) {
+                    for (uint32_t d = 0; d < head_dim; d++) {
+                        float* grad_q = &grad_queries[pos * embedding_dim + h * head_dim + d];
+                        for (uint32_t i = 0; i < head_dim; i++) {
+                            size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                            grad_query_weights[weight_idx] += input_vec[h * head_dim + i] * (*grad_q);
+                        }
+                    }
+                }
+            }
+            
+            // Accumulate key weight gradients: dL/dW_K = input^T × dL/dK
+            if (grad_key_weights) {
+                for (uint32_t h = 0; h < num_heads; h++) {
+                    for (uint32_t d = 0; d < head_dim; d++) {
+                        float* grad_k = &grad_keys[pos * embedding_dim + h * head_dim + d];
+                        for (uint32_t i = 0; i < head_dim; i++) {
+                            size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                            grad_key_weights[weight_idx] += input_vec[h * head_dim + i] * (*grad_k);
+                        }
+                    }
+                }
+            }
+            
+            // Accumulate value weight gradients: dL/dW_V = input^T × dL/dV
+            if (grad_value_weights) {
+                for (uint32_t h = 0; h < num_heads; h++) {
+                    for (uint32_t d = 0; d < head_dim; d++) {
+                        float* grad_v = &grad_values[pos * embedding_dim + h * head_dim + d];
+                        for (uint32_t i = 0; i < head_dim; i++) {
+                            size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                            grad_value_weights[weight_idx] += input_vec[h * head_dim + i] * (*grad_v);
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     free(queries);
     free(keys);
@@ -523,9 +575,17 @@ void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx,
     float* grad_temp = (float*)calloc(seq_len * embedding_dim, sizeof(float));
     if (!grad_temp) return;
     
+    // Get gradient buffers for this layer
+    float* grad_gamma = training->ln_grads ? training->ln_grads[layer_idx].gamma : NULL;
+    float* grad_beta = training->ln_grads ? training->ln_grads[layer_idx].beta : NULL;
+    
+    float* grad_query = training->attention_grads ? training->attention_grads[layer_idx].query_lattice : NULL;
+    float* grad_key = training->attention_grads ? training->attention_grads[layer_idx].key_lattice : NULL;
+    float* grad_value = training->attention_grads ? training->attention_grads[layer_idx].value_lattice : NULL;
+    
     // Backward through layer norm (post-FFN)
     CLLMLayerNorm* ln2 = &model->layer_norms[layer_idx];
-    cllm_layer_norm_backward(ln2, input, grad_output, grad_temp, NULL, NULL);
+    cllm_layer_norm_backward(ln2, input, grad_output, grad_temp, grad_gamma, grad_beta);
     
     // Backward through feed-forward network
     // Note: This is simplified - full implementation needs hidden activations
@@ -533,11 +593,82 @@ void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx,
     
     // Backward through attention
     AttentionLayer* attn = &model->attention_layers[layer_idx];
-    cllm_attention_backward(attn, input, grad_input, grad_temp, seq_len);
+    cllm_attention_backward(attn, input, grad_input, grad_temp, 
+                           grad_query, grad_key, grad_value, seq_len);
     
     memcpy(grad_input, grad_temp, seq_len * embedding_dim * sizeof(float));
     
     free(grad_temp);
+}
+
+/**
+ * Zero all gradient buffers
+ * 
+ * @param training Training state
+ */
+void cllm_zero_all_gradients(CLLMTraining* training) {
+    if (!training) return;
+    
+    CLLMModel* model = training->model;
+    
+    // Zero embedding gradients
+    if (training->gradients) {
+        memset(training->gradients, 0, model->header.total_params * sizeof(float));
+    }
+    
+    // Zero attention gradients
+    if (training->attention_grads) {
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            AttentionLayer* layer = &model->attention_layers[i];
+            size_t weight_size = layer->num_heads * layer->head_dim * layer->head_dim;
+            
+            if (training->attention_grads[i].query_lattice) {
+                memset(training->attention_grads[i].query_lattice, 0, weight_size * sizeof(float));
+            }
+            if (training->attention_grads[i].key_lattice) {
+                memset(training->attention_grads[i].key_lattice, 0, weight_size * sizeof(float));
+            }
+            if (training->attention_grads[i].value_lattice) {
+                memset(training->attention_grads[i].value_lattice, 0, weight_size * sizeof(float));
+            }
+        }
+    }
+    
+    // Zero feed-forward gradients
+    if (training->ff_grads) {
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            FeedForwardLayer* layer = &model->ff_layers[i];
+            
+            if (training->ff_grads[i].w1_lattice) {
+                memset(training->ff_grads[i].w1_lattice, 0, 
+                       layer->input_dim * layer->hidden_dim * sizeof(float));
+            }
+            if (training->ff_grads[i].w2_lattice) {
+                memset(training->ff_grads[i].w2_lattice, 0, 
+                       layer->hidden_dim * layer->output_dim * sizeof(float));
+            }
+            if (training->ff_grads[i].bias1) {
+                memset(training->ff_grads[i].bias1, 0, layer->hidden_dim * sizeof(float));
+            }
+            if (training->ff_grads[i].bias2) {
+                memset(training->ff_grads[i].bias2, 0, layer->output_dim * sizeof(float));
+            }
+        }
+    }
+    
+    // Zero layer norm gradients
+    if (training->ln_grads) {
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            CLLMLayerNorm* layer = &model->layer_norms[i];
+            
+            if (training->ln_grads[i].gamma) {
+                memset(training->ln_grads[i].gamma, 0, layer->dim * sizeof(float));
+            }
+            if (training->ln_grads[i].beta) {
+                memset(training->ln_grads[i].beta, 0, layer->dim * sizeof(float));
+            }
+        }
+    }
 }
 
 /**
@@ -557,9 +688,8 @@ void cllm_backward_complete(CLLMTraining* training, uint32_t* input_tokens,
     CLLMModel* model = training->model;
     uint32_t embedding_dim = model->embedding_dim;
     
-    // Zero gradients
-    size_t total_params = model->header.total_params;
-    memset(training->gradients, 0, total_params * sizeof(float));
+    // Zero all gradients before backward pass
+    cllm_zero_all_gradients(training);
     
     // Allocate buffers
     size_t activation_size = batch_size * seq_len * embedding_dim;
@@ -619,6 +749,7 @@ void cllm_backward_complete(CLLMTraining* training, uint32_t* input_tokens,
         
         // Copy to training gradients
         size_t embed_params = model->vocab_size * embedding_dim;
+        size_t total_params = model->header.total_params;
         if (embed_params <= total_params) {
             memcpy(training->gradients, grad_embeddings, embed_params * sizeof(float));
         }

@@ -58,8 +58,27 @@ typedef struct {
     int current_batch_offset;    // Current batch offset in tokens
     
     // Optimizer state
-    float* gradients;            // Gradient buffer
+    float* gradients;            // Gradient buffer for embeddings
     float* optimizer_state;      // Optimizer state (e.g., momentum, variance)
+    
+    // Layer-specific gradient buffers
+    struct {
+        float* query_lattice;    // Gradients for query weights
+        float* key_lattice;      // Gradients for key weights
+        float* value_lattice;    // Gradients for value weights
+    }* attention_grads;          // Array of num_layers
+    
+    struct {
+        float* w1_lattice;       // Gradients for W1
+        float* w2_lattice;       // Gradients for W2
+        float* bias1;            // Gradients for bias1
+        float* bias2;            // Gradients for bias2
+    }* ff_grads;                 // Array of num_layers
+    
+    struct {
+        float* gamma;            // Gradients for gamma
+        float* beta;             // Gradients for beta
+    }* ln_grads;                 // Array of num_layers
 } CLLMTraining;
 
 /* Loss computation functions */
@@ -95,9 +114,12 @@ void cllm_update_ema_weights(float* ema_weights, float* current_weights, size_t 
 /* Backward pass functions */
 void cllm_layer_norm_backward(CLLMLayerNorm* ln, float* input, float* grad_output, float* grad_input, float* grad_gamma, float* grad_beta);
 void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hidden, float* grad_output, float* grad_input, float* grad_w1, float* grad_w2, float* grad_b1, float* grad_b2);
-void cllm_attention_backward(AttentionLayer* layer, float* input, float* grad_output, float* grad_input, int seq_len);
+void cllm_attention_backward(AttentionLayer* layer, float* input, float* grad_output, float* grad_input,
+                            float* grad_query_weights, float* grad_key_weights, float* grad_value_weights,
+                            int seq_len);
 void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, float* grad_output, float* grad_embeddings, int batch_size);
 void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, float* input, float* grad_output, float* grad_input, int seq_len);
+void cllm_zero_all_gradients(CLLMTraining* training);
 void cllm_backward_complete(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int batch_size, int seq_len);
 
 /* Function declarations */
