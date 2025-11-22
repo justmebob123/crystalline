@@ -756,3 +756,46 @@ char* big_fixed_to_string(const BigFixed *f, int decimal_places) {
     
     return buffer;
 }
+// Convert BigInt to uint64_t helper
+static uint64_t bigint_to_uint64_helper(const BigInt* n) {
+    if (!n || !n->d || n->len == 0) return 0;
+    
+    uint64_t result = 0;
+    size_t max_digits = (n->len < 2) ? n->len : 2;
+    
+    for (size_t i = 0; i < max_digits; i++) {
+        result |= ((uint64_t)n->d[i]) << (i * 32);
+    }
+    
+    return result;
+}
+
+// Convert BigFixed to double
+double big_fixed_to_double(const BigFixed* value) {
+    if (!value) return 0.0;
+    
+    double result = (double)bigint_to_uint64_helper(value->integer_part);
+    
+    uint64_t frac = bigint_to_uint64_helper(value->fractional_part);
+    result += (double)frac / 18446744073709551616.0;
+    
+    if (value->negative) result = -result;
+    
+    return result;
+}
+
+// Convert double to BigFixed
+void big_fixed_from_double(BigFixed* result, double value) {
+    if (!result) return;
+    
+    result->negative = (value < 0);
+    if (value < 0) value = -value;
+    
+    int64_t int_part = (int64_t)value;
+    double frac_part = value - (double)int_part;
+    
+    big_from_int(result->integer_part, (uint64_t)int_part);
+    
+    uint64_t frac_fixed = (uint64_t)(frac_part * 18446744073709551616.0);
+    big_from_int(result->fractional_part, frac_fixed);
+}

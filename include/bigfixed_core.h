@@ -44,3 +44,6 @@ void big_fixed_frac(BigFixed *result, const BigFixed *f);
 char* big_fixed_to_string(const BigFixed *f, int decimal_places);
 
 #endif /* BIGFIXED_CORE_H */
+// Double conversion functions
+double big_fixed_to_double(const BigFixed* value);
+void big_fixed_from_double(BigFixed* result, double value);
