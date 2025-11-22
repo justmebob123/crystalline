@@ -390,3 +390,64 @@ void cllm_training_cleanup(CLLMTraining* training) {
 void cllm_training_free(CLLMTraining* training) {
     cllm_training_cleanup(training);
 }
+// Forward declaration for new backward pass
+void cllm_backward_complete_v2(CLLMTraining* training, uint32_t* input_tokens,
+                               uint32_t* target_tokens, int batch_size, int seq_len);
+
+// New backward pass implementation
+void cllm_backward_v2(CLLMTraining* training, uint32_t* input_tokens, 
+                      uint32_t* target_tokens, int num_tokens) {
+    if (!training || !input_tokens || !target_tokens) return;
+    
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    
+    if (num_tokens < batch_size * seq_len) {
+        size_t total_params = training->model->header.total_params;
+        memset(training->gradients, 0, total_params * sizeof(float));
+        return;
+    }
+    
+    cllm_backward_complete_v2(training, input_tokens, target_tokens, batch_size, seq_len);
+}
+
+// New optimizer step with parameter updates
+void cllm_optimizer_step_v2(CLLMTraining* training) {
+    if (!training) return;
+    
+    float lr = training->config.learning_rate;
+    float beta1 = 0.9f;
+    float beta2 = 0.999f;
+    float epsilon = 1e-8f;
+    
+    size_t total_params = training->model->header.total_params;
+    float* m = training->optimizer_state;
+    float* v = &training->optimizer_state[total_params];
+    
+    int t = training->current_step + 1;
+    float lr_t = lr * prime_sqrtf(1.0f - prime_powf(beta2, (float)t)) / 
+                      (1.0f - prime_powf(beta1, (float)t));
+    
+    // Get model parameters
+    CLLMModel* model = training->model;
+    uint32_t embedding_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    size_t embed_params = vocab_size * embedding_dim;
+    float* embeddings = model->embeddings.embeddings;
+    
+    // Update embedding parameters
+    for (size_t i = 0; i < embed_params && i < total_params; i++) {
+        float g = training->gradients[i];
+        
+        // Update moments
+        m[i] = beta1 * m[i] + (1.0f - beta1) * g;
+        v[i] = beta2 * v[i] + (1.0f - beta2) * g * g;
+        
+        // Compute and apply update
+        float update = lr_t * m[i] / (prime_sqrtf(v[i]) + epsilon);
+        
+        if (embeddings) {
+            embeddings[i] -= update;
+        }
+    }
+}
