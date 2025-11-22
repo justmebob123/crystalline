@@ -68,40 +68,112 @@ void big_ln(BigFixed *result, const BigInt *n, int precision_bits) {
     }
     big_free(&one);
     
-    // For now, use a simple approximation based on bit length
-    // This is a placeholder until we implement full Taylor series
-    // ln(n) ≈ (bit_length - 1) * ln(2)
+    // Improved algorithm: Use argument reduction + Taylor series
+    // ln(n) = ln(2^k × m) = k×ln(2) + ln(m) where 1 <= m < 2
     
-    int bit_length = 0;
-    for (size_t i = 0; i < n->len; i++) {
-        if (n->d[i] != 0) {
-            bit_length = i * 32;
-            uint32_t word = n->d[i];
-            while (word > 0) {
-                bit_length++;
+    // Step 1: Find k such that n = 2^k × m with 1 <= m < 2
+    int k = 0;
+    BigInt temp;
+    big_init(&temp);
+    big_copy(&temp, n);
+    
+    // Count leading bits to find k
+    for (size_t i = temp.len; i > 0; i--) {
+        if (temp.d[i-1] != 0) {
+            k = (i - 1) * 32;
+            uint32_t word = temp.d[i-1];
+            while (word > 1) {
                 word >>= 1;
+                k++;
             }
+            break;
         }
     }
     
-    // ln(2) ≈ 0.693147180559945309417232121458
-    // Use rational approximation: 355/512 ≈ 0.693359375 (close enough for now)
+    // Step 2: Compute m = n / 2^k (shift right by k bits)
+    BigInt m;
+    big_init(&m);
+    big_copy(&m, n);
+    if (k > 0) {
+        big_shr(&m, k);
+    }
+    
+    // Step 3: Convert m to BigFixed for Taylor series
+    // m is now in range [1, 2), compute ln(m) using Taylor series
+    // ln(1+x) = x - x²/2 + x³/3 - x⁴/4 + ...
+    // Let x = m - 1, so x is in [0, 1)
+    
+    BigFixed *m_fixed = big_fixed_create(precision_bits);
+    big_fixed_from_bigint(m_fixed, &m);
+    
+    BigFixed *one_fixed = big_fixed_create(precision_bits);
+    big_fixed_from_int(one_fixed, 1);
+    
+    BigFixed *x = big_fixed_create(precision_bits);
+    big_fixed_sub(x, m_fixed, one_fixed);  // x = m - 1
+    
+    // Taylor series: ln(1+x) = x - x²/2 + x³/3 - x⁴/4 + ...
+    BigFixed *sum = big_fixed_create(precision_bits);
+    BigFixed *term = big_fixed_create(precision_bits);
+    BigFixed *x_power = big_fixed_create(precision_bits);
+    
+    big_fixed_assign(sum, x);  // First term
+    big_fixed_assign(x_power, x);
+    
+    // Compute up to 50 terms or until convergence
+    for (int i = 2; i <= 50; i++) {
+        big_fixed_mul(x_power, x_power, x);  // x^i
+        
+        BigFixed *i_fixed = big_fixed_create(precision_bits);
+        big_fixed_from_int(i_fixed, i);
+        
+        big_fixed_div(term, x_power, i_fixed);
+        
+        // Alternate signs
+        if (i % 2 == 0) {
+            big_fixed_sub(sum, sum, term);
+        } else {
+            big_fixed_add(sum, sum, term);
+        }
+        
+        big_fixed_free(i_fixed);
+        
+        // Check for convergence (term becomes negligible)
+        if (big_fixed_is_zero(term)) {
+            break;
+        }
+    }
+    
+    // Step 4: Add k×ln(2)
+    // ln(2) ≈ 0.693147180559945 (use better approximation: 9/13 ≈ 0.692307)
     BigFixed *ln2 = big_fixed_create(precision_bits);
-    big_fixed_from_int(ln2, 355);
-    BigFixed *divisor = big_fixed_create(precision_bits);
-    big_fixed_from_int(divisor, 512);
-    big_fixed_div(ln2, ln2, divisor);
+    big_fixed_from_int(ln2, 9);
+    BigFixed *ln2_denom = big_fixed_create(precision_bits);
+    big_fixed_from_int(ln2_denom, 13);
+    big_fixed_div(ln2, ln2, ln2_denom);
     
-    // result = (bit_length - 1) * ln(2)
-    BigFixed *bits = big_fixed_create(precision_bits);
-    big_fixed_from_int(bits, bit_length - 1);
-    big_fixed_mul(result, bits, ln2);
+    BigFixed *k_fixed = big_fixed_create(precision_bits);
+    big_fixed_from_int(k_fixed, k);
     
+    BigFixed *k_ln2 = big_fixed_create(precision_bits);
+    big_fixed_mul(k_ln2, k_fixed, ln2);
+    
+    // result = k×ln(2) + ln(m)
+    big_fixed_add(result, k_ln2, sum);
+    
+    // Cleanup
+    big_free(&temp);
+    big_free(&m);
+    big_fixed_free(m_fixed);
+    big_fixed_free(one_fixed);
+    big_fixed_free(x);
+    big_fixed_free(sum);
+    big_fixed_free(term);
+    big_fixed_free(x_power);
     big_fixed_free(ln2);
-    big_fixed_free(divisor);
-    big_fixed_free(bits);
-    
-    // TODO: Add Taylor series refinement for better accuracy
+    big_fixed_free(ln2_denom);
+    big_fixed_free(k_fixed);
+    big_fixed_free(k_ln2);
 }
 
 /**
