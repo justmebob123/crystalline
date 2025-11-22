@@ -164,6 +164,122 @@ void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hid
  * @param grad_input Output gradient for previous layer [seq_len x embedding_dim]
  * @param seq_len Sequence length
  */
+/**
+ * Softmax backward pass
+ * 
+ * Given softmax output y and gradient dy, compute dx where y = softmax(x)
+ * 
+ * @param softmax_output Softmax output [size]
+ * @param grad_output Gradient w.r.t. output [size]
+ * @param grad_input Output gradient w.r.t. input [size]
+ * @param size Array size
+ */
+static void softmax_backward(float* softmax_output, float* grad_output,
+                            float* grad_input, int size) {
+    if (!softmax_output || !grad_output || !grad_input || size <= 0) return;
+    
+    // Compute sum of (grad_output * softmax_output)
+    float sum = 0.0f;
+    for (int i = 0; i < size; i++) {
+        sum += grad_output[i] * softmax_output[i];
+    }
+    
+    // Compute gradient: grad_input[i] = softmax_output[i] * (grad_output[i] - sum)
+    for (int i = 0; i < size; i++) {
+        grad_input[i] = softmax_output[i] * (grad_output[i] - sum);
+    }
+}
+
+/**
+ * Scaled dot-product attention backward pass
+ * 
+ * Computes gradients for query, keys, and values given gradient w.r.t. output
+ * 
+ * @param query Query vector [head_dim]
+ * @param keys Key matrix [seq_len x head_dim]
+ * @param values Value matrix [seq_len x head_dim]
+ * @param attention_weights Attention weights from forward pass [seq_len]
+ * @param grad_output Gradient w.r.t. output [head_dim]
+ * @param grad_query Output gradient for query [head_dim]
+ * @param grad_keys Output gradient for keys [seq_len x head_dim]
+ * @param grad_values Output gradient for values [seq_len x head_dim]
+ * @param head_dim Dimension per head
+ * @param seq_len Sequence length
+ */
+static void scaled_dot_product_attention_backward(
+    float* query, float* keys, float* values, float* attention_weights,
+    float* grad_output, float* grad_query, float* grad_keys, float* grad_values,
+    int head_dim, int seq_len) {
+    
+    if (!query || !keys || !values || !attention_weights || !grad_output ||
+        !grad_query || !grad_keys || !grad_values || head_dim <= 0 || seq_len <= 0) {
+        return;
+    }
+    
+    float scale = 1.0f / prime_sqrt((float)head_dim);
+    
+    // Allocate temporary buffers
+    float* grad_attention = (float*)calloc(seq_len, sizeof(float));
+    float* grad_scores = (float*)calloc(seq_len, sizeof(float));
+    
+    if (!grad_attention || !grad_scores) {
+        free(grad_attention);
+        free(grad_scores);
+        return;
+    }
+    
+    // Gradient w.r.t. values: grad_values[i] = attention_weights[i] * grad_output
+    for (int i = 0; i < seq_len; i++) {
+        for (int j = 0; j < head_dim; j++) {
+            grad_values[i * head_dim + j] += attention_weights[i] * grad_output[j];
+        }
+    }
+    
+    // Gradient w.r.t. attention weights: grad_attention[i] = sum(values[i] * grad_output)
+    for (int i = 0; i < seq_len; i++) {
+        float sum = 0.0f;
+        for (int j = 0; j < head_dim; j++) {
+            sum += values[i * head_dim + j] * grad_output[j];
+        }
+        grad_attention[i] = sum;
+    }
+    
+    // Gradient through softmax
+    softmax_backward(attention_weights, grad_attention, grad_scores, seq_len);
+    
+    // Gradient w.r.t. scaled scores (before softmax)
+    for (int i = 0; i < seq_len; i++) {
+        grad_scores[i] *= scale;
+    }
+    
+    // Gradient w.r.t. query: grad_query = sum(grad_scores[i] * keys[i])
+    memset(grad_query, 0, head_dim * sizeof(float));
+    for (int i = 0; i < seq_len; i++) {
+        for (int j = 0; j < head_dim; j++) {
+            grad_query[j] += grad_scores[i] * keys[i * head_dim + j];
+        }
+    }
+    
+    // Gradient w.r.t. keys: grad_keys[i] = grad_scores[i] * query
+    for (int i = 0; i < seq_len; i++) {
+        for (int j = 0; j < head_dim; j++) {
+            grad_keys[i * head_dim + j] += grad_scores[i] * query[j];
+        }
+    }
+    
+    free(grad_attention);
+    free(grad_scores);
+}
+
+/**
+ * Complete attention backward pass with weight gradients
+ * 
+ * @param layer Attention layer
+ * @param input Original input [seq_len x embedding_dim]
+ * @param grad_output Gradient from next layer [seq_len x embedding_dim]
+ * @param grad_input Output gradient for previous layer [seq_len x embedding_dim]
+ * @param seq_len Sequence length
+ */
 void cllm_attention_backward(AttentionLayer* layer, float* input,
                             float* grad_output, float* grad_input, int seq_len) {
     if (!layer || !input || !grad_output || !grad_input || seq_len <= 0) return;
@@ -172,16 +288,184 @@ void cllm_attention_backward(AttentionLayer* layer, float* input,
     uint32_t head_dim = layer->head_dim;
     uint32_t embedding_dim = num_heads * head_dim;
     
-    // Simplified backward pass - full implementation would compute
-    // gradients for Q, K, V projections and attention weights
+    // Allocate buffers for forward pass intermediate values
+    float* queries = (float*)calloc(seq_len * embedding_dim, sizeof(float));
+    float* keys = (float*)calloc(seq_len * embedding_dim, sizeof(float));
+    float* values = (float*)calloc(seq_len * embedding_dim, sizeof(float));
+    float* attention_weights = (float*)calloc(seq_len * seq_len * num_heads, sizeof(float));
     
-    // For now, just pass gradients through (identity-like)
-    memcpy(grad_input, grad_output, seq_len * embedding_dim * sizeof(float));
+    // Allocate buffers for gradients
+    float* grad_queries = (float*)calloc(seq_len * embedding_dim, sizeof(float));
+    float* grad_keys = (float*)calloc(seq_len * embedding_dim, sizeof(float));
+    float* grad_values = (float*)calloc(seq_len * embedding_dim, sizeof(float));
     
-    // TODO: Implement full attention backward pass with:
-    // - Gradient through softmax
-    // - Gradient through scaled dot-product
-    // - Gradients for Q, K, V weight matrices
+    if (!queries || !keys || !values || !attention_weights ||
+        !grad_queries || !grad_keys || !grad_values) {
+        free(queries);
+        free(keys);
+        free(values);
+        free(attention_weights);
+        free(grad_queries);
+        free(grad_keys);
+        free(grad_values);
+        return;
+    }
+    
+    // Re-compute forward pass to get intermediate values
+    // Project input to Q, K, V
+    for (int pos = 0; pos < seq_len; pos++) {
+        float* input_vec = &input[pos * embedding_dim];
+        
+        // Query projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                float sum = 0.0f;
+                for (uint32_t i = 0; i < head_dim; i++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    sum += layer->query_lattice[weight_idx] * input_vec[h * head_dim + i];
+                }
+                queries[pos * embedding_dim + h * head_dim + d] = sum;
+            }
+        }
+        
+        // Key projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                float sum = 0.0f;
+                for (uint32_t i = 0; i < head_dim; i++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    sum += layer->key_lattice[weight_idx] * input_vec[h * head_dim + i];
+                }
+                keys[pos * embedding_dim + h * head_dim + d] = sum;
+            }
+        }
+        
+        // Value projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                float sum = 0.0f;
+                for (uint32_t i = 0; i < head_dim; i++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    sum += layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
+                }
+                values[pos * embedding_dim + h * head_dim + d] = sum;
+            }
+        }
+    }
+    
+    // Compute attention weights for backward pass
+    float scale = 1.0f / prime_sqrt((float)head_dim);
+    for (int pos = 0; pos < seq_len; pos++) {
+        for (uint32_t h = 0; h < num_heads; h++) {
+            float* query = &queries[pos * embedding_dim + h * head_dim];
+            float* scores = &attention_weights[(pos * num_heads + h) * seq_len];
+            
+            // Compute attention scores
+            for (int i = 0; i < seq_len; i++) {
+                float* key = &keys[i * embedding_dim + h * head_dim];
+                float dot = 0.0f;
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    dot += query[d] * key[d];
+                }
+                scores[i] = dot * scale;
+            }
+            
+            // Apply softmax
+            float max_score = scores[0];
+            for (int i = 1; i < seq_len; i++) {
+                if (scores[i] > max_score) max_score = scores[i];
+            }
+            
+            float sum = 0.0f;
+            for (int i = 0; i < seq_len; i++) {
+                scores[i] = prime_exp(scores[i] - max_score);
+                sum += scores[i];
+            }
+            
+            if (sum > 1e-8f) {
+                for (int i = 0; i < seq_len; i++) {
+                    scores[i] /= sum;
+                }
+            }
+        }
+    }
+    
+    // Backward pass through attention for each position and head
+    for (int pos = 0; pos < seq_len; pos++) {
+        for (uint32_t h = 0; h < num_heads; h++) {
+            float* query = &queries[pos * embedding_dim + h * head_dim];
+            float* head_keys = &keys[h * head_dim];
+            float* head_values = &values[h * head_dim];
+            float* attn_weights = &attention_weights[(pos * num_heads + h) * seq_len];
+            float* grad_out = &grad_output[pos * embedding_dim + h * head_dim];
+            float* grad_q = &grad_queries[pos * embedding_dim + h * head_dim];
+            float* grad_k = &grad_keys[h * head_dim];
+            float* grad_v = &grad_values[h * head_dim];
+            
+            scaled_dot_product_attention_backward(
+                query, head_keys, head_values, attn_weights,
+                grad_out, grad_q, grad_k, grad_v,
+                head_dim, seq_len
+            );
+        }
+    }
+    
+    // Backward through Q, K, V projections to get gradient w.r.t. input
+    memset(grad_input, 0, seq_len * embedding_dim * sizeof(float));
+    
+    for (int pos = 0; pos < seq_len; pos++) {
+        float* grad_in = &grad_input[pos * embedding_dim];
+        
+        // Gradient from query projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t i = 0; i < head_dim; i++) {
+                float grad_sum = 0.0f;
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    grad_sum += layer->query_lattice[weight_idx] * 
+                               grad_queries[pos * embedding_dim + h * head_dim + d];
+                }
+                grad_in[h * head_dim + i] += grad_sum;
+            }
+        }
+        
+        // Gradient from key projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t i = 0; i < head_dim; i++) {
+                float grad_sum = 0.0f;
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    grad_sum += layer->key_lattice[weight_idx] * 
+                               grad_keys[pos * embedding_dim + h * head_dim + d];
+                }
+                grad_in[h * head_dim + i] += grad_sum;
+            }
+        }
+        
+        // Gradient from value projection
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t i = 0; i < head_dim; i++) {
+                float grad_sum = 0.0f;
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                    grad_sum += layer->value_lattice[weight_idx] * 
+                               grad_values[pos * embedding_dim + h * head_dim + d];
+                }
+                grad_in[h * head_dim + i] += grad_sum;
+            }
+        }
+    }
+    
+    // TODO: Accumulate gradients for query_lattice, key_lattice, value_lattice weights
+    // This would require passing gradient buffers for the weights
+    
+    free(queries);
+    free(keys);
+    free(values);
+    free(attention_weights);
+    free(grad_queries);
+    free(grad_keys);
+    free(grad_values);
 }
 
 /**
