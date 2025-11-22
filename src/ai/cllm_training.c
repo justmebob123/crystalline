@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <time.h>
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
@@ -124,16 +125,39 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     training->num_tokens = 0;
     training->tokens = (uint32_t*)malloc(file_size * sizeof(uint32_t)); // Overallocate
     
-    char* token = strtok(content, " \n\t");
-    while (token != NULL && training->num_tokens < (size_t)file_size) {
-        // Find token in vocabulary
-        for (uint32_t i = 0; i < training->model->vocab_size; i++) {
-            if (strcmp(training->model->tokens[i].token_str, token) == 0) {
-                training->tokens[training->num_tokens++] = i;
-                break;
+    // Check if model has vocabulary
+    if (!training->model->tokens) {
+        fprintf(stderr, "Warning: Model has no vocabulary, using character-based tokenization\n");
+        // Fallback: character-based tokenization
+        for (size_t i = 0; i < bytes_read && training->num_tokens < (size_t)file_size; i++) {
+            if (content[i] != '\n' && content[i] != '\r') {
+                training->tokens[training->num_tokens++] = (uint32_t)(content[i] % training->model->vocab_size);
             }
         }
-        token = strtok(NULL, " \n\t");
+    } else {
+        // Use vocabulary-based tokenization
+        char* token = strtok(content, " \n\t");
+        while (token != NULL && training->num_tokens < (size_t)file_size) {
+            // Find token in vocabulary
+            bool found = false;
+            for (uint32_t i = 0; i < training->model->vocab_size; i++) {
+                if (strcmp(training->model->tokens[i].token_str, token) == 0) {
+                    training->tokens[training->num_tokens++] = i;
+                    found = true;
+                    break;
+                }
+            }
+            // If token not in vocabulary, use hash or skip
+            if (!found) {
+                // Use simple hash to map unknown tokens
+                uint32_t hash = 0;
+                for (size_t i = 0; token[i]; i++) {
+                    hash = hash * 31 + (uint32_t)token[i];
+                }
+                training->tokens[training->num_tokens++] = hash % training->model->vocab_size;
+            }
+            token = strtok(NULL, " \n\t");
+        }
     }
     
     free(content);

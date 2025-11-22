@@ -55,8 +55,10 @@ void scan_training_directory(const char* dir_path) {
             if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode)) {
                 strncpy(training_files[file_count].filename, entry->d_name, 
                        sizeof(training_files[file_count].filename) - 1);
+                training_files[file_count].filename[sizeof(training_files[file_count].filename) - 1] = '\0';
                 strncpy(training_files[file_count].filepath, full_path,
                        sizeof(training_files[file_count].filepath) - 1);
+                training_files[file_count].filepath[sizeof(training_files[file_count].filepath) - 1] = '\0';
                 training_files[file_count].selected = false;
                 training_files[file_count].size = st.st_size;
                 
@@ -539,7 +541,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         printf("Save checkpoint button clicked\n");
         if (state->cllm_model) {
             // Create checkpoints directory
-            system("mkdir -p checkpoints");
+            int mkdir_result = system("mkdir -p checkpoints");
+            (void)mkdir_result; // Explicitly ignore
             
             // Save model
             char checkpoint_path[512];
