@@ -18,6 +18,7 @@
  */
 
 #include "prime_lattice_geometry.h"
+#include "prime_lattice_core.h"
 #include "prime_lowlevel.h"
 #include "prime_math_custom.h"
 #include "prime_types.h"
@@ -93,12 +94,7 @@ static void psi_triple(uint64_t p, uint64_t q, PythagoreanTriple *triple, uint64
     triple->layer = n % 3;  // 3-renewal
 }
 
-static double pythagorean_ratio(uint64_t p, uint64_t q) {
-    // ψ(p,q) = (p² - q²) / (p² + q²)
-    double p2 = (double)(p * p);
-    double q2 = (double)(q * q);
-    return (p2 - q2) / (p2 + q2);
-}
+// pythagorean_ratio defined in prime_lattice_core.c
 
 static int64_t pythagorean_difference_signed(uint64_t p, uint64_t q) {
     // p² - q² (can be negative!)
@@ -118,65 +114,9 @@ static int64_t pythagorean_difference_signed(uint64_t p, uint64_t q) {
  * "k'ancha" → 12
  * General: ν(λ) = 3^(λ mod 3)
  */
-static double nu_lambda(const char *lambda_phon) {
-    if (!lambda_phon) return 3.0;  // Default
-    
-    // Convert to lowercase
-    char lower[64];
-    strncpy(lower, lambda_phon, 63);
-    lower[63] = '\0';
-    for (int i = 0; lower[i]; i++) {
-        if (lower[i] >= 'A' && lower[i] <= 'Z') {
-            lower[i] = lower[i] + ('a' - 'A');
-        }
-    }
-    
-    // Phonetic mappings from symbol table
-    if (strstr(lower, "dub")) {
-        return 3.0;  // ν(dub) = 3
-    } else if (strstr(lower, "knbt")) {
-        return 3.0;  // ν(knbt) = 3 (3^(7 mod 3) = 3^1 = 3)
-    } else if (strstr(lower, "k'ancha") || strstr(lower, "kancha")) {
-        return 3.0;  // ν(k'ancha) = 3 (3^(12 mod 3) = 3^0 = 1, but base is 3)
-    } else if (strstr(lower, "kub")) {
-        return 3.0;  // ν(kub) = 3 (cube/triad)
-    } else if (strstr(lower, "triad")) {
-        return 3.0;  // Triad core
-    } else if (strstr(lower, "seven") || strstr(lower, "7")) {
-        return 7.0;  // Seven rays
-    } else if (strstr(lower, "twelve") || strstr(lower, "12")) {
-        return 12.0;  // Zodiac/clock
-    } else if (strstr(lower, "nineteen") || strstr(lower, "19")) {
-        return 19.0;  // Metonic cycle
-    } else if (strstr(lower, "thirtyone") || strstr(lower, "31")) {
-        return 31.0;  // Crown
-    }
-    
-    // Default: ν(λ) = 3 (triad base)
-    return 3.0;
-}
+// Use nu_lambda from prime_lattice_core.c (avoid duplication)
 
-/**
- * Update dimensional frequencies with phonon correction
- * φᵢ += ν(λ) × 0.1 for prime indices
- */
-static void update_phi_freqs(const double *phi_base, double *phi_updated,
-                             const char *lambda_phon, int count) {
-    double nu = nu_lambda(lambda_phon);
-    
-    for (int i = 0; i < count; i++) {
-        uint64_t Pi = (uint64_t)phi_base[i];
-        
-        // Check if Pi is prime
-        bool is_prime = is_prime_geometric(Pi);
-        
-        if (is_prime) {
-            phi_updated[i] = phi_base[i] + nu * 0.1;
-        } else {
-            phi_updated[i] = phi_base[i] / 10.0;
-        }
-    }
-}
+// update_phi_freqs defined in prime_lattice_core.c
 
 /* ============================================================================
  * MÖBIUS DUALITY TWIST
@@ -186,9 +126,7 @@ static void update_phi_freqs(const double *phi_base, double *phi_updated,
  * Γ(k) = (-1)^k
  * Provides duality for negative dimensions
  */
-static int mobius_twist(int k) {
-    return (k % 2 == 0) ? 1 : -1;
-}
+// Use mobius_twist from prime_lattice_core.c (avoid duplication)
 
 /* ============================================================================
  * ANGULAR POSITION θ(n,k,λ,ω,ψ)
@@ -251,23 +189,7 @@ static double r_n_complete(uint64_t prime) {
 /**
  * O(n,k,λ) = (n-1)·(π/6)/ln(3) + log₃(ν(λ)) + k·π·(1+√5)
  */
-static double O_exponent(uint64_t n, int k, const char *lambda_phon) {
-    double nu = nu_lambda(lambda_phon);
-    
-    // Term 1: (n-1)·(π/6)/ln(3)
-    double term1 = ((double)n - 1.0) * (LATTICE_PI / 6.0) / prime_log(3.0);
-    
-    // Term 2: log₃(ν(λ))
-    double term2 = 0.0;
-    if (nu > 0) {
-        term2 = prime_log(nu) / prime_log(3.0);
-    }
-    
-    // Term 3: k·π·(1+√5)
-    double term3 = (double)k * LATTICE_PI * (1.0 + LATTICE_SQRT5);
-    
-    return term1 + term2 + term3;
-}
+// O_exponent defined in prime_lattice_core.c
 
 /* ============================================================================
  * RECURSIVE 3^d
@@ -342,19 +264,7 @@ __attribute__((unused)) static void power_3d(BigInt *result, int d, const BigInt
 /**
  * Γ(n,d) = log₂(count_primes(d) / d)
  */
-static double lattice_entropy(uint64_t n, uint64_t d) {
-    (void)n;  // Not used in current formula
-    
-    if (d == 0) return 0.0;
-    
-    // Count primes up to d
-    uint64_t count = count_primes_geometric(d);
-    
-    if (count == 0) return 0.0;
-    
-    double density = (double)count / (double)d;
-    return prime_log(density) / prime_log(2.0);
-}
+// Use lattice_entropy from prime_lattice_core.c (avoid duplication)
 
 /* ============================================================================
  * MASTER LATTICE FUNCTION L(n,d,k,λ)
