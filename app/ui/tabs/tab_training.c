@@ -1,6 +1,7 @@
 // app/ui/tabs/tab_training.c - COMPLETE Training Tab Implementation
 #include "../../app_common.h"
 #include "../../cllm_integration.h"
+#include "../../text_input.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <pthread.h>
@@ -31,6 +32,12 @@ static bool training_thread_running = false;
 #define MAX_HISTORY 1000
 static float loss_history[MAX_HISTORY];
 static int history_count = 0;
+
+// Text input fields for training parameters
+static TextInput learning_rate_input;
+static TextInput epochs_input;
+static TextInput batch_size_input;
+static bool inputs_initialized = false;
 
 static void scan_training_directory(const char* dir_path) {
     file_count = 0;
@@ -112,6 +119,27 @@ static void* training_thread_func(void* arg) {
 void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
+    // Initialize text inputs once
+    if (!inputs_initialized) {
+        text_input_init(&learning_rate_input, "Learning Rate:", RENDER_WIDTH + 10, 150, 200, 30);
+        text_input_set_numeric(&learning_rate_input, 0.0001, 1.0);
+        char lr_buf[32];
+        snprintf(lr_buf, sizeof(lr_buf), "%.4f", state->training_learning_rate);
+        text_input_set_text(&learning_rate_input, lr_buf);
+        
+        text_input_init(&epochs_input, "Epochs:", RENDER_WIDTH + 10, 200, 200, 30);
+        text_input_set_numeric(&epochs_input, 1, 10000);
+        char ep_buf[32];
+        snprintf(ep_buf, sizeof(ep_buf), "%d", state->training_epochs);
+        text_input_set_text(&epochs_input, ep_buf);
+        
+        text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 250, 200, 30);
+        text_input_set_numeric(&batch_size_input, 1, 1024);
+        text_input_set_text(&batch_size_input, "32");
+        
+        inputs_initialized = true;
+    }
+    
     int panel_x = RENDER_WIDTH;
     int panel_y = 60;
     int panel_width = CONTROL_PANEL_WIDTH;
@@ -150,6 +178,17 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, "Model: Not Loaded", panel_x + 10, y, (SDL_Color){255, 100, 100, 255});
     }
     y += 25;
+    
+    // === SECTION 1.5: TRAINING PARAMETERS ===
+    draw_text(renderer, "PARAMETERS", panel_x + 10, y, text_color);
+    y += 20;
+    
+    // Render text input fields
+    text_input_render(&learning_rate_input, renderer, get_global_font());
+    text_input_render(&epochs_input, renderer, get_global_font());
+    text_input_render(&batch_size_input, renderer, get_global_font());
+    
+    y = 300; // Skip past the input fields
     
     // === SECTION 2: DATA FILES ===
     draw_text(renderer, "TRAINING DATA", panel_x + 10, y, text_color);
@@ -378,6 +417,33 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
                  RENDER_WIDTH / 2 - 170, WINDOW_HEIGHT / 2 + 30, 
                  (SDL_Color){150, 150, 150, 255});
     }
+}
+
+// Handle SDL events for text inputs
+bool handle_training_tab_event(AppState* state, SDL_Event* event) {
+    if (!state || !event) return false;
+    
+    // Handle text input events
+    if (text_input_handle_event(&learning_rate_input, event)) {
+        // Update state when input changes
+        if (!text_input_is_active(&learning_rate_input)) {
+            state->training_learning_rate = (float)text_input_get_number(&learning_rate_input);
+        }
+        return true;
+    }
+    
+    if (text_input_handle_event(&epochs_input, event)) {
+        if (!text_input_is_active(&epochs_input)) {
+            state->training_epochs = (int)text_input_get_number(&epochs_input);
+        }
+        return true;
+    }
+    
+    if (text_input_handle_event(&batch_size_input, event)) {
+        return true;
+    }
+    
+    return false;
 }
 
 void handle_training_tab_click(AppState* state, int x, int y) {

@@ -403,6 +403,20 @@ void handle_input(AppState* state, SDL_Event* event) {
         printf("KEY: %s (%d)\n", SDL_GetKeyName(event->key.keysym.sym), event->key.keysym.sym);
     }
     
+    // Handle Training tab text inputs first (before other event processing)
+    if (state->current_tab == TAB_TRAINING) {
+        if (handle_training_tab_event(state, event)) {
+            return; // Event was handled by text input
+        }
+    }
+    
+    // Handle Research tab text inputs
+    if (state->current_tab == TAB_RESEARCH) {
+        if (handle_research_tab_event(state, event)) {
+            return; // Event was handled by text input
+        }
+    }
+    
     switch (event->type) {
         case SDL_KEYDOWN:
             // Handle input mode toggle first

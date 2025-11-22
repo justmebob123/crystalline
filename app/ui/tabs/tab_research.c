@@ -1,5 +1,6 @@
 // app/ui/tabs/tab_research.c - COMPLETE Research Data Browser Tab
 #include "../../app_common.h"
+#include "../../text_input.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -37,6 +38,10 @@ static SortMode sort_mode = SORT_NAME;
 static bool sort_ascending = true;
 static char current_directory[512] = "docs/research";
 static char search_query[128] = "";
+
+// Text input for search
+static TextInput search_input;
+static bool search_input_initialized = false;
 
 static const char* get_file_type(const char* filename) {
     const char* ext = strrchr(filename, '.');
@@ -153,6 +158,13 @@ static const char* format_time(time_t time) {
 void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
+    // Initialize search input once
+    if (!search_input_initialized) {
+        text_input_init(&search_input, "Search:", RENDER_WIDTH + 10, 150, 260, 25);
+        text_input_set_text(&search_input, search_query);
+        search_input_initialized = true;
+    }
+    
     int panel_x = RENDER_WIDTH;
     int panel_y = 60;
     int panel_width = CONTROL_PANEL_WIDTH;
@@ -206,23 +218,9 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Up", up_btn.x + 28, up_btn.y + 5, text_color);
     y += 28;
     
-    // Search box
-    draw_text(renderer, "Search:", panel_x + 10, y, text_color);
-    y += 16;
-    
-    SDL_Rect search_box = {panel_x + 10, y, panel_width - 20, 20};
-    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-    SDL_RenderFillRect(renderer, &search_box);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &search_box);
-    
-    if (strlen(search_query) > 0) {
-        draw_text(renderer, search_query, search_box.x + 5, search_box.y + 4, text_color);
-    } else {
-        draw_text(renderer, "Type to search...", search_box.x + 5, search_box.y + 4, 
-                 (SDL_Color){100, 100, 100, 255});
-    }
-    y += 26;
+    // Search input (using text_input component)
+    text_input_render(&search_input, renderer, get_global_font());
+    y += 50;  // Skip past the search input
     
     // === SECTION 3: SORT CONTROLS ===
     draw_text(renderer, "Sort by:", panel_x + 10, y, text_color);
@@ -382,6 +380,26 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
                  RENDER_WIDTH / 2 - 120, WINDOW_HEIGHT / 2 + 30, 
                  (SDL_Color){150, 150, 150, 255});
     }
+}
+
+// Handle SDL events for search input
+bool handle_research_tab_event(AppState* state, SDL_Event* event) {
+    if (!state || !event) return false;
+    
+    // Handle search input events
+    if (text_input_handle_event(&search_input, event)) {
+        // Update search query when input changes
+        if (!text_input_is_active(&search_input)) {
+            const char* query = text_input_get_text(&search_input);
+            strncpy(search_query, query, sizeof(search_query) - 1);
+            search_query[sizeof(search_query) - 1] = '\0';
+            // Rescan directory with new search query
+            scan_research_directory(current_directory);
+        }
+        return true;
+    }
+    
+    return false;
 }
 
 void handle_research_tab_click(AppState* state, int x, int y) {

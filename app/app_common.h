@@ -3,6 +3,7 @@
 #define APP_COMMON_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -301,6 +302,7 @@ void draw_clock_grid(SDL_Renderer* renderer);
 // Function declarations from ui.c
 int init_font_system(void);
 void cleanup_font_system(void);
+TTF_Font* get_global_font(void);
 void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
 void draw_tabs(SDL_Renderer* renderer, AppState* state);
 void draw_control_panel(SDL_Renderer* renderer, AppState* state);
@@ -314,11 +316,13 @@ void handle_llm_tab_key(AppState* state, SDL_Keycode key);
 // Function declarations from tab_training.c
 void draw_training_tab(SDL_Renderer* renderer, AppState* state);
 void handle_training_tab_click(AppState* state, int x, int y);
+bool handle_training_tab_event(AppState* state, SDL_Event* event);
 
 // Function declarations from tab_research.c
 void draw_research_tab(SDL_Renderer* renderer, AppState* state);
 void handle_research_tab_click(AppState* state, int x, int y);
 void handle_research_tab_scroll(AppState* state, int scroll_y);
+bool handle_research_tab_event(AppState* state, SDL_Event* event);
 
 // Function declarations from io.c
 void start_recording(AppState* state);

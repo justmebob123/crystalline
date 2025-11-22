@@ -40,6 +40,10 @@ void cleanup_font_system(void) {
     TTF_Quit();
 }
 
+TTF_Font* get_global_font(void) {
+    return g_font;
+}
+
 void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color) {
     if (!g_font || !text || text[0] == '\0') {
         return;
