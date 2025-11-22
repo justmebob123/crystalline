@@ -1,0 +1,15 @@
+Mathematics forms the foundation of science and engineering. Algebra deals with symbols and rules for manipulating them. Calculus studies continuous change and motion.
+
+Geometry explores shapes, sizes, and spatial relationships. Euclidean geometry describes flat spaces with parallel lines. Non-Euclidean geometries model curved spaces.
+
+Statistics analyzes data to draw conclusions and make predictions. Probability theory quantifies uncertainty and randomness. Hypothesis testing evaluates claims about populations.
+
+Number theory investigates properties of integers and primes. Prime numbers are fundamental building blocks in mathematics. Cryptography relies on the difficulty of factoring large numbers.
+
+Linear algebra studies vectors, matrices, and linear transformations. It provides tools for solving systems of equations. Applications span computer graphics, machine learning, and physics.
+
+Discrete mathematics deals with countable objects and structures. Graph theory models networks and relationships. Combinatorics counts arrangements and selections.
+
+Mathematical proofs establish truth through logical reasoning. Induction proves statements for all natural numbers. Contradiction assumes the opposite and derives impossibility.
+
+Applied mathematics solves real-world problems using mathematical methods. Optimization finds best solutions under constraints. Numerical analysis approximates solutions computationally.
