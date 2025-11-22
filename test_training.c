@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "include/cllm.h"
+#include "include/cllm_utils.h"
 #include "include/cllm_training.h"
 
 int main() {
@@ -54,6 +55,8 @@ int main() {
         return 1;
     }
     printf("✓ Training initialized\n");
+    printf("  training->gradients = %p\n", (void*)training->gradients);
+    printf("  training->attention_grads = %p\n", (void*)training->attention_grads);
     fflush(stdout);
     
     // Create simple training data: [0,1,2,3,4,5,6,7]

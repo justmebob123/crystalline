@@ -613,7 +613,8 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
     
     // Zero embedding gradients
     if (training->gradients) {
-        memset(training->gradients, 0, model->header.total_params * sizeof(float));
+        size_t embed_size = model->vocab_size * model->embedding_dim;
+        memset(training->gradients, 0, embed_size * sizeof(float));
     }
     
     // Zero attention gradients

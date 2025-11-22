@@ -27,11 +27,37 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->current_step = 0;
     training->best_loss = 1e9f;
     
-    // Skip gradient allocation for now - causes crashes
-    // TODO: Fix structure layout issues
-    training->gradients = NULL;
-    training->optimizer_state = NULL;
-    training->attention_grads = NULL;
+    // Allocate gradient buffers
+    size_t embed_size = model->vocab_size * model->embedding_dim;
+    
+    if (embed_size > 0 && embed_size < 100000000) {
+        training->gradients = (float*)calloc(embed_size, sizeof(float));
+        training->optimizer_state = (float*)calloc(embed_size * 2, sizeof(float));
+    } else {
+        training->gradients = NULL;
+        training->optimizer_state = NULL;
+    }
+    
+    // Allocate attention gradient buffers
+    uint32_t num_layers = model->num_layers;
+    if (num_layers > 0 && num_layers < 100) {
+        training->attention_grads = (typeof(training->attention_grads))calloc(num_layers, sizeof(*training->attention_grads));
+        
+        if (training->attention_grads && model->attention_layers) {
+            for (uint32_t i = 0; i < num_layers; i++) {
+                AttentionLayer* layer = &model->attention_layers[i];
+                size_t weight_size = layer->num_heads * layer->head_dim * layer->head_dim;
+                
+                training->attention_grads[i].query_lattice = (float*)calloc(weight_size, sizeof(float));
+                training->attention_grads[i].key_lattice = (float*)calloc(weight_size, sizeof(float));
+                training->attention_grads[i].value_lattice = (float*)calloc(weight_size, sizeof(float));
+            }
+        }
+    } else {
+        training->attention_grads = NULL;
+    }
+    
+    // Skip FF and LN gradients for now - keep it simple
     training->ff_grads = NULL;
     training->ln_grads = NULL;
     
