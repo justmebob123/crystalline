@@ -1,83 +1,93 @@
-/*
- * CLLM Inference Engine
- * Performs inference using the Crystalline Lattice Language Model
- */
-
+#include "cllm_inference.h"
+#include "cllm.h"
+#include "prime_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include "../include/cllm_format.h"
-#include "../include/cllm_inference.h"
-#include "../include/prime_float_math.h"
+#include <math.h>
 
-// Standard math functions for min/max
-static inline float prime_prime_fmaxf(float a, float b) { return (a > b) ? a : b; }
-static inline float prime_prime_fminf(float a, float b) { return (a < b) ? a : b; }
-static inline float prime_expf_custom(float x) { return (float)prime_exp((double)x); }
-
-#define MAX_SEQUENCE_LENGTH 2048
+// Constants
+#define MAX_SEQUENCE_LENGTH 512
 #define TEMPERATURE_MIN 0.1f
 #define TEMPERATURE_MAX 2.0f
 
-// Initialize inference engine
+// Initialize inference context
 CLLMInference* cllm_inference_init(CLLMModel* model) {
-    if (!model) return NULL;
-    
-    // Validate model header fields
-    if (model->header.num_heads == 0) {
-        fprintf(stderr, "Error: model->header.num_heads is 0\n");
-        return NULL;
-    }
-    if (model->header.context_length == 0) {
-        fprintf(stderr, "Error: model->header.context_length is 0\n");
-        return NULL;
-    }
-    if (model->header.embedding_dim == 0) {
-        fprintf(stderr, "Error: model->header.embedding_dim is 0\n");
+    if (!model) {
+        fprintf(stderr, "Error: Cannot initialize inference with NULL model\n");
         return NULL;
     }
     
     CLLMInference* inference = (CLLMInference*)calloc(1, sizeof(CLLMInference));
-    if (!inference) return NULL;
+    if (!inference) {
+        fprintf(stderr, "Error: Failed to allocate inference context\n");
+        return NULL;
+    }
     
     inference->model = model;
-    inference->temperature = 0.7f;
+    inference->temperature = 1.0f;
     inference->top_p = 0.9f;
     inference->top_k = 50;
-    inference->max_tokens = 512;
-    inference->repetition_penalty = 1.1f;
+    inference->max_tokens = 50;
     
-    // Allocate KV cache
-    inference->kv_cache_size = model->header.context_length;
-    inference->kv_cache_used = 0;
+    // Allocate working memory
+    uint32_t embed_dim = model->embeddings.embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
     
-    size_t cache_size = model->header.num_layers * 
-                       model->header.num_heads * 
-                       model->header.context_length * 
-                       (model->header.embedding_dim / model->header.num_heads);
+    inference->hidden_states = (float*)calloc(embed_dim, sizeof(float));
+    inference->logits = (float*)calloc(vocab_size, sizeof(float));
     
-    inference->key_cache = (float*)calloc(cache_size, sizeof(float));
-    inference->value_cache = (float*)calloc(cache_size, sizeof(float));
-    
-    if (!inference->key_cache || !inference->value_cache) {
+    if (!inference->hidden_states || !inference->logits) {
+        fprintf(stderr, "Error: Failed to allocate inference buffers\n");
         cllm_inference_cleanup(inference);
         return NULL;
     }
     
-    // Allocate working buffers
-    inference->hidden_states = (float*)calloc(model->header.embedding_dim, sizeof(float));
-    inference->logits = (float*)calloc(model->header.vocab_size, sizeof(float));
-    
-    // Initialize random seed
-    srand(time(NULL));
-    
+    printf("Inference context initialized successfully\n");
     return inference;
 }
 
-// Tokenize input text (simple whitespace tokenization for now)
+// Cleanup inference context
+void cllm_inference_cleanup(CLLMInference* inference) {
+    if (!inference) return;
+    
+    if (inference->hidden_states) free(inference->hidden_states);
+    if (inference->logits) free(inference->logits);
+    
+    free(inference);
+}
+
+// Get embedding for a token
+void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* output) {
+    if (!inference || !output) return;
+    
+    CLLMModel* model = inference->model;
+    uint32_t embed_dim = model->embeddings.embedding_dim;
+    
+    if (token_id >= model->vocab_size) {
+        memset(output, 0, embed_dim * sizeof(float));
+        return;
+    }
+    
+    float* embedding = &model->embeddings.embeddings[token_id * embed_dim];
+    memcpy(output, embedding, embed_dim * sizeof(float));
+}
+
+// Tokenize text - FIXED VERSION
 int cllm_tokenize(CLLMInference* inference, const char* text, uint32_t* tokens, int max_tokens) {
     if (!inference || !text || !tokens) return 0;
+    
+    // Check if tokens array exists
+    if (!inference->model->tokens) {
+        fprintf(stderr, "Warning: model->tokens is NULL - using character-based fallback tokenization\n");
+        // Fallback: create simple character-based tokens
+        int len = strlen(text);
+        int count = len < max_tokens ? len : max_tokens;
+        for (int i = 0; i < count; i++) {
+            tokens[i] = (uint32_t)(text[i] % inference->model->vocab_size);
+        }
+        return count;
+    }
     
     int token_count = 0;
     char buffer[256];
@@ -119,9 +129,21 @@ int cllm_tokenize(CLLMInference* inference, const char* text, uint32_t* tokens, 
     return token_count;
 }
 
-// Detokenize tokens to text
+// Detokenize tokens to text - FIXED VERSION
 void cllm_detokenize(CLLMInference* inference, uint32_t* tokens, int num_tokens, char* output, int max_length) {
     if (!inference || !tokens || !output) return;
+    
+    // Check if tokens array exists
+    if (!inference->model->tokens) {
+        fprintf(stderr, "Warning: model->tokens is NULL - using character-based fallback detokenization\n");
+        // Fallback: convert token IDs to characters
+        int pos = 0;
+        for (int i = 0; i < num_tokens && pos < max_length - 1; i++) {
+            output[pos++] = (char)(tokens[i] % 128); // ASCII range
+        }
+        output[pos] = '\0';
+        return;
+    }
     
     int pos = 0;
     for (int i = 0; i < num_tokens && pos < max_length - 1; i++) {
@@ -129,124 +151,109 @@ void cllm_detokenize(CLLMInference* inference, uint32_t* tokens, int num_tokens,
             const char* token_str = inference->model->tokens[tokens[i]].token_str;
             int len = strlen(token_str);
             
-            if (pos + len + 1 < max_length) {
-                strcpy(output + pos, token_str);
+            if (pos + len < max_length - 1) {
+                strcpy(&output[pos], token_str);
                 pos += len;
-                if (i < num_tokens - 1) {
+                
+                // Add space between tokens
+                if (i < num_tokens - 1 && pos < max_length - 1) {
                     output[pos++] = ' ';
                 }
             }
         }
     }
+    
     output[pos] = '\0';
 }
 
-// Get embedding for a token
-void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* embedding) {
-    if (!inference || !embedding || token_id >= inference->model->vocab_size) return;
-    
-    uint32_t embed_dim = inference->model->embeddings.embedding_dim;
-    float* token_embed = &inference->model->embeddings.embeddings[token_id * embed_dim];
-    
-    memcpy(embedding, token_embed, embed_dim * sizeof(float));
-}
-
 // Apply positional encoding
-void cllm_apply_positional_encoding(CLLMInference* inference, float* embedding, int position) {
-    if (!inference || !embedding) return;
+void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_states, int position) {
+    if (!inference || !hidden_states) return;
     
-    uint32_t embed_dim = inference->model->embeddings.embedding_dim;
-    PositionalEncoding* pos_enc = &inference->model->pos_encoding;
+    CLLMModel* model = inference->model;
+    uint32_t embed_dim = model->embeddings.embedding_dim;
     
-    if (position < (int)pos_enc->max_length) {
-        // Combine spiral, clock, and prime-based positional encodings
-        float* spiral_pos = &pos_enc->spiral_positions[position * embed_dim];
-        float* clock_pos = &pos_enc->clock_positions[position * embed_dim];
-        float* prime_pos = &pos_enc->prime_positions[position * embed_dim];
-        
+    if (position >= (int)model->pos_encoding.max_length) {
+        position = model->pos_encoding.max_length - 1;
+    }
+    
+    // Add positional encoding if available
+    if (model->pos_encoding.spiral_positions) {
+        float* pos_enc = &model->pos_encoding.spiral_positions[position * embed_dim];
         for (uint32_t i = 0; i < embed_dim; i++) {
-            embedding[i] += 0.4f * spiral_pos[i] + 0.3f * clock_pos[i] + 0.3f * prime_pos[i];
+            hidden_states[i] += pos_enc[i];
         }
     }
 }
 
-// Layer normalization
-void cllm_layer_norm_old(float* x, CLLMLayerNorm* ln, int dim) {
+// Layer normalization (old version for compatibility)
+void cllm_layer_norm_old(float* x, CLLMLayerNorm* ln, uint32_t dim) {
     if (!x || !ln) return;
     
-    // Calculate mean
+    // Compute mean
     float mean = 0.0f;
-    for (int i = 0; i < dim; i++) {
+    for (uint32_t i = 0; i < dim; i++) {
         mean += x[i];
     }
     mean /= dim;
     
-    // Calculate variance
-    float variance = 0.0f;
-    for (int i = 0; i < dim; i++) {
+    // Compute variance
+    float var = 0.0f;
+    for (uint32_t i = 0; i < dim; i++) {
         float diff = x[i] - mean;
-        variance += diff * diff;
+        var += diff * diff;
     }
-    variance /= dim;
+    var /= dim;
     
     // Normalize
-    float std = prime_sqrtf(variance + ln->epsilon);
-    for (int i = 0; i < dim; i++) {
+    float std = sqrtf(var + ln->epsilon);
+    for (uint32_t i = 0; i < dim; i++) {
         x[i] = (x[i] - mean) / std;
-        x[i] = x[i] * ln->gamma[i] + ln->beta[i];
+        
+        // Apply learned parameters if available
+        if (ln->gamma && ln->beta) {
+            x[i] = x[i] * ln->gamma[i] + ln->beta[i];
+        }
     }
-}
-
-// Crystalline attention (simplified)
-void cllm_crystalline_attention(CLLMInference* inference, float* hidden, AttentionLayer* attn, int layer_id __attribute__((unused))) {
-    if (!inference || !hidden || !attn) return;
-    
-    // Check if attention weights are initialized
-    if (!attn->query_lattice || !attn->key_lattice || !attn->value_lattice) {
-        fprintf(stderr, "Error: Attention layer weights not initialized\n");
-        return;
-    }
-    
-    // This is a simplified version - full implementation would use lattice geometry
-    uint32_t embed_dim = inference->model->embeddings.embedding_dim;
-    uint32_t head_dim = attn->head_dim;
-    (void)embed_dim; /* Reserved for future use */
-    (void)head_dim;  /* Reserved for future use */
-    
-    // For now, just pass through (identity) to avoid crashes
-    // TODO: Implement full crystalline attention with geometric properties
-    
-    // Simplified attention output (identity for now)
-    // Full implementation would compute attention over lattice structure
 }
 
 // Feed-forward network
-void cllm_feed_forward(float* hidden, FeedForwardLayer* ff) {
-    if (!hidden || !ff) return;
+void cllm_feed_forward(float* x, FeedForwardLayer* ff) {
+    if (!x || !ff) return;
     
-    // First layer
-    float* intermediate = (float*)malloc(ff->hidden_dim * sizeof(float));
-    for (uint32_t i = 0; i < ff->hidden_dim; i++) {
-        intermediate[i] = ff->bias1[i];
-        for (uint32_t j = 0; j < ff->input_dim; j++) {
-            intermediate[i] += hidden[j] * ff->w1_lattice[i * ff->input_dim + j];
+    uint32_t input_dim = ff->input_dim;
+    uint32_t hidden_dim = ff->hidden_dim;
+    
+    // Allocate temporary buffer
+    float* hidden = (float*)calloc(hidden_dim, sizeof(float));
+    if (!hidden) return;
+    
+    // First layer: input -> hidden
+    if (ff->w1_lattice && ff->bias1) {
+        for (uint32_t i = 0; i < hidden_dim; i++) {
+            hidden[i] = ff->bias1[i];
+            for (uint32_t j = 0; j < input_dim; j++) {
+                hidden[i] += x[j] * ff->w1_lattice[j * hidden_dim + i];
+            }
+            // ReLU activation
+            if (hidden[i] < 0) hidden[i] = 0;
         }
-        // ReLU activation
-        if (intermediate[i] < 0) intermediate[i] = 0;
     }
     
-    // Second layer
-    for (uint32_t i = 0; i < ff->output_dim; i++) {
-        hidden[i] = ff->bias2[i];
-        for (uint32_t j = 0; j < ff->hidden_dim; j++) {
-            hidden[i] += intermediate[j] * ff->w2_lattice[i * ff->hidden_dim + j];
+    // Second layer: hidden -> output
+    if (ff->w2_lattice && ff->bias2) {
+        for (uint32_t i = 0; i < input_dim; i++) {
+            x[i] = ff->bias2[i];
+            for (uint32_t j = 0; j < hidden_dim; j++) {
+                x[i] += hidden[j] * ff->w2_lattice[j * input_dim + i];
+            }
         }
     }
     
-    free(intermediate);
+    free(hidden);
 }
 
-// Forward pass through the model
+// Forward pass
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     if (!inference || !tokens || num_tokens <= 0) return;
     
@@ -275,7 +282,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Get embedding for last token
     uint32_t last_token = tokens[num_tokens - 1];
     if (last_token >= model->vocab_size) {
-        fprintf(stderr, "Error: token %u out of range (vocab_size=%lu)\n", last_token, model->vocab_size);
+        fprintf(stderr, "Error: token %u out of range (vocab_size=%lu)\n", last_token, (unsigned long)model->vocab_size);
         return;
     }
     
@@ -291,8 +298,8 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
             cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[layer], embed_dim);
             
             // Attention
-            cllm_crystalline_attention(inference, inference->hidden_states, 
-                                       &model->attention_layers[layer], layer);
+//             cllm_crystalline_attention(inference, inference->hidden_states, 
+//                                        &model->attention_layers[layer], layer);
             
             // Feed-forward
             cllm_feed_forward(inference->hidden_states, &model->ff_layers[layer]);
@@ -314,7 +321,8 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
 
 // Apply temperature scaling
 void cllm_apply_temperature(float* logits, int vocab_size, float temperature) {
-    temperature = prime_fmaxf(TEMPERATURE_MIN, prime_fminf(TEMPERATURE_MAX, temperature));
+    if (temperature < TEMPERATURE_MIN) temperature = TEMPERATURE_MIN;
+    if (temperature > TEMPERATURE_MAX) temperature = TEMPERATURE_MAX;
     for (int i = 0; i < vocab_size; i++) {
         logits[i] /= temperature;
     }
@@ -331,7 +339,7 @@ void cllm_softmax(float* logits, int vocab_size) {
     // Compute exp and sum
     float sum = 0.0f;
     for (int i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf_custom(logits[i] - max_logit);
+        logits[i] = expf(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -341,108 +349,40 @@ void cllm_softmax(float* logits, int vocab_size) {
     }
 }
 
-// Top-k sampling
+// Sample top-k
 uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
-    // Create array of (index, prob) pairs
-    typedef struct { int idx; float prob; } IndexProb;
-    IndexProb* pairs = (IndexProb*)malloc(vocab_size * sizeof(IndexProb));
+    if (k <= 0 || k > vocab_size) k = vocab_size;
     
-    for (int i = 0; i < vocab_size; i++) {
-        pairs[i].idx = i;
-        pairs[i].prob = probs[i];
-    }
-    
-    // Partial sort to get top-k
-    for (int i = 0; i < k && i < vocab_size; i++) {
-        for (int j = i + 1; j < vocab_size; j++) {
-            if (pairs[j].prob > pairs[i].prob) {
-                IndexProb temp = pairs[i];
-                pairs[i] = pairs[j];
-                pairs[j] = temp;
-            }
-        }
-    }
-    
-    // Renormalize top-k
-    float sum = 0.0f;
-    for (int i = 0; i < k && i < vocab_size; i++) {
-        sum += pairs[i].prob;
-    }
-    
-    // Sample from top-k
-    float r = ((float)rand() / RAND_MAX) * sum;
+    // Simple sampling from top-k
+    float r = (float)rand() / RAND_MAX;
     float cumsum = 0.0f;
-    int selected = 0;
     
     for (int i = 0; i < k && i < vocab_size; i++) {
-        cumsum += pairs[i].prob;
-        if (r <= cumsum) {
-            selected = pairs[i].idx;
-            break;
-        }
+        cumsum += probs[i];
+        if (r < cumsum) return i;
     }
     
-    free(pairs);
-    return selected;
+    return 0;
 }
 
-// Top-p (nucleus) sampling
+// Sample top-p (nucleus sampling)
 uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
-    // Create sorted array
-    typedef struct { int idx; float prob; } IndexProb;
-    IndexProb* pairs = (IndexProb*)malloc(vocab_size * sizeof(IndexProb));
-    
-    for (int i = 0; i < vocab_size; i++) {
-        pairs[i].idx = i;
-        pairs[i].prob = probs[i];
-    }
-    
-    // Sort by probability (descending)
-    for (int i = 0; i < vocab_size - 1; i++) {
-        for (int j = i + 1; j < vocab_size; j++) {
-            if (pairs[j].prob > pairs[i].prob) {
-                IndexProb temp = pairs[i];
-                pairs[i] = pairs[j];
-                pairs[j] = temp;
-            }
-        }
-    }
-    
-    // Find nucleus
+    float r = (float)rand() / RAND_MAX;
     float cumsum = 0.0f;
-    int nucleus_size = 0;
+    
     for (int i = 0; i < vocab_size; i++) {
-        cumsum += pairs[i].prob;
-        nucleus_size++;
-        if (cumsum >= p) break;
+        cumsum += probs[i];
+        if (cumsum >= p || r < cumsum) return i;
     }
     
-    // Renormalize nucleus
-    float sum = 0.0f;
-    for (int i = 0; i < nucleus_size; i++) {
-        sum += pairs[i].prob;
-    }
-    
-    // Sample from nucleus
-    float r = ((float)rand() / RAND_MAX) * sum;
-    cumsum = 0.0f;
-    int selected = 0;
-    
-    for (int i = 0; i < nucleus_size; i++) {
-        cumsum += pairs[i].prob;
-        if (r <= cumsum) {
-            selected = pairs[i].idx;
-            break;
-        }
-    }
-    
-    free(pairs);
-    return selected;
+    return 0;
 }
 
-// Generate tokens
+// Generate text - MAIN FUNCTION
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length) {
     if (!inference || !prompt || !output) return -1;
+    
+    printf("Starting generation...\n");
     
     // Tokenize prompt
     uint32_t tokens[MAX_SEQUENCE_LENGTH];
@@ -452,6 +392,8 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         strcpy(output, "Error: Could not tokenize prompt");
         return -1;
     }
+    
+    printf("Tokenized %d tokens\n", num_tokens);
     
     // Generate tokens
     int tokens_generated = 0;
@@ -477,26 +419,30 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         tokens[num_tokens++] = next_token;
         tokens_generated++;
         
-        // Check for end of sequence token (if defined)
-        // TODO: Add EOS token handling
+        printf("Generated token %d/%d\n", tokens_generated, inference->max_tokens);
     }
     
     // Detokenize
     cllm_detokenize(inference, tokens, num_tokens, output, max_output_length);
     
+    printf("Generation complete: %d tokens\n", tokens_generated);
     return tokens_generated;
 }
 
 // Set generation parameters
 void cllm_set_temperature(CLLMInference* inference, float temperature) {
     if (inference) {
-        inference->temperature = prime_fmaxf(TEMPERATURE_MIN, prime_fminf(TEMPERATURE_MAX, temperature));
+        if (temperature < TEMPERATURE_MIN) temperature = TEMPERATURE_MIN;
+        if (temperature > TEMPERATURE_MAX) temperature = TEMPERATURE_MAX;
+        inference->temperature = temperature;
     }
 }
 
 void cllm_set_top_p(CLLMInference* inference, float top_p) {
     if (inference) {
-        inference->top_p = prime_fmaxf(0.0f, prime_fminf(1.0f, top_p));
+        if (top_p < 0.0f) top_p = 0.0f;
+        if (top_p > 1.0f) top_p = 1.0f;
+        inference->top_p = top_p;
     }
 }
 
@@ -533,7 +479,7 @@ int cllm_sample_token(CLLMInference* inf, float* logits) {
     
     float sum = 0.0f;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf_custom(logits[i] - max_logit);
+        logits[i] = expf(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -548,20 +494,9 @@ int cllm_sample_token(CLLMInference* inf, float* logits) {
     for (uint32_t i = 0; i < vocab_size; i++) {
         cumsum += logits[i];
         if (r < cumsum) {
-            return (int)i;
+            return i;
         }
     }
     
-    return vocab_size - 1;
-}
-
-// Cleanup
-void cllm_inference_cleanup(CLLMInference* inference) {
-    if (!inference) return;
-    
-    free(inference->key_cache);
-    free(inference->value_cache);
-    free(inference->hidden_states);
-    free(inference->logits);
-    free(inference);
+    return 0;
 }

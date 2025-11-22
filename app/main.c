@@ -735,6 +735,26 @@ int main(void) {
             }
         }
         
+        // TRAINING LOOP - Run training steps when training is active
+        if (state->training_in_progress && state->cllm_training) {
+            printf("=== TRAINING STEP %d ===\n", state->training_current_epoch);
+            
+            // Train one epoch
+            float loss = app_train_epoch(state);
+            
+            printf("Epoch %d complete - Loss: %.4f\n", state->training_current_epoch, loss);
+            
+            state->training_current_epoch++;
+            
+            // Check if training is complete
+            if (state->training_current_epoch >= state->training_epochs) {
+                printf("=== TRAINING COMPLETE ===\n");
+                printf("Total epochs: %d\n", state->training_current_epoch);
+                printf("Final loss: %.4f\n", loss);
+                state->training_in_progress = false;
+            }
+        }
+        
         render(state);
         SDL_Delay(16);
     }
