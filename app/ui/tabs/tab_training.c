@@ -506,6 +506,23 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 };
                 strcpy(config.optimizer, "adam");
                 state->cllm_training = cllm_training_init(state->cllm_model, &config);
+                
+                // CRITICAL: Load training data from selected files
+                if (state->cllm_training) {
+                    printf("Loading training data from %d files...\n", selected_count);
+                    for (int i = 0; i < file_count && i < MAX_TRAINING_FILES; i++) {
+                        if (training_files[i].selected) {
+                            printf("  Loading: %s\n", training_files[i].filepath);
+                            int tokens_loaded = cllm_load_training_data(state->cllm_training, 
+                                                                        training_files[i].filepath);
+                            if (tokens_loaded > 0) {
+                                printf("  ✓ Loaded %d tokens\n", tokens_loaded);
+                            } else {
+                                printf("  ✗ Failed to load file\n");
+                            }
+                        }
+                    }
+                }
             }
             
             state->training_in_progress = true;

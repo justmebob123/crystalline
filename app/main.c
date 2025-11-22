@@ -1,6 +1,7 @@
 // app/main.c - Main application entry point
 #define _POSIX_C_SOURCE 200809L
 #include "app_common.h"
+#include "cllm_integration.h"
 #include "../include/cllm_format.h"
 
 // Global pointer for lattice cache access from helper functions
