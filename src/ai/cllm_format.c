@@ -163,7 +163,9 @@ int cllm_write(const char* filename, CLLMModel* model) {
     
     // Write lattice structure
     fwrite(&model->num_lattice_points, sizeof(uint32_t), 1, f);
-    fwrite(model->lattice_points, sizeof(CLLMLatticePoint), model->num_lattice_points, f);
+    if (model->lattice_points && model->num_lattice_points > 0) {
+        fwrite(model->lattice_points, sizeof(CLLMLatticePoint), model->num_lattice_points, f);
+    }
     
     // Write embedding matrix
     fwrite(&model->embeddings.vocab_size, sizeof(uint32_t), 1, f);
@@ -173,8 +175,26 @@ int cllm_write(const char* filename, CLLMModel* model) {
     
     // Write transform matrices
     size_t transform_size = model->embeddings.embedding_dim * model->embeddings.embedding_dim;
-    fwrite(model->embeddings.lattice_transform, sizeof(float), transform_size, f);
-    fwrite(model->embeddings.inverse_transform, sizeof(float), transform_size, f);
+    if (model->embeddings.lattice_transform) {
+        fwrite(model->embeddings.lattice_transform, sizeof(float), transform_size, f);
+    } else {
+        // Write zeros if transform doesn't exist
+        float* zeros = (float*)calloc(transform_size, sizeof(float));
+        if (zeros) {
+            fwrite(zeros, sizeof(float), transform_size, f);
+            free(zeros);
+        }
+    }
+    if (model->embeddings.inverse_transform) {
+        fwrite(model->embeddings.inverse_transform, sizeof(float), transform_size, f);
+    } else {
+        // Write zeros if transform doesn't exist
+        float* zeros = (float*)calloc(transform_size, sizeof(float));
+        if (zeros) {
+            fwrite(zeros, sizeof(float), transform_size, f);
+            free(zeros);
+        }
+    }
     
     // Write layers
     fwrite(&model->num_layers, sizeof(uint32_t), 1, f);
@@ -186,9 +206,24 @@ int cllm_write(const char* filename, CLLMModel* model) {
         fwrite(&attn->head_dim, sizeof(uint32_t), 1, f);
         
         size_t attn_size = attn->num_heads * attn->head_dim * attn->head_dim;
-        fwrite(attn->query_lattice, sizeof(float), attn_size, f);
-        fwrite(attn->key_lattice, sizeof(float), attn_size, f);
-        fwrite(attn->value_lattice, sizeof(float), attn_size, f);
+        if (attn->query_lattice) {
+            fwrite(attn->query_lattice, sizeof(float), attn_size, f);
+        } else {
+            float* zeros = (float*)calloc(attn_size, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), attn_size, f); free(zeros); }
+        }
+        if (attn->key_lattice) {
+            fwrite(attn->key_lattice, sizeof(float), attn_size, f);
+        } else {
+            float* zeros = (float*)calloc(attn_size, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), attn_size, f); free(zeros); }
+        }
+        if (attn->value_lattice) {
+            fwrite(attn->value_lattice, sizeof(float), attn_size, f);
+        } else {
+            float* zeros = (float*)calloc(attn_size, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), attn_size, f); free(zeros); }
+        }
         
         // Write feed-forward layer (only metadata, not pointers)
         FeedForwardLayer* ff = &model->ff_layers[i];
@@ -199,28 +234,80 @@ int cllm_write(const char* filename, CLLMModel* model) {
         
         size_t ff_size1 = ff->input_dim * ff->hidden_dim;
         size_t ff_size2 = ff->hidden_dim * ff->output_dim;
-        fwrite(ff->w1_lattice, sizeof(float), ff_size1, f);
-        fwrite(ff->w2_lattice, sizeof(float), ff_size2, f);
-        fwrite(ff->bias1, sizeof(float), ff->hidden_dim, f);
-        fwrite(ff->bias2, sizeof(float), ff->output_dim, f);
+        
+        if (ff->w1_lattice) {
+            fwrite(ff->w1_lattice, sizeof(float), ff_size1, f);
+        } else {
+            float* zeros = (float*)calloc(ff_size1, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ff_size1, f); free(zeros); }
+        }
+        if (ff->w2_lattice) {
+            fwrite(ff->w2_lattice, sizeof(float), ff_size2, f);
+        } else {
+            float* zeros = (float*)calloc(ff_size2, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ff_size2, f); free(zeros); }
+        }
+        if (ff->bias1) {
+            fwrite(ff->bias1, sizeof(float), ff->hidden_dim, f);
+        } else {
+            float* zeros = (float*)calloc(ff->hidden_dim, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ff->hidden_dim, f); free(zeros); }
+        }
+        if (ff->bias2) {
+            fwrite(ff->bias2, sizeof(float), ff->output_dim, f);
+        } else {
+            float* zeros = (float*)calloc(ff->output_dim, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ff->output_dim, f); free(zeros); }
+        }
         
         // Write layer norm (only metadata, not pointers)
         CLLMLayerNorm* ln = &model->layer_norms[i];
         fwrite(&ln->layer_id, sizeof(uint32_t), 1, f);
         fwrite(&ln->dim, sizeof(uint32_t), 1, f);
         fwrite(&ln->epsilon, sizeof(float), 1, f);
-        fwrite(ln->gamma, sizeof(float), ln->dim, f);
-        fwrite(ln->beta, sizeof(float), ln->dim, f);
+        if (ln->gamma) {
+            fwrite(ln->gamma, sizeof(float), ln->dim, f);
+        } else {
+            float* zeros = (float*)calloc(ln->dim, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ln->dim, f); free(zeros); }
+        }
+        if (ln->beta) {
+            fwrite(ln->beta, sizeof(float), ln->dim, f);
+        } else {
+            float* zeros = (float*)calloc(ln->dim, sizeof(float));
+            if (zeros) { fwrite(zeros, sizeof(float), ln->dim, f); free(zeros); }
+        }
     }
     
     // Write positional encoding (only metadata, not the struct with pointers)
     fwrite(&model->pos_encoding.max_length, sizeof(uint32_t), 1, f);
     fwrite(&model->pos_encoding.embedding_dim, sizeof(uint32_t), 1, f);
     size_t pos_size = model->pos_encoding.max_length * model->pos_encoding.embedding_dim;
-    fwrite(model->pos_encoding.spiral_positions, sizeof(float), pos_size, f);
-    fwrite(model->pos_encoding.clock_positions, sizeof(float), pos_size, f);
-    fwrite(model->pos_encoding.prime_positions, sizeof(float), pos_size, f);
-    fwrite(model->pos_encoding.learned_positions, sizeof(float), pos_size, f);
+    
+    if (model->pos_encoding.spiral_positions) {
+        fwrite(model->pos_encoding.spiral_positions, sizeof(float), pos_size, f);
+    } else {
+        float* zeros = (float*)calloc(pos_size, sizeof(float));
+        if (zeros) { fwrite(zeros, sizeof(float), pos_size, f); free(zeros); }
+    }
+    if (model->pos_encoding.clock_positions) {
+        fwrite(model->pos_encoding.clock_positions, sizeof(float), pos_size, f);
+    } else {
+        float* zeros = (float*)calloc(pos_size, sizeof(float));
+        if (zeros) { fwrite(zeros, sizeof(float), pos_size, f); free(zeros); }
+    }
+    if (model->pos_encoding.prime_positions) {
+        fwrite(model->pos_encoding.prime_positions, sizeof(float), pos_size, f);
+    } else {
+        float* zeros = (float*)calloc(pos_size, sizeof(float));
+        if (zeros) { fwrite(zeros, sizeof(float), pos_size, f); free(zeros); }
+    }
+    if (model->pos_encoding.learned_positions) {
+        fwrite(model->pos_encoding.learned_positions, sizeof(float), pos_size, f);
+    } else {
+        float* zeros = (float*)calloc(pos_size, sizeof(float));
+        if (zeros) { fwrite(zeros, sizeof(float), pos_size, f); free(zeros); }
+    }
     
     // Write training metadata
     fwrite(&model->training_meta, sizeof(TrainingMetadata), 1, f);
