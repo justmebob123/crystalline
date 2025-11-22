@@ -2,7 +2,7 @@
 # Updated to match current flat structure with ui/tabs subdirectory
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O0 -std=c11
+CFLAGS = -Wall -Wextra -O2 -std=c11
 LDFLAGS = -L.. -lprimemath -lSDL2 -lSDL2_ttf -lm -lpthread
 INCLUDES = -I../include -I.
 
