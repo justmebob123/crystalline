@@ -41,4 +41,20 @@ double O_exponent(uint64_t n, int k, const char *lambda_phon);
 double L_lattice(uint64_t n, uint64_t d, int k, const char *lambda_phon,
                  uint16_t omega, uint64_t p, uint64_t q);
 
+/* Arbitrary precision lattice formula */
+void L_lattice_bigfixed(BigFixed *result, uint64_t n, uint64_t d, int k, 
+                        const char *lambda_phon, uint16_t omega, uint64_t p, uint64_t q,
+                        int precision_bits);
+
+/* Dimensional layer function */
+double Z_n_d(uint64_t n, uint64_t d, const char *lambda_phon);
+
+/* Prime function */
+double P_n_d_k(uint64_t n, uint64_t d, int k, const char *lambda_phon,
+               uint16_t omega, uint64_t p, uint64_t q);
+
+/* Complete clock mapping */
+void map_prime_complete(uint64_t prime, uint64_t n, CompleteClockMapping *mapping,
+                        const char *lambda_phon);
+
 #endif /* PRIME_LATTICE_CORE_H */
