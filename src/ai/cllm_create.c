@@ -73,6 +73,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         4 * config->embedding_dim;
     
     model->num_weights = embedding_weights + config->num_layers * per_layer_weights;
+    model->header.total_params = model->num_weights;
     
     // Allocate weights
     model->weights = (float*)calloc(model->num_weights, sizeof(float));

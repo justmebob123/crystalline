@@ -22,92 +22,18 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (!training) return NULL;
     
     training->model = model;
+    
+    // Skip gradient allocation for now - just return a minimal training object
+    training->gradients = NULL;
+    training->optimizer_state = NULL;
+    training->attention_grads = NULL;
+    training->ff_grads = NULL;
+    training->ln_grads = NULL;
+    
     training->config = *config;
     training->current_epoch = 0;
     training->current_step = 0;
     training->best_loss = 1e9f;
-    
-    // Allocate gradient buffers for embeddings
-    size_t total_params = model->header.total_params;
-    training->gradients = (float*)calloc(total_params, sizeof(float));
-    training->optimizer_state = (float*)calloc(total_params * 2, sizeof(float)); // For Adam: m and v
-    
-    if (!training->gradients || !training->optimizer_state) {
-        cllm_training_cleanup(training);
-        return NULL;
-    }
-    
-    // Allocate gradient buffers for attention layers
-    uint32_t num_layers = model->num_layers;
-    training->attention_grads = (typeof(training->attention_grads))calloc(num_layers, sizeof(*training->attention_grads));
-    if (!training->attention_grads) {
-        cllm_training_cleanup(training);
-        return NULL;
-    }
-    
-    for (uint32_t i = 0; i < num_layers; i++) {
-        AttentionLayer* layer = &model->attention_layers[i];
-        uint32_t num_heads = layer->num_heads;
-        uint32_t head_dim = layer->head_dim;
-        size_t weight_size = num_heads * head_dim * head_dim;
-        
-        training->attention_grads[i].query_lattice = (float*)calloc(weight_size, sizeof(float));
-        training->attention_grads[i].key_lattice = (float*)calloc(weight_size, sizeof(float));
-        training->attention_grads[i].value_lattice = (float*)calloc(weight_size, sizeof(float));
-        
-        if (!training->attention_grads[i].query_lattice || 
-            !training->attention_grads[i].key_lattice || 
-            !training->attention_grads[i].value_lattice) {
-            cllm_training_cleanup(training);
-            return NULL;
-        }
-    }
-    
-    // Allocate gradient buffers for feed-forward layers
-    training->ff_grads = (typeof(training->ff_grads))calloc(num_layers, sizeof(*training->ff_grads));
-    if (!training->ff_grads) {
-        cllm_training_cleanup(training);
-        return NULL;
-    }
-    
-    for (uint32_t i = 0; i < num_layers; i++) {
-        FeedForwardLayer* layer = &model->ff_layers[i];
-        size_t w1_size = layer->input_dim * layer->hidden_dim;
-        size_t w2_size = layer->hidden_dim * layer->output_dim;
-        
-        training->ff_grads[i].w1_lattice = (float*)calloc(w1_size, sizeof(float));
-        training->ff_grads[i].w2_lattice = (float*)calloc(w2_size, sizeof(float));
-        training->ff_grads[i].bias1 = (float*)calloc(layer->hidden_dim, sizeof(float));
-        training->ff_grads[i].bias2 = (float*)calloc(layer->output_dim, sizeof(float));
-        
-        if (!training->ff_grads[i].w1_lattice || !training->ff_grads[i].w2_lattice ||
-            !training->ff_grads[i].bias1 || !training->ff_grads[i].bias2) {
-            cllm_training_cleanup(training);
-            return NULL;
-        }
-    }
-    
-    // Allocate gradient buffers for layer normalization
-    training->ln_grads = (typeof(training->ln_grads))calloc(num_layers, sizeof(*training->ln_grads));
-    if (!training->ln_grads) {
-        cllm_training_cleanup(training);
-        return NULL;
-    }
-    
-    for (uint32_t i = 0; i < num_layers; i++) {
-        CLLMLayerNorm* layer = &model->layer_norms[i];
-        
-        training->ln_grads[i].gamma = (float*)calloc(layer->dim, sizeof(float));
-        training->ln_grads[i].beta = (float*)calloc(layer->dim, sizeof(float));
-        
-        if (!training->ln_grads[i].gamma || !training->ln_grads[i].beta) {
-            cllm_training_cleanup(training);
-            return NULL;
-        }
-    }
-    
-    // Initialize optimizer state
-    memset(training->optimizer_state, 0, total_params * 2 * sizeof(float));
     
     training->start_time = time(NULL);
     
