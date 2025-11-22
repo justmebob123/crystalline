@@ -25,6 +25,9 @@
 #include <string.h>
 #include <stdio.h>
 
+/* Use library's fabs instead of math.h */
+#define fabs(x) prime_fabs(x)
+
 /* ============================================================================
  * GRAM-SCHMIDT ORTHOGONALIZATION
  * ============================================================================ */
@@ -57,6 +60,7 @@
  */
 void big_gram_schmidt(BigFixed** orthogonal, BigFixed** mu,
                       BigFixed** basis, int n, int dim, int precision) {
+    (void)precision; /* Unused parameter - kept for API compatibility */
     if (!orthogonal || !basis || n <= 0 || dim <= 0) return;
     
     // Allocate working memory

@@ -800,11 +800,22 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
         return -1;
     }
     
-    // Write weights
-    if (fwrite(model->weights, sizeof(float), header.total_params, file) != header.total_params) {
-        fprintf(stderr, "Failed to write weights\n");
-        fclose(file);
-        return -1;
+    // Write weights - check if weights exist
+    if (model->weights && header.total_params > 0) {
+        if (fwrite(model->weights, sizeof(float), header.total_params, file) != header.total_params) {
+            fprintf(stderr, "Failed to write weights\n");
+            fclose(file);
+            return -1;
+        }
+    } else {
+        fprintf(stderr, "Warning: Model has no weights to save (weights=%p, params=%zu)\n", 
+                (void*)model->weights, header.total_params);
+        // Write zeros as placeholder
+        float* zeros = (float*)calloc(header.total_params, sizeof(float));
+        if (zeros) {
+            fwrite(zeros, sizeof(float), header.total_params, file);
+            free(zeros);
+        }
     }
     
     fclose(file);

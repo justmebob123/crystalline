@@ -12,6 +12,7 @@
 #include <math.h>
 
 void cllm_float_to_bigfixed(BigFixed* output, float* input, int n, int precision) {
+    (void)precision; /* Unused parameter - kept for API compatibility */
     if (!output || !input || n <= 0) return;
     
     for (int i = 0; i < n; i++) {

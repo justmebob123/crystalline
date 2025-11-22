@@ -210,6 +210,8 @@ void cllm_crystalline_attention(CLLMInference* inference, float* hidden, Attenti
     // This is a simplified version - full implementation would use lattice geometry
     uint32_t embed_dim = inference->model->embeddings.embedding_dim;
     uint32_t head_dim = attn->head_dim;
+    (void)embed_dim; /* Reserved for future use */
+    (void)head_dim;  /* Reserved for future use */
     
     // For now, just pass through (identity) to avoid crashes
     // TODO: Implement full crystalline attention with geometric properties

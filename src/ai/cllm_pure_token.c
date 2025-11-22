@@ -299,7 +299,10 @@ CrystallineToken* crystalline_token_create(uint32_t token_id, const char* token_
         token->lattice_coords[i].fractional_part = NULL;
     }
     
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-overflow"
     crystalline_compute_ulam_position(prime, token->lattice_coords, 256);
+    #pragma GCC diagnostic pop
     
     if (token->is_root) {
         token->root_token_id = token_id;

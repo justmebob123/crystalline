@@ -452,6 +452,35 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     int panel_x = RENDER_WIDTH;
     int panel_width = CONTROL_PANEL_WIDTH;
     
+    // Check text input clicks first
+    if (inputs_initialized) {
+        // Check if click is in any text input bounds
+        if (x >= learning_rate_input.bounds.x && x <= learning_rate_input.bounds.x + learning_rate_input.bounds.w &&
+            y >= learning_rate_input.bounds.y && y <= learning_rate_input.bounds.y + learning_rate_input.bounds.h) {
+            text_input_activate(&learning_rate_input);
+            text_input_deactivate(&epochs_input);
+            text_input_deactivate(&batch_size_input);
+            SDL_StartTextInput();
+            return;
+        }
+        if (x >= epochs_input.bounds.x && x <= epochs_input.bounds.x + epochs_input.bounds.w &&
+            y >= epochs_input.bounds.y && y <= epochs_input.bounds.y + epochs_input.bounds.h) {
+            text_input_activate(&epochs_input);
+            text_input_deactivate(&learning_rate_input);
+            text_input_deactivate(&batch_size_input);
+            SDL_StartTextInput();
+            return;
+        }
+        if (x >= batch_size_input.bounds.x && x <= batch_size_input.bounds.x + batch_size_input.bounds.w &&
+            y >= batch_size_input.bounds.y && y <= batch_size_input.bounds.y + batch_size_input.bounds.h) {
+            text_input_activate(&batch_size_input);
+            text_input_deactivate(&learning_rate_input);
+            text_input_deactivate(&epochs_input);
+            SDL_StartTextInput();
+            return;
+        }
+    }
+    
     // Scan Directory Button (y ≈ 118)
     SDL_Rect scan_btn = {panel_x + 10, 118, (panel_width - 30) / 2, 25};
     if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
@@ -627,5 +656,56 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             }
         }
         return;
+    }
+}
+
+void handle_training_tab_text_input(AppState* state, const char* text) {
+    if (!state || !text || !inputs_initialized) return;
+    
+    // Append text to active input
+    if (learning_rate_input.active) {
+        size_t len = strlen(learning_rate_input.text);
+        if (len < MAX_INPUT_LENGTH - 1) {
+            strncat(learning_rate_input.text, text, MAX_INPUT_LENGTH - len - 1);
+            learning_rate_input.cursor_pos = strlen(learning_rate_input.text);
+            state->training_learning_rate = atof(learning_rate_input.text);
+        }
+    } else if (epochs_input.active) {
+        size_t len = strlen(epochs_input.text);
+        if (len < MAX_INPUT_LENGTH - 1) {
+            strncat(epochs_input.text, text, MAX_INPUT_LENGTH - len - 1);
+            epochs_input.cursor_pos = strlen(epochs_input.text);
+            state->training_epochs = atoi(epochs_input.text);
+        }
+    } else if (batch_size_input.active) {
+        size_t len = strlen(batch_size_input.text);
+        if (len < MAX_INPUT_LENGTH - 1) {
+            strncat(batch_size_input.text, text, MAX_INPUT_LENGTH - len - 1);
+            batch_size_input.cursor_pos = strlen(batch_size_input.text);
+        }
+    }
+}
+
+void handle_training_tab_keydown(AppState* state, SDL_Keycode key) {
+    if (!state || !inputs_initialized) return;
+    
+    // Handle backspace
+    if (key == SDLK_BACKSPACE) {
+        if (learning_rate_input.active && learning_rate_input.cursor_pos > 0) {
+            learning_rate_input.text[--learning_rate_input.cursor_pos] = '\0';
+            state->training_learning_rate = atof(learning_rate_input.text);
+        } else if (epochs_input.active && epochs_input.cursor_pos > 0) {
+            epochs_input.text[--epochs_input.cursor_pos] = '\0';
+            state->training_epochs = atoi(epochs_input.text);
+        } else if (batch_size_input.active && batch_size_input.cursor_pos > 0) {
+            batch_size_input.text[--batch_size_input.cursor_pos] = '\0';
+        }
+    }
+    // Handle return/enter - deactivate input
+    else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+        text_input_deactivate(&learning_rate_input);
+        text_input_deactivate(&epochs_input);
+        text_input_deactivate(&batch_size_input);
+        SDL_StopTextInput();
     }
 }

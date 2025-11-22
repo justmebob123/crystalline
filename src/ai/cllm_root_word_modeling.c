@@ -80,6 +80,7 @@ static int is_prime(uint64_t n) {
 /**
  * Get nth prime number
  */
+__attribute__((unused))
 static uint64_t get_nth_prime(uint32_t n) {
     init_prime_cache();
     
@@ -306,6 +307,7 @@ void cllm_apply_symmetry_operation(float* weights, int seq_len, int symmetry_typ
     } else {
         // Reflection (mirror planes)
         int mirror_axis = operation - 12;
+        (void)mirror_axis; /* Reserved for future axis-specific reflections */
         
         for (int i = 0; i < seq_len; i++) {
             int reflected_i = seq_len - 1 - i;

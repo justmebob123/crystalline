@@ -438,6 +438,18 @@ void handle_input(AppState* state, SDL_Event* event) {
                 break;
             }
             
+            // Handle Training tab keyboard input
+            if (state->current_tab == TAB_TRAINING) {
+                handle_training_tab_keydown(state, event->key.keysym.sym);
+                break;
+            }
+            
+            // Handle Research tab keyboard input
+            if (state->current_tab == TAB_RESEARCH) {
+                handle_research_tab_keydown(state, event->key.keysym.sym);
+                break;
+            }
+            
             // If input is active, only handle input-related keys
             if (state->input_active) {
                 switch (event->key.keysym.sym) {
@@ -564,6 +576,10 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_TEXTINPUT:
             if (state->current_tab == TAB_LLM) {
                 handle_llm_tab_text_input(state, event->text.text);
+            } else if (state->current_tab == TAB_TRAINING) {
+                handle_training_tab_text_input(state, event->text.text);
+            } else if (state->current_tab == TAB_RESEARCH) {
+                handle_research_tab_text_input(state, event->text.text);
             } else if (state->input_active) {
                 // Filter out command keys (F, A, M, etc.) from text input
                 char c = event->text.text[0];

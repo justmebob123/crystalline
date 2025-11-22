@@ -499,3 +499,34 @@ void handle_research_tab_scroll(AppState* state, int scroll_y) {
         if (file_list_scroll > max_scroll) file_list_scroll = max_scroll;
     }
 }
+
+void handle_research_tab_text_input(AppState* state, const char* text) {
+    if (!state || !text || !search_input_initialized) return;
+    
+    if (search_input.active) {
+        size_t len = strlen(search_input.text);
+        if (len < MAX_INPUT_LENGTH - 1) {
+            strncat(search_input.text, text, MAX_INPUT_LENGTH - len - 1);
+            search_input.cursor_pos = strlen(search_input.text);
+            strncpy(search_query, search_input.text, sizeof(search_query) - 1);
+            search_query[sizeof(search_query) - 1] = '\0';
+        }
+    }
+}
+
+void handle_research_tab_keydown(AppState* state, SDL_Keycode key) {
+    if (!state || !search_input_initialized) return;
+    
+    if (search_input.active) {
+        if (key == SDLK_BACKSPACE && search_input.cursor_pos > 0) {
+            search_input.text[--search_input.cursor_pos] = '\0';
+            strncpy(search_query, search_input.text, sizeof(search_query) - 1);
+            search_query[sizeof(search_query) - 1] = '\0';
+        } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+            text_input_deactivate(&search_input);
+            SDL_StopTextInput();
+            // Trigger search
+            scan_research_directory(current_directory);
+        }
+    }
+}

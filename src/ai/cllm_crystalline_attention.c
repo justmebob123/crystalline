@@ -24,7 +24,9 @@
 
 // Constants for crystalline attention
 #define PI 3.14159265358979323846
+#ifndef PHI
 #define PHI 1.618033988749894848
+#endif
 #define EINSTEIN_LAMBDA (3.0 / 144000.0)
 #define SCHUMANN_RESONANCE 7.83
 #define GAMMA_BURST 40.0

@@ -316,11 +316,15 @@ void handle_llm_tab_key(AppState* state, SDL_Keycode key);
 // Function declarations from tab_training.c
 void draw_training_tab(SDL_Renderer* renderer, AppState* state);
 void handle_training_tab_click(AppState* state, int x, int y);
+void handle_training_tab_text_input(AppState* state, const char* text);
+void handle_training_tab_keydown(AppState* state, SDL_Keycode key);
 bool handle_training_tab_event(AppState* state, SDL_Event* event);
 
 // Function declarations from tab_research.c
 void draw_research_tab(SDL_Renderer* renderer, AppState* state);
 void handle_research_tab_click(AppState* state, int x, int y);
+void handle_research_tab_text_input(AppState* state, const char* text);
+void handle_research_tab_keydown(AppState* state, SDL_Keycode key);
 void handle_research_tab_scroll(AppState* state, int scroll_y);
 bool handle_research_tab_event(AppState* state, SDL_Event* event);
 
