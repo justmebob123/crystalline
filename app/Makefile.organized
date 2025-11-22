@@ -1,0 +1,114 @@
+# Prime Math Library - Application Makefile
+# SDL2 Visualization Application with nested directory structure
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+CC = gcc
+CFLAGS = -Wall -Wextra -O2 -std=c11
+INCLUDES = -I../include -I.
+LDFLAGS = -L.. -lprimemath -lm -lSDL2 -lSDL2_ttf
+
+# Application name
+APP_NAME = hyper_prime_spiral
+
+# ============================================================================
+# SOURCE FILES (nested structure)
+# ============================================================================
+
+# Main application files
+MAIN_SOURCES = main.c io.c analysis_manager.c
+
+# UI files
+UI_SOURCES = ui/ui.c
+
+# Lattice utilities
+LATTICE_SOURCES = $(wildcard ui/lattice/*.c)
+
+# Widget files
+WIDGET_SOURCES = $(wildcard ui/widgets/*.c)
+
+# Tab files (current versions only, excluding backup/old)
+TAB_SOURCES = $(wildcard ui/tabs/tab_*.c)
+TAB_SOURCES := $(filter-out %_backup.c %_old.c, $(TAB_SOURCES))
+
+# Visualization modes
+VIZ_SOURCES = $(wildcard visualization/*.c)
+
+# All application sources
+APP_SOURCES = $(MAIN_SOURCES) $(UI_SOURCES) $(LATTICE_SOURCES) \
+              $(WIDGET_SOURCES) $(TAB_SOURCES) $(VIZ_SOURCES)
+
+APP_OBJECTS = $(APP_SOURCES:.c=.o)
+
+# ============================================================================
+# TARGETS
+# ============================================================================
+
+.PHONY: all clean run info help
+
+# Default target
+all: $(APP_NAME)
+	@echo "✓ Application built: $(APP_NAME)"
+
+# Link application
+$(APP_NAME): $(APP_OBJECTS)
+	@echo "Linking application: $@"
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+# Compile object files
+%.o: %.c
+	@echo "Compiling: $<"
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Run application
+run: $(APP_NAME)
+	@echo "Running $(APP_NAME)..."
+	LD_LIBRARY_PATH=.. ./$(APP_NAME)
+
+# Display build information
+info:
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║         SDL2 Application - Build Configuration                ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Application:     $(APP_NAME)"
+	@echo "Compiler:        $(CC)"
+	@echo "Flags:           $(CFLAGS)"
+	@echo "Includes:        $(INCLUDES)"
+	@echo "Link Flags:      $(LDFLAGS)"
+	@echo ""
+	@echo "Source Files:"
+	@echo "  Main:          $(words $(MAIN_SOURCES)) files"
+	@echo "  UI:            $(words $(UI_SOURCES)) files"
+	@echo "  Lattice:       $(words $(LATTICE_SOURCES)) files"
+	@echo "  Widgets:       $(words $(WIDGET_SOURCES)) files"
+	@echo "  Tabs:          $(words $(TAB_SOURCES)) files"
+	@echo "  Visualization: $(words $(VIZ_SOURCES)) files"
+	@echo "  Total:         $(words $(APP_SOURCES)) files"
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning application build artifacts..."
+	rm -f $(APP_OBJECTS)
+	rm -f $(APP_NAME)
+	@echo "✓ Clean complete"
+
+# Help
+help:
+	@echo "SDL2 Application - Makefile Targets"
+	@echo ""
+	@echo "  make          - Build application"
+	@echo "  make run      - Build and run application"
+	@echo "  make info     - Display build configuration"
+	@echo "  make clean    - Remove build artifacts"
+	@echo "  make help     - Show this help message"
+
+# ============================================================================
+# DEBUG BUILD
+# ============================================================================
+
+debug: CFLAGS = -Wall -Wextra -g -O0 -std=c11 -DDEBUG
+debug: clean all
+	@echo "✓ Debug build complete"

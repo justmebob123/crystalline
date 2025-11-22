@@ -1,0 +1,329 @@
+/*
+ * prime_math_custom.c - Implementation of custom math library
+ * 
+ * This file implements all standard math.h functions using our custom
+ * low-level implementations. NO math.h dependency.
+ */
+
+#include "../include/prime_math_custom.h"
+#include "../include/prime_lowlevel.h"
+#include <stdint.h>
+
+/* ============================================================================
+ * SQUARE ROOT
+ * ============================================================================ */
+
+double prime_sqrt(double x) {
+    if (x < 0.0) return 0.0;  // Return 0 for negative (or could return NaN)
+    if (x == 0.0) return 0.0;
+    if (x == 1.0) return 1.0;
+    
+    // Convert to fixed-point
+    uint64_t x_fixed = double_to_fixed(x);
+    
+    // Use fixed-point sqrt
+    uint64_t result_fixed = prime_fixedpoint_sqrt(x_fixed);
+    
+    // Convert back to double
+    return fixed_to_double(result_fixed);
+}
+
+/* ============================================================================
+ * EXPONENTIAL AND LOGARITHM
+ * ============================================================================ */
+
+double prime_exp(double x) {
+    // Convert to fixed-point
+    int64_t x_fixed = (int64_t)(x * FIXED_POINT_SCALE);
+    
+    // Use fixed-point exp
+    uint64_t result_fixed = prime_exp_fixed(x_fixed);
+    
+    // Convert back to double
+    return fixed_to_double(result_fixed);
+}
+
+double prime_log(double x) {
+    if (x <= 0.0) return -1e308;  // Return very negative for invalid input
+    
+    // Convert to fixed-point
+    uint64_t x_fixed = double_to_fixed(x);
+    
+    // Use fixed-point log
+    int64_t result_fixed = prime_log_fixed(x_fixed);
+    
+    // Convert back to double
+    return fixed_to_double_signed(result_fixed);
+}
+
+double prime_log10(double x) {
+    // log10(x) = ln(x) / ln(10)
+    double ln_x = prime_log(x);
+    return ln_x / M_LN10;
+}
+
+double prime_log2(double x) {
+    // log2(x) = ln(x) / ln(2)
+    double ln_x = prime_log(x);
+    return ln_x / M_LN2;
+}
+
+/* ============================================================================
+ * POWER FUNCTION
+ * ============================================================================ */
+
+double prime_pow(double x, double y) {
+    // Special cases
+    if (y == 0.0) return 1.0;
+    if (y == 1.0) return x;
+    if (x == 0.0) return 0.0;
+    if (x == 1.0) return 1.0;
+    
+    // For integer exponents, use repeated multiplication
+    if (y == (double)(int)y && y >= 0 && y < 64) {
+        int exp_int = (int)y;
+        double result = 1.0;
+        for (int i = 0; i < exp_int; i++) {
+            result *= x;
+        }
+        return result;
+    }
+    
+    // For general case: x^y = e^(y * ln(x))
+    if (x < 0.0 && y != (double)(int)y) {
+        // Negative base with non-integer exponent is undefined
+        return 0.0;
+    }
+    
+    double ln_x = prime_log(prime_fabs(x));
+    double y_ln_x = y * ln_x;
+    double result = prime_exp(y_ln_x);
+    
+    // Handle negative base with integer exponent
+    if (x < 0.0 && ((int)y % 2 != 0)) {
+        result = -result;
+    }
+    
+    return result;
+}
+
+/* ============================================================================
+ * TRIGONOMETRIC FUNCTIONS
+ * ============================================================================ */
+
+double prime_sin_custom(double x) {
+    // Normalize angle to [0, 2π)
+    double two_pi = 2.0 * M_PI;
+    while (x < 0.0) x += two_pi;
+    while (x >= two_pi) x -= two_pi;
+    
+    // Convert to fixed-point radians
+    uint64_t x_fixed = double_to_fixed(x);
+    
+    // Use CORDIC
+    int64_t sin_fixed, cos_fixed;
+    prime_cordic_sincos(x_fixed, &sin_fixed, &cos_fixed);
+    
+    // Convert back to double
+    return fixed_to_double_signed(sin_fixed);
+}
+
+double prime_cos(double x) {
+    // Normalize angle to [0, 2π)
+    double two_pi = 2.0 * M_PI;
+    while (x < 0.0) x += two_pi;
+    while (x >= two_pi) x -= two_pi;
+    
+    // Convert to fixed-point radians
+    uint64_t x_fixed = double_to_fixed(x);
+    
+    // Use CORDIC
+    int64_t sin_fixed, cos_fixed;
+    prime_cordic_sincos(x_fixed, &sin_fixed, &cos_fixed);
+    
+    // Convert back to double
+    return fixed_to_double_signed(cos_fixed);
+}
+
+double prime_tan(double x) {
+    double sin_x = prime_sin(x);
+    double cos_x = prime_cos(x);
+    
+    if (prime_fabs(cos_x) < 1e-10) {
+        // tan is undefined at π/2, 3π/2, etc.
+        return (sin_x > 0) ? 1e308 : -1e308;
+    }
+    
+    return sin_x / cos_x;
+}
+
+/* ============================================================================
+ * INVERSE TRIGONOMETRIC FUNCTIONS
+ * ============================================================================ */
+
+double prime_asin(double x) {
+    // asin(x) using Newton-Raphson: find y such that sin(y) = x
+    // Or use series: asin(x) = x + x³/6 + 3x⁵/40 + ...
+    
+    if (x < -1.0 || x > 1.0) return 0.0;  // Invalid input
+    if (x == 0.0) return 0.0;
+    if (x == 1.0) return M_PI / 2.0;
+    if (x == -1.0) return -M_PI / 2.0;
+    
+    // Use series expansion for |x| < 0.5
+    if (prime_fabs(x) < 0.5) {
+        double x2 = x * x;
+        double x3 = x2 * x;
+        double x5 = x3 * x2;
+        double x7 = x5 * x2;
+        
+        return x + x3/6.0 + 3.0*x5/40.0 + 15.0*x7/336.0;
+    }
+    
+    // For larger values, use: asin(x) = π/2 - asin(√(1-x²))
+    double sqrt_term = prime_sqrt(1.0 - x * x);
+    return M_PI / 2.0 - prime_asin(sqrt_term);
+}
+
+double prime_acos(double x) {
+    // acos(x) = π/2 - asin(x)
+    return M_PI / 2.0 - prime_asin(x);
+}
+
+double prime_atan_custom(double x) {
+    // atan(x) using series: atan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ...
+    // Valid for |x| ≤ 1
+    
+    if (x == 0.0) return 0.0;
+    
+    // For |x| > 1, use: atan(x) = π/2 - atan(1/x) for x > 0
+    if (x > 1.0) {
+        return M_PI / 2.0 - prime_atan_custom(1.0 / x);
+    }
+    if (x < -1.0) {
+        return -M_PI / 2.0 - prime_atan_custom(1.0 / x);
+    }
+    
+    // Series expansion for |x| ≤ 1
+    double x2 = x * x;
+    double result = x;
+    double term = x;
+    
+    for (int n = 1; n < 20; n++) {
+        term *= -x2;
+        result += term / (2 * n + 1);
+        
+        if (prime_fabs(term / (2 * n + 1)) < 1e-15) break;
+    }
+    
+    return result;
+}
+
+double prime_atan2_custom(double y, double x) {
+    // atan2(y, x) returns angle in correct quadrant
+    
+    if (x == 0.0 && y == 0.0) return 0.0;
+    
+    if (x > 0.0) {
+        return prime_atan_custom(y / x);
+    } else if (x < 0.0 && y >= 0.0) {
+        return prime_atan_custom(y / x) + M_PI;
+    } else if (x < 0.0 && y < 0.0) {
+        return prime_atan_custom(y / x) - M_PI;
+    } else if (x == 0.0 && y > 0.0) {
+        return M_PI / 2.0;
+    } else {  // x == 0.0 && y < 0.0
+        return -M_PI / 2.0;
+    }
+}
+
+/* ============================================================================
+ * HYPERBOLIC FUNCTIONS
+ * ============================================================================ */
+
+double prime_sinh(double x) {
+    // sinh(x) = (e^x - e^(-x)) / 2
+    double exp_x = prime_exp(x);
+    double exp_neg_x = prime_exp(-x);
+    return (exp_x - exp_neg_x) / 2.0;
+}
+
+double prime_cosh(double x) {
+    // cosh(x) = (e^x + e^(-x)) / 2
+    double exp_x = prime_exp(x);
+    double exp_neg_x = prime_exp(-x);
+    return (exp_x + exp_neg_x) / 2.0;
+}
+
+double prime_tanh_custom(double x) {
+    // tanh(x) = sinh(x) / cosh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
+    double exp_x = prime_exp(x);
+    double exp_neg_x = prime_exp(-x);
+    return (exp_x - exp_neg_x) / (exp_x + exp_neg_x);
+}
+
+/* ============================================================================
+ * ROUNDING FUNCTIONS
+ * ============================================================================ */
+
+double prime_floor(double x) {
+    int64_t i = (int64_t)x;
+    if (x < 0.0 && x != (double)i) {
+        return (double)(i - 1);
+    }
+    return (double)i;
+}
+
+double prime_ceil(double x) {
+    int64_t i = (int64_t)x;
+    if (x > 0.0 && x != (double)i) {
+        return (double)(i + 1);
+    }
+    return (double)i;
+}
+
+double prime_round(double x) {
+    if (x >= 0.0) {
+        return prime_floor(x + 0.5);
+    } else {
+        return prime_ceil(x - 0.5);
+    }
+}
+
+double prime_trunc(double x) {
+    return (double)((int64_t)x);
+}
+
+/* ============================================================================
+ * MODULO AND REMAINDER
+ * ============================================================================ */
+
+double prime_fmod(double x, double y) {
+    if (y == 0.0) return 0.0;
+    
+    double quotient = x / y;
+    int64_t int_quotient = (int64_t)quotient;
+    
+    return x - (double)int_quotient * y;
+}
+
+double prime_remainder(double x, double y) {
+    if (y == 0.0) return 0.0;
+    
+    double quotient = x / y;
+    int64_t int_quotient = (int64_t)prime_round(quotient);
+    
+    return x - (double)int_quotient * y;
+}
+
+/* ============================================================================
+ * MIN/MAX FUNCTIONS
+ * ============================================================================ */
+
+double prime_fmax(double a, double b) {
+    return (a > b) ? a : b;
+}
+
+double prime_fmin(double a, double b) {
+    return (a < b) ? a : b;
+}

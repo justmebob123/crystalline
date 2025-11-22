@@ -1,0 +1,112 @@
+# Prime Math Library - Examples Makefile
+# Demo programs showcasing library features
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+CC = gcc
+CFLAGS = -Wall -Wextra -O2 -std=c11
+INCLUDES = -I../include
+LDFLAGS = -L.. -lprimemath -lm
+
+# ============================================================================
+# DEMO PROGRAMS
+# ============================================================================
+
+# Automatically discover all demo programs
+DEMO_SOURCES = $(wildcard *.c)
+DEMO_PROGRAMS = $(DEMO_SOURCES:.c=)
+
+# ============================================================================
+# TARGETS
+# ============================================================================
+
+.PHONY: all clean run_all info help
+
+# Default target - build all demos
+all: $(DEMO_PROGRAMS)
+	@echo "✓ All demos compiled ($(words $(DEMO_PROGRAMS)) programs)"
+
+# Generic rule to build demo programs
+%: %.c
+	@echo "Compiling demo: $@"
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDFLAGS)
+
+# Run all demos
+run_all: all
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║                    Running All Demos                          ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@for demo in $(DEMO_PROGRAMS); do \
+		echo ""; \
+		echo "Running: $$demo"; \
+		echo "----------------------------------------"; \
+		LD_LIBRARY_PATH=.. ./$$demo || echo "FAILED: $$demo"; \
+		echo ""; \
+	done
+	@echo "✓ All demos completed"
+
+# Individual demo runners
+run_prime: prime_demo
+	@echo "Running prime_demo..."
+	LD_LIBRARY_PATH=.. ./prime_demo
+
+run_cllm: cllm_demo
+	@echo "Running cllm_demo..."
+	LD_LIBRARY_PATH=.. ./cllm_demo
+
+run_pretrain: pretrain_model
+	@echo "Running pretrain_model..."
+	LD_LIBRARY_PATH=.. ./pretrain_model
+
+# Display build information
+info:
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║              Examples - Build Configuration                   ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Compiler:        $(CC)"
+	@echo "Flags:           $(CFLAGS)"
+	@echo "Includes:        $(INCLUDES)"
+	@echo "Link Flags:      $(LDFLAGS)"
+	@echo ""
+	@echo "Demo Programs:   $(words $(DEMO_PROGRAMS))"
+	@echo ""
+	@echo "Available Demos:"
+	@for demo in $(DEMO_PROGRAMS); do \
+		echo "  - $$demo"; \
+	done
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning example build artifacts..."
+	rm -f $(DEMO_PROGRAMS)
+	rm -f *.o
+	@echo "✓ Clean complete"
+
+# Help
+help:
+	@echo "Examples - Makefile Targets"
+	@echo ""
+	@echo "Building:"
+	@echo "  make              - Build all demo programs"
+	@echo ""
+	@echo "Running Demos:"
+	@echo "  make run_all      - Run all demos"
+	@echo "  make run_prime    - Run prime_demo"
+	@echo "  make run_cllm     - Run cllm_demo"
+	@echo "  make run_pretrain - Run pretrain_model"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make info         - Display build configuration"
+	@echo "  make clean        - Remove build artifacts"
+	@echo "  make help         - Show this help message"
+
+# ============================================================================
+# DEBUG BUILD
+# ============================================================================
+
+debug: CFLAGS = -Wall -Wextra -g -O0 -std=c11 -DDEBUG
+debug: clean all
+	@echo "✓ Debug build complete"

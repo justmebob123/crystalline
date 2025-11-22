@@ -1,0 +1,113 @@
+#ifndef CLLM_TRAINING_H
+#define CLLM_TRAINING_H
+
+/*
+ * cllm_training.h - Auto-generated header file
+ * Source: cllm_training.c
+ */
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <time.h>
+#include "prime_types.h"
+
+/* Local includes */
+#include "cllm.h"
+
+/* Type definitions */
+
+/*
+ * CLLM Training Configuration
+ */
+typedef struct {
+    float learning_rate;         // Learning rate
+    int batch_size;              // Batch size
+    int num_epochs;              // Number of training epochs
+    int max_steps;               // Maximum training steps
+    float weight_decay;          // Weight decay (L2 regularization)
+    float gradient_clip;         // Gradient clipping threshold
+    int warmup_steps;            // Learning rate warmup steps
+    int save_interval;           // Save checkpoint every N steps
+    int save_every;              // Alternative save interval
+    int eval_interval;           // Evaluate every N steps
+    int sequence_length;         // Sequence length for training
+    char optimizer[32];          // Optimizer name (e.g., "adam", "sgd")
+} CLLMTrainingConfig;
+
+/*
+ * CLLM Training State
+ */
+typedef struct {
+    CLLMModel* model;            // Pointer to the model
+    CLLMTrainingConfig config;   // Training configuration
+    
+    // Training data
+    uint32_t* tokens;            // Training tokens
+    size_t num_tokens;           // Number of tokens
+    
+    // Training state
+    int current_epoch;           // Current epoch
+    int current_step;            // Current training step
+    float best_loss;             // Best validation loss
+    float current_loss;          // Current training loss
+    time_t start_time;           // Training start time
+    
+    // Batch management
+    int total_batches;           // Total number of batches
+    int current_batch_offset;    // Current batch offset in tokens
+    
+    // Optimizer state
+    float* gradients;            // Gradient buffer
+    float* optimizer_state;      // Optimizer state (e.g., momentum, variance)
+} CLLMTraining;
+
+/* Loss computation functions */
+float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size);
+void cllm_compute_loss_gradient(float* logits, uint32_t target, float* grad_output, int vocab_size);
+float cllm_compute_batch_loss(float* logits, uint32_t* targets, int batch_size, int vocab_size);
+float cllm_compute_perplexity(float loss);
+float cllm_compute_label_smoothing_loss(float* logits, uint32_t target, int vocab_size, float smoothing);
+float cllm_compute_kl_divergence(float* logits, float* target_dist, int vocab_size);
+float cllm_compute_sequence_loss(float* logits, uint32_t* targets, int seq_len, int vocab_size);
+float cllm_compute_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size);
+float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
+
+/* Optimizer functions */
+void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm);
+void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_value);
+/* Training initialization and cleanup */
+CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config);
+void cllm_training_free(CLLMTraining* training);
+void cllm_training_cleanup(CLLMTraining* training);
+
+void cllm_adam_step(CLLMTraining* training, float learning_rate);
+void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum);
+void cllm_update_learning_rate(CLLMTraining* training);
+void cllm_apply_weight_decay(float* weights, size_t size, float weight_decay, float learning_rate);
+void cllm_zero_gradients(float* gradients, size_t size);
+float cllm_compute_gradient_norm(float* gradients, size_t size);
+void cllm_accumulate_gradients(float* accumulated_grads, float* current_grads, size_t size);
+void cllm_scale_gradients(float* gradients, size_t size, float scale);
+int cllm_check_gradients_valid(float* gradients, size_t size);
+void cllm_update_ema_weights(float* ema_weights, float* current_weights, size_t size, float decay);
+
+/* Backward pass functions */
+void cllm_layer_norm_backward(CLLMLayerNorm* ln, float* input, float* grad_output, float* grad_input, float* grad_gamma, float* grad_beta);
+void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hidden, float* grad_output, float* grad_input, float* grad_w1, float* grad_w2, float* grad_b1, float* grad_b2);
+void cllm_attention_backward(AttentionLayer* layer, float* input, float* grad_output, float* grad_input, int seq_len);
+void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, float* grad_output, float* grad_embeddings, int batch_size);
+void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, float* input, float* grad_output, float* grad_input, int seq_len);
+void cllm_backward_complete(CLLMTraining* training);
+
+/* Function declarations */
+int cllm_load_training_data(CLLMTraining* training, const char* filename);
+int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens);
+void cllm_optimizer_step(CLLMTraining* training);
+float cllm_train_epoch(CLLMTraining* training);
+int cllm_train(CLLMTraining* training);
+int cllm_save_checkpoint(CLLMTraining* training, const char* filename);
+int cllm_load_checkpoint(CLLMTraining* training, const char* filename);
+void cllm_training_cleanup(CLLMTraining* training);
+
+#endif /* CLLM_TRAINING_H */
