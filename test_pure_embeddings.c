@@ -1,5 +1,8 @@
 /*
  * Test suite for Pure Crystalline Embeddings
+ * 
+ * PURE IMPLEMENTATION: Uses ONLY arbitrary precision mathematics.
+ * NO external math libraries (math.h, GMP, etc.)
  */
 
 #include "cllm_pure_crystalline.h"
@@ -7,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
 
 // Test colors
 #define GREEN "\033[0;32m"
@@ -221,14 +223,61 @@ bool test_token_position() {
         printf("  coord[%d] = %.6f\n", i, val);
     }
     
-    // Verify position matches token's lattice_coords
+    // Verify position matches token's lattice_coords using PURE arbitrary precision
     for (int i = 0; i < 3; i++) {
-        double pos_val = big_fixed_to_double(&position[i]);
-        double token_val = big_fixed_to_double(&token->lattice_coords[i]);
+        // Create BigFixed for difference
+        BigFixed diff;
+        diff.integer_part = (BigInt*)malloc(sizeof(BigInt));
+        diff.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+        big_init(diff.integer_part);
+        big_init(diff.fractional_part);
+        diff.scale_bits = 256;
+        diff.negative = 0;
         
-        if (fabs(pos_val - token_val) > 0.0001) {
+        // Compute difference: diff = position[i] - token->lattice_coords[i]
+        big_fixed_sub(&diff, &position[i], &token->lattice_coords[i]);
+        
+        // Take absolute value
+        BigFixed abs_diff;
+        abs_diff.integer_part = (BigInt*)malloc(sizeof(BigInt));
+        abs_diff.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+        big_init(abs_diff.integer_part);
+        big_init(abs_diff.fractional_part);
+        abs_diff.scale_bits = 256;
+        abs_diff.negative = 0;
+        
+        big_fixed_abs(&abs_diff, &diff);
+        
+        // Create threshold: 0.0001
+        BigFixed threshold;
+        threshold.integer_part = (BigInt*)malloc(sizeof(BigInt));
+        threshold.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+        big_init(threshold.integer_part);
+        big_init(threshold.fractional_part);
+        threshold.scale_bits = 256;
+        threshold.negative = 0;
+        big_fixed_from_double(&threshold, 0.0001);
+        
+        // Compare: if abs_diff > threshold, fail
+        if (big_fixed_cmp(&abs_diff, &threshold) > 0) {
+            double pos_val = big_fixed_to_double(&position[i]);
+            double token_val = big_fixed_to_double(&token->lattice_coords[i]);
             printf("Position mismatch at coord %d: %.6f vs %.6f\n", i, pos_val, token_val);
+            
             // Cleanup
+            big_free(threshold.integer_part);
+            free(threshold.integer_part);
+            big_free(threshold.fractional_part);
+            free(threshold.fractional_part);
+            big_free(abs_diff.integer_part);
+            free(abs_diff.integer_part);
+            big_free(abs_diff.fractional_part);
+            free(abs_diff.fractional_part);
+            big_free(diff.integer_part);
+            free(diff.integer_part);
+            big_free(diff.fractional_part);
+            free(diff.fractional_part);
+            
             for (int j = 0; j < 3; j++) {
                 big_free(position[j].integer_part);
                 free(position[j].integer_part);
@@ -239,6 +288,20 @@ bool test_token_position() {
             crystalline_embeddings_free(embeddings);
             return false;
         }
+        
+        // Cleanup temporary BigFixed values
+        big_free(threshold.integer_part);
+        free(threshold.integer_part);
+        big_free(threshold.fractional_part);
+        free(threshold.fractional_part);
+        big_free(abs_diff.integer_part);
+        free(abs_diff.integer_part);
+        big_free(abs_diff.fractional_part);
+        free(abs_diff.fractional_part);
+        big_free(diff.integer_part);
+        free(diff.integer_part);
+        big_free(diff.fractional_part);
+        free(diff.fractional_part);
     }
     
     // Cleanup

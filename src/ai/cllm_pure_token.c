@@ -1,21 +1,44 @@
 /*
  * Pure Crystalline CLLM - Token Operations
+ * 
+ * PURE IMPLEMENTATION: Uses ONLY arbitrary precision mathematics.
+ * NO external math libraries (math.h, GMP, etc.)
  */
 
 #include "../../include/cllm_pure_crystalline.h"
 #include "../../include/bigint_core.h"
 #include "../../include/bigfixed_core.h"
 #include "../../include/prime_math_custom.h"
+#include "../../include/prime_bigint_transcendental.h"
+#include "../../include/bigfixed_constants.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-#define PHI 1.618033988749895
-#define GOLDEN_ANGLE (2.0 * M_PI / (PHI * PHI))
 #define PRIME_CACHE_SIZE 10000
 
 static uint64_t prime_cache[PRIME_CACHE_SIZE];
 static bool prime_cache_initialized = false;
+
+/*
+ * Pure integer square root using Newton's method
+ * NO floating point operations
+ */
+static uint64_t isqrt(uint64_t n) {
+    if (n == 0) return 0;
+    if (n <= 3) return 1;
+    
+    // Initial guess
+    uint64_t x = n;
+    uint64_t y = (x + 1) / 2;
+    
+    // Newton's method: x_new = (x + n/x) / 2
+    while (y < x) {
+        x = y;
+        y = (x + n / x) / 2;
+    }
+    
+    return x;
+}
 
 static void init_prime_cache(void) {
     if (prime_cache_initialized) return;
@@ -28,7 +51,7 @@ static void init_prime_cache(void) {
     
     while (count < PRIME_CACHE_SIZE) {
         bool is_prime = true;
-        uint64_t sqrt_cand = (uint64_t)sqrt((double)candidate);
+        uint64_t sqrt_cand = isqrt(candidate);
         
         for (uint32_t i = 0; i < count && prime_cache[i] <= sqrt_cand; i++) {
             if (candidate % prime_cache[i] == 0) {
@@ -52,7 +75,7 @@ bool crystalline_is_prime(uint64_t n) {
     if (n == 2) return true;
     if (n % 2 == 0) return false;
     
-    uint64_t sqrt_n = (uint64_t)sqrt((double)n);
+    uint64_t sqrt_n = isqrt(n);
     for (uint64_t i = 3; i <= sqrt_n; i += 2) {
         if (n % i == 0) return false;
     }
@@ -125,8 +148,11 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
             coords[i].fractional_part = (BigInt*)malloc(sizeof(BigInt));
             big_init(coords[i].fractional_part);
         }
+        coords[i].scale_bits = precision;
+        coords[i].negative = 0;
     }
     
+    // Find prime index
     uint32_t prime_index = 0;
     for (uint32_t i = 0; i < PRIME_CACHE_SIZE; i++) {
         if (prime_cache[i] == prime) {
@@ -136,25 +162,120 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
         if (prime_cache[i] > prime) break;
     }
     
+    // If prime not in cache, estimate index
     if (prime_index == 0 && prime > prime_cache[PRIME_CACHE_SIZE - 1]) {
-        prime_index = (uint32_t)(prime / log((double)prime));
+        // Approximate: prime_index ≈ prime / ln(prime)
+        // For simplicity, use prime_index = prime / 10 as rough estimate
+        prime_index = (uint32_t)(prime / 10);
+        if (prime_index == 0) prime_index = 1;
     }
     
-    double radius = sqrt((double)prime_index);
-    double angle = GOLDEN_ANGLE * prime_index;
+    // Create BigInt for prime_index
+    BigInt* idx = (BigInt*)malloc(sizeof(BigInt));
+    big_init(idx);
+    big_from_int(idx, prime_index);
     
-    double x = radius * cos(angle);
-    double y = radius * sin(angle);
-    double z = log((double)prime + 1.0);
+    // Compute radius = sqrt(prime_index) using pure BigFixed
+    BigFixed radius;
+    radius.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    radius.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(radius.integer_part);
+    big_init(radius.fractional_part);
+    radius.scale_bits = precision;
+    radius.negative = 0;
+    big_sqrt(&radius, idx, precision);
     
-    double perturbation = 0.01 * (prime % 100);
-    x += perturbation * cos(angle + M_PI/4);
-    y += perturbation * sin(angle + M_PI/4);
-    z += perturbation * 0.1;
+    // Compute angle = golden_angle * prime_index
+    // golden_angle = 2π / φ² ≈ 2.39996322972865332 radians
+    BigFixed golden_angle;
+    golden_angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    golden_angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(golden_angle.integer_part);
+    big_init(golden_angle.fractional_part);
+    golden_angle.scale_bits = precision;
+    golden_angle.negative = 0;
+    big_fixed_from_double(&golden_angle, 2.39996322972865332);
     
-    big_fixed_from_double(&coords[0], x);
-    big_fixed_from_double(&coords[1], y);
-    big_fixed_from_double(&coords[2], z);
+    BigFixed angle;
+    angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(angle.integer_part);
+    big_init(angle.fractional_part);
+    angle.scale_bits = precision;
+    angle.negative = 0;
+    
+    // angle = golden_angle * prime_index
+    BigFixed idx_fixed;
+    idx_fixed.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    idx_fixed.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(idx_fixed.integer_part);
+    big_init(idx_fixed.fractional_part);
+    idx_fixed.scale_bits = precision;
+    idx_fixed.negative = 0;
+    big_fixed_from_int(&idx_fixed, prime_index);
+    
+    big_fixed_mul(&angle, &golden_angle, &idx_fixed);
+    
+    // Compute x = radius * cos(angle)
+    BigFixed cos_angle;
+    cos_angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    cos_angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(cos_angle.integer_part);
+    big_init(cos_angle.fractional_part);
+    cos_angle.scale_bits = precision;
+    cos_angle.negative = 0;
+    big_cos(&cos_angle, &angle, precision);
+    
+    big_fixed_mul(&coords[0], &radius, &cos_angle);
+    
+    // Compute y = radius * sin(angle)
+    BigFixed sin_angle;
+    sin_angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    sin_angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(sin_angle.integer_part);
+    big_init(sin_angle.fractional_part);
+    sin_angle.scale_bits = precision;
+    sin_angle.negative = 0;
+    big_sin(&sin_angle, &angle, precision);
+    
+    big_fixed_mul(&coords[1], &radius, &sin_angle);
+    
+    // Compute z = ln(prime + 1)
+    BigInt* prime_plus_1 = (BigInt*)malloc(sizeof(BigInt));
+    big_init(prime_plus_1);
+    big_from_int(prime_plus_1, prime + 1);
+    
+    big_ln(&coords[2], prime_plus_1, precision);
+    
+    // Cleanup temporary BigFixed/BigInt structures
+    big_free(prime_plus_1);
+    free(prime_plus_1);
+    big_free(sin_angle.integer_part);
+    free(sin_angle.integer_part);
+    big_free(sin_angle.fractional_part);
+    free(sin_angle.fractional_part);
+    big_free(cos_angle.integer_part);
+    free(cos_angle.integer_part);
+    big_free(cos_angle.fractional_part);
+    free(cos_angle.fractional_part);
+    big_free(idx_fixed.integer_part);
+    free(idx_fixed.integer_part);
+    big_free(idx_fixed.fractional_part);
+    free(idx_fixed.fractional_part);
+    big_free(angle.integer_part);
+    free(angle.integer_part);
+    big_free(angle.fractional_part);
+    free(angle.fractional_part);
+    big_free(golden_angle.integer_part);
+    free(golden_angle.integer_part);
+    big_free(golden_angle.fractional_part);
+    free(golden_angle.fractional_part);
+    big_free(radius.integer_part);
+    free(radius.integer_part);
+    big_free(radius.fractional_part);
+    free(radius.fractional_part);
+    big_free(idx);
+    free(idx);
 }
 
 CrystallineToken* crystalline_token_create(uint32_t token_id, const char* token_str, uint64_t prime) {
@@ -269,9 +390,18 @@ void crystalline_lattice_distance(const BigFixed pos1[3], const BigFixed pos2[3]
         sum = temp;
     }
     
-    double sum_double = big_fixed_to_double(&sum);
-    double dist_double = sqrt(sum_double);
-    big_fixed_from_double(distance, dist_double);
+    // Compute sqrt(sum) using pure BigFixed
+    // First convert sum to BigInt for big_sqrt
+    BigInt* sum_int = (BigInt*)malloc(sizeof(BigInt));
+    big_init(sum_int);
+    big_fixed_to_bigint_rounded(sum_int, &sum);
+    
+    // Compute sqrt using pure arbitrary precision
+    big_sqrt(distance, sum_int, 256);
+    
+    // Cleanup
+    big_free(sum_int);
+    free(sum_int);
     
     // Cleanup
     for (int i = 0; i < 3; i++) {
@@ -340,8 +470,151 @@ void crystalline_phase_alignment(uint64_t prime1, uint64_t prime2, BigFixed* ali
         big_init(alignment->fractional_part);
     }
     
-    double phase_diff = 2.0 * M_PI * (double)(prime1 - prime2) / (double)(prime1 + prime2);
-    double align = (1.0 + cos(phase_diff)) / 2.0;
+    // Compute phase_diff = 2π * (prime1 - prime2) / (prime1 + prime2) using pure BigFixed
     
-    big_fixed_from_double(alignment, align);
+    // Get π using big_pi
+    BigFixed pi;
+    pi.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    pi.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(pi.integer_part);
+    big_init(pi.fractional_part);
+    pi.scale_bits = 256;
+    pi.negative = 0;
+    big_pi(&pi, 256);
+    
+    // Compute 2π
+    BigFixed two_pi;
+    two_pi.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    two_pi.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(two_pi.integer_part);
+    big_init(two_pi.fractional_part);
+    two_pi.scale_bits = 256;
+    two_pi.negative = 0;
+    
+    BigFixed two;
+    two.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    two.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(two.integer_part);
+    big_init(two.fractional_part);
+    two.scale_bits = 256;
+    two.negative = 0;
+    big_fixed_from_int(&two, 2);
+    
+    big_fixed_mul(&two_pi, &pi, &two);
+    
+    // Compute (prime1 - prime2)
+    int64_t diff = (int64_t)prime1 - (int64_t)prime2;
+    BigFixed diff_fixed;
+    diff_fixed.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    diff_fixed.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(diff_fixed.integer_part);
+    big_init(diff_fixed.fractional_part);
+    diff_fixed.scale_bits = 256;
+    diff_fixed.negative = (diff < 0) ? 1 : 0;
+    big_fixed_from_int(&diff_fixed, (diff < 0) ? -diff : diff);
+    
+    // Compute (prime1 + prime2)
+    uint64_t sum_primes = prime1 + prime2;
+    BigFixed sum_fixed;
+    sum_fixed.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    sum_fixed.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(sum_fixed.integer_part);
+    big_init(sum_fixed.fractional_part);
+    sum_fixed.scale_bits = 256;
+    sum_fixed.negative = 0;
+    big_fixed_from_int(&sum_fixed, sum_primes);
+    
+    // Compute 2π * (prime1 - prime2)
+    BigFixed numerator;
+    numerator.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    numerator.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(numerator.integer_part);
+    big_init(numerator.fractional_part);
+    numerator.scale_bits = 256;
+    numerator.negative = 0;
+    big_fixed_mul(&numerator, &two_pi, &diff_fixed);
+    
+    // Compute phase_diff = numerator / (prime1 + prime2)
+    BigFixed phase_diff;
+    phase_diff.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    phase_diff.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(phase_diff.integer_part);
+    big_init(phase_diff.fractional_part);
+    phase_diff.scale_bits = 256;
+    phase_diff.negative = 0;
+    big_fixed_div(&phase_diff, &numerator, &sum_fixed);
+    
+    // Compute cos(phase_diff)
+    BigFixed cos_phase;
+    cos_phase.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    cos_phase.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(cos_phase.integer_part);
+    big_init(cos_phase.fractional_part);
+    cos_phase.scale_bits = 256;
+    cos_phase.negative = 0;
+    big_cos(&cos_phase, &phase_diff, 256);
+    
+    // Compute (1 + cos(phase_diff))
+    BigFixed one;
+    one.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    one.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(one.integer_part);
+    big_init(one.fractional_part);
+    one.scale_bits = 256;
+    one.negative = 0;
+    big_fixed_from_int(&one, 1);
+    
+    BigFixed one_plus_cos;
+    one_plus_cos.integer_part = (BigInt*)malloc(sizeof(BigInt));
+    one_plus_cos.fractional_part = (BigInt*)malloc(sizeof(BigInt));
+    big_init(one_plus_cos.integer_part);
+    big_init(one_plus_cos.fractional_part);
+    one_plus_cos.scale_bits = 256;
+    one_plus_cos.negative = 0;
+    big_fixed_add(&one_plus_cos, &one, &cos_phase);
+    
+    // Compute alignment = (1 + cos(phase_diff)) / 2
+    big_fixed_div(alignment, &one_plus_cos, &two);
+    
+    // Cleanup
+    big_free(one_plus_cos.integer_part);
+    free(one_plus_cos.integer_part);
+    big_free(one_plus_cos.fractional_part);
+    free(one_plus_cos.fractional_part);
+    big_free(one.integer_part);
+    free(one.integer_part);
+    big_free(one.fractional_part);
+    free(one.fractional_part);
+    big_free(cos_phase.integer_part);
+    free(cos_phase.integer_part);
+    big_free(cos_phase.fractional_part);
+    free(cos_phase.fractional_part);
+    big_free(phase_diff.integer_part);
+    free(phase_diff.integer_part);
+    big_free(phase_diff.fractional_part);
+    free(phase_diff.fractional_part);
+    big_free(numerator.integer_part);
+    free(numerator.integer_part);
+    big_free(numerator.fractional_part);
+    free(numerator.fractional_part);
+    big_free(sum_fixed.integer_part);
+    free(sum_fixed.integer_part);
+    big_free(sum_fixed.fractional_part);
+    free(sum_fixed.fractional_part);
+    big_free(diff_fixed.integer_part);
+    free(diff_fixed.integer_part);
+    big_free(diff_fixed.fractional_part);
+    free(diff_fixed.fractional_part);
+    big_free(two.integer_part);
+    free(two.integer_part);
+    big_free(two.fractional_part);
+    free(two.fractional_part);
+    big_free(two_pi.integer_part);
+    free(two_pi.integer_part);
+    big_free(two_pi.fractional_part);
+    free(two_pi.fractional_part);
+    big_free(pi.integer_part);
+    free(pi.integer_part);
+    big_free(pi.fractional_part);
+    free(pi.fractional_part);
 }

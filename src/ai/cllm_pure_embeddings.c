@@ -3,13 +3,15 @@
  * 
  * Implements CrystallineEmbeddings with LLL-reduced lattice basis,
  * exact BigFixed token positions, and morphology graph.
+ * 
+ * PURE IMPLEMENTATION: Uses ONLY arbitrary precision mathematics.
+ * NO external math libraries (math.h, GMP, etc.)
  */
 
 #include "cllm_pure_crystalline.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 /*
  * Helper function to allocate BigFixed matrix
