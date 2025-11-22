@@ -55,4 +55,8 @@ int big_cmp_int(const BigInt *a, uint64_t n);
 void big_lattice_add(const BigInt *a, const BigInt *b, BigInt *result, int depth);
 bool big_is_mersenne_prime(const BigInt *p);
 
+int big_mod_inverse(BigInt* result, const BigInt* a, const BigInt* m);
+
+int big_mod_inverse(BigInt* result, const BigInt* a, const BigInt* m);
+
 #endif /* BIGINT_CORE_H */

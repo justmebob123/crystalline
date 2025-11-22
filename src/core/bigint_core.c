@@ -873,3 +873,54 @@ bool big_is_mersenne_prime(const BigInt *p) {
     
     return result;
 }
+
+/**
+ * Modular multiplicative inverse using extended Euclidean algorithm
+ * Finds x such that (a * x) mod m = 1
+ * Returns 1 if inverse exists, 0 otherwise
+ */
+/**
+ * Modular multiplicative inverse
+ * Finds x such that (a * x) mod m = 1
+ * 
+ * For prime m, uses Fermat's little theorem: a^(-1) ≡ a^(m-2) (mod m)
+ * 
+ * Returns 1 if inverse exists, 0 otherwise
+ */
+int big_mod_inverse(BigInt* result, const BigInt* a, const BigInt* m) {
+    if (!result || !a || !m) return 0;
+    
+    // Check if gcd(a, m) = 1
+    BigInt gcd_val;
+    big_init(&gcd_val);
+    big_gcd(a, m, &gcd_val);
+    
+    BigInt one, two;
+    big_init(&one);
+    big_init(&two);
+    big_from_int(&one, 1);
+    big_from_int(&two, 2);
+    
+    if (big_cmp(&gcd_val, &one) != 0) {
+        // Inverse doesn't exist
+        big_free(&gcd_val);
+        big_free(&one);
+        big_free(&two);
+        return 0;
+    }
+    
+    // For prime m: a^(-1) ≡ a^(m-2) (mod m) by Fermat's little theorem
+    BigInt m_minus_2;
+    big_init(&m_minus_2);
+    big_sub(m, &two, &m_minus_2);
+    
+    // result = a^(m-2) mod m
+    big_powmod(a, &m_minus_2, m, result);
+    
+    big_free(&m_minus_2);
+    big_free(&gcd_val);
+    big_free(&one);
+    big_free(&two);
+    
+    return 1;
+}

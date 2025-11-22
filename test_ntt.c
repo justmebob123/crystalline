@@ -9,7 +9,6 @@
 #include <time.h>
 #include "include/bigint_core.h"
 #include "include/bigint_ntt.h"
-#include "include/bigint_advanced.h"
 
 void print_test_header(const char* test_name) {
     printf("\n");
