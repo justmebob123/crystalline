@@ -87,20 +87,30 @@ double nu_lambda(const char *lambda_phon) {
         }
     }
     
-    // Phonetic mappings
+    // Phonetic mappings from complete symbol table
     if (strstr(lower, "dub")) {
-        base_val = 3.0;
+        base_val = 3.0;  // ν(dub) = 3
     } else if (strstr(lower, "knbt")) {
-        base_val = 7.0;
+        base_val = 3.0;  // ν(knbt) = 3
     } else if (strstr(lower, "k'ancha") || strstr(lower, "kancha")) {
-        base_val = 12.0;
+        base_val = 3.0;  // ν(k'ancha) = 3
+    } else if (strstr(lower, "kub")) {
+        base_val = 3.0;  // ν(kub) = 3 (cube/triad)
+    } else if (strstr(lower, "triad")) {
+        base_val = 3.0;  // Triad core
+    } else if (strstr(lower, "seven") || strstr(lower, "7")) {
+        base_val = 7.0;  // Seven rays
+    } else if (strstr(lower, "twelve") || strstr(lower, "12")) {
+        base_val = 12.0;  // Zodiac/clock
+    } else if (strstr(lower, "nineteen") || strstr(lower, "19")) {
+        base_val = 19.0;  // Metonic cycle
+    } else if (strstr(lower, "thirtyone") || strstr(lower, "31")) {
+        base_val = 31.0;  // Crown
     } else {
-        base_val = 3.0;  // Default
+        base_val = 3.0;  // Default: triad base
     }
     
-    // ν(λ) = 3^(λ mod 3) + 1 (adjusted to avoid zero)
-    double mod_val = prime_pow(3.0, prime_fmod(base_val, 3.0));
-    return mod_val + 1.0;
+    return base_val;
 }
 
 void update_phi_freqs(const double *phi_base, double *phi_updated,
