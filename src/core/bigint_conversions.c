@@ -1,12 +1,28 @@
 /*
  * BigInt Conversion Functions
  * Provides conversion between BigInt and standard numeric types
+ * 
+ * CRITICAL: This file maintains mathematical independence.
+ * NO math.h dependency - uses custom implementations.
  */
 
 #include "prime_types.h"
 #include "bigint_core.h"
-#include <math.h>
 #include <limits.h>
+
+// Custom infinity check without math.h
+// A double is infinity if all exponent bits are 1 and mantissa is 0
+static inline int custom_isinf(double x) {
+    union { double d; uint64_t u; } val;
+    val.d = x;
+    // IEEE 754: exponent = 0x7FF (all 1s), mantissa = 0
+    return ((val.u & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) &&
+           ((val.u & 0x000FFFFFFFFFFFFFULL) == 0);
+}
+
+// Custom positive infinity constant
+#define CUSTOM_INFINITY (1.0 / 0.0)
+#define CUSTOM_NEG_INFINITY (-1.0 / 0.0)
 
 /*
  * Convert BigInt to double
@@ -27,8 +43,8 @@ double bigint_to_double(const BigInt *n) {
         multiplier *= base;
         
         // Check for infinity
-        if (isinf(result)) {
-            return n->negative ? -INFINITY : INFINITY;
+        if (custom_isinf(result)) {
+            return n->negative ? CUSTOM_NEG_INFINITY : CUSTOM_INFINITY;
         }
     }
     

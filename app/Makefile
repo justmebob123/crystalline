@@ -10,6 +10,8 @@ INCLUDES = -I../include -I.
 APP_SOURCES = $(filter-out ui/tabs/%.c test_%.c, $(wildcard *.c))
 APP_OBJECTS = $(APP_SOURCES:.c=.o)
 
+# Note: text_input.c is included in APP_SOURCES automatically
+
 # Tab source files in ui/tabs/ subdirectory
 TAB_SOURCES = $(wildcard ui/tabs/*.c)
 TAB_OBJECTS = $(TAB_SOURCES:.c=.o)

@@ -105,8 +105,19 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->attention_layers[i].num_heads = config->num_heads;
         model->attention_layers[i].head_dim = head_dim;
         
-        // Assign weight pointers
+        // Assign weight pointers with bounds checking
         size_t qkv_size = config->embedding_dim * config->embedding_dim;
+        
+        // Verify we don't exceed allocated weight buffer
+        if (weight_offset + 3 * qkv_size > model->num_weights) {
+            fprintf(stderr, "Error: Weight offset exceeds allocated buffer at layer %u\n", i);
+            free(model->attention_layers);
+            free(model->weights);
+            free(model->tokens);
+            free(model);
+            return NULL;
+        }
+        
         model->attention_layers[i].query_lattice = model->weights + weight_offset;
         weight_offset += qkv_size;
         model->attention_layers[i].key_lattice = model->weights + weight_offset;
@@ -135,6 +146,18 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         
         size_t w1_size = config->embedding_dim * config->ff_dim;
         size_t w2_size = config->ff_dim * config->embedding_dim;
+        size_t total_ff_size = w1_size + config->ff_dim + w2_size + config->embedding_dim;
+        
+        // Verify we don't exceed allocated weight buffer
+        if (weight_offset + total_ff_size > model->num_weights) {
+            fprintf(stderr, "Error: Weight offset exceeds allocated buffer in FF layer %u\n", i);
+            free(model->ff_layers);
+            free(model->attention_layers);
+            free(model->weights);
+            free(model->tokens);
+            free(model);
+            return NULL;
+        }
         
         model->ff_layers[i].w1_lattice = model->weights + weight_offset;
         weight_offset += w1_size;

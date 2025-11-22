@@ -1,28 +1,55 @@
 #define _GNU_SOURCE
 #include "../include/prime_math_custom.h"
 #include "../include/prime_math.h"
-#include <math.h>
+
+/*
+ * CRITICAL: This file maintains mathematical independence.
+ * NO math.h dependency - uses custom implementations.
+ */
+
+// Custom absolute value without math.h
+static inline double custom_fabs(double x) {
+    return (x < 0.0) ? -x : x;
+}
+
+// Custom NaN check without math.h
+// IEEE 754: NaN has exponent = 0x7FF and non-zero mantissa
+static inline int custom_isnan(double x) {
+    union { double d; uint64_t u; } val;
+    val.d = x;
+    return ((val.u & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) &&
+           ((val.u & 0x000FFFFFFFFFFFFFULL) != 0);
+}
+
+// Custom infinity check without math.h
+// IEEE 754: infinity has exponent = 0x7FF and zero mantissa
+static inline int custom_isinf(double x) {
+    union { double d; uint64_t u; } val;
+    val.d = x;
+    return ((val.u & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) &&
+           ((val.u & 0x000FFFFFFFFFFFFFULL) == 0);
+}
 
 // Basic utility functions
 double prime_fabs(double x) {
-    return fabs(x);
+    return custom_fabs(x);
 }
 
 // Float absolute value function - moved to prime_float_math.c
 
 int prime_isnan(double x) {
-    return isnan(x);
+    return custom_isnan(x);
 }
 
 int prime_isinf(double x) {
-    return isinf(x);
+    return custom_isinf(x);
 }
 
 // Fixed-point conversion functions
 // FIXED_POINT_SCALE defined in prime_types.h
 
 uint64_t double_to_fixed(double x) {
-    return (uint64_t)(fabs(x) * FIXED_POINT_SCALE);
+    return (uint64_t)(custom_fabs(x) * FIXED_POINT_SCALE);
 }
 
 double fixed_to_double(uint64_t x) {

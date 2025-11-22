@@ -328,16 +328,22 @@ int cllm_check_model_health(CLLMModel* model) {
     }
     
     // Check attention layers
-    for (uint32_t layer = 0; layer < model->num_layers && issues < 10; layer++) {
-        AttentionLayer* attn = &model->attention_layers[layer];
-        uint32_t d_model = attn->num_heads * attn->head_dim;
-        uint32_t size = d_model * d_model;
-        
-        if (attn->query_lattice) {
-            for (uint32_t i = 0; i < size && issues < 10; i++) {
-                if (prime_isnan(attn->query_lattice[i]) || prime_isinf(attn->query_lattice[i])) {
-                    fprintf(stderr, "Warning: NaN/Inf in layer %u query weights\n", layer);
-                    issues++;
+    if (model->attention_layers) {
+        for (uint32_t layer = 0; layer < model->num_layers && issues < 10; layer++) {
+            AttentionLayer* attn = &model->attention_layers[layer];
+            
+            // Validate attention layer structure
+            if (!attn) continue;
+            
+            uint32_t d_model = attn->num_heads * attn->head_dim;
+            uint32_t size = d_model * d_model;
+            
+            if (attn->query_lattice) {
+                for (uint32_t i = 0; i < size && issues < 10; i++) {
+                    if (prime_isnanf(attn->query_lattice[i]) || prime_isinff(attn->query_lattice[i])) {
+                        fprintf(stderr, "Warning: NaN/Inf in layer %u query weights\n", layer);
+                        issues++;
+                    }
                 }
             }
         }

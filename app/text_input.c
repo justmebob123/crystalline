@@ -1,0 +1,239 @@
+#include "text_input.h"
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+void text_input_init(TextInput* input, const char* label, int x, int y, int w, int h) {
+    if (!input) return;
+    
+    memset(input->text, 0, MAX_INPUT_LENGTH);
+    input->cursor_pos = 0;
+    input->active = false;
+    input->bounds.x = x;
+    input->bounds.y = y;
+    input->bounds.w = w;
+    input->bounds.h = h;
+    input->numeric_only = false;
+    input->min_value = 0.0;
+    input->max_value = 0.0;
+    
+    if (label) {
+        strncpy(input->label, label, sizeof(input->label) - 1);
+        input->label[sizeof(input->label) - 1] = '\0';
+    } else {
+        input->label[0] = '\0';
+    }
+}
+
+void text_input_set_numeric(TextInput* input, double min, double max) {
+    if (!input) return;
+    input->numeric_only = true;
+    input->min_value = min;
+    input->max_value = max;
+}
+
+bool text_input_handle_event(TextInput* input, SDL_Event* event) {
+    if (!input) return false;
+    
+    if (event->type == SDL_MOUSEBUTTONDOWN) {
+        int mx = event->button.x;
+        int my = event->button.y;
+        
+        // Check if click is inside bounds
+        if (mx >= input->bounds.x && mx < input->bounds.x + input->bounds.w &&
+            my >= input->bounds.y && my < input->bounds.y + input->bounds.h) {
+            text_input_activate(input);
+            return true;
+        } else if (input->active) {
+            text_input_deactivate(input);
+            return true;
+        }
+    }
+    
+    if (!input->active) return false;
+    
+    if (event->type == SDL_TEXTINPUT) {
+        int len = strlen(input->text);
+        char c = event->text.text[0];
+        
+        // Validate input
+        if (input->numeric_only) {
+            if (!isdigit(c) && c != '.' && c != '-') {
+                return true; // Consume but ignore
+            }
+        }
+        
+        if (len < MAX_INPUT_LENGTH - 1) {
+            input->text[len] = c;
+            input->text[len + 1] = '\0';
+            input->cursor_pos = len + 1;
+        }
+        return true;
+    }
+    
+    if (event->type == SDL_KEYDOWN) {
+        switch (event->key.keysym.sym) {
+            case SDLK_BACKSPACE:
+                if (strlen(input->text) > 0) {
+                    input->text[strlen(input->text) - 1] = '\0';
+                    input->cursor_pos = strlen(input->text);
+                }
+                return true;
+                
+            case SDLK_RETURN:
+            case SDLK_KP_ENTER:
+                text_input_deactivate(input);
+                return true;
+                
+            case SDLK_ESCAPE:
+                text_input_deactivate(input);
+                return true;
+                
+            case SDLK_LEFT:
+                if (input->cursor_pos > 0) {
+                    input->cursor_pos--;
+                }
+                return true;
+                
+            case SDLK_RIGHT:
+                if (input->cursor_pos < (int)strlen(input->text)) {
+                    input->cursor_pos++;
+                }
+                return true;
+                
+            case SDLK_HOME:
+                input->cursor_pos = 0;
+                return true;
+                
+            case SDLK_END:
+                input->cursor_pos = strlen(input->text);
+                return true;
+        }
+    }
+    
+    return false;
+}
+
+void text_input_render(TextInput* input, SDL_Renderer* renderer, TTF_Font* font) {
+    if (!input || !renderer) return;
+    
+    // Draw background
+    SDL_Color bg_color = input->active ? 
+        (SDL_Color){255, 255, 255, 255} : 
+        (SDL_Color){200, 200, 200, 255};
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
+    SDL_RenderFillRect(renderer, &input->bounds);
+    
+    // Draw border
+    SDL_Color border_color = input->active ? 
+        (SDL_Color){0, 120, 215, 255} : 
+        (SDL_Color){100, 100, 100, 255};
+    SDL_SetRenderDrawColor(renderer, border_color.r, border_color.g, border_color.b, border_color.a);
+    SDL_RenderDrawRect(renderer, &input->bounds);
+    
+    // Draw label if exists
+    if (font && strlen(input->label) > 0) {
+        SDL_Color text_color = {0, 0, 0, 255};
+        SDL_Surface* label_surface = TTF_RenderText_Blended(font, input->label, text_color);
+        if (label_surface) {
+            SDL_Texture* label_texture = SDL_CreateTextureFromSurface(renderer, label_surface);
+            if (label_texture) {
+                SDL_Rect label_rect = {
+                    input->bounds.x,
+                    input->bounds.y - 20,
+                    label_surface->w,
+                    label_surface->h
+                };
+                SDL_RenderCopy(renderer, label_texture, NULL, &label_rect);
+                SDL_DestroyTexture(label_texture);
+            }
+            SDL_FreeSurface(label_surface);
+        }
+    }
+    
+    // Draw text
+    if (font && strlen(input->text) > 0) {
+        SDL_Color text_color = {0, 0, 0, 255};
+        SDL_Surface* text_surface = TTF_RenderText_Blended(font, input->text, text_color);
+        if (text_surface) {
+            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+            if (text_texture) {
+                SDL_Rect text_rect = {
+                    input->bounds.x + 5,
+                    input->bounds.y + (input->bounds.h - text_surface->h) / 2,
+                    text_surface->w,
+                    text_surface->h
+                };
+                SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
+                SDL_DestroyTexture(text_texture);
+            }
+            SDL_FreeSurface(text_surface);
+        }
+    }
+    
+    // Draw cursor if active
+    if (input->active) {
+        int cursor_x = input->bounds.x + 5;
+        if (font && strlen(input->text) > 0) {
+            int text_w = 0;
+            TTF_SizeText(font, input->text, &text_w, NULL);
+            cursor_x += text_w;
+        }
+        
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderDrawLine(renderer, 
+            cursor_x, input->bounds.y + 5,
+            cursor_x, input->bounds.y + input->bounds.h - 5);
+    }
+}
+
+const char* text_input_get_text(TextInput* input) {
+    return input ? input->text : "";
+}
+
+double text_input_get_number(TextInput* input) {
+    if (!input || !input->numeric_only) return 0.0;
+    
+    double value = atof(input->text);
+    
+    // Clamp to min/max if set
+    if (input->max_value > input->min_value) {
+        if (value < input->min_value) value = input->min_value;
+        if (value > input->max_value) value = input->max_value;
+    }
+    
+    return value;
+}
+
+void text_input_set_text(TextInput* input, const char* text) {
+    if (!input || !text) return;
+    
+    strncpy(input->text, text, MAX_INPUT_LENGTH - 1);
+    input->text[MAX_INPUT_LENGTH - 1] = '\0';
+    input->cursor_pos = strlen(input->text);
+}
+
+void text_input_clear(TextInput* input) {
+    if (!input) return;
+    
+    memset(input->text, 0, MAX_INPUT_LENGTH);
+    input->cursor_pos = 0;
+}
+
+bool text_input_is_active(TextInput* input) {
+    return input ? input->active : false;
+}
+
+void text_input_activate(TextInput* input) {
+    if (!input) return;
+    
+    input->active = true;
+    SDL_StartTextInput();
+}
+
+void text_input_deactivate(TextInput* input) {
+    if (!input) return;
+    
+    input->active = false;
+    SDL_StopTextInput();
+}
