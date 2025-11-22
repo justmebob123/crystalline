@@ -24,6 +24,20 @@ static inline float prime_expf_custom(float x) { return (float)prime_exp((double
 CLLMInference* cllm_inference_init(CLLMModel* model) {
     if (!model) return NULL;
     
+    // Validate model header fields
+    if (model->header.num_heads == 0) {
+        fprintf(stderr, "Error: model->header.num_heads is 0\n");
+        return NULL;
+    }
+    if (model->header.context_length == 0) {
+        fprintf(stderr, "Error: model->header.context_length is 0\n");
+        return NULL;
+    }
+    if (model->header.embedding_dim == 0) {
+        fprintf(stderr, "Error: model->header.embedding_dim is 0\n");
+        return NULL;
+    }
+    
     CLLMInference* inference = (CLLMInference*)calloc(1, sizeof(CLLMInference));
     if (!inference) return NULL;
     

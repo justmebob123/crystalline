@@ -40,6 +40,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.vocab_size = config->vocab_size;
     model->header.embedding_dim = config->embedding_dim;
     model->header.num_layers = config->num_layers;
+    model->header.num_heads = config->num_heads;
+    model->header.context_length = config->max_seq_len;
     
     // Allocate tokens array
     model->tokens = (CLLMToken*)calloc(config->vocab_size, sizeof(CLLMToken));
