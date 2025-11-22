@@ -8,7 +8,24 @@
 /**
  * Data Loader Structure
  */
-typedef struct CLLMDataLoader CLLMDataLoader;
+typedef struct {
+    CLLMTokenizer* tokenizer;
+    char** documents;
+    size_t num_documents;
+    size_t capacity;
+    
+    // Statistics
+    size_t total_chars;
+    size_t total_tokens;
+    size_t total_lines;
+    
+    // Configuration
+    int min_token_length;
+    int max_token_length;
+    int lowercase;
+    int remove_punctuation;
+    int remove_numbers;
+} CLLMDataLoader;
 
 /**
  * Token Dataset Structure

@@ -18,9 +18,10 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
     
     CLLMModel* model = training->model;
     
-    // Zero main gradient buffer
+    // Zero main gradient buffer (only embeddings are stored here)
     if (training->gradients) {
-        memset(training->gradients, 0, model->header.total_params * sizeof(float));
+        size_t embed_size = model->vocab_size * model->embedding_dim;
+        memset(training->gradients, 0, embed_size * sizeof(float));
     }
     
     // Zero attention gradients
@@ -83,15 +84,15 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
  * Backward pass through layer normalization
  */
 static void backward_layer_norm(float* grad_out, float* grad_in, float* x, 
-                                CLLMLayerNorm* ln, float* grad_gamma, float* grad_beta, int dim) {
+                                CLLMLayerNorm* ln, float* grad_gamma, float* grad_beta, uint64_t dim) {
     // Compute mean and variance
     float mean = 0.0f, var = 0.0f;
-    for (int i = 0; i < dim; i++) {
+    for (uint64_t i = 0; i < dim; i++) {
         mean += x[i];
     }
     mean /= dim;
     
-    for (int i = 0; i < dim; i++) {
+    for (uint64_t i = 0; i < dim; i++) {
         float diff = x[i] - mean;
         var += diff * diff;
     }
@@ -103,7 +104,7 @@ static void backward_layer_norm(float* grad_out, float* grad_in, float* x,
     // Compute gradients
     float grad_var = 0.0f, grad_mean = 0.0f;
     
-    for (int i = 0; i < dim; i++) {
+    for (uint64_t i = 0; i < dim; i++) {
         float x_norm = (x[i] - mean) * inv_std;
         
         // Gradient w.r.t. gamma and beta
@@ -119,7 +120,7 @@ static void backward_layer_norm(float* grad_out, float* grad_in, float* x,
     }
     
     // Gradient w.r.t. input
-    for (int i = 0; i < dim; i++) {
+    for (uint64_t i = 0; i < dim; i++) {
         float grad_x_norm = grad_out[i] * ln->gamma[i];
         grad_in[i] = grad_x_norm * inv_std + 
                      grad_var * 2.0f * (x[i] - mean) / dim + 
@@ -225,7 +226,7 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
     if (!input_tokens || !target_tokens || batch_size <= 0 || seq_len <= 0) return;
     
     CLLMModel* model = training->model;
-    uint32_t embed_dim = model->embedding_dim;
+    uint64_t embed_dim = model->embedding_dim;
     uint32_t num_layers = model->num_layers;
     
     // Zero all gradients
@@ -266,7 +267,7 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
             
             // Compute simple loss gradient (MSE with target embedding)
             float* target_embed = &model->embeddings.embeddings[target_id * embed_dim];
-            for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint64_t d = 0; d < embed_dim; d++) {
                 layer_grad[d] = 2.0f * (layer_input[d] - target_embed[d]) / (batch_size * seq_len);
             }
             
@@ -300,7 +301,7 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
             
             // Accumulate embedding gradients
             float* grad_embed = &training->gradients[token_id * embed_dim];
-            for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint64_t d = 0; d < embed_dim; d++) {
                 grad_embed[d] += layer_grad[d];
             }
         }

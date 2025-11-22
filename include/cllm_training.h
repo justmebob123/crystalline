@@ -82,6 +82,7 @@ typedef struct {
 } CLLMTraining;
 
 /* Loss computation functions */
+float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
 float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size);
 void cllm_compute_loss_gradient(float* logits, uint32_t target, float* grad_output, int vocab_size);
 float cllm_compute_batch_loss(float* logits, uint32_t* targets, int batch_size, int vocab_size);

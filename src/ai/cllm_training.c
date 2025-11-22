@@ -430,7 +430,9 @@ void cllm_training_cleanup(CLLMTraining* training) {
     if (!training) return;
     
     // Free training data
-    free(training->tokens);
+    // NOTE: training->tokens is typically a pointer to external data (dataset->tokens)
+    // and should NOT be freed here. Set to NULL before calling cleanup if you don't want it freed.
+    // free(training->tokens);  // REMOVED - tokens are owned by dataset
     free(training->gradients);
     free(training->optimizer_state);
     
