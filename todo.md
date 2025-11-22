@@ -25,15 +25,15 @@ The current implementation has placeholder attention backward pass. Need to impl
 
 ## 🔄 In Progress
 
-### 1. Complete Attention Backward Pass
-- [x] Analyze forward pass structure (Q, K, V projections)
-- [x] Implement softmax backward pass
-- [x] Implement scaled dot-product attention backward
-- [x] Compute gradients for input through Q, K, V projections
-- [ ] Accumulate gradients for query_lattice weights
-- [ ] Accumulate gradients for key_lattice weights
-- [ ] Accumulate gradients for value_lattice weights
-- [ ] Test gradient flow through attention
+### 1. Weight Gradient Accumulation (NEXT PRIORITY)
+- [x] Attention gradient flow complete (input gradients)
+- [ ] Add weight gradient buffers to training state
+- [ ] Implement query_lattice weight gradient accumulation
+- [ ] Implement key_lattice weight gradient accumulation
+- [ ] Implement value_lattice weight gradient accumulation
+- [ ] Implement feed-forward weight gradient accumulation
+- [ ] Implement layer norm weight gradient accumulation
+- [ ] Connect weight gradients to optimizer
 
 ### 2. Integrate Backward Pass into Training
 - [ ] Connect attention gradients to optimizer
