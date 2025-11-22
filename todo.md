@@ -1,15 +1,15 @@
 # Crystalline Repository - Task List
 
-## 🎯 CURRENT FOCUS: Complete CLLM Backward Pass
+## 🎯 CURRENT FOCUS: Weight Gradient Accumulation
 
-### Active Task: Implement Full Attention Backward Pass
-**Status:** 🔄 IN PROGRESS
+### Active Task: Implement Weight Gradient Buffers and Accumulation
+**Status:** 📋 PLANNED (Ready to implement)
 
-The current implementation has placeholder attention backward pass. Need to implement:
-1. Gradient through softmax
-2. Gradient through scaled dot-product attention
-3. Gradients for Q, K, V weight matrices
-4. Proper gradient accumulation
+The backward pass now computes complete gradient flow through all layers. Next step:
+1. Add gradient buffers for all weight types (attention, FF, layer norm)
+2. Accumulate weight gradients during backward pass
+3. Extend optimizer to update all weights
+4. Test gradient correctness with numerical checking
 
 ## ✅ Completed Tasks
 - [x] Repository cleanup and naming conventions
@@ -20,8 +20,12 @@ The current implementation has placeholder attention backward pass. Need to impl
 - [x] CLLM embedding backward pass
 - [x] Layer normalization backward pass (implemented)
 - [x] Feed-forward backward pass (implemented)
+- [x] Attention backward pass with complete gradient flow
+- [x] Softmax backward implementation
+- [x] Scaled dot-product attention backward
 - [x] Fix linker errors and segfaults
 - [x] Build verification (0 errors, 0 warnings)
+- [x] Comprehensive implementation documentation
 
 ## 🔄 In Progress
 
