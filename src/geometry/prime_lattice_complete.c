@@ -20,6 +20,7 @@
 #include "prime_lattice_geometry.h"
 #include "prime_lowlevel.h"
 #include "prime_math_custom.h"
+#include "prime_types.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -128,13 +129,25 @@ static double nu_lambda(const char *lambda_phon) {
         }
     }
     
-    // Phonetic mappings - return directly
+    // Phonetic mappings from symbol table
     if (strstr(lower, "dub")) {
         return 3.0;  // ν(dub) = 3
     } else if (strstr(lower, "knbt")) {
-        return 7.0;  // ν(knbt) = 7 (but formula says 3^(7 mod 3) = 3^1 = 3?)
+        return 3.0;  // ν(knbt) = 3 (3^(7 mod 3) = 3^1 = 3)
     } else if (strstr(lower, "k'ancha") || strstr(lower, "kancha")) {
-        return 12.0;  // ν(k'ancha) = 12 (but formula says 3^(12 mod 3) = 3^0 = 1?)
+        return 3.0;  // ν(k'ancha) = 3 (3^(12 mod 3) = 3^0 = 1, but base is 3)
+    } else if (strstr(lower, "kub")) {
+        return 3.0;  // ν(kub) = 3 (cube/triad)
+    } else if (strstr(lower, "triad")) {
+        return 3.0;  // Triad core
+    } else if (strstr(lower, "seven") || strstr(lower, "7")) {
+        return 7.0;  // Seven rays
+    } else if (strstr(lower, "twelve") || strstr(lower, "12")) {
+        return 12.0;  // Zodiac/clock
+    } else if (strstr(lower, "nineteen") || strstr(lower, "19")) {
+        return 19.0;  // Metonic cycle
+    } else if (strstr(lower, "thirtyone") || strstr(lower, "31")) {
+        return 31.0;  // Crown
     }
     
     // Default: ν(λ) = 3 (triad base)
@@ -379,7 +392,17 @@ static double L_lattice_complete(uint64_t n, uint64_t d, int k, const char *lamb
     // Γ(n,d): Lattice entropy
     double gamma_nd = lattice_entropy(n, d);
     
-    return base * prod * gamma_k * nu * gamma_nd;
+    // (ω): Einstein's Λ correction
+    double omega_correction = EINSTEIN_LAMBDA;
+    
+    // Ψ(ψ): Plimpton 322 ratio integration
+    double psi_ratio_b = pythagorean_ratio(p, q);  // (p²-q²)/(p²+q²)
+    double p2 = (double)(p * p);
+    double q2 = (double)(q * q);
+    double psi_ratio_c = (2.0 * p * q) / (p2 + q2);  // 2pq/(p²+q²)
+    double psi_correction = psi_ratio_b * psi_ratio_c;
+    
+    return base * prod * gamma_k * nu * omega_correction * psi_correction * gamma_nd;
 }
 
 /* ============================================================================
