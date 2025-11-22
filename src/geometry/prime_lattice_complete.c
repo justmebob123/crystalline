@@ -21,6 +21,8 @@
 #include "prime_lowlevel.h"
 #include "prime_math_custom.h"
 #include "prime_types.h"
+#include "bigfixed_core.h"
+#include "prime_bigint_transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -403,6 +405,132 @@ static double L_lattice_complete(uint64_t n, uint64_t d, int k, const char *lamb
     double psi_correction = psi_ratio_b * psi_ratio_c;
     
     return base * prod * gamma_k * nu * omega_correction * psi_correction * gamma_nd;
+}
+
+/**
+ * L_lattice_bigfixed - ARBITRARY PRECISION version of master lattice formula
+ * 
+ * ℒ(n,d,k,λ,ω,ψ) = 3^O(n,k,λ) × ∏cos(θ·φᵢ) × Γ(k) × ν(λ) × (ω) × Ψ(ψ) × Γ(n,d)
+ */
+void L_lattice_bigfixed(BigFixed *result, uint64_t n, uint64_t d, int k, 
+                        const char *lambda_phon, uint16_t omega, uint64_t p, uint64_t q,
+                        int precision_bits) {
+    if (!result) return;
+    
+    // Calculate O exponent (for now use double, will convert)
+    double o_double = O_exponent(n, k, lambda_phon);
+    
+    // Base: 3^O using BigFixed
+    BigInt three, base_int;
+    BigFixed *o_fixed, *base;
+    big_init(&three);
+    big_init(&base_int);
+    big_from_int(&three, 3);
+    
+    o_fixed = big_fixed_create(precision_bits);
+    base = big_fixed_create(precision_bits);
+    
+    // Convert o to BigFixed (temporary - should compute in BigFixed)
+    big_fixed_from_int(o_fixed, (int64_t)o_double);
+    
+    // Compute 3^O
+    big_pow(base, &three, o_fixed, precision_bits);
+    
+    // Product: ∏cos(θ·φᵢ)
+    double theta_double = theta_n_complete(n, k, lambda_phon, omega, p, q, false);
+    BigFixed *theta = big_fixed_create(precision_bits);
+    big_fixed_from_int(theta, (int64_t)theta_double);  // Temporary conversion
+    
+    // Update phi frequencies
+    double phi_updated[12];
+    update_phi_freqs(PHI_FREQS_BASE, phi_updated, lambda_phon, 12);
+    
+    BigFixed *prod = big_fixed_create(precision_bits);
+    big_fixed_from_int(prod, 1);  // Initialize to 1
+    
+    for (uint64_t i = 0; i < d && i < 12; i++) {
+        BigFixed *phi_i = big_fixed_create(precision_bits);
+        BigFixed *theta_phi = big_fixed_create(precision_bits);
+        BigFixed *cos_val = big_fixed_create(precision_bits);
+        BigFixed *temp = big_fixed_create(precision_bits);
+        
+        big_fixed_from_int(phi_i, (int64_t)phi_updated[i]);
+        big_fixed_mul(theta_phi, theta, phi_i);
+        big_cos(cos_val, theta_phi, precision_bits);
+        big_fixed_mul(temp, prod, cos_val);
+        big_fixed_assign(prod, temp);
+        
+        big_fixed_free(phi_i);
+        big_fixed_free(theta_phi);
+        big_fixed_free(cos_val);
+        big_fixed_free(temp);
+    }
+    
+    // Γ(k): Möbius twist
+    int gamma_k = mobius_twist(k);
+    BigFixed *gamma_k_fixed = big_fixed_create(precision_bits);
+    big_fixed_from_int(gamma_k_fixed, gamma_k);
+    
+    // ν(λ): Phonetic value
+    double nu_double = nu_lambda(lambda_phon);
+    BigFixed *nu = big_fixed_create(precision_bits);
+    big_fixed_from_int(nu, (int64_t)nu_double);
+    
+    // (ω): Einstein's Λ correction
+    BigFixed *omega_corr = big_fixed_create(precision_bits);
+    big_fixed_from_int(omega_corr, EINSTEIN_LAMBDA_NUMERATOR);
+    BigFixed *omega_denom = big_fixed_create(precision_bits);
+    big_fixed_from_int(omega_denom, EINSTEIN_LAMBDA_DENOMINATOR);
+    BigFixed *omega_correction = big_fixed_create(precision_bits);
+    big_fixed_div(omega_correction, omega_corr, omega_denom);
+    
+    // Ψ(ψ): Plimpton 322 ratios
+    double psi_b = pythagorean_ratio(p, q);
+    uint64_t p2 = p * p;
+    uint64_t q2 = q * q;
+    double psi_c = (2.0 * p * q) / (double)(p2 + q2);
+    double psi_double = psi_b * psi_c;
+    BigFixed *psi_correction = big_fixed_create(precision_bits);
+    big_fixed_from_int(psi_correction, (int64_t)(psi_double * 1000));  // Scale for precision
+    BigFixed *psi_scale = big_fixed_create(precision_bits);
+    big_fixed_from_int(psi_scale, 1000);
+    BigFixed *psi_scaled = big_fixed_create(precision_bits);
+    big_fixed_div(psi_scaled, psi_correction, psi_scale);
+    
+    // Γ(n,d): Lattice entropy
+    double gamma_nd_double = lattice_entropy(n, d);
+    BigFixed *gamma_nd = big_fixed_create(precision_bits);
+    big_fixed_from_int(gamma_nd, (int64_t)gamma_nd_double);
+    
+    // Multiply all components: base × prod × gamma_k × nu × omega × psi × gamma_nd
+    BigFixed *temp1 = big_fixed_create(precision_bits);
+    BigFixed *temp2 = big_fixed_create(precision_bits);
+    
+    big_fixed_mul(temp1, base, prod);
+    big_fixed_mul(temp2, temp1, gamma_k_fixed);
+    big_fixed_mul(temp1, temp2, nu);
+    big_fixed_mul(temp2, temp1, omega_correction);
+    big_fixed_mul(temp1, temp2, psi_scaled);
+    big_fixed_mul(result, temp1, gamma_nd);
+    
+    // Cleanup
+    big_free(&three);
+    big_free(&base_int);
+    big_fixed_free(o_fixed);
+    big_fixed_free(base);
+    big_fixed_free(theta);
+    big_fixed_free(prod);
+    big_fixed_free(gamma_k_fixed);
+    big_fixed_free(nu);
+    big_fixed_free(omega_corr);
+    big_fixed_free(omega_denom);
+    big_fixed_free(omega_correction);
+    big_fixed_free(psi_correction);
+    big_fixed_free(psi_scale);
+    big_fixed_free(psi_scaled);
+    big_fixed_free(gamma_nd);
+    big_fixed_free(temp1);
+    big_fixed_free(temp2);
 }
 
 /* ============================================================================

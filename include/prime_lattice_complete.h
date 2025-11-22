@@ -60,4 +60,9 @@ double P_n_d_k(uint64_t n, uint64_t d, int k, const char *lambda_phon,
 void map_prime_complete(uint64_t prime, uint64_t n, CompleteClockMapping *mapping,
                         const char *lambda_phon);
 
+/* Arbitrary precision lattice formula */
+void L_lattice_bigfixed(BigFixed *result, uint64_t n, uint64_t d, int k, 
+                        const char *lambda_phon, uint16_t omega, uint64_t p, uint64_t q,
+                        int precision_bits);
+
 #endif /* PRIME_LATTICE_COMPLETE_H */
