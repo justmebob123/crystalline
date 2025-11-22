@@ -46,7 +46,8 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         if (training->attention_grads && model->attention_layers) {
             for (uint32_t i = 0; i < num_layers; i++) {
                 AttentionLayer* layer = &model->attention_layers[i];
-                size_t weight_size = layer->num_heads * layer->head_dim * layer->head_dim;
+                uint32_t dim = layer->num_heads * layer->head_dim;
+                size_t weight_size = dim * dim;
                 
                 training->attention_grads[i].query_lattice = (float*)calloc(weight_size, sizeof(float));
                 training->attention_grads[i].key_lattice = (float*)calloc(weight_size, sizeof(float));
@@ -57,9 +58,39 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->attention_grads = NULL;
     }
     
-    // Skip FF and LN gradients for now - keep it simple
-    training->ff_grads = NULL;
-    training->ln_grads = NULL;
+    // Allocate feed-forward gradient buffers
+    if (num_layers > 0 && num_layers < 100) {
+        training->ff_grads = (typeof(training->ff_grads))calloc(num_layers, sizeof(*training->ff_grads));
+        
+        if (training->ff_grads && model->ff_layers) {
+            for (uint32_t i = 0; i < num_layers; i++) {
+                FeedForwardLayer* layer = &model->ff_layers[i];
+                
+                training->ff_grads[i].w1_lattice = (float*)calloc(layer->input_dim * layer->hidden_dim, sizeof(float));
+                training->ff_grads[i].w2_lattice = (float*)calloc(layer->hidden_dim * layer->output_dim, sizeof(float));
+                training->ff_grads[i].bias1 = (float*)calloc(layer->hidden_dim, sizeof(float));
+                training->ff_grads[i].bias2 = (float*)calloc(layer->output_dim, sizeof(float));
+            }
+        }
+    } else {
+        training->ff_grads = NULL;
+    }
+    
+    // Allocate layer norm gradient buffers
+    if (num_layers > 0 && num_layers < 100) {
+        training->ln_grads = (typeof(training->ln_grads))calloc(num_layers, sizeof(*training->ln_grads));
+        
+        if (training->ln_grads && model->layer_norms) {
+            for (uint32_t i = 0; i < num_layers; i++) {
+                CLLMLayerNorm* layer = &model->layer_norms[i];
+                
+                training->ln_grads[i].gamma = (float*)calloc(layer->dim, sizeof(float));
+                training->ln_grads[i].beta = (float*)calloc(layer->dim, sizeof(float));
+            }
+        }
+    } else {
+        training->ln_grads = NULL;
+    }
     
     training->start_time = time(NULL);
     
@@ -180,24 +211,7 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t
 }
 
 // Forward declaration
-void cllm_backward_complete(CLLMTraining* training, uint32_t* input_tokens,
-                           uint32_t* target_tokens, int batch_size, int seq_len);
-
-// Backward pass (compute gradients)
-void cllm_backward(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens) {
-    if (!training || !input_tokens || !target_tokens) return;
-    
-    int batch_size = training->config.batch_size;
-    int seq_len = training->config.sequence_length;
-    
-    if (num_tokens < batch_size * seq_len) {
-        size_t total_params = training->model->header.total_params;
-        memset(training->gradients, 0, total_params * sizeof(float));
-        return;
-    }
-    
-    cllm_backward_complete(training, input_tokens, target_tokens, batch_size, seq_len);
-}
+// cllm_backward is now implemented in cllm_backward.c
 
 // Adam optimizer step
 void cllm_optimizer_step(CLLMTraining* training) {

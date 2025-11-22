@@ -125,8 +125,12 @@ void cllm_adam_step(CLLMTraining* training, float learning_rate) {
     
     // Skip if no gradients allocated
     if (!training->gradients || !training->optimizer_state) {
+        printf("DEBUG: No gradients, skipping update\n");
         return;
     }
+    
+    printf("DEBUG: Updating embeddings...\n");
+    fflush(stdout);
     
     // Update embeddings (if gradients available)
     if (model->embeddings.embeddings) {
@@ -134,9 +138,15 @@ void cllm_adam_step(CLLMTraining* training, float learning_rate) {
         float* m = training->optimizer_state;
         float* v = &training->optimizer_state[embed_size];
         
+        printf("DEBUG: embed_size=%zu, grad[0]=%.8f\n", embed_size, training->gradients[0]);
+        fflush(stdout);
+        
         adam_update_params(model->embeddings.embeddings, training->gradients,
                           m, v, embed_size, learning_rate, beta1, beta2,
                           epsilon, bias_correction1, bias_correction2);
+        
+        printf("DEBUG: After update, embed[0]=%.8f\n", model->embeddings.embeddings[0]);
+        fflush(stdout);
     }
     
     // Update attention layers

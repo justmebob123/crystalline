@@ -89,6 +89,11 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->embeddings.embedding_dim = config->embedding_dim;
     model->embeddings.embeddings = model->weights;
     
+    // Initialize with small random values
+    for (uint64_t i = 0; i < embedding_weights; i++) {
+        model->embeddings.embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+    }
+    
     // Allocate attention layers
     model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));
     if (!model->attention_layers) {
