@@ -251,30 +251,56 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     if (!inference || !tokens || num_tokens <= 0) return;
     
     CLLMModel* model = inference->model;
+    if (!model) {
+        fprintf(stderr, "Error: Model is NULL in cllm_forward\n");
+        return;
+    }
+    
     uint32_t embed_dim = model->embeddings.embedding_dim;
+    
+    // Check critical pointers
+    if (!inference->hidden_states) {
+        fprintf(stderr, "Error: hidden_states is NULL\n");
+        return;
+    }
+    if (!inference->logits) {
+        fprintf(stderr, "Error: logits is NULL\n");
+        return;
+    }
+    if (!model->embeddings.embeddings) {
+        fprintf(stderr, "Error: embeddings is NULL\n");
+        return;
+    }
     
     // Get embedding for last token
     uint32_t last_token = tokens[num_tokens - 1];
+    if (last_token >= model->vocab_size) {
+        fprintf(stderr, "Error: token %u out of range (vocab_size=%lu)\n", last_token, model->vocab_size);
+        return;
+    }
+    
     cllm_get_embedding(inference, last_token, inference->hidden_states);
     
     // Apply positional encoding
     cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
     
     // Pass through transformer layers
-    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-        // Layer norm
-        cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[layer], embed_dim);
+    if (model->attention_layers && model->ff_layers && model->layer_norms) {
+        for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+            // Layer norm
+            cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[layer], embed_dim);
+            
+            // Attention
+            cllm_crystalline_attention(inference, inference->hidden_states, 
+                                       &model->attention_layers[layer], layer);
+            
+            // Feed-forward
+            cllm_feed_forward(inference->hidden_states, &model->ff_layers[layer]);
+        }
         
-        // Attention
-        cllm_crystalline_attention(inference, inference->hidden_states, 
-                                   &model->attention_layers[layer], layer);
-        
-        // Feed-forward
-        cllm_feed_forward(inference->hidden_states, &model->ff_layers[layer]);
+        // Final layer norm
+        cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[model->num_layers - 1], embed_dim);
     }
-    
-    // Final layer norm
-    cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[model->num_layers - 1], embed_dim);
     
     // Project to vocabulary
     for (uint32_t i = 0; i < model->vocab_size; i++) {

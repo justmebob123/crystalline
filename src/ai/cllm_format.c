@@ -810,12 +810,8 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     } else {
         fprintf(stderr, "Warning: Model has no weights to save (weights=%p, params=%zu)\n", 
                 (void*)model->weights, header.total_params);
-        // Write zeros as placeholder
-        float* zeros = (float*)calloc(header.total_params, sizeof(float));
-        if (zeros) {
-            fwrite(zeros, sizeof(float), header.total_params, file);
-            free(zeros);
-        }
+        // Don't try to allocate huge amounts of memory - just write header
+        // The model can be loaded later and weights initialized
     }
     
     fclose(file);
