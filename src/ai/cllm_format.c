@@ -159,7 +159,16 @@ int cllm_write(const char* filename, CLLMModel* model) {
     
     // Write vocabulary
     fwrite(&model->vocab_size, sizeof(uint32_t), 1, f);
-    fwrite(model->tokens, sizeof(CLLMToken), model->vocab_size, f);
+    if (model->tokens) {
+        fwrite(model->tokens, sizeof(CLLMToken), model->vocab_size, f);
+    } else {
+        // Write zeros if tokens don't exist
+        CLLMToken* zeros = (CLLMToken*)calloc(model->vocab_size, sizeof(CLLMToken));
+        if (zeros) {
+            fwrite(zeros, sizeof(CLLMToken), model->vocab_size, f);
+            free(zeros);
+        }
+    }
     
     // Write lattice structure
     fwrite(&model->num_lattice_points, sizeof(uint32_t), 1, f);
@@ -171,7 +180,16 @@ int cllm_write(const char* filename, CLLMModel* model) {
     fwrite(&model->embeddings.vocab_size, sizeof(uint32_t), 1, f);
     fwrite(&model->embeddings.embedding_dim, sizeof(uint32_t), 1, f);
     size_t embed_size = model->embeddings.vocab_size * model->embeddings.embedding_dim;
-    fwrite(model->embeddings.embeddings, sizeof(float), embed_size, f);
+    if (model->embeddings.embeddings) {
+        fwrite(model->embeddings.embeddings, sizeof(float), embed_size, f);
+    } else {
+        // Write zeros if embeddings don't exist
+        float* zeros = (float*)calloc(embed_size, sizeof(float));
+        if (zeros) {
+            fwrite(zeros, sizeof(float), embed_size, f);
+            free(zeros);
+        }
+    }
     
     // Write transform matrices
     size_t transform_size = model->embeddings.embedding_dim * model->embeddings.embedding_dim;
