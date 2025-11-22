@@ -5,7 +5,9 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 
+#ifndef MAX_INPUT_LENGTH
 #define MAX_INPUT_LENGTH 256
+#endif
 
 typedef struct {
     char text[MAX_INPUT_LENGTH];
