@@ -98,7 +98,7 @@ void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hid
 void cllm_attention_backward(AttentionLayer* layer, float* input, float* grad_output, float* grad_input, int seq_len);
 void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, float* grad_output, float* grad_embeddings, int batch_size);
 void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, float* input, float* grad_output, float* grad_input, int seq_len);
-void cllm_backward_complete(CLLMTraining* training);
+void cllm_backward_complete(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int batch_size, int seq_len);
 
 /* Function declarations */
 int cllm_load_training_data(CLLMTraining* training, const char* filename);
