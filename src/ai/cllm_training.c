@@ -22,18 +22,18 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (!training) return NULL;
     
     training->model = model;
+    training->config = *config;
+    training->current_epoch = 0;
+    training->current_step = 0;
+    training->best_loss = 1e9f;
     
-    // Skip gradient allocation for now - just return a minimal training object
+    // Skip gradient allocation for now - causes crashes
+    // TODO: Fix structure layout issues
     training->gradients = NULL;
     training->optimizer_state = NULL;
     training->attention_grads = NULL;
     training->ff_grads = NULL;
     training->ln_grads = NULL;
-    
-    training->config = *config;
-    training->current_epoch = 0;
-    training->current_step = 0;
-    training->best_loss = 1e9f;
     
     training->start_time = time(NULL);
     

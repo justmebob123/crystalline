@@ -109,47 +109,24 @@ static void adam_update_params(float* weights, float* gradients, float* m, float
 void cllm_adam_step(CLLMTraining* training, float learning_rate) {
     if (!training || !training->model) return;
     
-    printf("DEBUG: cllm_adam_step entered\n");
-    fflush(stdout);
-    
     CLLMModel* model = training->model;
-    
-    printf("DEBUG: model = %p\n", (void*)model);
-    fflush(stdout);
     
     // Adam hyperparameters
     float beta1 = 0.9f;
     float beta2 = 0.999f;
     float epsilon = 1e-8f;
     
-    printf("DEBUG: about to read current_step\n");
-    fflush(stdout);
-    
     // Update step count
     int t = training->current_step + 1;
-    
-    printf("DEBUG: t = %d\n", t);
-    fflush(stdout);
     
     // Bias correction terms
     float bias_correction1 = 1.0f - prime_pow(beta1, (float)t);
     float bias_correction2 = 1.0f - prime_pow(beta2, (float)t);
     
-    printf("DEBUG: bias corrections calculated\n");
-    fflush(stdout);
-    
-    printf("DEBUG: checking gradients pointer\n");
-    fflush(stdout);
-    
     // Skip if no gradients allocated
     if (!training->gradients || !training->optimizer_state) {
-        printf("DEBUG: no gradients, returning\n");
-        fflush(stdout);
         return;
     }
-    
-    printf("DEBUG: gradients exist\n");
-    fflush(stdout);
     
     // Update embeddings (if gradients available)
     if (model->embeddings.embeddings) {
