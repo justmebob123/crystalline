@@ -201,22 +201,18 @@ void cllm_layer_norm_old(float* x, CLLMLayerNorm* ln, int dim) {
 void cllm_crystalline_attention(CLLMInference* inference, float* hidden, AttentionLayer* attn, int layer_id __attribute__((unused))) {
     if (!inference || !hidden || !attn) return;
     
+    // Check if attention weights are initialized
+    if (!attn->query_lattice || !attn->key_lattice || !attn->value_lattice) {
+        fprintf(stderr, "Error: Attention layer weights not initialized\n");
+        return;
+    }
+    
     // This is a simplified version - full implementation would use lattice geometry
     uint32_t embed_dim = inference->model->embeddings.embedding_dim;
     uint32_t head_dim = attn->head_dim;
-    (void)attn; // num_heads used implicitly
     
-    // For now, just apply a simple transformation
+    // For now, just pass through (identity) to avoid crashes
     // TODO: Implement full crystalline attention with geometric properties
-    
-    // Apply query transformation
-    float query[head_dim];
-    for (uint32_t i = 0; i < head_dim; i++) {
-        query[i] = 0.0f;
-        for (uint32_t j = 0; j < embed_dim; j++) {
-            query[i] += hidden[j] * attn->query_lattice[i * embed_dim + j];
-        }
-    }
     
     // Simplified attention output (identity for now)
     // Full implementation would compute attention over lattice structure
