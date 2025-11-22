@@ -727,28 +727,23 @@ CLLMModel* cllm_read_model(const char* filepath) {
         return NULL;
     }
     
-    // Calculate total weights
-    size_t embedding_weights = config.vocab_size * config.embedding_dim;
-    size_t attention_weights_per_layer = 4 * config.embedding_dim * config.embedding_dim;
-    size_t ff_weights_per_layer = 2 * config.embedding_dim * config.ff_dim;
-    size_t total_weights = embedding_weights + 
-                          config.num_layers * (attention_weights_per_layer + ff_weights_per_layer);
+    // Use the total_params from the header (which was saved from model->num_weights)
+    size_t total_weights = header.total_params;
     
-    // Allocate weights if needed
-    if (!model->weights) {
-        model->weights = (float*)malloc(total_weights * sizeof(float));
-        if (!model->weights) {
-            fprintf(stderr, "Failed to allocate weights\n");
-            cllm_free(model);
-            fclose(file);
-            return NULL;
-        }
+    // The model was created by cllm_create_model, which already allocated weights
+    // We need to read into the existing weights array
+    if (!model->weights || model->num_weights != total_weights) {
+        fprintf(stderr, "Error: Model weights mismatch (expected %lu, got %lu)\n",
+                (unsigned long)total_weights, (unsigned long)model->num_weights);
+        cllm_free_model(model);
+        fclose(file);
+        return NULL;
     }
     
-    // Read weights
+    // Read weights into the existing array
     if (fread(model->weights, sizeof(float), total_weights, file) != total_weights) {
         fprintf(stderr, "Failed to read weights\n");
-        cllm_free(model);
+        cllm_free_model(model);
         fclose(file);
         return NULL;
     }
