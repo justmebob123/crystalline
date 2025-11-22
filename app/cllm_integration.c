@@ -80,6 +80,15 @@ CLLMModel* app_create_cllm_model_default(void) {
     model->embedding_dim = config->embedding_dim;
     model->num_layers = config->num_layers;
     
+    // Initialize header (CRITICAL for inference)
+    memcpy(model->header.magic, "CLLM", 4);
+    model->header.version = 1;
+    model->header.vocab_size = config->vocab_size;
+    model->header.embedding_dim = config->embedding_dim;
+    model->header.num_layers = config->num_layers;
+    model->header.num_heads = config->num_heads;
+    model->header.context_length = config->max_seq_len;
+    
     // Allocate embeddings
     model->embeddings.vocab_size = config->vocab_size;
     model->embeddings.embedding_dim = config->embedding_dim;
