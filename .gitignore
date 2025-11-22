@@ -1,0 +1,35 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# Executables
+hyper_prime_spiral
+cllm_demo
+pretrain_model
+prime_demo
+
+# Libraries
+libprimemath.a
+libprimemath.so
+
+# Backup files
+*.backup
+*.old
+*.broken
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_output/
+*.log
