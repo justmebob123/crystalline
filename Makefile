@@ -8,7 +8,7 @@
 # Compiler and flags
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra -O2 -fPIC -I./include
+CFLAGS = -Wall -Wextra -g -O0 -fPIC -I./include
 LDFLAGS = 
 ARFLAGS = rcs
 

@@ -785,13 +785,8 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     header.num_heads = 8;  // Default value
     header.context_length = 512;  // Default value
     
-    // Calculate total weights
-    size_t embedding_weights = model->vocab_size * model->embedding_dim;
-    size_t attention_weights_per_layer = 4 * model->embedding_dim * model->embedding_dim;
-    size_t ff_dim = model->embedding_dim * 4;  // Standard transformer ratio
-    size_t ff_weights_per_layer = 2 * model->embedding_dim * ff_dim;
-    header.total_params = embedding_weights + 
-                          model->num_layers * (attention_weights_per_layer + ff_weights_per_layer);
+    // Use the model's actual weight count instead of recalculating
+    header.total_params = model->num_weights;
     
     // Write header
     if (fwrite(&header, sizeof(CLLMHeader), 1, file) != 1) {
@@ -801,15 +796,15 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     }
     
     // Write weights - check if weights exist
-    if (model->weights && header.total_params > 0) {
-        if (fwrite(model->weights, sizeof(float), header.total_params, file) != header.total_params) {
+    if (model->weights && model->num_weights > 0) {
+        if (fwrite(model->weights, sizeof(float), model->num_weights, file) != model->num_weights) {
             fprintf(stderr, "Failed to write weights\n");
             fclose(file);
             return -1;
         }
     } else {
-        fprintf(stderr, "Warning: Model has no weights to save (weights=%p, params=%zu)\n", 
-                (void*)model->weights, header.total_params);
+        fprintf(stderr, "Warning: Model has no weights to save (weights=%p, params=%lu)\n", 
+                (void*)model->weights, (unsigned long)model->num_weights);
         // Don't try to allocate huge amounts of memory - just write header
         // The model can be loaded later and weights initialized
     }
