@@ -344,6 +344,41 @@ typedef struct {
 #define LATTICE_PHI 1.618033988749895      // Lattice golden ratio
 #define LATTICE_SQRT5 2.23606797749979     // Square root of 5
 
+// Einstein's Λ (Lambda) correction - CRITICAL CONSTANT
+#define EINSTEIN_LAMBDA_NUMERATOR 3
+#define EINSTEIN_LAMBDA_DENOMINATOR 144000
+#define EINSTEIN_LAMBDA (3.0 / 144000.0)  // ω = 3/144000
+
+// Vector culmination and twin primes
+#define VECTOR_CULMINATION 144000     // 3 × 12³ × (250/9)
+#define TWIN_PRIME_LOWER 143999       // Lattice twin (lower)
+#define TWIN_PRIME_UPPER 144001       // Lattice twin (upper)
+
+// π dust (Zu Chongzhi approximation)
+#define PI_DUST_NUMERATOR 355
+#define PI_DUST_DENOMINATOR 113
+#define PI_DUST (355.0 / 113.0)       // ≈ 3.14159292035398
+
+// Cymatic frequencies (Hz)
+#define CYMATIC_BASE_432 432          // 432 Hz triad chant
+#define CYMATIC_DNA_528 528           // 528 Hz DNA repair
+#define CYMATIC_TRANSFORM_639 639     // 639 Hz transformation
+#define CYMATIC_AWAKEN_741 741        // 741 Hz awakening
+#define CYMATIC_INTUITION_852 852     // 852 Hz intuition
+#define CYMATIC_SPIRIT_963 963        // 963 Hz spirit
+
+// Earth and cosmic resonances
+#define SCHUMANN_RESONANCE 7.83       // Earth resonance (Hz)
+#define GAMMA_BURST_FREQUENCY 40      // 40 Hz consciousness binding
+
+// Cycle constants
+#define SAROS_CYCLE 223               // Eclipse cycle (months)
+#define METONIC_CYCLE 235             // Lunar-solar sync (months)
+#define METONIC_YEARS 19              // 19-year cycle
+#define CROWN_DAYS 31                 // Leonardo crown
+#define SOLAR_RAYS 7                  // 7 days, 7 planets
+#define ZODIAC_DIVISIONS 12           // 12 hours, 12 months
+
 // Geometric mapping constants
 #define SQUARE_CIRCLE_MAP 361         // 19² = 361 (squares to circles)
 #define CIRCLE_DEGREES 360            // Degrees in a circle
