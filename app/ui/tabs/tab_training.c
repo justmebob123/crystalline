@@ -223,6 +223,42 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     y = 425; // After all input fields
     
+    // Add visual sliders for epochs and learning rate
+    y += 10;
+    
+    // Epochs slider
+    char epochs_label[64];
+    snprintf(epochs_label, sizeof(epochs_label), "Epochs: %d", state->training_epochs);
+    draw_text(renderer, epochs_label, panel_x + 10, y, text_color);
+    y += 16;
+    
+    SDL_Rect epochs_slider = {panel_x + 10, y, panel_width - 20, 8};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &epochs_slider);
+    
+    int epochs_pos = (int)((state->training_epochs / 100.0f) * epochs_slider.w);
+    SDL_Rect epochs_handle = {epochs_slider.x + epochs_pos - 4, epochs_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &epochs_handle);
+    y += 25;
+    
+    // Learning Rate slider
+    char lr_label[64];
+    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
+    draw_text(renderer, lr_label, panel_x + 10, y, text_color);
+    y += 16;
+    
+    SDL_Rect lr_slider = {panel_x + 10, y, panel_width - 20, 8};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &lr_slider);
+    
+    float lr_ratio = (state->training_learning_rate - 0.0001f) / (0.01f - 0.0001f);
+    int lr_pos = (int)(lr_ratio * lr_slider.w);
+    SDL_Rect lr_handle = {lr_slider.x + lr_pos - 4, lr_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &lr_handle);
+    y += 15;
+    
     // Separator line
     SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
     SDL_RenderDrawLine(renderer, panel_x + 10, y, panel_x + panel_width - 10, y);
@@ -477,7 +513,34 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (x >= browse_btn.x && x <= browse_btn.x + browse_btn.w &&
         y >= browse_btn.y && y <= browse_btn.y + browse_btn.h) {
         printf("Browse workspace button clicked\n");
-        printf("File picker not yet implemented - type path manually\n");
+        
+        // Simple file picker using zenity (if available)
+        FILE* fp = popen("which zenity 2>/dev/null", "r");
+        if (fp) {
+            char result[256];
+            if (fgets(result, sizeof(result), fp) != NULL) {
+                pclose(fp);
+                // zenity is available, use it
+                fp = popen("zenity --file-selection --directory --title='Select Workspace Directory' 2>/dev/null", "r");
+                if (fp) {
+                    char selected_path[512];
+                    if (fgets(selected_path, sizeof(selected_path), fp) != NULL) {
+                        // Remove trailing newline
+                        selected_path[strcspn(selected_path, "\n")] = 0;
+                        if (strlen(selected_path) > 0) {
+                            text_input_set_text(&workspace_path_input, selected_path);
+                            printf("Selected workspace: %s\n", selected_path);
+                        }
+                    }
+                    pclose(fp);
+                }
+            } else {
+                pclose(fp);
+                printf("zenity not available - type path manually or install zenity\n");
+                printf("  Ubuntu/Debian: sudo apt install zenity\n");
+                printf("  Fedora: sudo dnf install zenity\n");
+            }
+        }
         return;
     }
     
@@ -502,8 +565,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Scan Directory Button (y = 465)
-    SDL_Rect scan_btn = {panel_x + 10, 465, (panel_width - 30) / 2, 25};
+    // Scan Directory Button (y = 547)
+    SDL_Rect scan_btn = {panel_x + 10, 547, (panel_width - 30) / 2, 25};
     if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
         y >= scan_btn.y && y <= scan_btn.y + scan_btn.h) {
         printf("Scan directory button clicked\n");
@@ -514,8 +577,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Select All Button (y = 465)
-    SDL_Rect select_all_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 465, (panel_width - 30) / 2, 25};
+    // Select All Button (y = 547)
+    SDL_Rect select_all_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 547, (panel_width - 30) / 2, 25};
     if (x >= select_all_btn.x && x <= select_all_btn.x + select_all_btn.w &&
         y >= select_all_btn.y && y <= select_all_btn.y + select_all_btn.h) {
         bool all_selected = true;
@@ -533,8 +596,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // File list clicks (y = 517 to 637)
-    SDL_Rect list_rect = {panel_x + 10, 517, panel_width - 20, 120};
+    // File list clicks (y = 599 to 719)
+    SDL_Rect list_rect = {panel_x + 10, 599, panel_width - 20, 120};
     if (x >= list_rect.x && x <= list_rect.x + list_rect.w &&
         y >= list_rect.y && y <= list_rect.y + list_rect.h) {
         int file_index = scroll_offset + (y - list_rect.y - 5) / 16;
@@ -547,27 +610,34 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     }
     
     // Epochs slider (y = 528)
-    SDL_Rect epochs_slider = {panel_x + 10, 528, panel_width - 20, 8};
+    // Epochs slider (y = 451)
+    SDL_Rect epochs_slider = {panel_x + 10, 451, panel_width - 20, 8};
     if (x >= epochs_slider.x && x <= epochs_slider.x + epochs_slider.w &&
         y >= epochs_slider.y - 5 && y <= epochs_slider.y + epochs_slider.h + 5) {
         float ratio = (float)(x - epochs_slider.x) / epochs_slider.w;
         state->training_epochs = (int)(ratio * 100) + 1;
         if (state->training_epochs < 1) state->training_epochs = 1;
         if (state->training_epochs > 100) state->training_epochs = 100;
+        char epochs_str[32];
+        snprintf(epochs_str, sizeof(epochs_str), "%d", state->training_epochs);
+        text_input_set_text(&epochs_input, epochs_str);
         return;
     }
     
-    // Learning rate slider (y = 562)
-    SDL_Rect lr_slider = {panel_x + 10, 562, panel_width - 20, 8};
+    // Learning rate slider (y = 492)
+    SDL_Rect lr_slider = {panel_x + 10, 492, panel_width - 20, 8};
     if (x >= lr_slider.x && x <= lr_slider.x + lr_slider.w &&
         y >= lr_slider.y - 5 && y <= lr_slider.y + lr_slider.h + 5) {
         float ratio = (float)(x - lr_slider.x) / lr_slider.w;
         state->training_learning_rate = 0.0001f + ratio * (0.01f - 0.0001f);
+        char lr_str[32];
+        snprintf(lr_str, sizeof(lr_str), "%.4f", state->training_learning_rate);
+        text_input_set_text(&learning_rate_input, lr_str);
         return;
     }
     
-    // Start/Stop Training Button (y = 647)
-    SDL_Rect train_btn = {panel_x + 10, 647, panel_width - 20, 40};
+    // Start/Stop Training Button (y = 729)
+    SDL_Rect train_btn = {panel_x + 10, 729, panel_width - 20, 40};
     if (x >= train_btn.x && x <= train_btn.x + train_btn.w &&
         y >= train_btn.y && y <= train_btn.y + train_btn.h) {
         
@@ -690,8 +760,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Save/Load Checkpoint Buttons (y = 707)
-    SDL_Rect save_btn = {panel_x + 10, 707, (panel_width - 30) / 2, 25};
+    // Save/Load Checkpoint Buttons (y = 789)
+    SDL_Rect save_btn = {panel_x + 10, 789, (panel_width - 30) / 2, 25};
     if (x >= save_btn.x && x <= save_btn.x + save_btn.w &&
         y >= save_btn.y && y <= save_btn.y + save_btn.h) {
         printf("Save checkpoint button clicked\n");
@@ -716,7 +786,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 707, (panel_width - 30) / 2, 25};
+    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 789, (panel_width - 30) / 2, 25};
     if (x >= load_btn.x && x <= load_btn.x + load_btn.w &&
         y >= load_btn.y && y <= load_btn.y + load_btn.h) {
         printf("Load checkpoint button clicked\n");
