@@ -232,22 +232,20 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
     // Zero all gradients
     cllm_zero_all_gradients(training);
     
-    // Allocate buffers for activations and gradients
-    size_t activation_size = batch_size * seq_len * embed_dim;
-    float* embeddings = (float*)calloc(activation_size, sizeof(float));
-    float* grad_output = (float*)calloc(activation_size, sizeof(float));
-    float* layer_input = (float*)calloc(embed_dim, sizeof(float));
-    float* layer_grad = (float*)calloc(embed_dim, sizeof(float));
-    float* temp_grad = (float*)calloc(embed_dim, sizeof(float));
+    // Use pre-allocated buffers (OPTIMIZATION - no malloc/free overhead)
+    float* embeddings = training->backward_embeddings;
+    float* grad_output = training->backward_grad_output;
+    float* layer_input = training->backward_layer_input;
+    float* layer_grad = training->backward_layer_grad;
+    float* temp_grad = training->backward_temp_grad;
     
-    if (!embeddings || !grad_output || !layer_input || !layer_grad || !temp_grad) {
-        free(embeddings);
-        free(grad_output);
-        free(layer_input);
-        free(layer_grad);
-        free(temp_grad);
-        return;
-    }
+    // Zero buffers before use
+    size_t activation_size = batch_size * seq_len * embed_dim;
+    memset(embeddings, 0, activation_size * sizeof(float));
+    memset(grad_output, 0, activation_size * sizeof(float));
+    memset(layer_input, 0, embed_dim * sizeof(float));
+    memset(layer_grad, 0, embed_dim * sizeof(float));
+    memset(temp_grad, 0, embed_dim * sizeof(float));
     
     // Simplified backward pass - just compute gradients for embeddings and layers
     // For a proper implementation, we would need to store activations from forward pass
@@ -307,11 +305,7 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
         }
     }
     
-    free(embeddings);
-    free(grad_output);
-    free(layer_input);
-    free(layer_grad);
-    free(temp_grad);
+    // No need to free - using pre-allocated buffers (OPTIMIZATION)
 }
 
 /**

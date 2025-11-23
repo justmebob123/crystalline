@@ -79,6 +79,19 @@ typedef struct {
         float* gamma;            // Gradients for gamma
         float* beta;             // Gradients for beta
     }* ln_grads;                 // Array of num_layers
+    
+    // Pre-allocated backward pass buffers (OPTIMIZATION)
+    float* backward_embeddings;      // Reusable embedding buffer
+    float* backward_grad_output;     // Reusable gradient output buffer
+    float* backward_layer_input;     // Reusable layer input buffer
+    float* backward_layer_grad;      // Reusable layer gradient buffer
+    float* backward_temp_grad;       // Reusable temporary gradient buffer
+    size_t backward_buffer_size;     // Size of activation buffers
+    
+    // Embedding cache for batch processing (OPTIMIZATION)
+    float* cached_input_embeddings;  // Cached input embeddings
+    float* cached_target_embeddings; // Cached target embeddings
+    int cached_batch_size;           // Size of embedding cache
 } CLLMTraining;
 
 /* Loss computation functions */
