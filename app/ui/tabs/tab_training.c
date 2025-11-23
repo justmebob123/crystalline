@@ -525,7 +525,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 printf("  This model will be saved to models/saved_model.cllm after training\n");
             } else {
                 printf("=== USING EXISTING MODEL ===\n");
-                printf("  Vocab: %u tokens\n", state->cllm_model->vocab_size);
+                printf("  Vocab: %lu tokens\n", (unsigned long)state->cllm_model->vocab_size);
                 printf("  Layers: %u\n", state->cllm_model->num_layers);
                 printf("  Training will update this model's weights\n");
                 printf("  Model will be saved to models/saved_model.cllm after training\n");

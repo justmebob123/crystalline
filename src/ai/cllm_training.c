@@ -861,7 +861,7 @@ static void cllm_backward_training(CLLMTraining* training, uint32_t* target_toke
                 // Get layer input (input to attention)
                 float* layer_input = training->layer_inputs[layer];
                 float* attn_input = &layer_input[idx * embed_dim];
-                AttentionLayer* attn_layer = &model->attention_layers[layer];
+                (void)attn_input;  // Used below for gradient computation
                 
                 // Simplified attention backward: approximate with outer product
                 // Full implementation would require storing attention weights from forward pass

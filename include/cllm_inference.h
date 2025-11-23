@@ -108,11 +108,6 @@ void cllm_generate_symmetry_attention_mask(int* symmetry_groups, int seq_len, fl
 
 /* Forward pass and generation */
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);
-void cllm_transformer_layer_forward(CLLMInference* inf, int layer_idx, float* input, float* output, int seq_len);
-void cllm_forward_complete(CLLMInference* inf, uint32_t* tokens, int seq_len, float* output_logits);
-uint32_t cllm_generate_next_token(CLLMInference* inf, uint32_t* tokens, int seq_len);
-int cllm_generate_sequence(CLLMInference* inf, uint32_t* prompt, int prompt_len, uint32_t* output, int max_length);
-CLLMInference* cllm_initialize_inference(CLLMModel* model);
 void cllm_compute_logits(CLLMInference* inf, float* hidden_state);
 int cllm_sample_token(CLLMInference* inf, float* logits);
 void cllm_apply_temperature(float* logits, int vocab_size, float temperature);

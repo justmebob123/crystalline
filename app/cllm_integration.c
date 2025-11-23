@@ -11,6 +11,7 @@
 
 #include "app_common.h"
 #include "../include/cllm.h"
+#include "../include/cllm_utils.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
@@ -67,14 +68,18 @@ CLLMModel* app_create_cllm_model_default(void) {
     printf("✓ Model created with random weight initialization\n");
     
     // Verify weights are non-zero
-    float sum = 0.0f;
-    for (int i = 0; i < 100; i++) {
-        sum += fabsf(model->embeddings.embeddings[i]);
-    }
-    printf("  Sample weight magnitude: %.6f (should be ~0.01-0.1)\n", sum / 100);
-    
-    if (sum < 0.0001f) {
-        fprintf(stderr, "WARNING: Weights appear to be zero!\n");
+    if (model->embeddings.embeddings) {
+        float sum = 0.0f;
+        for (int i = 0; i < 100; i++) {
+            sum += fabsf(model->embeddings.embeddings[i]);
+        }
+        printf("  Sample weight magnitude: %.6f (should be ~0.01-0.1)\n", sum / 100);
+        
+        if (sum < 0.0001f) {
+            fprintf(stderr, "WARNING: Weights appear to be zero!\n");
+        }
+    } else {
+        fprintf(stderr, "ERROR: Model embeddings are NULL!\n");
     }
     
     return model;

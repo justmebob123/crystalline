@@ -299,21 +299,33 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     
     // Pass through transformer layers
     if (model->attention_layers && model->ff_layers && model->layer_norms) {
+        float* attn_output = (float*)malloc(embed_dim * sizeof(float));
+        if (!attn_output) {
+            fprintf(stderr, "Error: Failed to allocate attention output buffer\n");
+            return;
+        }
+        
         for (uint32_t layer = 0; layer < model->num_layers; layer++) {
             // Layer norm
             cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[layer], embed_dim);
             
-            // Attention
-//             cllm_crystalline_attention(inference, inference->hidden_states, 
-//                                        &model->attention_layers[layer], layer);
+            // Attention - use proper multi-head attention
+            AttentionLayer* attn_layer = &model->attention_layers[layer];
+            cllm_attention_forward(attn_layer, inference->hidden_states, attn_output, NULL, NULL, 1);
+            
+            // Copy attention output back to hidden states
+            memcpy(inference->hidden_states, attn_output, embed_dim * sizeof(float));
             
             // Feed-forward
             cllm_feed_forward(inference->hidden_states, &model->ff_layers[layer]);
         }
         
+        free(attn_output);
+        
         // Final layer norm
         cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[model->num_layers - 1], embed_dim);
     }
+
     
     // Project to vocabulary
     for (uint32_t i = 0; i < model->vocab_size; i++) {
