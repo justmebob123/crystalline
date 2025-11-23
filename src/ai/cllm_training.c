@@ -185,27 +185,41 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     fclose(f);
     
     // Tokenize content (simple whitespace tokenization)
-    training->num_tokens = 0;
-    training->tokens = (uint32_t*)malloc(file_size * sizeof(uint32_t)); // Overallocate
+    // CRITICAL FIX: APPEND instead of OVERWRITE
+    size_t old_num_tokens = training->num_tokens;
+    size_t new_capacity = old_num_tokens + file_size;
+    
+    // Reallocate to append new tokens
+    uint32_t* new_tokens = (uint32_t*)realloc(training->tokens, new_capacity * sizeof(uint32_t));
+    if (!new_tokens) {
+        free(content);
+        return -1;
+    }
+    training->tokens = new_tokens;
+    
+    // Start appending at old_num_tokens position
+    size_t tokens_added = 0;
     
     // Check if model has vocabulary
     if (!training->model->tokens) {
         fprintf(stderr, "Warning: Model has no vocabulary, using character-based tokenization\n");
         // Fallback: character-based tokenization
-        for (size_t i = 0; i < bytes_read && training->num_tokens < (size_t)file_size; i++) {
+        for (size_t i = 0; i < bytes_read && tokens_added < file_size; i++) {
             if (content[i] != '\n' && content[i] != '\r') {
-                training->tokens[training->num_tokens++] = (uint32_t)(content[i] % training->model->vocab_size);
+                training->tokens[old_num_tokens + tokens_added] = (uint32_t)(content[i] % training->model->vocab_size);
+                tokens_added++;
             }
         }
     } else {
         // Use vocabulary-based tokenization
         char* token = strtok(content, " \n\t");
-        while (token != NULL && training->num_tokens < (size_t)file_size) {
+        while (token != NULL && tokens_added < file_size) {
             // Find token in vocabulary
             bool found = false;
             for (uint32_t i = 0; i < training->model->vocab_size; i++) {
                 if (strcmp(training->model->tokens[i].token_str, token) == 0) {
-                    training->tokens[training->num_tokens++] = i;
+                    training->tokens[old_num_tokens + tokens_added] = i;
+                    tokens_added++;
                     found = true;
                     break;
                 }
@@ -217,11 +231,15 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
                 for (size_t i = 0; token[i]; i++) {
                     hash = hash * 31 + (uint32_t)token[i];
                 }
-                training->tokens[training->num_tokens++] = hash % training->model->vocab_size;
+                training->tokens[old_num_tokens + tokens_added] = hash % training->model->vocab_size;
+                tokens_added++;
             }
             token = strtok(NULL, " \n\t");
         }
     }
+    
+    // Update total token count
+    training->num_tokens = old_num_tokens + tokens_added;
     
     free(content);
     
@@ -229,7 +247,7 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     int tokens_per_batch = training->config.batch_size * training->config.sequence_length;
     training->total_batches = training->num_tokens / tokens_per_batch;
     
-    return training->num_tokens;
+    return tokens_added;  // Return number of tokens added from this file
 }
 
 // Get next training batch
@@ -573,6 +591,9 @@ float cllm_train_epoch(CLLMTraining* training) {
     
     free(input_tokens);
     free(target_tokens);
+    
+    // Print epoch summary
+    printf("  Epoch complete: %d batches, average loss = %.4f\n", num_batches, num_batches > 0 ? epoch_loss / num_batches : 0.0f);
     
     return num_batches > 0 ? epoch_loss / num_batches : 0.0f;
 }
