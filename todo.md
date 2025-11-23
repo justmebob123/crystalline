@@ -111,11 +111,12 @@
 
 ## NEXT STEPS
 
-### Immediate (Today)
-1. **Test optimizations** with real training data
-2. **Measure speedup** - compare before/after
-3. **Verify correctness** - loss should still decrease
-4. **Document results** - actual vs expected speedup
+### Immediate (User Testing Required) ⏳
+1. **Test training fixes** - Verify loss decreases over epochs
+2. **Check diagnostics** - Verify weights and gradients are non-zero
+3. **Measure startup time** - Should be ~1s (was ~5s)
+4. **Test generation** - Should produce varied output
+5. **Report results** - See USER_INSTRUCTIONS.md
 
 ### Short-Term (This Week)
 1. **Integrate crystalline algorithms** (biggest opportunity)
