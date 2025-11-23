@@ -1,7 +1,6 @@
 #include "../../app_common.h"
 #include "../../text_input.h"
 #include "../../training_thread.h"
-#include "../../workspace.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_training_parallel.h"
@@ -30,10 +29,7 @@ static TextInput learning_rate_input;
 static TextInput epochs_input;
 static TextInput batch_size_input;
 static TextInput thread_count_input;
-static TextInput workspace_path_input;
 static bool inputs_initialized = false;
-
-
 
 void scan_training_directory(const char* dir_path) {
     DIR* dir = opendir(dir_path);
@@ -90,21 +86,15 @@ void init_training_tab(AppState* state) {
     
     // Initialize text inputs
     if (!inputs_initialized) {
-        // Workspace path input at the top
-        text_input_init(&workspace_path_input, "Workspace:", RENDER_WIDTH + 10, 10, CONTROL_PANEL_WIDTH - 20, 25);
-        extern char* workspace_get_current_path(AppState* state);
-        const char* current_ws = workspace_get_current_path(state);
-        text_input_set_text(&workspace_path_input, current_ws ? current_ws : "default");
-        
-        text_input_init(&learning_rate_input, "Learning Rate:", RENDER_WIDTH + 10, 183, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&learning_rate_input, "Learning Rate:", RENDER_WIDTH + 10, 143, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&learning_rate_input, "0.001");
         
-        text_input_init(&epochs_input, "Epochs:", RENDER_WIDTH + 10, 233, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&epochs_input, "Epochs:", RENDER_WIDTH + 10, 193, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&epochs_input, "10");
         
-        text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 283, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 243, CONTROL_PANEL_WIDTH - 20, 25);
         
-        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 333, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 293, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&thread_count_input, "0");
         text_input_set_text(&batch_size_input, "32");
         
@@ -117,22 +107,16 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Initialize text inputs if not done
     if (!inputs_initialized) {
-        // Workspace path input at the top (y=90 to avoid overlap with label at y=70)
-        text_input_init(&workspace_path_input, "Workspace:", RENDER_WIDTH + 10, 90, CONTROL_PANEL_WIDTH - 20, 25);
-        extern char* workspace_get_current_path(AppState* state);
-        const char* current_ws = workspace_get_current_path(state);
-        text_input_set_text(&workspace_path_input, current_ws ? current_ws : "default");
-        
-        text_input_init(&learning_rate_input, "Learning Rate:", RENDER_WIDTH + 10, 240, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&learning_rate_input, "Learning Rate:", RENDER_WIDTH + 10, 143, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&learning_rate_input, "0.001");
         
-        text_input_init(&epochs_input, "Epochs:", RENDER_WIDTH + 10, 290, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&epochs_input, "Epochs:", RENDER_WIDTH + 10, 193, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&epochs_input, "10");
         
-        text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 340, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 243, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&batch_size_input, "32");
         
-        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 390, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 293, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&thread_count_input, "0");
         
         inputs_initialized = true;
@@ -155,37 +139,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     int y = panel_y + 10;
     
-    // === WORKSPACE SECTION ===
-    draw_text(renderer, "WORKSPACE", panel_x + 10, y, (SDL_Color){100, 200, 255, 255});
-    y += 20;
-    
-    // Render workspace path input (at y=90)
-    text_input_render(&workspace_path_input, renderer, get_global_font());
-    y = 120; // After input field
-    
-    // Browse and Switch buttons
-    SDL_Rect browse_btn = {panel_x + 10, y, (panel_width - 30) / 2, 25};
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &browse_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &browse_btn);
-    draw_text(renderer, "Browse...", browse_btn.x + 15, browse_btn.y + 6, text_color);
-    
-    SDL_Rect switch_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, y, (panel_width - 30) / 2, 25};
-    SDL_SetRenderDrawColor(renderer, button_hover.r, button_hover.g, button_hover.b, 255);
-    SDL_RenderFillRect(renderer, &switch_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &switch_btn);
-    draw_text(renderer, "Switch", switch_btn.x + 25, switch_btn.y + 6, text_color);
-    y += 35;
-    
-    // Separator line
-    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
-    SDL_RenderDrawLine(renderer, panel_x + 10, y, panel_x + panel_width - 10, y);
-    y += 10;
-    
     // === SECTION 1: STATUS ===
-    draw_text(renderer, "TRAINING STATUS", panel_x + 10, y, (SDL_Color){100, 200, 255, 255});
+    draw_text(renderer, "TRAINING", panel_x + 10, y, text_color);
     y += 20;
     
     // Status indicator
@@ -204,68 +159,22 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     } else {
         draw_text(renderer, "Model: Not Loaded", panel_x + 10, y, (SDL_Color){255, 100, 100, 255});
     }
-    y += 30;
+    y += 25;
     
-    // Separator line
-    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
-    SDL_RenderDrawLine(renderer, panel_x + 10, y, panel_x + panel_width - 10, y);
-    y += 10;
-    
-    // === SECTION 2: TRAINING PARAMETERS ===
-    draw_text(renderer, "PARAMETERS", panel_x + 10, y, (SDL_Color){100, 200, 255, 255});
+    // === SECTION 1.5: TRAINING PARAMETERS ===
+    draw_text(renderer, "PARAMETERS", panel_x + 10, y, text_color);
     y += 20;
     
-    // Render text input fields (at y=240, 290, 340, 390)
+    // Render text input fields
+    text_input_render(&thread_count_input, renderer, get_global_font());
     text_input_render(&learning_rate_input, renderer, get_global_font());
     text_input_render(&epochs_input, renderer, get_global_font());
     text_input_render(&batch_size_input, renderer, get_global_font());
-    text_input_render(&thread_count_input, renderer, get_global_font());
     
-    y = 425; // After all input fields
+    y = 300; // Skip past the input fields
     
-    // Add visual sliders for epochs and learning rate
-    y += 10;
-    
-    // Epochs slider
-    char epochs_label[64];
-    snprintf(epochs_label, sizeof(epochs_label), "Epochs: %d", state->training_epochs);
-    draw_text(renderer, epochs_label, panel_x + 10, y, text_color);
-    y += 16;
-    
-    SDL_Rect epochs_slider = {panel_x + 10, y, panel_width - 20, 8};
-    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
-    SDL_RenderFillRect(renderer, &epochs_slider);
-    
-    int epochs_pos = (int)((state->training_epochs / 100.0f) * epochs_slider.w);
-    SDL_Rect epochs_handle = {epochs_slider.x + epochs_pos - 4, epochs_slider.y - 4, 8, 16};
-    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
-    SDL_RenderFillRect(renderer, &epochs_handle);
-    y += 25;
-    
-    // Learning Rate slider
-    char lr_label[64];
-    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
-    draw_text(renderer, lr_label, panel_x + 10, y, text_color);
-    y += 16;
-    
-    SDL_Rect lr_slider = {panel_x + 10, y, panel_width - 20, 8};
-    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
-    SDL_RenderFillRect(renderer, &lr_slider);
-    
-    float lr_ratio = (state->training_learning_rate - 0.0001f) / (0.01f - 0.0001f);
-    int lr_pos = (int)(lr_ratio * lr_slider.w);
-    SDL_Rect lr_handle = {lr_slider.x + lr_pos - 4, lr_slider.y - 4, 8, 16};
-    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
-    SDL_RenderFillRect(renderer, &lr_handle);
-    y += 15;
-    
-    // Separator line
-    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
-    SDL_RenderDrawLine(renderer, panel_x + 10, y, panel_x + panel_width - 10, y);
-    y += 10;
-    
-    // === SECTION 3: DATA FILES ===
-    draw_text(renderer, "TRAINING DATA", panel_x + 10, y, (SDL_Color){100, 200, 255, 255});
+    // === SECTION 2: DATA FILES ===
+    draw_text(renderer, "TRAINING DATA", panel_x + 10, y, text_color);
     y += 20;
     
     // Scan Directory Button
@@ -333,28 +242,57 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     }
     y += list_height + 10;
     
-    // Separator line
-    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
-    SDL_RenderDrawLine(renderer, panel_x + 10, y, panel_x + panel_width - 10, y);
-    y += 10;
-    
-    // === SECTION 4: TRAINING CONTROLS ===
-    draw_text(renderer, "TRAINING CONTROLS", panel_x + 10, y, (SDL_Color){100, 200, 255, 255});
+    // === SECTION 3: PARAMETERS ===
+    draw_text(renderer, "PARAMETERS", panel_x + 10, y, text_color);
     y += 20;
     
-    // Start/Stop Button (large and prominent)
-    SDL_Rect train_btn = {panel_x + 10, y, panel_width - 20, 40};
+    // Epochs
+    char epochs_label[64];
+    snprintf(epochs_label, sizeof(epochs_label), "Epochs: %d", state->training_epochs);
+    draw_text(renderer, epochs_label, panel_x + 10, y, text_color);
+    y += 16;
+    
+    SDL_Rect epochs_slider = {panel_x + 10, y, panel_width - 20, 8};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &epochs_slider);
+    
+    int epochs_pos = (int)((state->training_epochs / 100.0f) * epochs_slider.w);
+    SDL_Rect epochs_handle = {epochs_slider.x + epochs_pos - 4, epochs_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &epochs_handle);
+    y += 18;
+    
+    // Learning Rate
+    char lr_label[64];
+    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
+    draw_text(renderer, lr_label, panel_x + 10, y, text_color);
+    y += 16;
+    
+    SDL_Rect lr_slider = {panel_x + 10, y, panel_width - 20, 8};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &lr_slider);
+    
+    float lr_ratio = (state->training_learning_rate - 0.0001f) / (0.01f - 0.0001f);
+    int lr_pos = (int)(lr_ratio * lr_slider.w);
+    SDL_Rect lr_handle = {lr_slider.x + lr_pos - 4, lr_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &lr_handle);
+    y += 25;
+    
+    // === SECTION 4: TRAINING CONTROLS ===
+    // Start/Stop Button
+    SDL_Rect train_btn = {panel_x + 10, y, panel_width - 20, 35};
     SDL_Color train_color = state->training_in_progress ? 
-        (SDL_Color){200, 80, 80, 255} : (SDL_Color){80, 150, 100, 255};
+        (SDL_Color){200, 80, 80, 255} : button_hover;
     SDL_SetRenderDrawColor(renderer, train_color.r, train_color.g, train_color.b, 255);
     SDL_RenderFillRect(renderer, &train_btn);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &train_btn);
     
     const char* train_text = state->training_in_progress ? "STOP TRAINING" : "START TRAINING";
-    draw_text(renderer, train_text, train_btn.x + 50, train_btn.y + 13, 
+    draw_text(renderer, train_text, train_btn.x + 60, train_btn.y + 11, 
              (SDL_Color){255, 255, 255, 255});
-    y += 50;
+    y += 42;
     
     // Save/Load Checkpoint Buttons
     SDL_Rect save_btn = {panel_x + 10, y, (panel_width - 30) / 2, 25};
@@ -410,11 +348,6 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
 bool handle_training_tab_event(AppState* state, SDL_Event* event) {
     if (!state || !event) return false;
     
-    // Handle workspace path input
-    if (text_input_handle_event(&workspace_path_input, event)) {
-        return true;
-    }
-    
     // Handle text input events
     if (text_input_handle_event(&learning_rate_input, event)) {
         // Update state when input changes
@@ -432,13 +365,13 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
     }
     
     if (text_input_handle_event(&batch_size_input, event)) {
-        return true;
-    }
     
     if (text_input_handle_event(&thread_count_input, event)) {
         if (!text_input_is_active(&thread_count_input)) {
             state->training_thread_count = (int)text_input_get_number(&thread_count_input);
         }
+        return true;
+    }
         return true;
     }
     
@@ -453,53 +386,34 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Check text input clicks first
     if (inputs_initialized) {
-        // Workspace path input
-        if (x >= workspace_path_input.bounds.x && x <= workspace_path_input.bounds.x + workspace_path_input.bounds.w &&
-            y >= workspace_path_input.bounds.y && y <= workspace_path_input.bounds.y + workspace_path_input.bounds.h) {
-            text_input_activate(&workspace_path_input);
-            text_input_deactivate(&learning_rate_input);
-            text_input_deactivate(&epochs_input);
-            text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
-            SDL_StartTextInput();
-            return;
-        }
-        
         // Check if click is in any text input bounds
         if (x >= learning_rate_input.bounds.x && x <= learning_rate_input.bounds.x + learning_rate_input.bounds.w &&
             y >= learning_rate_input.bounds.y && y <= learning_rate_input.bounds.y + learning_rate_input.bounds.h) {
             text_input_activate(&learning_rate_input);
-            text_input_deactivate(&workspace_path_input);
             text_input_deactivate(&epochs_input);
             text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
             SDL_StartTextInput();
             return;
         }
         if (x >= epochs_input.bounds.x && x <= epochs_input.bounds.x + epochs_input.bounds.w &&
             y >= epochs_input.bounds.y && y <= epochs_input.bounds.y + epochs_input.bounds.h) {
             text_input_activate(&epochs_input);
-            text_input_deactivate(&workspace_path_input);
             text_input_deactivate(&learning_rate_input);
             text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
             SDL_StartTextInput();
             return;
         }
         if (x >= batch_size_input.bounds.x && x <= batch_size_input.bounds.x + batch_size_input.bounds.w &&
             y >= batch_size_input.bounds.y && y <= batch_size_input.bounds.y + batch_size_input.bounds.h) {
             text_input_activate(&batch_size_input);
-            text_input_deactivate(&workspace_path_input);
             text_input_deactivate(&learning_rate_input);
             text_input_deactivate(&epochs_input);
-            text_input_deactivate(&thread_count_input);
             SDL_StartTextInput();
             return;
         }
         if (x >= thread_count_input.bounds.x && x <= thread_count_input.bounds.x + thread_count_input.bounds.w &&
             y >= thread_count_input.bounds.y && y <= thread_count_input.bounds.y + thread_count_input.bounds.h) {
             text_input_activate(&thread_count_input);
-            text_input_deactivate(&workspace_path_input);
             text_input_deactivate(&learning_rate_input);
             text_input_deactivate(&epochs_input);
             text_input_deactivate(&batch_size_input);
@@ -508,65 +422,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         }
     }
     
-    // Browse button (y = 120)
-    SDL_Rect browse_btn = {panel_x + 10, 120, (panel_width - 30) / 2, 25};
-    if (x >= browse_btn.x && x <= browse_btn.x + browse_btn.w &&
-        y >= browse_btn.y && y <= browse_btn.y + browse_btn.h) {
-        printf("Browse workspace button clicked\n");
-        
-        // Simple file picker using zenity (if available)
-        FILE* fp = popen("which zenity 2>/dev/null", "r");
-        if (fp) {
-            char result[256];
-            if (fgets(result, sizeof(result), fp) != NULL) {
-                pclose(fp);
-                // zenity is available, use it
-                fp = popen("zenity --file-selection --directory --title='Select Workspace Directory' 2>/dev/null", "r");
-                if (fp) {
-                    char selected_path[512];
-                    if (fgets(selected_path, sizeof(selected_path), fp) != NULL) {
-                        // Remove trailing newline
-                        selected_path[strcspn(selected_path, "\n")] = 0;
-                        if (strlen(selected_path) > 0) {
-                            text_input_set_text(&workspace_path_input, selected_path);
-                            printf("Selected workspace: %s\n", selected_path);
-                        }
-                    }
-                    pclose(fp);
-                }
-            } else {
-                pclose(fp);
-                printf("zenity not available - type path manually or install zenity\n");
-                printf("  Ubuntu/Debian: sudo apt install zenity\n");
-                printf("  Fedora: sudo dnf install zenity\n");
-            }
-        }
-        return;
-    }
-    
-    // Switch workspace button (y = 120)
-    SDL_Rect switch_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 120, (panel_width - 30) / 2, 25};
-    if (x >= switch_btn.x && x <= switch_btn.x + switch_btn.w &&
-        y >= switch_btn.y && y <= switch_btn.y + switch_btn.h) {
-        printf("Switch workspace button clicked\n");
-        const char* new_workspace = text_input_get_text(&workspace_path_input);
-        if (new_workspace && strlen(new_workspace) > 0) {
-            extern bool workspace_switch(AppState* state, const char* path);
-            if (workspace_switch(state, new_workspace)) {
-                printf("Switched to workspace: %s\n", new_workspace);
-                char training_dir[1024];
-                extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
-                workspace_get_training_dir(state, training_dir, sizeof(training_dir));
-                scan_training_directory(training_dir);
-            } else {
-                printf("Failed to switch workspace\n");
-            }
-        }
-        return;
-    }
-    
-    // Scan Directory Button (y = 547)
-    SDL_Rect scan_btn = {panel_x + 10, 547, (panel_width - 30) / 2, 25};
+    // Scan Directory Button (y = 320)
+    SDL_Rect scan_btn = {panel_x + 10, 320, (panel_width - 30) / 2, 25};
     if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
         y >= scan_btn.y && y <= scan_btn.y + scan_btn.h) {
         printf("Scan directory button clicked\n");
@@ -577,8 +434,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Select All Button (y = 547)
-    SDL_Rect select_all_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 547, (panel_width - 30) / 2, 25};
+    // Select All Button (y = 320)
+    SDL_Rect select_all_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 320, (panel_width - 30) / 2, 25};
     if (x >= select_all_btn.x && x <= select_all_btn.x + select_all_btn.w &&
         y >= select_all_btn.y && y <= select_all_btn.y + select_all_btn.h) {
         bool all_selected = true;
@@ -596,8 +453,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // File list clicks (y = 599 to 719)
-    SDL_Rect list_rect = {panel_x + 10, 599, panel_width - 20, 120};
+    // File list clicks (y = 372 to 492)
+    SDL_Rect list_rect = {panel_x + 10, 372, panel_width - 20, 120};
     if (x >= list_rect.x && x <= list_rect.x + list_rect.w &&
         y >= list_rect.y && y <= list_rect.y + list_rect.h) {
         int file_index = scroll_offset + (y - list_rect.y - 5) / 16;
@@ -610,34 +467,27 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     }
     
     // Epochs slider (y = 528)
-    // Epochs slider (y = 451)
-    SDL_Rect epochs_slider = {panel_x + 10, 451, panel_width - 20, 8};
+    SDL_Rect epochs_slider = {panel_x + 10, 528, panel_width - 20, 8};
     if (x >= epochs_slider.x && x <= epochs_slider.x + epochs_slider.w &&
         y >= epochs_slider.y - 5 && y <= epochs_slider.y + epochs_slider.h + 5) {
         float ratio = (float)(x - epochs_slider.x) / epochs_slider.w;
         state->training_epochs = (int)(ratio * 100) + 1;
         if (state->training_epochs < 1) state->training_epochs = 1;
         if (state->training_epochs > 100) state->training_epochs = 100;
-        char epochs_str[32];
-        snprintf(epochs_str, sizeof(epochs_str), "%d", state->training_epochs);
-        text_input_set_text(&epochs_input, epochs_str);
         return;
     }
     
-    // Learning rate slider (y = 492)
-    SDL_Rect lr_slider = {panel_x + 10, 492, panel_width - 20, 8};
+    // Learning rate slider (y = 562)
+    SDL_Rect lr_slider = {panel_x + 10, 562, panel_width - 20, 8};
     if (x >= lr_slider.x && x <= lr_slider.x + lr_slider.w &&
         y >= lr_slider.y - 5 && y <= lr_slider.y + lr_slider.h + 5) {
         float ratio = (float)(x - lr_slider.x) / lr_slider.w;
         state->training_learning_rate = 0.0001f + ratio * (0.01f - 0.0001f);
-        char lr_str[32];
-        snprintf(lr_str, sizeof(lr_str), "%.4f", state->training_learning_rate);
-        text_input_set_text(&learning_rate_input, lr_str);
         return;
     }
     
-    // Start/Stop Training Button (y = 729)
-    SDL_Rect train_btn = {panel_x + 10, 729, panel_width - 20, 40};
+    // Start/Stop Training Button (y = 587)
+    SDL_Rect train_btn = {panel_x + 10, 587, panel_width - 20, 35};
     if (x >= train_btn.x && x <= train_btn.x + train_btn.w &&
         y >= train_btn.y && y <= train_btn.y + train_btn.h) {
         
@@ -760,8 +610,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Save/Load Checkpoint Buttons (y = 789)
-    SDL_Rect save_btn = {panel_x + 10, 789, (panel_width - 30) / 2, 25};
+    // Save/Load Checkpoint Buttons (y = 629)
+    SDL_Rect save_btn = {panel_x + 10, 629, (panel_width - 30) / 2, 25};
     if (x >= save_btn.x && x <= save_btn.x + save_btn.w &&
         y >= save_btn.y && y <= save_btn.y + save_btn.h) {
         printf("Save checkpoint button clicked\n");
@@ -786,7 +636,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 789, (panel_width - 30) / 2, 25};
+    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 629, (panel_width - 30) / 2, 25};
     if (x >= load_btn.x && x <= load_btn.x + load_btn.w &&
         y >= load_btn.y && y <= load_btn.y + load_btn.h) {
         printf("Load checkpoint button clicked\n");
