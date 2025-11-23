@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 // Create a model from configuration
 CLLMModel* cllm_create_model(const CLLMConfig* config) {
@@ -132,6 +133,14 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         weight_offset += qkv_size;
         model->attention_layers[i].value_lattice = model->weights + weight_offset;
         weight_offset += qkv_size;
+        
+        // Initialize attention weights with Xavier initialization
+        float xavier_std = sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
+        for (size_t j = 0; j < qkv_size; j++) {
+            model->attention_layers[i].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+            model->attention_layers[i].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+            model->attention_layers[i].value_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+        }
     }
     
     // Allocate feed-forward layers
@@ -175,6 +184,24 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         weight_offset += w2_size;
         model->ff_layers[i].bias2 = model->weights + weight_offset;
         weight_offset += config->embedding_dim;
+        
+        // Initialize FF weights with He initialization (for ReLU/tanh)
+        float he_std_w1 = sqrtf(2.0f / config->embedding_dim);
+        float he_std_w2 = sqrtf(2.0f / config->ff_dim);
+        
+        
+        for (size_t j = 0; j < w1_size; j++) {
+            model->ff_layers[i].w1_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w1;
+        }
+        for (size_t j = 0; j < config->ff_dim; j++) {
+            model->ff_layers[i].bias1[j] = 0.0f;  // Biases initialized to zero
+        }
+        for (size_t j = 0; j < w2_size; j++) {
+            model->ff_layers[i].w2_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w2;
+        }
+        for (size_t j = 0; j < config->embedding_dim; j++) {
+            model->ff_layers[i].bias2[j] = 0.0f;  // Biases initialized to zero
+        }
     }
     
     // Allocate layer norms

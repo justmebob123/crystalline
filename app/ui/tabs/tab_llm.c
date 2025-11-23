@@ -280,7 +280,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
                  (SDL_Color){100, 100, 100, 255});
     }
     
-    g_send_btn = (SDL_Rect){chat_width - 90, input_y, 100, input_height};
+    g_send_btn = (SDL_Rect){g_input_rect.x + g_input_rect.w + 10, input_y, 90, input_height};
     SDL_Color send_color = state->llm_generating ? 
         (SDL_Color){80, 80, 80, 255} : (SDL_Color){80, 150, 80, 255};
     SDL_SetRenderDrawColor(renderer, send_color.r, send_color.g, send_color.b, 255);
