@@ -99,11 +99,22 @@ int cllm_tokenize(CLLMInference* inference, const char* text, uint32_t* tokens, 
                 buffer[buf_pos] = '\0';
                 
                 // Find token in vocabulary
+                bool found = false;
                 for (uint32_t j = 0; j < inference->model->vocab_size; j++) {
                     if (strcmp(inference->model->tokens[j].token_str, buffer) == 0) {
                         tokens[token_count++] = j;
+                        found = true;
                         break;
                     }
+                }
+                
+                // Handle unknown words with hash (like training does)
+                if (!found) {
+                    uint32_t hash = 0;
+                    for (int k = 0; buffer[k]; k++) {
+                        hash = hash * 31 + (uint32_t)buffer[k];
+                    }
+                    tokens[token_count++] = hash % inference->model->vocab_size;
                 }
                 
                 buf_pos = 0;
@@ -118,11 +129,22 @@ int cllm_tokenize(CLLMInference* inference, const char* text, uint32_t* tokens, 
     // Handle last token
     if (buf_pos > 0 && token_count < max_tokens) {
         buffer[buf_pos] = '\0';
+        bool found = false;
         for (uint32_t j = 0; j < inference->model->vocab_size; j++) {
             if (strcmp(inference->model->tokens[j].token_str, buffer) == 0) {
                 tokens[token_count++] = j;
+                found = true;
                 break;
             }
+        }
+        
+        // Handle unknown words with hash
+        if (!found) {
+            uint32_t hash = 0;
+            for (int k = 0; buffer[k]; k++) {
+                hash = hash * 31 + (uint32_t)buffer[k];
+            }
+            tokens[token_count++] = hash % inference->model->vocab_size;
         }
     }
     
