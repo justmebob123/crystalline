@@ -168,8 +168,20 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
 float cllm_train_epoch_crystalline(CLLMTraining* training) {
     if (!training) return 0.0f;
     
+    // CRITICAL: Validate training state
+    if (!training->model) {
+        fprintf(stderr, "ERROR: training->model is NULL\n");
+        return 0.0f;
+    }
+    if (!training->tokens || training->num_tokens == 0) {
+        fprintf(stderr, "ERROR: No training data loaded (tokens=%p, num_tokens=%zu)\n", 
+                (void*)training->tokens, training->num_tokens);
+        return 0.0f;
+    }
+    
     printf("=== CRYSTALLINE TRAINING MODE ===\n");
     printf("Using prime-based similarity and Ulam spiral locality\n");
+    printf("Training data: %zu tokens\n", training->num_tokens);
     
     float epoch_loss = 0.0f;
     int num_batches = 0;

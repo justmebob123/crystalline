@@ -210,6 +210,12 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
 int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens) {
     if (!training || !input_tokens || !target_tokens) return -1;
     
+    // CRITICAL: Check if training data is loaded
+    if (!training->tokens || training->num_tokens == 0) {
+        fprintf(stderr, "ERROR: No training data loaded! training->tokens is NULL\n");
+        return 0;
+    }
+    
     int batch_size = training->config.batch_size;
     int seq_len = training->config.sequence_length;
     int tokens_per_batch = batch_size * seq_len;
