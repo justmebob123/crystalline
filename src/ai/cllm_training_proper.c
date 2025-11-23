@@ -227,10 +227,34 @@ float cllm_train_epoch_proper(CLLMTraining* training) {
         num_batches++;
         
         // Backward pass (use existing implementation for now)
+        // NOTE: This is the problem - backward pass computes MSE gradients
+        // but forward pass computes cross-entropy loss!
         cllm_backward(training, input_tokens, target_tokens, tokens);
+        
+        // DEBUG: Check if gradients are non-zero
+        if (num_batches == 1) {
+            float grad_sum = 0.0f;
+            for (int i = 0; i < 100; i++) {
+                grad_sum += training->gradients[i] * training->gradients[i];
+            }
+            printf("  DEBUG: Gradient norm (first 100) = %.6f\n", sqrtf(grad_sum));
+        }
         
         // Optimizer step
         cllm_optimizer_step(training);
+        
+        // DEBUG: Check if parameters changed
+        if (num_batches == 1) {
+            static float first_embed = 0.0f;
+            if (first_embed == 0.0f) {
+                first_embed = training->model->embeddings.embeddings[0];
+                printf("  DEBUG: Initial embedding[0] = %.6f\n", first_embed);
+            } else {
+                printf("  DEBUG: After update embedding[0] = %.6f (diff = %.6f)\n",
+                       training->model->embeddings.embeddings[0],
+                       training->model->embeddings.embeddings[0] - first_embed);
+            }
+        }
         
         training->current_step++;
         training->current_loss = loss;
