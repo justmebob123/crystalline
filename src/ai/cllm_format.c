@@ -847,11 +847,17 @@ CLLMModel* cllm_read_model(const char* filepath) {
     // Read lattice transforms
     if (model->embeddings.lattice_transform) {
         size_t transform_size = model->embedding_dim * model->embedding_dim;
-        fread(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
+        size_t read = fread(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
+        if (read != transform_size) {
+            fprintf(stderr, "Warning: Expected %zu floats, read %zu for lattice_transform\n", transform_size, read);
+        }
     }
     if (model->embeddings.inverse_transform) {
         size_t transform_size = model->embedding_dim * model->embedding_dim;
-        fread(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
+        size_t read = fread(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
+        if (read != transform_size) {
+            fprintf(stderr, "Warning: Expected %zu floats, read %zu for inverse_transform\n", transform_size, read);
+        }
     }
     
     // Read attention layers
@@ -859,19 +865,40 @@ CLLMModel* cllm_read_model(const char* filepath) {
         AttentionLayer* attn = &model->attention_layers[i];
         uint32_t d_model = attn->num_heads * attn->head_dim;
         
-        if (attn->query_lattice) fread(attn->query_lattice, sizeof(float), d_model * d_model, file);
-        if (attn->key_lattice) fread(attn->key_lattice, sizeof(float), d_model * d_model, file);
-        if (attn->value_lattice) fread(attn->value_lattice, sizeof(float), d_model * d_model, file);
+        if (attn->query_lattice) {
+            size_t read = fread(attn->query_lattice, sizeof(float), d_model * d_model, file);
+            (void)read; // Suppress warning
+        }
+        if (attn->key_lattice) {
+            size_t read = fread(attn->key_lattice, sizeof(float), d_model * d_model, file);
+            (void)read;
+        }
+        if (attn->value_lattice) {
+            size_t read = fread(attn->value_lattice, sizeof(float), d_model * d_model, file);
+            (void)read;
+        }
     }
     
     // Read feedforward layers
     for (uint32_t i = 0; i < model->num_layers; i++) {
         FeedForwardLayer* ff = &model->ff_layers[i];
         
-        if (ff->w1_lattice) fread(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
-        if (ff->bias1) fread(ff->bias1, sizeof(float), ff->hidden_dim, file);
-        if (ff->w2_lattice) fread(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
-        if (ff->bias2) fread(ff->bias2, sizeof(float), ff->output_dim, file);
+        if (ff->w1_lattice) {
+            size_t read = fread(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
+            (void)read;
+        }
+        if (ff->bias1) {
+            size_t read = fread(ff->bias1, sizeof(float), ff->hidden_dim, file);
+            (void)read;
+        }
+        if (ff->w2_lattice) {
+            size_t read = fread(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
+            (void)read;
+        }
+        if (ff->bias2) {
+            size_t read = fread(ff->bias2, sizeof(float), ff->output_dim, file);
+            (void)read;
+        }
     }
     
     fclose(file);

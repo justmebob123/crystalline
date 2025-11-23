@@ -56,6 +56,14 @@ typedef struct {
 static UlamPosition compute_ulam_position(uint32_t token_id) {
     UlamPosition pos;
     
+    // Safety check
+    if (token_id == 0) {
+        pos.x = 0.0f;
+        pos.y = 0.0f;
+        pos.z = 0.0f;
+        return pos;
+    }
+    
     // Ulam spiral with golden angle
     float golden_angle = 2.39996322972865332f;  // 2π/φ²
     float radius = sqrtf((float)token_id);
@@ -89,29 +97,41 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
 float cllm_compute_loss_crystalline(CLLMTraining* training, uint32_t* input_tokens, 
                                    uint32_t* target_tokens, int num_tokens) {
     if (!training || !input_tokens || !target_tokens) return 0.0f;
+    if (!training->model) return 0.0f;
     
     float total_loss = 0.0f;
     int count = 0;
     
-    for (int i = 0; i < num_tokens; i++) {
+    // Safety: limit num_tokens to prevent buffer overflow
+    int safe_num_tokens = num_tokens;
+    if (safe_num_tokens > training->config.batch_size * training->config.sequence_length) {
+        fprintf(stderr, "WARNING: num_tokens (%d) exceeds batch size, clamping\n", num_tokens);
+        safe_num_tokens = training->config.batch_size * training->config.sequence_length;
+    }
+    
+    for (int i = 0; i < safe_num_tokens; i++) {
         uint32_t input = input_tokens[i];
         uint32_t target = target_tokens[i];
         
-        if (input < training->model->vocab_size && target < training->model->vocab_size) {
-            // Use prime-based similarity (O(log n) vs O(n) for dot product)
-            float similarity = crystalline_gcd_similarity(input + 1, target + 1);
-            
-            // Add spatial locality bonus (tokens close in Ulam spiral are related)
-            float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
-            
-            // Combined similarity
-            float combined = 0.7f * similarity + 0.3f * spatial_similarity;
-            
-            // Convert to loss
-            float clamped = combined > 1e-10f ? combined : 1e-10f;
-            total_loss += -logf(clamped);
-            count++;
+        // Bounds check
+        if (input >= training->model->vocab_size || target >= training->model->vocab_size) {
+            continue;
         }
+        
+        // Use prime-based similarity (O(log n) vs O(n) for dot product)
+        // Add 1 to avoid zero (which breaks GCD and log)
+        float similarity = crystalline_gcd_similarity(input + 1, target + 1);
+        
+        // Add spatial locality bonus (tokens close in Ulam spiral are related)
+        float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
+        
+        // Combined similarity
+        float combined = 0.7f * similarity + 0.3f * spatial_similarity;
+        
+        // Convert to loss
+        float clamped = combined > 1e-10f ? combined : 1e-10f;
+        total_loss += -logf(clamped);
+        count++;
     }
     
     return count > 0 ? total_loss / count : 0.0f;
@@ -170,8 +190,9 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
         if (tokens == 0) break;  // End of epoch
         
         // Sort by Ulam spiral position for cache locality
-        crystalline_sort_by_locality(input_tokens, tokens);
-        crystalline_sort_by_locality(target_tokens, tokens);
+        // DISABLED: Sorting changes token order which breaks training
+        // crystalline_sort_by_locality(input_tokens, tokens);
+        // crystalline_sort_by_locality(target_tokens, tokens);
         
         // Crystalline loss computation (much faster)
         float loss = cllm_compute_loss_crystalline(training, input_tokens, target_tokens, tokens);
