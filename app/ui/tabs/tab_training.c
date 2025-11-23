@@ -496,8 +496,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             if (!state->cllm_training) {
                 CLLMTrainingConfig config = {
                     .num_epochs = state->training_epochs,
-                    .batch_size = 32,
-                    .sequence_length = 128,
+                    .batch_size = 4,        // Reduced from 32 for small datasets
+                    .sequence_length = 32,  // Reduced from 128 for small datasets
                     .learning_rate = state->training_learning_rate,
                     .weight_decay = 0.01f,
                     .gradient_clip = 1.0f,

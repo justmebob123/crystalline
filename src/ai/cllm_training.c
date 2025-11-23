@@ -179,6 +179,12 @@ int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* tar
     
     // Check if we have enough tokens
     if (training->current_batch_offset + (size_t)tokens_per_batch + 1 > training->num_tokens) {
+        // Debug output
+        if (training->current_batch_offset == 0) {
+            printf("  Not enough tokens for even one batch!\n");
+            printf("  Need: %d tokens, Have: %zu tokens\n", tokens_per_batch + 1, training->num_tokens);
+            printf("  Batch size: %d, Sequence length: %d\n", batch_size, seq_len);
+        }
         // Shuffle and restart
         training->current_batch_offset = 0;
         training->current_epoch++;
