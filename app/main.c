@@ -738,12 +738,8 @@ int main(void) {
         
         // TRAINING LOOP - Run training steps when training is active
         if (state->training_in_progress && state->cllm_training) {
-            printf("=== TRAINING STEP %d ===\n", state->training_current_epoch);
-            
-            // Train one epoch
+            // Train one epoch (silent - progress shown in UI)
             float loss = app_train_epoch(state);
-            
-            printf("Epoch %d complete - Loss: %.4f\n", state->training_current_epoch, loss);
             
             state->training_current_epoch++;
             

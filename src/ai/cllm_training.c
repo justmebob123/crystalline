@@ -326,11 +326,8 @@ float cllm_train_epoch(CLLMTraining* training) {
             training->best_loss = loss;
         }
         
-        // Print progress
-        if (training->current_step % 10 == 0) {
-            printf("Step %d: Loss = %.4f (Best: %.4f)\n", 
-                   training->current_step, loss, training->best_loss);
-        }
+        // Silent training - progress shown in UI
+        // (No terminal spam)
     }
     
     free(input_tokens);

@@ -382,7 +382,7 @@ uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length) {
     if (!inference || !prompt || !output) return -1;
     
-    printf("Starting generation...\n");
+    // Silent generation - no terminal spam
     
     // Tokenize prompt
     uint32_t tokens[MAX_SEQUENCE_LENGTH];
@@ -392,8 +392,6 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         strcpy(output, "Error: Could not tokenize prompt");
         return -1;
     }
-    
-    printf("Tokenized %d tokens\n", num_tokens);
     
     // Generate tokens
     int tokens_generated = 0;
@@ -419,13 +417,13 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         tokens[num_tokens++] = next_token;
         tokens_generated++;
         
-        printf("Generated token %d/%d\n", tokens_generated, inference->max_tokens);
+        // Silent generation - no terminal spam
     }
     
     // Detokenize
     cllm_detokenize(inference, tokens, num_tokens, output, max_output_length);
     
-    printf("Generation complete: %d tokens\n", tokens_generated);
+    // Silent generation - no terminal spam
     return tokens_generated;
 }
 

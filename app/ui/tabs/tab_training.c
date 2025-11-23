@@ -2,6 +2,7 @@
 #include "../../text_input.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
+#include "cllm_vocab_builder.h"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -507,11 +508,29 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                     .max_steps = 10000
                 };
                 strcpy(config.optimizer, "adam");
+                
+                // STEP 1: Build vocabulary from training files FIRST
+                printf("=== BUILDING VOCABULARY ===\n");
+                for (int i = 0; i < file_count && i < MAX_TRAINING_FILES; i++) {
+                    if (training_files[i].selected) {
+                        printf("  Building vocab from: %s\n", training_files[i].filepath);
+                        int vocab_size = cllm_build_vocabulary_from_file(state->cllm_model, 
+                                                                          training_files[i].filepath);
+                        if (vocab_size > 0) {
+                            printf("  ✓ Vocabulary built: %d unique tokens\n", vocab_size);
+                            break; // Only need to build vocab once
+                        } else {
+                            printf("  ✗ Failed to build vocabulary\n");
+                        }
+                    }
+                }
+                
+                // STEP 2: Initialize training with vocabulary-enabled model
                 state->cllm_training = cllm_training_init(state->cllm_model, &config);
                 
-                // CRITICAL: Load training data from selected files
+                // STEP 3: Load training data from selected files
                 if (state->cllm_training) {
-                    printf("Loading training data from %d files...\n", selected_count);
+                    printf("=== LOADING TRAINING DATA ===\n");
                     for (int i = 0; i < file_count && i < MAX_TRAINING_FILES; i++) {
                         if (training_files[i].selected) {
                             printf("  Loading: %s\n", training_files[i].filepath);
@@ -529,7 +548,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             
             state->training_in_progress = true;
             state->training_current_epoch = 0;
-            printf("Starting training with %d files...\n", selected_count);
+            printf("=== STARTING TRAINING ===\n");
+            printf("Training with %d files...\n", selected_count);
         }
         return;
     }

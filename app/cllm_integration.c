@@ -337,12 +337,11 @@ float app_train_epoch(AppState* state) {
         return -1.0f;
     }
     
-    printf("Training epoch %d...\n", state->training_current_epoch);
-    
-    // Train one epoch
+    // Train one epoch (silent - no terminal spam)
     float loss = cllm_train_epoch(state->cllm_training);
     
-    printf("Epoch %d complete - Loss: %.4f\n", state->training_current_epoch, loss);
+    // Update UI state
+    state->training_loss = loss;
     
     return loss;
 }
