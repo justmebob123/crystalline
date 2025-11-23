@@ -137,3 +137,41 @@ int workspace_list(const char* base_dir, char workspaces[][512], int max_workspa
     (void)max_workspaces;
     return 0;
 }
+
+/**
+ * Get current workspace path
+ */
+char* workspace_get_current_path(AppState* state) {
+    if (!state) return NULL;
+    return state->workspace_path;
+}
+
+/**
+ * Switch to a different workspace
+ */
+bool workspace_switch(AppState* state, const char* new_workspace_path) {
+    if (!state || !new_workspace_path) return false;
+    
+    // Check if workspace exists
+    if (!workspace_exists(new_workspace_path)) {
+        printf("Workspace does not exist: %s\n", new_workspace_path);
+        printf("Creating new workspace...\n");
+        
+        // Try to create it
+        if (mkdir(new_workspace_path, 0755) == -1) {
+            printf("Failed to create workspace directory\n");
+            return false;
+        }
+    }
+    
+    // Update workspace path
+    strncpy(state->workspace_path, new_workspace_path, sizeof(state->workspace_path) - 1);
+    state->workspace_path[sizeof(state->workspace_path) - 1] = '\0';
+    state->workspace_active = true;
+    
+    // Create subdirectories
+    workspace_create_directories(state);
+    
+    printf("✓ Switched to workspace: %s\n", new_workspace_path);
+    return true;
+}

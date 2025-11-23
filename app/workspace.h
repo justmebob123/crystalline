@@ -58,4 +58,14 @@ bool workspace_exists(const char* workspace_path);
  */
 int workspace_list(const char* base_dir, char workspaces[][512], int max_workspaces);
 
+/**
+ * Get current workspace path
+ */
+char* workspace_get_current_path(AppState* state);
+
+/**
+ * Switch to a different workspace
+ */
+bool workspace_switch(AppState* state, const char* new_workspace_path);
+
 #endif // WORKSPACE_H
