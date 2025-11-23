@@ -423,7 +423,13 @@ void handle_input(AppState* state, SDL_Event* event) {
     
     switch (event->type) {
         case SDL_KEYDOWN:
-            // Handle input mode toggle first
+            // Handle LLM tab keyboard input FIRST (before hotkeys)
+            if (state->current_tab == TAB_LLM) {
+                handle_llm_tab_key(state, event->key.keysym.sym);
+                break;
+            }
+            
+            // Handle input mode toggle (only if NOT in LLM tab)
             if (event->key.keysym.sym == SDLK_i) {
                 state->input_active = !state->input_active;
                 if (state->input_active) {
@@ -433,12 +439,6 @@ void handle_input(AppState* state, SDL_Event* event) {
                     SDL_StopTextInput();
                     printf("Input deactivated\n");
                 }
-                break;
-            }
-            
-            // Handle LLM tab keyboard input
-            if (state->current_tab == TAB_LLM) {
-                handle_llm_tab_key(state, event->key.keysym.sym);
                 break;
             }
             

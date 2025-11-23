@@ -341,40 +341,90 @@ void cllm_optimizer_step(CLLMTraining* training) {
     if (!training) return;
     
     float lr = training->config.learning_rate;
-    float beta1 = 0.9f;
-    float beta2 = 0.999f;
-    
-    size_t total_params = training->model->header.total_params;
-    float* m = training->optimizer_state;  // First moment
-    float* v = &training->optimizer_state[total_params];  // Second moment
-    
-    int t = training->current_step + 1;
-    float lr_t = lr * sqrtf(1.0f - powf(beta2, (float)t)) / 
-                      (1.0f - powf(beta1, (float)t));
-    float epsilon = 1e-8f;
-    
-    // Get model parameters
     CLLMModel* model = training->model;
+    
+    // Simple SGD update (no momentum for now - just get it working)
+    // Update embeddings
     uint32_t embedding_dim = model->embedding_dim;
     uint32_t vocab_size = model->vocab_size;
     size_t embed_params = vocab_size * embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
     
-    // Update embedding parameters
-    for (size_t i = 0; i < embed_params && i < total_params; i++) {
-        float g = training->gradients[i];
+    if (model->embeddings.embeddings && training->gradients) {
+        for (size_t i = 0; i < embed_params; i++) {
+            model->embeddings.embeddings[i] -= lr * training->gradients[i];
+        }
+    }
+    
+    // Update layer weights
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        // Update attention weights
+        if (training->attention_grads && model->attention_layers) {
+            uint64_t attn_size = embedding_dim * embedding_dim;
+            
+            if (training->attention_grads[layer].query_lattice && model->attention_layers[layer].query_lattice) {
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    model->attention_layers[layer].query_lattice[i] -= lr * training->attention_grads[layer].query_lattice[i];
+                }
+            }
+            
+            if (training->attention_grads[layer].key_lattice && model->attention_layers[layer].key_lattice) {
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    model->attention_layers[layer].key_lattice[i] -= lr * training->attention_grads[layer].key_lattice[i];
+                }
+            }
+            
+            if (training->attention_grads[layer].value_lattice && model->attention_layers[layer].value_lattice) {
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    model->attention_layers[layer].value_lattice[i] -= lr * training->attention_grads[layer].value_lattice[i];
+                }
+            }
+        }
         
-        // Update biased first moment estimate
-        m[i] = beta1 * m[i] + (1.0f - beta1) * g;
+        // Update feedforward weights
+        if (training->ff_grads && model->ff_layers) {
+            FeedForwardLayer* ff = &model->ff_layers[layer];
+            uint32_t hidden_dim = ff->hidden_dim;
+            uint32_t input_dim = ff->input_dim;
+            uint32_t output_dim = ff->output_dim;
+            
+            if (training->ff_grads[layer].w1_lattice && ff->w1_lattice) {
+                for (uint32_t i = 0; i < input_dim * hidden_dim; i++) {
+                    ff->w1_lattice[i] -= lr * training->ff_grads[layer].w1_lattice[i];
+                }
+            }
+            
+            if (training->ff_grads[layer].w2_lattice && ff->w2_lattice) {
+                for (uint32_t i = 0; i < hidden_dim * output_dim; i++) {
+                    ff->w2_lattice[i] -= lr * training->ff_grads[layer].w2_lattice[i];
+                }
+            }
+            
+            if (training->ff_grads[layer].bias1 && ff->bias1) {
+                for (uint32_t i = 0; i < hidden_dim; i++) {
+                    ff->bias1[i] -= lr * training->ff_grads[layer].bias1[i];
+                }
+            }
+            
+            if (training->ff_grads[layer].bias2 && ff->bias2) {
+                for (uint32_t i = 0; i < output_dim; i++) {
+                    ff->bias2[i] -= lr * training->ff_grads[layer].bias2[i];
+                }
+            }
+        }
         
-        // Update biased second raw moment estimate
-        v[i] = beta2 * v[i] + (1.0f - beta2) * g * g;
-        
-        // Compute and apply update
-        float update = lr_t * m[i] / (prime_sqrtf(v[i]) + epsilon);
-        
-        if (embeddings) {
-            embeddings[i] -= update;
+        // Update layer norm parameters
+        if (training->ln_grads && model->layer_norms) {
+            if (training->ln_grads[layer].gamma && model->layer_norms[layer].gamma) {
+                for (uint64_t i = 0; i < embedding_dim; i++) {
+                    model->layer_norms[layer].gamma[i] -= lr * training->ln_grads[layer].gamma[i];
+                }
+            }
+            
+            if (training->ln_grads[layer].beta && model->layer_norms[layer].beta) {
+                for (uint64_t i = 0; i < embedding_dim; i++) {
+                    model->layer_norms[layer].beta[i] -= lr * training->ln_grads[layer].beta[i];
+                }
+            }
         }
     }
 }
