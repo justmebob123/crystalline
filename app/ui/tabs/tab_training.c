@@ -79,7 +79,10 @@ void init_training_tab(AppState* state) {
     (void)state;
     
     // Scan default training directory
-    scan_training_directory("data/training");
+    char training_dir[1024];
+    extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
+    workspace_get_training_dir(state, training_dir, sizeof(training_dir));
+    scan_training_directory(training_dir);
     
     // Initialize text inputs
     if (!inputs_initialized) {
@@ -424,7 +427,10 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
         y >= scan_btn.y && y <= scan_btn.y + scan_btn.h) {
         printf("Scan directory button clicked\n");
-        scan_training_directory("data/training");
+        char training_dir[1024];
+        extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
+        workspace_get_training_dir(state, training_dir, sizeof(training_dir));
+        scan_training_directory(training_dir);
         return;
     }
     

@@ -678,7 +678,7 @@ void render(AppState* state) {
     SDL_RenderPresent(state->renderer);
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
     printf("\n═══════════════════════════════════════════════════════════════\n");
     printf("        HYPER PRIME SPIRAL - PRIME MATHEMATICS EDITION\n");
     printf("═══════════════════════════════════════════════════════════════\n");
@@ -688,6 +688,37 @@ int main(void) {
     printf("  E - Expand primes | R - Record | S - Snapshot | Q - Quit\n");
     printf("═══════════════════════════════════════════════════════════════\n\n");
     
+    // Parse command line arguments
+    const char* workspace_path = NULL;
+    bool create_workspace = false;
+    
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--workspace") == 0 && i + 1 < argc) {
+            workspace_path = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "--create") == 0) {
+            create_workspace = true;
+        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            printf("Usage: %s [OPTIONS]\n", argv[0]);
+            printf("\nOptions:\n");
+            printf("  --workspace PATH    Use custom workspace directory\n");
+            printf("  --create            Create workspace if it doesn't exist\n");
+            printf("  --help, -h          Show this help message\n");
+            printf("\nExamples:\n");
+            printf("  %s                                    # Use default directories\n", argv[0]);
+            printf("  %s --workspace ~/my_project           # Use custom workspace\n", argv[0]);
+            printf("  %s --workspace ~/new_project --create # Create new workspace\n", argv[0]);
+            printf("\nEnvironment Variables:\n");
+            printf("  CRYSTALLINE_WORKSPACE    Default workspace directory\n");
+            return 0;
+        }
+    }
+    
+    // Check environment variable if no command line argument
+    if (!workspace_path) {
+        workspace_path = getenv("CRYSTALLINE_WORKSPACE");
+    }
+    
     AppState* state = init_app();
     if (!state) {
         fprintf(stderr, "Failed to initialize\n");
@@ -696,6 +727,15 @@ int main(void) {
     
     // Set global pointer for lattice cache access
     app_state_global = state;
+    
+    // Initialize workspace system
+    extern void workspace_init(AppState* state, const char* workspace_path);
+    workspace_init(state, workspace_path);
+    
+    if (create_workspace && workspace_path) {
+        extern int workspace_create_directories(AppState* state);
+        workspace_create_directories(state);
+    }
     
     SDL_Event event;
     bool running = true;

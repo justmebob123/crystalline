@@ -47,12 +47,20 @@ void* training_thread_func(void* arg) {
             if (state->cllm_model) {
                 printf("\nSaving final model...\n");
                 
+                // Get workspace-aware model path
+                char model_dir[1024];
+                char model_path[1024];
+                extern void workspace_get_models_dir(AppState* state, char* output, size_t output_size);
+                workspace_get_models_dir(state, model_dir, sizeof(model_dir));
+                
                 // Create models directory
-                int mkdir_ret = system("mkdir -p models");
+                char mkdir_cmd[1100];
+                snprintf(mkdir_cmd, sizeof(mkdir_cmd), "mkdir -p %s", model_dir);
+                int mkdir_ret = system(mkdir_cmd);
                 (void)mkdir_ret;
                 
-                // Save to default location
-                const char* model_path = "models/saved_model.cllm";
+                // Save to workspace location
+                snprintf(model_path, sizeof(model_path), "%s/saved_model.cllm", model_dir);
                 extern int app_save_model(CLLMModel* model, const char* filepath);
                 
                 if (app_save_model(state->cllm_model, model_path) == 0) {

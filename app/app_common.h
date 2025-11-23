@@ -262,6 +262,10 @@ typedef struct {
     int training_current_epoch;
     int training_thread_count;  // Number of threads for parallel training
     
+    // Workspace management
+    char workspace_path[512];  // Current workspace directory
+    bool workspace_active;     // Whether using custom workspace
+    
     // Research browser state
     char research_directory[512];
     int research_file_count;
