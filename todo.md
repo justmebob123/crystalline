@@ -1,18 +1,30 @@
 # Crystalline CLLM - Complete System Implementation
 
-## CRITICAL ISSUES - TRAINING SYSTEM ✅ FIXED
+## NEW ISSUES IDENTIFIED
+
+### Training & Model Issues
+- [ ] Training still single-threaded (not using all CPU cores)
+- [ ] Model weights not saving (weights=(nil))
+- [ ] Model not loading on startup
+- [ ] No file picker for loading models
+- [ ] No prompt before training (create new/overwrite/append)
+- [ ] Generation quality poor (small training data)
+
+### Root Causes
+1. Parallel training not actually parallelizing batches
+2. Model weights pointer is NULL
+3. Model save/load paths incorrect
+4. No UI for file selection
+5. Training overwrites without asking
+
+## CRITICAL ISSUES - TRAINING SYSTEM ✅ MOSTLY FIXED
 
 ### Problems Found and Fixed
 - [x] UI freezes during training - FIXED: Training in separate thread
-- [x] Thread pool not actually being used - FIXED: Parallel training active
 - [x] Terminal spam from mouse/keyboard events - FIXED: Removed all spam
-- [ ] Application killed (memory/deadlock issue) - NEEDS TESTING
-
-### Solutions Applied
-1. Training runs in SEPARATE THREAD - UI stays responsive
-2. Thread pool properly initialized and used
-3. All debug spam removed from terminal
-4. Thread-safe state updates with mutex
+- [x] UI stays responsive - FIXED: Works correctly
+- [ ] Thread pool not actually parallelizing - STILL SINGLE-THREADED
+- [ ] Application killed - SEEMS FIXED (completed successfully)
 
 ## URGENT FIXES APPLIED ✅
 

@@ -144,22 +144,24 @@ AppState* init_app(void) {
     // Auto-load default model if available
     printf("Attempting to auto-load default CLLM model...\n");
     const char* default_models[] = {
-           "data/models/default_model.cllm",
-           "data/models/demo_model.cllm",
-        "../data/models/default_model.cllm",
-        "../data/models/demo_model.cllm",
-        "../data/models/cllm_pretrained.cllm",
+        "models/saved_model.cllm",           // Training saves here
+        "models/default_model.cllm",
+        "data/models/default_model.cllm",
+        "data/models/demo_model.cllm",
         NULL
     };
     
     for (int i = 0; default_models[i] != NULL; i++) {
-        // Try to load default model
-        char model_path[512];
-        snprintf(model_path, sizeof(model_path), "%s/.cllm_models/%s", 
-                getenv("HOME") ? getenv("HOME") : ".", default_models[i]);
-        state->cllm_model = cllm_read_model(model_path);
+        state->cllm_model = cllm_read_model(default_models[i]);
         if (state->cllm_model) {
             printf("✓ Loaded model from: %s\n", default_models[i]);
+            
+            // Initialize inference context
+            if (state->cllm_inference) {
+                cllm_inference_cleanup(state->cllm_inference);
+            }
+            state->cllm_inference = cllm_inference_init(state->cllm_model);
+            
             break;
         }
     }
