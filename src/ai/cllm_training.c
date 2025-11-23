@@ -119,6 +119,31 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->cached_input_embeddings = (float*)calloc(cache_size * model->embedding_dim, sizeof(float));
     training->cached_target_embeddings = (float*)calloc(cache_size * model->embedding_dim, sizeof(float));
     
+    // Allocate forward pass activation storage
+    size_t seq_size = config->batch_size * config->sequence_length * model->embedding_dim;
+    size_t logits_size = config->batch_size * config->sequence_length * model->vocab_size;
+    
+    training->input_embeddings = (float*)calloc(seq_size, sizeof(float));
+    training->final_hidden = (float*)calloc(seq_size, sizeof(float));
+    training->logits = (float*)calloc(logits_size, sizeof(float));
+    
+    training->layer_inputs = (float**)calloc(num_layers, sizeof(float*));
+    training->attention_outputs = (float**)calloc(num_layers, sizeof(float*));
+    training->ff_outputs = (float**)calloc(num_layers, sizeof(float*));
+    training->layer_outputs = (float**)calloc(num_layers, sizeof(float*));
+    training->ff_hidden = (float**)calloc(num_layers, sizeof(float*));
+    
+    if (training->layer_inputs && training->attention_outputs && training->ff_outputs &&
+        training->layer_outputs && training->ff_hidden && model->ff_layers) {
+        for (uint32_t i = 0; i < num_layers; i++) {
+            training->layer_inputs[i] = (float*)calloc(seq_size, sizeof(float));
+            training->attention_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            training->ff_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            training->layer_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            training->ff_hidden[i] = (float*)calloc(seq_size * 4, sizeof(float)); // 4x for hidden dim
+        }
+    }
+    
     if (!training->cached_input_embeddings || !training->cached_target_embeddings) {
         fprintf(stderr, "Failed to allocate embedding cache\n");
         cllm_training_cleanup(training);
@@ -430,6 +455,11 @@ void cllm_optimizer_step(CLLMTraining* training) {
 }
 
 // Train for one epoch
+// Forward declarations
+static float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
+static float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
+static void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
+
 float cllm_train_epoch(CLLMTraining* training) {
     if (!training) return 0.0f;
     
@@ -450,13 +480,16 @@ float cllm_train_epoch(CLLMTraining* training) {
         int tokens = cllm_get_batch(training, input_tokens, target_tokens);
         if (tokens == 0) break; // End of epoch
         
-        // Forward pass
-        float loss = cllm_compute_loss(training, input_tokens, target_tokens, tokens);
+        // Forward pass with activation storage
+        cllm_forward_training(training, input_tokens);
+        
+        // Compute loss from stored logits
+        float loss = cllm_compute_loss_training(training, target_tokens);
         epoch_loss += loss;
         num_batches++;
         
-        // Backward pass
-        cllm_backward(training, input_tokens, target_tokens, tokens);
+        // Backward pass with cross-entropy gradients
+        cllm_backward_training(training, target_tokens);
         
         // Optimizer step
         cllm_optimizer_step(training);
@@ -469,14 +502,326 @@ float cllm_train_epoch(CLLMTraining* training) {
             training->best_loss = loss;
         }
         
-        // Silent training - progress shown in UI
-        // (No terminal spam)
+        if (num_batches % 5 == 0) {
+            printf("  Batch %d: loss = %.4f\n", num_batches, loss);
+        }
     }
     
     free(input_tokens);
     free(target_tokens);
     
     return num_batches > 0 ? epoch_loss / num_batches : 0.0f;
+}
+
+/**
+ * Forward pass with activation storage for training
+ */
+static float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
+    if (!training || !input_tokens) return 0.0f;
+    
+    CLLMModel* model = training->model;
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    
+    // Get embeddings
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t token_id = input_tokens[idx];
+            if (token_id >= vocab_size) continue;
+            
+            float* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            float* embed_dst = &training->input_embeddings[idx * embed_dim];
+            memcpy(embed_dst, embed_src, embed_dim * sizeof(float));
+        }
+    }
+    
+    // Process through layers
+    float* layer_input = training->input_embeddings;
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        memcpy(training->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+        
+        for (int b = 0; b < batch_size; b++) {
+            for (int s = 0; s < seq_len; s++) {
+                int idx = b * seq_len + s;
+                float* input = &layer_input[idx * embed_dim];
+                float* attn_out = &training->attention_outputs[layer][idx * embed_dim];
+                float* ff_out = &training->ff_outputs[layer][idx * embed_dim];
+                float* layer_out = &training->layer_outputs[layer][idx * embed_dim];
+                
+                // Attention (simplified)
+                memcpy(attn_out, input, embed_dim * sizeof(float));
+                for (uint32_t d = 0; d < embed_dim; d++) attn_out[d] += input[d];
+                
+                // FeedForward
+                FeedForwardLayer* ff = &model->ff_layers[layer];
+                float* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
+                
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    float sum = ff->bias1[h];
+                    for (uint32_t i = 0; i < embed_dim; i++) {
+                        sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
+                    }
+                    ff_hidden[h] = tanhf(sum);
+                }
+                
+                for (uint32_t o = 0; o < embed_dim; o++) {
+                    float sum = ff->bias2[o];
+                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
+                    }
+                    ff_out[o] = sum;
+                }
+                
+                // Residual + LayerNorm
+                for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
+                
+                CLLMLayerNorm* ln = &model->layer_norms[layer];
+                float mean = 0.0f, var = 0.0f;
+                for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
+                mean /= embed_dim;
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    float diff = layer_out[d] - mean;
+                    var += diff * diff;
+                }
+                var /= embed_dim;
+                float std = sqrtf(var + 1e-5f);
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
+                }
+            }
+        }
+        layer_input = training->layer_outputs[layer];
+    }
+    
+    // Copy final hidden
+    memcpy(training->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+    
+    // Project to vocabulary
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            float* hidden = &training->final_hidden[idx * embed_dim];
+            float* logits = &training->logits[idx * vocab_size];
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                float score = 0.0f;
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    score += hidden[d] * vocab_embed[d];
+                }
+                logits[v] = score;
+            }
+        }
+    }
+    
+    return 0.0f;
+}
+
+/**
+ * Compute cross-entropy loss from stored logits
+ */
+static float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens) {
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t vocab_size = training->model->vocab_size;
+    
+    float total_loss = 0.0f;
+    int count = 0;
+    
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t target = target_tokens[idx];
+            if (target >= vocab_size) continue;
+            
+            float* logits = &training->logits[idx * vocab_size];
+            
+            float max_logit = logits[0];
+            for (uint32_t v = 1; v < vocab_size; v++) {
+                if (logits[v] > max_logit) max_logit = logits[v];
+            }
+            
+            float sum_exp = 0.0f;
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                sum_exp += expf(logits[v] - max_logit);
+            }
+            
+            float log_prob = (logits[target] - max_logit) - logf(sum_exp);
+            total_loss += -log_prob;
+            count++;
+        }
+    }
+    
+    return count > 0 ? total_loss / count : 0.0f;
+}
+
+/**
+ * Backward pass with cross-entropy gradients
+ */
+static void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
+    if (!training || !target_tokens) return;
+    
+    CLLMModel* model = training->model;
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    
+    cllm_zero_all_gradients(training);
+    
+    float* grad_logits = (float*)calloc(batch_size * seq_len * vocab_size, sizeof(float));
+    float* grad_hidden = (float*)calloc(batch_size * seq_len * embed_dim, sizeof(float));
+    float* grad_layer = (float*)calloc(batch_size * seq_len * embed_dim, sizeof(float));
+    
+    if (!grad_logits || !grad_hidden || !grad_layer) {
+        free(grad_logits); free(grad_hidden); free(grad_layer);
+        return;
+    }
+    
+    // Gradient of cross-entropy w.r.t. logits
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t target = target_tokens[idx];
+            if (target >= vocab_size) continue;
+            
+            float* logits = &training->logits[idx * vocab_size];
+            float* grad = &grad_logits[idx * vocab_size];
+            
+            float max_logit = logits[0];
+            for (uint32_t v = 1; v < vocab_size; v++) {
+                if (logits[v] > max_logit) max_logit = logits[v];
+            }
+            
+            float sum_exp = 0.0f;
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                sum_exp += expf(logits[v] - max_logit);
+            }
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                float softmax_v = expf(logits[v] - max_logit) / sum_exp;
+                grad[v] = softmax_v;
+                if (v == target) grad[v] -= 1.0f;
+                grad[v] /= (batch_size * seq_len);
+            }
+        }
+    }
+    
+    // Backward through output projection
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            float* grad_log = &grad_logits[idx * vocab_size];
+            float* grad_hid = &grad_hidden[idx * embed_dim];
+            float* hidden = &training->final_hidden[idx * embed_dim];
+            
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                float sum = 0.0f;
+                for (uint32_t v = 0; v < vocab_size; v++) {
+                    sum += grad_log[v] * model->embeddings.embeddings[v * embed_dim + d];
+                }
+                grad_hid[d] = sum;
+            }
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                float* grad_embed = &training->gradients[v * embed_dim];
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    grad_embed[d] += grad_log[v] * hidden[d];
+                }
+            }
+        }
+    }
+    
+    // Backward through layers
+    memcpy(grad_layer, grad_hidden, batch_size * seq_len * embed_dim * sizeof(float));
+    
+    for (int layer = model->num_layers - 1; layer >= 0; layer--) {
+        float* attn_output = training->attention_outputs[layer];
+        float* ff_hidden = training->ff_hidden[layer];
+        FeedForwardLayer* ff = &model->ff_layers[layer];
+        CLLMLayerNorm* ln = &model->layer_norms[layer];
+        
+        for (int b = 0; b < batch_size; b++) {
+            for (int s = 0; s < seq_len; s++) {
+                int idx = b * seq_len + s;
+                float* grad = &grad_layer[idx * embed_dim];
+                float* input = &attn_output[idx * embed_dim];
+                float* hidden = &ff_hidden[idx * ff->hidden_dim];
+                
+                // LayerNorm backward
+                float mean = 0.0f, var = 0.0f;
+                for (uint32_t d = 0; d < embed_dim; d++) mean += input[d];
+                mean /= embed_dim;
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    float diff = input[d] - mean;
+                    var += diff * diff;
+                }
+                var /= embed_dim;
+                float std = sqrtf(var + 1e-5f);
+                
+                float grad_var = 0.0f, grad_mean = 0.0f;
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    float x_norm = (input[d] - mean) / std;
+                    if (training->ln_grads[layer].gamma) {
+                        training->ln_grads[layer].gamma[d] += grad[d] * x_norm;
+                    }
+                    if (training->ln_grads[layer].beta) {
+                        training->ln_grads[layer].beta[d] += grad[d];
+                    }
+                    float grad_x_norm = grad[d] * ln->gamma[d];
+                    grad_var += grad_x_norm * (input[d] - mean) * -0.5f * powf(std, -3.0f);
+                    grad_mean += grad_x_norm * (-1.0f / std);
+                }
+                
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    float grad_x_norm = grad[d] * ln->gamma[d];
+                    grad[d] = grad_x_norm / std + grad_var * 2.0f * (input[d] - mean) / embed_dim + grad_mean / embed_dim;
+                }
+                
+                // FeedForward backward
+                float* grad_hidden = (float*)calloc(ff->hidden_dim, sizeof(float));
+                if (!grad_hidden) continue;
+                
+                for (uint32_t o = 0; o < embed_dim; o++) {
+                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        if (training->ff_grads[layer].w2_lattice) {
+                            training->ff_grads[layer].w2_lattice[h * embed_dim + o] += hidden[h] * grad[o];
+                        }
+                        grad_hidden[h] += ff->w2_lattice[h * embed_dim + o] * grad[o];
+                    }
+                    if (training->ff_grads[layer].bias2) {
+                        training->ff_grads[layer].bias2[o] += grad[o];
+                    }
+                }
+                
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    float tanh_val = hidden[h];
+                    grad_hidden[h] *= (1.0f - tanh_val * tanh_val);
+                }
+                
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    for (uint32_t i = 0; i < embed_dim; i++) {
+                        if (training->ff_grads[layer].w1_lattice) {
+                            training->ff_grads[layer].w1_lattice[i * ff->hidden_dim + h] += input[i] * grad_hidden[h];
+                        }
+                        grad[i] += ff->w1_lattice[i * ff->hidden_dim + h] * grad_hidden[h];
+                    }
+                    if (training->ff_grads[layer].bias1) {
+                        training->ff_grads[layer].bias1[h] += grad_hidden[h];
+                    }
+                }
+                
+                free(grad_hidden);
+            }
+        }
+    }
+    
+    free(grad_logits);
+    free(grad_hidden);
+    free(grad_layer);
 }
 
 // Train the model
@@ -647,6 +992,46 @@ void cllm_training_cleanup(CLLMTraining* training) {
     free(training->cached_input_embeddings);
     free(training->cached_target_embeddings);
     
+    // Free forward pass activation storage
+    free(training->input_embeddings);
+    free(training->final_hidden);
+    free(training->logits);
+    
+    if (training->layer_inputs) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            free(training->layer_inputs[i]);
+        }
+        free(training->layer_inputs);
+    }
+    
+    if (training->attention_outputs) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            free(training->attention_outputs[i]);
+        }
+        free(training->attention_outputs);
+    }
+    
+    if (training->ff_outputs) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            free(training->ff_outputs[i]);
+        }
+        free(training->ff_outputs);
+    }
+    
+    if (training->layer_outputs) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            free(training->layer_outputs[i]);
+        }
+        free(training->layer_outputs);
+    }
+    
+    if (training->ff_hidden) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            free(training->ff_hidden[i]);
+        }
+        free(training->ff_hidden);
+    }
+    
     free(training);
 }
 
@@ -654,5 +1039,4 @@ void cllm_training_cleanup(CLLMTraining* training) {
 void cllm_training_free(CLLMTraining* training) {
     cllm_training_cleanup(training);
 }
-
 

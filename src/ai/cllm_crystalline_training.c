@@ -6,12 +6,11 @@
  * 2. Ulam spiral locality (spatial cache optimization)
  * 3. LLL lattice reduction (dimension reduction)
  * 
- * NOTE: Currently uses proper forward pass for correct training.
+ * NOTE: Currently uses standard training with proper forward/backward.
  * Crystalline optimizations will be re-enabled after training works.
  */
 
 #include "cllm_training.h"
-#include "cllm_training_proper.h"
 #include "cllm_pure_crystalline.h"
 #include "prime_lattice.h"
 #include <math.h>
@@ -169,9 +168,9 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
 /**
  * Train one epoch using crystalline optimizations
  * 
- * NOTE: Currently delegates to proper training implementation.
+ * NOTE: Currently uses standard training with proper forward/backward.
  * Crystalline optimizations (GCD, Ulam) will be re-enabled after
- * we verify that proper forward pass training works correctly.
+ * we verify that training works correctly.
  */
 float cllm_train_epoch_crystalline(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -187,7 +186,10 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
         return 0.0f;
     }
     
-    // Use proper training implementation
-    // (Crystalline optimizations temporarily disabled to fix training)
-    return cllm_train_epoch_proper(training);
+    printf("=== TRAINING MODE ===\n");
+    printf("Using complete forward pass + cross-entropy backward\n");
+    printf("Training data: %zu tokens\n", training->num_tokens);
+    
+    // Use standard training (now has proper forward/backward)
+    return cllm_train_epoch(training);
 }

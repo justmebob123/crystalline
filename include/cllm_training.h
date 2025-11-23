@@ -92,6 +92,16 @@ typedef struct {
     float* cached_input_embeddings;  // Cached input embeddings
     float* cached_target_embeddings; // Cached target embeddings
     int cached_batch_size;           // Size of embedding cache
+    
+    // Forward pass activation storage
+    float* input_embeddings;         // Input embeddings [batch * seq * embed]
+    float** layer_inputs;            // Per-layer inputs [num_layers][batch * seq * embed]
+    float** attention_outputs;       // Per-layer attention outputs
+    float** ff_outputs;              // Per-layer FF outputs
+    float** layer_outputs;           // Per-layer final outputs
+    float** ff_hidden;               // Per-layer FF hidden states
+    float* final_hidden;             // Final hidden state
+    float* logits;                   // Output logits [batch * seq * vocab]
 } CLLMTraining;
 
 /* Loss computation functions */
