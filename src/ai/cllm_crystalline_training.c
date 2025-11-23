@@ -5,9 +5,13 @@
  * 1. Prime-based similarity (GCD instead of dot product)
  * 2. Ulam spiral locality (spatial cache optimization)
  * 3. LLL lattice reduction (dimension reduction)
+ * 
+ * NOTE: Currently uses proper forward pass for correct training.
+ * Crystalline optimizations will be re-enabled after training works.
  */
 
 #include "cllm_training.h"
+#include "cllm_training_proper.h"
 #include "cllm_pure_crystalline.h"
 #include "prime_lattice.h"
 #include <math.h>
@@ -164,6 +168,10 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
 
 /**
  * Train one epoch using crystalline optimizations
+ * 
+ * NOTE: Currently delegates to proper training implementation.
+ * Crystalline optimizations (GCD, Ulam) will be re-enabled after
+ * we verify that proper forward pass training works correctly.
  */
 float cllm_train_epoch_crystalline(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -179,58 +187,7 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
         return 0.0f;
     }
     
-    printf("=== CRYSTALLINE TRAINING MODE ===\n");
-    printf("Using prime-based similarity and Ulam spiral locality\n");
-    printf("Training data: %zu tokens\n", training->num_tokens);
-    
-    float epoch_loss = 0.0f;
-    int num_batches = 0;
-    
-    // Allocate batch buffers
-    uint32_t* input_tokens = (uint32_t*)malloc(training->config.batch_size * 
-                                               training->config.sequence_length * 
-                                               sizeof(uint32_t));
-    uint32_t* target_tokens = (uint32_t*)malloc(training->config.batch_size * 
-                                                training->config.sequence_length * 
-                                                sizeof(uint32_t));
-    
-    training->current_batch_offset = 0;
-    
-    while (1) {
-        // Get batch
-        int tokens = cllm_get_batch(training, input_tokens, target_tokens);
-        if (tokens == 0) break;  // End of epoch
-        
-        // Sort by Ulam spiral position for cache locality
-        // DISABLED: Sorting changes token order which breaks training
-        // crystalline_sort_by_locality(input_tokens, tokens);
-        // crystalline_sort_by_locality(target_tokens, tokens);
-        
-        // Crystalline loss computation (much faster)
-        float loss = cllm_compute_loss_crystalline(training, input_tokens, target_tokens, tokens);
-        epoch_loss += loss;
-        num_batches++;
-        
-        // Standard backward pass (could be optimized further with crystalline gradients)
-        cllm_backward(training, input_tokens, target_tokens, tokens);
-        
-        // Optimizer step
-        cllm_optimizer_step(training);
-        
-        training->current_step++;
-        training->current_loss = loss;
-        
-        // Update best loss
-        if (loss < training->best_loss) {
-            training->best_loss = loss;
-        }
-    }
-    
-    free(input_tokens);
-    free(target_tokens);
-    
-    printf("Crystalline epoch complete: %d batches, avg loss = %.4f\n", 
-           num_batches, num_batches > 0 ? epoch_loss / num_batches : 0.0f);
-    
-    return num_batches > 0 ? epoch_loss / num_batches : 0.0f;
+    // Use proper training implementation
+    // (Crystalline optimizations temporarily disabled to fix training)
+    return cllm_train_epoch_proper(training);
 }
