@@ -467,7 +467,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     }
     
     // Epochs slider (y = 528)
-    SDL_Rect epochs_slider = {panel_x + 10, 528, panel_width - 20, 8};
+    SDL_Rect epochs_slider = {panel_x + 10, 538, panel_width - 20, 8};
     if (x >= epochs_slider.x && x <= epochs_slider.x + epochs_slider.w &&
         y >= epochs_slider.y - 5 && y <= epochs_slider.y + epochs_slider.h + 5) {
         float ratio = (float)(x - epochs_slider.x) / epochs_slider.w;
@@ -477,8 +477,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Learning rate slider (y = 562)
-    SDL_Rect lr_slider = {panel_x + 10, 562, panel_width - 20, 8};
+    // Learning rate slider (y = 572)
+    SDL_Rect lr_slider = {panel_x + 10, 572, panel_width - 20, 8};
     if (x >= lr_slider.x && x <= lr_slider.x + lr_slider.w &&
         y >= lr_slider.y - 5 && y <= lr_slider.y + lr_slider.h + 5) {
         float ratio = (float)(x - lr_slider.x) / lr_slider.w;
@@ -486,8 +486,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Start/Stop Training Button (y = 587)
-    SDL_Rect train_btn = {panel_x + 10, 587, panel_width - 20, 35};
+    // Start/Stop Training Button (y = 597)
+    SDL_Rect train_btn = {panel_x + 10, 597, panel_width - 20, 35};
     if (x >= train_btn.x && x <= train_btn.x + train_btn.w &&
         y >= train_btn.y && y <= train_btn.y + train_btn.h) {
         
@@ -610,8 +610,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Save/Load Checkpoint Buttons (y = 629)
-    SDL_Rect save_btn = {panel_x + 10, 629, (panel_width - 30) / 2, 25};
+    // Save/Load Checkpoint Buttons (y = 639)
+    SDL_Rect save_btn = {panel_x + 10, 639, (panel_width - 30) / 2, 25};
     if (x >= save_btn.x && x <= save_btn.x + save_btn.w &&
         y >= save_btn.y && y <= save_btn.y + save_btn.h) {
         printf("Save checkpoint button clicked\n");
@@ -636,7 +636,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 629, (panel_width - 30) / 2, 25};
+    SDL_Rect load_btn = {panel_x + 10 + (panel_width - 30) / 2 + 10, 639, (panel_width - 30) / 2, 25};
     if (x >= load_btn.x && x <= load_btn.x + load_btn.w &&
         y >= load_btn.y && y <= load_btn.y + load_btn.h) {
         printf("Load checkpoint button clicked\n");
