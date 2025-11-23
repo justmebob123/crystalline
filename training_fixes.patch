@@ -1,0 +1,9 @@
+--- a/src/ai/cllm_training.c
++++ b/src/ai/cllm_training.c
+@@ -10,6 +10,7 @@
+ #include <math.h>
+ #include "../include/cllm_format.h"
+ #include "../include/cllm_training.h"
++#include "../include/cllm_inference.h"
+ #include "../include/prime_float_math.h"
+ #include "../include/cllm_simd_utils.h"

@@ -53,13 +53,14 @@ AppState* init_app(void) {
     state->visible_primes = state->prime_count;
     printf("Generated %d primes (old system)\n", state->prime_count);
     
-    // NEW: Initialize Crystalline Lattice Cache
-    // Default: 200,000 (~16K primes, ~1MB, ~100ms)
-    printf("\n=== Initializing Crystalline Lattice Cache ===\n");
-    state->lattice_cache = lattice_cache_create(200000);
-    state->lattice_cache_initialized = (state->lattice_cache != NULL);
+    // OPTIMIZATION: Defer lattice cache initialization to improve startup time
+    // Cache will be initialized on first use (when needed for visualization)
+    // printf("\n=== Initializing Crystalline Lattice Cache ===\n");
+    // state->lattice_cache = lattice_cache_create(200000);
+    state->lattice_cache = NULL;  // Initialize lazily
+    state->lattice_cache_initialized = false;
     state->auto_extend_on_zoom = false;  // Disabled by default
-    printf("=== Lattice Cache Ready ===\n\n");
+    // printf("=== Lattice Cache Ready ===\n\n");
     
     // Initialize clock map
     state->clock_map = calloc(state->prime_count, sizeof(ClockMapping));
