@@ -132,6 +132,7 @@ AppState* init_app(void) {
     state->llm_max_tokens = 100;
     state->training_data_path[0] = '\0';
     state->training_epochs = 10;
+    state->training_thread_count = 0;  // 0 = auto-detect optimal
     state->training_learning_rate = 0.001f;
     state->training_in_progress = false;
     state->training_loss = 0.0f;

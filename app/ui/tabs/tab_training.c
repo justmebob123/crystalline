@@ -2,6 +2,7 @@
 #include "../../text_input.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
+#include "cllm_training_parallel.h"
 #include "cllm_vocab_builder.h"
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +27,7 @@ static int scroll_offset = 0;
 static TextInput learning_rate_input;
 static TextInput epochs_input;
 static TextInput batch_size_input;
+static TextInput thread_count_input;
 static bool inputs_initialized = false;
 
 void scan_training_directory(const char* dir_path) {
@@ -87,6 +89,9 @@ void init_training_tab(AppState* state) {
         text_input_set_text(&epochs_input, "10");
         
         text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 243, CONTROL_PANEL_WIDTH - 20, 25);
+        
+        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 293, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_set_text(&thread_count_input, "0");
         text_input_set_text(&batch_size_input, "32");
         
         inputs_initialized = true;
@@ -106,6 +111,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         
         text_input_init(&batch_size_input, "Batch Size:", RENDER_WIDTH + 10, 243, CONTROL_PANEL_WIDTH - 20, 25);
         text_input_set_text(&batch_size_input, "32");
+        
+        text_input_init(&thread_count_input, "Threads (0=auto):", RENDER_WIDTH + 10, 293, CONTROL_PANEL_WIDTH - 20, 25);
+        text_input_set_text(&thread_count_input, "0");
         
         inputs_initialized = true;
     }
@@ -154,6 +162,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     y += 20;
     
     // Render text input fields
+    text_input_render(&thread_count_input, renderer, get_global_font());
     text_input_render(&learning_rate_input, renderer, get_global_font());
     text_input_render(&epochs_input, renderer, get_global_font());
     text_input_render(&batch_size_input, renderer, get_global_font());
@@ -352,6 +361,13 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
     }
     
     if (text_input_handle_event(&batch_size_input, event)) {
+    
+    if (text_input_handle_event(&thread_count_input, event)) {
+        if (!text_input_is_active(&thread_count_input)) {
+            state->training_thread_count = (int)text_input_get_number(&thread_count_input);
+        }
+        return true;
+    }
         return true;
     }
     
@@ -388,6 +404,15 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             text_input_activate(&batch_size_input);
             text_input_deactivate(&learning_rate_input);
             text_input_deactivate(&epochs_input);
+            SDL_StartTextInput();
+            return;
+        }
+        if (x >= thread_count_input.bounds.x && x <= thread_count_input.bounds.x + thread_count_input.bounds.w &&
+            y >= thread_count_input.bounds.y && y <= thread_count_input.bounds.y + thread_count_input.bounds.h) {
+            text_input_activate(&thread_count_input);
+            text_input_deactivate(&learning_rate_input);
+            text_input_deactivate(&epochs_input);
+            text_input_deactivate(&batch_size_input);
             SDL_StartTextInput();
             return;
         }
@@ -544,6 +569,15 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                         }
                     }
                 }
+                
+                // STEP 4: Initialize thread pool for parallel training
+                int thread_count = state->training_thread_count;
+                if (thread_count <= 0) {
+                    thread_count = cllm_get_optimal_thread_count();
+                }
+                int actual_threads = cllm_init_thread_pool(thread_count);
+                printf("=== THREAD POOL INITIALIZED ===\n");
+                printf("Using %d threads for training\n", actual_threads);
             }
             
             state->training_in_progress = true;

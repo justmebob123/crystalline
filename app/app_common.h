@@ -260,6 +260,7 @@ typedef struct {
     bool training_in_progress;
     float training_loss;
     int training_current_epoch;
+    int training_thread_count;  // Number of threads for parallel training
     
     // Research browser state
     char research_directory[512];

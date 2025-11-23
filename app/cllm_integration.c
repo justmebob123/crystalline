@@ -14,6 +14,7 @@
 #include "../include/cllm_format.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/cllm_training_parallel.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -337,8 +338,13 @@ float app_train_epoch(AppState* state) {
         return -1.0f;
     }
     
-    // Train one epoch (silent - no terminal spam)
-    float loss = cllm_train_epoch(state->cllm_training);
+    // Train one epoch using parallel training if thread pool is initialized
+    float loss;
+    if (cllm_get_thread_count() > 0) {
+        loss = cllm_train_epoch_parallel(state->cllm_training);
+    } else {
+        loss = cllm_train_epoch(state->cllm_training);
+    }
     
     // Update UI state
     state->training_loss = loss;
