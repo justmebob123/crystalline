@@ -149,6 +149,12 @@ void cllm_detokenize(CLLMInference* inference, uint32_t* tokens, int num_tokens,
     for (int i = 0; i < num_tokens && pos < max_length - 1; i++) {
         if (tokens[i] < inference->model->vocab_size) {
             const char* token_str = inference->model->tokens[tokens[i]].token_str;
+            
+            // Skip special tokens (PAD, UNK, BOS, EOS, etc.)
+            if (token_str[0] == '<' && token_str[strlen(token_str)-1] == '>') {
+                continue;  // Skip special tokens like <PAD>, <UNK>, etc.
+            }
+            
             int len = strlen(token_str);
             
             if (pos + len < max_length - 1) {

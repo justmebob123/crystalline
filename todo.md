@@ -1,5 +1,13 @@
 # Crystalline CLLM - Complete System Implementation
 
+## URGENT FIXES APPLIED ✅
+
+### Issues Found in Testing
+- [x] Control panel removed - FIXED: Restored alongside chat
+- [x] Model/Settings buttons not detecting clicks properly - FIXED: Proper click detection
+- [x] Generation outputs `<PAD>` tokens instead of real text - FIXED: Skip special tokens
+- [x] Need to output generated text to terminal for debugging - FIXED: Added printf statements
+
 ## COMPLETED IN THIS SESSION ✅
 
 ### 1. Multi-Threading Support ✅
