@@ -226,14 +226,14 @@ void expand_primes(AppState* state) {
 }
 
 void handle_mouse_click(AppState* state, int x, int y) {
-    printf("Mouse click at: %d, %d\n", x, y);
+    // Silent mouse clicks (no terminal spam)
     
     if (y < 40) {
         int tab_width = RENDER_WIDTH / TAB_COUNT;
         int new_tab = x / tab_width;
         if (new_tab >= 0 && new_tab < TAB_COUNT) {
             state->current_tab = new_tab;
-            printf("Switched to tab: %d\n", new_tab);
+            // Silent tab switching
         }
     }
     
@@ -402,7 +402,7 @@ void handle_mouse_click(AppState* state, int x, int y) {
 
 void handle_input(AppState* state, SDL_Event* event) {
     if (event->type == SDL_KEYDOWN) {
-        printf("KEY: %s (%d)\n", SDL_GetKeyName(event->key.keysym.sym), event->key.keysym.sym);
+        // Silent key presses (no terminal spam)
     }
     
     // Handle Training tab text inputs first (before other event processing)
@@ -624,10 +624,10 @@ void handle_input(AppState* state, SDL_Event* event) {
             } else {
                 if (event->wheel.y > 0) {
                     state->zoom = prime_fmin(state->zoom * 1.2, MAX_ZOOM);
-                    printf("Wheel zoom in: %.2f\n", state->zoom);
+                    // Silent zoom
                 } else if (event->wheel.y < 0) {
                     state->zoom = prime_fmax(state->zoom / 1.2, MIN_ZOOM);
-                    printf("Wheel zoom out: %.2f\n", state->zoom);
+                    // Silent zoom
                 }
             }
             break;
@@ -737,21 +737,8 @@ int main(void) {
             }
         }
         
-        // TRAINING LOOP - Run training steps when training is active
-        if (state->training_in_progress && state->cllm_training) {
-            // Train one epoch (silent - progress shown in UI)
-            float loss = app_train_epoch(state);
-            
-            state->training_current_epoch++;
-            
-            // Check if training is complete
-            if (state->training_current_epoch >= state->training_epochs) {
-                printf("=== TRAINING COMPLETE ===\n");
-                printf("Total epochs: %d\n", state->training_current_epoch);
-                printf("Final loss: %.4f\n", loss);
-                state->training_in_progress = false;
-            }
-        }
+        // Training now runs in separate thread (see training_thread.c)
+        // UI remains responsive during training
         
         render(state);
         SDL_Delay(16);

@@ -1,5 +1,19 @@
 # Crystalline CLLM - Complete System Implementation
 
+## CRITICAL ISSUES - TRAINING SYSTEM
+
+### Problems Found
+- [ ] UI freezes during training (training blocks main thread)
+- [ ] Thread pool not actually being used (still single-threaded)
+- [ ] Terminal spam from mouse/keyboard events
+- [ ] Application killed (memory/deadlock issue)
+
+### Root Causes
+1. Training runs in main thread, blocking UI
+2. Thread pool created but not used for actual training
+3. Debug output for every input event
+4. Possible memory leak or infinite loop
+
 ## URGENT FIXES APPLIED ✅
 
 ### Issues Found in Testing

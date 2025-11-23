@@ -1,5 +1,6 @@
 #include "../../app_common.h"
 #include "../../text_input.h"
+#include "../../training_thread.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_training_parallel.h"
@@ -485,8 +486,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         y >= train_btn.y && y <= train_btn.y + train_btn.h) {
         
         if (state->training_in_progress) {
-            // Stop training
-            state->training_in_progress = false;
+            // Stop training thread
+            stop_training_thread(state);
             printf("Stopping training...\n");
         } else {
             // Start training
@@ -580,10 +581,14 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 printf("Using %d threads for training\n", actual_threads);
             }
             
-            state->training_in_progress = true;
-            state->training_current_epoch = 0;
-            printf("=== STARTING TRAINING ===\n");
+            // Start training in separate thread (keeps UI responsive)
+            printf("=== STARTING TRAINING THREAD ===\n");
             printf("Training with %d files...\n", selected_count);
+            if (start_training_thread(state) == 0) {
+                printf("✓ Training thread started successfully\n");
+            } else {
+                printf("✗ Failed to start training thread\n");
+            }
         }
         return;
     }
