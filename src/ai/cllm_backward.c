@@ -241,6 +241,16 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
     
     // Zero buffers before use
     size_t activation_size = batch_size * seq_len * embed_dim;
+    
+    // CRITICAL: Check buffer size to prevent overflow
+    if (activation_size > training->backward_buffer_size) {
+        fprintf(stderr, "ERROR: Activation size (%zu) exceeds buffer size (%zu)\n",
+                activation_size, training->backward_buffer_size);
+        fprintf(stderr, "  batch_size=%d, seq_len=%d, embed_dim=%lu\n",
+                batch_size, seq_len, embed_dim);
+        return;
+    }
+    
     memset(embeddings, 0, activation_size * sizeof(float));
     memset(grad_output, 0, activation_size * sizeof(float));
     memset(layer_input, 0, embed_dim * sizeof(float));

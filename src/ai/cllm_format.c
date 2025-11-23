@@ -876,7 +876,7 @@ CLLMModel* cllm_read_model(const char* filepath) {
     
     fclose(file);
     printf("✓ Model loaded: %s\n", filepath);
-    printf("  Vocab: %lu | Embedding: %lu | Layers: %u\n",
+    printf("  Vocab: %lu | Embedding: %lu | Layers: %lu\n",
            (unsigned long)header.vocab_size, (unsigned long)header.embedding_dim, 
            (unsigned long)header.num_layers);
     

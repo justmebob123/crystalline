@@ -301,9 +301,18 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t
         uint32_t target = target_tokens[i];
         
         if (input < training->model->vocab_size && target < training->model->vocab_size) {
-            // Use cached embeddings (OPTIMIZATION - better cache locality)
-            float* input_embed = get_cached_input_embedding(training, i);
-            float* target_embed = get_cached_target_embedding(training, i);
+            float* input_embed;
+            float* target_embed;
+            
+            // Use cached embeddings if within cache bounds (OPTIMIZATION)
+            if (i < training->cached_batch_size) {
+                input_embed = get_cached_input_embedding(training, i);
+                target_embed = get_cached_target_embedding(training, i);
+            } else {
+                // Fallback to direct lookup for tokens beyond cache
+                input_embed = &training->model->embeddings.embeddings[input * embed_dim];
+                target_embed = &training->model->embeddings.embeddings[target * embed_dim];
+            }
             
             // Use vectorized dot product (OPTIMIZATION - 4-8x faster)
             float similarity = dot_product(input_embed, target_embed, embed_dim);
