@@ -832,32 +832,53 @@ CLLMModel* cllm_read_model(const char* filepath) {
         return NULL;
     }
     
-    // Use the total_params from the header (which was saved from model->num_weights)
-    size_t total_weights = header.total_params;
-    
-    // The model was created by cllm_create_model, which already allocated weights
-    // We need to read into the existing weights array
-    if (!model->weights || model->num_weights != total_weights) {
-        fprintf(stderr, "Error: Model weights mismatch (expected %lu, got %lu)\n",
-                (unsigned long)total_weights, (unsigned long)model->num_weights);
-        cllm_free_model(model);
-        fclose(file);
-        return NULL;
+    // Read embeddings
+    if (model->embeddings.embeddings) {
+        size_t emb_size = model->vocab_size * model->embedding_dim;
+        if (fread(model->embeddings.embeddings, sizeof(float), emb_size, file) != emb_size) {
+            fprintf(stderr, "Failed to read embeddings\n");
+            cllm_free_model(model);
+            fclose(file);
+            return NULL;
+        }
+        printf("  Loaded embeddings: %zu floats\n", emb_size);
     }
     
-    // Read weights into the existing array
-    if (fread(model->weights, sizeof(float), total_weights, file) != total_weights) {
-        fprintf(stderr, "Failed to read weights\n");
-        cllm_free_model(model);
-        fclose(file);
-        return NULL;
+    // Read lattice transforms
+    if (model->embeddings.lattice_transform) {
+        size_t transform_size = model->embedding_dim * model->embedding_dim;
+        fread(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
+    }
+    if (model->embeddings.inverse_transform) {
+        size_t transform_size = model->embedding_dim * model->embedding_dim;
+        fread(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
+    }
+    
+    // Read attention layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        AttentionLayer* attn = &model->attention_layers[i];
+        uint32_t d_model = attn->num_heads * attn->head_dim;
+        
+        if (attn->query_lattice) fread(attn->query_lattice, sizeof(float), d_model * d_model, file);
+        if (attn->key_lattice) fread(attn->key_lattice, sizeof(float), d_model * d_model, file);
+        if (attn->value_lattice) fread(attn->value_lattice, sizeof(float), d_model * d_model, file);
+    }
+    
+    // Read feedforward layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        FeedForwardLayer* ff = &model->ff_layers[i];
+        
+        if (ff->w1_lattice) fread(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
+        if (ff->bias1) fread(ff->bias1, sizeof(float), ff->hidden_dim, file);
+        if (ff->w2_lattice) fread(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
+        if (ff->bias2) fread(ff->bias2, sizeof(float), ff->output_dim, file);
     }
     
     fclose(file);
     printf("✓ Model loaded: %s\n", filepath);
-    printf("  Vocab: %lu | Embedding: %lu | Layers: %lu | Weights: %lu\n",
+    printf("  Vocab: %lu | Embedding: %lu | Layers: %u\n",
            (unsigned long)header.vocab_size, (unsigned long)header.embedding_dim, 
-           (unsigned long)header.num_layers, (unsigned long)total_weights);
+           (unsigned long)header.num_layers);
     
     return model;
 }
@@ -895,21 +916,49 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
         return -1;
     }
     
-    // Write weights - check if weights exist
-    if (model->weights && model->num_weights > 0) {
-        if (fwrite(model->weights, sizeof(float), model->num_weights, file) != model->num_weights) {
-            fprintf(stderr, "Failed to write weights\n");
+    // Write embeddings
+    if (model->embeddings.embeddings) {
+        size_t emb_size = model->vocab_size * model->embedding_dim;
+        if (fwrite(model->embeddings.embeddings, sizeof(float), emb_size, file) != emb_size) {
+            fprintf(stderr, "Failed to write embeddings\n");
             fclose(file);
             return -1;
         }
-    } else {
-        fprintf(stderr, "Warning: Model has no weights to save (weights=%p, params=%lu)\n", 
-                (void*)model->weights, (unsigned long)model->num_weights);
-        // Don't try to allocate huge amounts of memory - just write header
-        // The model can be loaded later and weights initialized
+        printf("  Saved embeddings: %zu floats\n", emb_size);
+    }
+    
+    // Write lattice transforms
+    if (model->embeddings.lattice_transform) {
+        size_t transform_size = model->embedding_dim * model->embedding_dim;
+        fwrite(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
+    }
+    if (model->embeddings.inverse_transform) {
+        size_t transform_size = model->embedding_dim * model->embedding_dim;
+        fwrite(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
+    }
+    
+    // Write attention layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        AttentionLayer* attn = &model->attention_layers[i];
+        uint32_t d_model = attn->num_heads * attn->head_dim;
+        
+        if (attn->query_lattice) fwrite(attn->query_lattice, sizeof(float), d_model * d_model, file);
+        if (attn->key_lattice) fwrite(attn->key_lattice, sizeof(float), d_model * d_model, file);
+        if (attn->value_lattice) fwrite(attn->value_lattice, sizeof(float), d_model * d_model, file);
+    }
+    
+    // Write feedforward layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        FeedForwardLayer* ff = &model->ff_layers[i];
+        
+        if (ff->w1_lattice) fwrite(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
+        if (ff->bias1) fwrite(ff->bias1, sizeof(float), ff->hidden_dim, file);
+        if (ff->w2_lattice) fwrite(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
+        if (ff->bias2) fwrite(ff->bias2, sizeof(float), ff->output_dim, file);
     }
     
     fclose(file);
     printf("✓ Model saved: %s\n", filepath);
+    printf("  Saved %u layers with embeddings\n", model->num_layers);
     return 0;
 }

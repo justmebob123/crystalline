@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
 #include "../include/prime_float_math.h"
@@ -232,7 +233,9 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t
             }
             
             // Convert to loss (negative log likelihood approximation)
-            total_loss += -prime_logf(prime_fmaxf(similarity, 1e-10f));
+            // Use standard math functions since prime_ versions don't exist
+            float clamped = similarity > 1e-10f ? similarity : 1e-10f;
+            total_loss += -logf(clamped);
             count++;
         }
     }
@@ -256,8 +259,8 @@ void cllm_optimizer_step(CLLMTraining* training) {
     float* v = &training->optimizer_state[total_params];  // Second moment
     
     int t = training->current_step + 1;
-    float lr_t = lr * prime_sqrtf(1.0f - prime_powf(beta2, (float)t)) / 
-                      (1.0f - prime_powf(beta1, (float)t));
+    float lr_t = lr * sqrtf(1.0f - powf(beta2, (float)t)) / 
+                      (1.0f - powf(beta1, (float)t));
     float epsilon = 1e-8f;
     
     // Get model parameters
