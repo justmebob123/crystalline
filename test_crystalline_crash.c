@@ -1,74 +1,101 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "include/cllm.h"
-#include "include/cllm_training.h"
-#include "include/cllm_crystalline_training.h"
+#include <string.h>
+#include "cllm.h"
+#include "cllm_training.h"
+#include "cllm_crystalline_training.h"
+#include "cllm_vocab_builder.h"
 
 int main() {
-    printf("=== Testing Crystalline Training ===\n");
+    printf("=== TESTING CRYSTALLINE TRAINING CRASH ===\n");
     
-    // Create minimal model
-    CLLMConfig config = {
-        .vocab_size = 611,
-        .embedding_dim = 512,
-        .num_layers = 6,
-        .num_heads = 8,
-        .head_dim = 64,
-        .hidden_dim = 2048,
-        .max_seq_len = 2048
-    };
-    
-    CLLMModel* model = cllm_create_model(&config);
+    // Create model
+    printf("1. Creating model...\n");
+    CLLMModel* model = cllm_create_model(10000, 512, 6, 8, 2048);
     if (!model) {
-        printf("Failed to create model\n");
+        printf("ERROR: Failed to create model\n");
         return 1;
     }
+    printf("   ✓ Model created\n");
     
-    // Create training config
-    CLLMTrainingConfig train_config = {
-        .batch_size = 4,
-        .sequence_length = 32,
-        .learning_rate = 0.001f,
-        .num_epochs = 1,
-        .save_every = 100
-    };
+    // Build vocabulary
+    printf("2. Building vocabulary...\n");
+    const char* files[] = {"data/training/large_corpus.txt"};
+    int result = cllm_build_vocabulary_from_files(model, files, 1);
+    if (result != 0) {
+        printf("ERROR: Failed to build vocabulary\n");
+        return 1;
+    }
+    printf("   ✓ Vocabulary built: %d tokens\n", model->vocab_size);
+    
+    // Load training data
+    printf("3. Loading training data...\n");
+    result = cllm_load_training_data(model, "data/training/large_corpus.txt");
+    if (result != 0) {
+        printf("ERROR: Failed to load training data\n");
+        return 1;
+    }
+    printf("   ✓ Training data loaded: %d tokens\n", model->num_tokens);
     
     // Initialize training
-    CLLMTraining* training = cllm_training_init(model, &train_config);
+    printf("4. Initializing training...\n");
+    CLLMTrainingConfig config = {
+        .learning_rate = 0.001f,
+        .batch_size = 4,
+        .sequence_length = 32,
+        .num_epochs = 1,
+        .use_crystalline = 1
+    };
+    
+    CLLMTrainingState* training = cllm_init_training(model, &config);
     if (!training) {
-        printf("Failed to init training\n");
+        printf("ERROR: Failed to initialize training\n");
         return 1;
     }
+    printf("   ✓ Training initialized\n");
     
-    // Create dummy training data
-    training->num_tokens = 128;
-    training->tokens = (uint32_t*)malloc(128 * sizeof(uint32_t));
-    for (int i = 0; i < 128; i++) {
-        training->tokens[i] = i % 611;
+    // Check critical pointers
+    printf("5. Checking critical pointers...\n");
+    printf("   model->tokens = %p\n", (void*)model->tokens);
+    printf("   model->num_tokens = %d\n", model->num_tokens);
+    printf("   training->tokens = %p\n", (void*)training->tokens);
+    printf("   training->num_tokens = %d\n", training->num_tokens);
+    printf("   training->backward_buffer = %p\n", (void*)training->backward_buffer);
+    printf("   training->embedding_cache = %p\n", (void*)training->embedding_cache);
+    
+    // Try to get a batch
+    printf("6. Getting first batch...\n");
+    int* input_ids = (int*)malloc(config.batch_size * config.sequence_length * sizeof(int));
+    int* target_ids = (int*)malloc(config.batch_size * config.sequence_length * sizeof(int));
+    
+    int batch_result = cllm_get_batch(training, 0, input_ids, target_ids);
+    printf("   Batch result: %d\n", batch_result);
+    
+    if (batch_result > 0) {
+        printf("   ✓ Got batch with %d sequences\n", batch_result);
+        
+        // Print first few tokens
+        printf("   First input tokens: ");
+        for (int i = 0; i < 10 && i < config.sequence_length; i++) {
+            printf("%d ", input_ids[i]);
+        }
+        printf("\n");
+    } else {
+        printf("   ERROR: Failed to get batch\n");
     }
-    training->total_batches = 1;
     
-    printf("Model created, starting crystalline training...\n");
+    // Try crystalline training
+    printf("7. Testing crystalline training epoch...\n");
+    float loss = cllm_train_epoch_crystalline(model, training);
+    printf("   Loss: %f\n", loss);
     
-    // Allocate batch buffers
-    uint32_t* input_tokens = (uint32_t*)malloc(128 * sizeof(uint32_t));
-    uint32_t* target_tokens = (uint32_t*)malloc(128 * sizeof(uint32_t));
+    // Cleanup
+    printf("8. Cleaning up...\n");
+    free(input_ids);
+    free(target_ids);
+    cllm_free_training(training);
+    cllm_free_model(model);
     
-    for (int i = 0; i < 128; i++) {
-        input_tokens[i] = i % 611;
-        target_tokens[i] = (i + 1) % 611;
-    }
-    
-    printf("Calling crystalline loss computation...\n");
-    
-    // This is where it crashes
-    float loss = cllm_compute_loss_crystalline(training, input_tokens, target_tokens, 128);
-    
-    printf("Loss: %.4f\n", loss);
-    
-    free(input_tokens);
-    free(target_tokens);
-    cllm_training_cleanup(training);
-    
+    printf("=== TEST COMPLETE ===\n");
     return 0;
 }

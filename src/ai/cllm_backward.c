@@ -85,6 +85,15 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
  */
 static void backward_layer_norm(float* grad_out, float* grad_in, float* x, 
                                 CLLMLayerNorm* ln, float* grad_gamma, float* grad_beta, uint64_t dim) {
+    // CRITICAL: NULL pointer checks
+    if (!grad_out || !grad_in || !x || !ln) return;
+    if (!ln->gamma || !ln->beta) {
+        fprintf(stderr, "ERROR: LayerNorm has NULL pointers!\n");
+        fprintf(stderr, "  gamma=%p, beta=%p\n",
+                (void*)ln->gamma, (void*)ln->beta);
+        return;
+    }
+    
     // Compute mean and variance
     float mean = 0.0f, var = 0.0f;
     for (uint64_t i = 0; i < dim; i++) {
@@ -135,6 +144,16 @@ static void backward_feed_forward(float* grad_out, float* grad_in, float* x,
                                  FeedForwardLayer* ff, 
                                  float* grad_w1, float* grad_w2,
                                  float* grad_b1, float* grad_b2) {
+    // CRITICAL: NULL pointer checks
+    if (!grad_out || !grad_in || !x || !ff) return;
+    if (!ff->w1_lattice || !ff->w2_lattice || !ff->bias1 || !ff->bias2) {
+        fprintf(stderr, "ERROR: FeedForwardLayer has NULL pointers!\n");
+        fprintf(stderr, "  w1_lattice=%p, w2_lattice=%p, bias1=%p, bias2=%p\n",
+                (void*)ff->w1_lattice, (void*)ff->w2_lattice, 
+                (void*)ff->bias1, (void*)ff->bias2);
+        return;
+    }
+    
     int input_dim = ff->input_dim;
     int hidden_dim = ff->hidden_dim;
     int output_dim = ff->output_dim;
@@ -199,6 +218,16 @@ static void backward_feed_forward(float* grad_out, float* grad_in, float* x,
 static void backward_attention(float* grad_out, float* grad_in, float* x,
                               AttentionLayer* attn,
                               float* grad_query, float* grad_key, float* grad_value) {
+    // CRITICAL: NULL pointer checks
+    if (!grad_out || !grad_in || !x || !attn) return;
+    if (!attn->query_lattice || !attn->key_lattice || !attn->value_lattice) {
+        fprintf(stderr, "ERROR: AttentionLayer has NULL pointers!\n");
+        fprintf(stderr, "  query_lattice=%p, key_lattice=%p, value_lattice=%p\n",
+                (void*)attn->query_lattice, (void*)attn->key_lattice, 
+                (void*)attn->value_lattice);
+        return;
+    }
+    
     uint32_t dim = attn->num_heads * attn->head_dim;
     
     // Simplified: just compute gradients for Q, K, V projections
@@ -259,6 +288,20 @@ static void cllm_backward_impl(CLLMTraining* training, uint32_t* input_tokens,
     
     // Simplified backward pass - just compute gradients for embeddings and layers
     // For a proper implementation, we would need to store activations from forward pass
+    
+    // CRITICAL: Check if model layers are initialized
+    if (!model->ff_layers || !model->attention_layers || !model->layer_norms) {
+        fprintf(stderr, "ERROR: Model layers are NULL!\n");
+        fprintf(stderr, "  ff_layers=%p, attention_layers=%p, layer_norms=%p\n",
+                (void*)model->ff_layers, (void*)model->attention_layers,
+                (void*)model->layer_norms);
+        return;
+    }
+    
+    if (!model->embeddings.embeddings) {
+        fprintf(stderr, "ERROR: Model embeddings are NULL!\n");
+        return;
+    }
     
     // Process each sequence in batch
     for (int b = 0; b < batch_size; b++) {
