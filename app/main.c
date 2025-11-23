@@ -142,48 +142,17 @@ AppState* init_app(void) {
     state->research_file_count = 0;
     state->research_selected_file = -1;
     
-    // Auto-load default model if available
-    printf("Attempting to auto-load default CLLM model...\n");
-    const char* default_models[] = {
-        "models/saved_model.cllm",           // Training saves here
-        "models/default_model.cllm",
-        "data/models/default_model.cllm",
-        "data/models/demo_model.cllm",
-        NULL
-    };
+    // Don't auto-load model - let user choose
+    printf("=== CLLM Model Management ===\n");
+    printf("No model loaded on startup.\n");
+    printf("Options:\n");
+    printf("  1. Go to Training tab and click START TRAINING to create a new model\n");
+    printf("  2. Go to LLM tab and click LOAD MODEL to load an existing model\n");
+    printf("  3. Existing models will be found in models/ directory\n");
     
-    for (int i = 0; default_models[i] != NULL; i++) {
-        state->cllm_model = cllm_read_model(default_models[i]);
-        if (state->cllm_model) {
-            printf("✓ Loaded model from: %s\n", default_models[i]);
-            
-            // Initialize inference context
-            if (state->cllm_inference) {
-                cllm_inference_cleanup(state->cllm_inference);
-            }
-            state->cllm_inference = cllm_inference_init(state->cllm_model);
-            
-            break;
-        }
-    }
-    if (state->cllm_model) {
-        printf("✓ Default model loaded successfully!\n");
-        printf("  Vocab size: %lu\n", (unsigned long)state->cllm_model->vocab_size);
-        printf("  Layers: %u\n", state->cllm_model->num_layers);
-        printf("  Lattice points: %lu\n", (unsigned long)state->cllm_model->num_lattice_points);
-        
-        // Initialize inference engine
-        state->cllm_inference = cllm_inference_init(state->cllm_model);
-        if (state->cllm_inference) {
-            cllm_set_temperature(state->cllm_inference, state->llm_temperature);
-            cllm_set_max_tokens(state->cllm_inference, state->llm_max_tokens);
-            printf("✓ Inference engine initialized\n");
-            strcpy(state->llm_output_text, "Default model loaded and ready for inference!");
-        }
-    } else {
-        printf("ℹ No default model found. You can create one in the Training tab.\n");
-        strcpy(state->llm_output_text, "No model loaded. Click 'Load Model' or train a new model in the Training tab.");
-    }
+    state->cllm_model = NULL;
+    state->cllm_inference = NULL;
+    strcpy(state->llm_output_text, "No model loaded. Start training to create a new model, or load an existing one.");
     
     printf("=== CLLM System Ready ===\n\n");
     

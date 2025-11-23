@@ -502,22 +502,33 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 return;
             }
             
+            // Check if model exists
             if (!state->cllm_model) {
-                printf("No model loaded. Creating new model...\n");
-                // Create a new model with default parameters
-                // Create models directory if it doesn't exist
-                int mkdir_ret = system("mkdir -p ~/.cllm_models");
-                (void)mkdir_ret;  // Explicitly ignore return value
+                printf("=== NO MODEL LOADED ===\n");
+                printf("Creating new model with random weights...\n");
                 
-                // Load base model
-                char model_path[512];
-                snprintf(model_path, sizeof(model_path), "%s/.cllm_models/base_model.cllm",
-                        getenv("HOME") ? getenv("HOME") : ".");
-                state->cllm_model = cllm_read_model(model_path);
+                // Create models directory if it doesn't exist
+                int mkdir_ret = system("mkdir -p models");
+                (void)mkdir_ret;
+                
+                // Create new model using proper initialization
+                extern CLLMModel* app_create_cllm_model_default(void);
+                state->cllm_model = app_create_cllm_model_default();
+                
                 if (!state->cllm_model) {
-                    printf("Failed to load base model\n");
+                    printf("ERROR: Failed to create model\n");
+                    printf("Cannot start training without a model.\n");
                     return;
                 }
+                
+                printf("✓ New model created successfully\n");
+                printf("  This model will be saved to models/saved_model.cllm after training\n");
+            } else {
+                printf("=== USING EXISTING MODEL ===\n");
+                printf("  Vocab: %u tokens\n", state->cllm_model->vocab_size);
+                printf("  Layers: %u\n", state->cllm_model->num_layers);
+                printf("  Training will update this model's weights\n");
+                printf("  Model will be saved to models/saved_model.cllm after training\n");
             }
             
             if (!state->cllm_training) {

@@ -42,6 +42,27 @@ void* training_thread_func(void* arg) {
             printf("=== TRAINING COMPLETE ===\n");
             printf("Total epochs: %d\n", state->training_current_epoch);
             printf("Final loss: %.4f\n", loss);
+            
+            // Save final model
+            if (state->cllm_model) {
+                printf("\nSaving final model...\n");
+                
+                // Create models directory
+                int mkdir_ret = system("mkdir -p models");
+                (void)mkdir_ret;
+                
+                // Save to default location
+                const char* model_path = "models/saved_model.cllm";
+                extern int app_save_model(CLLMModel* model, const char* filepath);
+                
+                if (app_save_model(state->cllm_model, model_path) == 0) {
+                    printf("✓ Model saved to: %s\n", model_path);
+                    printf("  You can load this model later or continue training from it\n");
+                } else {
+                    printf("✗ Failed to save model\n");
+                }
+            }
+            
             break;
         }
     }
