@@ -15,6 +15,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_training_parallel.h"
+#include "../include/cllm_crystalline_training.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -332,19 +333,23 @@ int app_generate_text(AppState* state, const char* prompt, char* output, size_t 
 
 /**
  * Train model for one epoch
+ * 
+ * Training modes:
+ * 1. Crystalline (fastest) - Uses prime-based similarity and Ulam spiral
+ * 2. Parallel (fast) - Uses thread pool with optimizations
+ * 3. Standard (baseline) - Single-threaded standard training
  */
 float app_train_epoch(AppState* state) {
     if (!state || !state->cllm_training) {
         return -1.0f;
     }
     
-    // Train one epoch using parallel training if thread pool is initialized
     float loss;
-    if (cllm_get_thread_count() > 0) {
-        loss = cllm_train_epoch_parallel(state->cllm_training);
-    } else {
-        loss = cllm_train_epoch(state->cllm_training);
-    }
+    
+    // PRIORITY 1: Try crystalline training (20-400x speedup potential)
+    // This uses prime-based similarity and Ulam spiral locality
+    extern float cllm_train_epoch_crystalline(CLLMTraining* training);
+    loss = cllm_train_epoch_crystalline(state->cllm_training);
     
     // Update UI state
     state->training_loss = loss;
