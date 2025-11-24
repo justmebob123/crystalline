@@ -75,72 +75,94 @@ static void remove_lock(const char* filepath) {
  */
 static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t* num_tokens) {
     FILE* f = fopen(filepath, "r");
-    if (!f) return -1;
-    
-    // Skip header lines
-    char line[1024];
-    while (fgets(line, sizeof(line), f)) {
-        if (line[0] != '#') break;
+    if (!f) {
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s Cannot open: %s\n", timestamp, filepath);
+        return -1;
     }
     
-    // Count tokens first
-    long pos = ftell(f);
+    // Skip header lines and read token line
+    char line[4096];
+    int found = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] != '#') {
+            found = 1;
+            break;
+        }
+    }
+    fclose(f);
+    
+    if (!found) {
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s No tokens in: %s\n", timestamp, filepath);
+        return -1;
+    }
+    
+    // Count tokens
     int count = 0;
-    char token[256];
-    while (fscanf(f, "%255s", token) == 1) {
-        count++;
+    char* p = line;
+    while (*p) {
+        while (*p && (*p == ' ' || *p == '\t' || *p == '\n')) p++;
+        if (*p) {
+            count++;
+            while (*p && *p != ' ' && *p != '\t' && *p != '\n') p++;
+        }
     }
     
     if (count == 0) {
-        fclose(f);
         return -1;
     }
     
-    // Allocate and read tokens
+    // Allocate
     *tokens = (uint32_t*)malloc(count * sizeof(uint32_t));
-    if (!*tokens) {
-        fclose(f);
-        return -1;
-    }
+    if (!*tokens) return -1;
     
-    fseek(f, pos, SEEK_SET);
+    // Parse tokens
     int i = 0;
-    while (fscanf(f, "%255s", token) == 1 && i < count) {
-        // Simple hash-based token ID (replace with proper vocab lookup)
-        unsigned long hash = 5381;
-        for (char* p = token; *p; p++) {
-            hash = ((hash << 5) + hash) + *p;
+    p = line;
+    char token[256];
+    while (*p && i < count) {
+        while (*p && (*p == ' ' || *p == '\t' || *p == '\n')) p++;
+        if (!*p) break;
+        
+        int j = 0;
+        while (*p && *p != ' ' && *p != '\t' && *p != '\n' && j < 255) {
+            token[j++] = *p++;
         }
-        (*tokens)[i++] = (uint32_t)(hash % 10000);  // Mod by vocab size
+        token[j] = '\0';
+        
+        // Hash to ID
+        unsigned long hash = 5381;
+        for (char* tp = token; *tp; tp++) {
+            hash = ((hash << 5) + hash) + *tp;
+        }
+        (*tokens)[i++] = (uint32_t)(hash % 10000);
     }
     
     *num_tokens = i;
-    fclose(f);
     return 0;
 }
+
 
 /**
  * Train on one file
  */
 static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
-    char timestamp[32];
-    get_timestamp(timestamp, sizeof(timestamp));
-    
-    printf("\n%s === Training on file ===\n", timestamp);
-    printf("%s File: %s\n", timestamp, filepath);
+    printf("\n=== Training on file ===\n");
+    printf("File: %s\n", filepath);
     
     // Load tokens
     uint32_t* tokens = NULL;
     size_t num_tokens = 0;
     
     if (load_tokens_from_file(filepath, &tokens, &num_tokens) != 0) {
-        get_timestamp(timestamp, sizeof(timestamp));
-        fprintf(stderr, "%s Failed to load tokens from: %s\n", timestamp, filepath);
+        fprintf(stderr, "Failed to load tokens from: %s\n", filepath);
         return -1;
     }
     
-    get_timestamp(timestamp, sizeof(timestamp));
-    printf("%s Loaded %zu tokens\n", timestamp, num_tokens);
+    printf("Loaded %zu tokens\n", num_tokens);
     
     // Update training data
     if (state->training->tokens) {
@@ -212,12 +234,7 @@ static void* training_worker_thread(void* arg) {
         
         while ((entry = readdir(dir)) != NULL) {
             if (entry->d_name[0] == '.') continue;
-            
-            // Only process .tok files (not .tok.lock or .tok.lock.lock)
-            size_t len = strlen(entry->d_name);
-            if (len < 4 || strcmp(entry->d_name + len - 4, ".tok") != 0) {
-                continue;
-            }
+            if (strstr(entry->d_name, ".tok") == NULL) continue;
             
             char filepath[2048];
             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
