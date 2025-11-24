@@ -564,13 +564,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
              (SDL_Color){150, 150, 150, 255});
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
-    SDL_Rect old_bounds = crawler_url_input.bounds;
+    // CRITICAL FIX: Update bounds during rendering so click detection matches visual position
     crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
-    if (old_bounds.x != crawler_url_input.bounds.x || old_bounds.y != crawler_url_input.bounds.y) {
-        printf("DEBUG: crawler_url_input bounds changed from (%d,%d) to (%d,%d), text='%s'\n",
-               old_bounds.x, old_bounds.y, crawler_url_input.bounds.x, crawler_url_input.bounds.y,
-               crawler_url_input.text);
-    }
     
     // DEBUG: Show what's in the input field
     if (crawler_url_input.text[0] != '\0') {
@@ -730,6 +725,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
     printf("DEBUG: handle_training_tab_click called at (%d, %d)\n", x, y);
+    printf("DEBUG: Input bounds:\n");
+    printf("  learning_rate: (%d,%d,%d,%d)\n", learning_rate_input.bounds.x, learning_rate_input.bounds.y, learning_rate_input.bounds.w, learning_rate_input.bounds.h);
+    printf("  epochs: (%d,%d,%d,%d)\n", epochs_input.bounds.x, epochs_input.bounds.y, epochs_input.bounds.w, epochs_input.bounds.h);
+    printf("  batch_size: (%d,%d,%d,%d)\n", batch_size_input.bounds.x, batch_size_input.bounds.y, batch_size_input.bounds.w, batch_size_input.bounds.h);
+    printf("  thread_count: (%d,%d,%d,%d)\n", thread_count_input.bounds.x, thread_count_input.bounds.y, thread_count_input.bounds.w, thread_count_input.bounds.h);
+    printf("  crawler_url: (%d,%d,%d,%d)\n", crawler_url_input.bounds.x, crawler_url_input.bounds.y, crawler_url_input.bounds.w, crawler_url_input.bounds.h);
     
     // Update visualization
     update_training_visualization(state);
