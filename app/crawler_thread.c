@@ -42,6 +42,9 @@ static void* crawler_thread_func(void* arg) {
     }
     
     // Create data directories
+    printf("Creating directory structure...\n");
+    mkdir(args->data_dir, 0755);  // Create main data directory first!
+    
     char raw_dir[1024], preprocessed_dir[1024], training_queue_dir[1024], trained_dir[1024];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", args->data_dir);
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", args->data_dir);
@@ -52,6 +55,8 @@ static void* crawler_thread_func(void* arg) {
     mkdir(preprocessed_dir, 0755);
     mkdir(training_queue_dir, 0755);
     mkdir(trained_dir, 0755);
+    
+    printf("✓ Directories created\n");
     
     // Build command to run cllm_crawler
     // Use the same model as the main app
