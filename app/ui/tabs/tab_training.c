@@ -680,24 +680,7 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
 void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
-    printf("DEBUG: handle_training_tab_click called at (%d, %d)\n", x, y);
-    
-    // Check InputManager bounds
-    extern InputManager* g_input_manager;
-    if (g_input_manager) {
-        printf("DEBUG: InputManager bounds:\n");
-        ManagedInput* lr = input_manager_get(g_input_manager, "training.learning_rate");
-        ManagedInput* ep = input_manager_get(g_input_manager, "training.epochs");
-        ManagedInput* bs = input_manager_get(g_input_manager, "training.batch_size");
-        ManagedInput* tc = input_manager_get(g_input_manager, "training.thread_count");
-        ManagedInput* cu = input_manager_get(g_input_manager, "training.crawler_url");
-        
-        if (lr) printf("  learning_rate: (%d,%d,%d,%d)\n", lr->bounds.x, lr->bounds.y, lr->bounds.w, lr->bounds.h);
-        if (ep) printf("  epochs: (%d,%d,%d,%d)\n", ep->bounds.x, ep->bounds.y, ep->bounds.w, ep->bounds.h);
-        if (bs) printf("  batch_size: (%d,%d,%d,%d)\n", bs->bounds.x, bs->bounds.y, bs->bounds.w, bs->bounds.h);
-        if (tc) printf("  thread_count: (%d,%d,%d,%d)\n", tc->bounds.x, tc->bounds.y, tc->bounds.w, tc->bounds.h);
-        if (cu) printf("  crawler_url: (%d,%d,%d,%d)\n", cu->bounds.x, cu->bounds.y, cu->bounds.w, cu->bounds.h);
-    }
+    // Silent click handling
     
     // Update visualization
     update_training_visualization(state);
@@ -817,10 +800,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Start Crawler button (NEW!)
     if (rect_contains_point(btn_start_crawler.bounds, x, y)) {
-        printf("DEBUG: START CRAWLER button clicked at (%d, %d)\n", x, y);
-        printf("DEBUG: Button bounds: x=%d, y=%d, w=%d, h=%d\n", 
-               btn_start_crawler.bounds.x, btn_start_crawler.bounds.y,
-               btn_start_crawler.bounds.w, btn_start_crawler.bounds.h);
+        // Crawler button clicked
         
         if (crawler_running || state->crawler_running) {
             printf("Stopping crawler...\n");
@@ -837,7 +817,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             const char* start_url = g_input_manager ? 
                 input_manager_get_text(g_input_manager, "training.crawler_url") : "";
             
-            printf("DEBUG: Retrieved URL from InputManager: '%s'\n", start_url ? start_url : "(NULL)");
+            // Retrieved URL from InputManager
             
             // Update state
             if (start_url && start_url[0] != '\0') {

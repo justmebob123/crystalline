@@ -63,8 +63,7 @@ ManagedInput* input_manager_register(
     input->on_submit = NULL;
     input->user_data = NULL;
     
-    printf("InputManager: Registered '%s' (tab=%d, type=%d, bounds=(%d,%d,%d,%d))\n", 
-           id, tab_id, type, bounds.x, bounds.y, bounds.w, bounds.h);
+    // Silent registration
     return input;
 }
 
@@ -132,7 +131,7 @@ void input_manager_focus(InputManager* manager, const char* id) {
         input->active = true;
         manager->focused_input = input;
         SDL_StartTextInput();
-        printf("InputManager: Focused '%s'\n", id);
+        // Silent focus
     }
 }
 
@@ -140,7 +139,7 @@ void input_manager_focus(InputManager* manager, const char* id) {
 void input_manager_unfocus(InputManager* manager) {
     if (!manager || !manager->focused_input) return;
     
-    printf("InputManager: Unfocused '%s'\n", manager->focused_input->id);
+    // Silent unfocus
     manager->focused_input->active = false;
     manager->focused_input = NULL;
     SDL_StopTextInput();
@@ -215,7 +214,7 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
                         input->cursor_pos = strlen(input->text);
                         SDL_free(clipboard);
                         
-                        printf("InputManager: Pasted into '%s': %s\n", input->id, input->text);
+                        // Silent paste
                         
                         if (input->on_change) {
                             input->on_change(input->text, input->user_data);
@@ -261,25 +260,10 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
 
 // Render all inputs for current tab
 void input_manager_render(InputManager* manager, SDL_Renderer* renderer, TTF_Font* font, int tab_id) {
-    if (!manager || !renderer || !font) {
-        printf("DEBUG: input_manager_render - NULL parameter (manager=%p, renderer=%p, font=%p)\n",
-               (void*)manager, (void*)renderer, (void*)font);
-        return;
-    }
-    
-    static int render_count = 0;
-    if (++render_count % 60 == 0) {  // Log every 60 frames
-        printf("DEBUG: input_manager_render called for tab %d, input_count=%d\n", tab_id, manager->input_count);
-    }
+    if (!manager || !renderer || !font) return;
     
     for (int i = 0; i < manager->input_count; i++) {
         ManagedInput* input = &manager->inputs[i];
-        
-        if (render_count % 60 == 0) {
-            printf("  Input %d: id='%s', tab=%d, visible=%d, bounds=(%d,%d,%d,%d)\n",
-                   i, input->id, input->tab_id, input->visible,
-                   input->bounds.x, input->bounds.y, input->bounds.w, input->bounds.h);
-        }
         
         if (!input->visible || input->tab_id != tab_id) continue;
         

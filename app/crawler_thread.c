@@ -58,36 +58,87 @@ static void* crawler_thread_func(void* arg) {
         char log_file[1024];
         snprintf(log_file, sizeof(log_file), "%s/crawler.log", args->data_dir);
         
+        printf("\n=== CRAWLER MONITORING STARTED ===\n");
+        printf("Watching: %s\n", log_file);
+        printf("Raw pages: %s\n", raw_dir);
+        printf("Preprocessed: %s\n", preprocessed_dir);
+        printf("Training queue: %s\n", training_queue_dir);
+        printf("Trained: %s\n\n", trained_dir);
+        
+        int last_raw = 0, last_preprocessed = 0, last_queue = 0, last_trained = 0;
+        
         while (crawler_running) {
             // Update status by checking directories
             pthread_mutex_lock(&crawler_mutex);
             
-            // Count files in raw_pages directory
+            // Count files in each directory
             char count_cmd[1024];
+            int raw_count = 0, preprocessed_count = 0, queue_count = 0, trained_count = 0;
+            
             snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", raw_dir);
             FILE* fp = popen(count_cmd, "r");
             if (fp) {
-                if (fscanf(fp, "%d", &crawler_pages_crawled) != 1) {
-                    crawler_pages_crawled = 0;
+                if (fscanf(fp, "%d", &raw_count) == 1) {
+                    crawler_pages_crawled = raw_count;
                 }
                 pclose(fp);
             }
             
-            // Count files in training_queue directory
+            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", preprocessed_dir);
+            fp = popen(count_cmd, "r");
+            if (fp) {
+                fscanf(fp, "%d", &preprocessed_count);
+                pclose(fp);
+            }
+            
             snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", training_queue_dir);
             fp = popen(count_cmd, "r");
             if (fp) {
-                if (fscanf(fp, "%d", &crawler_queue_size) != 1) {
-                    crawler_queue_size = 0;
+                if (fscanf(fp, "%d", &queue_count) == 1) {
+                    crawler_queue_size = queue_count;
                 }
+                pclose(fp);
+            }
+            
+            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", trained_dir);
+            fp = popen(count_cmd, "r");
+            if (fp) {
+                fscanf(fp, "%d", &trained_count);
                 pclose(fp);
             }
             
             pthread_mutex_unlock(&crawler_mutex);
             
+            // Print status if anything changed
+            if (raw_count != last_raw || preprocessed_count != last_preprocessed || 
+                queue_count != last_queue || trained_count != last_trained) {
+                printf("[CRAWLER STATUS] Raw: %d | Preprocessed: %d | Queue: %d | Trained: %d\n",
+                       raw_count, preprocessed_count, queue_count, trained_count);
+                
+                if (raw_count > last_raw) {
+                    printf("  → Downloaded %d new page(s)\n", raw_count - last_raw);
+                }
+                if (preprocessed_count > last_preprocessed) {
+                    printf("  → Preprocessed %d new page(s)\n", preprocessed_count - last_preprocessed);
+                }
+                if (queue_count > last_queue) {
+                    printf("  → Tokenized %d new page(s)\n", queue_count - last_queue);
+                }
+                if (trained_count > last_trained) {
+                    printf("  → Trained on %d new page(s)\n", trained_count - last_trained);
+                }
+                
+                last_raw = raw_count;
+                last_preprocessed = preprocessed_count;
+                last_queue = queue_count;
+                last_trained = trained_count;
+            }
+            
             // Sleep for 5 seconds before next update
             sleep(5);
         }
+        
+        printf("\n=== CRAWLER MONITORING STOPPED ===\n");
     } else {
         printf("ERROR: Failed to start crawler process (exit code: %d)\n", result);
     }
