@@ -13,6 +13,7 @@
 #include "../../text_input.h"
 #include "../../training_thread.h"
 #include "../../ui_layout.h"
+#include "../../input_manager.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_training_parallel.h"
@@ -202,25 +203,36 @@ void init_training_tab(AppState* state) {
     viz_area_rect.w = RENDER_WIDTH - 20;
     viz_area_rect.h = WINDOW_HEIGHT - 80;
     
-    // Initialize text inputs if not done
+    // Register inputs with global input manager
     if (!inputs_initialized) {
-        int panel_x = RENDER_WIDTH + 10;
-        int input_width = CONTROL_PANEL_WIDTH - 20;
-        
-        text_input_init(&learning_rate_input, "Learning Rate:", panel_x, 200, input_width, 25);
-        text_input_set_text(&learning_rate_input, "0.001");
-        
-        text_input_init(&epochs_input, "Epochs:", panel_x, 240, input_width, 25);
-        text_input_set_text(&epochs_input, "10");
-        
-        text_input_init(&batch_size_input, "Batch Size:", panel_x, 280, input_width, 25);
-        text_input_set_text(&batch_size_input, "32");
-        
-        text_input_init(&thread_count_input, "Threads (0=auto):", panel_x, 320, input_width, 25);
-        text_input_set_text(&thread_count_input, "0");
-        
-        text_input_init(&crawler_url_input, "Crawler Start URL:", panel_x, 360, input_width, 25);
-        text_input_set_text(&crawler_url_input, ""); // User must provide URL
+        extern InputManager* g_input_manager;
+        if (g_input_manager) {
+            int panel_x = RENDER_WIDTH + 10;
+            int input_width = CONTROL_PANEL_WIDTH - 20;
+            
+            // Register all training tab inputs with EXACT bounds from layout
+            input_manager_register(g_input_manager, "training.learning_rate", TAB_TRAINING, INPUT_TYPE_NUMBER,
+                                 (SDL_Rect){panel_x, 417, input_width, 25});
+            input_manager_set_text(g_input_manager, "training.learning_rate", "0.001");
+            
+            input_manager_register(g_input_manager, "training.epochs", TAB_TRAINING, INPUT_TYPE_NUMBER,
+                                 (SDL_Rect){panel_x, 474, input_width, 25});
+            input_manager_set_text(g_input_manager, "training.epochs", "10");
+            
+            input_manager_register(g_input_manager, "training.batch_size", TAB_TRAINING, INPUT_TYPE_NUMBER,
+                                 (SDL_Rect){panel_x, 531, input_width, 25});
+            input_manager_set_text(g_input_manager, "training.batch_size", "32");
+            
+            input_manager_register(g_input_manager, "training.thread_count", TAB_TRAINING, INPUT_TYPE_NUMBER,
+                                 (SDL_Rect){panel_x, 588, input_width, 25});
+            input_manager_set_text(g_input_manager, "training.thread_count", "0");
+            
+            input_manager_register(g_input_manager, "training.crawler_url", TAB_TRAINING, INPUT_TYPE_URL,
+                                 (SDL_Rect){panel_x, 686, input_width, 30});
+            input_manager_set_text(g_input_manager, "training.crawler_url", "");
+            
+            printf("Training tab: Registered 5 inputs with InputManager\n");
+        }
         
         inputs_initialized = true;
     }
@@ -528,34 +540,39 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect lr_label = layout_add_label(&layout, "Learning Rate:", 16);
     draw_text(renderer, "Learning Rate:", lr_label.x, lr_label.y, text_color);
     SDL_Rect lr_rect = layout_add_element(&layout, 0, 25);
-    learning_rate_input.bounds = (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25};
-    // Render using text_input_render but DON'T let it draw its own label
-    learning_rate_input.label[0] = '\0'; // Clear label to prevent duplicate rendering
-    text_input_render(&learning_rate_input, renderer, get_global_font());
+    // Update bounds in input manager
+    extern InputManager* g_input_manager;
+    if (g_input_manager) {
+        input_manager_set_bounds(g_input_manager, "training.learning_rate", 
+                               (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25});
+    }
     
     // Epochs
     SDL_Rect ep_label = layout_add_label(&layout, "Epochs:", 16);
     draw_text(renderer, "Epochs:", ep_label.x, ep_label.y, text_color);
     SDL_Rect ep_rect = layout_add_element(&layout, 0, 25);
-    epochs_input.bounds = (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25};
-    epochs_input.label[0] = '\0';
-    text_input_render(&epochs_input, renderer, get_global_font());
+    if (g_input_manager) {
+        input_manager_set_bounds(g_input_manager, "training.epochs",
+                               (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25});
+    }
     
     // Batch Size
     SDL_Rect bs_label = layout_add_label(&layout, "Batch Size:", 16);
     draw_text(renderer, "Batch Size:", bs_label.x, bs_label.y, text_color);
     SDL_Rect bs_rect = layout_add_element(&layout, 0, 25);
-    batch_size_input.bounds = (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25};
-    batch_size_input.label[0] = '\0';
-    text_input_render(&batch_size_input, renderer, get_global_font());
+    if (g_input_manager) {
+        input_manager_set_bounds(g_input_manager, "training.batch_size",
+                               (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25});
+    }
     
     // Threads
     SDL_Rect tc_label = layout_add_label(&layout, "Threads (0=auto):", 16);
     draw_text(renderer, "Threads (0=auto):", tc_label.x, tc_label.y, text_color);
     SDL_Rect tc_rect = layout_add_element(&layout, 0, 25);
-    thread_count_input.bounds = (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25};
-    thread_count_input.label[0] = '\0';
-    text_input_render(&thread_count_input, renderer, get_global_font());
+    if (g_input_manager) {
+        input_manager_set_bounds(g_input_manager, "training.thread_count",
+                               (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25});
+    }
     
     layout_add_spacing(&layout, 15);
     
@@ -569,52 +586,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
              (SDL_Color){150, 150, 150, 255});
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
-    // Set bounds to EXACTLY where the input box is rendered
-    crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
-    
-    // CRITICAL: Render input MANUALLY to ensure bounds match exactly
-    SDL_Color input_bg = crawler_url_input.active ? 
-        (SDL_Color){255, 255, 255, 255} : (SDL_Color){200, 200, 200, 255};
-    SDL_SetRenderDrawColor(renderer, input_bg.r, input_bg.g, input_bg.b, 255);
-    SDL_RenderFillRect(renderer, &crawler_url_input.bounds);
-    
-    SDL_Color input_border = crawler_url_input.active ?
-        (SDL_Color){0, 120, 215, 255} : (SDL_Color){100, 100, 100, 255};
-    SDL_SetRenderDrawColor(renderer, input_border.r, input_border.g, input_border.b, 255);
-    SDL_RenderDrawRect(renderer, &crawler_url_input.bounds);
-    
-    // Draw text inside input
-    if (strlen(crawler_url_input.text) > 0) {
-        SDL_Color text_color = {0, 0, 0, 255};
-        SDL_Surface* text_surface = TTF_RenderText_Blended(get_global_font(), crawler_url_input.text, text_color);
-        if (text_surface) {
-            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
-            if (text_texture) {
-                SDL_Rect text_rect = {
-                    crawler_url_input.bounds.x + 5,
-                    crawler_url_input.bounds.y + (crawler_url_input.bounds.h - text_surface->h) / 2,
-                    text_surface->w,
-                    text_surface->h
-                };
-                SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
-                SDL_DestroyTexture(text_texture);
-            }
-            SDL_FreeSurface(text_surface);
-        }
-    }
-    
-    // Draw cursor if active
-    if (crawler_url_input.active) {
-        int cursor_x = crawler_url_input.bounds.x + 5;
-        if (strlen(crawler_url_input.text) > 0) {
-            int text_w = 0;
-            TTF_SizeText(get_global_font(), crawler_url_input.text, &text_w, NULL);
-            cursor_x += text_w;
-        }
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderDrawLine(renderer,
-            cursor_x, crawler_url_input.bounds.y + 5,
-            cursor_x, crawler_url_input.bounds.y + crawler_url_input.bounds.h - 5);
+    if (g_input_manager) {
+        input_manager_set_bounds(g_input_manager, "training.crawler_url",
+                               (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30});
     }
     
     layout_add_spacing(&layout, 10);
@@ -679,6 +653,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
     SDL_RenderDrawRect(renderer, &btn_load.bounds);
     draw_text(renderer, "Load", btn_load.bounds.x + 35, btn_load.bounds.y + 6, text_color);
+    
+    // Render all inputs through input manager
+    extern InputManager* g_input_manager;
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_TRAINING);
+    }
 }
 
 /**
@@ -711,49 +691,13 @@ void update_training_visualization(AppState* state) {
 
 /**
  * Handle text input events
+ * NOTE: Input events are now handled by InputManager in main event loop
+ * This function is kept for compatibility but does nothing
  */
 bool handle_training_tab_event(AppState* state, SDL_Event* event) {
-    if (!state || !event) return false;
-    
-    // Handle text input events
-    if (text_input_handle_event(&learning_rate_input, event)) {
-        if (!text_input_is_active(&learning_rate_input)) {
-            state->training_learning_rate = (float)text_input_get_number(&learning_rate_input);
-        }
-        return true;
-    }
-    
-    if (text_input_handle_event(&epochs_input, event)) {
-        if (!text_input_is_active(&epochs_input)) {
-            state->training_epochs = (int)text_input_get_number(&epochs_input);
-        }
-        return true;
-    }
-    
-    if (text_input_handle_event(&batch_size_input, event)) {
-        return true;
-    }
-    
-    if (text_input_handle_event(&thread_count_input, event)) {
-        if (!text_input_is_active(&thread_count_input)) {
-            state->training_thread_count = (int)text_input_get_number(&thread_count_input);
-        }
-        return true;
-    }
-    
-    if (text_input_handle_event(&crawler_url_input, event)) {
-        // ALWAYS update the crawler start URL in state when text changes
-        // This ensures paste operations (Ctrl+V) immediately update the state
-        const char* current_text = text_input_get_text(&crawler_url_input);
-        printf("DEBUG: text_input_handle_event returned true, current_text = '%s'\n", current_text);
-        strncpy(state->crawler_start_url, current_text, 
-                sizeof(state->crawler_start_url) - 1);
-        state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
-        printf("DEBUG: Updated state->crawler_start_url = '%s'\n", state->crawler_start_url);
-        return true;
-    }
-    
-    return false;
+    (void)state;
+    (void)event;
+    return false; // InputManager handles all input events now
 }
 
 /**
@@ -773,55 +717,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     // Update visualization
     update_training_visualization(state);
     
-    // Check text input clicks
-    // CRITICAL: Ignore clicks if bounds haven't been set yet (all zeros)
-    printf("DEBUG: inputs_initialized=%d, crawler_url_input.bounds.w=%d\n", 
-           inputs_initialized, crawler_url_input.bounds.w);
-    if (inputs_initialized && crawler_url_input.bounds.w > 0) {
-        printf("DEBUG: Processing input clicks (bounds are initialized)\n");
-        if (rect_contains_point(learning_rate_input.bounds, x, y)) {
-            text_input_activate(&learning_rate_input);
-            text_input_deactivate(&epochs_input);
-            text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
-            SDL_StartTextInput();
-            return;
-        }
-        if (rect_contains_point(epochs_input.bounds, x, y)) {
-            text_input_activate(&epochs_input);
-            text_input_deactivate(&learning_rate_input);
-            text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
-            SDL_StartTextInput();
-            return;
-        }
-        if (rect_contains_point(batch_size_input.bounds, x, y)) {
-            text_input_activate(&batch_size_input);
-            text_input_deactivate(&learning_rate_input);
-            text_input_deactivate(&epochs_input);
-            text_input_deactivate(&thread_count_input);
-            SDL_StartTextInput();
-            return;
-        }
-        if (rect_contains_point(thread_count_input.bounds, x, y)) {
-            text_input_activate(&thread_count_input);
-            text_input_deactivate(&learning_rate_input);
-            text_input_deactivate(&epochs_input);
-            text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&crawler_url_input);
-            SDL_StartTextInput();
-            return;
-        }
-        if (rect_contains_point(crawler_url_input.bounds, x, y)) {
-            text_input_activate(&crawler_url_input);
-            text_input_deactivate(&learning_rate_input);
-            text_input_deactivate(&epochs_input);
-            text_input_deactivate(&batch_size_input);
-            text_input_deactivate(&thread_count_input);
-            SDL_StartTextInput();
-            return;
-        }
-    }
+    // Input clicks are now handled by InputManager in main event loop
+    // No need for tab-specific input click handling
     
     // Check button clicks using dynamic bounds
     if (rect_contains_point(btn_scan_dir.bounds, x, y)) {
@@ -953,12 +850,14 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             extern void stop_crawler_thread(void);
             stop_crawler_thread();
         } else {
-            // CRITICAL FIX: Read URL directly from input field, not from state
-            // State may be empty if input hasn't been deactivated yet
-            const char* start_url = text_input_get_text(&crawler_url_input);
-            printf("DEBUG: Retrieved URL directly from input: '%s'\n", start_url ? start_url : "(NULL)");
+            // Get URL from input manager
+            extern InputManager* g_input_manager;
+            const char* start_url = g_input_manager ? 
+                input_manager_get_text(g_input_manager, "training.crawler_url") : "";
             
-            // Also update state for future use
+            printf("DEBUG: Retrieved URL from InputManager: '%s'\n", start_url ? start_url : "(NULL)");
+            
+            // Update state
             if (start_url && start_url[0] != '\0') {
                 strncpy(state->crawler_start_url, start_url, sizeof(state->crawler_start_url) - 1);
                 state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';

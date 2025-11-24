@@ -3,6 +3,7 @@
 #include "app_common.h"
 #include "cllm_integration.h"
 #include "../include/cllm_format.h"
+#include "input_manager.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
@@ -38,6 +39,16 @@ AppState* init_app(void) {
         return NULL;
     }
 
+    // Initialize global input manager
+    g_input_manager = input_manager_create();
+    if (!g_input_manager) {
+        printf("Failed to create input manager\n");
+        SDL_DestroyRenderer(state->renderer);
+        SDL_DestroyWindow(state->window);
+        SDL_Quit();
+        return NULL;
+    }
+    
     // Initialize state
     state->mode = MODE_ULAM_SPIRAL;
     state->fold_mode = FOLD_NONE;
@@ -438,19 +449,10 @@ void handle_input(AppState* state, SDL_Event* event) {
         // Silent key presses (no terminal spam)
     }
     
-    // Handle Training tab text inputs first (before other event processing)
-    if (state->current_tab == TAB_TRAINING) {
-        if (handle_training_tab_event(state, event)) {
-            printf("DEBUG: handle_training_tab_event returned true, event handled\n");
-            return; // Event was handled by text input
-        }
-    }
-    
-    // Handle Research tab text inputs
-    if (state->current_tab == TAB_RESEARCH) {
-        if (handle_research_tab_event(state, event)) {
-            return; // Event was handled by text input
-        }
+    // Handle input events through global input manager
+    if (g_input_manager && input_manager_handle_event(g_input_manager, event)) {
+        printf("DEBUG: InputManager handled event\n");
+        return; // Event was handled by input manager
     }
     
     switch (event->type) {
