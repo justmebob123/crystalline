@@ -1,6 +1,7 @@
 // app/ui/tabs/tab_llm.c - Chat Interface with Control Panel
 #include "../../app_common.h"
 #include "../../cllm_integration.h"
+#include "../../ui_layout.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
@@ -123,92 +124,102 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect panel_rect = {panel_x, panel_y, panel_width, WINDOW_HEIGHT - panel_y};
     SDL_RenderFillRect(renderer, &panel_rect);
     
-    int y = panel_y + 10;
+    // Initialize dynamic layout
+    LayoutContainer layout;
+    layout_init(&layout, panel_rect, LAYOUT_VERTICAL, 10, 8);
     
-    // Model Status
-    draw_text(renderer, "CLLM MODEL", panel_x + 10, y, text_color);
-    y += 20;
+    // === SECTION 1: MODEL STATUS ===
+    SDL_Rect model_label = layout_add_label(&layout, "CLLM MODEL", 20);
+    draw_text(renderer, "CLLM MODEL", model_label.x, model_label.y, text_color);
     
     const char* status = state->cllm_model ? "Loaded" : "Not Loaded";
     SDL_Color status_color = state->cllm_model ? 
         (SDL_Color){100, 255, 100, 255} : (SDL_Color){255, 100, 100, 255};
     char status_text[64];
     snprintf(status_text, sizeof(status_text), "Status: %s", status);
-    draw_text(renderer, status_text, panel_x + 10, y, status_color);
-    y += 18;
+    SDL_Rect status_rect = layout_add_label(&layout, status_text, 18);
+    draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
     
     if (state->cllm_model) {
         char info[128];
         snprintf(info, sizeof(info), "Vocab: %lu", (unsigned long)state->cllm_model->vocab_size);
-        draw_text(renderer, info, panel_x + 10, y, text_color);
-        y += 16;
+        SDL_Rect vocab_rect = layout_add_label(&layout, info, 16);
+        draw_text(renderer, info, vocab_rect.x, vocab_rect.y, text_color);
+        
         snprintf(info, sizeof(info), "Layers: %u", state->cllm_model->num_layers);
-        draw_text(renderer, info, panel_x + 10, y, text_color);
-        y += 20;
-    } else {
-        y += 20;
+        SDL_Rect layers_rect = layout_add_label(&layout, info, 16);
+        draw_text(renderer, info, layers_rect.x, layers_rect.y, text_color);
     }
     
-    // Model buttons
-    g_create_btn = (SDL_Rect){panel_x + 10, y, (panel_width - 30) / 2, 28};
+    layout_add_spacing(&layout, 10);
+    
+    // Model buttons row
+    SDL_Rect btn_row = layout_add_element(&layout, 0, 28);
+    int button_width = (panel_width - 30) / 2;
+    
+    g_create_btn = (SDL_Rect){btn_row.x, btn_row.y, button_width, 28};
     SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
     SDL_RenderFillRect(renderer, &g_create_btn);
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
     SDL_RenderDrawRect(renderer, &g_create_btn);
     draw_text(renderer, "Create", g_create_btn.x + 25, g_create_btn.y + 7, text_color);
     
-    g_load_btn = (SDL_Rect){panel_x + 15 + (panel_width - 30) / 2, y, (panel_width - 30) / 2, 28};
+    g_load_btn = (SDL_Rect){btn_row.x + button_width + 10, btn_row.y, button_width, 28};
     SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
     SDL_RenderFillRect(renderer, &g_load_btn);
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
     SDL_RenderDrawRect(renderer, &g_load_btn);
     draw_text(renderer, "Load", g_load_btn.x + 30, g_load_btn.y + 7, text_color);
-    y += 35;
     
     if (state->cllm_model) {
-        g_save_btn = (SDL_Rect){panel_x + 10, y, panel_width - 20, 28};
+        g_save_btn = layout_add_button(&layout, NULL, 0, 28);
         SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
         SDL_RenderFillRect(renderer, &g_save_btn);
         SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
         SDL_RenderDrawRect(renderer, &g_save_btn);
         draw_text(renderer, "Save Model", g_save_btn.x + 70, g_save_btn.y + 7, text_color);
-        y += 35;
     }
     
-    // Parameters
-    draw_text(renderer, "PARAMETERS", panel_x + 10, y, text_color);
-    y += 20;
+    layout_add_spacing(&layout, 10);
     
+    // === SECTION 2: PARAMETERS ===
+    SDL_Rect params_label = layout_add_label(&layout, "PARAMETERS", 20);
+    draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
+    
+    // Temperature slider
     char temp_label[64];
     snprintf(temp_label, sizeof(temp_label), "Temperature: %.2f", state->llm_temperature);
-    draw_text(renderer, temp_label, panel_x + 10, y, text_color);
-    y += 16;
+    SDL_Rect temp_label_rect = layout_add_label(&layout, temp_label, 16);
+    draw_text(renderer, temp_label, temp_label_rect.x, temp_label_rect.y, text_color);
     
-    g_temp_slider = (SDL_Rect){panel_x + 10, y, panel_width - 20, 8};
+    g_temp_slider = layout_add_element(&layout, 0, 8);
     SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
     SDL_RenderFillRect(renderer, &g_temp_slider);
     int temp_handle_x = g_temp_slider.x + (int)((state->llm_temperature / 2.0f) * g_temp_slider.w);
     SDL_Rect temp_handle = {temp_handle_x - 4, g_temp_slider.y - 4, 8, 16};
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &temp_handle);
-    y += 20;
     
+    layout_add_spacing(&layout, 5);
+    
+    // Max tokens slider
     char tokens_label[64];
     snprintf(tokens_label, sizeof(tokens_label), "Max Tokens: %d", state->llm_max_tokens);
-    draw_text(renderer, tokens_label, panel_x + 10, y, text_color);
-    y += 16;
+    SDL_Rect tokens_label_rect = layout_add_label(&layout, tokens_label, 16);
+    draw_text(renderer, tokens_label, tokens_label_rect.x, tokens_label_rect.y, text_color);
     
-    g_tokens_slider = (SDL_Rect){panel_x + 10, y, panel_width - 20, 8};
+    g_tokens_slider = layout_add_element(&layout, 0, 8);
     SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
     SDL_RenderFillRect(renderer, &g_tokens_slider);
     int tokens_handle_x = g_tokens_slider.x + (int)((float)state->llm_max_tokens / 500.0f * g_tokens_slider.w);
     SDL_Rect tokens_handle = {tokens_handle_x - 4, g_tokens_slider.y - 4, 8, 16};
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &tokens_handle);
-    y += 30;
+    
+    layout_add_spacing(&layout, 10);
     
     // Clear chat button
-    g_clear_chat_btn = (SDL_Rect){panel_x + 10, y, panel_width - 20, 25};
+    g_clear_chat_btn = layout_add_button(&layout, NULL, 0, 25);
     SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
     SDL_RenderFillRect(renderer, &g_clear_chat_btn);
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);

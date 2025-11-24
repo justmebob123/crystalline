@@ -1,6 +1,7 @@
 // app/ui/tabs/tab_research.c - COMPLETE Research Data Browser Tab
 #include "../../app_common.h"
 #include "../../text_input.h"
+#include "../../ui_layout.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
