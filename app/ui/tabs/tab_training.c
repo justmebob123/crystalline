@@ -539,44 +539,22 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Learning Rate
     SDL_Rect lr_label = layout_add_label(&layout, "Learning Rate:", 16);
     draw_text(renderer, "Learning Rate:", lr_label.x, lr_label.y, text_color);
-    SDL_Rect lr_rect = layout_add_element(&layout, 0, 25);
-    // Update bounds in input manager
-    extern InputManager* g_input_manager;
-    if (g_input_manager) {
-        printf("DEBUG: Setting learning_rate bounds to (%d,%d,%d,%d)\n", 
-               lr_rect.x, lr_rect.y, lr_rect.w, 25);
-        input_manager_set_bounds(g_input_manager, "training.learning_rate", 
-                               (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25});
-    } else {
-        printf("DEBUG: g_input_manager is NULL!\n");
-    }
+    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
     
     // Epochs
     SDL_Rect ep_label = layout_add_label(&layout, "Epochs:", 16);
     draw_text(renderer, "Epochs:", ep_label.x, ep_label.y, text_color);
-    SDL_Rect ep_rect = layout_add_element(&layout, 0, 25);
-    if (g_input_manager) {
-        input_manager_set_bounds(g_input_manager, "training.epochs",
-                               (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25});
-    }
+    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
     
     // Batch Size
     SDL_Rect bs_label = layout_add_label(&layout, "Batch Size:", 16);
     draw_text(renderer, "Batch Size:", bs_label.x, bs_label.y, text_color);
-    SDL_Rect bs_rect = layout_add_element(&layout, 0, 25);
-    if (g_input_manager) {
-        input_manager_set_bounds(g_input_manager, "training.batch_size",
-                               (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25});
-    }
+    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
     
     // Threads
     SDL_Rect tc_label = layout_add_label(&layout, "Threads (0=auto):", 16);
     draw_text(renderer, "Threads (0=auto):", tc_label.x, tc_label.y, text_color);
-    SDL_Rect tc_rect = layout_add_element(&layout, 0, 25);
-    if (g_input_manager) {
-        input_manager_set_bounds(g_input_manager, "training.thread_count",
-                               (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25});
-    }
+    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
     
     layout_add_spacing(&layout, 15);
     
@@ -589,15 +567,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Enter URL to begin crawling:", cu_help.x, cu_help.y, 
              (SDL_Color){150, 150, 150, 255});
     
-    SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
-    if (g_input_manager) {
-        printf("DEBUG: Setting crawler_url bounds to (%d,%d,%d,%d)\n", 
-               cu_rect.x, cu_rect.y, cu_rect.w, 30);
-        input_manager_set_bounds(g_input_manager, "training.crawler_url",
-                               (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30});
-    } else {
-        printf("DEBUG: g_input_manager is NULL for crawler_url!\n");
-    }
+    layout_add_element(&layout, 0, 30);  // Reserve space for input (rendered by InputManager)
     
     layout_add_spacing(&layout, 10);
     

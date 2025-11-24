@@ -103,13 +103,8 @@ const char* input_manager_get_text(InputManager* manager, const char* id) {
 // Set input bounds
 void input_manager_set_bounds(InputManager* manager, const char* id, SDL_Rect bounds) {
     ManagedInput* input = input_manager_get(manager, id);
-    if (!input) {
-        printf("DEBUG: input_manager_set_bounds - input '%s' not found!\n", id);
-        return;
-    }
+    if (!input) return;
     
-    printf("DEBUG: input_manager_set_bounds - setting '%s' to (%d,%d,%d,%d)\n",
-           id, bounds.x, bounds.y, bounds.w, bounds.h);
     input->bounds = bounds;
 }
 
