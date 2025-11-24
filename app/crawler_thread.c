@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 
 static pthread_t crawler_thread_id = 0;
 static int crawler_running = 0;
@@ -25,10 +26,20 @@ typedef struct {
 static void* crawler_thread_func(void* arg) {
     CrawlerThreadArgs* args = (CrawlerThreadArgs*)arg;
     
-    printf("=== CRAWLER THREAD STARTED ===\n");
+    // Get timestamp
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    char timestamp[32];
+    strftime(timestamp, sizeof(timestamp), "%H:%M:%S", tm_info);
+    
+    printf("\n[%s] === CRAWLER THREAD STARTED ===\n", timestamp);
     printf("Start URL: %s\n", args->start_url);
     printf("Data directory: %s\n", args->data_dir);
-    printf("Max pages: %d\n", args->max_pages);
+    if (args->max_pages == 0) {
+        printf("Max pages: UNLIMITED\n");
+    } else {
+        printf("Max pages: %d\n", args->max_pages);
+    }
     
     // Create data directories
     char raw_dir[1024], preprocessed_dir[1024], training_queue_dir[1024], trained_dir[1024];
@@ -43,9 +54,10 @@ static void* crawler_thread_func(void* arg) {
     mkdir(trained_dir, 0755);
     
     // Build command to run cllm_crawler
+    // Use the same model as the main app
     char command[2048];
     snprintf(command, sizeof(command),
-             "cd %s && ../tools/cllm_crawler --start-url '%s' --max-pages %d --data-dir '%s' > crawler.log 2>&1 &",
+             "cd %s && ../tools/cllm_crawler --start-url '%s' --max-pages %d --data-dir '%s' --model-path '../models/saved_model.cllm' > crawler.log 2>&1 &",
              args->data_dir, args->start_url, args->max_pages, args->data_dir);
     
     printf("Executing: %s\n", command);
@@ -112,8 +124,14 @@ static void* crawler_thread_func(void* arg) {
             // Print status if anything changed
             if (raw_count != last_raw || preprocessed_count != last_preprocessed || 
                 queue_count != last_queue || trained_count != last_trained) {
-                printf("[CRAWLER STATUS] Raw: %d | Preprocessed: %d | Queue: %d | Trained: %d\n",
-                       raw_count, preprocessed_count, queue_count, trained_count);
+                // Get timestamp
+                time_t now = time(NULL);
+                struct tm* tm_info = localtime(&now);
+                char timestamp[32];
+                strftime(timestamp, sizeof(timestamp), "%H:%M:%S", tm_info);
+                
+                printf("[%s] CRAWLER STATUS: Raw: %d | Preprocessed: %d | Queue: %d | Trained: %d\n",
+                       timestamp, raw_count, preprocessed_count, queue_count, trained_count);
                 
                 if (raw_count > last_raw) {
                     printf("  → Downloaded %d new page(s)\n", raw_count - last_raw);
@@ -168,7 +186,7 @@ int start_crawler_thread(AppState* state, const char* start_url) {
     strncpy(args->data_dir, state->crawler_data_dir, sizeof(args->data_dir) - 1);
     args->data_dir[sizeof(args->data_dir) - 1] = '\0';
     
-    args->max_pages = 100; // Default max pages
+    args->max_pages = 0; // 0 = unlimited
     
     // Set running flag
     crawler_running = 1;
