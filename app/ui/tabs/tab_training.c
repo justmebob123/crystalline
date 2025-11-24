@@ -698,9 +698,12 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
     if (text_input_handle_event(&crawler_url_input, event)) {
         // ALWAYS update the crawler start URL in state when text changes
         // This ensures paste operations (Ctrl+V) immediately update the state
-        strncpy(state->crawler_start_url, text_input_get_text(&crawler_url_input), 
+        const char* current_text = text_input_get_text(&crawler_url_input);
+        printf("DEBUG: text_input_handle_event returned true, current_text = '%s'\n", current_text);
+        strncpy(state->crawler_start_url, current_text, 
                 sizeof(state->crawler_start_url) - 1);
         state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+        printf("DEBUG: Updated state->crawler_start_url = '%s'\n", state->crawler_start_url);
         return true;
     }
     
