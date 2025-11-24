@@ -18,6 +18,7 @@
 #include "cllm_training.h"
 #include "cllm_training_parallel.h"
 #include "cllm_vocab_builder.h"
+#include <time.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -364,6 +365,14 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         int current_pages = 0, current_queue = 0;
         get_crawler_status(&current_pages, &current_queue);
         
+        // Debug: Print status to terminal (remove after testing)
+        static int debug_counter = 0;
+        if (debug_counter++ % 60 == 0) {  // Print every 60 frames (~1 second)
+            printf("[UI] Crawler status: Pages=%d, Queue=%d, crawler_running=%d, state->crawler_running=%d
+",
+                   current_pages, current_queue, crawler_running, state->crawler_running);
+        }
+        
         int crawler_y = viz_area_rect.y + viz_area_rect.h - 80;
         SDL_Rect crawler_status = {content_x, crawler_y, content_w, 70};
         SDL_SetRenderDrawColor(renderer, 40, 60, 40, 255);
@@ -371,10 +380,16 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
         SDL_RenderDrawRect(renderer, &crawler_status);
         
+        // Get current time for heartbeat
+        time_t now = time(NULL);
+        struct tm* tm_info = localtime(&now);
+        char time_str[32];
+        strftime(time_str, sizeof(time_str), "%H:%M:%S", tm_info);
+        
         char crawler_text[128];
         snprintf(crawler_text, sizeof(crawler_text), 
-                "CRAWLER ACTIVE | Pages: %d | Training Queue: %d", 
-                current_pages, current_queue);
+                "CRAWLER ACTIVE [%s] | Pages: %d | Queue: %d", 
+                time_str, current_pages, current_queue);
         draw_text(renderer, crawler_text, crawler_status.x + 10, crawler_status.y + 10, 
                  (SDL_Color){100, 255, 100, 255});
         
