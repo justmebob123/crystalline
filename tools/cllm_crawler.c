@@ -135,9 +135,20 @@ int main(int argc, char** argv) {
     
     if (!model) {
         printf("No existing model found, creating new model...\n");
-        extern CLLMModel* cllm_create_model(uint32_t vocab_size, uint32_t embedding_dim, 
-                                           uint32_t num_layers, uint32_t num_heads);
-        model = cllm_create_model(10000, 512, 6, 8);
+        
+        // Create model configuration
+        CLLMConfig config = {
+            .vocab_size = 10000,
+            .embedding_dim = 512,
+            .num_layers = 6,
+            .num_heads = 8,
+            .ff_dim = 2048,
+            .max_seq_len = 512,
+            .dropout = 0.1f
+        };
+        
+        extern CLLMModel* cllm_create_model(const CLLMConfig* config);
+        model = cllm_create_model(&config);
         
         if (!model) {
             fprintf(stderr, "Failed to create model\n");
