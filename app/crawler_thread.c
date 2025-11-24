@@ -19,7 +19,7 @@ static pthread_mutex_t g_crawler_mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Callback for crawler events - updates UI
  */
-static void crawler_event_callback(const CrawlerEvent* event, void* user_data) {
+static void crawler_event_callback(const CrawlerEvent* event, void* user_data __attribute__((unused))) {
     // This callback is called from the crawler library
     // We can use it to update UI state or log events
     

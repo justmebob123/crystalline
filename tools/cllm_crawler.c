@@ -27,7 +27,7 @@ static void signal_handler(int signum) {
 /**
  * Callback for crawler events
  */
-static void crawler_event_callback(const CrawlerEvent* event, void* user_data) {
+static void crawler_event_callback(const CrawlerEvent* event, void* user_data __attribute__((unused))) {
     const char* event_type = "UNKNOWN";
     
     switch (event->type) {

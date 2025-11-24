@@ -3,7 +3,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -std=c11
-LDFLAGS = -L.. -lprimemath -lcrawler -lSDL2 -lSDL2_ttf -lm -lpthread
+LDFLAGS = -L.. -lcrystalline -lcllm -lcrawler -lSDL2 -lSDL2_ttf -lm -lpthread
 INCLUDES = -I../include -I.
 
 # Source files in flat app/ directory (excluding ui/tabs and test files)

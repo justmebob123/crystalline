@@ -13,9 +13,13 @@ LDFLAGS =
 ARFLAGS = rcs
 
 # Library names
+CRYSTALLINE_LIB = libcrystalline.so
+CLLM_LIB = libcllm.so
+CRAWLER_LIB = libcrawler.so
+
+# Legacy names (for backwards compatibility)
 STATIC_LIB = libprimemath.a
 SHARED_LIB = libprimemath.so
-CRAWLER_LIB = libcrawler.so
 
 # Installation directories
 PREFIX = /usr/local
@@ -57,11 +61,37 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(STATIC_LIB) $(SHARED_LIB) $(CRAWLER_LIB)
+all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	@echo "✓ Build complete!"
-	@echo "  Static library: $(STATIC_LIB)"
-	@echo "  Shared library: $(SHARED_LIB)"
+	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
+	@echo "  CLLM library: $(CLLM_LIB)"
 	@echo "  Crawler library: $(CRAWLER_LIB)"
+	@echo "  Legacy static: $(STATIC_LIB)"
+	@echo "  Legacy shared: $(SHARED_LIB)"
+	@echo "  Crawler library: $(CRAWLER_LIB)"
+
+# ============================================================================
+# Three Independent Libraries
+# ============================================================================
+
+# 1. Crystalline Lattice Library (core math + geometry)
+CRYSTALLINE_OBJECTS = $(CORE_OBJECTS) $(TRANS_OBJECTS) $(GEOM_OBJECTS)
+
+$(CRYSTALLINE_LIB): $(CRYSTALLINE_OBJECTS)
+	@echo "Creating crystalline library: $@"
+	$(CC) -shared -o $@ $^ -lm
+	@echo "✓ Crystalline library created"
+
+# 2. CLLM Library (AI/language model - depends on crystalline)
+$(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB)
+	@echo "Creating CLLM library: $@"
+	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lm
+	@echo "✓ CLLM library created"
+
+# ============================================================================
+# Legacy Libraries (for backwards compatibility)
+# ============================================================================
+
 
 # Static library
 $(STATIC_LIB): $(ALL_OBJECTS)
@@ -228,7 +258,7 @@ help:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
-	rm -f $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
@@ -254,9 +284,9 @@ CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
 CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 
-$(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(STATIC_LIB)
+$(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(CLLM_LIB)
 	@echo "Creating crawler library: $@"
-	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lprimemath -lcurl -lpthread -lm
+	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread -lm
 	@echo "✓ Crawler library created"
 
 # ============================================================================
@@ -267,6 +297,6 @@ crawler: $(CRAWLER_LIB)
 	@echo "Building crawler CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c \
-		-L. -lcrawler -lprimemath -lpthread -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcrawler -lcllm -lcrystalline -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Crawler CLI built: tools/cllm_crawler"
 

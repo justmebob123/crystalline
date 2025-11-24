@@ -85,7 +85,7 @@ static void trigger_callback(CrawlerState* state, CrawlerEventType type, const c
 static void* status_monitor_thread_func(void* arg) {
     CrawlerState* state = (CrawlerState*)arg;
     
-    char raw_dir[1024], preprocessed_dir[1024], queue_dir[1024], trained_dir[1024];
+    char raw_dir[2048], preprocessed_dir[1024], queue_dir[1024], trained_dir[1024];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", state->data_dir);
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);

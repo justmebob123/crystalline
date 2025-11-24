@@ -184,7 +184,7 @@ int crawler_save_page(CrawlerStateInternal* state, const char* url, const char* 
     }
     
     time_t now = time(NULL);
-    char filename[1024];
+    char filename[2048];
     snprintf(filename, sizeof(filename), "%s/raw_pages/page_%lu_%ld.html", 
              state->data_dir, hash, now);
     
@@ -291,7 +291,7 @@ int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size
     url[strcspn(url, "\n")] = 0;
     
     // Read remaining lines into temp file
-    char temp_path[1024];
+    char temp_path[2048];
     snprintf(temp_path, sizeof(temp_path), "%s/links_to_crawl.tmp", state->data_dir);
     FILE* temp = fopen(temp_path, "w");
     
@@ -304,7 +304,7 @@ int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size
     fclose(state->links_to_crawl);
     
     // Replace original with temp
-    char orig_path[1024];
+    char orig_path[2048];
     snprintf(orig_path, sizeof(orig_path), "%s/links_to_crawl.txt", state->data_dir);
     rename(temp_path, orig_path);
     
