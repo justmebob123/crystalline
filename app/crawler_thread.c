@@ -67,11 +67,14 @@ static void* crawler_thread_func(void* arg) {
     printf("✓ Directories created\n");
     
     // Build command to run cllm_crawler with proper library path
-    // Use the same model as the main app
+    // Use absolute paths to avoid path confusion
     char command[2048];
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    
     snprintf(command, sizeof(command),
-             "cd %s && LD_LIBRARY_PATH=.. ../tools/cllm_crawler --start-url '%s' --max-pages %d --data-dir '%s' --model-path '../models/saved_model.cllm' > crawler.log 2>&1 &",
-             args->data_dir, args->start_url, args->max_pages, args->data_dir);
+             "cd %s && LD_LIBRARY_PATH=%s %s/tools/cllm_crawler --start-url '%s' --max-pages %d --data-dir %s --model-path %s/models/saved_model.cllm > %s/crawler.log 2>&1 &",
+             cwd, cwd, cwd, args->start_url, args->max_pages, args->data_dir, cwd, args->data_dir);
     
     printf("Executing: %s\n", command);
     fflush(stdout);

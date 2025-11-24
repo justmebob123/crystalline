@@ -234,7 +234,9 @@ static void* training_worker_thread(void* arg) {
         
         while ((entry = readdir(dir)) != NULL) {
             if (entry->d_name[0] == '.') continue;
-            if (strstr(entry->d_name, ".tok") == NULL) continue;
+            // Only process .tok files, NOT .tok.lock files
+            size_t len = strlen(entry->d_name);
+            if (len < 4 || strcmp(entry->d_name + len - 4, ".tok") != 0) continue;
             
             char filepath[2048];
             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
