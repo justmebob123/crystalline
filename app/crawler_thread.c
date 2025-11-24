@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <errno.h>
 
 static pthread_t crawler_thread_id = 0;
 static int crawler_running = 0;
@@ -43,7 +44,14 @@ static void* crawler_thread_func(void* arg) {
     
     // Create data directories
     printf("Creating directory structure...\n");
-    mkdir(args->data_dir, 0755);  // Create main data directory first!
+    printf("  Main directory: %s\n", args->data_dir);
+    fflush(stdout);
+    
+    int dir_result = mkdir(args->data_dir, 0755);  // Create main data directory first!
+    if (dir_result != 0 && errno != EEXIST) {
+        printf("  ERROR: Failed to create %s (errno=%d)\n", args->data_dir, errno);
+        fflush(stdout);
+    }
     
     char raw_dir[1024], preprocessed_dir[1024], training_queue_dir[1024], trained_dir[1024];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", args->data_dir);
@@ -66,10 +74,15 @@ static void* crawler_thread_func(void* arg) {
              args->data_dir, args->start_url, args->max_pages, args->data_dir);
     
     printf("Executing: %s\n", command);
+    fflush(stdout);
+    
     int result = system(command);
+    printf("Command returned: %d\n", result);
+    fflush(stdout);
     
     if (result == 0) {
         printf("Crawler process started successfully\n");
+        fflush(stdout);
         
         // Monitor crawler progress
         char log_file[1024];
