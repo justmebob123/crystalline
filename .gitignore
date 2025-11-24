@@ -47,3 +47,8 @@ data/training/*.txt
 # Test executables
 test_*
 !test_*.c
+
+# Agent working files (keep in /workspace root, not in repo)
+*.md
+!README.md
+!ARCHITECTURE.md
