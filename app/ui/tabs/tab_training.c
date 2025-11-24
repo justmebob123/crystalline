@@ -399,7 +399,12 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
 void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (!state) return;
     
-    // Removed old debug output for deleted TextInput variable
+    // Initialize tab on first draw
+    static bool tab_initialized = false;
+    if (!tab_initialized) {
+        init_training_tab(state);
+        tab_initialized = true;
+    }
     
     // Draw visualization area first
     draw_training_visualization(renderer, state);
