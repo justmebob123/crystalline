@@ -64,7 +64,7 @@ static void* crawler_thread_func(void* arg) {
             
             // Count files in raw_pages directory
             char count_cmd[1024];
-            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %s 2>/dev/null | wc -l", raw_dir);
+            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", raw_dir);
             FILE* fp = popen(count_cmd, "r");
             if (fp) {
                 if (fscanf(fp, "%d", &crawler_pages_crawled) != 1) {
@@ -74,7 +74,7 @@ static void* crawler_thread_func(void* arg) {
             }
             
             // Count files in training_queue directory
-            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %s 2>/dev/null | wc -l", training_queue_dir);
+            snprintf(count_cmd, sizeof(count_cmd), "ls -1 %.900s 2>/dev/null | wc -l", training_queue_dir);
             fp = popen(count_cmd, "r");
             if (fp) {
                 if (fscanf(fp, "%d", &crawler_queue_size) != 1) {

@@ -84,10 +84,10 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
                     strncpy(input->text, clipboard, remaining);
                     input->text[remaining] = '\0';
                     input->cursor_pos = strlen(input->text);
-                    SDL_free(clipboard);
                     printf("Pasted from clipboard: %s\n", input->text);
                     printf("DEBUG: After paste, input->text = '%s', length = %zu, active = %d\n", 
                            input->text, strlen(input->text), input->active);
+                    SDL_free(clipboard);
                 }
             }
             return true;

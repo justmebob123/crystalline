@@ -205,7 +205,7 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     if (!training->model->tokens) {
         fprintf(stderr, "Warning: Model has no vocabulary, using character-based tokenization\n");
         // Fallback: character-based tokenization
-        for (size_t i = 0; i < bytes_read && tokens_added < file_size; i++) {
+        for (size_t i = 0; i < bytes_read && tokens_added < (size_t)file_size; i++) {
             if (content[i] != '\n' && content[i] != '\r') {
                 training->tokens[old_num_tokens + tokens_added] = (uint32_t)(content[i] % training->model->vocab_size);
                 tokens_added++;
@@ -214,7 +214,7 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     } else {
         // Use vocabulary-based tokenization
         char* token = strtok(content, " \n\t");
-        while (token != NULL && tokens_added < file_size) {
+        while (token != NULL && tokens_added < (size_t)file_size) {
             // Find token in vocabulary
             bool found = false;
             for (uint32_t i = 0; i < training->model->vocab_size; i++) {

@@ -1,5 +1,6 @@
 // workspace.c - Workspace management for project isolation
 #include "app_common.h"
+#include "workspace.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>

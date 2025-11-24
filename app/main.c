@@ -152,7 +152,7 @@ AppState* init_app(void) {
     // Set crawler data directory (use workspace if available, otherwise default)
     if (state->workspace_active) {
         snprintf(state->crawler_data_dir, sizeof(state->crawler_data_dir), 
-                 "%s/crawler_data", state->workspace_path);
+                 "%.498s/crawler_data", state->workspace_path);
     } else {
         strcpy(state->crawler_data_dir, "crawler_data");
     }

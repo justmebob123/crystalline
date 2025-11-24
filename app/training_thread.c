@@ -60,7 +60,7 @@ void* training_thread_func(void* arg) {
                 (void)mkdir_ret;
                 
                 // Save to workspace location
-                snprintf(model_path, sizeof(model_path), "%s/saved_model.cllm", model_dir);
+                snprintf(model_path, sizeof(model_path), "%.1006s/saved_model.cllm", model_dir);
                 extern int app_save_model(CLLMModel* model, const char* filepath);
                 
                 if (app_save_model(state->cllm_model, model_path) == 0) {

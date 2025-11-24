@@ -125,6 +125,7 @@ static void load_crawl_queue(AppState* state) {
 /**
  * Add URL to crawl queue
  */
+static void add_url_to_queue(AppState* state, const char* url) __attribute__((unused));
 static void add_url_to_queue(AppState* state, const char* url) {
     if (!state || !url || url[0] == '\0') return;
     
@@ -897,10 +898,17 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             extern void stop_crawler_thread(void);
             stop_crawler_thread();
         } else {
-            // FIXED: Get URL from state (it was copied there when input became inactive)
-            // The input field text gets cleared, but state->crawler_start_url has the URL
-            const char* start_url = state->crawler_start_url;
-            printf("DEBUG: Retrieved URL from state: '%s'\n", start_url ? start_url : "(NULL)");
+            // CRITICAL FIX: Read URL directly from input field, not from state
+            // State may be empty if input hasn't been deactivated yet
+            const char* start_url = text_input_get_text(&crawler_url_input);
+            printf("DEBUG: Retrieved URL directly from input: '%s'\n", start_url ? start_url : "(NULL)");
+            
+            // Also update state for future use
+            if (start_url && start_url[0] != '\0') {
+                strncpy(state->crawler_start_url, start_url, sizeof(state->crawler_start_url) - 1);
+                state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+            }
+            
             if (start_url && start_url[0] != '\0') {
                 printf("Starting crawler from URL: %s\n", start_url);
                 
