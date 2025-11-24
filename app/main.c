@@ -58,6 +58,11 @@ AppState* init_app(void) {
     state->show_control_panel = true;
     state->clock_crystalline_mode = false;  // Start with natural X pattern
     
+    // Set InputManager's initial tab
+    if (g_input_manager) {
+        input_manager_set_tab(g_input_manager, TAB_PRIME_SPIRAL);
+    }
+    
     // Generate primes - OLD SYSTEM (kept for compatibility)
     state->prime_count = 1000;
     state->primes = generate_n_primes(state->prime_count);
@@ -264,6 +269,11 @@ void handle_mouse_click(AppState* state, int x, int y) {
         int new_tab = x / tab_width;
         if (new_tab >= 0 && new_tab < TAB_COUNT) {
             state->current_tab = new_tab;
+            // Update InputManager's current tab
+            extern InputManager* g_input_manager;
+            if (g_input_manager) {
+                input_manager_set_tab(g_input_manager, new_tab);
+            }
             // Silent tab switching
         }
     }
@@ -566,6 +576,10 @@ void handle_input(AppState* state, SDL_Event* event) {
                     break;
                 case SDLK_TAB:
                     state->current_tab = (state->current_tab + 1) % TAB_COUNT;
+                    // Update InputManager's current tab
+                    if (g_input_manager) {
+                        input_manager_set_tab(g_input_manager, state->current_tab);
+                    }
                     break;
                 case SDLK_PLUS:
                 case SDLK_EQUALS:
