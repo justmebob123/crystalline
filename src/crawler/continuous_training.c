@@ -17,6 +17,15 @@
 
 #define MAX_TOKENS_PER_FILE 100000
 
+/**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
 typedef struct {
     char data_dir[1024];
     char model_path[1024];
@@ -114,19 +123,24 @@ static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t
  * Train on one file
  */
 static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
-    printf("\n=== Training on file ===\n");
-    printf("File: %s\n", filepath);
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    
+    printf("\n%s === Training on file ===\n", timestamp);
+    printf("%s File: %s\n", timestamp, filepath);
     
     // Load tokens
     uint32_t* tokens = NULL;
     size_t num_tokens = 0;
     
     if (load_tokens_from_file(filepath, &tokens, &num_tokens) != 0) {
-        fprintf(stderr, "Failed to load tokens from: %s\n", filepath);
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s Failed to load tokens from: %s\n", timestamp, filepath);
         return -1;
     }
     
-    printf("Loaded %zu tokens\n", num_tokens);
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s Loaded %zu tokens\n", timestamp, num_tokens);
     
     // Update training data
     if (state->training->tokens) {
@@ -198,7 +212,12 @@ static void* training_worker_thread(void* arg) {
         
         while ((entry = readdir(dir)) != NULL) {
             if (entry->d_name[0] == '.') continue;
-            if (strstr(entry->d_name, ".tok") == NULL) continue;
+            
+            // Only process .tok files (not .tok.lock or .tok.lock.lock)
+            size_t len = strlen(entry->d_name);
+            if (len < 4 || strcmp(entry->d_name + len - 4, ".tok") != 0) {
+                continue;
+            }
             
             char filepath[2048];
             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
@@ -278,15 +297,6 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     }
     
     return state;
-}
-
-/**
- * Get current timestamp string
- */
-static void get_timestamp(char* buffer, size_t size) {
-    time_t now = time(NULL);
-    struct tm* tm_info = localtime(&now);
-    strftime(buffer, size, "[%H:%M:%S]", tm_info);
 }
 
 /**
