@@ -148,7 +148,7 @@ LLLEmbeddingReducer* lll_reducer_create(CLLMModel* model, int target_dim) {
         return NULL;
     }
     
-    printf("Creating LLL embedding reducer: %d → %d\n", model->embedding_dim, target_dim);
+    printf("Creating LLL embedding reducer: %lu → %d\n", (unsigned long)model->embedding_dim, target_dim);
     
     LLLEmbeddingReducer* reducer = (LLLEmbeddingReducer*)calloc(1, sizeof(LLLEmbeddingReducer));
     reducer->original_dim = model->embedding_dim;

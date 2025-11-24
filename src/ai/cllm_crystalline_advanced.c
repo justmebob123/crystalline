@@ -351,7 +351,7 @@ CrystallineAdvancedState* crystalline_advanced_create(CLLMModel* model) {
     
     printf("Advanced crystalline features initialized\n");
     printf("- Prime factor cache: 10000 entries\n");
-    printf("- Ulam spatial index: %u tokens\n", model->vocab_size);
+    printf("- Ulam spatial index: %lu tokens\n", (unsigned long)model->vocab_size);
     
     return state;
 }

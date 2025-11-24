@@ -157,4 +157,9 @@ int cllm_save_checkpoint(CLLMTraining* training, const char* filename);
 int cllm_load_checkpoint(CLLMTraining* training, const char* filename);
 void cllm_training_cleanup(CLLMTraining* training);
 
+/* Training step functions (used by multi-threading and production features) */
+float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
+float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
+
 #endif /* CLLM_TRAINING_H */

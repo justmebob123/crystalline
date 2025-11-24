@@ -150,7 +150,7 @@ int train_complete(CLLMTraining* training, CompleteTrainingConfig* config) {
     printf("  Learning rate: %.6f\n", config->learning_rate);
     printf("  Threads: %d\n", config->num_threads);
     printf("  LLL reduction: %s", config->use_lll ? "enabled" : "disabled");
-    if (config->use_lll) printf(" (%d → %d dims)", training->model->embedding_dim, config->lll_target_dim);
+    if (config->use_lll) printf(" (%lu → %d dims)", (unsigned long)training->model->embedding_dim, config->lll_target_dim);
     printf("\n");
     printf("  Advanced crystalline: %s\n", config->use_advanced_crystalline ? "enabled" : "disabled");
     printf("  LR scheduling: %s\n", config->use_lr_schedule ? "enabled" : "disabled");

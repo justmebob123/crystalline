@@ -496,9 +496,9 @@ void cllm_optimizer_step(CLLMTraining* training) {
 
 // Train for one epoch
 // Forward declarations
-static float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
-static float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
-static void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
+float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
+float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
 
 float cllm_train_epoch(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -622,7 +622,7 @@ float cllm_train_epoch(CLLMTraining* training) {
 /**
  * Forward pass with activation storage for training
  */
-static float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
+float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     if (!training || !input_tokens) return 0.0f;
     
     CLLMModel* model = training->model;
@@ -737,7 +737,7 @@ static float cllm_forward_training(CLLMTraining* training, uint32_t* input_token
 /**
  * Compute cross-entropy loss from stored logits
  */
-static float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens) {
+float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens) {
     int batch_size = training->config.batch_size;
     int seq_len = training->config.sequence_length;
     uint32_t vocab_size = training->model->vocab_size;
@@ -775,7 +775,7 @@ static float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target
 /**
  * Backward pass with cross-entropy gradients
  */
-static void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
     if (!training || !target_tokens) return;
     
     CLLMModel* model = training->model;
