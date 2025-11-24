@@ -512,26 +512,28 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect params_label = layout_add_label(&layout, "PARAMETERS", 20);
     draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
     
-    // Show current crawler URL
-    char url_display[100];
-    const char* current_url = text_input_get_text(&crawler_url_input);
-    snprintf(url_display, sizeof(url_display), "Crawler URL: %.70s", 
-             current_url && current_url[0] ? current_url : "(not set)");
-    SDL_Rect url_info = layout_add_label(&layout, url_display, 16);
-    draw_text(renderer, url_display, url_info.x, url_info.y, 
-             (SDL_Color){150, 200, 255, 255});
-    
-    layout_add_spacing(&layout, 5);
-    
-    // Render text inputs
+    // Update text input positions using dynamic layout
+    SDL_Rect lr_rect = layout_add_element(&layout, 0, 25);
+    learning_rate_input.bounds = (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25};
     text_input_render(&learning_rate_input, renderer, get_global_font());
+    
+    SDL_Rect ep_rect = layout_add_element(&layout, 0, 25);
+    epochs_input.bounds = (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25};
     text_input_render(&epochs_input, renderer, get_global_font());
+    
+    SDL_Rect bs_rect = layout_add_element(&layout, 0, 25);
+    batch_size_input.bounds = (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25};
     text_input_render(&batch_size_input, renderer, get_global_font());
+    
+    SDL_Rect tc_rect = layout_add_element(&layout, 0, 25);
+    thread_count_input.bounds = (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25};
     text_input_render(&thread_count_input, renderer, get_global_font());
+    
+    SDL_Rect cu_rect = layout_add_element(&layout, 0, 25);
+    crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 25};
     text_input_render(&crawler_url_input, renderer, get_global_font());
     
-    // Skip past input fields (now 5 inputs instead of 4)
-    layout_add_spacing(&layout, 200);
+    layout_add_spacing(&layout, 10);
     
     // === SECTION 4: ACTIONS ===
     SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 20);
