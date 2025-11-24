@@ -71,12 +71,7 @@ static UIButton btn_load;
 static SDL_Rect file_list_rect;
 static SDL_Rect viz_area_rect;
 
-// Text input fields
-static TextInput learning_rate_input;
-static TextInput epochs_input;
-static TextInput batch_size_input;
-static TextInput thread_count_input;
-static TextInput crawler_url_input;
+// Input initialization flag
 static bool inputs_initialized = false;
 
 // Crawler state
@@ -404,11 +399,7 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
 void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (!state) return;
     
-    static int draw_count = 0;
-    if (++draw_count % 60 == 0) {  // Log every 60 frames
-        printf("DEBUG: draw_training_tab called, crawler_url_input.text='%s'\n", 
-               crawler_url_input.text);
-    }
+    // Removed old debug output for deleted TextInput variable
     
     // Draw visualization area first
     draw_training_visualization(renderer, state);
@@ -685,12 +676,23 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
     printf("DEBUG: handle_training_tab_click called at (%d, %d)\n", x, y);
-    printf("DEBUG: Input bounds:\n");
-    printf("  learning_rate: (%d,%d,%d,%d)\n", learning_rate_input.bounds.x, learning_rate_input.bounds.y, learning_rate_input.bounds.w, learning_rate_input.bounds.h);
-    printf("  epochs: (%d,%d,%d,%d)\n", epochs_input.bounds.x, epochs_input.bounds.y, epochs_input.bounds.w, epochs_input.bounds.h);
-    printf("  batch_size: (%d,%d,%d,%d)\n", batch_size_input.bounds.x, batch_size_input.bounds.y, batch_size_input.bounds.w, batch_size_input.bounds.h);
-    printf("  thread_count: (%d,%d,%d,%d)\n", thread_count_input.bounds.x, thread_count_input.bounds.y, thread_count_input.bounds.w, thread_count_input.bounds.h);
-    printf("  crawler_url: (%d,%d,%d,%d)\n", crawler_url_input.bounds.x, crawler_url_input.bounds.y, crawler_url_input.bounds.w, crawler_url_input.bounds.h);
+    
+    // Check InputManager bounds
+    extern InputManager* g_input_manager;
+    if (g_input_manager) {
+        printf("DEBUG: InputManager bounds:\n");
+        ManagedInput* lr = input_manager_get(g_input_manager, "training.learning_rate");
+        ManagedInput* ep = input_manager_get(g_input_manager, "training.epochs");
+        ManagedInput* bs = input_manager_get(g_input_manager, "training.batch_size");
+        ManagedInput* tc = input_manager_get(g_input_manager, "training.thread_count");
+        ManagedInput* cu = input_manager_get(g_input_manager, "training.crawler_url");
+        
+        if (lr) printf("  learning_rate: (%d,%d,%d,%d)\n", lr->bounds.x, lr->bounds.y, lr->bounds.w, lr->bounds.h);
+        if (ep) printf("  epochs: (%d,%d,%d,%d)\n", ep->bounds.x, ep->bounds.y, ep->bounds.w, ep->bounds.h);
+        if (bs) printf("  batch_size: (%d,%d,%d,%d)\n", bs->bounds.x, bs->bounds.y, bs->bounds.w, bs->bounds.h);
+        if (tc) printf("  thread_count: (%d,%d,%d,%d)\n", tc->bounds.x, tc->bounds.y, tc->bounds.w, tc->bounds.h);
+        if (cu) printf("  crawler_url: (%d,%d,%d,%d)\n", cu->bounds.x, cu->bounds.y, cu->bounds.w, cu->bounds.h);
+    }
     
     // Update visualization
     update_training_visualization(state);
@@ -814,9 +816,6 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         printf("DEBUG: Button bounds: x=%d, y=%d, w=%d, h=%d\n", 
                btn_start_crawler.bounds.x, btn_start_crawler.bounds.y,
                btn_start_crawler.bounds.w, btn_start_crawler.bounds.h);
-        printf("DEBUG: crawler_url_input=%p, crawler_url_input.text = '%s', length = %zu, active = %d\n",
-               (void*)&crawler_url_input, crawler_url_input.text, strlen(crawler_url_input.text), crawler_url_input.active);
-        printf("DEBUG: state->crawler_start_url = '%s'\n", state->crawler_start_url);
         
         if (crawler_running || state->crawler_running) {
             printf("Stopping crawler...\n");
@@ -906,30 +905,9 @@ void handle_training_tab_click(AppState* state, int x, int y) {
 void handle_training_tab_keydown(AppState* state, int key) {
     if (!state) return;
     
-    if (key == SDLK_ESCAPE) {
-        text_input_deactivate(&learning_rate_input);
-        text_input_deactivate(&epochs_input);
-        text_input_deactivate(&batch_size_input);
-        text_input_deactivate(&thread_count_input);
-        SDL_StopTextInput();
-    } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
-        if (text_input_is_active(&learning_rate_input)) {
-            text_input_deactivate(&learning_rate_input);
-            state->training_learning_rate = (float)text_input_get_number(&learning_rate_input);
-            SDL_StopTextInput();
-        } else if (text_input_is_active(&epochs_input)) {
-            text_input_deactivate(&epochs_input);
-            state->training_epochs = (int)text_input_get_number(&epochs_input);
-            SDL_StopTextInput();
-        } else if (text_input_is_active(&batch_size_input)) {
-            text_input_deactivate(&batch_size_input);
-            SDL_StopTextInput();
-        } else if (text_input_is_active(&thread_count_input)) {
-            text_input_deactivate(&thread_count_input);
-            state->training_thread_count = (int)text_input_get_number(&thread_count_input);
-            SDL_StopTextInput();
-        }
-    }
+    // Input handling is now done by InputManager in main event loop
+    // This function is kept for compatibility but does nothing
+    (void)key;  // Suppress unused parameter warning
 }
 
 /**

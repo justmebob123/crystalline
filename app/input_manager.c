@@ -63,7 +63,8 @@ ManagedInput* input_manager_register(
     input->on_submit = NULL;
     input->user_data = NULL;
     
-    printf("InputManager: Registered '%s' (tab=%d, type=%d)\n", id, tab_id, type);
+    printf("InputManager: Registered '%s' (tab=%d, type=%d, bounds=(%d,%d,%d,%d))\n", 
+           id, tab_id, type, bounds.x, bounds.y, bounds.w, bounds.h);
     return input;
 }
 
