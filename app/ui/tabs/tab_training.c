@@ -351,6 +351,11 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
     
     // Crawler status (if running)
     if (crawler_running || state->crawler_running) {
+        // Get real-time crawler status
+        extern void get_crawler_status(int* pages_crawled, int* queue_size);
+        int current_pages = 0, current_queue = 0;
+        get_crawler_status(&current_pages, &current_queue);
+        
         int crawler_y = viz_area_rect.y + viz_area_rect.h - 80;
         SDL_Rect crawler_status = {content_x, crawler_y, content_w, 70};
         SDL_SetRenderDrawColor(renderer, 40, 60, 40, 255);
@@ -360,8 +365,8 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         
         char crawler_text[128];
         snprintf(crawler_text, sizeof(crawler_text), 
-                "CRAWLER ACTIVE | Pages: %d | Queue: %d", 
-                state->crawler_pages_crawled, state->crawler_queue_size);
+                "CRAWLER ACTIVE | Pages: %d | Training Queue: %d", 
+                current_pages, current_queue);
         draw_text(renderer, crawler_text, crawler_status.x + 10, crawler_status.y + 10, 
                  (SDL_Color){100, 255, 100, 255});
         
@@ -885,7 +890,10 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             crawler_running = false;
             state->crawler_running = false;
             state->crawler_current_url[0] = '\0';
-            // TODO: Stop crawler thread
+            
+            // Stop crawler thread
+            extern void stop_crawler_thread(void);
+            stop_crawler_thread();
         } else {
             // FIXED: Get URL from state (it was copied there when input became inactive)
             // The input field text gets cleared, but state->crawler_start_url has the URL
@@ -908,7 +916,15 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 load_crawl_queue(state);
                 pages_in_queue = state->crawler_queue_size;
                 
-                // TODO: Start crawler thread with URL
+                // Start crawler thread
+                extern int start_crawler_thread(AppState* state, const char* start_url);
+                if (start_crawler_thread(state, start_url) == 0) {
+                    printf("✓ Crawler thread started successfully\n");
+                } else {
+                    printf("✗ Failed to start crawler thread\n");
+                    crawler_running = false;
+                    state->crawler_running = false;
+                }
                 printf("Crawler will start from: %s\n", start_url);
                 printf("Data directory: %s\n", state->crawler_data_dir);
                 printf("Queue file: %s/links_to_crawl.txt\n", state->crawler_data_dir);
