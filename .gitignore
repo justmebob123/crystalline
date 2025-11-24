@@ -1,5 +1,6 @@
 # Documentation (user doesn't want these)
 *.md
+!docs/mathematical_framework/COMPLETE_MATHEMATICAL_SPECIFICATION.md
 
 # Build artifacts
 *.o
