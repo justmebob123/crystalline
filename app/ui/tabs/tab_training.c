@@ -736,7 +736,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     update_training_visualization(state);
     
     // Check text input clicks
-    if (inputs_initialized) {
+    // CRITICAL: Ignore clicks if bounds haven't been set yet (all zeros)
+    if (inputs_initialized && crawler_url_input.bounds.w > 0) {
         if (rect_contains_point(learning_rate_input.bounds, x, y)) {
             text_input_activate(&learning_rate_input);
             text_input_deactivate(&epochs_input);
