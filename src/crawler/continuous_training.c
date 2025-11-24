@@ -27,8 +27,8 @@ static void get_timestamp(char* buffer, size_t size) {
 }
 
 typedef struct {
-    char data_dir[1024];
-    char model_path[1024];
+    char data_dir[2048];
+    char model_path[2048];
     CLLMModel* model;
     CLLMTraining* training;
     int running;
@@ -219,7 +219,7 @@ static int move_to_trained(const char* data_dir, const char* filename) {
 static void* training_worker_thread(void* arg) {
     ContinuousTrainingState* state = (ContinuousTrainingState*)arg;
     
-    char queue_dir[1024];
+    char queue_dir[2048];
     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
     
     while (state->running) {

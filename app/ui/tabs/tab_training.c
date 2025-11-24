@@ -368,8 +368,7 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         // Debug: Print status to terminal (remove after testing)
         static int debug_counter = 0;
         if (debug_counter++ % 60 == 0) {  // Print every 60 frames (~1 second)
-            printf("[UI] Crawler status: Pages=%d, Queue=%d, crawler_running=%d, state->crawler_running=%d
-",
+            printf("[UI] Crawler status: Pages=%d, Queue=%d, crawler_running=%d, state->crawler_running=%d\n",
                    current_pages, current_queue, crawler_running, state->crawler_running);
         }
         

@@ -1,16 +1,14 @@
 # Makefile for Hyper Prime Spiral Application
-# Updated to match current flat structure with ui/tabs subdirectory
+# Links against three separate libraries: libprimemath, libcllm, libcrawler
 
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -std=c11
-LDFLAGS = -L.. -lprimemath -lSDL2 -lSDL2_ttf -lm -lpthread
+LDFLAGS = -L.. -lcrawler -lcllm -lprimemath -lSDL2 -lSDL2_ttf -lcurl -lpthread -lm
 INCLUDES = -I../include -I.
 
 # Source files in flat app/ directory (excluding ui/tabs and test files)
 APP_SOURCES = $(filter-out ui/tabs/%.c test_%.c, $(wildcard *.c))
 APP_OBJECTS = $(APP_SOURCES:.c=.o)
-
-# Note: text_input.c is included in APP_SOURCES automatically
 
 # Tab source files in ui/tabs/ subdirectory
 TAB_SOURCES = $(wildcard ui/tabs/*.c)
@@ -68,6 +66,7 @@ info:
 	@echo ""
 	@echo "Compiler: $(CC)"
 	@echo "Flags: $(CFLAGS)"
+	@echo "Libraries: libcrawler, libcllm, libprimemath, SDL2, SDL2_ttf"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all   - Build application"
