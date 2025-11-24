@@ -512,30 +512,52 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect params_label = layout_add_label(&layout, "PARAMETERS", 20);
     draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
     
-    // Update text input positions using dynamic layout
+    // Learning Rate
+    SDL_Rect lr_label = layout_add_label(&layout, "Learning Rate:", 16);
+    draw_text(renderer, "Learning Rate:", lr_label.x, lr_label.y, text_color);
     SDL_Rect lr_rect = layout_add_element(&layout, 0, 25);
     learning_rate_input.bounds = (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25};
     text_input_render(&learning_rate_input, renderer, get_global_font());
     
+    // Epochs
+    SDL_Rect ep_label = layout_add_label(&layout, "Epochs:", 16);
+    draw_text(renderer, "Epochs:", ep_label.x, ep_label.y, text_color);
     SDL_Rect ep_rect = layout_add_element(&layout, 0, 25);
     epochs_input.bounds = (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25};
     text_input_render(&epochs_input, renderer, get_global_font());
     
+    // Batch Size
+    SDL_Rect bs_label = layout_add_label(&layout, "Batch Size:", 16);
+    draw_text(renderer, "Batch Size:", bs_label.x, bs_label.y, text_color);
     SDL_Rect bs_rect = layout_add_element(&layout, 0, 25);
     batch_size_input.bounds = (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25};
     text_input_render(&batch_size_input, renderer, get_global_font());
     
+    // Threads
+    SDL_Rect tc_label = layout_add_label(&layout, "Threads (0=auto):", 16);
+    draw_text(renderer, "Threads (0=auto):", tc_label.x, tc_label.y, text_color);
     SDL_Rect tc_rect = layout_add_element(&layout, 0, 25);
     thread_count_input.bounds = (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25};
     text_input_render(&thread_count_input, renderer, get_global_font());
     
-    SDL_Rect cu_rect = layout_add_element(&layout, 0, 25);
-    crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 25};
+    layout_add_spacing(&layout, 15);
+    
+    // === SECTION 4: CRAWLER URL (PROMINENT) ===
+    SDL_Rect crawler_section = layout_add_label(&layout, "CRAWLER START URL", 20);
+    draw_text(renderer, "CRAWLER START URL", crawler_section.x, crawler_section.y, 
+             (SDL_Color){100, 200, 255, 255});
+    
+    SDL_Rect cu_help = layout_add_label(&layout, "Enter URL to begin crawling:", 14);
+    draw_text(renderer, "Enter URL to begin crawling:", cu_help.x, cu_help.y, 
+             (SDL_Color){150, 150, 150, 255});
+    
+    SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
+    crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
     text_input_render(&crawler_url_input, renderer, get_global_font());
     
     layout_add_spacing(&layout, 10);
     
-    // === SECTION 4: ACTIONS ===
+    // === SECTION 5: ACTIONS ===
     SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 20);
     draw_text(renderer, "ACTIONS", actions_label.x, actions_label.y, text_color);
     
