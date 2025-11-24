@@ -512,6 +512,17 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect params_label = layout_add_label(&layout, "PARAMETERS", 20);
     draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
     
+    // Show current crawler URL
+    char url_display[100];
+    const char* current_url = text_input_get_text(&crawler_url_input);
+    snprintf(url_display, sizeof(url_display), "Crawler URL: %.70s", 
+             current_url && current_url[0] ? current_url : "(not set)");
+    SDL_Rect url_info = layout_add_label(&layout, url_display, 16);
+    draw_text(renderer, url_display, url_info.x, url_info.y, 
+             (SDL_Color){150, 200, 255, 255});
+    
+    layout_add_spacing(&layout, 5);
+    
     // Render text inputs
     text_input_render(&learning_rate_input, renderer, get_global_font());
     text_input_render(&epochs_input, renderer, get_global_font());
@@ -833,6 +844,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         } else {
             // Get URL from input field
             const char* start_url = text_input_get_text(&crawler_url_input);
+            printf("DEBUG: Retrieved URL from input: '%s'\n", start_url ? start_url : "(NULL)");
             if (start_url && start_url[0] != '\0') {
                 printf("Starting crawler from URL: %s\n", start_url);
                 
