@@ -392,6 +392,12 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
 void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (!state) return;
     
+    static int draw_count = 0;
+    if (++draw_count % 60 == 0) {  // Log every 60 frames
+        printf("DEBUG: draw_training_tab called, crawler_url_input.text='%s'\n", 
+               crawler_url_input.text);
+    }
+    
     // Draw visualization area first
     draw_training_visualization(renderer, state);
     
@@ -558,7 +564,13 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
              (SDL_Color){150, 150, 150, 255});
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
+    SDL_Rect old_bounds = crawler_url_input.bounds;
     crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
+    if (old_bounds.x != crawler_url_input.bounds.x || old_bounds.y != crawler_url_input.bounds.y) {
+        printf("DEBUG: crawler_url_input bounds changed from (%d,%d) to (%d,%d), text='%s'\n",
+               old_bounds.x, old_bounds.y, crawler_url_input.bounds.x, crawler_url_input.bounds.y,
+               crawler_url_input.text);
+    }
     
     // DEBUG: Show what's in the input field
     if (crawler_url_input.text[0] != '\0') {
@@ -884,8 +896,8 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         printf("DEBUG: Button bounds: x=%d, y=%d, w=%d, h=%d\n", 
                btn_start_crawler.bounds.x, btn_start_crawler.bounds.y,
                btn_start_crawler.bounds.w, btn_start_crawler.bounds.h);
-        printf("DEBUG: crawler_url_input.text = '%s', length = %zu, active = %d\n",
-               crawler_url_input.text, strlen(crawler_url_input.text), crawler_url_input.active);
+        printf("DEBUG: crawler_url_input=%p, crawler_url_input.text = '%s', length = %zu, active = %d\n",
+               (void*)&crawler_url_input, crawler_url_input.text, strlen(crawler_url_input.text), crawler_url_input.active);
         printf("DEBUG: state->crawler_start_url = '%s'\n", state->crawler_start_url);
         
         if (crawler_running || state->crawler_running) {

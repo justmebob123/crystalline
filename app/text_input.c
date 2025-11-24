@@ -46,7 +46,8 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
             text_input_activate(input);
             return true;
         } else if (input->active) {
-            printf("DEBUG: Mouse click outside input bounds, deactivating. text='%s'\n", input->text);
+            printf("DEBUG: Mouse click outside input bounds, deactivating. input=%p, text='%s'\n", 
+                   (void*)input, input->text);
             text_input_deactivate(input);
             return true;
         }
@@ -87,8 +88,8 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
                     input->text[remaining] = '\0';
                     input->cursor_pos = strlen(input->text);
                     printf("Pasted from clipboard: %s\n", input->text);
-                    printf("DEBUG: After paste, input->text = '%s', length = %zu, active = %d\n", 
-                           input->text, strlen(input->text), input->active);
+                    printf("DEBUG: After paste, input=%p, input->text = '%s', length = %zu, active = %d\n", 
+                           (void*)input, input->text, strlen(input->text), input->active);
                     SDL_free(clipboard);
                 }
             }
@@ -287,10 +288,10 @@ void text_input_activate(TextInput* input) {
 void text_input_deactivate(TextInput* input) {
     if (!input) return;
     
-    printf("DEBUG: text_input_deactivate called, text='%s', length=%zu\n", 
-           input->text, strlen(input->text));
+    printf("DEBUG: text_input_deactivate called, input=%p, text='%s', length=%zu\n", 
+           (void*)input, input->text, strlen(input->text));
     input->active = false;
     SDL_StopTextInput();
-    printf("DEBUG: After deactivate, text='%s', length=%zu\n", 
-           input->text, strlen(input->text));
+    printf("DEBUG: After deactivate, input=%p, text='%s', length=%zu\n", 
+           (void*)input, input->text, strlen(input->text));
 }
