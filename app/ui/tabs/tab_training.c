@@ -543,8 +543,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Update bounds in input manager
     extern InputManager* g_input_manager;
     if (g_input_manager) {
+        printf("DEBUG: Setting learning_rate bounds to (%d,%d,%d,%d)\n", 
+               lr_rect.x, lr_rect.y, lr_rect.w, 25);
         input_manager_set_bounds(g_input_manager, "training.learning_rate", 
                                (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25});
+    } else {
+        printf("DEBUG: g_input_manager is NULL!\n");
     }
     
     // Epochs
@@ -587,8 +591,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
     if (g_input_manager) {
+        printf("DEBUG: Setting crawler_url bounds to (%d,%d,%d,%d)\n", 
+               cu_rect.x, cu_rect.y, cu_rect.w, 30);
         input_manager_set_bounds(g_input_manager, "training.crawler_url",
                                (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30});
+    } else {
+        printf("DEBUG: g_input_manager is NULL for crawler_url!\n");
     }
     
     layout_add_spacing(&layout, 10);
