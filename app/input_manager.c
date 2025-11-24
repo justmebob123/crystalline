@@ -261,10 +261,25 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
 
 // Render all inputs for current tab
 void input_manager_render(InputManager* manager, SDL_Renderer* renderer, TTF_Font* font, int tab_id) {
-    if (!manager || !renderer || !font) return;
+    if (!manager || !renderer || !font) {
+        printf("DEBUG: input_manager_render - NULL parameter (manager=%p, renderer=%p, font=%p)\n",
+               (void*)manager, (void*)renderer, (void*)font);
+        return;
+    }
+    
+    static int render_count = 0;
+    if (++render_count % 60 == 0) {  // Log every 60 frames
+        printf("DEBUG: input_manager_render called for tab %d, input_count=%d\n", tab_id, manager->input_count);
+    }
     
     for (int i = 0; i < manager->input_count; i++) {
         ManagedInput* input = &manager->inputs[i];
+        
+        if (render_count % 60 == 0) {
+            printf("  Input %d: id='%s', tab=%d, visible=%d, bounds=(%d,%d,%d,%d)\n",
+                   i, input->id, input->tab_id, input->visible,
+                   input->bounds.x, input->bounds.y, input->bounds.w, input->bounds.h);
+        }
         
         if (!input->visible || input->tab_id != tab_id) continue;
         
