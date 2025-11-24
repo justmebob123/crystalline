@@ -11,6 +11,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
+#include "../include/cllm_cache.h"
 
 // Forward declarations for missing math functions
 double prime_exp(double x);
@@ -74,6 +75,10 @@ static void scaled_dot_product_attention(float* query, float* keys, float* value
     
     // Compute attention scores using SIMD dot product: scores[i] = query · keys[i] / sqrt(head_dim)
     for (int i = 0; i < seq_len; i++) {
+        // Prefetch next key for better cache utilization
+        if (i + 1 < seq_len) {
+            prefetch_read(&keys[(i + 1) * head_dim]);
+        }
         scores[i] = dot_product(query, &keys[i * head_dim], head_dim) * scale;
     }
     
@@ -83,6 +88,11 @@ static void scaled_dot_product_attention(float* query, float* keys, float* value
     // Compute weighted sum of values using SIMD
     memset(output, 0, head_dim * sizeof(float));
     for (int i = 0; i < seq_len; i++) {
+        // Prefetch next value for better cache utilization
+        if (i + 1 < seq_len) {
+            prefetch_read(&values[(i + 1) * head_dim]);
+        }
+        
         // output += scores[i] * values[i]
         float score = scores[i];
         int j = 0;

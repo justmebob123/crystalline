@@ -7,6 +7,7 @@
 #include <immintrin.h>
 #include <stdint.h>
 #include <string.h>
+#include "../include/cllm_cache.h"
 
 /**
  * AVX2 dot product (8 floats at a time)
@@ -149,7 +150,7 @@ void simd_matrix_multiply(float* C, const float* A, const float* B, int m, int n
     memset(C, 0, m * p * sizeof(float));
     
     // Block size for cache optimization (tune based on cache size)
-    const int BLOCK_SIZE = 64;
+    const int BLOCK_SIZE = 32;  // Optimized for L1 cache (32KB)
     
     // Blocked matrix multiplication
     for (int i0 = 0; i0 < m; i0 += BLOCK_SIZE) {
