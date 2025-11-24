@@ -1,3 +1,6 @@
+# Documentation (user doesn't want these)
+*.md
+
 # Build artifacts
 *.o
 *.a
