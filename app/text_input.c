@@ -281,6 +281,8 @@ bool text_input_is_active(TextInput* input) {
 void text_input_activate(TextInput* input) {
     if (!input) return;
     
+    printf("DEBUG: text_input_activate called, input=%p, text='%s'\n", 
+           (void*)input, input->text);
     input->active = true;
     SDL_StartTextInput();
 }
