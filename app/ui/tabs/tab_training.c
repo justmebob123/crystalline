@@ -709,6 +709,8 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
 void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
+    printf("DEBUG: handle_training_tab_click called at (%d, %d)\n", x, y);
+    
     // Update visualization
     update_training_visualization(state);
     
@@ -870,6 +872,13 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Start Crawler button (NEW!)
     if (rect_contains_point(btn_start_crawler.bounds, x, y)) {
+        printf("DEBUG: START CRAWLER button clicked at (%d, %d)\n", x, y);
+        printf("DEBUG: Button bounds: x=%d, y=%d, w=%d, h=%d\n", 
+               btn_start_crawler.bounds.x, btn_start_crawler.bounds.y,
+               btn_start_crawler.bounds.w, btn_start_crawler.bounds.h);
+        printf("DEBUG: crawler_url_input.text = '%s', length = %zu, active = %d\n",
+               crawler_url_input.text, strlen(crawler_url_input.text), crawler_url_input.active);
+        
         if (crawler_running || state->crawler_running) {
             printf("Stopping crawler...\n");
             crawler_running = false;
