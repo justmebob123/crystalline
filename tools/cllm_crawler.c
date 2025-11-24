@@ -62,7 +62,7 @@ void print_usage(const char* prog) {
 
 int main(int argc, char** argv) {
     // Default configuration
-    char start_url[2048] = "https://en.wikipedia.org/wiki/Main_Page";
+    char start_url[2048] = ""; // No default - must be provided via --start-url
     int max_pages = 1000;
     char data_dir[1024];
     char model_path[1024];

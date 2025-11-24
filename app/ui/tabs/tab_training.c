@@ -219,7 +219,7 @@ void init_training_tab(AppState* state) {
         text_input_set_text(&thread_count_input, "0");
         
         text_input_init(&crawler_url_input, "Crawler Start URL:", panel_x, 360, input_width, 25);
-        text_input_set_text(&crawler_url_input, "https://en.wikipedia.org/wiki/Main_Page");
+        text_input_set_text(&crawler_url_input, ""); // User must provide URL
         
         inputs_initialized = true;
     }

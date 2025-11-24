@@ -143,7 +143,7 @@ AppState* init_app(void) {
     state->research_selected_file = -1;
     
     // Initialize crawler state
-    strcpy(state->crawler_start_url, "https://en.wikipedia.org/wiki/Main_Page");
+    state->crawler_start_url[0] = '\0'; // No default URL - user must provide
     state->crawler_current_url[0] = '\0';
     state->crawler_running = false;
     state->crawler_pages_crawled = 0;
