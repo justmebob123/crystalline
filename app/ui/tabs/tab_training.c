@@ -553,6 +553,17 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
     crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
+    
+    // DEBUG: Show what's in the input field
+    if (crawler_url_input.text[0] != '\0') {
+        char debug_text[100];
+        snprintf(debug_text, sizeof(debug_text), "Current: %.60s", crawler_url_input.text);
+        SDL_Rect debug_rect = layout_add_label(&layout, debug_text, 12);
+        draw_text(renderer, debug_text, debug_rect.x, debug_rect.y, 
+                 (SDL_Color){100, 255, 100, 255});
+        layout_add_spacing(&layout, -12); // Move back up
+    }
+    
     text_input_render(&crawler_url_input, renderer, get_global_font());
     
     layout_add_spacing(&layout, 10);
