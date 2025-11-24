@@ -421,6 +421,19 @@ void handle_mouse_click(AppState* state, int x, int y) {
 }
 
 void handle_input(AppState* state, SDL_Event* event) {
+    // DEBUG: Log all events to track activation
+    static const char* event_names[] = {
+        [SDL_MOUSEBUTTONDOWN] = "MOUSEBUTTONDOWN",
+        [SDL_MOUSEBUTTONUP] = "MOUSEBUTTONUP",
+        [SDL_MOUSEMOTION] = "MOUSEMOTION",
+        [SDL_KEYDOWN] = "KEYDOWN",
+        [SDL_KEYUP] = "KEYUP",
+        [SDL_TEXTINPUT] = "TEXTINPUT"
+    };
+    if (event->type < sizeof(event_names)/sizeof(event_names[0]) && event_names[event->type]) {
+        printf("DEBUG: Event type: %s\n", event_names[event->type]);
+    }
+    
     if (event->type == SDL_KEYDOWN) {
         // Silent key presses (no terminal spam)
     }
@@ -428,6 +441,7 @@ void handle_input(AppState* state, SDL_Event* event) {
     // Handle Training tab text inputs first (before other event processing)
     if (state->current_tab == TAB_TRAINING) {
         if (handle_training_tab_event(state, event)) {
+            printf("DEBUG: handle_training_tab_event returned true, event handled\n");
             return; // Event was handled by text input
         }
     }
