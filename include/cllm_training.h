@@ -42,6 +42,13 @@ typedef struct {
     
     // Gradient accumulation
     int gradient_accumulation_steps;  // Number of steps to accumulate gradients (default: 1)
+    
+    // Mixed precision training
+    int use_mixed_precision;          // Enable FP16/FP32 mixed precision (default: 0)
+    float loss_scale;                 // Loss scaling factor for FP16 (default: 1024.0)
+    float loss_scale_growth;          // Growth factor for dynamic loss scaling (default: 2.0)
+    float loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
+    int loss_scale_window;            // Steps before increasing loss scale (default: 2000)
 } CLLMTrainingConfig;
 
 /*
@@ -64,6 +71,13 @@ typedef struct {
     
     // Gradient accumulation state
     int accumulation_step;       // Current accumulation step (0 to gradient_accumulation_steps-1)
+    
+    // Mixed precision training state
+    float* master_weights;       // FP32 master copy of weights (for mixed precision)
+    uint16_t* fp16_activations;  // FP16 activation buffer
+    uint16_t* fp16_gradients;    // FP16 gradient buffer
+    float current_loss_scale;    // Current dynamic loss scale
+    int loss_scale_steps;        // Steps since last loss scale increase
     
     // Batch management
     int total_batches;           // Total number of batches

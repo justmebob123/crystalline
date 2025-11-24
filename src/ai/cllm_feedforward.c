@@ -86,7 +86,7 @@ void cllm_activation_relu(float* x, int size) {
 static void matmul_add_bias(float* matrix, float* input, float* bias, 
                            float* output, int input_dim, int output_dim) {
     // Use SIMD matrix-vector multiply
-    simd_simd_matrix_vector_multiply(output, matrix, input, output_dim, input_dim);
+    simd_matrix_vector_multiply(output, matrix, input, output_dim, input_dim);
     
     // Add bias if present
     if (bias) {

@@ -344,7 +344,12 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
         .lr_decay_factor = 0.1f,
         .lr_decay_steps = 1000,
         .min_lr = 1e-6f,
-        .gradient_accumulation_steps = 4  // Accumulate over 4 steps (effective batch size = 16)
+        .gradient_accumulation_steps = 4,  // Accumulate over 4 steps (effective batch size = 16)
+        .use_mixed_precision = 0,          // Disabled by default (enable for 2-3x speedup)
+        .loss_scale = 1024.0f,
+        .loss_scale_growth = 2.0f,
+        .loss_scale_backoff = 0.5f,
+        .loss_scale_window = 2000
     };
     strcpy(config.optimizer, "adam");
     strcpy(config.lr_scheduler, "cosine");  // Use cosine decay by default

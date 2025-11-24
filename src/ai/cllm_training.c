@@ -33,6 +33,25 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->best_loss = 1e9f;
     training->accumulation_step = 0;  // Initialize gradient accumulation counter
     
+    // Initialize mixed precision state
+    training->master_weights = NULL;
+    training->fp16_activations = NULL;
+    training->fp16_gradients = NULL;
+    training->current_loss_scale = config->loss_scale > 0 ? config->loss_scale : 1024.0f;
+    training->loss_scale_steps = 0;
+    
+    // Allocate master weights for mixed precision if enabled
+    if (config->use_mixed_precision) {
+        size_t total_params = model->header.total_params;
+        if (total_params > 0 && total_params < 1000000000) {
+            training->master_weights = (float*)malloc(total_params * sizeof(float));
+            if (training->master_weights && model->weights) {
+                // Copy current weights to master weights
+                memcpy(training->master_weights, model->weights, total_params * sizeof(float));
+            }
+        }
+    }
+    
     // Allocate gradient buffers
     size_t embed_size = model->vocab_size * model->embedding_dim;
     
@@ -1124,6 +1143,11 @@ void cllm_training_cleanup(CLLMTraining* training) {
     // free(training->tokens);  // REMOVED - tokens are owned by dataset
     free(training->gradients);
     free(training->optimizer_state);
+    
+    // Free mixed precision buffers
+    free(training->master_weights);
+    free(training->fp16_activations);
+    free(training->fp16_gradients);
     
     // Free attention gradient buffers
     if (training->attention_grads) {
