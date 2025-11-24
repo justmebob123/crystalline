@@ -6,9 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <immintrin.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
+#include "../include/cllm_simd_utils.h"
 
 // Forward declarations for missing math functions
 double prime_exp(double x);
@@ -70,23 +72,34 @@ static void scaled_dot_product_attention(float* query, float* keys, float* value
     float* scores = (float*)malloc(seq_len * sizeof(float));
     if (!scores) return;
     
-    // Compute attention scores: scores[i] = query · keys[i] / sqrt(head_dim)
+    // Compute attention scores using SIMD dot product: scores[i] = query · keys[i] / sqrt(head_dim)
     for (int i = 0; i < seq_len; i++) {
-        float dot = 0.0f;
-        for (int j = 0; j < head_dim; j++) {
-            dot += query[j] * keys[i * head_dim + j];
-        }
-        scores[i] = dot * scale;
+        scores[i] = dot_product(query, &keys[i * head_dim], head_dim) * scale;
     }
     
     // Apply softmax to get attention weights
     softmax(scores, seq_len);
     
-    // Compute weighted sum of values
+    // Compute weighted sum of values using SIMD
     memset(output, 0, head_dim * sizeof(float));
     for (int i = 0; i < seq_len; i++) {
-        for (int j = 0; j < head_dim; j++) {
-            output[j] += scores[i] * values[i * head_dim + j];
+        // output += scores[i] * values[i]
+        float score = scores[i];
+        int j = 0;
+        int j_vec = (head_dim / 8) * 8;
+        __m256 vscore = _mm256_set1_ps(score);
+        
+        // Vectorized accumulation
+        for (; j < j_vec; j += 8) {
+            __m256 vval = _mm256_loadu_ps(&values[i * head_dim + j]);
+            __m256 vout = _mm256_loadu_ps(&output[j]);
+            vout = _mm256_fmadd_ps(vscore, vval, vout);
+            _mm256_storeu_ps(&output[j], vout);
+        }
+        
+        // Scalar remainder
+        for (; j < head_dim; j++) {
+            output[j] += score * values[i * head_dim + j];
         }
     }
     

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "../include/cllm.h"
 #include "../include/prime_float_math.h"
+#include "../include/cllm_simd_utils.h"
 
 // Forward declaration
 void cllm_feedforward_free(FeedForwardLayer* layer);
@@ -73,6 +74,7 @@ void cllm_activation_relu(float* x, int size) {
 
 /**
  * Matrix-vector multiplication: output = matrix * input + bias
+ * Uses SIMD for vectorization
  * 
  * @param matrix Weight matrix [output_dim x input_dim]
  * @param input Input vector [input_dim]
@@ -83,12 +85,12 @@ void cllm_activation_relu(float* x, int size) {
  */
 static void matmul_add_bias(float* matrix, float* input, float* bias, 
                            float* output, int input_dim, int output_dim) {
-    for (int i = 0; i < output_dim; i++) {
-        float sum = 0.0f;
-        for (int j = 0; j < input_dim; j++) {
-            sum += matrix[i * input_dim + j] * input[j];
-        }
-        output[i] = sum + (bias ? bias[i] : 0.0f);
+    // Use SIMD matrix-vector multiply
+    simd_simd_matrix_vector_multiply(output, matrix, input, output_dim, input_dim);
+    
+    // Add bias if present
+    if (bias) {
+        vector_add(output, output, bias, output_dim);
     }
 }
 

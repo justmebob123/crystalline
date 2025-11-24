@@ -126,3 +126,119 @@ void vector_scale(float* result, const float* a, float scalar, int n) {
         result[i] = a[i] * scalar;
     }
 }
+
+/**
+ * Matrix-vector multiplication: result = A * x
+ * A is m x n matrix in row-major order
+ * x is n-dimensional vector
+ * result is m-dimensional vector
+ */
+void simd_matrix_vector_multiply(float* result, const float* A, const float* x, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        result[i] = dot_product(&A[i * n], x, n);
+    }
+}
+
+/**
+ * Matrix-matrix multiplication: C = A * B
+ * Uses cache-friendly blocking and AVX2 vectorization
+ * All matrices in row-major order
+ */
+void simd_matrix_multiply(float* C, const float* A, const float* B, int m, int n, int p) {
+    // Initialize C to zero
+    memset(C, 0, m * p * sizeof(float));
+    
+    // Block size for cache optimization (tune based on cache size)
+    const int BLOCK_SIZE = 64;
+    
+    // Blocked matrix multiplication
+    for (int i0 = 0; i0 < m; i0 += BLOCK_SIZE) {
+        for (int j0 = 0; j0 < p; j0 += BLOCK_SIZE) {
+            for (int k0 = 0; k0 < n; k0 += BLOCK_SIZE) {
+                // Process block
+                int i_max = (i0 + BLOCK_SIZE < m) ? i0 + BLOCK_SIZE : m;
+                int j_max = (j0 + BLOCK_SIZE < p) ? j0 + BLOCK_SIZE : p;
+                int k_max = (k0 + BLOCK_SIZE < n) ? k0 + BLOCK_SIZE : n;
+                
+                for (int i = i0; i < i_max; i++) {
+                    for (int k = k0; k < k_max; k++) {
+                        float a_ik = A[i * n + k];
+                        __m256 va = _mm256_set1_ps(a_ik);
+                        
+                        int j = j0;
+                        int j_vec = j0 + ((j_max - j0) / 8) * 8;
+                        
+                        // Vectorized inner loop
+                        for (; j < j_vec; j += 8) {
+                            __m256 vb = _mm256_loadu_ps(&B[k * p + j]);
+                            __m256 vc = _mm256_loadu_ps(&C[i * p + j]);
+                            vc = _mm256_fmadd_ps(va, vb, vc);
+                            _mm256_storeu_ps(&C[i * p + j], vc);
+                        }
+                        
+                        // Scalar remainder
+                        for (; j < j_max; j++) {
+                            C[i * p + j] += a_ik * B[k * p + j];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Transposed matrix-matrix multiplication: C = A^T * B
+ * A is n x m (will be transposed to m x n)
+ * B is n x p
+ * C is m x p
+ * More cache-friendly when A needs to be transposed
+ */
+void simd_matrix_multiply_transposed(float* C, const float* A, const float* B, int m, int n, int p) {
+    // Initialize C to zero
+    memset(C, 0, m * p * sizeof(float));
+    
+    // For A^T * B, we compute C[i,j] = sum_k A[k,i] * B[k,j]
+    // This is more cache-friendly than explicitly transposing A
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < p; j++) {
+            float sum = 0.0f;
+            
+            // Vectorized dot product
+            int k = 0;
+            int k_vec = (n / 8) * 8;
+            __m256 vsum = _mm256_setzero_ps();
+            
+            for (; k < k_vec; k += 8) {
+                // Load A[k:k+8, i] (strided access)
+                __m256 va = _mm256_set_ps(
+                    A[(k+7)*m + i], A[(k+6)*m + i], A[(k+5)*m + i], A[(k+4)*m + i],
+                    A[(k+3)*m + i], A[(k+2)*m + i], A[(k+1)*m + i], A[k*m + i]
+                );
+                
+                // Load B[k:k+8, j] (strided access)
+                __m256 vb = _mm256_set_ps(
+                    B[(k+7)*p + j], B[(k+6)*p + j], B[(k+5)*p + j], B[(k+4)*p + j],
+                    B[(k+3)*p + j], B[(k+2)*p + j], B[(k+1)*p + j], B[k*p + j]
+                );
+                
+                vsum = _mm256_fmadd_ps(va, vb, vsum);
+            }
+            
+            // Horizontal sum
+            __m128 sum_high = _mm256_extractf128_ps(vsum, 1);
+            __m128 sum_low = _mm256_castps256_ps128(vsum);
+            __m128 sum128 = _mm_add_ps(sum_high, sum_low);
+            sum128 = _mm_hadd_ps(sum128, sum128);
+            sum128 = _mm_hadd_ps(sum128, sum128);
+            sum = _mm_cvtss_f32(sum128);
+            
+            // Scalar remainder
+            for (; k < n; k++) {
+                sum += A[k * m + i] * B[k * p + j];
+            }
+            
+            C[i * p + j] = sum;
+        }
+    }
+}
