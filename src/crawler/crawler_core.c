@@ -23,6 +23,15 @@
 #define MIN_DELAY_SECONDS 2
 #define MAX_DELAY_SECONDS 5
 
+/**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
 typedef struct {
     char* data;
     size_t size;
@@ -181,7 +190,9 @@ int crawler_save_page(CrawlerState* state, const char* url, const char* content,
     
     FILE* f = fopen(filename, "w");
     if (!f) {
-        fprintf(stderr, "Failed to open file: %s\n", filename);
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s Failed to open file: %s\n", timestamp, filename);
         return -1;
     }
     
@@ -194,7 +205,9 @@ int crawler_save_page(CrawlerState* state, const char* url, const char* content,
     fwrite(content, 1, size, f);
     fclose(f);
     
-    printf("✓ Saved: %s\n", filename);
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s ✓ Saved: %s\n", timestamp, filename);
     return 0;
 }
 
@@ -251,7 +264,9 @@ int crawler_extract_links(const char* html, const char* base_url, CrawlerState* 
     
     if (links_found > 0) {
         fflush(state->links_to_crawl);
-        printf("  Found %d links\n", links_found);
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        printf("%s   Found %d links\n", timestamp, links_found);
     }
     
     return links_found;
@@ -315,23 +330,36 @@ void crawler_mark_crawled(CrawlerState* state, const char* url) {
  */
 void* crawler_thread_func(void* arg) {
     CrawlerState* state = (CrawlerState*)arg;
+    char timestamp[32];
     
-    printf("=== CRAWLER STARTED ===\n");
-    printf("Data directory: %s\n", state->data_dir);
-    printf("Max pages: %d\n", state->max_pages);
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === CRAWLER STARTED ===\n", timestamp);
+    printf("%s Data directory: %s\n", timestamp, state->data_dir);
+    if (state->max_pages == 0) {
+        printf("%s Max pages: UNLIMITED\n", timestamp);
+    } else {
+        printf("%s Max pages: %d\n", timestamp, state->max_pages);
+    }
     
-    while (state->running && state->pages_crawled < state->max_pages) {
+    while (state->running && (state->max_pages == 0 || state->pages_crawled < state->max_pages)) {
         char url[MAX_URL_LENGTH];
         
         // Get next URL
         if (crawler_get_next_url(state, url, sizeof(url)) != 0) {
-            printf("No more URLs in queue\n");
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s No more URLs in queue, waiting...\n", timestamp);
             sleep(5);  // Wait for more URLs
             continue;
         }
         
-        printf("\n=== Crawling [%d/%d] ===\n", state->pages_crawled + 1, state->max_pages);
-        printf("URL: %s\n", url);
+        // Print progress
+        get_timestamp(timestamp, sizeof(timestamp));
+        if (state->max_pages == 0) {
+            printf("\n%s === Crawling [%d/unlimited] ===\n", timestamp, state->pages_crawled + 1);
+        } else {
+            printf("\n%s === Crawling [%d/%d] ===\n", timestamp, state->pages_crawled + 1, state->max_pages);
+        }
+        printf("%s URL: %s\n", timestamp, url);
         
         // Download page
         MemoryBuffer buffer = {0};
@@ -339,6 +367,9 @@ void* crawler_thread_func(void* arg) {
         buffer.data = (char*)malloc(buffer.capacity);
         
         if (crawler_download_page(url, &buffer) == 0) {
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s Downloaded %zu bytes\n", timestamp, buffer.size);
+            
             // Save page
             crawler_save_page(state, url, buffer.data, buffer.size);
             
@@ -348,19 +379,22 @@ void* crawler_thread_func(void* arg) {
             // Mark as crawled
             crawler_mark_crawled(state, url);
         } else {
-            printf("✗ Failed to download\n");
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s ✗ Failed to download\n", timestamp);
         }
         
         free(buffer.data);
         
         // Rate limiting: random delay between MIN and MAX seconds
         int delay = MIN_DELAY_SECONDS + (rand() % (MAX_DELAY_SECONDS - MIN_DELAY_SECONDS + 1));
-        printf("Waiting %d seconds...\n", delay);
+        get_timestamp(timestamp, sizeof(timestamp));
+        printf("%s Waiting %d seconds...\n", timestamp, delay);
         sleep(delay);
     }
     
-    printf("\n=== CRAWLER STOPPED ===\n");
-    printf("Total pages crawled: %d\n", state->pages_crawled);
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("\n%s === CRAWLER STOPPED ===\n", timestamp);
+    printf("%s Total pages crawled: %d\n", timestamp, state->pages_crawled);
     
     return NULL;
 }

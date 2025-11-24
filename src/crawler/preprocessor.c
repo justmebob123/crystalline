@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
@@ -210,10 +211,21 @@ static int preprocess_file(const char* input_path, const char* output_path) {
 /**
  * Preprocessor thread
  */
+/**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
 void* preprocessor_thread_func(void* arg) {
     PreprocessorState* state = (PreprocessorState*)arg;
+    char timestamp[32];
     
-    printf("=== PREPROCESSOR STARTED ===\n");
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === PREPROCESSOR STARTED ===\n", timestamp);
     
     char raw_dir[1024];
     char preprocessed_dir[1024];
@@ -253,10 +265,12 @@ void* preprocessor_thread_func(void* arg) {
             char input_path[2048];
             snprintf(input_path, sizeof(input_path), "%s/%s", raw_dir, entry->d_name);
             
-            printf("Preprocessing: %s\n", entry->d_name);
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s Preprocessing: %s\n", timestamp, entry->d_name);
             
             if (preprocess_file(input_path, preprocessed_path) == 0) {
-                printf("✓ Preprocessed: %s\n", base);
+                get_timestamp(timestamp, sizeof(timestamp));
+                printf("%s ✓ Preprocessed: %s\n", timestamp, base);
                 pthread_mutex_lock(&state->lock);
                 state->files_processed++;
                 pthread_mutex_unlock(&state->lock);
@@ -276,7 +290,8 @@ void* preprocessor_thread_func(void* arg) {
         }
     }
     
-    printf("=== PREPROCESSOR STOPPED ===\n");
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === PREPROCESSOR STOPPED ===\n", timestamp);
     return NULL;
 }
 

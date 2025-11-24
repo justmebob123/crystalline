@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "cllm_training.h"
 #include "cllm.h"
 
@@ -280,16 +281,28 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
 }
 
 /**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
+/**
  * Start training threads
  */
 int continuous_training_start(ContinuousTrainingState* state, pthread_t* threads) {
-    printf("=== CONTINUOUS TRAINING STARTED ===\n");
-    printf("Threads: %d\n", state->num_threads);
-    printf("Model: %s\n", state->model_path);
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    
+    printf("%s === CONTINUOUS TRAINING STARTED ===\n", timestamp);
+    printf("%s Threads: %d\n", timestamp, state->num_threads);
+    printf("%s Model: %s\n", timestamp, state->model_path);
     
     for (int i = 0; i < state->num_threads; i++) {
         if (pthread_create(&threads[i], NULL, training_worker_thread, state) != 0) {
-            fprintf(stderr, "Failed to create training thread %d\n", i);
+            fprintf(stderr, "%s Failed to create training thread %d\n", timestamp, i);
             return -1;
         }
     }
@@ -307,8 +320,10 @@ void continuous_training_stop(ContinuousTrainingState* state, pthread_t* threads
         pthread_join(threads[i], NULL);
     }
     
-    printf("=== CONTINUOUS TRAINING STOPPED ===\n");
-    printf("Total files trained: %d\n", state->files_trained);
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === CONTINUOUS TRAINING STOPPED ===\n", timestamp);
+    printf("%s Total files trained: %d\n", timestamp, state->files_trained);
 }
 
 /**

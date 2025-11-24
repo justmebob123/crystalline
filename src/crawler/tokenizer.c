@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #define MAX_TOKEN_LENGTH 64
 #define MAX_TOKENS 100000
@@ -125,12 +126,23 @@ static int tokenize_file(const char* input_path, const char* output_path) {
 }
 
 /**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
+/**
  * Tokenizer thread
  */
 void* tokenizer_thread_func(void* arg) {
     TokenizerState* state = (TokenizerState*)arg;
+    char timestamp[32];
     
-    printf("=== TOKENIZER STARTED ===\n");
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === TOKENIZER STARTED ===\n", timestamp);
     
     char preprocessed_dir[1024];
     char queue_dir[1024];
@@ -170,11 +182,13 @@ void* tokenizer_thread_func(void* arg) {
             char input_path[2048];
             snprintf(input_path, sizeof(input_path), "%s/%s", preprocessed_dir, entry->d_name);
             
-            printf("Tokenizing: %s\n", entry->d_name);
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s Tokenizing: %s\n", timestamp, entry->d_name);
             
             int token_count = tokenize_file(input_path, output_path);
             if (token_count > 0) {
-                printf("✓ Tokenized: %s (%d tokens)\n", base, token_count);
+                get_timestamp(timestamp, sizeof(timestamp));
+                printf("%s ✓ Tokenized: %s (%d tokens)\n", timestamp, base, token_count);
                 pthread_mutex_lock(&state->lock);
                 state->files_processed++;
                 pthread_mutex_unlock(&state->lock);
@@ -194,7 +208,8 @@ void* tokenizer_thread_func(void* arg) {
         }
     }
     
-    printf("=== TOKENIZER STOPPED ===\n");
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === TOKENIZER STOPPED ===\n", timestamp);
     return NULL;
 }
 
