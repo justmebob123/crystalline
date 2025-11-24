@@ -72,6 +72,51 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
     }
     
     if (event->type == SDL_KEYDOWN) {
+        SDL_Keymod mod = SDL_GetModState();
+        
+        // Handle Ctrl+V (Paste)
+        if ((mod & KMOD_CTRL) && event->key.keysym.sym == SDLK_v) {
+            if (SDL_HasClipboardText()) {
+                char* clipboard = SDL_GetClipboardText();
+                if (clipboard) {
+                    // Clear current text and paste clipboard content
+                    int remaining = MAX_INPUT_LENGTH - 1;
+                    strncpy(input->text, clipboard, remaining);
+                    input->text[remaining] = '\0';
+                    input->cursor_pos = strlen(input->text);
+                    SDL_free(clipboard);
+                    printf("Pasted from clipboard: %s\n", input->text);
+                }
+            }
+            return true;
+        }
+        
+        // Handle Ctrl+C (Copy)
+        if ((mod & KMOD_CTRL) && event->key.keysym.sym == SDLK_c) {
+            if (strlen(input->text) > 0) {
+                SDL_SetClipboardText(input->text);
+                printf("Copied to clipboard: %s\n", input->text);
+            }
+            return true;
+        }
+        
+        // Handle Ctrl+X (Cut)
+        if ((mod & KMOD_CTRL) && event->key.keysym.sym == SDLK_x) {
+            if (strlen(input->text) > 0) {
+                SDL_SetClipboardText(input->text);
+                printf("Cut to clipboard: %s\n", input->text);
+                memset(input->text, 0, MAX_INPUT_LENGTH);
+                input->cursor_pos = 0;
+            }
+            return true;
+        }
+        
+        // Handle Ctrl+A (Select All - for now just move cursor to end)
+        if ((mod & KMOD_CTRL) && event->key.keysym.sym == SDLK_a) {
+            input->cursor_pos = strlen(input->text);
+            return true;
+        }
+        
         switch (event->key.keysym.sym) {
             case SDLK_BACKSPACE:
                 if (strlen(input->text) > 0) {
