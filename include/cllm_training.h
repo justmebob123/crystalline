@@ -39,6 +39,9 @@ typedef struct {
     float lr_decay_factor;       // Decay factor for step scheduler (default: 0.1)
     int lr_decay_steps;          // Steps between decay for step scheduler (default: 1000)
     float min_lr;                // Minimum learning rate (default: 1e-6)
+    
+    // Gradient accumulation
+    int gradient_accumulation_steps;  // Number of steps to accumulate gradients (default: 1)
 } CLLMTrainingConfig;
 
 /*
@@ -58,6 +61,9 @@ typedef struct {
     float best_loss;             // Best validation loss
     float current_loss;          // Current training loss
     time_t start_time;           // Training start time
+    
+    // Gradient accumulation state
+    int accumulation_step;       // Current accumulation step (0 to gradient_accumulation_steps-1)
     
     // Batch management
     int total_batches;           // Total number of batches

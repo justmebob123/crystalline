@@ -31,6 +31,7 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->current_epoch = 0;
     training->current_step = 0;
     training->best_loss = 1e9f;
+    training->accumulation_step = 0;  // Initialize gradient accumulation counter
     
     // Allocate gradient buffers
     size_t embed_size = model->vocab_size * model->embedding_dim;
@@ -405,6 +406,23 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t
 void cllm_optimizer_step(CLLMTraining* training) {
     if (!training) return;
     
+    // Gradient accumulation logic
+    int accum_steps = training->config.gradient_accumulation_steps;
+    if (accum_steps <= 0) accum_steps = 1;
+    
+    training->accumulation_step++;
+    
+    // Only apply gradients when we've accumulated enough steps
+    if (training->accumulation_step < accum_steps) {
+        return;  // Continue accumulating
+    }
+    
+    // Reset accumulation counter
+    training->accumulation_step = 0;
+    
+    // Scale gradients by 1/accum_steps
+    float gradient_scale = 1.0f / (float)accum_steps;
+    
     float lr = training->config.learning_rate;
     CLLMModel* model = training->model;
     
@@ -416,7 +434,8 @@ void cllm_optimizer_step(CLLMTraining* training) {
     
     if (model->embeddings.embeddings && training->gradients) {
         for (size_t i = 0; i < embed_params; i++) {
-            model->embeddings.embeddings[i] -= lr * training->gradients[i];
+            model->embeddings.embeddings[i] -= lr * training->gradients[i] * gradient_scale;
+            training->gradients[i] = 0.0f;  // Clear gradient after update
         }
     }
     
@@ -428,19 +447,22 @@ void cllm_optimizer_step(CLLMTraining* training) {
             
             if (training->attention_grads[layer].query_lattice && model->attention_layers[layer].query_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].query_lattice[i] -= lr * training->attention_grads[layer].query_lattice[i];
+                    model->attention_layers[layer].query_lattice[i] -= lr * training->attention_grads[layer].query_lattice[i] * gradient_scale;
+                    training->attention_grads[layer].query_lattice[i] = 0.0f;
                 }
             }
             
             if (training->attention_grads[layer].key_lattice && model->attention_layers[layer].key_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].key_lattice[i] -= lr * training->attention_grads[layer].key_lattice[i];
+                    model->attention_layers[layer].key_lattice[i] -= lr * training->attention_grads[layer].key_lattice[i] * gradient_scale;
+                    training->attention_grads[layer].key_lattice[i] = 0.0f;
                 }
             }
             
             if (training->attention_grads[layer].value_lattice && model->attention_layers[layer].value_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].value_lattice[i] -= lr * training->attention_grads[layer].value_lattice[i];
+                    model->attention_layers[layer].value_lattice[i] -= lr * training->attention_grads[layer].value_lattice[i] * gradient_scale;
+                    training->attention_grads[layer].value_lattice[i] = 0.0f;
                 }
             }
         }
@@ -454,25 +476,29 @@ void cllm_optimizer_step(CLLMTraining* training) {
             
             if (training->ff_grads[layer].w1_lattice && ff->w1_lattice) {
                 for (uint32_t i = 0; i < input_dim * hidden_dim; i++) {
-                    ff->w1_lattice[i] -= lr * training->ff_grads[layer].w1_lattice[i];
+                    ff->w1_lattice[i] -= lr * training->ff_grads[layer].w1_lattice[i] * gradient_scale;
+                    training->ff_grads[layer].w1_lattice[i] = 0.0f;
                 }
             }
             
             if (training->ff_grads[layer].w2_lattice && ff->w2_lattice) {
                 for (uint32_t i = 0; i < hidden_dim * output_dim; i++) {
-                    ff->w2_lattice[i] -= lr * training->ff_grads[layer].w2_lattice[i];
+                    ff->w2_lattice[i] -= lr * training->ff_grads[layer].w2_lattice[i] * gradient_scale;
+                    training->ff_grads[layer].w2_lattice[i] = 0.0f;
                 }
             }
             
             if (training->ff_grads[layer].bias1 && ff->bias1) {
                 for (uint32_t i = 0; i < hidden_dim; i++) {
-                    ff->bias1[i] -= lr * training->ff_grads[layer].bias1[i];
+                    ff->bias1[i] -= lr * training->ff_grads[layer].bias1[i] * gradient_scale;
+                    training->ff_grads[layer].bias1[i] = 0.0f;
                 }
             }
             
             if (training->ff_grads[layer].bias2 && ff->bias2) {
                 for (uint32_t i = 0; i < output_dim; i++) {
-                    ff->bias2[i] -= lr * training->ff_grads[layer].bias2[i];
+                    ff->bias2[i] -= lr * training->ff_grads[layer].bias2[i] * gradient_scale;
+                    training->ff_grads[layer].bias2[i] = 0.0f;
                 }
             }
         }

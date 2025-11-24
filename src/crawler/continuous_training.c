@@ -343,7 +343,8 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
         .max_steps = 10000,
         .lr_decay_factor = 0.1f,
         .lr_decay_steps = 1000,
-        .min_lr = 1e-6f
+        .min_lr = 1e-6f,
+        .gradient_accumulation_steps = 4  // Accumulate over 4 steps (effective batch size = 16)
     };
     strcpy(config.optimizer, "adam");
     strcpy(config.lr_scheduler, "cosine");  // Use cosine decay by default

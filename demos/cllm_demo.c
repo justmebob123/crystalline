@@ -283,7 +283,8 @@ void test_cllm_training(CLLMModel* model) {
         .max_steps = 1000,
         .lr_decay_factor = 0.1f,
         .lr_decay_steps = 200,
-        .min_lr = 1e-6f
+        .min_lr = 1e-6f,
+        .gradient_accumulation_steps = 2
     };
     strcpy(config.optimizer, "adam");
     strcpy(config.lr_scheduler, "cosine");
