@@ -75,12 +75,70 @@ static TextInput learning_rate_input;
 static TextInput epochs_input;
 static TextInput batch_size_input;
 static TextInput thread_count_input;
+static TextInput crawler_url_input;
 static bool inputs_initialized = false;
 
 // Crawler state
 static bool crawler_running = false;
 static int pages_crawled = 0;
 static int pages_in_queue = 0;
+
+/**
+ * Load crawl queue from file
+ * Creates file with start URL if it doesn't exist
+ */
+static void load_crawl_queue(AppState* state) {
+    if (!state) return;
+    
+    char queue_path[1024];
+    snprintf(queue_path, sizeof(queue_path), "%s/links_to_crawl.txt", state->crawler_data_dir);
+    
+    // Create directory if it doesn't exist
+    char mkdir_cmd[1100];
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "mkdir -p %s", state->crawler_data_dir);
+    (void)system(mkdir_cmd);
+    
+    FILE* f = fopen(queue_path, "r");
+    if (f) {
+        // File exists - count lines
+        state->crawler_queue_size = 0;
+        char line[2048];
+        while (fgets(line, sizeof(line), f)) {
+            state->crawler_queue_size++;
+        }
+        fclose(f);
+        printf("Loaded crawl queue: %d URLs\n", state->crawler_queue_size);
+    } else {
+        // File doesn't exist - create it with start URL
+        f = fopen(queue_path, "w");
+        if (f) {
+            fprintf(f, "%s\n", state->crawler_start_url);
+            fclose(f);
+            state->crawler_queue_size = 1;
+            printf("Created new crawl queue with start URL: %s\n", state->crawler_start_url);
+        } else {
+            printf("Error: Could not create crawl queue file: %s\n", queue_path);
+        }
+    }
+}
+
+/**
+ * Add URL to crawl queue
+ */
+static void add_url_to_queue(AppState* state, const char* url) {
+    if (!state || !url || url[0] == '\0') return;
+    
+    char queue_path[1024];
+    snprintf(queue_path, sizeof(queue_path), "%s/links_to_crawl.txt", state->crawler_data_dir);
+    
+    FILE* f = fopen(queue_path, "a");
+    if (f) {
+        fprintf(f, "%s\n", url);
+        fclose(f);
+        state->crawler_queue_size++;
+        printf("Added URL to queue: %s\n", url);
+    }
+}
 
 /**
  * Scan training directory for files
@@ -159,6 +217,9 @@ void init_training_tab(AppState* state) {
         
         text_input_init(&thread_count_input, "Threads (0=auto):", panel_x, 320, input_width, 25);
         text_input_set_text(&thread_count_input, "0");
+        
+        text_input_init(&crawler_url_input, "Crawler Start URL:", panel_x, 360, input_width, 25);
+        text_input_set_text(&crawler_url_input, "https://en.wikipedia.org/wiki/Main_Page");
         
         inputs_initialized = true;
     }
@@ -289,9 +350,9 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
     }
     
     // Crawler status (if running)
-    if (crawler_running) {
-        int crawler_y = viz_area_rect.y + viz_area_rect.h - 60;
-        SDL_Rect crawler_status = {content_x, crawler_y, content_w, 50};
+    if (crawler_running || state->crawler_running) {
+        int crawler_y = viz_area_rect.y + viz_area_rect.h - 80;
+        SDL_Rect crawler_status = {content_x, crawler_y, content_w, 70};
         SDL_SetRenderDrawColor(renderer, 40, 60, 40, 255);
         SDL_RenderFillRect(renderer, &crawler_status);
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
@@ -300,12 +361,22 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         char crawler_text[128];
         snprintf(crawler_text, sizeof(crawler_text), 
                 "CRAWLER ACTIVE | Pages: %d | Queue: %d", 
-                pages_crawled, pages_in_queue);
+                state->crawler_pages_crawled, state->crawler_queue_size);
         draw_text(renderer, crawler_text, crawler_status.x + 10, crawler_status.y + 10, 
                  (SDL_Color){100, 255, 100, 255});
         
+        // Show current URL being crawled
+        if (state->crawler_current_url[0] != '\0') {
+            char url_display[100];
+            snprintf(url_display, sizeof(url_display), "Current: %.80s", state->crawler_current_url);
+            draw_text(renderer, url_display, crawler_status.x + 10, crawler_status.y + 28, text_color);
+        } else {
+            draw_text(renderer, "Initializing crawler...", 
+                     crawler_status.x + 10, crawler_status.y + 28, text_color);
+        }
+        
         draw_text(renderer, "Continuously crawling and training...", 
-                 crawler_status.x + 10, crawler_status.y + 28, text_color);
+                 crawler_status.x + 10, crawler_status.y + 46, text_color);
     }
 }
 
@@ -347,7 +418,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         (SDL_Color){255, 200, 100, 255} : (SDL_Color){100, 255, 100, 255};
     
     char status_text[64];
-    snprintf(status_text, sizeof(status_text), "● %s", status);
+    snprintf(status_text, sizeof(status_text), "* %s", status);
     SDL_Rect status_rect = layout_add_label(&layout, status_text, 18);
     draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
     
@@ -446,9 +517,10 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     text_input_render(&epochs_input, renderer, get_global_font());
     text_input_render(&batch_size_input, renderer, get_global_font());
     text_input_render(&thread_count_input, renderer, get_global_font());
+    text_input_render(&crawler_url_input, renderer, get_global_font());
     
-    // Skip past input fields
-    layout_add_spacing(&layout, 160);
+    // Skip past input fields (now 5 inputs instead of 4)
+    layout_add_spacing(&layout, 200);
     
     // === SECTION 4: ACTIONS ===
     SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 20);
@@ -572,6 +644,16 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
         return true;
     }
     
+    if (text_input_handle_event(&crawler_url_input, event)) {
+        if (!text_input_is_active(&crawler_url_input)) {
+            // Update the crawler start URL in state
+            strncpy(state->crawler_start_url, text_input_get_text(&crawler_url_input), 
+                    sizeof(state->crawler_start_url) - 1);
+            state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+        }
+        return true;
+    }
+    
     return false;
 }
 
@@ -615,6 +697,16 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             text_input_deactivate(&learning_rate_input);
             text_input_deactivate(&epochs_input);
             text_input_deactivate(&batch_size_input);
+            text_input_deactivate(&crawler_url_input);
+            SDL_StartTextInput();
+            return;
+        }
+        if (rect_contains_point(crawler_url_input.bounds, x, y)) {
+            text_input_activate(&crawler_url_input);
+            text_input_deactivate(&learning_rate_input);
+            text_input_deactivate(&epochs_input);
+            text_input_deactivate(&batch_size_input);
+            text_input_deactivate(&thread_count_input);
             SDL_StartTextInput();
             return;
         }
@@ -732,17 +824,40 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Start Crawler button (NEW!)
     if (rect_contains_point(btn_start_crawler.bounds, x, y)) {
-        if (crawler_running) {
+        if (crawler_running || state->crawler_running) {
             printf("Stopping crawler...\n");
             crawler_running = false;
+            state->crawler_running = false;
+            state->crawler_current_url[0] = '\0';
             // TODO: Stop crawler thread
         } else {
-            printf("Starting crawler...\n");
-            crawler_running = true;
-            pages_crawled = 0;
-            pages_in_queue = 0;
-            // TODO: Start crawler thread
-            printf("Crawler functionality will be integrated with tools/cllm_crawler\n");
+            // Get URL from input field
+            const char* start_url = text_input_get_text(&crawler_url_input);
+            if (start_url && start_url[0] != '\0') {
+                printf("Starting crawler from URL: %s\n", start_url);
+                
+                // Update state
+                strncpy(state->crawler_start_url, start_url, sizeof(state->crawler_start_url) - 1);
+                state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+                state->crawler_running = true;
+                state->crawler_pages_crawled = 0;
+                strncpy(state->crawler_current_url, start_url, sizeof(state->crawler_current_url) - 1);
+                
+                crawler_running = true;
+                pages_crawled = 0;
+                
+                // Load or create crawl queue
+                load_crawl_queue(state);
+                pages_in_queue = state->crawler_queue_size;
+                
+                // TODO: Start crawler thread with URL
+                printf("Crawler will start from: %s\n", start_url);
+                printf("Data directory: %s\n", state->crawler_data_dir);
+                printf("Queue file: %s/links_to_crawl.txt\n", state->crawler_data_dir);
+                printf("Crawler functionality will be integrated with tools/cllm_crawler\n");
+            } else {
+                printf("Error: Please enter a valid URL to start crawling\n");
+            }
         }
         return;
     }

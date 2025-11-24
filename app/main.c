@@ -142,17 +142,65 @@ AppState* init_app(void) {
     state->research_file_count = 0;
     state->research_selected_file = -1;
     
-    // Don't auto-load model - let user choose
-    printf("=== CLLM Model Management ===\n");
-    printf("No model loaded on startup.\n");
-    printf("Options:\n");
-    printf("  1. Go to Training tab and click START TRAINING to create a new model\n");
-    printf("  2. Go to LLM tab and click LOAD MODEL to load an existing model\n");
-    printf("  3. Existing models will be found in models/ directory\n");
+    // Initialize crawler state
+    strcpy(state->crawler_start_url, "https://en.wikipedia.org/wiki/Main_Page");
+    state->crawler_current_url[0] = '\0';
+    state->crawler_running = false;
+    state->crawler_pages_crawled = 0;
+    state->crawler_queue_size = 0;
     
-    state->cllm_model = NULL;
-    state->cllm_inference = NULL;
-    strcpy(state->llm_output_text, "No model loaded. Start training to create a new model, or load an existing one.");
+    // Set crawler data directory (use workspace if available, otherwise default)
+    if (state->workspace_active) {
+        snprintf(state->crawler_data_dir, sizeof(state->crawler_data_dir), 
+                 "%s/crawler_data", state->workspace_path);
+    } else {
+        strcpy(state->crawler_data_dir, "crawler_data");
+    }
+    
+    // Auto-load default model if it exists
+    printf("=== CLLM Model Management ===\n");
+    const char* default_model_path = "models/saved_model.cllm";
+    
+    // Check if default model exists
+    FILE* test_file = fopen(default_model_path, "rb");
+    if (test_file) {
+        fclose(test_file);
+        printf("Found default model: %s\n", default_model_path);
+        printf("Loading model...\n");
+        
+        state->cllm_model = cllm_read_model(default_model_path);
+        if (state->cllm_model) {
+            printf("✓ Model loaded successfully!\n");
+            printf("  Vocabulary size: %lu\n", (unsigned long)state->cllm_model->vocab_size);
+            printf("  Embedding dimension: %lu\n", (unsigned long)state->cllm_model->embedding_dim);
+            printf("  Number of layers: %d\n", state->cllm_model->num_layers);
+            
+            // Create inference context
+            state->cllm_inference = cllm_inference_init(state->cllm_model);
+            if (state->cllm_inference) {
+                printf("✓ Inference context created\n");
+                strcpy(state->llm_output_text, "Model loaded and ready. Type a message to chat!");
+            } else {
+                printf("✗ Failed to create inference context\n");
+                strcpy(state->llm_output_text, "Model loaded but inference failed. Try reloading.");
+            }
+        } else {
+            printf("✗ Failed to load model from %s\n", default_model_path);
+            state->cllm_model = NULL;
+            state->cllm_inference = NULL;
+            strcpy(state->llm_output_text, "Failed to load model. You can create a new one in the Training tab.");
+        }
+    } else {
+        printf("No default model found at %s\n", default_model_path);
+        printf("Options:\n");
+        printf("  1. Go to Training tab and click START TRAINING to create a new model\n");
+        printf("  2. Go to LLM tab and click LOAD MODEL to load an existing model\n");
+        printf("  3. Existing models will be found in models/ directory\n");
+        
+        state->cllm_model = NULL;
+        state->cllm_inference = NULL;
+        strcpy(state->llm_output_text, "No model loaded. Start training to create a new model, or load an existing one.");
+    }
     
     printf("=== CLLM System Ready ===\n\n");
     

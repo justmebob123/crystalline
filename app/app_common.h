@@ -270,6 +270,14 @@ typedef struct {
     char research_directory[512];
     int research_file_count;
     int research_selected_file;
+    
+    // Crawler state
+    char crawler_start_url[2048];
+    char crawler_current_url[2048];
+    bool crawler_running;
+    int crawler_pages_crawled;
+    int crawler_queue_size;
+    char crawler_data_dir[512];
 } AppState;
 
 // Utility functions - use library versions where available
