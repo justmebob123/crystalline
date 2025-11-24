@@ -1,14 +1,16 @@
 # Makefile for Hyper Prime Spiral Application
-# Links against three separate libraries: libprimemath, libcllm, libcrawler
+# Updated to match current flat structure with ui/tabs subdirectory
 
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -std=c11
-LDFLAGS = -L.. -lcrawler -lcllm -lprimemath -lSDL2 -lSDL2_ttf -lcurl -lpthread -lm
+LDFLAGS = -L.. -lprimemath -lcrawler -lSDL2 -lSDL2_ttf -lm -lpthread
 INCLUDES = -I../include -I.
 
 # Source files in flat app/ directory (excluding ui/tabs and test files)
 APP_SOURCES = $(filter-out ui/tabs/%.c test_%.c, $(wildcard *.c))
 APP_OBJECTS = $(APP_SOURCES:.c=.o)
+
+# Note: text_input.c is included in APP_SOURCES automatically
 
 # Tab source files in ui/tabs/ subdirectory
 TAB_SOURCES = $(wildcard ui/tabs/*.c)
@@ -25,7 +27,7 @@ all: $(TARGET)
 
 $(TARGET): $(ALL_OBJECTS)
 	@echo "Linking $(TARGET)..."
-	$(CC) $(ALL_OBJECTS) -o $(TARGET) $(LDFLAGS) -Wl,-rpath,..
+	$(CC) $(ALL_OBJECTS) -o $(TARGET) $(LDFLAGS) -Wl,-rpath,..,-rpath,.
 	@echo "✓ Build complete!"
 	@echo ""
 	@echo "Run with: LD_LIBRARY_PATH=.. ./$(TARGET)"
@@ -66,7 +68,6 @@ info:
 	@echo ""
 	@echo "Compiler: $(CC)"
 	@echo "Flags: $(CFLAGS)"
-	@echo "Libraries: libcrawler, libcllm, libprimemath, SDL2, SDL2_ttf"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all   - Build application"

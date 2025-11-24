@@ -17,7 +17,7 @@
 #define MIN_TEXT_LENGTH 100
 
 typedef struct {
-    char data_dir[2048];
+    char data_dir[1024];
     int running;
     int files_processed;
     pthread_mutex_t lock;
@@ -227,8 +227,8 @@ void* preprocessor_thread_func(void* arg) {
     get_timestamp(timestamp, sizeof(timestamp));
     printf("%s === PREPROCESSOR STARTED ===\n", timestamp);
     
-    char raw_dir[2048];
-    char preprocessed_dir[2048];
+    char raw_dir[1024];
+    char preprocessed_dir[1024];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", state->data_dir);
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
     

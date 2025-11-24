@@ -17,7 +17,7 @@
 #define MAX_TOKENS 100000
 
 typedef struct {
-    char data_dir[2048];
+    char data_dir[1024];
     int running;
     int files_processed;
     pthread_mutex_t lock;
@@ -144,8 +144,8 @@ void* tokenizer_thread_func(void* arg) {
     get_timestamp(timestamp, sizeof(timestamp));
     printf("%s === TOKENIZER STARTED ===\n", timestamp);
     
-    char preprocessed_dir[2048];
-    char queue_dir[2048];
+    char preprocessed_dir[1024];
+    char queue_dir[1024];
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
     

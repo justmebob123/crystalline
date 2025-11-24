@@ -27,8 +27,8 @@ static void get_timestamp(char* buffer, size_t size) {
 }
 
 typedef struct {
-    char data_dir[2048];
-    char model_path[2048];
+    char data_dir[1024];
+    char model_path[1024];
     CLLMModel* model;
     CLLMTraining* training;
     int running;
@@ -219,7 +219,7 @@ static int move_to_trained(const char* data_dir, const char* filename) {
 static void* training_worker_thread(void* arg) {
     ContinuousTrainingState* state = (ContinuousTrainingState*)arg;
     
-    char queue_dir[2048];
+    char queue_dir[1024];
     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
     
     while (state->running) {
@@ -234,9 +234,7 @@ static void* training_worker_thread(void* arg) {
         
         while ((entry = readdir(dir)) != NULL) {
             if (entry->d_name[0] == '.') continue;
-            // Only process .tok files, NOT .tok.lock files
-            size_t len = strlen(entry->d_name);
-            if (len < 4 || strcmp(entry->d_name + len - 4, ".tok") != 0) continue;
+            if (strstr(entry->d_name, ".tok") == NULL) continue;
             
             char filepath[2048];
             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);

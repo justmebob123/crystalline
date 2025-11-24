@@ -1,0 +1,275 @@
+/**
+ * Crawler High-Level API
+ * 
+ * Provides a clean, thread-safe API for both CLI and GUI applications.
+ * This is the ONLY interface applications should use.
+ */
+
+#include "../../include/crawler.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+// Main state structure
+struct CrawlerState {
+    // Configuration
+    char data_dir[1024];
+    char start_url[512];
+    int max_pages;
+    
+    // Thread handles
+    pthread_t crawler_thread;
+    pthread_t preprocessor_thread;
+    pthread_t tokenizer_thread;
+    pthread_t monitor_thread;
+    
+    // Component states (opaque pointers to internal implementations)
+    void* crawler_internal;
+    void* preprocessor_internal;
+    void* tokenizer_internal;
+    
+    // Status tracking
+    int running;
+    int pages_crawled;
+    int pages_preprocessed;
+    int pages_tokenized;
+    int pages_trained;
+    char current_url[512];
+    char last_error[512];
+    
+    // Callback
+    CrawlerCallback callback;
+    void* callback_user_data;
+    
+    // Thread safety
+    pthread_mutex_t status_lock;
+};
+
+// Note: We use the actual function declarations from crawler.h
+// The internal state structures are opaque (void*)
+
+// Helper to count files in directory
+static int count_files_in_dir(const char* dir_path) {
+    DIR* dir = opendir(dir_path);
+    if (!dir) return 0;
+    
+    int count = 0;
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_name[0] != '.') {
+            count++;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+// Helper to trigger callback
+static void trigger_callback(CrawlerState* state, CrawlerEventType type, const char* message) {
+    if (!state || !state->callback) return;
+    
+    CrawlerEvent event;
+    event.type = type;
+    strncpy(event.message, message ? message : "", sizeof(event.message) - 1);
+    event.message[sizeof(event.message) - 1] = '\0';
+    event.pages_crawled = state->pages_crawled;
+    
+    state->callback(&event, state->callback_user_data);
+}
+
+// Status monitoring thread
+static void* status_monitor_thread_func(void* arg) {
+    CrawlerState* state = (CrawlerState*)arg;
+    
+    char raw_dir[1024], preprocessed_dir[1024], queue_dir[1024], trained_dir[1024];
+    snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", state->data_dir);
+    snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
+    snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
+    snprintf(trained_dir, sizeof(trained_dir), "%s/trained", state->data_dir);
+    
+    int last_crawled = 0, last_preprocessed = 0, last_tokenized = 0, last_trained = 0;
+    
+    while (state->running) {
+        // Count files
+        int crawled = count_files_in_dir(raw_dir);
+        int preprocessed = count_files_in_dir(preprocessed_dir);
+        int tokenized = count_files_in_dir(queue_dir);
+        int trained = count_files_in_dir(trained_dir);
+        
+        // Update status
+        pthread_mutex_lock(&state->status_lock);
+        state->pages_crawled = crawled;
+        state->pages_preprocessed = preprocessed;
+        state->pages_tokenized = tokenized;
+        state->pages_trained = trained;
+        pthread_mutex_unlock(&state->status_lock);
+        
+        // Trigger callbacks for changes
+        if (crawled > last_crawled) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "Downloaded %d new page(s)", crawled - last_crawled);
+            trigger_callback(state, CRAWLER_EVENT_PAGE_DOWNLOADED, msg);
+            last_crawled = crawled;
+        }
+        
+        if (preprocessed > last_preprocessed) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "Preprocessed %d new page(s)", preprocessed - last_preprocessed);
+            trigger_callback(state, CRAWLER_EVENT_PAGE_PREPROCESSED, msg);
+            last_preprocessed = preprocessed;
+        }
+        
+        if (tokenized > last_tokenized) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "Tokenized %d new page(s)", tokenized - last_tokenized);
+            trigger_callback(state, CRAWLER_EVENT_PAGE_TOKENIZED, msg);
+            last_tokenized = tokenized;
+        }
+        
+        if (trained > last_trained) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "Trained on %d new page(s)", trained - last_trained);
+            trigger_callback(state, CRAWLER_EVENT_PAGE_TRAINED, msg);
+            last_trained = trained;
+        }
+        
+        sleep(2);
+    }
+    
+    return NULL;
+}
+
+// ============================================================================
+// PUBLIC API IMPLEMENTATION
+// ============================================================================
+
+CrawlerState* crawler_state_init(const char* data_dir, const char* start_url, int max_pages) {
+    CrawlerState* state = (CrawlerState*)calloc(1, sizeof(CrawlerState));
+    if (!state) return NULL;
+    
+    strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
+    strncpy(state->start_url, start_url, sizeof(state->start_url) - 1);
+    state->max_pages = max_pages;
+    state->running = 0;
+    
+    pthread_mutex_init(&state->status_lock, NULL);
+    
+    // Create directory structure
+    mkdir(data_dir, 0755);
+    
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/raw_pages", data_dir);
+    mkdir(path, 0755);
+    
+    snprintf(path, sizeof(path), "%s/preprocessed", data_dir);
+    mkdir(path, 0755);
+    
+    snprintf(path, sizeof(path), "%s/training_queue", data_dir);
+    mkdir(path, 0755);
+    
+    snprintf(path, sizeof(path), "%s/trained", data_dir);
+    mkdir(path, 0755);
+    
+    return state;
+}
+
+int crawler_start(CrawlerState* state) {
+    if (!state) return -1;
+    if (state->running) return -1;
+    
+    state->running = 1;
+    
+    // Initialize components
+    state->crawler_internal = crawler_internal_init(state->data_dir, state->start_url, state->max_pages);
+    if (!state->crawler_internal) {
+        state->running = 0;
+        return -1;
+    }
+    
+    state->preprocessor_internal = preprocessor_init(state->data_dir);
+    state->tokenizer_internal = tokenizer_init(state->data_dir);
+    
+    // Start threads
+    if (pthread_create(&state->crawler_thread, NULL, crawler_thread_func, state->crawler_internal) != 0) {
+        state->running = 0;
+        crawler_internal_cleanup(state->crawler_internal);
+        return -1;
+    }
+    
+    if (pthread_create(&state->preprocessor_thread, NULL, preprocessor_thread_func, state->preprocessor_internal) != 0) {
+        state->running = 0;
+        pthread_cancel(state->crawler_thread);
+        crawler_internal_cleanup(state->crawler_internal);
+        return -1;
+    }
+    
+    if (pthread_create(&state->tokenizer_thread, NULL, tokenizer_thread_func, state->tokenizer_internal) != 0) {
+        state->running = 0;
+        pthread_cancel(state->crawler_thread);
+        pthread_cancel(state->preprocessor_thread);
+        crawler_internal_cleanup(state->crawler_internal);
+        preprocessor_cleanup(state->preprocessor_internal);
+        return -1;
+    }
+    
+    // Start monitor thread
+    pthread_create(&state->monitor_thread, NULL, status_monitor_thread_func, state);
+    
+    trigger_callback(state, CRAWLER_EVENT_PAGE_DOWNLOADED, "Crawler started");
+    
+    return 0;
+}
+
+void crawler_stop(CrawlerState* state) {
+    if (!state || !state->running) return;
+    
+    state->running = 0;
+    
+    // Wait for threads
+    if (state->crawler_thread) pthread_join(state->crawler_thread, NULL);
+    if (state->preprocessor_thread) pthread_join(state->preprocessor_thread, NULL);
+    if (state->tokenizer_thread) pthread_join(state->tokenizer_thread, NULL);
+    if (state->monitor_thread) pthread_join(state->monitor_thread, NULL);
+    
+    trigger_callback(state, CRAWLER_EVENT_STOPPED, "Crawler stopped");
+}
+
+void crawler_get_status(CrawlerState* state, CrawlerStatus* status) {
+    if (!state || !status) return;
+    
+    pthread_mutex_lock(&state->status_lock);
+    status->running = state->running;
+    status->pages_crawled = state->pages_crawled;
+    status->pages_preprocessed = state->pages_preprocessed;
+    status->pages_tokenized = state->pages_tokenized;
+    status->pages_trained = state->pages_trained;
+    strncpy(status->current_url, state->current_url, sizeof(status->current_url) - 1);
+    strncpy(status->last_error, state->last_error, sizeof(status->last_error) - 1);
+    pthread_mutex_unlock(&state->status_lock);
+}
+
+void crawler_set_callback(CrawlerState* state, CrawlerCallback callback, void* user_data) {
+    if (!state) return;
+    
+    pthread_mutex_lock(&state->status_lock);
+    state->callback = callback;
+    state->callback_user_data = user_data;
+    pthread_mutex_unlock(&state->status_lock);
+}
+
+void crawler_state_cleanup(CrawlerState* state) {
+    if (!state) return;
+    
+    crawler_stop(state);
+    
+    if (state->crawler_internal) crawler_internal_cleanup(state->crawler_internal);
+    if (state->preprocessor_internal) preprocessor_cleanup(state->preprocessor_internal);
+    if (state->tokenizer_internal) tokenizer_cleanup(state->tokenizer_internal);
+    
+    pthread_mutex_destroy(&state->status_lock);
+    free(state);
+}

@@ -39,7 +39,7 @@ typedef struct {
 } MemoryBuffer;
 
 typedef struct {
-    char data_dir[2048];
+    char data_dir[1024];
     char start_url[MAX_URL_LENGTH];
     int max_pages;
     int pages_crawled;
@@ -50,9 +50,9 @@ typedef struct {
 } CrawlerState;
 
 /**
- * Initialize crawler state
+ * Initialize crawler state (internal function)
  */
-CrawlerState* crawler_init(const char* data_dir, const char* start_url, int max_pages) {
+CrawlerState* crawler_internal_init(const char* data_dir, const char* start_url, int max_pages) {
     CrawlerState* state = (CrawlerState*)calloc(1, sizeof(CrawlerState));
     if (!state) return NULL;
     
@@ -64,7 +64,7 @@ CrawlerState* crawler_init(const char* data_dir, const char* start_url, int max_
     pthread_mutex_init(&state->lock, NULL);
     
     // Create directory structure
-    char path[2048];
+    char path[1024];
     snprintf(path, sizeof(path), "%s/raw_pages", data_dir);
     mkdir(path, 0755);
     
@@ -95,9 +95,9 @@ CrawlerState* crawler_init(const char* data_dir, const char* start_url, int max_
 }
 
 /**
- * Cleanup crawler state
+ * Cleanup crawler state (internal function)
  */
-void crawler_cleanup(CrawlerState* state) {
+void crawler_internal_cleanup(CrawlerState* state) {
     if (!state) return;
     
     if (state->links_to_crawl) fclose(state->links_to_crawl);
@@ -184,7 +184,7 @@ int crawler_save_page(CrawlerState* state, const char* url, const char* content,
     }
     
     time_t now = time(NULL);
-    char filename[2048];
+    char filename[1024];
     snprintf(filename, sizeof(filename), "%s/raw_pages/page_%lu_%ld.html", 
              state->data_dir, hash, now);
     
@@ -291,7 +291,7 @@ int crawler_get_next_url(CrawlerState* state, char* url, size_t url_size) {
     url[strcspn(url, "\n")] = 0;
     
     // Read remaining lines into temp file
-    char temp_path[2048];
+    char temp_path[1024];
     snprintf(temp_path, sizeof(temp_path), "%s/links_to_crawl.tmp", state->data_dir);
     FILE* temp = fopen(temp_path, "w");
     
@@ -304,7 +304,7 @@ int crawler_get_next_url(CrawlerState* state, char* url, size_t url_size) {
     fclose(state->links_to_crawl);
     
     // Replace original with temp
-    char orig_path[2048];
+    char orig_path[1024];
     snprintf(orig_path, sizeof(orig_path), "%s/links_to_crawl.txt", state->data_dir);
     rename(temp_path, orig_path);
     

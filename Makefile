@@ -1,26 +1,20 @@
 # ============================================================================
-# Crystalline Project - Master Makefile
+# Prime Math Library - Master Makefile
 # ============================================================================
-# Three independent libraries:
-# 1. libprimemath - Core crystalline lattice math library
-# 2. libcllm - Crystalline Lattice Language Model library
-# 3. libcrawler - Web crawler and continuous learning library
+# Crystalline Lattice Arbitrary Precision Math Library
+# Organized modular build system with NO external math dependencies
 # ============================================================================
 
 # Compiler and flags
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra -Wno-format-truncation -g -O0 -fPIC -I./include -mavx2 -mfma
+CFLAGS = -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma
 LDFLAGS = 
 ARFLAGS = rcs
 
 # Library names
-PRIMEMATH_STATIC = libprimemath.a
-PRIMEMATH_SHARED = libprimemath.so
-CLLM_STATIC = libcllm.a
-CLLM_SHARED = libcllm.so
-CRAWLER_STATIC = libcrawler.a
-CRAWLER_SHARED = libcrawler.so
+STATIC_LIB = libprimemath.a
+SHARED_LIB = libprimemath.so
 
 # Installation directories
 PREFIX = /usr/local
@@ -32,86 +26,52 @@ SRC_CORE = src/core
 SRC_TRANS = src/transcendental
 SRC_GEOM = src/geometry
 SRC_AI = src/ai
-SRC_CRAWLER = src/crawler
+SRC_UTILS = src/utils
 
-# Source files organized by library
-PRIMEMATH_SOURCES = $(wildcard $(SRC_CORE)/*.c) $(wildcard $(SRC_TRANS)/*.c) $(wildcard $(SRC_GEOM)/*.c)
-CLLM_SOURCES = $(wildcard $(SRC_AI)/*.c)
-CRAWLER_SOURCES = $(wildcard $(SRC_CRAWLER)/*.c)
+# Source files organized by category
+CORE_SOURCES = $(wildcard $(SRC_CORE)/*.c)
+TRANS_SOURCES = $(wildcard $(SRC_TRANS)/*.c)
+GEOM_SOURCES = $(wildcard $(SRC_GEOM)/*.c)
+AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
+TOOLS_DIR = tools
+UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
+
+# All sources
+ALL_SOURCES = $(CORE_SOURCES) $(TRANS_SOURCES) $(GEOM_SOURCES) $(AI_SOURCES) $(UTILS_SOURCES)
 
 # Object files
-PRIMEMATH_OBJECTS = $(PRIMEMATH_SOURCES:.c=.o)
-CLLM_OBJECTS = $(CLLM_SOURCES:.c=.o)
-CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
+CORE_OBJECTS = $(CORE_SOURCES:.c=.o)
+TRANS_OBJECTS = $(TRANS_SOURCES:.c=.o)
+GEOM_OBJECTS = $(GEOM_SOURCES:.c=.o)
+AI_OBJECTS = $(AI_SOURCES:.c=.o)
+UTILS_OBJECTS = $(UTILS_SOURCES:.c=.o)
+ALL_OBJECTS = $(ALL_SOURCES:.c=.o)
 
 # Header files
 HEADERS = $(wildcard include/*.h)
-
-# Tools directory
-TOOLS_DIR = tools
 
 # ============================================================================
 # Main Targets
 # ============================================================================
 
-.PHONY: all clean install uninstall test demos app info verify help crawler libs
+.PHONY: all clean install uninstall test demos app info verify help
 
-all: libs
-	@echo "✓ All libraries built successfully!"
+all: $(STATIC_LIB) $(SHARED_LIB)
+	@echo "✓ Build complete!"
+	@echo "  Static library: $(STATIC_LIB)"
+	@echo "  Shared library: $(SHARED_LIB)"
 
-libs: primemath cllm crawler
-	@echo "✓ Library build complete!"
-	@echo "  libprimemath: $(PRIMEMATH_STATIC), $(PRIMEMATH_SHARED)"
-	@echo "  libcllm:      $(CLLM_STATIC), $(CLLM_SHARED)"
-	@echo "  libcrawler:   $(CRAWLER_STATIC), $(CRAWLER_SHARED)"
-
-# ============================================================================
-# Library 1: Prime Math (Core Crystalline Lattice)
-# ============================================================================
-
-primemath: $(PRIMEMATH_STATIC) $(PRIMEMATH_SHARED)
-
-$(PRIMEMATH_STATIC): $(PRIMEMATH_OBJECTS)
-	@echo "Creating libprimemath.a (Core Crystalline Lattice Math)"
+# Static library
+$(STATIC_LIB): $(ALL_OBJECTS)
+	@echo "Creating static library: $@"
 	$(AR) $(ARFLAGS) $@ $^
-	@echo "✓ libprimemath.a created"
+	@echo "✓ Static library created"
 
-$(PRIMEMATH_SHARED): $(PRIMEMATH_OBJECTS)
-	@echo "Creating libprimemath.so (Core Crystalline Lattice Math)"
+# Shared library
+$(SHARED_LIB): $(ALL_OBJECTS)
+	@echo "Creating shared library: $@"
 	$(CC) -shared -o $@ $^ $(LDFLAGS)
-	@echo "✓ libprimemath.so created"
-
-# ============================================================================
-# Library 2: CLLM (Crystalline Lattice Language Model)
-# ============================================================================
-
-cllm: primemath $(CLLM_STATIC) $(CLLM_SHARED)
-
-$(CLLM_STATIC): $(CLLM_OBJECTS)
-	@echo "Creating libcllm.a (CLLM Library)"
-	$(AR) $(ARFLAGS) $@ $^
-	@echo "✓ libcllm.a created"
-
-$(CLLM_SHARED): $(CLLM_OBJECTS) $(PRIMEMATH_SHARED)
-	@echo "Creating libcllm.so (CLLM Library)"
-	$(CC) -shared -o $@ $(CLLM_OBJECTS) -L. -lprimemath $(LDFLAGS)
-	@echo "✓ libcllm.so created"
-
-# ============================================================================
-# Library 3: Crawler (Web Crawler & Continuous Learning)
-# ============================================================================
-
-crawler-lib: cllm $(CRAWLER_STATIC) $(CRAWLER_SHARED)
-
-$(CRAWLER_STATIC): $(CRAWLER_OBJECTS)
-	@echo "Creating libcrawler.a (Crawler Library)"
-	$(AR) $(ARFLAGS) $@ $^
-	@echo "✓ libcrawler.a created"
-
-$(CRAWLER_SHARED): $(CRAWLER_OBJECTS) $(CLLM_SHARED) $(PRIMEMATH_SHARED)
-	@echo "Creating libcrawler.so (Crawler Library)"
-	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcllm -lprimemath -lcurl -lpthread $(LDFLAGS)
-	@echo "✓ libcrawler.so created"
+	@echo "✓ Shared library created"
 
 # ============================================================================
 # Compilation Rules
@@ -132,21 +92,16 @@ $(SRC_GEOM)/%.o: $(SRC_GEOM)/%.c $(HEADERS)
 	@echo "Compiling [GEOM]: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# AI/CLLM objects
+# AI objects
 $(SRC_AI)/%.o: $(SRC_AI)/%.c $(HEADERS)
-	@echo "Compiling [CLLM]: $<"
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Crawler objects
-$(SRC_CRAWLER)/%.o: $(SRC_CRAWLER)/%.c $(HEADERS)
-	@echo "Compiling [CRAWLER]: $<"
+	@echo "Compiling [AI]: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ============================================================================
 # Subdirectory Builds
 # ============================================================================
 
-test: libs
+test: $(STATIC_LIB)
 	@echo "Building test suite..."
 	@if [ -d tests ] && [ -f tests/Makefile ]; then \
 		$(MAKE) -C tests; \
@@ -154,7 +109,7 @@ test: libs
 		echo "No test suite found"; \
 	fi
 
-demos: libs
+demos: $(STATIC_LIB)
 	@echo "Building demos..."
 	@if [ -d demos ] && [ -f demos/Makefile ]; then \
 		$(MAKE) -C demos; \
@@ -162,7 +117,7 @@ demos: libs
 		echo "No demos found"; \
 	fi
 
-app: libs
+app: $(STATIC_LIB)
 	@echo "Building application..."
 	@if [ -d app ] && [ -f app/Makefile ]; then \
 		$(MAKE) -C app; \
@@ -171,45 +126,24 @@ app: libs
 	fi
 
 # ============================================================================
-# Crawler Tool
-# ============================================================================
-
-crawler: crawler-lib
-	@echo "Building crawler tool..."
-	@mkdir -p $(TOOLS_DIR)
-	$(CC) $(CFLAGS) -o $(TOOLS_DIR)/cllm_crawler tools/cllm_crawler.c \
-		-L. -lcrawler -lcllm -lprimemath -lcurl -lpthread -lm
-	@echo "✓ Crawler built: $(TOOLS_DIR)/cllm_crawler"
-
-# ============================================================================
 # Installation
 # ============================================================================
 
-install: libs
-	@echo "Installing Crystalline libraries..."
+install: $(STATIC_LIB) $(SHARED_LIB)
+	@echo "Installing Prime Math Library..."
 	install -d $(DESTDIR)$(LIBDIR)
-	install -m 644 $(PRIMEMATH_STATIC) $(DESTDIR)$(LIBDIR)
-	install -m 755 $(PRIMEMATH_SHARED) $(DESTDIR)$(LIBDIR)
-	install -m 644 $(CLLM_STATIC) $(DESTDIR)$(LIBDIR)
-	install -m 755 $(CLLM_SHARED) $(DESTDIR)$(LIBDIR)
-	install -m 644 $(CRAWLER_STATIC) $(DESTDIR)$(LIBDIR)
-	install -m 755 $(CRAWLER_SHARED) $(DESTDIR)$(LIBDIR)
-	install -d $(DESTDIR)$(INCLUDEDIR)/crystalline
-	install -m 644 $(HEADERS) $(DESTDIR)$(INCLUDEDIR)/crystalline
+	install -m 644 $(STATIC_LIB) $(DESTDIR)$(LIBDIR)
+	install -m 755 $(SHARED_LIB) $(DESTDIR)$(LIBDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)/primemath
+	install -m 644 $(HEADERS) $(DESTDIR)$(INCLUDEDIR)/primemath
 	ldconfig
 	@echo "✓ Installation complete"
-	@echo "  Libraries: $(LIBDIR)/"
-	@echo "  Headers:   $(INCLUDEDIR)/crystalline/"
 
 uninstall:
-	@echo "Uninstalling Crystalline libraries..."
-	rm -f $(DESTDIR)$(LIBDIR)/$(PRIMEMATH_STATIC)
-	rm -f $(DESTDIR)$(LIBDIR)/$(PRIMEMATH_SHARED)
-	rm -f $(DESTDIR)$(LIBDIR)/$(CLLM_STATIC)
-	rm -f $(DESTDIR)$(LIBDIR)/$(CLLM_SHARED)
-	rm -f $(DESTDIR)$(LIBDIR)/$(CRAWLER_STATIC)
-	rm -f $(DESTDIR)$(LIBDIR)/$(CRAWLER_SHARED)
-	rm -rf $(DESTDIR)$(INCLUDEDIR)/crystalline
+	@echo "Uninstalling Prime Math Library..."
+	rm -f $(DESTDIR)$(LIBDIR)/$(STATIC_LIB)
+	rm -f $(DESTDIR)$(LIBDIR)/$(SHARED_LIB)
+	rm -rf $(DESTDIR)$(INCLUDEDIR)/primemath
 	ldconfig
 	@echo "✓ Uninstallation complete"
 
@@ -219,7 +153,7 @@ uninstall:
 
 verify:
 	@echo "Verifying mathematical independence..."
-	@echo "Checking for math.h dependencies in core library:"
+	@echo "Checking for math.h dependencies:"
 	@if grep -r "math\.h" $(SRC_CORE) $(SRC_TRANS) $(SRC_GEOM) 2>/dev/null; then \
 		echo "✗ Found math.h dependencies in core library!"; \
 		exit 1; \
@@ -227,54 +161,58 @@ verify:
 		echo "✓ Core library is mathematically independent"; \
 	fi
 	@echo ""
+	@echo "Checking for -lm flag:"
+	@if echo "$(LDFLAGS)" | grep -q "\-lm"; then \
+		echo "✗ Found -lm flag in LDFLAGS!"; \
+		exit 1; \
+	else \
+		echo "✓ No -lm flag present"; \
+	fi
+	@echo ""
 	@echo "✓ Mathematical independence verified!"
 
 info:
 	@echo "╔════════════════════════════════════════════════════════════════╗"
-	@echo "║      Crystalline Project - Build Information                  ║"
+	@echo "║         Prime Math Library - Build Information                ║"
 	@echo "╠════════════════════════════════════════════════════════════════╣"
 	@echo "║ Compiler:        $(CC)                                         "
 	@echo "║ CFLAGS:          $(CFLAGS)"
+	@echo "║ LDFLAGS:         $(LDFLAGS)"
 	@echo "╠════════════════════════════════════════════════════════════════╣"
-	@echo "║ Library 1: libprimemath (Core Crystalline Lattice)            ║"
-	@echo "║   Core:          $(words $(wildcard $(SRC_CORE)/*.c)) files"
-	@echo "║   Transcendental: $(words $(wildcard $(SRC_TRANS)/*.c)) files"
-	@echo "║   Geometry:      $(words $(wildcard $(SRC_GEOM)/*.c)) files"
-	@echo "║   Total:         $(words $(PRIMEMATH_SOURCES)) files"
+	@echo "║ Source Files:                                                  ║"
+	@echo "║   Core:          $(words $(CORE_SOURCES)) files                "
+	@echo "║   Transcendental: $(words $(TRANS_SOURCES)) files              "
+	@echo "║   Geometry:      $(words $(GEOM_SOURCES)) files                "
+	@echo "║   AI/CLLM:       $(words $(AI_SOURCES)) files                  "
+	@echo "║   Total:         $(words $(ALL_SOURCES)) files                 "
 	@echo "╠════════════════════════════════════════════════════════════════╣"
-	@echo "║ Library 2: libcllm (CLLM)                                     ║"
-	@echo "║   AI/CLLM:       $(words $(CLLM_SOURCES)) files"
+	@echo "║ Output:                                                        ║"
+	@echo "║   Static:        $(STATIC_LIB)                                 "
+	@echo "║   Shared:        $(SHARED_LIB)                                 "
 	@echo "╠════════════════════════════════════════════════════════════════╣"
-	@echo "║ Library 3: libcrawler (Crawler)                               ║"
-	@echo "║   Crawler:       $(words $(CRAWLER_SOURCES)) files"
-	@echo "╠════════════════════════════════════════════════════════════════╣"
-	@echo "║ Mathematical Independence: YES (no -lm in core)               ║"
+	@echo "║ Mathematical Independence: YES (no -lm, no math.h)            ║"
 	@echo "╚════════════════════════════════════════════════════════════════╝"
 
 help:
-	@echo "Crystalline Project - Build System"
+	@echo "Prime Math Library - Build System"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  all        - Build all three libraries (default)"
-	@echo "  libs       - Build all three libraries"
-	@echo "  primemath  - Build libprimemath only"
-	@echo "  cllm       - Build libcllm only (requires libprimemath)"
-	@echo "  crawler-lib- Build libcrawler only (requires libcllm)"
+	@echo "  all        - Build static and shared libraries (default)"
 	@echo "  clean      - Remove all build artifacts"
 	@echo "  test       - Build and run test suite"
 	@echo "  demos      - Build demo programs"
 	@echo "  app        - Build SDL application"
-	@echo "  crawler    - Build crawler tool"
 	@echo "  install    - Install libraries and headers (requires sudo)"
 	@echo "  uninstall  - Remove installed files (requires sudo)"
 	@echo "  verify     - Verify mathematical independence"
 	@echo "  info       - Display build information"
 	@echo "  help       - Show this help message"
 	@echo ""
-	@echo "Library Structure:"
-	@echo "  libprimemath - Core crystalline lattice math (independent)"
-	@echo "  libcllm      - CLLM (depends on libprimemath)"
-	@echo "  libcrawler   - Crawler (depends on libcllm + libprimemath)"
+	@echo "Examples:"
+	@echo "  make              # Build everything"
+	@echo "  make clean all    # Clean rebuild"
+	@echo "  make test         # Build and run tests"
+	@echo "  sudo make install # Install system-wide"
 
 # ============================================================================
 # Cleanup
@@ -282,11 +220,8 @@ help:
 
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f $(PRIMEMATH_OBJECTS) $(CLLM_OBJECTS) $(CRAWLER_OBJECTS)
-	rm -f $(PRIMEMATH_STATIC) $(PRIMEMATH_SHARED)
-	rm -f $(CLLM_STATIC) $(CLLM_SHARED)
-	rm -f $(CRAWLER_STATIC) $(CRAWLER_SHARED)
-	rm -f $(TOOLS_DIR)/cllm_crawler
+	rm -f $(ALL_OBJECTS)
+	rm -f $(STATIC_LIB) $(SHARED_LIB)
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
@@ -300,3 +235,31 @@ debug: CFLAGS += -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined
 debug: LDFLAGS += -fsanitize=address -fsanitize=undefined
 debug: clean all
 	@echo "✓ Debug build complete"
+
+# ============================================================================
+# ============================================================================
+# Crawler Library (libcrawler.so)
+# ============================================================================
+
+CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
+                  src/crawler/tokenizer.c src/crawler/continuous_training.c \
+                  src/crawler/crawler_api.c
+CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
+CRAWLER_LIB = libcrawler.so
+
+$(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(STATIC_LIB)
+	@echo "Creating crawler library: $@"
+	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lprimemath -lcurl -lpthread -lm
+	@echo "✓ Crawler library created"
+
+# ============================================================================
+# Crawler CLI Tool (uses libcrawler.so)
+# ============================================================================
+
+crawler: $(CRAWLER_LIB)
+	@echo "Building crawler CLI tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler_new.c \
+		-L. -lcrawler -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Crawler CLI built: tools/cllm_crawler"
+
