@@ -25,9 +25,25 @@ void cllm_lattice_point_create(CLLMLatticePoint* point, uint32_t point_id,
 float cllm_lattice_distance(const CLLMLatticePoint* p1, const CLLMLatticePoint* p2);
 void cllm_lattice_find_neighbors(CLLMLatticePoint* point, CLLMLatticePoint* all_points, 
                                  int num_points, float max_distance);
-int cllm_write(const char* filename, CLLMModel* model);
+/**
+ * MODEL I/O FUNCTIONS
+ * 
+ * RECOMMENDED API (use these):
+ *   cllm_read_model()  - Load model with proper validation
+ *   cllm_write_model() - Save model with layer weights
+ * 
+ * DEPRECATED API (legacy compatibility):
+ *   cllm_read()  - Old format, use cllm_read_model() instead
+ *   cllm_write() - Old format, use cllm_write_model() instead
+ */
+
+// RECOMMENDED: New API with proper layer-by-layer save/load
 CLLMModel* cllm_read_model(const char* filename);
 int cllm_write_model(const CLLMModel* model, const char* filepath);
+
+// DEPRECATED: Old API for backward compatibility
+CLLMModel* cllm_read(const char* filename);
+int cllm_write(const char* filename, CLLMModel* model);
 
 // Forward declaration for validation
 int cllm_validate_model(void* model);

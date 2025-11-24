@@ -999,7 +999,7 @@ int cllm_train(CLLMTraining* training) {
             char checkpoint_path[256];
             snprintf(checkpoint_path, sizeof(checkpoint_path), 
                     "checkpoint_epoch_%d.cllm", epoch + 1);
-            cllm_write(checkpoint_path, training->model);
+            cllm_write_model(training->model, checkpoint_path);
             printf("Checkpoint saved: %s\n", checkpoint_path);
         }
     }
@@ -1020,7 +1020,7 @@ int cllm_save_checkpoint(CLLMTraining* training, const char* filename) {
     if (!training || !filename) return -1;
     
     // Save model
-    if (cllm_write(filename, training->model) != 0) {
+    if (cllm_write_model(training->model, filename) != 0) {
         return -1;
     }
     

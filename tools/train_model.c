@@ -106,7 +106,7 @@ int save_checkpoint(CLLMModel* model, CLLMTraining* training, const char* checkp
     model->training_meta.loss = training->best_loss;
     model->training_meta.learning_rate = training->config.learning_rate;
     
-    int result = cllm_write(filename, model);
+    int result = cllm_write_model(model, filename);
     if (result == 0) {
         printf("✓ Checkpoint saved\n");
         return 1;
@@ -371,7 +371,7 @@ int main(int argc, char** argv) {
         char final_model[512];
         snprintf(final_model, sizeof(final_model), "%s/final_model.cllm", checkpoint_dir);
         printf("\nSaving final model: %s\n", final_model);
-        cllm_write(final_model, model);
+        cllm_write_model(model, final_model);
         
         // Generate final samples
         printf("\n=== Final Model Samples ===\n");

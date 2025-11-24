@@ -190,7 +190,7 @@ void test_cllm_io(CLLMModel* model) {
     
     // Write model
     printf("Writing model to: %s\n", filename);
-    int result = cllm_write(filename, model);
+    int result = cllm_write_model(model, filename);
     if (result == 0) {
         printf("✓ Model written successfully\n");
     } else {
@@ -209,7 +209,7 @@ void test_cllm_io(CLLMModel* model) {
     
     // Read model back
     printf("Reading model from file...\n");
-    CLLMModel* loaded_model = cllm_read(filename);
+    CLLMModel* loaded_model = cllm_read_model(filename);
     if (loaded_model) {
         printf("✓ Model loaded successfully\n");
         printf("  Vocab size: %lu\n", (unsigned long)loaded_model->vocab_size);

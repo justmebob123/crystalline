@@ -417,8 +417,8 @@ int app_save_model(CLLMModel* model, const char* filepath) {
         return -1;
     }
     
-    // Use CLLM write function (note: signature is (filename, model))
-    int result = cllm_write(filepath, model);
+    // Use new CLLM write function with proper layer-by-layer save
+    int result = cllm_write_model(model, filepath);
     
     if (result == 0) {
         printf("Model saved successfully\n");

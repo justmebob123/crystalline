@@ -262,7 +262,7 @@ int main(void) {
     // Save pretrained model
     printf("\nSaving pretrained model...\n");
     const char* filename = "../data/models/cllm_pretrained.cllm";
-    int result = cllm_write(filename, model);
+    int result = cllm_write_model(model, filename);
     
     if (result == 0) {
         printf("✓ Model saved to: %s\n", filename);

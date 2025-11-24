@@ -10,6 +10,7 @@
  */
 
 #include "cllm_training.h"
+#include "cllm_format.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -190,7 +191,7 @@ int save_checkpoint(CLLMTraining* training, const char* filepath) {
     // Save model separately
     char model_path[512];
     snprintf(model_path, sizeof(model_path), "%s.model", filepath);
-    cllm_write(training->model, model_path);
+    cllm_write_model(training->model, model_path);
     
     printf("Checkpoint saved: epoch %d, step %d, loss %.4f\n", 
            checkpoint.epoch, checkpoint.step, checkpoint.best_loss);
@@ -230,7 +231,7 @@ int load_checkpoint(CLLMTraining* training, const char* filepath) {
     char model_path[512];
     snprintf(model_path, sizeof(model_path), "%s.model", filepath);
     
-    CLLMModel* loaded_model = cllm_read(model_path);
+    CLLMModel* loaded_model = cllm_read_model(model_path);
     if (!loaded_model) {
         fprintf(stderr, "ERROR: Failed to load model from checkpoint\n");
         return -1;
