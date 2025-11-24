@@ -20,6 +20,7 @@ libprimemath.so
 *.backup
 *.old
 *.broken
+*.bak
 *~
 
 # IDE files
@@ -42,3 +43,7 @@ checkpoints/
 crawler_data/
 test_run/
 data/training/*.txt
+
+# Test executables
+test_*
+!test_*.c

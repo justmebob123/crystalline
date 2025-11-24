@@ -47,13 +47,13 @@ typedef struct {
     pthread_mutex_t lock;
     FILE* links_to_crawl;
     FILE* links_crawled;
-} CrawlerState;
+} CrawlerStateInternal;
 
 /**
  * Initialize crawler state (internal function)
  */
-CrawlerState* crawler_internal_init(const char* data_dir, const char* start_url, int max_pages) {
-    CrawlerState* state = (CrawlerState*)calloc(1, sizeof(CrawlerState));
+CrawlerStateInternal* crawler_internal_init(const char* data_dir, const char* start_url, int max_pages) {
+    CrawlerStateInternal* state = (CrawlerStateInternal*)calloc(1, sizeof(CrawlerStateInternal));
     if (!state) return NULL;
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
@@ -97,7 +97,7 @@ CrawlerState* crawler_internal_init(const char* data_dir, const char* start_url,
 /**
  * Cleanup crawler state (internal function)
  */
-void crawler_internal_cleanup(CrawlerState* state) {
+void crawler_internal_cleanup(CrawlerStateInternal* state) {
     if (!state) return;
     
     if (state->links_to_crawl) fclose(state->links_to_crawl);
@@ -176,7 +176,7 @@ int crawler_download_page(const char* url, MemoryBuffer* buffer) {
 /**
  * Save page to disk
  */
-int crawler_save_page(CrawlerState* state, const char* url, const char* content, size_t size) {
+int crawler_save_page(CrawlerStateInternal* state, const char* url, const char* content, size_t size) {
     // Generate filename from URL hash
     unsigned long hash = 5381;
     for (const char* p = url; *p; p++) {
@@ -214,7 +214,7 @@ int crawler_save_page(CrawlerState* state, const char* url, const char* content,
 /**
  * Extract links from HTML
  */
-int crawler_extract_links(const char* html, const char* base_url, CrawlerState* state) {
+int crawler_extract_links(const char* html, const char* base_url, CrawlerStateInternal* state) {
     (void)base_url;  // TODO: Use for resolving relative URLs
     // Simple link extraction (looking for href="...")
     const char* p = html;
@@ -276,7 +276,7 @@ int crawler_extract_links(const char* html, const char* base_url, CrawlerState* 
 /**
  * Get next URL to crawl
  */
-int crawler_get_next_url(CrawlerState* state, char* url, size_t url_size) {
+int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size) {
     pthread_mutex_lock(&state->lock);
     
     // Rewind and read first line
@@ -318,7 +318,7 @@ int crawler_get_next_url(CrawlerState* state, char* url, size_t url_size) {
 /**
  * Mark URL as crawled
  */
-void crawler_mark_crawled(CrawlerState* state, const char* url) {
+void crawler_mark_crawled(CrawlerStateInternal* state, const char* url) {
     pthread_mutex_lock(&state->lock);
     fprintf(state->links_crawled, "%s\n", url);
     fflush(state->links_crawled);
@@ -330,7 +330,7 @@ void crawler_mark_crawled(CrawlerState* state, const char* url) {
  * Main crawler loop
  */
 void* crawler_thread_func(void* arg) {
-    CrawlerState* state = (CrawlerState*)arg;
+    CrawlerStateInternal* state = (CrawlerStateInternal*)arg;
     char timestamp[32];
     
     get_timestamp(timestamp, sizeof(timestamp));

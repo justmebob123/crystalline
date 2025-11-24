@@ -1,7 +1,9 @@
 /**
- * CLLM Crawler - Command Line Application
+ * CLLM Crawler CLI Tool
  * 
- * Continuous web crawling and training system
+ * This is a PURE consumer of libcrawler.so
+ * It has NO shared code with the GUI application.
+ * Both CLI and GUI are independent implementations using the same library.
  */
 
 #include <stdio.h>
@@ -9,87 +11,81 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <sys/stat.h>
-#include "cllm.h"
-#include "cllm_training.h"
+#include "../include/crawler.h"
 
-// Forward declarations from crawler modules
-typedef struct CrawlerState CrawlerState;
-typedef struct PreprocessorState PreprocessorState;
-typedef struct TokenizerState TokenizerState;
-typedef struct ContinuousTrainingState ContinuousTrainingState;
-
-extern CrawlerState* crawler_init(const char* data_dir, const char* start_url, int max_pages);
-extern void crawler_cleanup(CrawlerState* state);
-extern void* crawler_thread_func(void* arg);
-
-extern PreprocessorState* preprocessor_init(const char* data_dir);
-extern void preprocessor_cleanup(PreprocessorState* state);
-extern void* preprocessor_thread_func(void* arg);
-
-extern TokenizerState* tokenizer_init(const char* data_dir);
-extern void tokenizer_cleanup(TokenizerState* state);
-extern void* tokenizer_thread_func(void* arg);
-
-extern ContinuousTrainingState* continuous_training_init(const char* data_dir, const char* model_path, 
-                                                          CLLMModel* model, int num_threads);
-extern int continuous_training_start(ContinuousTrainingState* state, pthread_t* threads);
-extern void continuous_training_stop(ContinuousTrainingState* state, pthread_t* threads);
-extern void continuous_training_cleanup(ContinuousTrainingState* state);
-
-// Global state for signal handling
+static CrawlerState* g_crawler_state = NULL;
 static volatile int g_running = 1;
 
-void signal_handler(int signum) {
-    (void)signum;
-    printf("\n\n=== SHUTDOWN SIGNAL RECEIVED ===\n");
+/**
+ * Signal handler for graceful shutdown
+ */
+static void signal_handler(int signum) {
+    printf("\n\nReceived signal %d, shutting down...\n", signum);
     g_running = 0;
 }
 
-void print_usage(const char* prog) {
-    printf("Usage: %s [OPTIONS]\n", prog);
-    printf("\nOptions:\n");
-    printf("  --start-url URL      Starting URL for crawler\n");
-    printf("  --max-pages N        Maximum pages to crawl (default: 1000)\n");
-    printf("  --data-dir PATH      Data directory (default: ~/.cllm_crawler)\n");
-    printf("  --model-path PATH    Model file path (default: ~/.cllm_models/continuous_model.cllm)\n");
-    printf("  --threads N          Number of training threads (default: CPU count - 3)\n");
-    printf("  --help               Show this help\n");
-    printf("\nExample:\n");
-    printf("  %s --start-url https://example.com --max-pages 500\n", prog);
+/**
+ * Callback for crawler events
+ */
+static void crawler_event_callback(const CrawlerEvent* event, void* user_data) {
+    const char* event_type = "UNKNOWN";
+    
+    switch (event->type) {
+        case CRAWLER_EVENT_PAGE_DOWNLOADED:
+            event_type = "DOWNLOADED";
+            break;
+        case CRAWLER_EVENT_PAGE_PREPROCESSED:
+            event_type = "PREPROCESSED";
+            break;
+        case CRAWLER_EVENT_PAGE_TOKENIZED:
+            event_type = "TOKENIZED";
+            break;
+        case CRAWLER_EVENT_PAGE_TRAINED:
+            event_type = "TRAINED";
+            break;
+        case CRAWLER_EVENT_ERROR:
+            event_type = "ERROR";
+            break;
+        case CRAWLER_EVENT_STOPPED:
+            event_type = "STOPPED";
+            break;
+    }
+    
+    printf("[%s] %s (Total pages: %d)\n", event_type, event->message, event->pages_crawled);
+    fflush(stdout);
 }
 
-int main(int argc, char** argv) {
+/**
+ * Print usage information
+ */
+static void print_usage(const char* program_name) {
+    printf("Usage: %s [OPTIONS]\n", program_name);
+    printf("\nOptions:\n");
+    printf("  --start-url URL      Starting URL for crawling (required)\n");
+    printf("  --data-dir DIR       Directory for storing data (default: ./crawler_data)\n");
+    printf("  --max-pages N        Maximum pages to crawl (0 = unlimited, default: 0)\n");
+    printf("  --help               Show this help message\n");
+    printf("\nExample:\n");
+    printf("  %s --start-url https://example.com --max-pages 100\n", program_name);
+}
+
+int main(int argc, char* argv[]) {
     // Default configuration
-    char start_url[2048] = ""; // No default - must be provided via --start-url
-    int max_pages = 1000;
-    char data_dir[1024];
-    char model_path[1024];
-    int num_training_threads = 0;
+    const char* start_url = NULL;
+    const char* data_dir = "./crawler_data";
+    int max_pages = 0;
     
-    // Get home directory
-    const char* home = getenv("HOME");
-    if (!home) home = "/tmp";
-    
-    snprintf(data_dir, sizeof(data_dir), "%s/.cllm_crawler", home);
-    snprintf(model_path, sizeof(model_path), "%s/.cllm_models/continuous_model.cllm", home);
-    
-    // Parse arguments
+    // Parse command line arguments
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            return 0;
-        } else if (strcmp(argv[i], "--start-url") == 0 && i + 1 < argc) {
-            strncpy(start_url, argv[++i], sizeof(start_url) - 1);
+        if (strcmp(argv[i], "--start-url") == 0 && i + 1 < argc) {
+            start_url = argv[++i];
+        } else if (strcmp(argv[i], "--data-dir") == 0 && i + 1 < argc) {
+            data_dir = argv[++i];
         } else if (strcmp(argv[i], "--max-pages") == 0 && i + 1 < argc) {
             max_pages = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "--data-dir") == 0 && i + 1 < argc) {
-            strncpy(data_dir, argv[++i], sizeof(data_dir) - 1);
-        } else if (strcmp(argv[i], "--model-path") == 0 && i + 1 < argc) {
-            strncpy(model_path, argv[++i], sizeof(model_path) - 1);
-        } else if (strcmp(argv[i], "--threads") == 0 && i + 1 < argc) {
-            num_training_threads = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--help") == 0) {
+            print_usage(argv[0]);
+            return 0;
         } else {
             fprintf(stderr, "Unknown option: %s\n", argv[i]);
             print_usage(argv[0]);
@@ -97,136 +93,88 @@ int main(int argc, char** argv) {
         }
     }
     
-    // Auto-detect thread count if not specified
-    if (num_training_threads == 0) {
-        long nproc = sysconf(_SC_NPROCESSORS_ONLN);
-        num_training_threads = nproc - 3;  // Reserve 3 for crawler, preprocessor, tokenizer
-        if (num_training_threads < 1) num_training_threads = 1;
+    // Validate required arguments
+    if (!start_url) {
+        fprintf(stderr, "Error: --start-url is required\n\n");
+        print_usage(argv[0]);
+        return 1;
     }
-    
-    printf("═══════════════════════════════════════════════════════════════\n");
-    printf("        CLLM CRAWLER - Continuous Learning System\n");
-    printf("═══════════════════════════════════════════════════════════════\n");
-    printf("Configuration:\n");
-    printf("  Start URL: %s\n", start_url);
-    printf("  Max pages: %d\n", max_pages);
-    printf("  Data directory: %s\n", data_dir);
-    printf("  Model path: %s\n", model_path);
-    printf("  Training threads: %d\n", num_training_threads);
-    printf("═══════════════════════════════════════════════════════════════\n\n");
     
     // Setup signal handlers
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     
-    // Create directories
-    mkdir(data_dir, 0755);
-    
-    char models_dir[1024];
-    snprintf(models_dir, sizeof(models_dir), "%s/.cllm_models", home);
-    mkdir(models_dir, 0755);
-    
-    // Load or create model
-    printf("=== Loading Model ===\n");
-    CLLMModel* model = NULL;
-    
-    extern CLLMModel* cllm_read_model(const char* filepath);
-    model = cllm_read_model(model_path);
-    
-    if (!model) {
-        printf("No existing model found, creating new model...\n");
-        
-        // Create model configuration
-        CLLMConfig config = {
-            .vocab_size = 10000,
-            .embedding_dim = 512,
-            .num_layers = 6,
-            .num_heads = 8,
-            .ff_dim = 2048,
-            .max_seq_len = 512,
-            .dropout = 0.1f
-        };
-        
-        extern CLLMModel* cllm_create_model(const CLLMConfig* config);
-        model = cllm_create_model(&config);
-        
-        if (!model) {
-            fprintf(stderr, "Failed to create model\n");
-            return 1;
-        }
-        
-        printf("✓ Model created\n");
-    } else {
-        printf("✓ Model loaded from: %s\n", model_path);
+    printf("=== CLLM Crawler ===\n");
+    printf("Start URL: %s\n", start_url);
+    printf("Data directory: %s\n", data_dir);
+    printf("Max pages: %s\n\n", max_pages == 0 ? "unlimited" : "");
+    if (max_pages > 0) {
+        printf("Max pages: %d\n\n", max_pages);
     }
     
-    // Initialize components
-    printf("\n=== Initializing Components ===\n");
-    
-    CrawlerState* crawler = crawler_init(data_dir, start_url, max_pages);
-    PreprocessorState* preprocessor = preprocessor_init(data_dir);
-    TokenizerState* tokenizer = tokenizer_init(data_dir);
-    ContinuousTrainingState* training = continuous_training_init(data_dir, model_path, model, num_training_threads);
-    
-    if (!crawler || !preprocessor || !tokenizer || !training) {
-        fprintf(stderr, "Failed to initialize components\n");
+    // Initialize crawler
+    printf("Initializing crawler...\n");
+    g_crawler_state = crawler_state_init(data_dir, start_url, max_pages);
+    if (!g_crawler_state) {
+        fprintf(stderr, "Error: Failed to initialize crawler\n");
         return 1;
     }
     
-    printf("✓ All components initialized\n");
+    // Set callback
+    crawler_set_callback(g_crawler_state, crawler_event_callback, NULL);
     
-    // Start threads
-    printf("\n=== Starting Threads ===\n");
+    // Start crawler
+    printf("Starting crawler...\n");
+    if (crawler_start(g_crawler_state) != 0) {
+        fprintf(stderr, "Error: Failed to start crawler\n");
+        crawler_state_cleanup(g_crawler_state);
+        return 1;
+    }
     
-    pthread_t crawler_thread;
-    pthread_t preprocessor_thread;
-    pthread_t tokenizer_thread;
-    pthread_t* training_threads = (pthread_t*)malloc(num_training_threads * sizeof(pthread_t));
-    
-    pthread_create(&crawler_thread, NULL, crawler_thread_func, crawler);
-    pthread_create(&preprocessor_thread, NULL, preprocessor_thread_func, preprocessor);
-    pthread_create(&tokenizer_thread, NULL, tokenizer_thread_func, tokenizer);
-    continuous_training_start(training, training_threads);
-    
-    printf("✓ All threads started\n");
-    printf("\n=== System Running ===\n");
+    printf("Crawler started successfully!\n");
     printf("Press Ctrl+C to stop\n\n");
     
-    // Status monitoring loop
+    // Main loop - print status periodically
     while (g_running) {
         sleep(10);
         
-        // Print status (access state safely)
-        printf("\n=== STATUS UPDATE ===\n");
-        printf("System running... (Ctrl+C to stop)\n");
-        printf("Check logs above for detailed progress\n");
+        CrawlerStatus status;
+        crawler_get_status(g_crawler_state, &status);
+        
+        if (status.running) {
+            printf("\n--- Status Update ---\n");
+            printf("Pages crawled: %d\n", status.pages_crawled);
+            printf("Pages preprocessed: %d\n", status.pages_preprocessed);
+            printf("Pages tokenized: %d\n", status.pages_tokenized);
+            printf("Pages trained: %d\n", status.pages_trained);
+            if (status.last_error[0] != '\0') {
+                printf("Last error: %s\n", status.last_error);
+            }
+            printf("--------------------\n\n");
+        } else {
+            printf("Crawler has stopped\n");
+            break;
+        }
     }
     
-    // Shutdown
-    printf("\n=== Shutting Down ===\n");
+    // Stop crawler
+    printf("\nStopping crawler...\n");
+    crawler_stop(g_crawler_state);
     
-    // Stop threads
-    printf("Stopping crawler...\n");
-    pthread_join(crawler_thread, NULL);
+    // Print final statistics
+    CrawlerStatus final_status;
+    crawler_get_status(g_crawler_state, &final_status);
     
-    printf("Stopping preprocessor...\n");
-    pthread_join(preprocessor_thread, NULL);
-    
-    printf("Stopping tokenizer...\n");
-    pthread_join(tokenizer_thread, NULL);
-    
-    printf("Stopping training threads...\n");
-    continuous_training_stop(training, training_threads);
+    printf("\n=== Final Statistics ===\n");
+    printf("Total pages crawled: %d\n", final_status.pages_crawled);
+    printf("Total pages preprocessed: %d\n", final_status.pages_preprocessed);
+    printf("Total pages tokenized: %d\n", final_status.pages_tokenized);
+    printf("Total pages trained: %d\n", final_status.pages_trained);
+    printf("=======================\n");
     
     // Cleanup
-    printf("Cleaning up...\n");
-    crawler_cleanup(crawler);
-    preprocessor_cleanup(preprocessor);
-    tokenizer_cleanup(tokenizer);
-    continuous_training_cleanup(training);
-    free(training_threads);
+    crawler_state_cleanup(g_crawler_state);
     
-    printf("\n✓ Shutdown complete\n");
-    
+    printf("\nCrawler shutdown complete\n");
     return 0;
 }
