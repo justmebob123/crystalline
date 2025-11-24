@@ -33,6 +33,12 @@ typedef struct {
     int eval_interval;           // Evaluate every N steps
     int sequence_length;         // Sequence length for training
     char optimizer[32];          // Optimizer name (e.g., "adam", "sgd")
+    
+    // Learning rate scheduling
+    char lr_scheduler[32];       // Scheduler type: "none", "linear", "cosine", "step"
+    float lr_decay_factor;       // Decay factor for step scheduler (default: 0.1)
+    int lr_decay_steps;          // Steps between decay for step scheduler (default: 1000)
+    float min_lr;                // Minimum learning rate (default: 1e-6)
 } CLLMTrainingConfig;
 
 /*

@@ -278,8 +278,15 @@ void test_cllm_training(CLLMModel* model) {
         .sequence_length = 32,
         .learning_rate = 0.001f,
         .weight_decay = 0.01f,
-        .eval_interval = 10
+        .eval_interval = 10,
+        .warmup_steps = 50,
+        .max_steps = 1000,
+        .lr_decay_factor = 0.1f,
+        .lr_decay_steps = 200,
+        .min_lr = 1e-6f
     };
+    strcpy(config.optimizer, "adam");
+    strcpy(config.lr_scheduler, "cosine");
     
     // Initialize training
     printf("Initializing training...\n");

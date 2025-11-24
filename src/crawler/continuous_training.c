@@ -340,9 +340,13 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
         .warmup_steps = 100,
         .save_every = 5,
         .eval_interval = 100,
-        .max_steps = 10000
+        .max_steps = 10000,
+        .lr_decay_factor = 0.1f,
+        .lr_decay_steps = 1000,
+        .min_lr = 1e-6f
     };
     strcpy(config.optimizer, "adam");
+    strcpy(config.lr_scheduler, "cosine");  // Use cosine decay by default
     
     state->training = cllm_training_init(state->model, &config);
     if (!state->training) {

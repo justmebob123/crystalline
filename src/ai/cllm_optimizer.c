@@ -276,24 +276,80 @@ void cllm_update_learning_rate(CLLMTraining* training) {
     int step = training->current_step;
     int warmup_steps = training->config.warmup_steps;
     float base_lr = training->config.learning_rate;
+    float min_lr = training->config.min_lr > 0 ? training->config.min_lr : 1e-6f;
     
     float lr;
     
-    if (step < warmup_steps) {
-        // Linear warmup
+    // Linear warmup phase (applies to all schedulers)
+    if (step < warmup_steps && warmup_steps > 0) {
         lr = base_lr * (float)step / (float)warmup_steps;
-    } else {
+        if (lr < min_lr) lr = min_lr;
+        training->config.learning_rate = lr;
+        return;
+    }
+    
+    // Determine scheduler type
+    const char* scheduler = training->config.lr_scheduler;
+    if (scheduler[0] == '\0' || strcmp(scheduler, "none") == 0) {
+        // No scheduling - keep base learning rate
+        lr = base_lr;
+    } else if (strcmp(scheduler, "cosine") == 0) {
         // Cosine decay after warmup
         int decay_steps = training->config.max_steps - warmup_steps;
         int steps_since_warmup = step - warmup_steps;
         
-        float progress = (float)steps_since_warmup / (float)decay_steps;
-        lr = base_lr * 0.5f * (1.0f + prime_cos(3.14159265f * progress));
+        if (decay_steps > 0) {
+            float progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0f) progress = 1.0f;
+            lr = min_lr + (base_lr - min_lr) * 0.5f * (1.0f + prime_cos(3.14159265f * progress));
+        } else {
+            lr = base_lr;
+        }
+    } else if (strcmp(scheduler, "linear") == 0) {
+        // Linear decay after warmup
+        int decay_steps = training->config.max_steps - warmup_steps;
+        int steps_since_warmup = step - warmup_steps;
+        
+        if (decay_steps > 0) {
+            float progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0f) progress = 1.0f;
+            lr = base_lr - (base_lr - min_lr) * progress;
+        } else {
+            lr = base_lr;
+        }
+    } else if (strcmp(scheduler, "step") == 0) {
+        // Step decay - reduce by factor every N steps
+        int decay_steps = training->config.lr_decay_steps > 0 ? training->config.lr_decay_steps : 1000;
+        float decay_factor = training->config.lr_decay_factor > 0 ? training->config.lr_decay_factor : 0.1f;
+        
+        int steps_since_warmup = step - warmup_steps;
+        int num_decays = steps_since_warmup / decay_steps;
+        
+        lr = base_lr;
+        for (int i = 0; i < num_decays; i++) {
+            lr *= decay_factor;
+            if (lr < min_lr) {
+                lr = min_lr;
+                break;
+            }
+        }
+    } else {
+        // Unknown scheduler - default to cosine
+        int decay_steps = training->config.max_steps - warmup_steps;
+        int steps_since_warmup = step - warmup_steps;
+        
+        if (decay_steps > 0) {
+            float progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0f) progress = 1.0f;
+            lr = min_lr + (base_lr - min_lr) * 0.5f * (1.0f + prime_cos(3.14159265f * progress));
+        } else {
+            lr = base_lr;
+        }
     }
     
     // Ensure minimum learning rate
-    if (lr < 1e-6f) {
-        lr = 1e-6f;
+    if (lr < min_lr) {
+        lr = min_lr;
     }
     
     training->config.learning_rate = lr;
