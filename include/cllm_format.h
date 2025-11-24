@@ -32,18 +32,16 @@ void cllm_lattice_find_neighbors(CLLMLatticePoint* point, CLLMLatticePoint* all_
  *   cllm_read_model()  - Load model with proper validation
  *   cllm_write_model() - Save model with layer weights
  * 
- * DEPRECATED API (legacy compatibility):
- *   cllm_read()  - Old format, use cllm_read_model() instead
- *   cllm_write() - Old format, use cllm_write_model() instead
+ * OLD API REMOVED:
+ *   cllm_read()  - REMOVED (use cllm_read_model)
+ *   cllm_write() - REMOVED (use cllm_write_model)
  */
 
 // RECOMMENDED: New API with proper layer-by-layer save/load
 CLLMModel* cllm_read_model(const char* filename);
 int cllm_write_model(const CLLMModel* model, const char* filepath);
 
-// DEPRECATED: Old API for backward compatibility
-CLLMModel* cllm_read(const char* filename);
-int cllm_write(const char* filename, CLLMModel* model);
+// DEPRECATED API REMOVED - Use cllm_read_model/cllm_write_model instead
 
 // Forward declaration for validation
 int cllm_validate_model(void* model);
