@@ -235,3 +235,19 @@ debug: CFLAGS += -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined
 debug: LDFLAGS += -fsanitize=address -fsanitize=undefined
 debug: clean all
 	@echo "✓ Debug build complete"
+
+# ============================================================================
+# Crawler Tool
+# ============================================================================
+
+CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
+                  src/crawler/tokenizer.c src/crawler/continuous_training.c
+CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
+
+crawler: $(STATIC_LIB) $(CRAWLER_OBJECTS)
+	@echo "Building crawler tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c $(CRAWLER_OBJECTS) \
+		-L. -lprimemath -lcurl -lpthread -lm
+	@echo "✓ Crawler built: tools/cllm_crawler"
+
