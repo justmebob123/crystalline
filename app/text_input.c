@@ -6,6 +6,7 @@
 void text_input_init(TextInput* input, const char* label, int x, int y, int w, int h) {
     if (!input) return;
     
+    printf("DEBUG: text_input_init called for '%s', clearing text\n", label ? label : "NULL");
     memset(input->text, 0, MAX_INPUT_LENGTH);
     input->cursor_pos = 0;
     input->active = false;
@@ -45,6 +46,7 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
             text_input_activate(input);
             return true;
         } else if (input->active) {
+            printf("DEBUG: Mouse click outside input bounds, deactivating. text='%s'\n", input->text);
             text_input_deactivate(input);
             return true;
         }
@@ -255,14 +257,18 @@ double text_input_get_number(TextInput* input) {
 void text_input_set_text(TextInput* input, const char* text) {
     if (!input || !text) return;
     
+    printf("DEBUG: text_input_set_text called, old='%s', new='%s'\n", 
+           input->text, text);
     strncpy(input->text, text, MAX_INPUT_LENGTH - 1);
     input->text[MAX_INPUT_LENGTH - 1] = '\0';
     input->cursor_pos = strlen(input->text);
+    printf("DEBUG: After set_text, text='%s'\n", input->text);
 }
 
 void text_input_clear(TextInput* input) {
     if (!input) return;
     
+    printf("DEBUG: text_input_clear called! text was='%s'\n", input->text);
     memset(input->text, 0, MAX_INPUT_LENGTH);
     input->cursor_pos = 0;
 }
@@ -281,6 +287,10 @@ void text_input_activate(TextInput* input) {
 void text_input_deactivate(TextInput* input) {
     if (!input) return;
     
+    printf("DEBUG: text_input_deactivate called, text='%s', length=%zu\n", 
+           input->text, strlen(input->text));
     input->active = false;
     SDL_StopTextInput();
+    printf("DEBUG: After deactivate, text='%s', length=%zu\n", 
+           input->text, strlen(input->text));
 }
