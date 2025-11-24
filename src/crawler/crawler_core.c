@@ -212,68 +212,6 @@ int crawler_save_page(CrawlerStateInternal* state, const char* url, const char* 
 }
 
 /**
- * Extract links from HTML
- */
-int crawler_extract_links(const char* html, const char* base_url, CrawlerStateInternal* state) {
-    (void)base_url;  // TODO: Use for resolving relative URLs
-    // Simple link extraction (looking for href="...")
-    const char* p = html;
-    int links_found = 0;
-    
-    while ((p = strstr(p, "href=&quot;")) != NULL) {
-        p += 6;  // Skip 'href="'
-        
-        const char* end = strchr(p, '"');
-        if (!end) break;
-        
-        size_t len = end - p;
-        if (len >= MAX_URL_LENGTH) {
-            p = end + 1;
-            continue;
-        }
-        
-        char url[MAX_URL_LENGTH];
-        strncpy(url, p, len);
-        url[len] = '\0';
-        
-        // Skip anchors, javascript, mailto
-        if (url[0] == '#' || strncmp(url, "javascript:", 11) == 0 || 
-            strncmp(url, "mailto:", 7) == 0) {
-            p = end + 1;
-            continue;
-        }
-        
-        // Handle relative URLs (simple version)
-        if (url[0] == '/') {
-            // TODO: Combine with base_url
-            p = end + 1;
-            continue;
-        }
-        
-        // Only http/https
-        if (strncmp(url, "http://", 7) != 0 && strncmp(url, "https://", 8) != 0) {
-            p = end + 1;
-            continue;
-        }
-        
-        // Add to queue
-        fprintf(state->links_to_crawl, "%s\n", url);
-        links_found++;
-        
-        p = end + 1;
-    }
-    
-    if (links_found > 0) {
-        fflush(state->links_to_crawl);
-        char timestamp[32];
-        get_timestamp(timestamp, sizeof(timestamp));
-        printf("%s   Found %d links\n", timestamp, links_found);
-    }
-    
-    return links_found;
-}
-
-/**
  * Get next URL to crawl
  */
 int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size) {
@@ -375,7 +313,7 @@ void* crawler_thread_func(void* arg) {
             crawler_save_page(state, url, buffer.data, buffer.size);
             
             // Extract links
-            crawler_extract_links(buffer.data, url, state);
+            // Links will be extracted by preprocessor
             
             // Mark as crawled
             crawler_mark_crawled(state, url);

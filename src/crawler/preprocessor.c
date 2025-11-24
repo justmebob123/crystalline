@@ -16,6 +16,13 @@
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
 
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
+
 typedef struct {
     char data_dir[1024];
     int running;
@@ -148,10 +155,133 @@ static void clean_text(char* text) {
     }
 }
 
+
+/**
+ * Extract links from HTML and add to crawl queue
+ */
+static int extract_links(const char* html, const char* base_url, const char* queue_file) {
+    FILE* queue = fopen(queue_file, "a");
+    if (!queue) {
+        fprintf(stderr, "Failed to open queue file: %s\n", queue_file);
+        return -1;
+    }
+    
+    int links_found = 0;
+    const char* p = html;
+    
+    // Look for href attributes
+    while ((p = strstr(p, "href=")) != NULL) {
+        p += 5; // Skip "href="
+        
+        // Skip whitespace
+        while (*p && isspace(*p)) p++;
+        
+        // Determine quote type
+        char quote = 0;
+        if (*p == '"' || *p == '\'') {
+            quote = *p;
+            p++;
+        }
+        
+        // Find end of URL
+        const char* url_start = p;
+        const char* url_end = NULL;
+        
+        if (quote) {
+            url_end = strchr(p, quote);
+        } else {
+            // No quotes - find whitespace or >
+            while (*p && !isspace(*p) && *p != '>') p++;
+            url_end = p;
+        }
+        
+        if (!url_end || url_end == url_start) {
+            if (quote) p = url_end + 1;
+            continue;
+        }
+        
+        // Extract URL
+        size_t url_len = url_end - url_start;
+        if (url_len >= 2048) {
+            p = url_end + 1;
+            continue;
+        }
+        
+        char url[2048];
+        strncpy(url, url_start, url_len);
+        url[url_len] = '\0';
+        
+        // Skip invalid URLs
+        if (url[0] == '#' || 
+            strncmp(url, "javascript:", 11) == 0 ||
+            strncmp(url, "mailto:", 7) == 0 ||
+            strncmp(url, "tel:", 4) == 0 ||
+            strncmp(url, "data:", 5) == 0) {
+            p = url_end + 1;
+            continue;
+        }
+        
+        // Handle relative URLs
+        if (url[0] == '/') {
+            // Extract domain from base_url
+            const char* domain_start = strstr(base_url, "://");
+            if (domain_start) {
+                domain_start += 3;
+                const char* domain_end = strchr(domain_start, '/');
+                if (!domain_end) domain_end = domain_start + strlen(domain_start);
+                
+                size_t domain_len = domain_end - domain_start;
+                char full_url[2048];
+                
+                // Determine protocol
+                const char* protocol = "https://";
+                if (strncmp(base_url, "http://", 7) == 0) {
+                    protocol = "http://";
+                }
+                
+                snprintf(full_url, sizeof(full_url), "%s%.*s%s", 
+                        protocol, (int)domain_len, domain_start, url);
+                fprintf(queue, "%s\n", full_url);
+                links_found++;
+            }
+        } else if (strncmp(url, "http://", 7) == 0 || strncmp(url, "https://", 8) == 0) {
+            // Absolute URL
+            fprintf(queue, "%s\n", url);
+            links_found++;
+        }
+        
+        p = url_end + 1;
+    }
+    
+    fclose(queue);
+    return links_found;
+}
+
+/**
+ * Extract base URL from HTML metadata comment
+ */
+static int extract_base_url(const char* html, char* base_url, size_t size) {
+    // Look for <!-- URL: ... --> comment
+    const char* marker = "<!-- URL: ";
+    const char* p = strstr(html, marker);
+    if (!p) return -1;
+    
+    p += strlen(marker);
+    const char* end = strstr(p, " -->");
+    if (!end) return -1;
+    
+    size_t len = end - p;
+    if (len >= size) return -1;
+    
+    strncpy(base_url, p, len);
+    base_url[len] = '\0';
+    return 0;
+}
+
 /**
  * Process one HTML file
  */
-static int preprocess_file(const char* input_path, const char* output_path) {
+static int preprocess_file(const char* input_path, const char* output_path, const char* queue_file) {
     // Read input file
     FILE* f = fopen(input_path, "r");
     if (!f) {
@@ -172,6 +302,22 @@ static int preprocess_file(const char* input_path, const char* output_path) {
     fread(html, 1, size, f);
     html[size] = '\0';
     fclose(f);
+    
+
+    // Extract base URL from metadata
+    char base_url[2048] = {0};
+    extract_base_url(html, base_url, sizeof(base_url));
+    
+    // Extract links and add to queue
+    int links_found = 0;
+    if (base_url[0]) {
+        links_found = extract_links(html, base_url, queue_file);
+        if (links_found > 0) {
+            char timestamp[32];
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s   Extracted %d links\n", timestamp, links_found);
+        }
+    }
     
     // Extract text
     char* text = (char*)malloc(MAX_TEXT_SIZE);
@@ -214,11 +360,7 @@ static int preprocess_file(const char* input_path, const char* output_path) {
 /**
  * Get current timestamp string
  */
-static void get_timestamp(char* buffer, size_t size) {
-    time_t now = time(NULL);
-    struct tm* tm_info = localtime(&now);
-    strftime(buffer, size, "[%H:%M:%S]", tm_info);
-}
+
 
 void* preprocessor_thread_func(void* arg) {
     PreprocessorState* state = (PreprocessorState*)arg;
@@ -229,8 +371,10 @@ void* preprocessor_thread_func(void* arg) {
     
     char raw_dir[2048];
     char preprocessed_dir[2048];
+    char queue_file[2048];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", state->data_dir);
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
+    snprintf(queue_file, sizeof(queue_file), "%s/links_to_crawl.txt", state->data_dir);
     
     while (state->running) {
         DIR* dir = opendir(raw_dir);
@@ -268,7 +412,7 @@ void* preprocessor_thread_func(void* arg) {
             get_timestamp(timestamp, sizeof(timestamp));
             printf("%s Preprocessing: %s\n", timestamp, entry->d_name);
             
-            if (preprocess_file(input_path, preprocessed_path) == 0) {
+            if (preprocess_file(input_path, preprocessed_path, queue_file) == 0) {
                 get_timestamp(timestamp, sizeof(timestamp));
                 printf("%s ✓ Preprocessed: %s\n", timestamp, base);
                 pthread_mutex_lock(&state->lock);
