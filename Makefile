@@ -15,6 +15,7 @@ ARFLAGS = rcs
 # Library names
 STATIC_LIB = libprimemath.a
 SHARED_LIB = libprimemath.so
+CRAWLER_LIB = libcrawler.so
 
 # Installation directories
 PREFIX = /usr/local
@@ -56,10 +57,11 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(STATIC_LIB) $(SHARED_LIB)
+all: $(STATIC_LIB) $(SHARED_LIB) $(CRAWLER_LIB)
 	@echo "✓ Build complete!"
 	@echo "  Static library: $(STATIC_LIB)"
 	@echo "  Shared library: $(SHARED_LIB)"
+	@echo "  Crawler library: $(CRAWLER_LIB)"
 
 # Static library
 $(STATIC_LIB): $(ALL_OBJECTS)
@@ -95,6 +97,11 @@ $(SRC_GEOM)/%.o: $(SRC_GEOM)/%.c $(HEADERS)
 # AI objects
 $(SRC_AI)/%.o: $(SRC_AI)/%.c $(HEADERS)
 	@echo "Compiling [AI]: $<"
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Crawler objects
+src/crawler/%.o: src/crawler/%.c $(HEADERS)
+	@echo "Compiling [CRAWLER]: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ============================================================================
