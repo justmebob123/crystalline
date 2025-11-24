@@ -20,17 +20,20 @@ struct CrawlerState {
     char data_dir[1024];
     char start_url[512];
     int max_pages;
+    int num_training_threads;  // NEW: Number of training threads
     
     // Thread handles
     pthread_t crawler_thread;
     pthread_t preprocessor_thread;
     pthread_t tokenizer_thread;
     pthread_t monitor_thread;
+    pthread_t* training_threads;  // NEW: Array of training threads
     
     // Component states (opaque pointers to internal implementations)
     void* crawler_internal;
     void* preprocessor_internal;
     void* tokenizer_internal;
+    void* training_internal;  // NEW: Training state
     
     // Status tracking
     int running;
@@ -156,6 +159,11 @@ CrawlerState* crawler_state_init(const char* data_dir, const char* start_url, in
     state->max_pages = max_pages;
     state->running = 0;
     
+    // NEW: Set default number of training threads (4 for now, will make configurable)
+    state->num_training_threads = 4;
+    state->training_threads = NULL;
+    state->training_internal = NULL;
+    
     pthread_mutex_init(&state->status_lock, NULL);
     
     // Create directory structure
@@ -193,6 +201,12 @@ int crawler_start(CrawlerState* state) {
     state->preprocessor_internal = preprocessor_init(state->data_dir);
     state->tokenizer_internal = tokenizer_init(state->data_dir);
     
+    // NEW: Initialize training component
+    // Note: We pass NULL for model initially - training will load/create model as needed
+    char model_path[1024];
+    snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+    state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_training_threads);
+    
     // Start threads
     if (pthread_create(&state->crawler_thread, NULL, crawler_thread_func, state->crawler_internal) != 0) {
         state->running = 0;
@@ -216,6 +230,18 @@ int crawler_start(CrawlerState* state) {
         return -1;
     }
     
+    // NEW: Start training threads
+    if (state->training_internal) {
+        state->training_threads = (pthread_t*)malloc(state->num_training_threads * sizeof(pthread_t));
+        if (state->training_threads) {
+            if (continuous_training_start(state->training_internal, state->training_threads) != 0) {
+                fprintf(stderr, "Warning: Failed to start training threads\n");
+                free(state->training_threads);
+                state->training_threads = NULL;
+            }
+        }
+    }
+    
     // Start monitor thread
     pthread_create(&state->monitor_thread, NULL, status_monitor_thread_func, state);
     
@@ -228,6 +254,13 @@ void crawler_stop(CrawlerState* state) {
     if (!state || !state->running) return;
     
     state->running = 0;
+    
+    // NEW: Stop training threads first
+    if (state->training_internal && state->training_threads) {
+        continuous_training_stop(state->training_internal, state->training_threads);
+        free(state->training_threads);
+        state->training_threads = NULL;
+    }
     
     // Wait for threads
     if (state->crawler_thread) pthread_join(state->crawler_thread, NULL);
@@ -269,6 +302,12 @@ void crawler_state_cleanup(CrawlerState* state) {
     if (state->crawler_internal) crawler_internal_cleanup(state->crawler_internal);
     if (state->preprocessor_internal) preprocessor_cleanup(state->preprocessor_internal);
     if (state->tokenizer_internal) tokenizer_cleanup(state->tokenizer_internal);
+    
+    // NEW: Cleanup training
+    if (state->training_internal) {
+        continuous_training_cleanup(state->training_internal);
+        state->training_internal = NULL;
+    }
     
     pthread_mutex_destroy(&state->status_lock);
     free(state);

@@ -286,11 +286,41 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
     strncpy(state->model_path, model_path, sizeof(state->model_path) - 1);
-    state->model = model;
     state->running = 1;
     state->files_trained = 0;
     state->num_threads = num_threads;
     pthread_mutex_init(&state->lock, NULL);
+    
+    // NEW: Load or create model if not provided
+    if (model) {
+        state->model = model;
+    } else {
+        // Try to load existing model
+        state->model = cllm_read_model(model_path);
+        if (!state->model) {
+            // Create new model with default configuration
+            char timestamp[32];
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s No existing model found, creating new model...\n", timestamp);
+            
+            // Create default config
+            CLLMConfig default_config = {
+                .vocab_size = 10000,
+                .embedding_dim = 512,
+                .num_layers = 6,
+                .num_heads = 8,
+                .ff_dim = 2048,
+                .max_seq_len = 512,
+                .dropout = 0.1f
+            };
+            state->model = cllm_create_model(&default_config);
+            if (!state->model) {
+                fprintf(stderr, "%s Failed to create model\n", timestamp);
+                free(state);
+                return NULL;
+            }
+        }
+    }
     
     // Initialize training state
     CLLMTrainingConfig config = {
@@ -307,7 +337,7 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     };
     strcpy(config.optimizer, "adam");
     
-    state->training = cllm_training_init(model, &config);
+    state->training = cllm_training_init(state->model, &config);
     if (!state->training) {
         free(state);
         return NULL;
