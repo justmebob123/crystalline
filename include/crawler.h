@@ -69,6 +69,17 @@ typedef void (*CrawlerCallback)(const CrawlerEvent* event, void* user_data);
 CrawlerState* crawler_state_init(const char* data_dir, const char* start_url, int max_pages);
 
 /**
+ * Initialize crawler with custom thread count
+ * @param data_dir Directory for storing crawler data
+ * @param start_url Starting URL for crawling
+ * @param max_pages Maximum pages to crawl (0 = unlimited)
+ * @param num_threads Number of threads per stage (0 = auto-detect cores-1)
+ * @return Crawler state or NULL on error
+ */
+CrawlerState* crawler_state_init_threaded(const char* data_dir, const char* start_url, 
+                                          int max_pages, int num_threads);
+
+/**
  * Start the crawler (spawns all threads internally)
  * @param state Crawler state
  * @return 0 on success, -1 on error

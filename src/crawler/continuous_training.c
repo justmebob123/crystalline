@@ -14,6 +14,8 @@
 #include <time.h>
 #include "cllm_training.h"
 #include "cllm.h"
+#include "cllm_format.h"
+#include "cllm_utils.h"
 
 #define MAX_TOKENS_PER_FILE 100000
 
@@ -186,7 +188,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     printf("✓ Training complete: avg loss = %.4f\n", avg_loss);
     
     // Save model
-    extern int cllm_write_model(CLLMModel* model, const char* filepath);
+    // cllm_write_model is declared in cllm_format.h
     if (cllm_write_model(state->model, state->model_path) == 0) {
         printf("✓ Model saved: %s\n", state->model_path);
     }
