@@ -696,12 +696,11 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
     }
     
     if (text_input_handle_event(&crawler_url_input, event)) {
-        if (!text_input_is_active(&crawler_url_input)) {
-            // Update the crawler start URL in state
-            strncpy(state->crawler_start_url, text_input_get_text(&crawler_url_input), 
-                    sizeof(state->crawler_start_url) - 1);
-            state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
-        }
+        // ALWAYS update the crawler start URL in state when text changes
+        // This ensures paste operations (Ctrl+V) immediately update the state
+        strncpy(state->crawler_start_url, text_input_get_text(&crawler_url_input), 
+                sizeof(state->crawler_start_url) - 1);
+        state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
         return true;
     }
     
