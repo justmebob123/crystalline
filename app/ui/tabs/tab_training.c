@@ -529,6 +529,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Learning Rate:", lr_label.x, lr_label.y, text_color);
     SDL_Rect lr_rect = layout_add_element(&layout, 0, 25);
     learning_rate_input.bounds = (SDL_Rect){lr_rect.x, lr_rect.y, lr_rect.w, 25};
+    // Render using text_input_render but DON'T let it draw its own label
+    learning_rate_input.label[0] = '\0'; // Clear label to prevent duplicate rendering
     text_input_render(&learning_rate_input, renderer, get_global_font());
     
     // Epochs
@@ -536,6 +538,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Epochs:", ep_label.x, ep_label.y, text_color);
     SDL_Rect ep_rect = layout_add_element(&layout, 0, 25);
     epochs_input.bounds = (SDL_Rect){ep_rect.x, ep_rect.y, ep_rect.w, 25};
+    epochs_input.label[0] = '\0';
     text_input_render(&epochs_input, renderer, get_global_font());
     
     // Batch Size
@@ -543,6 +546,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Batch Size:", bs_label.x, bs_label.y, text_color);
     SDL_Rect bs_rect = layout_add_element(&layout, 0, 25);
     batch_size_input.bounds = (SDL_Rect){bs_rect.x, bs_rect.y, bs_rect.w, 25};
+    batch_size_input.label[0] = '\0';
     text_input_render(&batch_size_input, renderer, get_global_font());
     
     // Threads
@@ -550,6 +554,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Threads (0=auto):", tc_label.x, tc_label.y, text_color);
     SDL_Rect tc_rect = layout_add_element(&layout, 0, 25);
     thread_count_input.bounds = (SDL_Rect){tc_rect.x, tc_rect.y, tc_rect.w, 25};
+    thread_count_input.label[0] = '\0';
     text_input_render(&thread_count_input, renderer, get_global_font());
     
     layout_add_spacing(&layout, 15);
@@ -564,20 +569,53 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
              (SDL_Color){150, 150, 150, 255});
     
     SDL_Rect cu_rect = layout_add_element(&layout, 0, 30);
-    // CRITICAL FIX: Update bounds during rendering so click detection matches visual position
+    // Set bounds to EXACTLY where the input box is rendered
     crawler_url_input.bounds = (SDL_Rect){cu_rect.x, cu_rect.y, cu_rect.w, 30};
     
-    // DEBUG: Show what's in the input field
-    if (crawler_url_input.text[0] != '\0') {
-        char debug_text[100];
-        snprintf(debug_text, sizeof(debug_text), "Current: %.60s", crawler_url_input.text);
-        SDL_Rect debug_rect = layout_add_label(&layout, debug_text, 12);
-        draw_text(renderer, debug_text, debug_rect.x, debug_rect.y, 
-                 (SDL_Color){100, 255, 100, 255});
-        layout_add_spacing(&layout, -12); // Move back up
+    // CRITICAL: Render input MANUALLY to ensure bounds match exactly
+    SDL_Color input_bg = crawler_url_input.active ? 
+        (SDL_Color){255, 255, 255, 255} : (SDL_Color){200, 200, 200, 255};
+    SDL_SetRenderDrawColor(renderer, input_bg.r, input_bg.g, input_bg.b, 255);
+    SDL_RenderFillRect(renderer, &crawler_url_input.bounds);
+    
+    SDL_Color input_border = crawler_url_input.active ?
+        (SDL_Color){0, 120, 215, 255} : (SDL_Color){100, 100, 100, 255};
+    SDL_SetRenderDrawColor(renderer, input_border.r, input_border.g, input_border.b, 255);
+    SDL_RenderDrawRect(renderer, &crawler_url_input.bounds);
+    
+    // Draw text inside input
+    if (strlen(crawler_url_input.text) > 0) {
+        SDL_Color text_color = {0, 0, 0, 255};
+        SDL_Surface* text_surface = TTF_RenderText_Blended(get_global_font(), crawler_url_input.text, text_color);
+        if (text_surface) {
+            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+            if (text_texture) {
+                SDL_Rect text_rect = {
+                    crawler_url_input.bounds.x + 5,
+                    crawler_url_input.bounds.y + (crawler_url_input.bounds.h - text_surface->h) / 2,
+                    text_surface->w,
+                    text_surface->h
+                };
+                SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
+                SDL_DestroyTexture(text_texture);
+            }
+            SDL_FreeSurface(text_surface);
+        }
     }
     
-    text_input_render(&crawler_url_input, renderer, get_global_font());
+    // Draw cursor if active
+    if (crawler_url_input.active) {
+        int cursor_x = crawler_url_input.bounds.x + 5;
+        if (strlen(crawler_url_input.text) > 0) {
+            int text_w = 0;
+            TTF_SizeText(get_global_font(), crawler_url_input.text, &text_w, NULL);
+            cursor_x += text_w;
+        }
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderDrawLine(renderer,
+            cursor_x, crawler_url_input.bounds.y + 5,
+            cursor_x, crawler_url_input.bounds.y + crawler_url_input.bounds.h - 5);
+    }
     
     layout_add_spacing(&layout, 10);
     
