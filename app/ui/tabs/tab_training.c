@@ -878,6 +878,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                btn_start_crawler.bounds.w, btn_start_crawler.bounds.h);
         printf("DEBUG: crawler_url_input.text = '%s', length = %zu, active = %d\n",
                crawler_url_input.text, strlen(crawler_url_input.text), crawler_url_input.active);
+        printf("DEBUG: state->crawler_start_url = '%s'\n", state->crawler_start_url);
         
         if (crawler_running || state->crawler_running) {
             printf("Stopping crawler...\n");
@@ -886,9 +887,10 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             state->crawler_current_url[0] = '\0';
             // TODO: Stop crawler thread
         } else {
-            // Get URL from input field
-            const char* start_url = text_input_get_text(&crawler_url_input);
-            printf("DEBUG: Retrieved URL from input: '%s'\n", start_url ? start_url : "(NULL)");
+            // FIXED: Get URL from state (it was copied there when input became inactive)
+            // The input field text gets cleared, but state->crawler_start_url has the URL
+            const char* start_url = state->crawler_start_url;
+            printf("DEBUG: Retrieved URL from state: '%s'\n", start_url ? start_url : "(NULL)");
             if (start_url && start_url[0] != '\0') {
                 printf("Starting crawler from URL: %s\n", start_url);
                 
