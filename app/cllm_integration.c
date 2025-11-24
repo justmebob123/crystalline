@@ -85,23 +85,6 @@ CLLMModel* app_create_cllm_model_default(void) {
     return model;
 }
 
-// OLD BROKEN VERSION - DO NOT USE
-CLLMModel* app_create_cllm_model_default_OLD_BROKEN(void) {
-    printf("Creating default CLLM model...\n");
-    
-    // Create configuration
-    CLLMConfig* config = cllm_create_config(
-        10000,  // vocab_size
-        512,    // embedding_dim
-        6,      // num_layers
-        8,      // num_heads
-        2048    // ff_dim
-    );
-    
-    if (!config) {
-        fprintf(stderr, "Failed to create configuration\n");
-        return NULL;
-    }
     
     // Validate configuration
     if (!cllm_validate_config(config)) {

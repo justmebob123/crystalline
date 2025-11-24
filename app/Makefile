@@ -26,26 +26,26 @@ TARGET = hyper_prime_spiral
 all: $(TARGET)
 
 $(TARGET): $(ALL_OBJECTS)
-	@echo "Linking $(TARGET)..."
-	$(CC) $(ALL_OBJECTS) -o $(TARGET) $(LDFLAGS) -Wl,-rpath,..
-	@echo "✓ Build complete!"
-	@echo ""
-	@echo "Run with: LD_LIBRARY_PATH=.. ./$(TARGET)"
+		@echo "Linking $(TARGET)..."
+		$(CC) $(ALL_OBJECTS) -o $(TARGET) $(LDFLAGS) -Wl,-rpath,..
+		@echo "✓ Build complete!"
+		@echo ""
+		@echo "Run with: LD_LIBRARY_PATH=.. ./$(TARGET)"
 
 # Compile app files
 %.o: %.c
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+		@echo "Compiling $<..."
+		$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compile tab files
 ui/tabs/%.o: ui/tabs/%.c
-	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+		@echo "Compiling $<..."
+		$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Run the application
 run: $(TARGET)
-	@echo "Running $(TARGET)..."
-	@LD_LIBRARY_PATH=.. ./$(TARGET)
+		@echo "Running $(TARGET)..."
+		@LD_LIBRARY_PATH=.. ./$(TARGET)
 
 # Debug build
 debug: CFLAGS += -g -DDEBUG
@@ -53,27 +53,27 @@ debug: clean all
 
 # Clean
 clean:
-	@echo "Cleaning application..."
-	rm -f $(APP_OBJECTS) $(TAB_OBJECTS) $(TARGET)
-	rm -f ui/tabs/*.o
-	@echo "✓ Application cleaned"
+		@echo "Cleaning application..."
+		rm -f $(APP_OBJECTS) $(TAB_OBJECTS) $(TARGET)
+		rm -f ui/tabs/*.o
+		@echo "✓ Application cleaned"
 
 # Info
 info:
-	@echo "Application Build Information"
-	@echo "=============================="
-	@echo "App sources: $(words $(APP_SOURCES)) files"
-	@echo "Tab sources: $(words $(TAB_SOURCES)) files"
-	@echo "Total sources: $(words $(APP_SOURCES) $(TAB_SOURCES)) files"
-	@echo ""
-	@echo "Compiler: $(CC)"
-	@echo "Flags: $(CFLAGS)"
-	@echo ""
-	@echo "Targets:"
-	@echo "  all   - Build application"
-	@echo "  run   - Build and run application"
-	@echo "  debug - Build with debug symbols"
-	@echo "  clean - Remove build artifacts"
-	@echo "  info  - Show this information"
+		@echo "Application Build Information"
+		@echo "=============================="
+		@echo "App sources: $(words $(APP_SOURCES)) files"
+		@echo "Tab sources: $(words $(TAB_SOURCES)) files"
+		@echo "Total sources: $(words $(APP_SOURCES) $(TAB_SOURCES)) files"
+		@echo ""
+		@echo "Compiler: $(CC)"
+		@echo "Flags: $(CFLAGS)"
+		@echo ""
+		@echo "Targets:"
+		@echo "  all   - Build application"
+		@echo "  run   - Build and run application"
+		@echo "  debug - Build with debug symbols"
+		@echo "  clean - Remove build artifacts"
+		@echo "  info  - Show this information"
 
 .PHONY: all run debug clean info
