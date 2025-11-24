@@ -306,13 +306,17 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
             printf("%s No existing model found, creating new model...\n", timestamp);
             
             // Create default config
+            // NOTE: These are conservative defaults. The system supports:
+            // - vocab_size: 100K-250K+ for multilingual models
+            // - embedding_dim: 1024-8192+ (dynamic, no hardcoded limits)
+            // - max_seq_len: 2048-4096+ for long-range dependencies
             CLLMConfig default_config = {
-                .vocab_size = 10000,
-                .embedding_dim = 512,
+                .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
+                .embedding_dim = 1024,    // Increased from 512 (better representations)
                 .num_layers = 6,
                 .num_heads = 8,
-                .ff_dim = 2048,
-                .max_seq_len = 512,
+                .ff_dim = 4096,           // Increased from 2048 (more capacity)
+                .max_seq_len = 1024,      // Increased from 512 (longer context)
                 .dropout = 0.1f
             };
             state->model = cllm_create_model(&default_config);
@@ -325,10 +329,11 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     }
     
     // Initialize training state
+    // NOTE: Increased sequence_length for better long-range dependency learning
     CLLMTrainingConfig config = {
         .num_epochs = 5,
         .batch_size = 4,
-        .sequence_length = 32,
+        .sequence_length = 256,   // Increased from 32 (8x longer context)
         .learning_rate = 0.001f,
         .weight_decay = 0.01f,
         .gradient_clip = 1.0f,

@@ -403,11 +403,11 @@ CLLMModel* cllm_create_small_model(void) {
 // Create a default medium model
 CLLMModel* cllm_create_medium_model(void) {
     CLLMConfig config = {
-        .vocab_size = 10000,
-        .embedding_dim = 512,
+        .vocab_size = 50000,      // Increased for better coverage
+        .embedding_dim = 1024,    // Increased for richer representations
         .num_layers = 8,
         .num_heads = 8,
-        .ff_dim = 2048,
+        .ff_dim = 4096,           // Increased for more capacity
         .max_seq_len = 1024,
         .dropout = 0.1f
     };

@@ -12,11 +12,28 @@ int init_font_system(void) {
         return 0;
     }
     
-    // Try to load a system font
+    // Try to load a system font (supports Ubuntu, Debian, CentOS, Fedora, Arch)
+    // Check for environment variable override first
+    const char* env_font = getenv("CLLM_FONT_PATH");
+    if (env_font) {
+        g_font = TTF_OpenFont(env_font, 14);
+        if (g_font) {
+            printf("Loaded font from CLLM_FONT_PATH: %s\n", env_font);
+            return 1;
+        }
+        fprintf(stderr, "Warning: CLLM_FONT_PATH set but font not found: %s\n", env_font);
+    }
+    
     const char* font_paths[] = {
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",              // Ubuntu/Debian
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",                       // CentOS/RHEL/Fedora
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", // Ubuntu/Debian
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",       // CentOS/RHEL/Fedora
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",              // Ubuntu/Debian
+        "/usr/share/fonts/gnu-free/FreeSans.ttf",                       // CentOS/RHEL/Fedora
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",                          // Arch Linux
+        "/System/Library/Fonts/Helvetica.ttc",                          // macOS
+        "C:\\Windows\\Fonts\\arial.ttf",                                 // Windows
         NULL
     };
     

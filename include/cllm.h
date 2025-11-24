@@ -78,7 +78,7 @@ typedef struct {
     uint32_t neighbor_ids[MAX_NEIGHBORS];  // Alternative neighbor storage
     uint32_t num_neighbors;      // Number of neighbors
     uint32_t neighbor_count;     // Neighbor count (alternative)
-    float embedding[512];        // Embedding vector (max 512 dim)
+    float* embedding;            // Embedding vector (dynamic dimension)
     uint32_t symmetry_group;     // Symmetry group (0 to SYMMETRY_ORDER-1)
     uint8_t reserved[48];        // Reserved
 } CLLMLatticePoint;
