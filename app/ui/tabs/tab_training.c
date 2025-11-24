@@ -775,7 +775,10 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Check text input clicks
     // CRITICAL: Ignore clicks if bounds haven't been set yet (all zeros)
+    printf("DEBUG: inputs_initialized=%d, crawler_url_input.bounds.w=%d\n", 
+           inputs_initialized, crawler_url_input.bounds.w);
     if (inputs_initialized && crawler_url_input.bounds.w > 0) {
+        printf("DEBUG: Processing input clicks (bounds are initialized)\n");
         if (rect_contains_point(learning_rate_input.bounds, x, y)) {
             text_input_activate(&learning_rate_input);
             text_input_deactivate(&epochs_input);

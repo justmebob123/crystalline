@@ -283,6 +283,7 @@ void text_input_activate(TextInput* input) {
     
     printf("DEBUG: text_input_activate called, input=%p, text='%s'\n", 
            (void*)input, input->text);
+    printf("DEBUG: Activation stack trace - check where this was called from\n");
     input->active = true;
     SDL_StartTextInput();
 }
