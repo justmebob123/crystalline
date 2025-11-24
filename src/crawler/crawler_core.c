@@ -215,6 +215,7 @@ int crawler_save_page(CrawlerState* state, const char* url, const char* content,
  * Extract links from HTML
  */
 int crawler_extract_links(const char* html, const char* base_url, CrawlerState* state) {
+    (void)base_url;  // TODO: Use for resolving relative URLs
     // Simple link extraction (looking for href="...")
     const char* p = html;
     int links_found = 0;
