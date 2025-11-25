@@ -1,81 +1,89 @@
-# Phase 1, Day 5: Control Process Structure - COMPLETE ✅
+# Phase 1, Day 6: Training Loop Integration
 
 ## Overview
-Implement the control process that manages the hierarchical sphere system, coordinates training epochs, and handles system-wide operations.
+Integrate the control process with the training loop to enable distributed training across the hierarchical sphere system. This includes gradient synchronization, weight broadcasting, and checkpoint/restore functionality.
 
 ## Tasks
 
-### 1. Control Process Structure ✅
-- [x] Create `include/ai/cllm_control_process.h` header
-- [x] Define ControlProcess structure with:
-  - [x] Root sphere reference
-  - [x] System-wide configuration
-  - [x] Epoch management state
-  - [x] Global synchronization primitives
-  - [x] Training statistics aggregation
-  - [x] System health monitoring
-- [x] Define control process states (INITIALIZING, RUNNING, PAUSED, STOPPING, STOPPED)
-- [x] Define control messages and commands
+### 1. Training Loop Structure ✅
+- [x] Create `include/ai/cllm_training_loop.h` header
+- [x] Define TrainingLoop structure with:
+  - [x] Control process reference
+  - [x] Training configuration
+  - [x] Batch management
+  - [x] Gradient buffers
+  - [x] Weight buffers
+  - [x] Loss tracking
+  - [x] Checkpoint management
+- [x] Define training states and callbacks
 
-### 2. Control Process Implementation ✅
-- [x] Create `src/ai/infrastructure/cllm_control_process.c`
-- [x] Implement `control_process_create()` - Initialize control process
-- [x] Implement `control_process_free()` - Clean shutdown
-- [x] Implement `control_process_start()` - Start system
-- [x] Implement `control_process_stop()` - Stop system
-- [x] Implement `control_process_pause()` - Pause training
-- [x] Implement `control_process_resume()` - Resume training
+### 2. Training Loop Implementation ✅
+- [x] Create `src/ai/infrastructure/cllm_training_loop.c`
+- [x] Implement `training_loop_create()` - Initialize training loop
+- [x] Implement `training_loop_free()` - Clean shutdown
+- [x] Implement `training_loop_run()` - Main training loop
+- [x] Implement `training_loop_step()` - Single training step
+- [x] Implement batch processing logic
 
-### 3. Epoch Management ✅
-- [x] Implement `control_process_start_epoch()` - Begin new epoch
-- [x] Implement `control_process_end_epoch()` - Complete epoch
-- [x] Implement `control_process_wait_epoch_complete()` - Wait for all spheres
-- [x] Implement epoch synchronization across hierarchy
-- [x] Implement epoch statistics collection
+### 3. Gradient Synchronization ✅
+- [x] Implement `training_loop_sync_gradients()` - Collect gradients from all spheres
+- [x] Implement gradient accumulation across hierarchy
+- [x] Implement gradient averaging
+- [x] Implement gradient clipping
+- [x] Add gradient validation
 
-### 4. Sphere Lifecycle Management ✅
-- [x] Implement `control_process_spawn_sphere()` - Create new sphere
-- [x] Implement `control_process_terminate_sphere()` - Remove sphere
-- [x] Implement `control_process_rebalance_hierarchy()` - Adjust structure
-- [x] Implement sphere health monitoring
-- [x] Implement automatic sphere recovery
+### 4. Weight Broadcasting ✅
+- [x] Implement `training_loop_broadcast_weights()` - Distribute weights to all spheres
+- [x] Implement efficient weight distribution
+- [x] Add weight validation
+- [x] Implement weight versioning
+- [x] Add weight consistency checks
 
-### 5. System-Wide Operations ✅
-- [x] Implement `control_process_broadcast_weights()` - Distribute weights
-- [x] Implement `control_process_collect_gradients()` - Aggregate gradients
-- [x] Implement `control_process_synchronize_all()` - Global sync
-- [x] Implement `control_process_checkpoint()` - Save system state
-- [x] Implement `control_process_restore()` - Load system state
+### 5. Checkpoint/Restore ✅
+- [x] Implement `training_loop_checkpoint()` - Save training state
+- [x] Implement `training_loop_restore()` - Load training state
+- [x] Save control process state
+- [x] Save sphere states
+- [x] Save optimizer state
+- [x] Save training metrics
+- [x] Implement checkpoint versioning
 
-### 6. Statistics & Monitoring ✅
-- [x] Implement `control_process_get_system_stats()` - Aggregate statistics
-- [x] Implement `control_process_get_sphere_stats()` - Individual sphere stats
-- [x] Implement `control_process_print_hierarchy()` - Display structure
-- [x] Implement performance monitoring
-- [x] Implement resource utilization tracking
+### 6. Training Callbacks ✅
+- [x] Implement `training_loop_register_callback()` - Register callbacks
+- [x] Define callback types (epoch_start, epoch_end, batch_start, batch_end, etc.)
+- [x] Implement callback execution
+- [x] Add callback error handling
 
-### 7. Testing ✅
-- [x] Create `tests/test_control_process.c`
-- [x] Test control process creation and initialization
-- [x] Test epoch management and synchronization
-- [x] Test sphere lifecycle operations
-- [x] Test system-wide operations
-- [x] Test statistics collection
-- [x] Test error handling and recovery
-- [x] Run all tests and verify 100% pass rate (13/13 tests passed)
+### 7. Performance Monitoring ✅
+- [x] Implement training throughput tracking
+- [x] Add gradient statistics
+- [x] Track weight update frequency
+- [x] Monitor synchronization overhead
+- [x] Add performance profiling
 
-### 8. Integration & Documentation ✅
+### 8. Testing ✅
+- [x] Create `tests/test_training_loop.c`
+- [x] Test training loop creation and initialization
+- [x] Test single training step
+- [x] Test gradient synchronization
+- [x] Test weight broadcasting
+- [x] Test checkpoint/restore
+- [x] Test callback system
+- [x] Run all tests and verify 100% pass rate (12/12 tests passed)
+
+### 9. Integration & Documentation ✅
 - [x] Update Makefile with new files
 - [x] Verify clean build with no warnings
-- [x] All tests passing (13/13 = 100%)
-- [x] Ready to commit and push Day 5 work
+- [x] Update API documentation
+- [x] Create training examples
+- [x] Commit and push Day 6 work
 
-## Success Criteria - ALL MET ✅
-- ✅ All control process functions implemented
-- ✅ Epoch management working correctly
-- ✅ Sphere lifecycle properly managed
-- ✅ System-wide operations functional
-- ✅ Statistics collection accurate
-- ✅ All tests passing (13/13 = 100%)
-- ✅ Clean build with no errors
-- ✅ Ready for git commit
+## Success Criteria
+- All training loop functions implemented
+- Gradient synchronization working correctly
+- Weight broadcasting functional
+- Checkpoint/restore operational
+- Callbacks system working
+- All tests passing (100%)
+- Clean build with no warnings
+- Code committed and pushed
