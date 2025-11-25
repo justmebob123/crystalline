@@ -19,14 +19,13 @@ OBJECTS = $(SOURCES:.c=.o)
 LIBRARY = libalgorithms.so
 
 # Crystalline library dependency
-CRYSTALLINE_LIB = ../libcrystalline.so
 
 .PHONY: all clean install
 
 all: $(LIBRARY)
 
-$(LIBRARY): $(OBJECTS) $(CRYSTALLINE_LIB)
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline -lm
+$(LIBRARY): $(OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
