@@ -2,7 +2,7 @@
 #include "cllm_mathematical_constants.h"
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+#include "prime_math_custom.h"
 
 void cllm_sphere_stats_init(SphereStatistics* stats, 
                             int symmetry_group,

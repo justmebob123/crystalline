@@ -1,5 +1,5 @@
 #include "cllm_angular_position.h"
-#include <math.h>
+#include "prime_math_custom.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -14,8 +14,8 @@
 double angular_position_spiral_term(uint64_t prime_index) {
     // k·π(1+√5)
     // Golden ratio: φ = (1+√5)/2, so (1+√5) = 2φ - 1 ≈ 2.236067977...
-    double one_plus_sqrt5 = 1.0 + sqrt(5.0);
-    return (double)prime_index * M_PI * one_plus_sqrt5;
+    double one_plus_sqrt5 = 1.0 + prime_sqrt(5.0);
+    return (double)prime_index * PRIME_PI * one_plus_sqrt5;
 }
 
 double angular_position_index_term(int dimension) {
@@ -25,7 +25,7 @@ double angular_position_index_term(int dimension) {
     }
     
     double ln3 = LN_3;
-    return (double)(dimension - 1) * (2.0 * M_PI) / (12.0 * ln3);
+    return (double)(dimension - 1) * (2.0 * PRIME_PI) / (12.0 * ln3);
 }
 
 double angular_position_phonetic_term(double phonetic_wavelength) {
@@ -44,7 +44,7 @@ double angular_position_phonetic_term(double phonetic_wavelength) {
     
     // log₃(x) = ln(x) / ln(3)
     double ln3 = LN_3;
-    return log(frequency) / ln3;
+    return prime_log(frequency) / ln3;
 }
 
 double angular_position_omega_correction(uint64_t prime) {
@@ -54,7 +54,7 @@ double angular_position_omega_correction(uint64_t prime) {
     double lambda = cllm_get_einstein_lambda();
     
     // Calculate distance to 144000
-    double distance = fabs((double)prime - (double)VECTOR_CULMINATION);
+    double distance = prime_fabs((double)prime - (double)VECTOR_CULMINATION);
     
     // f(p) = 1 / (1 + distance/144000)
     // This makes the correction stronger near 144000
@@ -155,10 +155,10 @@ void angular_position_calculate_bigfixed(uint64_t prime,
 
 double angular_position_normalize(double theta) {
     // Normalize to [0, 2π)
-    double two_pi = 2.0 * M_PI;
+    double two_pi = 2.0 * PRIME_PI;
     
     // Reduce to [0, 2π) range
-    theta = fmod(theta, two_pi);
+    theta = prime_fmod(theta, two_pi);
     
     // Handle negative angles
     if (theta < 0.0) {
@@ -181,11 +181,11 @@ void angular_position_to_clock(double theta, int* hour, double* minute) {
     // 3π/2 radians = 9 o'clock (left)
     
     // Convert to hours (0-12)
-    double hours = (theta / (2.0 * M_PI)) * 12.0;
+    double hours = (theta / (2.0 * PRIME_PI)) * 12.0;
     
     // Extract hour and minute
     *hour = (int)hours % 12;
-    *minute = (hours - floor(hours)) * 60.0;
+    *minute = (hours - prime_floor(hours)) * 60.0;
 }
 
 int angular_position_symmetry_group(uint64_t prime) {
@@ -193,7 +193,7 @@ int angular_position_symmetry_group(uint64_t prime) {
 }
 
 int angular_position_is_near_boundary(uint64_t prime, double* distance) {
-    double dist = fabs((double)prime - (double)VECTOR_CULMINATION);
+    double dist = prime_fabs((double)prime - (double)VECTOR_CULMINATION);
     
     if (distance) {
         *distance = dist;
@@ -313,11 +313,11 @@ double calculate_plimpton_correction_factor(uint64_t prime,
     double psi = (double)(prime % triple->c) / (double)triple->c;
     
     // Scale by 2π to get angular correction
-    psi *= 2.0 * M_PI;
+    psi *= 2.0 * PRIME_PI;
     
     // Normalize to [-π, π]
-    if (psi > M_PI) {
-        psi -= 2.0 * M_PI;
+    if (psi > PRIME_PI) {
+        psi -= 2.0 * PRIME_PI;
     }
     
     return psi;
@@ -339,10 +339,10 @@ void angular_position_print(const AngularPosition* pos) {
            (unsigned long)pos->prime_index);
     printf("Dimension: %d\n", pos->dimension);
     printf("Symmetry Group: %d\n", pos->symmetry_group);
-    printf("θ: %.6f rad (%.2f°)\n", pos->theta, pos->theta * 180.0 / M_PI);
+    printf("θ: %.6f rad (%.2f°)\n", pos->theta, pos->theta * 180.0 / PRIME_PI);
     printf("θ (normalized): %.6f rad (%.2f°)\n", 
            pos->theta_normalized, 
-           pos->theta_normalized * 180.0 / M_PI);
+           pos->theta_normalized * 180.0 / PRIME_PI);
     printf("Clock Position: %d:%02.0f\n", pos->clock_hour, pos->clock_minute);
     
     if (pos->is_near_144000) {
@@ -378,9 +378,9 @@ void angular_position_print_detailed(const AngularPosition* pos) {
     
     printf("\nFinal Result:\n");
     printf("  θ (raw): %.6f rad (%.2f°)\n", 
-           pos->theta, pos->theta * 180.0 / M_PI);
+           pos->theta, pos->theta * 180.0 / PRIME_PI);
     printf("  θ (normalized): %.6f rad (%.2f°)\n", 
-           pos->theta_normalized, pos->theta_normalized * 180.0 / M_PI);
+           pos->theta_normalized, pos->theta_normalized * 180.0 / PRIME_PI);
     
     printf("\nClock Position:\n");
     printf("  Hour: %d\n", pos->clock_hour);
@@ -402,7 +402,7 @@ int angular_position_validate(const AngularPosition* pos) {
     if (!pos) return 0;
     
     // Check that normalized theta is in [0, 2π)
-    if (pos->theta_normalized < 0.0 || pos->theta_normalized >= 2.0 * M_PI) {
+    if (pos->theta_normalized < 0.0 || pos->theta_normalized >= 2.0 * PRIME_PI) {
         return 0;
     }
     
@@ -441,11 +441,11 @@ double angular_position_distance(const AngularPosition* pos1,
     if (!pos1 || !pos2) return 0.0;
     
     // Calculate angular distance on circle
-    double diff = fabs(pos1->theta_normalized - pos2->theta_normalized);
+    double diff = prime_fabs(pos1->theta_normalized - pos2->theta_normalized);
     
     // Take shorter path around circle
-    if (diff > M_PI) {
-        diff = 2.0 * M_PI - diff;
+    if (diff > PRIME_PI) {
+        diff = 2.0 * PRIME_PI - diff;
     }
     
     return diff;

@@ -2,8 +2,8 @@
  * Comprehensive Test for Phase 1, Day 1 Components
  */
 
-#include "cllm_thread_allocation.h"
-#include "cllm_shared_memory.h"
+#include "ai/cllm_thread_allocation.h"
+#include "ai/cllm_shared_memory.h"
 #include "cllm_sphere_position.h"
 #include "bigint_core.h"
 #include <stdio.h>

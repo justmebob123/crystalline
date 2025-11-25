@@ -5,8 +5,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "cllm_sphere_message.h"
-#include "cllm_message_queue.h"
+#include "ai/cllm_sphere_message.h"
+#include "ai/cllm_message_queue.h"
 
 // Test counter
 static int tests_passed = 0;

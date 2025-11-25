@@ -38,6 +38,8 @@ CORE_SOURCES = $(wildcard $(SRC_CORE)/*.c)
 TRANS_SOURCES = $(wildcard $(SRC_TRANS)/*.c)
 GEOM_SOURCES = $(wildcard $(SRC_GEOM)/*.c)
 AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
+INFRASTRUCTURE_SOURCES = $(wildcard src/ai/infrastructure/*.c)
+AI_SOURCES += $(INFRASTRUCTURE_SOURCES)
 TOOLS_DIR = tools
 UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
 

@@ -5,7 +5,7 @@
 #include <math.h>
 
 #include "cllm_mathematical_constants.h"
-#include "cllm_sphere_stats.h"
+#include "ai/cllm_sphere_stats.h"
 
 // Test counter
 static int tests_passed = 0;
