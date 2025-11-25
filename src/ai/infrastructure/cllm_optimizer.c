@@ -558,7 +558,8 @@ float optimizer_compute_parameter_norm(
 float optimizer_update_learning_rate(OptimizerState* state) {
     if (!state) return 0.0f;
     
-    int step = state->step;
+    // Use step + 1 because we calculate LR before incrementing step
+    int step = state->step + 1;
     OptimizerConfig* config = &state->config;
     
     float lr = config->learning_rate;
