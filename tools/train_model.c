@@ -14,8 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
+#include "../include/cllm_training_mt.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_data_loader.h"
 #include "../include/cllm_inference.h"
@@ -119,8 +121,15 @@ int save_checkpoint(CLLMModel* model, CLLMTraining* training, const char* checkp
  * Main training loop
  */
 int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* config,
-                const char* checkpoint_dir) {
+                const char* checkpoint_dir, int num_threads) {
     printf("\n=== Starting Training ===\n\n");
+    
+    // Auto-detect CPU count if not specified
+    if (num_threads == 0) {
+        num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+        if (num_threads < 1) num_threads = 1;
+    }
+    printf("Using %d threads for training\n\n", num_threads);
     
     // Create training state
     CLLMTraining* training = cllm_training_init(model, config);
@@ -154,7 +163,13 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                epoch + 1, config->num_epochs);
         printf("╚═══════════════════════════════════════════════════════════╝\n\n");
         
-        float epoch_loss = cllm_train_epoch(training);
+        // Use multi-threaded training for better performance
+        float epoch_loss;
+        if (num_threads > 1) {
+            epoch_loss = cllm_train_epoch_mt(training, num_threads);
+        } else {
+            epoch_loss = cllm_train_epoch(training);
+        }
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
@@ -207,9 +222,10 @@ int main(int argc, char** argv) {
         printf("  --seq-len <n>         Sequence length (default: 128)\n");
         printf("  --learning-rate <f>   Learning rate (default: 0.0001)\n");
         printf("  --epochs <n>          Number of epochs (default: 100)\n");
+        printf("  --threads <n>         Number of threads (default: auto-detect)\n");
         printf("  --checkpoint-dir <d>  Checkpoint directory (default: ./checkpoints)\n");
         printf("\nExample:\n");
-        printf("  %s ./data/raw --vocab-size 5000 --epochs 50\n", argv[0]);
+        printf("  %s ./data/raw --vocab-size 5000 --epochs 50 --threads 4\n", argv[0]);
         return 1;
     }
     
@@ -224,6 +240,7 @@ int main(int argc, char** argv) {
     int seq_len = 128;
     float learning_rate = 0.0001f;
     int epochs = 100;
+    int num_threads = 0;  // 0 = auto-detect CPU count
     const char* checkpoint_dir = "./checkpoints";
     
     for (int i = 2; i < argc - 1; i++) {
@@ -243,6 +260,8 @@ int main(int argc, char** argv) {
             learning_rate = atof(argv[++i]);
         } else if (strcmp(argv[i], "--epochs") == 0) {
             epochs = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--threads") == 0) {
+            num_threads = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--checkpoint-dir") == 0) {
             checkpoint_dir = argv[++i];
         }
@@ -363,7 +382,7 @@ int main(int argc, char** argv) {
     printf("Step 6: Training model\n");
     printf("=======================\n");
     
-    int success = train_model(model, dataset, &train_config, checkpoint_dir);
+    int success = train_model(model, dataset, &train_config, checkpoint_dir, num_threads);
     
     if (success) {
         // Save final model
