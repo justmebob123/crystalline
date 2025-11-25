@@ -639,6 +639,9 @@ float cllm_train_epoch(CLLMTraining* training) {
         }
         
         
+        // Update learning rate based on schedule (warmup + decay)
+        cllm_update_learning_rate(training);
+        
         // Optimizer step - Use Adam optimizer with gradient accumulation
         cllm_optimizer_step_adam(training);
         
