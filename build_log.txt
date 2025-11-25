@@ -1,0 +1,220 @@
+Compiling [CORE]: src/core/bigfixed_constants.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_constants.c -o src/core/bigfixed_constants.o
+Compiling [CORE]: src/core/bigfixed_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_core.c -o src/core/bigfixed_core.o
+Compiling [CORE]: src/core/bigint_conversions.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_conversions.c -o src/core/bigint_conversions.o
+Compiling [CORE]: src/core/bigint_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_core.c -o src/core/bigint_core.o
+Compiling [CORE]: src/core/bigint_ntt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_ntt.c -o src/core/bigint_ntt.o
+Compiling [CORE]: src/core/crystal_abacus.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/crystal_abacus.c -o src/core/crystal_abacus.o
+Compiling [CORE]: src/core/prime_lowlevel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/prime_lowlevel.c -o src/core/prime_lowlevel.o
+Compiling [TRANS]: src/transcendental/prime_basic.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_basic.c -o src/transcendental/prime_basic.o
+Compiling [TRANS]: src/transcendental/prime_bigint_transcendental.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_bigint_transcendental.c -o src/transcendental/prime_bigint_transcendental.o
+Compiling [TRANS]: src/transcendental/prime_float_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_float_math.c -o src/transcendental/prime_float_math.o
+Compiling [TRANS]: src/transcendental/prime_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math.c -o src/transcendental/prime_math.o
+Compiling [TRANS]: src/transcendental/prime_math_custom.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math_custom.c -o src/transcendental/prime_math_custom.o
+Compiling [GEOM]: src/geometry/lattice_algorithms.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/lattice_algorithms.c -o src/geometry/lattice_algorithms.o
+Compiling [GEOM]: src/geometry/prime_coords.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_coords.c -o src/geometry/prime_coords.o
+Compiling [GEOM]: src/geometry/prime_hyperdim.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_hyperdim.c -o src/geometry/prime_hyperdim.o
+Compiling [GEOM]: src/geometry/prime_lattice.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice.c -o src/geometry/prime_lattice.o
+Compiling [GEOM]: src/geometry/prime_lattice_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_core.c -o src/geometry/prime_lattice_core.o
+Compiling [GEOM]: src/geometry/prime_lattice_geometry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_geometry.c -o src/geometry/prime_lattice_geometry.o
+Compiling [GEOM]: src/geometry/prime_matrix.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_matrix.c -o src/geometry/prime_matrix.o
+Compiling [GEOM]: src/geometry/prime_rainbow.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_rainbow.c -o src/geometry/prime_rainbow.o
+Creating crystalline library: libcrystalline.so
+gcc -shared -o libcrystalline.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o -lm
+✓ Crystalline library created
+Compiling [AI]: src/ai/cllm_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_attention.c -o src/ai/cllm_attention.o
+Compiling [AI]: src/ai/cllm_backward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_backward.c -o src/ai/cllm_backward.o
+Compiling [AI]: src/ai/cllm_benchmark.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_benchmark.c -o src/ai/cllm_benchmark.o
+Compiling [AI]: src/ai/cllm_cache.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_cache.c -o src/ai/cllm_cache.o
+Compiling [AI]: src/ai/cllm_create.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_create.c -o src/ai/cllm_create.o
+Compiling [AI]: src/ai/cllm_crystalline_advanced.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_advanced.c -o src/ai/cllm_crystalline_advanced.o
+Compiling [AI]: src/ai/cllm_crystalline_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_attention.c -o src/ai/cllm_crystalline_attention.o
+Compiling [AI]: src/ai/cllm_crystalline_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_training.c -o src/ai/cllm_crystalline_training.o
+Compiling [AI]: src/ai/cllm_data_loader.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_data_loader.c -o src/ai/cllm_data_loader.o
+Compiling [AI]: src/ai/cllm_embedding.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_embedding.c -o src/ai/cllm_embedding.o
+Compiling [AI]: src/ai/cllm_feedforward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_feedforward.c -o src/ai/cllm_feedforward.o
+Compiling [AI]: src/ai/cllm_format.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_format.c -o src/ai/cllm_format.o
+Compiling [AI]: src/ai/cllm_fp16.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_fp16.c -o src/ai/cllm_fp16.o
+Compiling [AI]: src/ai/cllm_inference.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_inference.c -o src/ai/cllm_inference.o
+Compiling [AI]: src/ai/cllm_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_init.c -o src/ai/cllm_init.o
+Compiling [AI]: src/ai/cllm_lattice_conversion.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_conversion.c -o src/ai/cllm_lattice_conversion.o
+Compiling [AI]: src/ai/cllm_lattice_embed.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_embed.c -o src/ai/cllm_lattice_embed.o
+Compiling [AI]: src/ai/cllm_lattice_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_init.c -o src/ai/cllm_lattice_init.o
+Compiling [AI]: src/ai/cllm_layernorm.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_layernorm.c -o src/ai/cllm_layernorm.o
+Compiling [AI]: src/ai/cllm_lll_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lll_embeddings.c -o src/ai/cllm_lll_embeddings.o
+Compiling [AI]: src/ai/cllm_loss.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_loss.c -o src/ai/cllm_loss.o
+Compiling [AI]: src/ai/cllm_optimizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_optimizer.c -o src/ai/cllm_optimizer.o
+Compiling [AI]: src/ai/cllm_positional.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_positional.c -o src/ai/cllm_positional.o
+Compiling [AI]: src/ai/cllm_production.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_production.c -o src/ai/cllm_production.o
+Compiling [AI]: src/ai/cllm_pure_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_embeddings.c -o src/ai/cllm_pure_embeddings.o
+Compiling [AI]: src/ai/cllm_pure_token.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_token.c -o src/ai/cllm_pure_token.o
+Compiling [AI]: src/ai/cllm_root_word_modeling.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_root_word_modeling.c -o src/ai/cllm_root_word_modeling.o
+Compiling [AI]: src/ai/cllm_simd_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_simd_utils.c -o src/ai/cllm_simd_utils.o
+Compiling [AI]: src/ai/cllm_symmetry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_symmetry.c -o src/ai/cllm_symmetry.o
+Compiling [AI]: src/ai/cllm_tokenizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_tokenizer.c -o src/ai/cllm_tokenizer.o
+Compiling [AI]: src/ai/cllm_train_complete.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_train_complete.c -o src/ai/cllm_train_complete.o
+Compiling [AI]: src/ai/cllm_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training.c -o src/ai/cllm_training.o
+Compiling [AI]: src/ai/cllm_training_mt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_mt.c -o src/ai/cllm_training_mt.o
+Compiling [AI]: src/ai/cllm_training_parallel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_parallel.c -o src/ai/cllm_training_parallel.o
+Compiling [AI]: src/ai/cllm_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_utils.c -o src/ai/cllm_utils.o
+Compiling [AI]: src/ai/cllm_validate.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_validate.c -o src/ai/cllm_validate.o
+Compiling [AI]: src/ai/cllm_vocab_builder.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_vocab_builder.c -o src/ai/cllm_vocab_builder.o
+Creating CLLM library: libcllm.so
+gcc -shared -o libcllm.so src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o -L. -lcrystalline -lm
+✓ CLLM library created
+Compiling [CRAWLER]: src/crawler/crawler_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/crawler/crawler_core.c -o src/crawler/crawler_core.o
+Compiling [CRAWLER]: src/crawler/preprocessor.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/crawler/preprocessor.c -o src/crawler/preprocessor.o
+src/crawler/preprocessor.c: In function ‘extract_links’:
+src/crawler/preprocessor.c:242:61: warning: ‘%s’ directive output may be truncated writing up to 2047 bytes into a region of size between 2040 and 2041 [-Wformat-truncation=]
+  242 |                 snprintf(full_url, sizeof(full_url), "%s%.*s%s",
+      |                                                             ^~
+  243 |                         protocol, (int)domain_len, domain_start, url);
+      |                                                                  ~~~
+src/crawler/preprocessor.c:242:17: note: ‘snprintf’ output 8 or more bytes (assuming 2056) into a destination of size 2048
+  242 |                 snprintf(full_url, sizeof(full_url), "%s%.*s%s",
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  243 |                         protocol, (int)domain_len, domain_start, url);
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/preprocessor.c: In function ‘preprocessor_thread_func’:
+src/crawler/preprocessor.c:400:27: warning: ‘.txt’ directive output may be truncated writing 4 bytes into a region of size between 0 and 2047 [-Wformat-truncation=]
+  400 |                     "%s/%s.txt", preprocessed_dir, base);
+      |                           ^~~~
+src/crawler/preprocessor.c:399:13: note: ‘snprintf’ output 6 or more bytes (assuming 2053) into a destination of size 2048
+  399 |             snprintf(preprocessed_path, sizeof(preprocessed_path),
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  400 |                     "%s/%s.txt", preprocessed_dir, base);
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/preprocessor.c:410:58: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size between 0 and 2047 [-Wformat-truncation=]
+  410 |             snprintf(input_path, sizeof(input_path), "%s/%s", raw_dir, entry->d_name);
+      |                                                          ^~
+src/crawler/preprocessor.c:410:13: note: ‘snprintf’ output between 2 and 2304 bytes into a destination of size 2048
+  410 |             snprintf(input_path, sizeof(input_path), "%s/%s", raw_dir, entry->d_name);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiling [CRAWLER]: src/crawler/tokenizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/crawler/tokenizer.c -o src/crawler/tokenizer.o
+src/crawler/tokenizer.c: In function ‘tokenizer_thread_func’:
+src/crawler/tokenizer.c:173:27: warning: ‘.tok’ directive output may be truncated writing 4 bytes into a region of size between 0 and 2047 [-Wformat-truncation=]
+  173 |                     "%s/%s.tok", queue_dir, base);
+      |                           ^~~~
+src/crawler/tokenizer.c:172:13: note: ‘snprintf’ output 6 or more bytes (assuming 2053) into a destination of size 2048
+  172 |             snprintf(output_path, sizeof(output_path),
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  173 |                     "%s/%s.tok", queue_dir, base);
+      |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/tokenizer.c:183:58: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size between 0 and 2047 [-Wformat-truncation=]
+  183 |             snprintf(input_path, sizeof(input_path), "%s/%s", preprocessed_dir, entry->d_name);
+      |                                                          ^~
+src/crawler/tokenizer.c:183:13: note: ‘snprintf’ output between 2 and 2304 bytes into a destination of size 2048
+  183 |             snprintf(input_path, sizeof(input_path), "%s/%s", preprocessed_dir, entry->d_name);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiling [CRAWLER]: src/crawler/continuous_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/crawler/continuous_training.c -o src/crawler/continuous_training.o
+src/crawler/continuous_training.c: In function ‘training_worker_thread’:
+src/crawler/continuous_training.c:242:54: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size between 0 and 2047 [-Wformat-truncation=]
+  242 |             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
+      |                                                      ^~
+src/crawler/continuous_training.c:242:13: note: ‘snprintf’ output between 2 and 2304 bytes into a destination of size 2048
+  242 |             snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiling [CRAWLER]: src/crawler/crawler_api.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/crawler/crawler_api.c -o src/crawler/crawler_api.o
+src/crawler/crawler_api.c: In function ‘status_monitor_thread_func’:
+src/crawler/crawler_api.c:104:61: warning: ‘/preprocessed’ directive output may be truncated writing 13 bytes into a region of size between 1 and 1024 [-Wformat-truncation=]
+  104 |     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
+      |                                                             ^~~~~~~~~~~~~
+src/crawler/crawler_api.c:104:5: note: ‘snprintf’ output between 14 and 1037 bytes into a destination of size 1024
+  104 |     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/crawler_api.c:105:47: warning: ‘/training_queue’ directive output may be truncated writing 15 bytes into a region of size between 1 and 1024 [-Wformat-truncation=]
+  105 |     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
+      |                                               ^~~~~~~~~~~~~~~
+src/crawler/crawler_api.c:105:5: note: ‘snprintf’ output between 16 and 1039 bytes into a destination of size 1024
+  105 |     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/crawler_api.c:106:51: warning: ‘/trained’ directive output may be truncated writing 8 bytes into a region of size between 1 and 1024 [-Wformat-truncation=]
+  106 |     snprintf(trained_dir, sizeof(trained_dir), "%s/trained", state->data_dir);
+      |                                                   ^~~~~~~~
+src/crawler/crawler_api.c:106:5: note: ‘snprintf’ output between 9 and 1032 bytes into a destination of size 1024
+  106 |     snprintf(trained_dir, sizeof(trained_dir), "%s/trained", state->data_dir);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/crawler_api.c: In function ‘crawler_start’:
+src/crawler/crawler_api.c:232:49: warning: ‘/model.cllm’ directive output may be truncated writing 11 bytes into a region of size between 1 and 1024 [-Wformat-truncation=]
+  232 |     snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+      |                                                 ^~~~~~~~~~~
+src/crawler/crawler_api.c:232:5: note: ‘snprintf’ output between 12 and 1035 bytes into a destination of size 1024
+  232 |     snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating crawler library: libcrawler.so
+gcc -shared -o libcrawler.so src/crawler/crawler_core.o src/crawler/preprocessor.o src/crawler/tokenizer.o src/crawler/continuous_training.o src/crawler/crawler_api.o -L. -lcrystalline -lcllm -lcurl -lpthread -lm
+✓ Crawler library created
+Creating static library: libprimemath.a
+ar rcs libprimemath.a src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o
+✓ Static library created
+Creating shared library: libprimemath.so
+gcc -shared -o libprimemath.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o 
+✓ Shared library created
+✓ Build complete!
+  Crystalline library: libcrystalline.so
+  CLLM library: libcllm.so
+  Crawler library: libcrawler.so
+  Legacy static: libprimemath.a
+  Legacy shared: libprimemath.so
+  Crawler library: libcrawler.so
