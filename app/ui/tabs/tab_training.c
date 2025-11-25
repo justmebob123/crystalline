@@ -767,7 +767,15 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                     .warmup_steps = 100,
                     .save_every = 5,
                     .eval_interval = 100,
-                    .max_steps = 10000
+                    .max_steps = 10000,
+                    
+                    // Performance optimizations - ENABLED
+                    .gradient_accumulation_steps = 8,    // Effective batch size = 4 * 8 = 32
+                    .use_mixed_precision = 1,            // Enable FP16/FP32 mixed precision
+                    .loss_scale = 1024.0f,               // Initial loss scale for FP16
+                    .loss_scale_growth = 2.0f,           // Growth factor for dynamic scaling
+                    .loss_scale_backoff = 0.5f,          // Backoff factor for dynamic scaling
+                    .loss_scale_window = 2000            // Steps before increasing loss scale
                 };
                 strcpy(config.optimizer, "adam");
                 

@@ -324,7 +324,15 @@ CLLMTraining* app_init_training(CLLMModel* model, const char* data_path) {
         .save_every = 5,
         .save_interval = 5,
         .eval_interval = 100,
-        .sequence_length = 512
+        .sequence_length = 512,
+        
+        // Performance optimizations - ENABLED
+        .gradient_accumulation_steps = 4,    // Effective batch size = 32 * 4 = 128
+        .use_mixed_precision = 1,            // Enable FP16/FP32 mixed precision
+        .loss_scale = 1024.0f,               // Initial loss scale for FP16
+        .loss_scale_growth = 2.0f,           // Growth factor for dynamic scaling
+        .loss_scale_backoff = 0.5f,          // Backoff factor for dynamic scaling
+        .loss_scale_window = 2000            // Steps before increasing loss scale
     };
     strncpy(config.optimizer, "adam", sizeof(config.optimizer));
     
