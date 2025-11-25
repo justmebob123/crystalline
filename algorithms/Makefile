@@ -12,7 +12,8 @@ SOURCES = src/numerical.c \
           src/backprop.c \
           src/statistics.c \
           src/threading.c \
-          src/shared_memory.c
+          src/shared_memory.c \
+          src/lock_free_queue.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -47,3 +48,4 @@ src/backprop.o: src/backprop.c include/backprop.h include/numerical.h
 src/statistics.o: src/statistics.c include/statistics.h
 src/threading.o: src/threading.c include/threading.h
 src/shared_memory.o: src/shared_memory.c include/shared_memory.h
+src/lock_free_queue.o: src/lock_free_queue.c include/lock_free_queue.h
