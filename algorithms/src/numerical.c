@@ -4,8 +4,9 @@
  */
 
 #include "numerical.h"
+#include "prime_math_custom.h"
+#include "prime_float_math.h"
 #include <string.h>
-#include <math.h>
 
 /* ============================================================================
  * Softmax and Related Functions
@@ -25,7 +26,7 @@ void numerical_softmax(const double* input, double* output, size_t size) {
     // Compute exp(x - max) and sum
     double sum = 0.0;
     for (size_t i = 0; i < size; i++) {
-        output[i] = exp(input[i] - max_val);
+        output[i] = prime_exp(input[i] - max_val);
         sum += output[i];
     }
     
@@ -61,11 +62,11 @@ double numerical_log_sum_exp(const double* values, size_t size) {
     // Compute sum(exp(x - max))
     double sum = 0.0;
     for (size_t i = 0; i < size; i++) {
-        sum += exp(values[i] - max_val);
+        sum += prime_exp(values[i] - max_val);
     }
     
     // Return max + log(sum)
-    return max_val + log(sum);
+    return max_val + prime_log(sum);
 }
 
 void numerical_softmax_2d(const double* input, double* output, 
@@ -95,12 +96,12 @@ void numerical_log_softmax_2d(const double* input, double* output,
  * ============================================================================ */
 
 double numerical_safe_log(double x, double epsilon) {
-    return log(x + epsilon);
+    return prime_log(x + epsilon);
 }
 
 double numerical_safe_exp(double x, double max_exp) {
-    if (x > max_exp) return exp(max_exp);
-    return exp(x);
+    if (x > max_exp) return prime_exp(max_exp);
+    return prime_exp(x);
 }
 
 double numerical_safe_divide(double numerator, double denominator, double epsilon) {
@@ -109,7 +110,7 @@ double numerical_safe_divide(double numerator, double denominator, double epsilo
 
 double numerical_safe_sqrt(double x, double epsilon) {
     if (x < 0.0) x = 0.0;
-    return sqrt(x + epsilon);
+    return prime_sqrt(x + epsilon);
 }
 
 /* ============================================================================
@@ -224,7 +225,7 @@ double numerical_variance(const double* values, size_t size,
 double numerical_std_dev(const double* values, size_t size,
                         double mean, bool compute_mean) {
     double var = numerical_variance(values, size, mean, compute_mean);
-    return sqrt(var);
+    return prime_sqrt(var);
 }
 
 /* ============================================================================
@@ -265,7 +266,7 @@ void numerical_l2_normalize(double* values, size_t size) {
     for (size_t i = 0; i < size; i++) {
         norm += values[i] * values[i];
     }
-    norm = sqrt(norm);
+    norm = prime_sqrt(norm);
     
     if (norm < 1e-10) return; // Avoid division by zero
     
@@ -286,7 +287,7 @@ double numerical_l2_distance(const double* a, const double* b, size_t size) {
         double diff = a[i] - b[i];
         dist += diff * diff;
     }
-    return sqrt(dist);
+    return prime_sqrt(dist);
 }
 
 double numerical_l1_distance(const double* a, const double* b, size_t size) {
@@ -310,8 +311,8 @@ double numerical_cosine_similarity(const double* a, const double* b, size_t size
         norm_a += a[i] * a[i];
         norm_b += b[i] * b[i];
     }
-    norm_a = sqrt(norm_a);
-    norm_b = sqrt(norm_b);
+    norm_a = prime_sqrt(norm_a);
+    norm_b = prime_sqrt(norm_b);
     
     if (norm_a < 1e-10 || norm_b < 1e-10) return 0.0;
     

@@ -4,9 +4,9 @@
  */
 
 #include "statistics.h"
+#include "prime_math_custom.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 /* ============================================================================
  * Helper Functions
@@ -48,7 +48,7 @@ double stats_variance(const double* values, size_t size, bool sample_variance) {
 }
 
 double stats_std_dev(const double* values, size_t size, bool sample_variance) {
-    return sqrt(stats_variance(values, size, sample_variance));
+    return prime_sqrt(stats_variance(values, size, sample_variance));
 }
 
 double stats_median(double* values, size_t size) {
@@ -76,7 +76,7 @@ double stats_mode(const double* values, size_t size, double tolerance) {
     for (size_t i = 0; i < size; i++) {
         size_t count = 0;
         for (size_t j = 0; j < size; j++) {
-            if (fabs(values[i] - values[j]) <= tolerance) {
+            if (prime_fabs(values[i] - values[j]) <= tolerance) {
                 count++;
             }
         }
@@ -98,8 +98,8 @@ double stats_percentile(double* values, size_t size, double percentile) {
     qsort(values, size, sizeof(double), compare_doubles);
     
     double index = (percentile / 100.0) * (double)(size - 1);
-    size_t lower = (size_t)floor(index);
-    size_t upper = (size_t)ceil(index);
+    size_t lower = (size_t)prime_floor(index);
+    size_t upper = (size_t)prime_ceil(index);
     
     if (lower == upper) {
         return values[lower];

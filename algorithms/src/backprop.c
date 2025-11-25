@@ -5,9 +5,10 @@
 
 #include "backprop.h"
 #include "numerical.h"
+#include "prime_math_custom.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
 
 /* ============================================================================
@@ -331,7 +332,7 @@ double gradient_l2_norm(const double* gradients, size_t size) {
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    return sqrt(norm);
+    return prime_sqrt(norm);
 }
 
 double gradient_global_norm(
@@ -352,7 +353,7 @@ double gradient_global_norm(
         }
     }
     
-    return sqrt(global_norm_sq);
+    return prime_sqrt(global_norm_sq);
 }
 
 /* ============================================================================
@@ -379,7 +380,7 @@ void gradient_check_numerical_issues(
         if (numerical_is_inf(gradients[i])) {
             *has_inf = true;
         }
-        if (fabs(gradients[i]) < 1e-10) {
+        if (prime_fabs(gradients[i]) < 1e-10) {
             (*num_zero)++;
         }
     }
@@ -397,7 +398,7 @@ bool gradient_validate(
             return false;
         }
         
-        double abs_val = (gradients[i] < 0) ? -gradients[i] : gradients[i];
+        double abs_val = prime_fabs(gradients[i]);
         if (abs_val > max_abs_value) {
             return false;
         }

@@ -5,9 +5,9 @@
 
 #include "loss_functions.h"
 #include "numerical.h"
+#include "prime_math_custom.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <float.h>
 
 /* ============================================================================
@@ -245,7 +245,7 @@ LossResult loss_kl_divergence(
         
         if (p > epsilon) {
             // KL(P||Q) = sum(P * log(P/Q))
-            total_loss += p * (log(p + epsilon) - log(q + epsilon));
+            total_loss += p * (prime_log(p + epsilon) - prime_log(q + epsilon));
         }
     }
     
@@ -560,7 +560,7 @@ double loss_gradient_norm(const double* gradients, size_t size) {
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    return sqrt(norm);
+    return prime_sqrt(norm);
 }
 
 void loss_check_numerical_issues(
