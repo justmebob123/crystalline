@@ -13,7 +13,7 @@
 #include "cllm_training.h"
 #include "cllm_pure_crystalline.h"
 #include "prime_lattice.h"
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,12 +69,12 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
     
     // Ulam spiral with golden angle
     float golden_angle = 2.39996322972865332f;  // 2π/φ²
-    float radius = prime_sqrtf((float)token_id);
+    float radius = sqrtf((float)token_id);
     float angle = (float)token_id * golden_angle;
     
-    pos.x = radius * prime_cosf(angle);
-    pos.y = radius * prime_sinf(angle);
-    pos.z = prime_logf((float)token_id + 1.0f);
+    pos.x = radius * cosf(angle);
+    pos.y = radius * sinf(angle);
+    pos.z = logf((float)token_id + 1.0f);
     
     return pos;
 }
@@ -90,7 +90,7 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
     float dy = pos1.y - pos2.y;
     float dz = pos1.z - pos2.z;
     
-    return prime_sqrtf(dx*dx + dy*dy + dz*dz);
+    return sqrtf(dx*dx + dy*dy + dz*dz);
 }
 
 /**
@@ -133,7 +133,7 @@ float cllm_compute_loss_crystalline(CLLMTraining* training, uint32_t* input_toke
         
         // Convert to loss
         float clamped = combined > 1e-10f ? combined : 1e-10f;
-        total_loss += -prime_logf(clamped);
+        total_loss += -logf(clamped);
         count++;
     }
     
@@ -153,8 +153,8 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
             UlamPosition pos2 = compute_ulam_position(tokens[j + 1]);
             
             // Sort by distance from origin
-            float dist1 = prime_sqrtf(pos1.x*pos1.x + pos1.y*pos1.y + pos1.z*pos1.z);
-            float dist2 = prime_sqrtf(pos2.x*pos2.x + pos2.y*pos2.y + pos2.z*pos2.z);
+            float dist1 = sqrtf(pos1.x*pos1.x + pos1.y*pos1.y + pos1.z*pos1.z);
+            float dist2 = sqrtf(pos2.x*pos2.x + pos2.y*pos2.y + pos2.z*pos2.z);
             
             if (dist1 > dist2) {
                 uint32_t temp = tokens[j];

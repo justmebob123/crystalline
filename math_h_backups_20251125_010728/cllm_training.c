@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_inference.h"
@@ -410,7 +410,7 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t
             
             // Convert to loss (negative log likelihood approximation)
             float clamped = similarity > 1e-10f ? similarity : 1e-10f;
-            total_loss += -prime_logf(clamped);
+            total_loss += -logf(clamped);
             count++;
         }
     }
@@ -572,18 +572,18 @@ float cllm_train_epoch(CLLMTraining* training) {
             int count = 100;
             
             for (int i = 0; i < count; i++) {
-                sum_embed += prime_fabsf(model->embeddings.embeddings[i]);
+                sum_embed += fabsf(model->embeddings.embeddings[i]);
             }
             
             if (model->attention_layers && model->attention_layers[0].query_lattice) {
                 for (int i = 0; i < count; i++) {
-                    sum_attn += prime_fabsf(model->attention_layers[0].query_lattice[i]);
+                    sum_attn += fabsf(model->attention_layers[0].query_lattice[i]);
                 }
             }
             
             if (model->ff_layers && model->ff_layers[0].w1_lattice) {
                 for (int i = 0; i < count; i++) {
-                    sum_ff += prime_fabsf(model->ff_layers[0].w1_lattice[i]);
+                    sum_ff += fabsf(model->ff_layers[0].w1_lattice[i]);
                 }
             }
             
@@ -611,7 +611,7 @@ float cllm_train_epoch(CLLMTraining* training) {
             size_t embed_size = model->vocab_size * model->embedding_dim;
             
             for (size_t i = 0; i < embed_size && i < 10000; i++) {
-                float g = prime_fabsf(training->gradients[i]);
+                float g = fabsf(training->gradients[i]);
                 if (g > 1e-10f) {
                     nonzero_embed++;
                     sum_embed_grad += g;
@@ -624,7 +624,7 @@ float cllm_train_epoch(CLLMTraining* training) {
             if (training->attention_grads && model->num_layers > 0) {
                 size_t size = model->embedding_dim * model->embedding_dim;
                 for (size_t i = 0; i < size && i < 10000; i++) {
-                    float g = prime_fabsf(training->attention_grads[0].query_lattice[i]);
+                    float g = fabsf(training->attention_grads[0].query_lattice[i]);
                     if (g > 1e-10f) {
                         nonzero_attn++;
                         if (g > max_attn_grad) max_attn_grad = g;
@@ -723,7 +723,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                     for (uint32_t i = 0; i < embed_dim; i++) {
                         sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
                     }
-                    ff_hidden[h] = prime_tanhf(sum);
+                    ff_hidden[h] = tanhf(sum);
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
@@ -746,7 +746,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                float std = sqrtf(var + 1e-5f);
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
                 }
@@ -805,10 +805,10 @@ float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens
             
             float sum_exp = 0.0f;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                sum_exp += prime_expf(logits[v] - max_logit);
+                sum_exp += expf(logits[v] - max_logit);
             }
             
-            float log_prob = (logits[target] - max_logit) - prime_logf(sum_exp);
+            float log_prob = (logits[target] - max_logit) - logf(sum_exp);
             total_loss += -log_prob;
             count++;
         }
@@ -857,11 +857,11 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
             
             float sum_exp = 0.0f;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                sum_exp += prime_expf(logits[v] - max_logit);
+                sum_exp += expf(logits[v] - max_logit);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float softmax_v = prime_expf(logits[v] - max_logit) / sum_exp;
+                float softmax_v = expf(logits[v] - max_logit) / sum_exp;
                 grad[v] = softmax_v;
                 if (v == target) grad[v] -= 1.0f;
                 grad[v] /= (batch_size * seq_len);
@@ -919,7 +919,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                float std = sqrtf(var + 1e-5f);
                 
                 float grad_var = 0.0f, grad_mean = 0.0f;
                 for (uint32_t d = 0; d < embed_dim; d++) {
@@ -931,7 +931,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
                         training->ln_grads[layer].beta[d] += grad[d];
                     }
                     float grad_x_norm = grad[d] * ln->gamma[d];
-                    grad_var += grad_x_norm * (input[d] - mean) * -0.5f * prime_powf(std, -3.0f);
+                    grad_var += grad_x_norm * (input[d] - mean) * -0.5f * powf(std, -3.0f);
                     grad_mean += grad_x_norm * (-1.0f / std);
                 }
                 

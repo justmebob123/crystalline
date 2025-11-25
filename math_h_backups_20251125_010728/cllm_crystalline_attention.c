@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
@@ -113,7 +113,7 @@ static void apply_mobius_transform(float* scores, int seq_len, int k) {
         float numerator = a * z + b;
         float denominator = c * z + d;
         
-        if (prime_fabs(denominator) > 1e-8f) {
+        if (fabs(denominator) > 1e-8f) {
             scores[i] = numerator / denominator;
         }
     }

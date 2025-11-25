@@ -14,7 +14,7 @@
 #include "prime_matrix.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include <stdio.h>
 
 typedef struct {
@@ -96,7 +96,7 @@ static float** apply_lll_reduction(float** cov_matrix, int dim, int target_dim) 
             for (int j = 0; j < dim; j++) {
                 norm += basis[i][j] * basis[i][j];
             }
-            norm = prime_sqrtf(norm);
+            norm = sqrtf(norm);
             if (norm > 1e-6f) {
                 for (int j = 0; j < dim; j++) {
                     basis[i][j] /= norm;
@@ -129,7 +129,7 @@ static float** compute_pseudo_inverse(float** basis, int reduced_dim, int origin
         for (int i = 0; i < original_dim; i++) {
             norm += inverse[i][j] * inverse[i][j];
         }
-        norm = prime_sqrtf(norm);
+        norm = sqrtf(norm);
         if (norm > 1e-6f) {
             for (int i = 0; i < original_dim; i++) {
                 inverse[i][j] /= norm;

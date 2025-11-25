@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include "../include/cllm_crystalline_attention.h"
 #include "../include/prime_float_math.h"
 

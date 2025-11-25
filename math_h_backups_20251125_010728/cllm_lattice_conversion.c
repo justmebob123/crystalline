@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 
 void cllm_float_to_bigfixed(BigFixed* output, float* input, int n, int precision) {
     (void)precision; /* Unused parameter - kept for API compatibility */
@@ -107,7 +107,7 @@ float cllm_test_conversion_accuracy(float* input, int n, int precision) {
     
     float max_error = 0.0f;
     for (int i = 0; i < n; i++) {
-        float error = prime_fabsf(output[i] - input[i]);
+        float error = fabsf(output[i] - input[i]);
         if (error > max_error) {
             max_error = error;
         }

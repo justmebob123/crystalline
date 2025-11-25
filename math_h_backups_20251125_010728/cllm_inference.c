@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
@@ -234,7 +234,7 @@ void cllm_layer_norm_old(float* x, CLLMLayerNorm* ln, uint32_t dim) {
     var /= dim;
     
     // Normalize
-    float std = prime_sqrtf(var + ln->epsilon);
+    float std = sqrtf(var + ln->epsilon);
     for (uint32_t i = 0; i < dim; i++) {
         x[i] = (x[i] - mean) / std;
         
@@ -379,7 +379,7 @@ void cllm_softmax(float* logits, int vocab_size) {
     // Compute exp and sum
     float sum = 0.0f;
     for (int i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf(logits[i] - max_logit);
+        logits[i] = expf(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -517,7 +517,7 @@ int cllm_sample_token(CLLMInference* inf, float* logits) {
     
     float sum = 0.0f;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf(logits[i] - max_logit);
+        logits[i] = expf(logits[i] - max_logit);
         sum += logits[i];
     }
     

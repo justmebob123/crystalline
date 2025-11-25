@@ -7,7 +7,7 @@
 #include <immintrin.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include "../include/cllm_fp16.h"
 
 /**
@@ -147,7 +147,7 @@ void scale_fp32_array(float* data, size_t n, float scale) {
  */
 int has_nan_or_inf(const float* data, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        if (prime_isnanf(data[i]) || prime_isinff(data[i])) {
+        if (isnan(data[i]) || isinf(data[i])) {
             return 1;
         }
     }

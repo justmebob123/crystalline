@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 
 // Training checkpoint
 typedef struct {
@@ -324,7 +324,7 @@ float get_learning_rate(LRScheduler* scheduler) {
         return scheduler->min_lr;
     }
     
-    float cosine_decay = 0.5f * (1.0f + prime_cosf(M_PI * decay_step / decay_steps));
+    float cosine_decay = 0.5f * (1.0f + cosf(M_PI * decay_step / decay_steps));
     return scheduler->min_lr + (scheduler->initial_lr - scheduler->min_lr) * cosine_decay;
 }
 
@@ -385,7 +385,7 @@ void clip_gradients(CLLMTraining* training, float max_norm) {
         }
     }
     
-    grad_norm = prime_sqrtf(grad_norm);
+    grad_norm = sqrtf(grad_norm);
     
     // Clip if necessary
     if (grad_norm > max_norm) {

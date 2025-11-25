@@ -7,7 +7,7 @@
 #include "cllm_utils.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include <stdio.h>
 
 /**
@@ -107,7 +107,7 @@ static void backward_layer_norm(float* grad_out, float* grad_in, float* x,
     }
     var /= dim;
     
-    float std = prime_sqrtf(var + 1e-5f);
+    float std = sqrtf(var + 1e-5f);
     float inv_std = 1.0f / std;
     
     // Compute gradients
@@ -174,7 +174,7 @@ static void backward_feed_forward(float* grad_out, float* grad_in, float* x,
         for (int i = 0; i < input_dim; i++) {
             sum += x[i] * ff->w1_lattice[i * hidden_dim + h];
         }
-        hidden[h] = prime_tanhf(sum);  // ReLU or tanh activation
+        hidden[h] = tanhf(sum);  // ReLU or tanh activation
     }
     
     // Backward through second layer

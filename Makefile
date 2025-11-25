@@ -61,7 +61,7 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools all_tools
+all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools
 	@echo "✓ Build complete!"
 	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
 	@echo "  CLLM library: $(CLLM_LIB)"
@@ -79,13 +79,13 @@ CRYSTALLINE_OBJECTS = $(CORE_OBJECTS) $(TRANS_OBJECTS) $(GEOM_OBJECTS)
 
 $(CRYSTALLINE_LIB): $(CRYSTALLINE_OBJECTS)
 	@echo "Creating crystalline library: $@"
-	$(CC) -shared -o $@ $^ -lm
+	$(CC) -shared -o $@ $^
 	@echo "✓ Crystalline library created"
 
 # 2. CLLM Library (AI/language model - depends on crystalline)
 $(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB)
 	@echo "Creating CLLM library: $@"
-	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lm
+	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline
 	@echo "✓ CLLM library created"
 
 # ============================================================================
@@ -202,12 +202,12 @@ verify:
 		echo "✓ Core library is mathematically independent"; \
 	fi
 	@echo ""
-	@echo "Checking for -lm flag:"
+	@echo "Checking for flag:"
 	@if echo "$(LDFLAGS)" | grep -q "\-lm"; then \
-		echo "✗ Found -lm flag in LDFLAGS!"; \
+		echo "✗ Found flag in LDFLAGS!"; \
 		exit 1; \
 	else \
-		echo "✓ No -lm flag present"; \
+		echo "✓ No flag present"; \
 	fi
 	@echo ""
 	@echo "✓ Mathematical independence verified!"
@@ -231,7 +231,7 @@ info:
 	@echo "║   Static:        $(STATIC_LIB)                                 "
 	@echo "║   Shared:        $(SHARED_LIB)                                 "
 	@echo "╠════════════════════════════════════════════════════════════════╣"
-	@echo "║ Mathematical Independence: YES (no -lm, no math.h)            ║"
+	@echo "║ Mathematical Independence: YES (no, no math.h)            ║"
 	@echo "╚════════════════════════════════════════════════════════════════╝"
 
 help:
@@ -291,7 +291,7 @@ CRAWLER_LIB = libcrawler.so
 
 $(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(CLLM_LIB)
 	@echo "Creating crawler library: $@"
-	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread -lm
+	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread
 	@echo "✓ Crawler library created"
 
 # ============================================================================
@@ -316,7 +316,7 @@ DOCPROC_LIB = libdocproc.so
 
 $(DOCPROC_LIB): $(DOCPROC_OBJECTS)
 	@echo "Creating document processing library: $@"
-	$(CC) -shared -o $@ $(DOCPROC_OBJECTS) -lm
+	$(CC) -shared -o $@ $(DOCPROC_OBJECTS)
 	@echo "✓ Document processing library created"
 
 # ============================================================================

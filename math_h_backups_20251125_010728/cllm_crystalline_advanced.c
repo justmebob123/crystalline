@@ -13,7 +13,7 @@
 #include "prime_lattice.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 #include <stdio.h>
 
 // Prime factorization cache entry
@@ -172,12 +172,12 @@ static void compute_ulam_position(uint32_t token_id, float* x, float* y, float* 
     }
     
     float golden_angle = 2.39996322972865332f;  // 2π/φ²
-    float radius = prime_sqrtf((float)token_id);
+    float radius = sqrtf((float)token_id);
     float angle = (float)token_id * golden_angle;
     
-    *x = radius * prime_cosf(angle);
-    *y = radius * prime_sinf(angle);
-    *z = prime_logf((float)token_id + 1.0f);
+    *x = radius * cosf(angle);
+    *y = radius * sinf(angle);
+    *z = logf((float)token_id + 1.0f);
 }
 
 /**
@@ -226,7 +226,7 @@ static int* find_nearby_tokens(UlamSpatialIndex* index, uint32_t token_id,
         float dx = index->tokens[i].x - target->x;
         float dy = index->tokens[i].y - target->y;
         float dz = index->tokens[i].z - target->z;
-        all_distances[i] = prime_sqrtf(dx*dx + dy*dy + dz*dz);
+        all_distances[i] = sqrtf(dx*dx + dy*dy + dz*dz);
     }
     
     // Find k nearest (simple selection, could use heap)
@@ -313,7 +313,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
             float val = embeddings[v * embed_dim + d];
             length += val * val;
         }
-        length = prime_sqrtf(length);
+        length = sqrtf(length);
         
         if (length > 1e-6f && length < min_length) {
             min_length = length;

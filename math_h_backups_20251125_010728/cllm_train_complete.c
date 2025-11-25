@@ -22,7 +22,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 
 // Complete training configuration
 typedef struct {

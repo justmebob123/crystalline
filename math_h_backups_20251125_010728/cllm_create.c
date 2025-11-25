@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
 
 // Create a model from configuration
 CLLMModel* cllm_create_model(const CLLMConfig* config) {
@@ -135,7 +135,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         weight_offset += qkv_size;
         
         // Initialize attention weights with Xavier initialization
-        float xavier_std = prime_sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
+        float xavier_std = sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
         for (size_t j = 0; j < qkv_size; j++) {
             model->attention_layers[i].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
             model->attention_layers[i].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
@@ -186,8 +186,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         weight_offset += config->embedding_dim;
         
         // Initialize FF weights with He initialization (for ReLU/tanh)
-        float he_std_w1 = prime_sqrtf(2.0f / config->embedding_dim);
-        float he_std_w2 = prime_sqrtf(2.0f / config->ff_dim);
+        float he_std_w1 = sqrtf(2.0f / config->embedding_dim);
+        float he_std_w2 = sqrtf(2.0f / config->ff_dim);
         
         
         for (size_t j = 0; j < w1_size; j++) {
