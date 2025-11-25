@@ -33,6 +33,9 @@ void* training_thread_func(void* arg) {
         state->training_loss = loss;
         pthread_mutex_unlock(&training_mutex);
         
+        // Yield to UI thread for real-time updates
+        SDL_Delay(10);
+        
         // Check if complete
         if (state->training_current_epoch >= state->training_epochs) {
             pthread_mutex_lock(&training_mutex);

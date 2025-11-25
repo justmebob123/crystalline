@@ -177,6 +177,7 @@ void cllm_zero_all_gradients(CLLMTraining* training);
 int cllm_load_training_data(CLLMTraining* training, const char* filename);
 int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens);
 void cllm_optimizer_step(CLLMTraining* training);
+void cllm_optimizer_step_adam(CLLMTraining* training);  // Adam optimizer with gradient accumulation
 float cllm_train_epoch(CLLMTraining* training);
 int cllm_train(CLLMTraining* training);
 int cllm_save_checkpoint(CLLMTraining* training, const char* filename);

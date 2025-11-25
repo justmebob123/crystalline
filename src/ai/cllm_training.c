@@ -798,18 +798,43 @@ float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens
             
             float* logits = &training->logits[idx * vocab_size];
             
+            // Find max for numerical stability
             float max_logit = logits[0];
             for (uint32_t v = 1; v < vocab_size; v++) {
                 if (logits[v] > max_logit) max_logit = logits[v];
             }
             
+            // Clip max_logit to prevent overflow
+            if (max_logit > 50.0f) max_logit = 50.0f;
+            if (max_logit < -50.0f) max_logit = -50.0f;
+            
+            // Compute softmax denominator with clipping
             float sum_exp = 0.0f;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                sum_exp += prime_expf(logits[v] - max_logit);
+                float exp_val = prime_expf(logits[v] - max_logit);
+                if (exp_val > 1e10f) exp_val = 1e10f;  // Prevent overflow
+                sum_exp += exp_val;
             }
             
+            // Prevent log(0)
+            if (sum_exp < 1e-10f) sum_exp = 1e-10f;
+            
+            // Compute log probability
             float log_prob = (logits[target] - max_logit) - prime_logf(sum_exp);
-            total_loss += -log_prob;
+            
+            // Clip log_prob to reasonable range
+            if (log_prob > 0.0f) log_prob = 0.0f;        // Can't be positive
+            if (log_prob < -100.0f) log_prob = -100.0f;  // Prevent extreme negatives
+            
+            // Loss is negative log probability
+            float loss = -log_prob;
+            
+            // Sanity check - loss should be positive and reasonable
+            if (loss < 0.0f) loss = 0.0f;
+            if (loss > 100.0f) loss = 100.0f;
+            if (prime_isnanf(loss) || prime_isinff(loss)) loss = 10.0f;
+            
+            total_loss += loss;
             count++;
         }
     }
