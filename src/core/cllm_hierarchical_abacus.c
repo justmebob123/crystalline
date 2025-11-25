@@ -51,8 +51,8 @@ HierarchicalAbacus* hierarchical_abacus_create(const LatticePartition* partition
     // Copy partition (we need our own copy)
     abacus->partition = create_lattice_partition(
         partition->symmetry_group,
-        &amp;partition->range_start,
-        &amp;partition->range_end
+        &partition->range_start,
+        &partition->range_end
     );
     
     if (!abacus->partition) {
@@ -74,24 +74,24 @@ HierarchicalAbacus* hierarchical_abacus_create(const LatticePartition* partition
     }
     
     for (size_t i = 0; i < abacus->cache_capacity; i++) {
-        big_init(&amp;abacus->cached_primes[i]);
+        big_init(&abacus->cached_primes[i]);
     }
     
     abacus->cache_size = 0;
     
     // Initialize current candidate to range start
-    big_init(&amp;abacus->current_candidate);
-    big_copy(&amp;abacus->current_candidate, &amp;partition->range_start);
+    big_init(&abacus->current_candidate);
+    big_copy(&abacus->current_candidate, &partition->range_start);
     
     // Set symmetry group and filtering
     abacus->symmetry_group = partition->symmetry_group;
     abacus->filter_by_symmetry = true;
     
     // Initialize statistics
-    atomic_init(&amp;abacus->total_primes_generated, 0);
-    atomic_init(&amp;abacus->cache_hits, 0);
-    atomic_init(&amp;abacus->cache_misses, 0);
-    atomic_init(&amp;abacus->parent_lookups, 0);
+    atomic_init(&abacus->total_primes_generated, 0);
+    atomic_init(&abacus->cache_hits, 0);
+    atomic_init(&abacus->cache_misses, 0);
+    atomic_init(&abacus->parent_lookups, 0);
     
     abacus->primes_generated = 0;
     
@@ -122,13 +122,13 @@ void hierarchical_abacus_free(HierarchicalAbacus* abacus) {
     // Free cache
     if (abacus->cached_primes) {
         for (size_t i = 0; i < abacus->cache_capacity; i++) {
-            big_free(&amp;abacus->cached_primes[i]);
+            big_free(&abacus->cached_primes[i]);
         }
         free(abacus->cached_primes);
     }
     
     // Free current candidate
-    big_free(&amp;abacus->current_candidate);
+    big_free(&abacus->current_candidate);
     
     // Note: Do NOT free parent_abacus (not owned)
     
@@ -140,17 +140,17 @@ void hierarchical_abacus_free(HierarchicalAbacus* abacus) {
  */
 static bool matches_symmetry_group(const BigInt* prime, int symmetry_group) {
     BigInt twelve, remainder;
-    big_init(&amp;twelve);
-    big_init(&amp;remainder);
+    big_init(&twelve);
+    big_init(&remainder);
     
-    big_from_int(&amp;twelve, 12);
-    big_mod(prime, &amp;twelve, &amp;remainder);
+    big_from_int(&twelve, 12);
+    big_mod(prime, &twelve, &remainder);
     
     // Convert remainder to int
     int mod_value = (remainder.len > 0) ? (int)remainder.d[0] : 0;
     
-    big_free(&amp;twelve);
-    big_free(&amp;remainder);
+    big_free(&twelve);
+    big_free(&remainder);
     
     return mod_value == symmetry_group;
 }
@@ -165,8 +165,8 @@ bool hierarchical_abacus_in_partition(const HierarchicalAbacus* abacus,
     }
     
     // Check range
-    if (big_cmp(prime, &amp;abacus->partition->range_start) < 0 ||
-        big_cmp(prime, &amp;abacus->partition->range_end) > 0) {
+    if (big_cmp(prime, &abacus->partition->range_start) < 0 ||
+        big_cmp(prime, &abacus->partition->range_end) > 0) {
         return false;
     }
     
@@ -188,33 +188,33 @@ bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const BigInt* 
     
     // Search local cache
     for (size_t i = 0; i < abacus->cache_size; i++) {
-        if (big_cmp(&amp;abacus->cached_primes[i], prime) == 0) {
-            atomic_fetch_add(&amp;abacus->cache_hits, 1);
+        if (big_cmp(&abacus->cached_primes[i], prime) == 0) {
+            atomic_fetch_add(&abacus->cache_hits, 1);
             return true;
         }
     }
     
     // Search parent cache if available
     if (abacus->parent_abacus) {
-        atomic_fetch_add(&amp;abacus->parent_lookups, 1);
+        atomic_fetch_add(&abacus->parent_lookups, 1);
         
         // Check parent's primes array
         for (size_t i = 0; i < abacus->parent_abacus->num_primes; i++) {
             BigInt parent_prime;
-            big_init(&amp;parent_prime);
-            big_from_int(&amp;parent_prime, abacus->parent_abacus->primes[i]);
+            big_init(&parent_prime);
+            big_from_int(&parent_prime, abacus->parent_abacus->primes[i]);
             
-            int cmp = big_cmp(&amp;parent_prime, prime);
-            big_free(&amp;parent_prime);
+            int cmp = big_cmp(&parent_prime, prime);
+            big_free(&parent_prime);
             
             if (cmp == 0) {
-                atomic_fetch_add(&amp;abacus->cache_hits, 1);
+                atomic_fetch_add(&abacus->cache_hits, 1);
                 return true;
             }
         }
     }
     
-    atomic_fetch_add(&amp;abacus->cache_misses, 1);
+    atomic_fetch_add(&abacus->cache_misses, 1);
     return false;
 }
 
@@ -242,7 +242,7 @@ int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const BigInt* pr
         
         // Initialize new entries
         for (size_t i = abacus->cache_capacity; i < new_capacity; i++) {
-            big_init(&amp;new_cache[i]);
+            big_init(&new_cache[i]);
         }
         
         abacus->cached_primes = new_cache;
@@ -250,7 +250,7 @@ int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const BigInt* pr
     }
     
     // Add to cache
-    big_copy(&amp;abacus->cached_primes[abacus->cache_size], prime);
+    big_copy(&abacus->cached_primes[abacus->cache_size], prime);
     abacus->cache_size++;
     
     return 0;
@@ -289,43 +289,43 @@ int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, BigInt* out_prime
     }
     
     BigInt one;
-    big_init(&amp;one);
-    big_from_int(&amp;one, 1);
+    big_init(&one);
+    big_from_int(&one, 1);
     
     // Start from current candidate
     BigInt candidate;
-    big_init(&amp;candidate);
-    big_copy(&amp;candidate, &amp;abacus->current_candidate);
+    big_init(&candidate);
+    big_copy(&candidate, &abacus->current_candidate);
     
     // Search for next prime in partition
-    while (big_cmp(&amp;candidate, &amp;abacus->partition->range_end) <= 0) {
+    while (big_cmp(&candidate, &abacus->partition->range_end) <= 0) {
         // Check if in partition and matches symmetry group
-        if (hierarchical_abacus_in_partition(abacus, &amp;candidate)) {
+        if (hierarchical_abacus_in_partition(abacus, &candidate)) {
             // Check if prime
-            if (hierarchical_abacus_is_prime(abacus, &amp;candidate)) {
+            if (hierarchical_abacus_is_prime(abacus, &candidate)) {
                 // Found prime
-                big_copy(out_prime, &amp;candidate);
+                big_copy(out_prime, &candidate);
                 
                 // Update current candidate for next call
-                big_add(&amp;candidate, &amp;one, &amp;abacus->current_candidate);
+                big_add(&candidate, &one, &abacus->current_candidate);
                 
                 // Update statistics
                 abacus->primes_generated++;
-                atomic_fetch_add(&amp;abacus->total_primes_generated, 1);
+                atomic_fetch_add(&abacus->total_primes_generated, 1);
                 
-                big_free(&amp;candidate);
-                big_free(&amp;one);
+                big_free(&candidate);
+                big_free(&one);
                 return 0;
             }
         }
         
         // Move to next candidate
-        big_add(&amp;candidate, &amp;one, &amp;candidate);
+        big_add(&candidate, &one, &candidate);
     }
     
     // No more primes in partition
-    big_free(&amp;candidate);
-    big_free(&amp;one);
+    big_free(&candidate);
+    big_free(&one);
     return -1;
 }
 
@@ -342,19 +342,19 @@ void hierarchical_abacus_get_stats(const HierarchicalAbacus* abacus,
     }
     
     if (out_generated) {
-        *out_generated = atomic_load(&amp;abacus->total_primes_generated);
+        *out_generated = atomic_load(&abacus->total_primes_generated);
     }
     
     if (out_cache_hits) {
-        *out_cache_hits = atomic_load(&amp;abacus->cache_hits);
+        *out_cache_hits = atomic_load(&abacus->cache_hits);
     }
     
     if (out_cache_misses) {
-        *out_cache_misses = atomic_load(&amp;abacus->cache_misses);
+        *out_cache_misses = atomic_load(&abacus->cache_misses);
     }
     
     if (out_parent_lookups) {
-        *out_parent_lookups = atomic_load(&amp;abacus->parent_lookups);
+        *out_parent_lookups = atomic_load(&abacus->parent_lookups);
     }
 }
 
@@ -366,10 +366,10 @@ void hierarchical_abacus_reset_stats(HierarchicalAbacus* abacus) {
         return;
     }
     
-    atomic_store(&amp;abacus->total_primes_generated, 0);
-    atomic_store(&amp;abacus->cache_hits, 0);
-    atomic_store(&amp;abacus->cache_misses, 0);
-    atomic_store(&amp;abacus->parent_lookups, 0);
+    atomic_store(&abacus->total_primes_generated, 0);
+    atomic_store(&abacus->cache_hits, 0);
+    atomic_store(&abacus->cache_misses, 0);
+    atomic_store(&abacus->parent_lookups, 0);
     abacus->primes_generated = 0;
 }
 
@@ -381,8 +381,8 @@ double hierarchical_abacus_cache_efficiency(const HierarchicalAbacus* abacus) {
         return 0.0;
     }
     
-    uint64_t hits = atomic_load(&amp;abacus->cache_hits);
-    uint64_t misses = atomic_load(&amp;abacus->cache_misses);
+    uint64_t hits = atomic_load(&abacus->cache_hits);
+    uint64_t misses = atomic_load(&abacus->cache_misses);
     uint64_t total = hits + misses;
     
     if (total == 0) {
@@ -402,17 +402,17 @@ int hierarchical_abacus_prefill_cache(HierarchicalAbacus* abacus, int max_primes
     
     int count = 0;
     BigInt prime;
-    big_init(&amp;prime);
+    big_init(&prime);
     
     for (int i = 0; i < max_primes; i++) {
-        if (hierarchical_abacus_next_prime(abacus, &amp;prime) == 0) {
+        if (hierarchical_abacus_next_prime(abacus, &prime) == 0) {
             count++;
         } else {
             break;  // No more primes in partition
         }
     }
     
-    big_free(&amp;prime);
+    big_free(&prime);
     return count;
 }
 
@@ -474,10 +474,10 @@ void hierarchical_abacus_print_info(const HierarchicalAbacus* abacus,
     printf("  Efficiency: %.2f%%\n", hierarchical_abacus_cache_efficiency(abacus));
     
     printf("\nStatistics:\n");
-    printf("  Primes generated: %lu\n", atomic_load(&amp;abacus->total_primes_generated));
-    printf("  Cache hits: %lu\n", atomic_load(&amp;abacus->cache_hits));
-    printf("  Cache misses: %lu\n", atomic_load(&amp;abacus->cache_misses));
-    printf("  Parent lookups: %lu\n", atomic_load(&amp;abacus->parent_lookups));
+    printf("  Primes generated: %lu\n", atomic_load(&abacus->total_primes_generated));
+    printf("  Cache hits: %lu\n", atomic_load(&abacus->cache_hits));
+    printf("  Cache misses: %lu\n", atomic_load(&abacus->cache_misses));
+    printf("  Parent lookups: %lu\n", atomic_load(&abacus->parent_lookups));
     
     printf("\n");
 }
