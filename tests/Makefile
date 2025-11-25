@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -I../include -mavx2 -mfma
-LDFLAGS = -L.. -lcrystalline -lcllm -Wl,-rpath,'$$ORIGIN/..'
+LDFLAGS = -L.. -lcrystalline -lcllm -lm -Wl,-rpath,'$$ORIGIN/..'
 
 # Test directories
 UNIT_DIR = unit
