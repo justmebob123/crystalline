@@ -128,6 +128,18 @@ typedef struct {
     float** ff_hidden;               // Per-layer FF hidden states
     float* final_hidden;             // Final hidden state
     float* logits;                   // Output logits [batch * seq * vocab]
+    
+    // Attention backward pass storage (for full gradient computation)
+    struct {
+        float* attention_weights;    // [num_heads * seq_len * seq_len]
+        float* queries;              // [seq_len * embedding_dim]
+        float* keys;                 // [seq_len * embedding_dim]
+        float* values;               // [seq_len * embedding_dim]
+        float* scores;               // [num_heads * seq_len * seq_len]
+    }* attention_cache;              // Array of num_layers
+    
+    int cached_seq_len;              // Cached sequence length
+    int store_attention_weights;     // Flag to enable full attention backward (1=enabled, 0=simplified)
 } CLLMTraining;
 
 /* Loss computation functions */

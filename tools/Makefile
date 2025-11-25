@@ -1,21 +1,26 @@
 # Tools Makefile
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -I../include
-LDFLAGS = -L.. -lprimemath -lm
+LDFLAGS = -L.. -lcrystalline -lcllm -Wl,-rpath,'$$ORIGIN/..'
 
-TOOLS = web_scraper train_model
+TOOLS = web_scraper train_model cllm_crawler
 
 all: $(TOOLS)
 
 web_scraper: web_scraper.c
 	@echo "Building web_scraper..."
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ web_scraper built"
 
 train_model: train_model.c
 	@echo "Building train_model..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ train_model built"
+
+cllm_crawler: cllm_crawler.c
+	@echo "Building cllm_crawler..."
+	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ cllm_crawler built"
 
 clean:
 	@echo "Cleaning tools..."
