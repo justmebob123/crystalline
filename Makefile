@@ -14,6 +14,7 @@ ARFLAGS = rcs
 
 # Library names
 CRYSTALLINE_LIB = libcrystalline.so
+ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = libcllm.so
 CRAWLER_LIB = libcrawler.so
 
@@ -63,7 +64,7 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools
+all: $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools
 	@echo "✓ Build complete!"
 	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
 	@echo "  CLLM library: $(CLLM_LIB)"
@@ -84,10 +85,17 @@ $(CRYSTALLINE_LIB): $(CRYSTALLINE_OBJECTS)
 	$(CC) -shared -o $@ $^
 	@echo "✓ Crystalline library created"
 
-# 2. CLLM Library (AI/language model - depends on crystalline)
-$(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB)
+# 3. CLLM Library (AI/language model - depends on crystalline and algorithms)
+# 2. Algorithms Library (mathematical algorithms - depends on crystalline)
+$(ALGORITHMS_LIB): $(CRYSTALLINE_LIB)
+	@echo "Building algorithms library..."
+	@$(MAKE) -C algorithms
+	@cp algorithms/$(ALGORITHMS_LIB) .
+	@echo "✓ Algorithms library created"
+
+$(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Creating CLLM library: $@"
-	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline
+	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms
 	@echo "✓ CLLM library created"
 
 # ============================================================================
@@ -264,9 +272,10 @@ help:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
-	rm -f $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
+	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
 	@echo "✓ Clean complete"
