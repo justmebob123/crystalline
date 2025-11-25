@@ -61,7 +61,7 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(STATIC_LIB) $(SHARED_LIB)
+all: $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools all_tools
 	@echo "✓ Build complete!"
 	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
 	@echo "  CLLM library: $(CLLM_LIB)"
@@ -131,6 +131,10 @@ $(SRC_AI)/%.o: $(SRC_AI)/%.c $(HEADERS)
 
 # Crawler objects
 src/crawler/%.o: src/crawler/%.c $(HEADERS)
+
+src/document_processing/%.o: src/document_processing/%.c $(HEADERS)
+	@echo "Compiling $<"
+	$(CC) $(CFLAGS) -c $< -o $@
 	@echo "Compiling [CRAWLER]: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -258,7 +262,8 @@ help:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
-	rm -f $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(CRYSTALLINE_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
@@ -299,4 +304,73 @@ crawler: $(CRAWLER_LIB)
 	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c \
 		-L. -lcrawler -lcllm -lcrystalline -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Crawler CLI built: tools/cllm_crawler"
+
+
+# ============================================================================
+# Document Processing Library (libdocproc.so)
+# ============================================================================
+
+DOCPROC_SOURCES = src/document_processing/cllm_pdf.c src/document_processing/cllm_ocr.c
+DOCPROC_OBJECTS = $(DOCPROC_SOURCES:.c=.o)
+DOCPROC_LIB = libdocproc.so
+
+$(DOCPROC_LIB): $(DOCPROC_OBJECTS)
+	@echo "Creating document processing library: $@"
+	$(CC) -shared -o $@ $(DOCPROC_OBJECTS) -lm
+	@echo "✓ Document processing library created"
+
+# ============================================================================
+# Document Processing CLI Tools
+# ============================================================================
+
+tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr
+
+tools/cllm_pdf_extract: $(DOCPROC_LIB)
+	@echo "Building PDF extraction tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_pdf_extract tools/cllm_pdf_extract.c \
+		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ PDF extraction tool built: tools/cllm_pdf_extract"
+
+tools/cllm_ocr: $(DOCPROC_LIB)
+	@echo "Building OCR tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_ocr tools/cllm_ocr.c \
+		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ OCR tool built: tools/cllm_ocr"
+
+tools/cllm_pdf_ocr: $(DOCPROC_LIB)
+	@echo "Building combined PDF+OCR tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_pdf_ocr tools/cllm_pdf_ocr.c \
+		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Combined PDF+OCR tool built: tools/cllm_pdf_ocr"
+
+
+# ============================================================================
+# Additional CLI Tools
+# ============================================================================
+
+tools/cllm_inference: $(CLLM_LIB)
+	@echo "Building inference tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_inference tools/cllm_inference.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Inference tool built: tools/cllm_inference"
+
+tools/cllm_tokenize: $(CLLM_LIB)
+	@echo "Building tokenizer tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_tokenize tools/cllm_tokenize.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Tokenizer tool built: tools/cllm_tokenize"
+
+tools/cllm_vocab_build: $(CLLM_LIB)
+	@echo "Building vocabulary builder tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_vocab_build tools/cllm_vocab_build.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Vocabulary builder tool built: tools/cllm_vocab_build"
+
+all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
 

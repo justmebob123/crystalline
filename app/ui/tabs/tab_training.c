@@ -406,6 +406,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         tab_initialized = true;
     }
     
+    // Update visualization data from training state
+    update_training_visualization(state);
+    
     // Draw visualization area first
     draw_training_visualization(renderer, state);
     
