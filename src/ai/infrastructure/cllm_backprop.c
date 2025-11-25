@@ -1,7 +1,7 @@
 #include "ai/cllm_backprop.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <float.h>
 #include <stdio.h>
 #include <time.h>
@@ -128,7 +128,7 @@ void gradient_buffer_compute_stats(GradientBuffer* buffer) {
         if (val < min_val) min_val = val;
     }
     
-    buffer->norm = sqrtf(sum_sq);
+    buffer->norm = prime_sqrtf(sum_sq);
     buffer->max_value = max_val;
     buffer->min_value = min_val;
     buffer->mean_value = sum / buffer->size;
@@ -182,7 +182,7 @@ float gradient_buffer_clip_by_norm(GradientBuffer* buffer, float max_norm) {
         float val = buffer->data[i];
         sum_sq += val * val;
     }
-    float norm = sqrtf(sum_sq);
+    float norm = prime_sqrtf(sum_sq);
     
     // Clip if necessary
     if (norm > max_norm) {

@@ -1,12 +1,14 @@
 #include "ai/cllm_training_loop.h"
+#include "prime_math_custom.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -19,7 +21,11 @@ static double get_current_time(void) {
 }
 
 static bool is_valid_double(double value) {
-    return !isnan(value) && !isinf(value);
+    // Check for NaN: NaN != NaN
+    bool is_nan = (value != value);
+    // Check for infinity
+    bool is_inf = (value == INFINITY || value == -INFINITY);
+    return !is_nan && !is_inf;
 }
 
 static double compute_norm(const double* values, size_t count) {
@@ -27,7 +33,7 @@ static double compute_norm(const double* values, size_t count) {
     for (size_t i = 0; i < count; i++) {
         sum += values[i] * values[i];
     }
-    return sqrt(sum);
+    return prime_sqrt(sum);
 }
 
 static void create_directory(const char* path) {

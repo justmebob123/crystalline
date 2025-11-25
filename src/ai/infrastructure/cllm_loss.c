@@ -1,7 +1,7 @@
 #include "ai/cllm_loss.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <float.h>
 #include <stdio.h>
 
@@ -10,12 +10,12 @@
 // ============================================================================
 
 static inline float safe_log(float x, float epsilon) {
-    return logf(fmaxf(x, epsilon));
+    return prime_logf(prime_fmaxf(x, epsilon));
 }
 
 static inline float safe_exp(float x) {
     // Clamp to prevent overflow
-    return expf(fminf(fmaxf(x, -88.0f), 88.0f));
+    return prime_expf(prime_fminf(prime_fmaxf(x, -88.0f), 88.0f));
 }
 
 // ============================================================================
@@ -916,7 +916,7 @@ float loss_compute_gradient_norm(const Tensor* gradients) {
         sum_sq += val * val;
     }
     
-    return sqrtf(sum_sq);
+    return prime_sqrtf(sum_sq);
 }
 
 void loss_computation_print_stats(const LossComputation* loss_comp) {
