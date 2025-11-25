@@ -639,8 +639,8 @@ float cllm_train_epoch(CLLMTraining* training) {
         }
         
         
-        // Optimizer step
-        cllm_optimizer_step(training);
+        // Optimizer step - Use Adam optimizer with gradient accumulation
+        cllm_optimizer_step_adam(training);
         
         training->current_step++;
         training->current_loss = loss;
