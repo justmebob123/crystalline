@@ -200,9 +200,12 @@ void* shared_memory_write(SharedMemoryRegion* region) {
                 }
                 
                 // Replace data with copy
-                region->original = (SharedMemoryRegion*)region->data; // Store original pointer
+             // Free original data and replace with copy
+             void* old_data = region->data;
                 region->data = copy;
+             region->original = NULL; // No parent region tracking
                 region->is_copy = true;
+             region->free_fn(old_data); // Free old data after replacement
                 atomic_fetch_add(&region->copy_count, 1);
             }
             
