@@ -578,6 +578,136 @@ void cllm_optimizer_step(CLLMTraining* training) {
 }
 
 /**
+ * Training-specific attention forward with cache storage
+ * Wraps cllm_attention_forward and stores Q, K, V, attention weights for backward pass
+ */
+static void cllm_attention_forward_training(
+    CLLMTraining* training,
+    int layer,
+    AttentionLayer* attn_layer,
+    float* input,
+    float* output,
+    int seq_len
+) {
+    if (!training || !attn_layer || !input || !output || layer < 0 || seq_len <= 0) return;
+    if (layer >= (int)training->model->num_layers) return;
+    
+    // Call the standard attention forward
+    cllm_attention_forward(attn_layer, input, output, NULL, NULL, seq_len);
+    
+    // If attention cache is enabled, store Q, K, V, and attention weights
+    if (training->store_attention_weights && training->attention_cache) {
+        uint32_t num_heads = attn_layer->num_heads;
+        uint32_t head_dim = attn_layer->head_dim;
+        uint32_t embed_dim = num_heads * head_dim;
+        
+        // Allocate temporary buffers for Q, K, V
+        float* queries = (float*)malloc(seq_len * embed_dim * sizeof(float));
+        float* keys = (float*)malloc(seq_len * embed_dim * sizeof(float));
+        float* values = (float*)malloc(seq_len * embed_dim * sizeof(float));
+        
+        if (!queries || !keys || !values) {
+            free(queries);
+            free(keys);
+            free(values);
+            return;
+        }
+        
+        // Compute Q, K, V projections (same as in cllm_attention_forward)
+        for (int pos = 0; pos < seq_len; pos++) {
+            float* input_vec = &input[pos * embed_dim];
+            
+            // Query projection
+            for (uint32_t h = 0; h < num_heads; h++) {
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    float sum = 0.0f;
+                    for (uint32_t i = 0; i < head_dim; i++) {
+                        size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                        sum += attn_layer->query_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    }
+                    queries[pos * embed_dim + h * head_dim + d] = sum;
+                }
+            }
+            
+            // Key projection
+            for (uint32_t h = 0; h < num_heads; h++) {
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    float sum = 0.0f;
+                    for (uint32_t i = 0; i < head_dim; i++) {
+                        size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                        sum += attn_layer->key_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    }
+                    keys[pos * embed_dim + h * head_dim + d] = sum;
+                }
+            }
+            
+            // Value projection
+            for (uint32_t h = 0; h < num_heads; h++) {
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    float sum = 0.0f;
+                    for (uint32_t i = 0; i < head_dim; i++) {
+                        size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                        sum += attn_layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    }
+                    values[pos * embed_dim + h * head_dim + d] = sum;
+                }
+            }
+        }
+        
+        // Compute and store attention weights
+        float scale = 1.0f / prime_sqrtf((float)head_dim);
+        
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (int i = 0; i < seq_len; i++) {
+                float* query = &queries[i * embed_dim + h * head_dim];
+                
+                // Compute attention scores
+                for (int j = 0; j < seq_len; j++) {
+                    float* key = &keys[j * embed_dim + h * head_dim];
+                    float score = 0.0f;
+                    for (uint32_t d = 0; d < head_dim; d++) {
+                        score += query[d] * key[d];
+                    }
+                    score *= scale;
+                    training->attention_cache[layer].scores[h * seq_len * seq_len + i * seq_len + j] = score;
+                }
+                
+                // Apply softmax to get attention weights
+                float* scores_row = &training->attention_cache[layer].scores[h * seq_len * seq_len + i * seq_len];
+                float* weights_row = &training->attention_cache[layer].attention_weights[h * seq_len * seq_len + i * seq_len];
+                
+                // Find max for numerical stability
+                float max_score = scores_row[0];
+                for (int j = 1; j < seq_len; j++) {
+                    if (scores_row[j] > max_score) max_score = scores_row[j];
+                }
+                
+                // Compute exp and sum
+                float sum = 0.0f;
+                for (int j = 0; j < seq_len; j++) {
+                    weights_row[j] = prime_expf(scores_row[j] - max_score);
+                    sum += weights_row[j];
+                }
+                
+                // Normalize
+                for (int j = 0; j < seq_len; j++) {
+                    weights_row[j] /= sum;
+                }
+            }
+        }
+        
+        // Store Q, K, V in cache
+        memcpy(training->attention_cache[layer].queries, queries, seq_len * embed_dim * sizeof(float));
+        memcpy(training->attention_cache[layer].keys, keys, seq_len * embed_dim * sizeof(float));
+        memcpy(training->attention_cache[layer].values, values, seq_len * embed_dim * sizeof(float));
+        
+        free(queries);
+        free(keys);
+        free(values);
+    }
+}
+
+/**
  * Softmax backward pass
  * Computes gradient w.r.t. softmax input given gradient w.r.t. softmax output
  * 
@@ -931,9 +1061,9 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             float* batch_input = &layer_input[start_idx * embed_dim];
             float* batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
             
-            // Use proper attention mechanism
-            cllm_attention_forward(attn_layer, batch_input, batch_output,
-                                  NULL, NULL, seq_len);
+            // Use training-specific attention that caches Q, K, V, and attention weights
+            cllm_attention_forward_training(training, layer, attn_layer, 
+                                           batch_input, batch_output, seq_len);
         }
         
         // Process feedforward for each position
