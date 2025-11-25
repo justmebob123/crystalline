@@ -10,7 +10,8 @@ SOURCES = src/numerical.c \
           src/loss_functions.c \
           src/optimizers.c \
           src/backprop.c \
-          src/statistics.c
+          src/statistics.c \
+          src/threading.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -43,3 +44,4 @@ src/loss_functions.o: src/loss_functions.c include/loss_functions.h include/nume
 src/optimizers.o: src/optimizers.c include/optimizers.h
 src/backprop.o: src/backprop.c include/backprop.h include/numerical.h
 src/statistics.o: src/statistics.c include/statistics.h
+src/threading.o: src/threading.c include/threading.h
