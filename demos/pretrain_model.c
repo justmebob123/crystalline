@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"

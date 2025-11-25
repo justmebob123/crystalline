@@ -23,7 +23,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define MAX_TRAINING_FILES 100
 #define MAX_LOSS_HISTORY 100

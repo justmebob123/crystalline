@@ -19,7 +19,6 @@
 #include "../include/cllm_crystalline_training.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
 
 // External declarations for initialization functions
