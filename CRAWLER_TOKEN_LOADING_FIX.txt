@@ -1,0 +1,56 @@
+# CRITICAL FIX: Token File Parsing Completely Broken
+
+## ROOT CAUSE
+
+The `load_tokens_from_file()` function in `src/crawler/continuous_training.c` had a fatal bug:
+
+1. `fgets()` reads the first non-comment line into buffer
+2. `ftell()` gets file position AFTER that line (already consumed)
+3. `fscanf()` tries to read from AFTER the tokens = reads NOTHING
+4. Result: count = 0, "Failed to load tokens" error spam
+
+## THE FIX
+
+Complete rewrite of the function:
+- Read entire token line into buffer with `fgets()`
+- Close file immediately (don't need it anymore)
+- Parse tokens directly from the buffer string
+- Manual tokenization (split on whitespace)
+- Hash each token to ID (hash % 10000)
+
+## FILES MODIFIED
+
+1. `src/crawler/continuous_training.c` - Rewrote `load_tokens_from_file()` function (lines 67-145)
+
+## TO APPLY THE FIX
+
+The fixed file is at: /workspace/crystalline/src/crawler/continuous_training.c
+
+Copy it to your repo:
+```bash
+cp /workspace/crystalline/src/crawler/continuous_training.c ~/code/math/crystalline/src/crawler/
+cd ~/code/math/crystalline
+make clean && make && make crawler
+```
+
+## RESULT
+
+- Tokens actually load from .tok files
+- Training can proceed
+- No more error spam
+- Crawler should work end-to-end now
+
+## TESTING
+
+```bash
+cd ~/code/math/crystalline
+./cleanup_locks.sh  # Remove any orphaned locks
+cd crawler_data
+../tools/cllm_crawler --start-url 'https://x.com/JustMeBob123' --max-pages 10 --data-dir '.'
+```
+
+You should see:
+- [HH:MM:SS] timestamps on every line
+- "Loaded N tokens" messages
+- Training actually proceeding
+- Loss values being computed

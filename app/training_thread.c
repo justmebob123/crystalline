@@ -35,11 +35,14 @@ static CLLMBatchIterator* g_batch_iterator = NULL;
 static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system) {
     if (!state || !system) return;
     
-    // Extract statistics from each of the 12 kissing spheres
-    state->sphere_stats.active_spheres = 12;
+    // Get number of worker spheres
+    int num_workers = threaded_training_get_num_workers(system);
+    state->sphere_stats.active_spheres = num_workers;
     state->sphere_stats.total_batches = 0;
     
-    for (int i = 0; i < 12; i++) {
+    // Extract statistics from all worker spheres (up to 12 for UI display)
+    int display_count = (num_workers < 12) ? num_workers : 12;
+    for (int i = 0; i < display_count; i++) {
         int batches = 0;
         float loss = 0.0f;
         
@@ -110,7 +113,8 @@ void* training_thread_func(void* arg) {
     printf("\nInitializing 12 kissing spheres...\n");
     g_threaded_system = threaded_training_create(
         state->cllm_training,
-        g_batch_iterator
+        g_batch_iterator,
+        0  // 0 = auto-detect CPU cores
     );
     
     if (!g_threaded_system) {

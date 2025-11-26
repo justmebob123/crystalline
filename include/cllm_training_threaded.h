@@ -24,10 +24,12 @@ typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
  * 
  * @param training Training context
  * @param batch_iterator Batch iterator for data
+ * @param num_threads Number of worker threads (0 = auto-detect from CPU cores)
  * @return Threaded training system or NULL on failure
  */
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
-                                                  CLLMBatchIterator* batch_iterator);
+                                                  CLLMBatchIterator* batch_iterator,
+                                                  int num_threads);
 
 /**
  * Free threaded training system
@@ -70,6 +72,14 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
  * @return Total gradient norm
  */
 float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
+
+/**
+ * Get number of worker spheres
+ * 
+ * @param system Threaded training system
+ * @return Number of worker spheres
+ */
+int threaded_training_get_num_workers(ThreadedTrainingSystem* system);
 
 #ifdef __cplusplus
 }

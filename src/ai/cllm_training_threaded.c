@@ -47,8 +47,9 @@ typedef struct {
     CLLMTraining* training;
     ThreadSystem* thread_system;
     
-    // Sphere contexts (one per kissing sphere)
-    SphereTrainingContext* sphere_contexts[12];
+    // Sphere contexts (dynamic array)
+    SphereTrainingContext** sphere_contexts;
+    int num_worker_spheres;
     
     // Batch iterator
     CLLMBatchIterator* batch_iterator;
@@ -171,11 +172,32 @@ static void* sphere_worker_thread(void* arg) {
 }
 
 /**
+ * Calculate optimal hierarchy levels for given thread count
+ */
+static int calculate_hierarchy_levels(int num_threads) {
+    if (num_threads <= 1) return 1;   // Just root
+    if (num_threads <= 13) return 2;  // Root + up to 12 kissing spheres
+    if (num_threads <= 157) return 3; // Root + 12 + up to 144
+    return 4;                          // Full hierarchy (up to 1741 threads)
+}
+
+/**
  * Create threaded training system
  */
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
-                                                  CLLMBatchIterator* batch_iterator) {
+                                                  CLLMBatchIterator* batch_iterator,
+                                                  int num_threads) {
     if (!training || !batch_iterator) return NULL;
+    
+    // Auto-detect thread count if not specified
+    if (num_threads <= 0) {
+        num_threads = get_num_cpu_cores();
+        if (num_threads > 1) num_threads--; // Reserve 1 for main thread
+        printf("Auto-detected %d worker threads\n", num_threads);
+    }
+    
+    // Ensure at least 1 thread
+    if (num_threads < 1) num_threads = 1;
     
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)calloc(1, sizeof(ThreadedTrainingSystem));
     if (!system) return NULL;
@@ -183,6 +205,14 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     system->training = training;
     system->batch_iterator = batch_iterator;
     system->running = 1;
+    
+    // Calculate number of worker spheres (exclude root)
+    int hierarchy_levels = calculate_hierarchy_levels(num_threads);
+    system->num_worker_spheres = num_threads;
+    
+    printf("Creating threaded training system:\n");
+    printf("  Worker threads: %d\n", system->num_worker_spheres);
+    printf("  Hierarchy levels: %d\n", hierarchy_levels);
     
     // Calculate gradient size
     system->gradient_size = training->model->vocab_size * training->model->embedding_dim;
@@ -196,12 +226,12 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     pthread_mutex_init(&system->gradient_lock, NULL);
     
-    // Initialize barriers for 12 threads + 1 main thread
-    pthread_barrier_init(&system->epoch_barrier, NULL, 13);
-    pthread_barrier_init(&system->batch_barrier, NULL, 13);
+    // Initialize barriers for N threads + 1 main thread
+    pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 1);
+    pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 1);
     
-    // Create thread system with 2 levels (root + 12 kissing spheres)
-    system->thread_system = threads_create(2);
+    // Create thread system with calculated hierarchy
+    system->thread_system = threads_create(hierarchy_levels);
     if (!system->thread_system) {
         free(system->accumulated_gradients);
         pthread_mutex_destroy(&system->gradient_lock);
@@ -209,14 +239,27 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         return NULL;
     }
     
-    // Create sphere contexts for 12 kissing spheres
-    for (int i = 0; i < 12; i++) {
-        system->sphere_contexts[i] = sphere_context_create(i, i, system->gradient_size);
+    // Allocate dynamic sphere contexts array
+    system->sphere_contexts = (SphereTrainingContext**)calloc(system->num_worker_spheres, 
+                                                               sizeof(SphereTrainingContext*));
+    if (!system->sphere_contexts) {
+        threads_free(system->thread_system);
+        free(system->accumulated_gradients);
+        pthread_mutex_destroy(&system->gradient_lock);
+        free(system);
+        return NULL;
+    }
+    
+    // Create sphere contexts for all worker spheres
+    for (int i = 0; i < system->num_worker_spheres; i++) {
+        int symmetry_group = i % 12; // Distribute across 12 symmetry groups
+        system->sphere_contexts[i] = sphere_context_create(i, symmetry_group, system->gradient_size);
         if (!system->sphere_contexts[i]) {
             // Cleanup on failure
             for (int j = 0; j < i; j++) {
                 sphere_context_free(system->sphere_contexts[j]);
             }
+            free(system->sphere_contexts);
             threads_free(system->thread_system);
             free(system->accumulated_gradients);
             pthread_mutex_destroy(&system->gradient_lock);
@@ -227,6 +270,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     system->epoch_loss = 0.0f;
     system->total_batches = 0;
+    
+    printf("  ✓ Threaded training system created successfully\n\n");
     
     return system;
 }
@@ -240,7 +285,7 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     system->running = 0;
     
     // Wake up all worker threads
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i]) {
             pthread_mutex_lock(&system->sphere_contexts[i]->lock);
             pthread_cond_signal(&system->sphere_contexts[i]->work_ready);
@@ -249,9 +294,12 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     }
     
     // Free sphere contexts
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < system->num_worker_spheres; i++) {
         sphere_context_free(system->sphere_contexts[i]);
     }
+    
+    // Free the dynamic array
+    free(system->sphere_contexts);
     
     threads_free(system->thread_system);
     free(system->accumulated_gradients);
@@ -292,7 +340,7 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
     
     // Sum gradients from all spheres
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         for (size_t j = 0; j < system->gradient_size; j++) {
             system->accumulated_gradients[j] += ctx->local_gradients[j];
@@ -301,7 +349,7 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     
     // Average gradients
     for (size_t i = 0; i < system->gradient_size; i++) {
-        system->accumulated_gradients[i] /= 12.0f;
+        system->accumulated_gradients[i] /= (float)system->num_worker_spheres;
     }
     
     pthread_mutex_unlock(&system->gradient_lock);
@@ -314,20 +362,22 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
     if (!system) return 0.0f;
     
     printf("\nStarting multi-threaded epoch training...\n");
-    printf("Using 12 kissing spheres for parallel batch processing\n\n");
+    printf("Using %d worker threads for parallel batch processing\n\n", system->num_worker_spheres);
     
     cllm_batch_iterator_reset(system->batch_iterator);
     
     float epoch_loss = 0.0f;
     int batch_count = 0;
     
-    // Process batches in groups of 12 (one per sphere)
+    // Process batches in groups (one per sphere)
     while (1) {
-        CLLMBatch* batches[12] = {NULL};
+        CLLMBatch** batches = (CLLMBatch**)calloc(system->num_worker_spheres, sizeof(CLLMBatch*));
+        if (!batches) break;
+        
         int batches_loaded = 0;
         
-        // Load up to 12 batches
-        for (int i = 0; i < 12; i++) {
+        // Load up to N batches (one per worker sphere)
+        for (int i = 0; i < system->num_worker_spheres; i++) {
             batches[i] = cllm_batch_iterator_next(system->batch_iterator);
             if (batches[i]) {
                 batches_loaded++;
@@ -336,10 +386,13 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
             }
         }
         
-        if (batches_loaded == 0) break;
+        if (batches_loaded == 0) {
+            free(batches);
+            break;
+        }
         
         printf("Processing batch group %d (%d batches across %d spheres)...\n",
-               batch_count / 12 + 1, batches_loaded, batches_loaded);
+               batch_count / system->num_worker_spheres + 1, batches_loaded, batches_loaded);
         
         // Distribute batches to spheres
         for (int i = 0; i < batches_loaded; i++) {
@@ -372,6 +425,7 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
                 cllm_batch_free(batches[i]);
             }
         }
+        free(batches);
         
         // Apply gradients to model (simplified)
         // In real implementation, this would call the optimizer
@@ -380,12 +434,12 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         pthread_mutex_unlock(&system->gradient_lock);
     }
     
-    float avg_loss = (batch_count > 0) ? epoch_loss / (batch_count / 12.0f) : 0.0f;
+    float avg_loss = (batch_count > 0) ? epoch_loss / (batch_count / (float)system->num_worker_spheres) : 0.0f;
     
     printf("\nEpoch complete:\n");
     printf("  Total batches processed: %d\n", batch_count);
     printf("  Average loss: %.4f\n", avg_loss);
-    printf("  Batches per sphere: %.1f\n", (float)batch_count / 12.0f);
+    printf("  Batches per sphere: %.1f\n", (float)batch_count / system->num_worker_spheres);
     
     return avg_loss;
 }
@@ -404,7 +458,7 @@ void threaded_training_print_stats(ThreadedTrainingSystem* system) {
     threads_print_stats(system->thread_system);
     
     printf("\nSphere Statistics:\n");
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         printf("  Sphere %2d (Group %2d): %d batches processed, avg loss: %.4f\n",
                ctx->sphere_id, ctx->symmetry_group, ctx->batches_processed,
@@ -420,7 +474,7 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
                                        int sphere_id,
                                        int* batches_processed,
                                        float* avg_loss) {
-    if (!system || sphere_id < 0 || sphere_id >= 12) return -1;
+    if (!system || sphere_id < 0 || sphere_id >= system->num_worker_spheres) return -1;
     
     SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
     if (!ctx) return -1;
@@ -455,4 +509,12 @@ float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
     pthread_mutex_unlock(&system->gradient_lock);
     
     return norm;
+}
+
+/**
+ * Get number of worker spheres
+ */
+int threaded_training_get_num_workers(ThreadedTrainingSystem* system) {
+    if (!system) return 0;
+    return system->num_worker_spheres;
 }

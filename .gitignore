@@ -52,3 +52,7 @@ test_*
 *.md
 !README.md
 !ARCHITECTURE.md
+outputs/
+summarized_conversations/
+crystalline/
+crystalline-repo/
