@@ -14,7 +14,8 @@ SOURCES = src/numerical.c \
           src/threading.c \
           src/shared_memory.c \
           src/lock_free_queue.c \
-          src/sphere_packing.c
+          src/sphere_packing.c \
+          src/hierarchical_primes.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -51,3 +52,4 @@ src/threading.o: src/threading.c include/threading.h
 src/shared_memory.o: src/shared_memory.c include/shared_memory.h
 src/lock_free_queue.o: src/lock_free_queue.c include/lock_free_queue.h
 src/sphere_packing.o: src/sphere_packing.c include/sphere_packing.h
+src/hierarchical_primes.o: src/hierarchical_primes.c include/hierarchical_primes.h
