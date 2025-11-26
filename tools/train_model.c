@@ -18,6 +18,8 @@
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_training_mt.h"
+#include "../include/cllm_training_threaded.h"
+#include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_data_loader.h"
 #include "../include/cllm_inference.h"
@@ -163,10 +165,43 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                epoch + 1, config->num_epochs);
         printf("╚═══════════════════════════════════════════════════════════╝\n\n");
         
-        // Use multi-threaded training for better performance
+        // Use kissing spheres multi-threaded training for better performance
         float epoch_loss;
         if (num_threads > 1) {
-            epoch_loss = cllm_train_epoch_mt(training, num_threads);
+            // Create batch iterator for kissing spheres architecture
+            CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+                training->tokens,
+                training->num_tokens,
+                config->batch_size,
+                config->sequence_length,
+                0,  // shuffle = false (maintain order)
+                0   // drop_last = false (use all data)
+            );
+            
+            if (batch_iterator) {
+                // Use kissing spheres architecture
+                ThreadedTrainingSystem* threaded_system = threaded_training_create(
+                    training,
+                    batch_iterator,
+                    num_threads
+                );
+                
+                if (threaded_system) {
+                    printf("Using Kissing Spheres Architecture with %d worker threads\n", 
+                           threaded_training_get_num_workers(threaded_system));
+                    epoch_loss = threaded_train_epoch(threaded_system);
+                    threaded_training_print_stats(threaded_system);
+                    threaded_training_free(threaded_system);
+                } else {
+                    printf("Warning: Failed to create threaded system, falling back to simple MT\n");
+                    epoch_loss = cllm_train_epoch_mt(training, num_threads);
+                }
+                
+                cllm_batch_iterator_free(batch_iterator);
+            } else {
+                printf("Warning: Failed to create batch iterator, falling back to simple MT\n");
+                epoch_loss = cllm_train_epoch_mt(training, num_threads);
+            }
         } else {
             epoch_loss = cllm_train_epoch(training);
         }
