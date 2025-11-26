@@ -278,6 +278,15 @@ typedef struct {
     int crawler_pages_crawled;
     int crawler_queue_size;
     char crawler_data_dir[512];
+    
+    // Kissing spheres training statistics (for UI display)
+    struct {
+        int batches_processed[12];   // Per-sphere batch count
+        float avg_loss[12];           // Per-sphere average loss
+        int active_spheres;           // Number of active spheres
+        float total_gradient_norm;    // Total gradient magnitude
+        int total_batches;            // Total batches across all spheres
+    } sphere_stats;
 } AppState;
 
 // Utility functions - use library versions where available
