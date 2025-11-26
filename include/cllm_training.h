@@ -39,6 +39,7 @@ typedef struct {
     float lr_decay_factor;       // Decay factor for step scheduler (default: 0.1)
     int lr_decay_steps;          // Steps between decay for step scheduler (default: 1000)
     float min_lr;                // Minimum learning rate (default: 1e-6)
+    float initial_learning_rate; // Original learning rate (preserved for scheduling)
     
     // Gradient accumulation
     int gradient_accumulation_steps;  // Number of steps to accumulate gradients (default: 1)

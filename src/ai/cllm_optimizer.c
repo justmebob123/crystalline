@@ -275,15 +275,22 @@ void cllm_update_learning_rate(CLLMTraining* training) {
     
     int step = training->current_step;
     int warmup_steps = training->config.warmup_steps;
-    float base_lr = training->config.learning_rate;
+    float base_lr = training->config.initial_learning_rate;  // Use preserved initial LR
     float min_lr = training->config.min_lr > 0 ? training->config.min_lr : 1e-6f;
     
     float lr;
     
     // Linear warmup phase (applies to all schedulers)
     if (step < warmup_steps && warmup_steps > 0) {
-        lr = base_lr * (float)step / (float)warmup_steps;
-        if (lr < min_lr) lr = min_lr;
+        // Warmup from min_lr to base_lr over warmup_steps
+        // At step 0: lr = min_lr + small amount
+        // At step warmup_steps-1: lr = base_lr
+        float warmup_progress = (float)(step + 1) / (float)warmup_steps;
+        lr = min_lr + (base_lr - min_lr) * warmup_progress;
+        
+        // DEBUG
+        // printf("[WARMUP] step=%d, progress=%.3f, lr=%.6f\n", step, warmup_progress, lr);
+        
         training->config.learning_rate = lr;
         return;
     }

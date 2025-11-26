@@ -33,6 +33,9 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->best_loss = 1e9f;
     training->accumulation_step = 0;  // Initialize gradient accumulation counter
     
+    // Store initial learning rate for scheduling
+    training->config.initial_learning_rate = config->learning_rate;
+    
     // Initialize mixed precision state
     training->master_weights = NULL;
     training->fp16_activations = NULL;
@@ -1629,11 +1632,11 @@ void cllm_training_cleanup(CLLMTraining* training) {
     // Free attention cache (OPTIMIZATION)
     if (training->attention_cache) {
         for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->attention_cache[i].queries);
-            free(training->attention_cache[i].keys);
-            free(training->attention_cache[i].values);
-            free(training->attention_cache[i].attention_weights);
-            free(training->attention_cache[i].scores);
+            if (training->attention_cache[i].queries) free(training->attention_cache[i].queries);
+            if (training->attention_cache[i].keys) free(training->attention_cache[i].keys);
+            if (training->attention_cache[i].values) free(training->attention_cache[i].values);
+            if (training->attention_cache[i].attention_weights) free(training->attention_cache[i].attention_weights);
+            if (training->attention_cache[i].scores) free(training->attention_cache[i].scores);
         }
         free(training->attention_cache);
     }
