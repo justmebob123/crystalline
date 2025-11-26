@@ -144,8 +144,8 @@ bool gradient_buffer_check_stability(const GradientBuffer* buffer, bool* has_nan
     
     for (size_t i = 0; i < buffer->size; i++) {
         float val = buffer->data[i];
-        if (isnan(val)) found_nan = true;
-        if (isinf(val)) found_inf = true;
+        if (prime_isnanf(val)) found_nan = true;
+        if (prime_isinff(val)) found_inf = true;
     }
     
     if (has_nan) *has_nan = found_nan;
@@ -192,7 +192,7 @@ float gradient_buffer_clip_by_norm(GradientBuffer* buffer, float max_norm) {
         }
     }
     
-    buffer->norm = fminf(norm, max_norm);
+    buffer->norm = prime_fminf(norm, max_norm);
     
     pthread_mutex_unlock(&buffer->mutex);
     

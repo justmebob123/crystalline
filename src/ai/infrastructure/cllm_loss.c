@@ -573,7 +573,7 @@ float loss_mae_forward(
         float sample_loss = 0.0f;
         for (size_t i = 0; i < sample_size; i++) {
             size_t idx = b * sample_size + i;
-            float diff = fabsf(predictions->data[idx] - targets->data[idx]);
+            float diff = prime_fabsf(predictions->data[idx] - targets->data[idx]);
             sample_loss += diff;
         }
         
@@ -669,7 +669,7 @@ float loss_huber_forward(
         float sample_loss = 0.0f;
         for (size_t i = 0; i < sample_size; i++) {
             size_t idx = b * sample_size + i;
-            float diff = fabsf(predictions->data[idx] - targets->data[idx]);
+            float diff = prime_fabsf(predictions->data[idx] - targets->data[idx]);
             
             if (diff <= delta) {
                 // Quadratic for small errors
@@ -731,7 +731,7 @@ Tensor* loss_huber_backward(
         for (size_t i = 0; i < sample_size; i++) {
             size_t idx = b * sample_size + i;
             float diff = predictions->data[idx] - targets->data[idx];
-            float abs_diff = fabsf(diff);
+            float abs_diff = prime_fabsf(diff);
             
             float grad;
             if (abs_diff <= delta) {
@@ -867,8 +867,8 @@ bool loss_check_numerical_stability(const Tensor* tensor, bool* has_nan, bool* h
     
     for (size_t i = 0; i < tensor->total_size; i++) {
         float val = tensor->data[i];
-        if (isnan(val)) found_nan = true;
-        if (isinf(val)) found_inf = true;
+        if (prime_isnanf(val)) found_nan = true;
+        if (prime_isinff(val)) found_inf = true;
     }
     
     if (has_nan) *has_nan = found_nan;

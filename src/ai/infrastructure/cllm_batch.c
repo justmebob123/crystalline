@@ -1,4 +1,5 @@
 #include "ai/cllm_batch.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -378,13 +379,13 @@ bool batch_validate(const Batch* batch) {
     
     // Check for NaN or Inf
     for (size_t i = 0; i < batch->input.total_size; i++) {
-        if (isnan(batch->input.data[i]) || isinf(batch->input.data[i])) {
+        if (prime_isnanf(batch->input.data[i]) || prime_isinff(batch->input.data[i])) {
             return false;
         }
     }
     
     for (size_t i = 0; i < batch->target.total_size; i++) {
-        if (isnan(batch->target.data[i]) || isinf(batch->target.data[i])) {
+        if (prime_isnanf(batch->target.data[i]) || prime_isinff(batch->target.data[i])) {
             return false;
         }
     }
