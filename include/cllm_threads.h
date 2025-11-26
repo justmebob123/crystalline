@@ -27,7 +27,7 @@ typedef struct {
     CLLMLatticeHierarchy* root;          // Root sphere
     pthread_t* threads;                  // Thread handles
     int num_threads;                     // Number of threads
-} KissingSpheresSystem;
+} ThreadSystem;
 
 // ============================================================================
 // SYSTEM MANAGEMENT
@@ -43,14 +43,14 @@ typedef struct {
  *                   Level 3: 1728 spheres (12 per level-2 sphere)
  * @return New system, or NULL on error
  */
-KissingSpheresSystem* kissing_spheres_create(int num_levels);
+ThreadSystem* threads_create(int num_levels);
 
 /**
  * Free kissing spheres system
  * 
  * @param system System to free
  */
-void kissing_spheres_free(KissingSpheresSystem* system);
+void threads_free(ThreadSystem* system);
 
 /**
  * Start all sphere threads
@@ -58,7 +58,7 @@ void kissing_spheres_free(KissingSpheresSystem* system);
  * @param system Kissing spheres system
  * @return 0 on success, -1 on error
  */
-int kissing_spheres_start(KissingSpheresSystem* system);
+int threads_start(ThreadSystem* system);
 
 /**
  * Stop all sphere threads
@@ -66,7 +66,7 @@ int kissing_spheres_start(KissingSpheresSystem* system);
  * @param system Kissing spheres system
  * @return 0 on success, -1 on error
  */
-int kissing_spheres_stop(KissingSpheresSystem* system);
+int threads_stop(ThreadSystem* system);
 
 /**
  * Distribute work to spheres
@@ -76,7 +76,7 @@ int kissing_spheres_stop(KissingSpheresSystem* system);
  * @param num_items Number of work items
  * @return 0 on success, -1 on error
  */
-int kissing_spheres_distribute_work(KissingSpheresSystem* system, 
+int threads_distribute_work(ThreadSystem* system, 
                                     uint64_t* work_items, 
                                     int num_items);
 
@@ -85,7 +85,7 @@ int kissing_spheres_distribute_work(KissingSpheresSystem* system,
  * 
  * @param system Kissing spheres system
  */
-void kissing_spheres_print_stats(KissingSpheresSystem* system);
+void threads_print_stats(ThreadSystem* system);
 
 // ============================================================================
 // HELPER FUNCTIONS

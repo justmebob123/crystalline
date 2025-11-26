@@ -8,7 +8,7 @@
  * - Displays statistics
  */
 
-#include "cllm_kissing_spheres_threading.h"
+#include "cllm_threads.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     
     // Create kissing spheres system
     printf("Creating kissing spheres system...\n");
-    KissingSpheresSystem* system = kissing_spheres_create(num_levels);
+    ThreadSystem* system = threads_create(num_levels);
     if (!system) {
         fprintf(stderr, "ERROR: Failed to create kissing spheres system\n");
         return 1;
@@ -43,9 +43,9 @@ int main(int argc, char** argv) {
     
     // Start all sphere threads
     printf("Starting sphere threads...\n");
-    if (kissing_spheres_start(system) != 0) {
+    if (threads_start(system) != 0) {
         fprintf(stderr, "ERROR: Failed to start sphere threads\n");
-        kissing_spheres_free(system);
+        threads_free(system);
         return 1;
     }
     printf("\n");
@@ -62,11 +62,11 @@ int main(int argc, char** argv) {
     
     // Distribute work
     printf("Distributing work to spheres...\n");
-    if (kissing_spheres_distribute_work(system, work_items, num_work_items) != 0) {
+    if (threads_distribute_work(system, work_items, num_work_items) != 0) {
         fprintf(stderr, "ERROR: Failed to distribute work\n");
         free(work_items);
-        kissing_spheres_stop(system);
-        kissing_spheres_free(system);
+        threads_stop(system);
+        threads_free(system);
         return 1;
     }
     printf("\n");
@@ -80,16 +80,16 @@ int main(int argc, char** argv) {
     printf("\n");
     
     // Print statistics
-    kissing_spheres_print_stats(system);
+    threads_print_stats(system);
     
     // Stop system
     printf("Stopping sphere threads...\n");
-    kissing_spheres_stop(system);
+    threads_stop(system);
     printf("\n");
     
     // Clean up
     free(work_items);
-    kissing_spheres_free(system);
+    threads_free(system);
     
     printf("Demo completed successfully!\n");
     

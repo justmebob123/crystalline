@@ -32,7 +32,7 @@ typedef struct {
     CLLMLatticeHierarchy* root;          // Root sphere
     pthread_t* threads;                  // Thread handles
     int num_threads;                     // Number of threads
-} KissingSpheresSystem;
+} ThreadSystem;
 
 // ============================================================================
 // SPHERE WORKER THREAD
@@ -191,13 +191,13 @@ static void* sphere_worker_thread(void* arg) {
  * Level 2: 144 spheres (12 per level-1 sphere)
  * etc.
  */
-KissingSpheresSystem* kissing_spheres_create(int num_levels) {
+ThreadSystem* threads_create(int num_levels) {
     if (num_levels < 1 || num_levels > 4) {
         fprintf(stderr, "ERROR: Invalid number of levels: %d (must be 1-4)\n", num_levels);
         return NULL;
     }
     
-    KissingSpheresSystem* system = calloc(1, sizeof(KissingSpheresSystem));
+    ThreadSystem* system = calloc(1, sizeof(ThreadSystem));
     if (!system) return NULL;
     
     system->num_levels = num_levels;
@@ -250,7 +250,7 @@ KissingSpheresSystem* kissing_spheres_create(int num_levels) {
             
             if (!sphere) {
                 fprintf(stderr, "ERROR: Failed to create level 1 sphere %d\n", g);
-                kissing_spheres_free(system);
+                threads_free(system);
                 return NULL;
             }
             
@@ -280,7 +280,7 @@ KissingSpheresSystem* kissing_spheres_create(int num_levels) {
                 
                 if (!sphere) {
                     fprintf(stderr, "ERROR: Failed to create level 2 sphere\n");
-                    kissing_spheres_free(system);
+                    threads_free(system);
                     return NULL;
                 }
                 
@@ -307,7 +307,7 @@ KissingSpheresSystem* kissing_spheres_create(int num_levels) {
 /**
  * Free kissing spheres system
  */
-void kissing_spheres_free(KissingSpheresSystem* system) {
+void threads_free(ThreadSystem* system) {
     if (!system) return;
     
     // Free all spheres (root will recursively free children)
@@ -327,7 +327,7 @@ void kissing_spheres_free(KissingSpheresSystem* system) {
 /**
  * Start all sphere threads
  */
-int kissing_spheres_start(KissingSpheresSystem* system) {
+int threads_start(ThreadSystem* system) {
     if (!system) return -1;
     
     printf("Starting %d sphere threads...\n", system->total_spheres);
@@ -358,7 +358,7 @@ int kissing_spheres_start(KissingSpheresSystem* system) {
 /**
  * Stop all sphere threads
  */
-int kissing_spheres_stop(KissingSpheresSystem* system) {
+int threads_stop(ThreadSystem* system) {
     if (!system) return -1;
     
     printf("Stopping %d sphere threads...\n", system->total_spheres);
@@ -382,7 +382,7 @@ int kissing_spheres_stop(KissingSpheresSystem* system) {
 /**
  * Distribute work to spheres
  */
-int kissing_spheres_distribute_work(KissingSpheresSystem* system, 
+int threads_distribute_work(ThreadSystem* system, 
                                     uint64_t* work_items, 
                                     int num_items) {
     if (!system || !work_items || num_items <= 0) return -1;
@@ -419,7 +419,7 @@ int kissing_spheres_distribute_work(KissingSpheresSystem* system,
 /**
  * Print system statistics
  */
-void kissing_spheres_print_stats(KissingSpheresSystem* system) {
+void threads_print_stats(ThreadSystem* system) {
     if (!system) return;
     
     printf("\n========================================\n");
