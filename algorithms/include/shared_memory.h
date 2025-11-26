@@ -1,6 +1,4 @@
-#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
 #ifndef ALGORITHMS_SHARED_MEMORY_H
 #define ALGORITHMS_SHARED_MEMORY_H
 

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
-#include <math.h>
 #include <stdio.h>
 
 // ============================================================================
@@ -279,7 +278,6 @@ float loss_cross_entropy_forward(
     float epsilon,
     Tensor** per_sample_loss
 ) {
-    (void)epsilon;  // Reserved for numerical stability in future implementations
     if (!predictions || !targets) return NAN;
     
     size_t batch_size = predictions->shape[0];
@@ -368,7 +366,6 @@ Tensor* loss_cross_entropy_backward(
     float label_smoothing,
     float epsilon
 ) {
-    (void)epsilon;  // Reserved for numerical stability
     if (!predictions || !targets) return NULL;
     
     size_t batch_size = predictions->shape[0];

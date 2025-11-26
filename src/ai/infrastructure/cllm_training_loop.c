@@ -727,7 +727,6 @@ uint32_t training_loop_list_checkpoints(const TrainingLoop* loop,
 }
 
 uint32_t training_loop_cleanup_checkpoints(TrainingLoop* loop, uint32_t keep_count) {
-    (void)keep_count;  // TODO: Use for selective checkpoint retention
     if (!loop) return 0;
     
     // TODO: Implement checkpoint cleanup

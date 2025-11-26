@@ -20,20 +20,14 @@
  * 144000 = 3 × 12³ × (250/9)
  * This is the point where dimensional vectors culminate
  */
-#ifndef VECTOR_CULMINATION
 #define VECTOR_CULMINATION 144000ULL
-#endif
 
 /**
  * Twin Prime Boundaries
  * These primes bracket the vector culmination point
  */
-#ifndef TWIN_PRIME_LOWER
 #define TWIN_PRIME_LOWER 143999ULL  // Prime below 144000
-#endif
-#ifndef TWIN_PRIME_UPPER
 #define TWIN_PRIME_UPPER 144001ULL  // Prime above 144000
-#endif
 
 /**
  * Einstein's Lambda (Λ) Correction
@@ -121,9 +115,7 @@ extern const size_t CYMATIC_FREQUENCIES_COUNT;
  * Golden Ratio (φ)
  * φ = (1 + √5) / 2 ≈ 1.618033988749895
  */
-#ifndef GOLDEN_RATIO
 #define GOLDEN_RATIO 1.618033988749894848204586834365638117720309179805762862135
-#endif
 
 /**
  * Natural Logarithm of 3

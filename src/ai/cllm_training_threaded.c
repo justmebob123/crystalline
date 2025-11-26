@@ -133,7 +133,6 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
  * Process batch on a sphere (worker thread function)
  */
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training) {
-    (void)training;  // Reserved for future use
     if (!ctx->current_batch) return;
     
     CLLMBatch* batch = ctx->current_batch;

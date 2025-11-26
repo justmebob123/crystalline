@@ -59,7 +59,6 @@ int get_optimal_thread_count(void) {
 uint64_t estimate_symmetry_group_workload(int symmetry_group,
                                           uint64_t range_start,
                                           uint64_t range_end) {
-    (void)symmetry_group;  // TODO: Implement symmetry-based workload estimation
     if (range_start >= range_end) {
         return 0;
     }
