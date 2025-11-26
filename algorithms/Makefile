@@ -16,7 +16,8 @@ SOURCES = src/numerical.c \
           src/lock_free_queue.c \
           src/sphere_packing.c \
           src/hierarchical_primes.c \
-          src/hierarchical_structures.c
+          src/hierarchical_structures.c \
+          src/batch_processing.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -55,3 +56,4 @@ src/lock_free_queue.o: src/lock_free_queue.c include/lock_free_queue.h
 src/sphere_packing.o: src/sphere_packing.c include/sphere_packing.h
 src/hierarchical_primes.o: src/hierarchical_primes.c include/hierarchical_primes.h
 src/hierarchical_structures.o: src/hierarchical_structures.c include/hierarchical_structures.h
+src/batch_processing.o: src/batch_processing.c include/batch_processing.h
