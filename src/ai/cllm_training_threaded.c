@@ -3,11 +3,17 @@
  * 
  * Integrates the 12-fold kissing spheres threading system into the training loop
  * for parallel batch processing and gradient accumulation.
+ * 
+ * Phase 2 Optimizations:
+ * - Lock-free segment-based gradient accumulation
+ * - SIMD-optimized gradient operations
+ * - Streaming accumulation (overlap computation with updates)
  */
 
 #include "cllm_training.h"
 #include "cllm_threads.h"
 #include "cllm_batch.h"
+#include "cllm_simd_gradient_ops.h"
 #include "ai/cllm_lattice_hierarchy.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,6 +31,10 @@ typedef struct {
     // Local gradient buffers
     float* local_gradients;
     size_t gradient_size;
+    
+    // Segment ownership (lock-free)
+    size_t segment_start;
+    size_t segment_end;
     
     // Batch processing
     CLLMBatch* current_batch;
@@ -54,10 +64,10 @@ typedef struct {
     // Batch iterator
     CLLMBatchIterator* batch_iterator;
     
-    // Global gradient accumulation
+    // Global gradient accumulation (lock-free segments)
     float* accumulated_gradients;
     size_t gradient_size;
-    pthread_mutex_t gradient_lock;
+    pthread_mutex_t gradient_lock;  // Only for boundaries
     
     // Synchronization
     pthread_barrier_t epoch_barrier;
@@ -67,6 +77,11 @@ typedef struct {
     float epoch_loss;
     int total_batches;
     int running;
+    
+    // Phase 2: Streaming accumulation
+    int* sphere_completion_flags;
+    pthread_mutex_t completion_lock;
+    pthread_cond_t completion_cond;
     
 } ThreadedTrainingSystem;
 
