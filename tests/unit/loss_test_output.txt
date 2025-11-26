@@ -1,0 +1,31 @@
+
+========================================
+  Loss Computation Tests
+========================================
+
+Running test: loss_computation_create... PASSED
+Running test: cross_entropy_forward... FAILED
+Running test: cross_entropy_backward... PASSED
+Running test: mse_forward... FAILED
+Running test: mse_backward... FAILED
+Running test: mae_forward... FAILED
+Running test: mae_backward... FAILED
+Running test: huber_forward... FAILED
+Running test: huber_backward... PASSED
+Running test: log_softmax... FAILED
+Running test: softmax... FAILED
+Running test: label_smoothing... FAILED
+Running test: numerical_stability... FAILED
+Running test: gradient_clipping_by_value... FAILED
+Running test: gradient_clipping_by_norm... FAILED
+Running test: loss_with_mask... PASSED
+
+========================================
+  Test Summary
+========================================
+Tests run:    16
+Tests passed: 4
+Tests failed: 12
+Success rate: 25.0%
+========================================
+

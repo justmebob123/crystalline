@@ -59,22 +59,22 @@ int test_loss_computation_create() {
 int test_cross_entropy_forward() {
     // Create simple predictions and targets
     // Predictions: [batch_size=2, num_classes=3]
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
-    Tensor* targets = tensor_create((size_t[]){2}, 1);
+    Tensor* targets = tensor_create((uint32_t[]){2}, 1);
     
     // Set predictions (logits)
-    tensor_set(predictions, (size_t[]){0, 0}, 2.0f);  // Class 0
-    tensor_set(predictions, (size_t[]){0, 1}, 1.0f);
-    tensor_set(predictions, (size_t[]){0, 2}, 0.1f);
+    tensor_set(predictions, (uint32_t[]){0, 0}, 2.0f);  // Class 0
+    tensor_set(predictions, (uint32_t[]){0, 1}, 1.0f);
+    tensor_set(predictions, (uint32_t[]){0, 2}, 0.1f);
     
-    tensor_set(predictions, (size_t[]){1, 0}, 0.5f);
-    tensor_set(predictions, (size_t[]){1, 1}, 2.5f);  // Class 1
-    tensor_set(predictions, (size_t[]){1, 2}, 0.2f);
+    tensor_set(predictions, (uint32_t[]){1, 0}, 0.5f);
+    tensor_set(predictions, (uint32_t[]){1, 1}, 2.5f);  // Class 1
+    tensor_set(predictions, (uint32_t[]){1, 2}, 0.2f);
     
     // Set targets (class indices)
-    tensor_set(targets, (size_t[]){0}, 0.0f);  // Target class 0
-    tensor_set(targets, (size_t[]){1}, 1.0f);  // Target class 1
+    tensor_set(targets, (uint32_t[]){0}, 0.0f);  // Target class 0
+    tensor_set(targets, (uint32_t[]){1}, 1.0f);  // Target class 1
     
     // Compute loss
     float loss = loss_cross_entropy_forward(
@@ -91,22 +91,22 @@ int test_cross_entropy_forward() {
 }
 
 int test_cross_entropy_backward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
-    Tensor* targets = tensor_create((size_t[]){2}, 1);
+    Tensor* targets = tensor_create((uint32_t[]){2}, 1);
     
     // Set predictions
-    tensor_set(predictions, (size_t[]){0, 0}, 2.0f);
-    tensor_set(predictions, (size_t[]){0, 1}, 1.0f);
-    tensor_set(predictions, (size_t[]){0, 2}, 0.1f);
+    tensor_set(predictions, (uint32_t[]){0, 0}, 2.0f);
+    tensor_set(predictions, (uint32_t[]){0, 1}, 1.0f);
+    tensor_set(predictions, (uint32_t[]){0, 2}, 0.1f);
     
-    tensor_set(predictions, (size_t[]){1, 0}, 0.5f);
-    tensor_set(predictions, (size_t[]){1, 1}, 2.5f);
-    tensor_set(predictions, (size_t[]){1, 2}, 0.2f);
+    tensor_set(predictions, (uint32_t[]){1, 0}, 0.5f);
+    tensor_set(predictions, (uint32_t[]){1, 1}, 2.5f);
+    tensor_set(predictions, (uint32_t[]){1, 2}, 0.2f);
     
     // Set targets
-    tensor_set(targets, (size_t[]){0}, 0.0f);
-    tensor_set(targets, (size_t[]){1}, 1.0f);
+    tensor_set(targets, (uint32_t[]){0}, 0.0f);
+    tensor_set(targets, (uint32_t[]){1}, 1.0f);
     
     // Compute gradients
     Tensor* gradients = loss_cross_entropy_backward(
@@ -117,12 +117,12 @@ int test_cross_entropy_backward() {
     
     // Check that gradients sum to approximately 0 for each sample
     if (passed) {
-        float sum0 = tensor_get(gradients, (size_t[]){0, 0}) +
-                     tensor_get(gradients, (size_t[]){0, 1}) +
-                     tensor_get(gradients, (size_t[]){0, 2});
-        float sum1 = tensor_get(gradients, (size_t[]){1, 0}) +
-                     tensor_get(gradients, (size_t[]){1, 1}) +
-                     tensor_get(gradients, (size_t[]){1, 2});
+        float sum0 = tensor_get(gradients, (uint32_t[]){0, 0}) +
+                     tensor_get(gradients, (uint32_t[]){0, 1}) +
+                     tensor_get(gradients, (uint32_t[]){0, 2});
+        float sum1 = tensor_get(gradients, (uint32_t[]){1, 0}) +
+                     tensor_get(gradients, (uint32_t[]){1, 1}) +
+                     tensor_get(gradients, (uint32_t[]){1, 2});
         
         passed = float_equals(sum0, 0.0f, 1e-4f) && float_equals(sum1, 0.0f, 1e-4f);
     }
@@ -135,7 +135,7 @@ int test_cross_entropy_backward() {
 }
 
 int test_mse_forward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -160,7 +160,7 @@ int test_mse_forward() {
 }
 
 int test_mse_backward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -188,7 +188,7 @@ int test_mse_backward() {
 }
 
 int test_mae_forward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -213,7 +213,7 @@ int test_mae_forward() {
 }
 
 int test_mae_backward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -241,7 +241,7 @@ int test_mae_backward() {
 }
 
 int test_huber_forward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -267,7 +267,7 @@ int test_huber_forward() {
 }
 
 int test_huber_backward() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
     Tensor* targets = tensor_create(shape, 2);
     
@@ -290,17 +290,17 @@ int test_huber_backward() {
 }
 
 int test_log_softmax() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* logits = tensor_create(shape, 2);
     
     // Set logits
-    tensor_set(logits, (size_t[]){0, 0}, 2.0f);
-    tensor_set(logits, (size_t[]){0, 1}, 1.0f);
-    tensor_set(logits, (size_t[]){0, 2}, 0.1f);
+    tensor_set(logits, (uint32_t[]){0, 0}, 2.0f);
+    tensor_set(logits, (uint32_t[]){0, 1}, 1.0f);
+    tensor_set(logits, (uint32_t[]){0, 2}, 0.1f);
     
-    tensor_set(logits, (size_t[]){1, 0}, 0.5f);
-    tensor_set(logits, (size_t[]){1, 1}, 2.5f);
-    tensor_set(logits, (size_t[]){1, 2}, 0.2f);
+    tensor_set(logits, (uint32_t[]){1, 0}, 0.5f);
+    tensor_set(logits, (uint32_t[]){1, 1}, 2.5f);
+    tensor_set(logits, (uint32_t[]){1, 2}, 0.2f);
     
     Tensor* log_probs = loss_log_softmax(logits);
     
@@ -308,9 +308,9 @@ int test_log_softmax() {
     
     // Check that exp(log_probs) sum to 1 for each sample
     if (passed) {
-        float sum0 = expf(tensor_get(log_probs, (size_t[]){0, 0})) +
-                     expf(tensor_get(log_probs, (size_t[]){0, 1})) +
-                     expf(tensor_get(log_probs, (size_t[]){0, 2}));
+        float sum0 = expf(tensor_get(log_probs, (uint32_t[]){0, 0})) +
+                     expf(tensor_get(log_probs, (uint32_t[]){0, 1})) +
+                     expf(tensor_get(log_probs, (uint32_t[]){0, 2}));
         
         passed = float_equals(sum0, 1.0f, 1e-4f);
     }
@@ -322,13 +322,13 @@ int test_log_softmax() {
 }
 
 int test_softmax() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* logits = tensor_create(shape, 2);
     
     // Set logits
-    tensor_set(logits, (size_t[]){0, 0}, 2.0f);
-    tensor_set(logits, (size_t[]){0, 1}, 1.0f);
-    tensor_set(logits, (size_t[]){0, 2}, 0.1f);
+    tensor_set(logits, (uint32_t[]){0, 0}, 2.0f);
+    tensor_set(logits, (uint32_t[]){0, 1}, 1.0f);
+    tensor_set(logits, (uint32_t[]){0, 2}, 0.1f);
     
     Tensor* probs = loss_softmax(logits);
     
@@ -336,9 +336,9 @@ int test_softmax() {
     
     // Check that probabilities sum to 1
     if (passed) {
-        float sum = tensor_get(probs, (size_t[]){0, 0}) +
-                    tensor_get(probs, (size_t[]){0, 1}) +
-                    tensor_get(probs, (size_t[]){0, 2});
+        float sum = tensor_get(probs, (uint32_t[]){0, 0}) +
+                    tensor_get(probs, (uint32_t[]){0, 1}) +
+                    tensor_get(probs, (uint32_t[]){0, 2});
         
         passed = float_equals(sum, 1.0f, 1e-4f);
     }
@@ -350,13 +350,13 @@ int test_softmax() {
 }
 
 int test_label_smoothing() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* targets = tensor_create(shape, 2);
     
     // One-hot targets
-    tensor_set(targets, (size_t[]){0, 0}, 1.0f);
-    tensor_set(targets, (size_t[]){0, 1}, 0.0f);
-    tensor_set(targets, (size_t[]){0, 2}, 0.0f);
+    tensor_set(targets, (uint32_t[]){0, 0}, 1.0f);
+    tensor_set(targets, (uint32_t[]){0, 1}, 0.0f);
+    tensor_set(targets, (uint32_t[]){0, 2}, 0.0f);
     
     float smoothing = 0.1f;
     Tensor* smoothed = loss_apply_label_smoothing(targets, smoothing);
@@ -364,8 +364,8 @@ int test_label_smoothing() {
     int passed = (smoothed != NULL);
     
     if (passed) {
-        float target_val = tensor_get(smoothed, (size_t[]){0, 0});
-        float non_target_val = tensor_get(smoothed, (size_t[]){0, 1});
+        float target_val = tensor_get(smoothed, (uint32_t[]){0, 0});
+        float non_target_val = tensor_get(smoothed, (uint32_t[]){0, 1});
         
         // Target should be (1 - smoothing + smoothing/3)
         // Non-target should be (smoothing/3)
@@ -383,7 +383,7 @@ int test_label_smoothing() {
 }
 
 int test_numerical_stability() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* tensor = tensor_create(shape, 2);
     
     // Set normal values
@@ -411,7 +411,7 @@ int test_numerical_stability() {
 }
 
 int test_gradient_clipping_by_value() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* gradients = tensor_create(shape, 2);
     
     // Set gradients with large values
@@ -432,7 +432,7 @@ int test_gradient_clipping_by_value() {
 }
 
 int test_gradient_clipping_by_norm() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* gradients = tensor_create(shape, 2);
     
     // Set gradients
@@ -456,10 +456,10 @@ int test_gradient_clipping_by_norm() {
 }
 
 int test_loss_with_mask() {
-    size_t shape[] = {3, 2};
+    uint32_t shape[] = {3, 2};
     Tensor* predictions = tensor_create(shape, 2);
-    Tensor* targets = tensor_create((size_t[]){3}, 1);
-    Tensor* mask = tensor_create((size_t[]){3}, 1);
+    Tensor* targets = tensor_create((uint32_t[]){3}, 1);
+    Tensor* mask = tensor_create((uint32_t[]){3}, 1);
     
     // Set predictions
     for (size_t i = 0; i < predictions->total_size; i++) {
@@ -467,14 +467,14 @@ int test_loss_with_mask() {
     }
     
     // Set targets
-    tensor_set(targets, (size_t[]){0}, 0.0f);
-    tensor_set(targets, (size_t[]){1}, 1.0f);
-    tensor_set(targets, (size_t[]){2}, 0.0f);
+    tensor_set(targets, (uint32_t[]){0}, 0.0f);
+    tensor_set(targets, (uint32_t[]){1}, 1.0f);
+    tensor_set(targets, (uint32_t[]){2}, 0.0f);
     
     // Set mask (mask out second sample)
-    tensor_set(mask, (size_t[]){0}, 1.0f);
-    tensor_set(mask, (size_t[]){1}, 0.0f);  // Masked
-    tensor_set(mask, (size_t[]){2}, 1.0f);
+    tensor_set(mask, (uint32_t[]){0}, 1.0f);
+    tensor_set(mask, (uint32_t[]){1}, 0.0f);  // Masked
+    tensor_set(mask, (uint32_t[]){2}, 1.0f);
     
     float loss = loss_cross_entropy_forward(
         predictions, targets, mask,

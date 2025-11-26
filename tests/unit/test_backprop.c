@@ -429,15 +429,15 @@ int test_backprop_compute_batch() {
     BackpropContext* ctx = backprop_create(6, 1, 0, GRADIENT_ACCUMULATION_IMMEDIATE);
     
     // Create predictions and targets
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* predictions = tensor_create(shape, 2);
-    Tensor* targets = tensor_create((size_t[]){2}, 1);
+    Tensor* targets = tensor_create((uint32_t[]){2}, 1);
     
     for (size_t i = 0; i < predictions->total_size; i++) {
         predictions->data[i] = (float)i;
     }
-    tensor_set(targets, (size_t[]){0}, 0.0f);
-    tensor_set(targets, (size_t[]){1}, 1.0f);
+    tensor_set(targets, (uint32_t[]){0}, 0.0f);
+    tensor_set(targets, (uint32_t[]){1}, 1.0f);
     
     // Compute batch
     BackpropResult* result = backprop_compute_batch(ctx, loss_comp, predictions, targets, NULL);
@@ -457,7 +457,7 @@ int test_backprop_compute_batch() {
 }
 
 int test_tensor_to_buffer_conversion() {
-    size_t shape[] = {2, 3};
+    uint32_t shape[] = {2, 3};
     Tensor* tensor = tensor_create(shape, 2);
     
     for (size_t i = 0; i < tensor->total_size; i++) {
