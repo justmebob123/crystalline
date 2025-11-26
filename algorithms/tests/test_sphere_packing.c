@@ -179,9 +179,9 @@ void test_vector2d_operations(void) {
     const char* current_test = "2D Vector Operations";
     TEST_START(current_test);
     
-    Vector2D v1 = {3.0, 4.0};
-    Vector2D v2 = {1.0, 2.0};
-    Vector2D result;
+    Vec2D v1 = {3.0, 4.0};
+    Vec2D v2 = {1.0, 2.0};
+    Vec2D result;
     
     // Addition
     vector2d_add(&v1, &v2, &result);
@@ -221,9 +221,9 @@ void test_vector3d_operations(void) {
     const char* current_test = "3D Vector Operations";
     TEST_START(current_test);
     
-    Vector3D v1 = {1.0, 2.0, 3.0};
-    Vector3D v2 = {4.0, 5.0, 6.0};
-    Vector3D result;
+    Vec3D v1 = {1.0, 2.0, 3.0};
+    Vec3D v2 = {4.0, 5.0, 6.0};
+    Vec3D result;
     
     // Addition
     vector3d_add(&v1, &v2, &result);
@@ -248,8 +248,8 @@ void test_vector3d_operations(void) {
     ASSERT_NEAR(dot, 32.0, 0.001, "Dot product incorrect"); // 1*4 + 2*5 + 3*6 = 32
     
     // Cross product
-    Vector3D i = {1.0, 0.0, 0.0};
-    Vector3D j = {0.0, 1.0, 0.0};
+    Vec3D i = {1.0, 0.0, 0.0};
+    Vec3D j = {0.0, 1.0, 0.0};
     vector3d_cross(&i, &j, &result);
     ASSERT_NEAR(result.x, 0.0, 0.001, "Cross product X incorrect");
     ASSERT_NEAR(result.y, 0.0, 0.001, "Cross product Y incorrect");
