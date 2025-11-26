@@ -1,5 +1,4 @@
 #include "cllm_recursive_spheres.h"
-#include "cllm_simd_gradient_ops.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -129,8 +128,8 @@ SphereHierarchy* sphere_hierarchy_create(
     }
     hierarchy->sphere_array_size = hierarchy->total_spheres;
     
-    // Allocate global gradient buffer
-    hierarchy->gradient_size = training_state->model->total_params;
+    // Allocate global gradient buffer - use model's num_weights
+    hierarchy->gradient_size = training_state->model->num_weights;
     hierarchy->global_gradients = calloc(hierarchy->gradient_size, sizeof(float));
     if (!hierarchy->global_gradients) {
         free(hierarchy->sphere_array);
@@ -331,20 +330,20 @@ static int sphere_process_batches(RecursiveSphere *sphere, SphereHierarchy *hier
             return -1;
         }
         
-        // Forward pass (read-only, lock-free)
-        cllm_forward_training(training, batch->input_ids, batch->batch_size);
+        // Forward pass - use the correct API
+        cllm_forward_training(training, batch->input_ids);
         
-        // Compute loss and backward pass
+        // Backward pass - use the correct API
         cllm_backward(training, batch->input_ids, batch->target_ids, batch->batch_size);
         
-        // Copy gradients to local segment (simple memcpy for now)
-        if (sphere->gradient_segment && training->model) {
+        // Copy gradients to local segment
+        if (sphere->gradient_segment && training->gradients) {
             uint32_t offset = sphere->segment_offset;
             uint32_t size = sphere->segment_size;
             
             // Accumulate gradients into local segment
-            for (uint32_t i = 0; i < size && (offset + i) < training->model->total_params; i++) {
-                sphere->gradient_segment[i] += training->model->gradients[offset + i];
+            for (uint32_t i = 0; i < size && (offset + i) < hierarchy->gradient_size; i++) {
+                sphere->gradient_segment[i] += training->gradients[offset + i];
             }
         }
         
