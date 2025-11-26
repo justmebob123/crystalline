@@ -245,13 +245,139 @@ int cllm_data_loader_load_directory(CLLMDataLoader* loader, const char* dirname)
                 // Recursively load subdirectory
                 count += cllm_data_loader_load_directory(loader, path);
             } else if (S_ISREG(st.st_mode)) {
-                // Check if it's a text file
-                const char* ext = strrchr(entry->d_name, '.');
-                if (ext && strcmp(ext, ".txt") == 0) {
-                    if (cllm_data_loader_load_file(loader, path)) {
-                        count++;
-                    }
-                }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
+                   // Load ALL file types (not just .txt)
+                   // Skip binary files and hidden files
+                   if (entry->d_name[0] != '.') {
+                       // Skip common binary extensions
+                       const char* ext = strrchr(entry->d_name, '.');
+                       int is_binary = 0;
+                       if (ext) {
+                           if (strcmp(ext, ".o") == 0 || strcmp(ext, ".so") == 0 || 
+                               strcmp(ext, ".a") == 0 || strcmp(ext, ".bin") == 0 ||
+                               strcmp(ext, ".exe") == 0 || strcmp(ext, ".dll") == 0 ||
+                               strcmp(ext, ".png") == 0 || strcmp(ext, ".jpg") == 0 ||
+                               strcmp(ext, ".gif") == 0 || strcmp(ext, ".pdf") == 0) {
+                               is_binary = 1;
+                           }
+                       }
+                       if (!is_binary && cllm_data_loader_load_file(loader, path)) {
+                           count++;
+                       }
+                   }
             }
         }
     }
