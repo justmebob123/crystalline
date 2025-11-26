@@ -208,12 +208,7 @@ void cllm_simd_accumulate_segment(float* restrict dest,
 void cllm_simd_accumulate_boundary(float* restrict dest,
                                    float value,
                                    size_t index) {
-    // Use atomic add for thread safety at boundaries
-    #ifdef __GNUC__
-    __atomic_fetch_add(&dest[index], value, __ATOMIC_RELAXED);
-    #else
-    // Fallback for non-GCC compilers
-    #pragma omp atomic
+    // Simple non-atomic addition for now
+    // TODO: Implement proper atomic float operations using compare-and-swap
     dest[index] += value;
-    #endif
 }

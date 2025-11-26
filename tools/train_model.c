@@ -19,6 +19,7 @@
 #include "../include/cllm_training.h"
 #include "../include/cllm_training_mt.h"
 #include "../include/cllm_training_threaded.h"
+#include "../include/cllm_recursive_spheres.h"
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_data_loader.h"
@@ -276,6 +277,7 @@ int main(int argc, char** argv) {
     float learning_rate = 0.0001f;
     int epochs = 100;
     int num_threads = 0;  // 0 = auto-detect CPU count
+    int recursive_depth = 0;  // 0 = flat hierarchy, >0 = recursive spheres
     const char* checkpoint_dir = "./checkpoints";
     
     for (int i = 2; i < argc - 1; i++) {
@@ -297,6 +299,8 @@ int main(int argc, char** argv) {
             epochs = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--threads") == 0) {
             num_threads = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--recursive-depth") == 0) {
+            recursive_depth = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--checkpoint-dir") == 0) {
             checkpoint_dir = argv[++i];
         }
