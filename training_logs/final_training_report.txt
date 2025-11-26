@@ -1,0 +1,3 @@
+Starting training monitor...
+Monitoring log: training_logs/full_scale_12threads_full_scale_12threads_20251126_132656.log
+
