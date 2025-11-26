@@ -269,7 +269,6 @@ int cllm_data_loader_load_directory(CLLMDataLoader* loader, const char* dirname)
     }
     
     closedir(dir);
-    closedir(dir);
     return count;
 }
 
