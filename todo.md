@@ -1,105 +1,226 @@
-# Day 18: Batch Processing - Implementation Plan
+# CLLM AI System Completion - Focused Plan
 
-## Overview
-Extract generic batch processing algorithms from cllm_batch.c into the algorithms library. Focus on broadly applicable batch queue management, memory pooling, and batch splitting/merging while keeping tensor-specific operations in libcllm.so.
+## Mission: Complete the CLLM AI Training and Inference System
+
+We are refocusing on completing the core AI system, not general algorithms. The goal is to have a fully functional AI that can:
+1. Load and preprocess data
+2. Train on that data
+3. Save/load checkpoints
+4. Perform inference
+5. Be monitored and evaluated
 
 ---
 
-## Tasks
+## Current Status
 
-### 1. Analysis & Planning
-- [x] Review Day 17 completion status
-- [x] Understand Day 18 requirements
-- [x] Create focused todo.md
-- [x] Analyze cllm_batch.c structure (862 lines)
-- [x] Identify generic vs tensor-specific components
-- [x] Design clean API for batch processing
+### ✅ COMPLETE
+- Core mathematical foundation (libcrystalline.so)
+- Model architecture (attention, feedforward, embeddings)
+- Training infrastructure (backprop, optimizers, loss functions)
+- Crystalline-specific features (lattice embeddings, symmetry)
 
-**Analysis Results:**
-- **Generic**: Batch queue, memory pool, reference counting
-- **Tensor-specific**: Tensor operations (keep in libcllm.so)
-- **Focus**: Extract queue and pool management only
+### ⚠️ NEEDS COMPLETION
+- **Data Pipeline** (tokenization, loading, preprocessing)
+- **End-to-End Training** (integration and verification)
+- **Inference System** (sampling, beam search)
+- **Checkpointing** (save/load/resume)
+- **Monitoring** (metrics, logging, visualization)
+- **Tools** (data crawler, evaluation)
+- **User Interface** (training/inference UI)
 
-### 2. Header Creation ✅
-- [x] Create algorithms/include/batch_processing.h (350+ lines)
-- [x] Define generic batch structure
-- [x] Define batch queue structure
-- [x] Define memory pool structure
-- [x] Document all public APIs
-- [x] Add usage examples in comments
+---
 
-### 3. Implementation ✅
-- [x] Create algorithms/src/batch_processing.c (750+ lines)
-- [x] Implement batch queue functions:
-  - [x] batch_queue_create() - Create batch queue
-  - [x] batch_queue_enqueue() - Add batch to queue (blocking & non-blocking)
-  - [x] batch_queue_dequeue() - Get batch from queue (blocking & non-blocking)
-  - [x] batch_queue_peek() - Peek at next batch
-  - [x] batch_queue_size() - Get queue size
-  - [x] batch_queue_free() - Free queue
-  - [x] batch_queue_close() - Close queue
-  - [x] batch_queue_clear() - Clear all batches
-- [x] Implement memory pool functions:
-  - [x] batch_pool_create() - Create memory pool
-  - [x] batch_pool_allocate() - Allocate from pool (blocking & non-blocking)
-  - [x] batch_pool_release() - Release to pool
-  - [x] batch_pool_free() - Free pool
-  - [x] batch_pool_resize() - Resize pool
-  - [x] batch_pool_get_stats() - Get statistics
-- [x] Implement batch operations:
-  - [x] batch_split() - Split batch into smaller batches
-  - [x] batch_merge() - Merge batches
-  - [x] batch_create() - Create batch
-  - [x] batch_free() - Free batch
-  - [x] batch_retain() - Increment reference count
-  - [x] batch_release() - Decrement reference count
+## Week 1: Core Training System (Days 19-23)
 
-### 4. Testing ✅
-- [x] Create algorithms/tests/test_batch_processing.c (600+ lines)
-- [x] Test batch creation and basic operations
-- [x] Test batch queue operations
-- [x] Test memory pool allocation/release
-- [x] Test batch splitting
-- [x] Test batch merging
-- [x] Test concurrent access patterns
-- [x] Test memory management
-- [x] Result: 15/15 tests passing (100%)
+### Day 19: Data Pipeline Foundation ⏳ IN PROGRESS
+**Goal**: Implement complete data pipeline for training
 
-### 5. Build Integration ✅
-- [x] Update algorithms/Makefile
-- [x] Add batch_processing to build
-- [x] Verify clean compilation
-- [x] Run all tests (15/15 passing)
-- [x] Verify no regressions
+#### Tasks
+- [x] Analyze existing tokenizer implementation
+- [ ] Implement BPE (Byte Pair Encoding) tokenizer
+  - [ ] Vocabulary building from corpus
+  - [ ] Token encoding/decoding
+  - [ ] Special tokens handling (<PAD>, <UNK>, <BOS>, <EOS>)
+  - [ ] Merge rules management
+- [ ] Implement data streaming loader
+  - [ ] Memory-efficient file reading
+  - [ ] Batch generation
+  - [ ] Shuffling and sampling
+  - [ ] Multi-file support
+- [ ] Implement preprocessing pipeline
+  - [ ] Text cleaning
+  - [ ] Normalization
+  - [ ] Sequence padding/truncation
+  - [ ] Attention mask generation
+- [ ] Create comprehensive tests
+  - [ ] Tokenizer tests
+  - [ ] Data loader tests
+  - [ ] Preprocessing tests
+- [ ] Integration with training loop
+- [ ] Documentation
 
-### 6. Documentation ✅
-- [x] Create DAY18_BATCH_PROCESSING_COMPLETE.md
-- [x] Document all implemented functions
-- [x] Provide usage examples
-- [x] Document design decisions
-- [x] Document test results
+**Deliverable**: Working tokenizer + data loader that can feed the training loop
 
-### 7. Git Operations
-- [ ] Stage all new files
-- [ ] Commit with descriptive message
-- [ ] Push to GitHub
-- [ ] Verify remote sync
+### Day 20: Training Loop Integration
+**Goal**: Verify end-to-end training works
+
+#### Tasks
+- [ ] Review all training components
+- [ ] Test forward pass
+- [ ] Test backward pass
+- [ ] Test optimizer step
+- [ ] Test loss computation
+- [ ] Fix any integration issues
+- [ ] Verify gradient flow
+- [ ] Test on small dataset
+- [ ] Profile performance
+- [ ] Documentation
+
+**Deliverable**: Verified working training loop
+
+### Day 21: Loss and Optimization Verification
+**Goal**: Ensure training actually learns
+
+#### Tasks
+- [ ] Verify loss functions
+- [ ] Verify optimizers (Adam, SGD)
+- [ ] Test gradient clipping
+- [ ] Test learning rate scheduling
+- [ ] Test weight decay
+- [ ] Verify convergence on toy problem
+- [ ] Fix any numerical issues
+- [ ] Documentation
+
+**Deliverable**: Verified training system that learns
+
+### Day 22: Checkpointing and Resume
+**Goal**: Persistent training with save/load
+
+#### Tasks
+- [ ] Implement model save
+- [ ] Implement model load
+- [ ] Implement optimizer state save/load
+- [ ] Implement training state save/load
+- [ ] Implement checkpoint management
+- [ ] Test resume training
+- [ ] Test checkpoint rotation
+- [ ] Documentation
+
+**Deliverable**: Persistent training with checkpoints
+
+### Day 23: Training Monitoring
+**Goal**: Observable training progress
+
+#### Tasks
+- [ ] Implement metrics tracking
+  - [ ] Loss tracking
+  - [ ] Perplexity
+  - [ ] Learning rate
+  - [ ] Gradient norms
+- [ ] Implement logging system
+- [ ] Implement progress reporting
+- [ ] Implement basic visualization
+- [ ] Integration with UI
+- [ ] Documentation
+
+**Deliverable**: Observable training with metrics
+
+---
+
+## Week 2: Inference and Tools (Days 24-27)
+
+### Day 24: Inference System
+**Goal**: Working text generation
+
+#### Tasks
+- [ ] Implement greedy sampling
+- [ ] Implement top-k sampling
+- [ ] Implement top-p (nucleus) sampling
+- [ ] Implement temperature control
+- [ ] Implement beam search
+- [ ] Implement batch inference
+- [ ] Optimize inference speed
+- [ ] Test generation quality
+- [ ] Documentation
+
+**Deliverable**: Working inference system
+
+### Day 25: Evaluation Tools
+**Goal**: Model evaluation capabilities
+
+#### Tasks
+- [ ] Implement perplexity calculation
+- [ ] Implement BLEU score
+- [ ] Implement ROUGE score
+- [ ] Implement benchmark suite
+- [ ] Implement evaluation pipeline
+- [ ] Documentation
+
+**Deliverable**: Model evaluation tools
+
+### Day 26: Data Tools
+**Goal**: Data collection and preparation
+
+#### Tasks
+- [ ] Implement web crawler
+- [ ] Implement data scraper
+- [ ] Implement data cleaning
+- [ ] Implement dataset preparation
+- [ ] Implement data quality checks
+- [ ] Documentation
+
+**Deliverable**: Data collection tools
+
+### Day 27: User Interface Completion
+**Goal**: Complete UI for training and inference
+
+#### Tasks
+- [ ] Complete training UI
+  - [ ] Training configuration
+  - [ ] Progress monitoring
+  - [ ] Metrics visualization
+- [ ] Implement inference UI
+  - [ ] Text input
+  - [ ] Generation controls
+  - [ ] Output display
+- [ ] Implement model management UI
+  - [ ] Model list
+  - [ ] Model loading
+  - [ ] Checkpoint management
+- [ ] Documentation
+
+**Deliverable**: Complete UI
 
 ---
 
 ## Success Criteria
 
-- ✅ Generic batch processing implemented
-- ✅ Batch queues working
-- ✅ Memory pooling functional
-- ✅ Batch splitting/merging working
-- ✅ 15+ tests passing (100%)
-- ✅ Clean separation from tensor-specific code
-- ✅ Documentation complete
-- ✅ Code committed and pushed
+### Minimum Viable Product (MVP)
+- ✅ Can load text data
+- ✅ Can tokenize text
+- ✅ Can train model on data
+- ✅ Training loss decreases
+- ✅ Can save/load checkpoints
+- ✅ Can generate text
+- ✅ Can monitor training progress
+
+### Full System
+- ✅ All MVP criteria
+- ✅ Efficient data pipeline
+- ✅ Multiple sampling strategies
+- ✅ Comprehensive evaluation
+- ✅ Data collection tools
+- ✅ Complete UI
+- ✅ Full documentation
 
 ---
 
-## Current Status: Starting Day 18
+## Current Focus: Day 19 - Data Pipeline Foundation
 
-**Next Step**: Analyze cllm_batch.c to identify generic components
+**Next Step**: Analyze existing tokenizer and implement BPE
+
+---
+
+**Date**: November 26, 2024
+**Status**: Refocused on AI system completion
+**Priority**: Data pipeline → Training verification → Inference
