@@ -13,26 +13,13 @@
  */
 
 #include "ai/cllm_lattice_hierarchy.h"
+#include "cllm_threads.h"
 #include "cllm_training.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
-
-// ============================================================================
-// KISSING SPHERES CONFIGURATION
-// ============================================================================
-
-typedef struct {
-    int num_levels;                      // Number of hierarchy levels
-    int spheres_per_level[4];            // Spheres at each level
-    int total_spheres;                   // Total number of spheres
-    CLLMLatticeHierarchy** all_spheres;  // Array of all spheres
-    CLLMLatticeHierarchy* root;          // Root sphere
-    pthread_t* threads;                  // Thread handles
-    int num_threads;                     // Number of threads
-} ThreadSystem;
 
 // ============================================================================
 // SPHERE WORKER THREAD
@@ -72,7 +59,8 @@ static void* sphere_worker_thread(void* arg) {
                     if (sphere->enable_work_stealing && sphere->num_siblings > 0) {
                         for (int i = 0; i < sphere->num_siblings; i++) {
                             CLLMLatticeHierarchy* sibling = sphere->siblings[i];
-                            if (lattice_hierarchy_steal_work(sphere, sibling) == 0) {
+                            uint64_t stolen_work;
+                            if (lattice_hierarchy_steal_work(sphere, sibling, &stolen_work) == 0) {
                                 atomic_store(&sphere->state, HIERARCHY_STATE_PROCESSING);
                                 break;
                             }
@@ -454,4 +442,9 @@ void threads_print_stats(ThreadSystem* system) {
         }
         printf("\n");
     }
+}
+
+// Get number of CPU cores
+int get_num_cpu_cores(void) {
+    return detect_num_cpu_cores();
 }
