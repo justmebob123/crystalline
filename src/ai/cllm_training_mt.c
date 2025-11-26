@@ -314,7 +314,12 @@ float cllm_train_epoch_mt(CLLMTraining* training, int num_threads) {
         mt_state.thread_contexts[i].thread_id = i;
         mt_state.thread_contexts[i].start_batch = i * batches_per_thread;
         mt_state.thread_contexts[i].end_batch = (i + 1) * batches_per_thread;
-        if (mt_state.thread_contexts[i].end_batch > total_batches) {
+        
+        // Fix: Ensure start_batch doesn't exceed total_batches
+        if (mt_state.thread_contexts[i].start_batch >= total_batches) {
+            mt_state.thread_contexts[i].start_batch = total_batches;
+            mt_state.thread_contexts[i].end_batch = total_batches;
+        } else if (mt_state.thread_contexts[i].end_batch > total_batches) {
             mt_state.thread_contexts[i].end_batch = total_batches;
         }
     }
