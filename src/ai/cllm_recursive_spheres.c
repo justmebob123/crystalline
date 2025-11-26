@@ -1,8 +1,8 @@
 #include "cllm_recursive_spheres.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <pthread.h>
 
 // Internal helper functions

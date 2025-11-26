@@ -15,11 +15,11 @@
 #include "cllm_batch.h"
 #include "cllm_simd_gradient_ops.h"
 #include "ai/cllm_lattice_hierarchy.h"
+#include "prime_float_math.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include <math.h>
 
 /**
  * Thread-local training context for each sphere
