@@ -5,7 +5,9 @@
  * All mathematical operations use crystalline library (prime_* functions).
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE  // For CPU_SET, CPU_ZERO, pthread_setaffinity_np
+#endif
 
 #include "threading.h"
 #include "prime_math_custom.h"
@@ -62,6 +64,7 @@ uint64_t default_workload_estimator(int work_group, void* user_data) {
 }
 
 uint64_t prime_workload_estimator(int work_group, void* user_data) {
+    (void)work_group;  // Unused in this implementation
     if (!user_data) {
         return 1000;  // Fallback to default
     }
@@ -224,6 +227,7 @@ static void create_balanced_allocation(
     
     // Target workload per thread
     double target_per_thread = (double)total_work / N;
+    (void)target_per_thread;  // Reserved for future load balancing optimization
     
     // Initialize mappings
     for (int t = 0; t < N; t++) {

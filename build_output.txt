@@ -1,0 +1,517 @@
+Compiling [CORE]: src/core/bigfixed_constants.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_constants.c -o src/core/bigfixed_constants.o
+Compiling [CORE]: src/core/bigfixed_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_core.c -o src/core/bigfixed_core.o
+Compiling [CORE]: src/core/bigint_conversions.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_conversions.c -o src/core/bigint_conversions.o
+Compiling [CORE]: src/core/bigint_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_core.c -o src/core/bigint_core.o
+Compiling [CORE]: src/core/bigint_ntt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_ntt.c -o src/core/bigint_ntt.o
+Compiling [CORE]: src/core/cllm_angular_position.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_angular_position.c -o src/core/cllm_angular_position.o
+In file included from ./include/cllm_angular_position.h:6,
+                 from src/core/cllm_angular_position.c:1:
+./include/cllm_mathematical_constants.h:23: warning: "VECTOR_CULMINATION" redefined
+   23 | #define VECTOR_CULMINATION 144000ULL
+      | 
+In file included from ./include/bigint_core.h:16,
+                 from ./include/bigfixed_core.h:13,
+                 from ./include/cllm_angular_position.h:5:
+./include/prime_types.h:353: note: this is the location of the previous definition
+  353 | #define VECTOR_CULMINATION 144000     // 3 × 12³ × (250/9)
+      | 
+./include/cllm_mathematical_constants.h:29: warning: "TWIN_PRIME_LOWER" redefined
+   29 | #define TWIN_PRIME_LOWER 143999ULL  // Prime below 144000
+      | 
+./include/prime_types.h:354: note: this is the location of the previous definition
+  354 | #define TWIN_PRIME_LOWER 143999       // Lattice twin (lower)
+      | 
+./include/cllm_mathematical_constants.h:30: warning: "TWIN_PRIME_UPPER" redefined
+   30 | #define TWIN_PRIME_UPPER 144001ULL  // Prime above 144000
+      | 
+./include/prime_types.h:355: note: this is the location of the previous definition
+  355 | #define TWIN_PRIME_UPPER 144001       // Lattice twin (upper)
+      | 
+./include/cllm_mathematical_constants.h:118: warning: "GOLDEN_RATIO" redefined
+  118 | #define GOLDEN_RATIO 1.618033988749894848204586834365638117720309179805762862135
+      | 
+./include/prime_types.h:339: note: this is the location of the previous definition
+  339 | #define GOLDEN_RATIO 1.618033988749895
+      | 
+Compiling [CORE]: src/core/cllm_hierarchical_abacus.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_hierarchical_abacus.c -o src/core/cllm_hierarchical_abacus.o
+Compiling [CORE]: src/core/cllm_mathematical_constants.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_mathematical_constants.c -o src/core/cllm_mathematical_constants.o
+In file included from src/core/cllm_mathematical_constants.c:1:
+./include/cllm_mathematical_constants.h:23: warning: "VECTOR_CULMINATION" redefined
+   23 | #define VECTOR_CULMINATION 144000ULL
+      | 
+In file included from ./include/bigint_core.h:16,
+                 from ./include/bigfixed_core.h:13,
+                 from ./include/cllm_mathematical_constants.h:5:
+./include/prime_types.h:353: note: this is the location of the previous definition
+  353 | #define VECTOR_CULMINATION 144000     // 3 × 12³ × (250/9)
+      | 
+./include/cllm_mathematical_constants.h:29: warning: "TWIN_PRIME_LOWER" redefined
+   29 | #define TWIN_PRIME_LOWER 143999ULL  // Prime below 144000
+      | 
+./include/prime_types.h:354: note: this is the location of the previous definition
+  354 | #define TWIN_PRIME_LOWER 143999       // Lattice twin (lower)
+      | 
+./include/cllm_mathematical_constants.h:30: warning: "TWIN_PRIME_UPPER" redefined
+   30 | #define TWIN_PRIME_UPPER 144001ULL  // Prime above 144000
+      | 
+./include/prime_types.h:355: note: this is the location of the previous definition
+  355 | #define TWIN_PRIME_UPPER 144001       // Lattice twin (upper)
+      | 
+./include/cllm_mathematical_constants.h:118: warning: "GOLDEN_RATIO" redefined
+  118 | #define GOLDEN_RATIO 1.618033988749894848204586834365638117720309179805762862135
+      | 
+./include/prime_types.h:339: note: this is the location of the previous definition
+  339 | #define GOLDEN_RATIO 1.618033988749895
+      | 
+Compiling [CORE]: src/core/cllm_sphere_position.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_sphere_position.c -o src/core/cllm_sphere_position.o
+Compiling [CORE]: src/core/crystal_abacus.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/crystal_abacus.c -o src/core/crystal_abacus.o
+Compiling [CORE]: src/core/prime_lowlevel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/prime_lowlevel.c -o src/core/prime_lowlevel.o
+Compiling [TRANS]: src/transcendental/prime_basic.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_basic.c -o src/transcendental/prime_basic.o
+Compiling [TRANS]: src/transcendental/prime_bigint_transcendental.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_bigint_transcendental.c -o src/transcendental/prime_bigint_transcendental.o
+Compiling [TRANS]: src/transcendental/prime_float_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_float_math.c -o src/transcendental/prime_float_math.o
+Compiling [TRANS]: src/transcendental/prime_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math.c -o src/transcendental/prime_math.o
+Compiling [TRANS]: src/transcendental/prime_math_custom.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math_custom.c -o src/transcendental/prime_math_custom.o
+Compiling [GEOM]: src/geometry/lattice_algorithms.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/lattice_algorithms.c -o src/geometry/lattice_algorithms.o
+Compiling [GEOM]: src/geometry/prime_coords.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_coords.c -o src/geometry/prime_coords.o
+Compiling [GEOM]: src/geometry/prime_hyperdim.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_hyperdim.c -o src/geometry/prime_hyperdim.o
+Compiling [GEOM]: src/geometry/prime_lattice.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice.c -o src/geometry/prime_lattice.o
+Compiling [GEOM]: src/geometry/prime_lattice_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_core.c -o src/geometry/prime_lattice_core.o
+Compiling [GEOM]: src/geometry/prime_lattice_geometry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_geometry.c -o src/geometry/prime_lattice_geometry.o
+Compiling [GEOM]: src/geometry/prime_matrix.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_matrix.c -o src/geometry/prime_matrix.o
+Compiling [GEOM]: src/geometry/prime_rainbow.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_rainbow.c -o src/geometry/prime_rainbow.o
+Creating crystalline library: libcrystalline.so
+gcc -shared -o libcrystalline.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
+✓ Crystalline library created
+Building algorithms library...
+make[1]: Entering directory '/workspace/algorithms'
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/numerical.c -o src/numerical.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/loss_functions.c -o src/loss_functions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/optimizers.c -o src/optimizers.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/backprop.c -o src/backprop.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/statistics.c -o src/statistics.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/threading.c -o src/threading.o
+src/threading.c:8: warning: "_GNU_SOURCE" redefined
+    8 | #define _GNU_SOURCE  // For CPU_SET, CPU_ZERO, pthread_setaffinity_np
+      | 
+<command-line>: note: this is the location of the previous definition
+src/threading.c: In function ‘prime_workload_estimator’:
+src/threading.c:64:39: warning: unused parameter ‘work_group’ [-Wunused-parameter]
+   64 | uint64_t prime_workload_estimator(int work_group, void* user_data) {
+      |                                   ~~~~^~~~~~~~~~
+src/threading.c: In function ‘create_balanced_allocation’:
+src/threading.c:226:12: warning: unused variable ‘target_per_thread’ [-Wunused-variable]
+  226 |     double target_per_thread = (double)total_work / N;
+      |            ^~~~~~~~~~~~~~~~~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/shared_memory.c -o src/shared_memory.o
+In file included from src/shared_memory.c:7:
+./include/shared_memory.h:1: warning: "_GNU_SOURCE" redefined
+    1 | #define _GNU_SOURCE
+      | 
+<command-line>: note: this is the location of the previous definition
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lock_free_queue.c -o src/lock_free_queue.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/sphere_packing.c -o src/sphere_packing.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
+src/hierarchical_structures.c:12:17: warning: ‘get_time_ns’ defined but not used [-Wunused-function]
+   12 | static uint64_t get_time_ns(void) {
+      |                 ^~~~~~~~~~~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/batch_processing.c -o src/batch_processing.o
+gcc -shared -o libalgorithms.so src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/lock_free_queue.o src/sphere_packing.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o -L.. -lcrystalline
+make[1]: Leaving directory '/workspace/algorithms'
+✓ Algorithms library created
+Compiling [AI]: src/ai/cllm_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_attention.c -o src/ai/cllm_attention.o
+Compiling [AI]: src/ai/cllm_backward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_backward.c -o src/ai/cllm_backward.o
+Compiling [AI]: src/ai/cllm_batch.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_batch.c -o src/ai/cllm_batch.o
+src/ai/cllm_batch.c: In function ‘cllm_batch_create’:
+src/ai/cllm_batch.c:59:9: warning: implicit declaration of function ‘cllm_batch_free’; did you mean ‘cllm_batch_create’? [-Wimplicit-function-declaration]
+   59 |         cllm_batch_free(batch);
+      |         ^~~~~~~~~~~~~~~
+      |         cllm_batch_create
+src/ai/cllm_batch.c: At top level:
+src/ai/cllm_batch.c:69:6: warning: conflicting types for ‘cllm_batch_free’; have ‘void(CLLMBatch *)’
+   69 | void cllm_batch_free(CLLMBatch* batch) {
+      |      ^~~~~~~~~~~~~~~
+src/ai/cllm_batch.c:59:9: note: previous implicit declaration of ‘cllm_batch_free’ with type ‘void(CLLMBatch *)’
+   59 |         cllm_batch_free(batch);
+      |         ^~~~~~~~~~~~~~~
+Compiling [AI]: src/ai/cllm_benchmark.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_benchmark.c -o src/ai/cllm_benchmark.o
+Compiling [AI]: src/ai/cllm_cache.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_cache.c -o src/ai/cllm_cache.o
+Compiling [AI]: src/ai/cllm_create.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_create.c -o src/ai/cllm_create.o
+Compiling [AI]: src/ai/cllm_crystalline_advanced.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_advanced.c -o src/ai/cllm_crystalline_advanced.o
+Compiling [AI]: src/ai/cllm_crystalline_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_attention.c -o src/ai/cllm_crystalline_attention.o
+Compiling [AI]: src/ai/cllm_crystalline_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_training.c -o src/ai/cllm_crystalline_training.o
+Compiling [AI]: src/ai/cllm_data_loader.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_data_loader.c -o src/ai/cllm_data_loader.o
+Compiling [AI]: src/ai/cllm_embedding.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_embedding.c -o src/ai/cllm_embedding.o
+Compiling [AI]: src/ai/cllm_feedforward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_feedforward.c -o src/ai/cllm_feedforward.o
+Compiling [AI]: src/ai/cllm_format.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_format.c -o src/ai/cllm_format.o
+Compiling [AI]: src/ai/cllm_fp16.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_fp16.c -o src/ai/cllm_fp16.o
+Compiling [AI]: src/ai/cllm_inference.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_inference.c -o src/ai/cllm_inference.o
+Compiling [AI]: src/ai/cllm_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_init.c -o src/ai/cllm_init.o
+Compiling [AI]: src/ai/cllm_lattice_conversion.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_conversion.c -o src/ai/cllm_lattice_conversion.o
+Compiling [AI]: src/ai/cllm_lattice_embed.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_embed.c -o src/ai/cllm_lattice_embed.o
+Compiling [AI]: src/ai/cllm_lattice_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_init.c -o src/ai/cllm_lattice_init.o
+Compiling [AI]: src/ai/cllm_layernorm.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_layernorm.c -o src/ai/cllm_layernorm.o
+Compiling [AI]: src/ai/cllm_lll_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lll_embeddings.c -o src/ai/cllm_lll_embeddings.o
+Compiling [AI]: src/ai/cllm_loss.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_loss.c -o src/ai/cllm_loss.o
+Compiling [AI]: src/ai/cllm_optimizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_optimizer.c -o src/ai/cllm_optimizer.o
+Compiling [AI]: src/ai/cllm_optimizer_wrapper.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_optimizer_wrapper.c -o src/ai/cllm_optimizer_wrapper.o
+Compiling [AI]: src/ai/cllm_positional.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_positional.c -o src/ai/cllm_positional.o
+Compiling [AI]: src/ai/cllm_production.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_production.c -o src/ai/cllm_production.o
+Compiling [AI]: src/ai/cllm_pure_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_embeddings.c -o src/ai/cllm_pure_embeddings.o
+Compiling [AI]: src/ai/cllm_pure_token.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_token.c -o src/ai/cllm_pure_token.o
+Compiling [AI]: src/ai/cllm_recursive_spheres.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_recursive_spheres.c -o src/ai/cllm_recursive_spheres.o
+Compiling [AI]: src/ai/cllm_root_word_modeling.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_root_word_modeling.c -o src/ai/cllm_root_word_modeling.o
+Compiling [AI]: src/ai/cllm_simd_gradient_ops.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_simd_gradient_ops.c -o src/ai/cllm_simd_gradient_ops.o
+Compiling [AI]: src/ai/cllm_simd_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_simd_utils.c -o src/ai/cllm_simd_utils.o
+Compiling [AI]: src/ai/cllm_symmetry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_symmetry.c -o src/ai/cllm_symmetry.o
+Compiling [AI]: src/ai/cllm_threads.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_threads.c -o src/ai/cllm_threads.o
+Compiling [AI]: src/ai/cllm_tokenizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_tokenizer.c -o src/ai/cllm_tokenizer.o
+Compiling [AI]: src/ai/cllm_train_complete.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_train_complete.c -o src/ai/cllm_train_complete.o
+Compiling [AI]: src/ai/cllm_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training.c -o src/ai/cllm_training.o
+Compiling [AI]: src/ai/cllm_training_mt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_mt.c -o src/ai/cllm_training_mt.o
+Compiling [AI]: src/ai/cllm_training_parallel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_parallel.c -o src/ai/cllm_training_parallel.o
+Compiling [AI]: src/ai/cllm_training_threaded.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_threaded.c -o src/ai/cllm_training_threaded.o
+src/ai/cllm_training_threaded.c: In function ‘sphere_process_batch’:
+src/ai/cllm_training_threaded.c:135:76: warning: unused parameter ‘training’ [-Wunused-parameter]
+  135 | static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training) {
+      |                                                              ~~~~~~~~~~~~~~^~~~~~~~
+src/ai/cllm_training_threaded.c: At top level:
+src/ai/cllm_training_threaded.c:175:14: warning: ‘sphere_worker_thread’ defined but not used [-Wunused-function]
+  175 | static void* sphere_worker_thread(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~
+Compiling [AI]: src/ai/cllm_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_utils.c -o src/ai/cllm_utils.o
+Compiling [AI]: src/ai/cllm_validate.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_validate.c -o src/ai/cllm_validate.o
+Compiling [AI]: src/ai/cllm_vocab_builder.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_vocab_builder.c -o src/ai/cllm_vocab_builder.o
+Compiling [AI]: src/ai/infrastructure/cllm_backprop.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_backprop.c -o src/ai/infrastructure/cllm_backprop.o
+src/ai/infrastructure/cllm_backprop.c: In function ‘gradient_buffer_check_stability’:
+src/ai/infrastructure/cllm_backprop.c:147:13: warning: implicit declaration of function ‘isnan’ [-Wimplicit-function-declaration]
+  147 |         if (isnan(val)) found_nan = true;
+      |             ^~~~~
+src/ai/infrastructure/cllm_backprop.c:7:1: note: include ‘<math.h>’ or provide a declaration of ‘isnan’
+    6 | #include <stdio.h>
+  +++ |+#include <math.h>
+    7 | #include <time.h>
+src/ai/infrastructure/cllm_backprop.c:148:13: warning: implicit declaration of function ‘isinf’ [-Wimplicit-function-declaration]
+  148 |         if (isinf(val)) found_inf = true;
+      |             ^~~~~
+src/ai/infrastructure/cllm_backprop.c:148:13: note: include ‘<math.h>’ or provide a declaration of ‘isinf’
+src/ai/infrastructure/cllm_backprop.c: In function ‘gradient_buffer_clip_by_norm’:
+src/ai/infrastructure/cllm_backprop.c:195:20: warning: implicit declaration of function ‘fminf’ [-Wimplicit-function-declaration]
+  195 |     buffer->norm = fminf(norm, max_norm);
+      |                    ^~~~~
+src/ai/infrastructure/cllm_backprop.c:195:20: note: include ‘<math.h>’ or provide a declaration of ‘fminf’
+src/ai/infrastructure/cllm_backprop.c:195:20: warning: incompatible implicit declaration of built-in function ‘fminf’ [-Wbuiltin-declaration-mismatch]
+src/ai/infrastructure/cllm_backprop.c:195:20: note: include ‘<math.h>’ or provide a declaration of ‘fminf’
+src/ai/infrastructure/cllm_backprop.c: In function ‘backprop_verify_gradients’:
+src/ai/infrastructure/cllm_backprop.c:577:11: warning: unused parameter ‘epsilon’ [-Wunused-parameter]
+  577 |     float epsilon
+      |     ~~~~~~^~~~~~~
+Compiling [AI]: src/ai/infrastructure/cllm_batch.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_batch.c -o src/ai/infrastructure/cllm_batch.o
+src/ai/infrastructure/cllm_batch.c: In function ‘batch_validate’:
+src/ai/infrastructure/cllm_batch.c:381:13: warning: implicit declaration of function ‘isnan’ [-Wimplicit-function-declaration]
+  381 |         if (isnan(batch->input.data[i]) || isinf(batch->input.data[i])) {
+      |             ^~~~~
+src/ai/infrastructure/cllm_batch.c:5:1: note: include ‘<math.h>’ or provide a declaration of ‘isnan’
+    4 | #include <stdio.h>
+  +++ |+#include <math.h>
+    5 | #include <stdatomic.h>
+src/ai/infrastructure/cllm_batch.c:381:44: warning: implicit declaration of function ‘isinf’ [-Wimplicit-function-declaration]
+  381 |         if (isnan(batch->input.data[i]) || isinf(batch->input.data[i])) {
+      |                                            ^~~~~
+src/ai/infrastructure/cllm_batch.c:381:44: note: include ‘<math.h>’ or provide a declaration of ‘isinf’
+Compiling [AI]: src/ai/infrastructure/cllm_control_process.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_control_process.c -o src/ai/infrastructure/cllm_control_process.o
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_stop’:
+src/ai/infrastructure/cllm_control_process.c:194:61: warning: passing argument 2 of ‘lattice_hierarchy_send_message’ from incompatible pointer type [-Wincompatible-pointer-types]
+  194 |             lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+      |                                                             ^~~
+      |                                                             |
+      |                                                             SphereMessage *
+In file included from ./include/ai/cllm_control_process.h:4,
+                 from src/ai/infrastructure/cllm_control_process.c:1:
+./include/ai/cllm_lattice_hierarchy.h:421:58: note: expected ‘CLLMLatticeHierarchy *’ but argument is of type ‘SphereMessage *’
+  421 |                                    CLLMLatticeHierarchy* receiver,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_start_epoch’:
+src/ai/infrastructure/cllm_control_process.c:287:61: warning: passing argument 2 of ‘lattice_hierarchy_send_message’ from incompatible pointer type [-Wincompatible-pointer-types]
+  287 |             lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+      |                                                             ^~~
+      |                                                             |
+      |                                                             SphereMessage *
+./include/ai/cllm_lattice_hierarchy.h:421:58: note: expected ‘CLLMLatticeHierarchy *’ but argument is of type ‘SphereMessage *’
+  421 |                                    CLLMLatticeHierarchy* receiver,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_end_epoch’:
+src/ai/infrastructure/cllm_control_process.c:324:61: warning: passing argument 2 of ‘lattice_hierarchy_send_message’ from incompatible pointer type [-Wincompatible-pointer-types]
+  324 |             lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+      |                                                             ^~~
+      |                                                             |
+      |                                                             SphereMessage *
+./include/ai/cllm_lattice_hierarchy.h:421:58: note: expected ‘CLLMLatticeHierarchy *’ but argument is of type ‘SphereMessage *’
+  421 |                                    CLLMLatticeHierarchy* receiver,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_wait_epoch_complete’:
+src/ai/infrastructure/cllm_control_process.c:339:69: warning: unused parameter ‘timeout_seconds’ [-Wunused-parameter]
+  339 | bool control_process_wait_epoch_complete(ControlProcess* cp, double timeout_seconds) {
+      |                                                              ~~~~~~~^~~~~~~~~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_terminate_sphere’:
+src/ai/infrastructure/cllm_control_process.c:455:48: warning: passing argument 2 of ‘lattice_hierarchy_send_message’ from incompatible pointer type [-Wincompatible-pointer-types]
+  455 |         lattice_hierarchy_send_message(sphere, msg, false);
+      |                                                ^~~
+      |                                                |
+      |                                                SphereMessage *
+./include/ai/cllm_lattice_hierarchy.h:421:58: note: expected ‘CLLMLatticeHierarchy *’ but argument is of type ‘SphereMessage *’
+  421 |                                    CLLMLatticeHierarchy* receiver,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+src/ai/infrastructure/cllm_control_process.c:462:32: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+  462 |         for (uint32_t i = 0; i < parent->num_children; i++) {
+      |                                ^
+src/ai/infrastructure/cllm_control_process.c:465:40: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+  465 |                 for (uint32_t j = i; j < parent->num_children - 1; j++) {
+      |                                        ^
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_recover_sphere’:
+src/ai/infrastructure/cllm_control_process.c:528:66: warning: unused parameter ‘sphere_id’ [-Wunused-parameter]
+  528 | bool control_process_recover_sphere(ControlProcess* cp, uint32_t sphere_id) {
+      |                                                         ~~~~~~~~~^~~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_broadcast_weights’:
+src/ai/infrastructure/cllm_control_process.c:562:57: warning: passing argument 2 of ‘lattice_hierarchy_send_message’ from incompatible pointer type [-Wincompatible-pointer-types]
+  562 |         lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+      |                                                         ^~~
+      |                                                         |
+      |                                                         SphereMessage *
+./include/ai/cllm_lattice_hierarchy.h:421:58: note: expected ‘CLLMLatticeHierarchy *’ but argument is of type ‘SphereMessage *’
+  421 |                                    CLLMLatticeHierarchy* receiver,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+src/ai/infrastructure/cllm_control_process.c:547:47: warning: unused parameter ‘weight_count’ [-Wunused-parameter]
+  547 |                                        size_t weight_count) {
+      |                                        ~~~~~~~^~~~~~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘control_process_synchronize_all’:
+src/ai/infrastructure/cllm_control_process.c:596:65: warning: unused parameter ‘timeout_seconds’ [-Wunused-parameter]
+  596 | bool control_process_synchronize_all(ControlProcess* cp, double timeout_seconds) {
+      |                                                          ~~~~~~~^~~~~~~~~~~~~~~
+src/ai/infrastructure/cllm_control_process.c: In function ‘collect_statistics_recursive’:
+src/ai/infrastructure/cllm_control_process.c:821:28: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+  821 |     for (uint32_t i = 0; i < sphere->num_children; i++) {
+      |                            ^
+src/ai/infrastructure/cllm_control_process.c: In function ‘find_sphere_recursive’:
+src/ai/infrastructure/cllm_control_process.c:832:27: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  832 |     if (sphere->sphere_id == sphere_id) {
+      |                           ^~
+src/ai/infrastructure/cllm_control_process.c:837:28: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+  837 |     for (uint32_t i = 0; i < sphere->num_children; i++) {
+      |                            ^
+src/ai/infrastructure/cllm_control_process.c: In function ‘count_spheres_recursive’:
+src/ai/infrastructure/cllm_control_process.c:852:28: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+  852 |     for (uint32_t i = 0; i < sphere->num_children; i++) {
+      |                            ^
+Compiling [AI]: src/ai/infrastructure/cllm_lattice_hierarchy.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_lattice_hierarchy.c -o src/ai/infrastructure/cllm_lattice_hierarchy.o
+src/ai/infrastructure/cllm_lattice_hierarchy.c: In function ‘lattice_hierarchy_wait_for_state’:
+src/ai/infrastructure/cllm_lattice_hierarchy.c:412:44: warning: comparison of integer expressions of different signedness: ‘atomic_int’ {aka ‘int’} and ‘HierarchyState’ [-Wsign-compare]
+  412 |         while (atomic_load(&sphere->state) != target_state) {
+      |                                            ^~
+src/ai/infrastructure/cllm_lattice_hierarchy.c:429:44: warning: comparison of integer expressions of different signedness: ‘atomic_int’ {aka ‘int’} and ‘HierarchyState’ [-Wsign-compare]
+  429 |         while (atomic_load(&sphere->state) != target_state) {
+      |                                            ^~
+src/ai/infrastructure/cllm_lattice_hierarchy.c: In function ‘lattice_hierarchy_add_work’:
+src/ai/infrastructure/cllm_lattice_hierarchy.c:672:12: warning: unused variable ‘head’ [-Wunused-variable]
+  672 |     size_t head = atomic_load(&sphere->work_queue_head);
+      |            ^~~~
+Compiling [AI]: src/ai/infrastructure/cllm_loss.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_loss.c -o src/ai/infrastructure/cllm_loss.o
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_cross_entropy_forward’:
+src/ai/infrastructure/cllm_loss.c:278:11: warning: unused parameter ‘epsilon’ [-Wunused-parameter]
+  278 |     float epsilon,
+      |     ~~~~~~^~~~~~~
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_cross_entropy_backward’:
+src/ai/infrastructure/cllm_loss.c:367:11: warning: unused parameter ‘epsilon’ [-Wunused-parameter]
+  367 |     float epsilon
+      |     ~~~~~~^~~~~~~
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_mae_forward’:
+src/ai/infrastructure/cllm_loss.c:576:26: warning: implicit declaration of function ‘fabsf’ [-Wimplicit-function-declaration]
+  576 |             float diff = fabsf(predictions->data[idx] - targets->data[idx]);
+      |                          ^~~~~
+src/ai/infrastructure/cllm_loss.c:7:1: note: include ‘<math.h>’ or provide a declaration of ‘fabsf’
+    6 | #include <stdio.h>
+  +++ |+#include <math.h>
+    7 | 
+src/ai/infrastructure/cllm_loss.c:576:26: warning: incompatible implicit declaration of built-in function ‘fabsf’ [-Wbuiltin-declaration-mismatch]
+  576 |             float diff = fabsf(predictions->data[idx] - targets->data[idx]);
+      |                          ^~~~~
+src/ai/infrastructure/cllm_loss.c:576:26: note: include ‘<math.h>’ or provide a declaration of ‘fabsf’
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_huber_forward’:
+src/ai/infrastructure/cllm_loss.c:672:26: warning: incompatible implicit declaration of built-in function ‘fabsf’ [-Wbuiltin-declaration-mismatch]
+  672 |             float diff = fabsf(predictions->data[idx] - targets->data[idx]);
+      |                          ^~~~~
+src/ai/infrastructure/cllm_loss.c:672:26: note: include ‘<math.h>’ or provide a declaration of ‘fabsf’
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_huber_backward’:
+src/ai/infrastructure/cllm_loss.c:734:30: warning: incompatible implicit declaration of built-in function ‘fabsf’ [-Wbuiltin-declaration-mismatch]
+  734 |             float abs_diff = fabsf(diff);
+      |                              ^~~~~
+src/ai/infrastructure/cllm_loss.c:734:30: note: include ‘<math.h>’ or provide a declaration of ‘fabsf’
+src/ai/infrastructure/cllm_loss.c: In function ‘loss_check_numerical_stability’:
+src/ai/infrastructure/cllm_loss.c:870:13: warning: implicit declaration of function ‘isnan’ [-Wimplicit-function-declaration]
+  870 |         if (isnan(val)) found_nan = true;
+      |             ^~~~~
+src/ai/infrastructure/cllm_loss.c:870:13: note: include ‘<math.h>’ or provide a declaration of ‘isnan’
+src/ai/infrastructure/cllm_loss.c:871:13: warning: implicit declaration of function ‘isinf’ [-Wimplicit-function-declaration]
+  871 |         if (isinf(val)) found_inf = true;
+      |             ^~~~~
+src/ai/infrastructure/cllm_loss.c:871:13: note: include ‘<math.h>’ or provide a declaration of ‘isinf’
+Compiling [AI]: src/ai/infrastructure/cllm_message_queue.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_message_queue.c -o src/ai/infrastructure/cllm_message_queue.o
+Compiling [AI]: src/ai/infrastructure/cllm_optimizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_optimizer.c -o src/ai/infrastructure/cllm_optimizer.o
+Compiling [AI]: src/ai/infrastructure/cllm_shared_memory.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_shared_memory.c -o src/ai/infrastructure/cllm_shared_memory.o
+Compiling [AI]: src/ai/infrastructure/cllm_sphere_message.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_sphere_message.c -o src/ai/infrastructure/cllm_sphere_message.o
+Compiling [AI]: src/ai/infrastructure/cllm_sphere_stats.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_sphere_stats.c -o src/ai/infrastructure/cllm_sphere_stats.o
+In file included from src/ai/infrastructure/cllm_sphere_stats.c:2:
+./include/cllm_mathematical_constants.h:23: warning: "VECTOR_CULMINATION" redefined
+   23 | #define VECTOR_CULMINATION 144000ULL
+      | 
+In file included from ./include/bigint_core.h:16,
+                 from ./include/bigfixed_core.h:13,
+                 from ./include/cllm_mathematical_constants.h:5:
+./include/prime_types.h:353: note: this is the location of the previous definition
+  353 | #define VECTOR_CULMINATION 144000     // 3 × 12³ × (250/9)
+      | 
+./include/cllm_mathematical_constants.h:29: warning: "TWIN_PRIME_LOWER" redefined
+   29 | #define TWIN_PRIME_LOWER 143999ULL  // Prime below 144000
+      | 
+./include/prime_types.h:354: note: this is the location of the previous definition
+  354 | #define TWIN_PRIME_LOWER 143999       // Lattice twin (lower)
+      | 
+./include/cllm_mathematical_constants.h:30: warning: "TWIN_PRIME_UPPER" redefined
+   30 | #define TWIN_PRIME_UPPER 144001ULL  // Prime above 144000
+      | 
+./include/prime_types.h:355: note: this is the location of the previous definition
+  355 | #define TWIN_PRIME_UPPER 144001       // Lattice twin (upper)
+      | 
+./include/cllm_mathematical_constants.h:118: warning: "GOLDEN_RATIO" redefined
+  118 | #define GOLDEN_RATIO 1.618033988749894848204586834365638117720309179805762862135
+      | 
+./include/prime_types.h:339: note: this is the location of the previous definition
+  339 | #define GOLDEN_RATIO 1.618033988749895
+      | 
+src/ai/infrastructure/cllm_sphere_stats.c: In function ‘cllm_sphere_stats_record_batch’:
+src/ai/infrastructure/cllm_sphere_stats.c:96:46: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+   96 |                                     uint64_t batch_size,
+      |                                     ~~~~~~~~~^~~~~~~~~~
+Compiling [AI]: src/ai/infrastructure/cllm_thread_allocation.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_thread_allocation.c -o src/ai/infrastructure/cllm_thread_allocation.o
+src/ai/infrastructure/cllm_thread_allocation.c: In function ‘estimate_symmetry_group_workload’:
+src/ai/infrastructure/cllm_thread_allocation.c:59:47: warning: unused parameter ‘symmetry_group’ [-Wunused-parameter]
+   59 | uint64_t estimate_symmetry_group_workload(int symmetry_group,
+      |                                           ~~~~^~~~~~~~~~~~~~
+Compiling [AI]: src/ai/infrastructure/cllm_training_loop.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_training_loop.c -o src/ai/infrastructure/cllm_training_loop.o
+src/ai/infrastructure/cllm_training_loop.c: In function ‘training_loop_cleanup_checkpoints’:
+src/ai/infrastructure/cllm_training_loop.c:729:73: warning: unused parameter ‘keep_count’ [-Wunused-parameter]
+  729 | uint32_t training_loop_cleanup_checkpoints(TrainingLoop* loop, uint32_t keep_count) {
+      |                                                                ~~~~~~~~~^~~~~~~~~~
+Creating CLLM library: libcllm.so
+gcc -shared -o libcllm.so src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o -L. -lcrystalline -lalgorithms
+✓ CLLM library created
+Creating crawler library: libcrawler.so
+gcc -shared -o libcrawler.so src/crawler/crawler_core.o src/crawler/preprocessor.o src/crawler/tokenizer.o src/crawler/continuous_training.o src/crawler/crawler_api.o -L. -lcrystalline -lcllm -lcurl -lpthread
+✓ Crawler library created
+Creating static library: libprimemath.a
+ar rcs libprimemath.a src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o
+✓ Static library created
+Creating shared library: libprimemath.so
+gcc -shared -o libprimemath.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o 
+✓ Shared library created
+Creating document processing library: libdocproc.so
+gcc -shared -o libdocproc.so src/document_processing/cllm_pdf.o src/document_processing/cllm_ocr.o
+✓ Document processing library created
+Building PDF extraction tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_pdf_extract tools/cllm_pdf_extract.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ PDF extraction tool built: tools/cllm_pdf_extract
+Building OCR tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_ocr tools/cllm_ocr.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ OCR tool built: tools/cllm_ocr
+Building combined PDF+OCR tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_pdf_ocr tools/cllm_pdf_ocr.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ Combined PDF+OCR tool built: tools/cllm_pdf_ocr
+✓ Build complete!
+  Crystalline library: libcrystalline.so
+  CLLM library: libcllm.so
+  Crawler library: libcrawler.so
+  Legacy static: libprimemath.a
+  Legacy shared: libprimemath.so
+  Crawler library: libcrawler.so

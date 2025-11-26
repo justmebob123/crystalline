@@ -1,6 +1,7 @@
 #include "ai/cllm_batch.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdatomic.h>
 

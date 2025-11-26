@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -576,6 +577,7 @@ float backprop_verify_gradients(
     const Tensor* targets,
     float epsilon
 ) {
+    (void)epsilon;  // Reserved for future numerical stability checks
     if (!ctx || !loss_comp || !predictions || !targets) return -1.0f;
     
     // Numerical gradient checking

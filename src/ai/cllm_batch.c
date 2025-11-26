@@ -26,6 +26,9 @@ typedef struct {
     uint32_t num_valid_tokens;  // Total non-padding tokens
 } CLLMBatch;
 
+// Forward declaration
+void cllm_batch_free(CLLMBatch* batch);
+
 /**
  * Batch Iterator Structure
  */

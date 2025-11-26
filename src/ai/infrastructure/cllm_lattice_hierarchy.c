@@ -669,7 +669,7 @@ int lattice_hierarchy_add_work(CLLMLatticeHierarchy* sphere,
     if (!sphere) return 0;
     
     size_t tail = atomic_load(&sphere->work_queue_tail);
-    size_t head = atomic_load(&sphere->work_queue_head);
+    (void)atomic_load(&sphere->work_queue_head);  // Reserved for future queue validation
     size_t size = atomic_load(&sphere->work_queue_size);
     
     // Check if queue is full

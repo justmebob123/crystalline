@@ -1,0 +1,18 @@
+Compiling [AI]: src/ai/cllm_batch.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_batch.c -o src/ai/cllm_batch.o
+src/ai/cllm_batch.c:18:22: error: unknown type name ‘CLLMBatch’
+   18 | void cllm_batch_free(CLLMBatch* batch);
+      |                      ^~~~~~~~~
+src/ai/cllm_batch.c: In function ‘cllm_batch_create’:
+src/ai/cllm_batch.c:62:9: warning: implicit declaration of function ‘cllm_batch_free’; did you mean ‘cllm_batch_create’? [-Wimplicit-function-declaration]
+   62 |         cllm_batch_free(batch);
+      |         ^~~~~~~~~~~~~~~
+      |         cllm_batch_create
+src/ai/cllm_batch.c: At top level:
+src/ai/cllm_batch.c:72:6: warning: conflicting types for ‘cllm_batch_free’; have ‘void(CLLMBatch *)’
+   72 | void cllm_batch_free(CLLMBatch* batch) {
+      |      ^~~~~~~~~~~~~~~
+src/ai/cllm_batch.c:62:9: note: previous implicit declaration of ‘cllm_batch_free’ with type ‘void(CLLMBatch *)’
+   62 |         cllm_batch_free(batch);
+      |         ^~~~~~~~~~~~~~~
+make: *** [Makefile:140: src/ai/cllm_batch.o] Error 1

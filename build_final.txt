@@ -1,0 +1,212 @@
+Compiling [CORE]: src/core/bigfixed_constants.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_constants.c -o src/core/bigfixed_constants.o
+Compiling [CORE]: src/core/bigfixed_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigfixed_core.c -o src/core/bigfixed_core.o
+Compiling [CORE]: src/core/bigint_conversions.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_conversions.c -o src/core/bigint_conversions.o
+Compiling [CORE]: src/core/bigint_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_core.c -o src/core/bigint_core.o
+Compiling [CORE]: src/core/bigint_ntt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/bigint_ntt.c -o src/core/bigint_ntt.o
+Compiling [CORE]: src/core/cllm_angular_position.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_angular_position.c -o src/core/cllm_angular_position.o
+Compiling [CORE]: src/core/cllm_hierarchical_abacus.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_hierarchical_abacus.c -o src/core/cllm_hierarchical_abacus.o
+Compiling [CORE]: src/core/cllm_mathematical_constants.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_mathematical_constants.c -o src/core/cllm_mathematical_constants.o
+Compiling [CORE]: src/core/cllm_sphere_position.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/cllm_sphere_position.c -o src/core/cllm_sphere_position.o
+Compiling [CORE]: src/core/crystal_abacus.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/crystal_abacus.c -o src/core/crystal_abacus.o
+Compiling [CORE]: src/core/prime_lowlevel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/core/prime_lowlevel.c -o src/core/prime_lowlevel.o
+Compiling [TRANS]: src/transcendental/prime_basic.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_basic.c -o src/transcendental/prime_basic.o
+Compiling [TRANS]: src/transcendental/prime_bigint_transcendental.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_bigint_transcendental.c -o src/transcendental/prime_bigint_transcendental.o
+Compiling [TRANS]: src/transcendental/prime_float_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_float_math.c -o src/transcendental/prime_float_math.o
+Compiling [TRANS]: src/transcendental/prime_math.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math.c -o src/transcendental/prime_math.o
+Compiling [TRANS]: src/transcendental/prime_math_custom.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/transcendental/prime_math_custom.c -o src/transcendental/prime_math_custom.o
+Compiling [GEOM]: src/geometry/lattice_algorithms.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/lattice_algorithms.c -o src/geometry/lattice_algorithms.o
+Compiling [GEOM]: src/geometry/prime_coords.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_coords.c -o src/geometry/prime_coords.o
+Compiling [GEOM]: src/geometry/prime_hyperdim.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_hyperdim.c -o src/geometry/prime_hyperdim.o
+Compiling [GEOM]: src/geometry/prime_lattice.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice.c -o src/geometry/prime_lattice.o
+Compiling [GEOM]: src/geometry/prime_lattice_core.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_core.c -o src/geometry/prime_lattice_core.o
+Compiling [GEOM]: src/geometry/prime_lattice_geometry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_lattice_geometry.c -o src/geometry/prime_lattice_geometry.o
+Compiling [GEOM]: src/geometry/prime_matrix.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_matrix.c -o src/geometry/prime_matrix.o
+Compiling [GEOM]: src/geometry/prime_rainbow.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/geometry/prime_rainbow.c -o src/geometry/prime_rainbow.o
+Creating crystalline library: libcrystalline.so
+gcc -shared -o libcrystalline.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
+✓ Crystalline library created
+Building algorithms library...
+make[1]: Entering directory '/workspace/algorithms'
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/numerical.c -o src/numerical.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/loss_functions.c -o src/loss_functions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/optimizers.c -o src/optimizers.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/backprop.c -o src/backprop.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/statistics.c -o src/statistics.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/threading.c -o src/threading.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/shared_memory.c -o src/shared_memory.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lock_free_queue.c -o src/lock_free_queue.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/sphere_packing.c -o src/sphere_packing.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/batch_processing.c -o src/batch_processing.o
+gcc -shared -o libalgorithms.so src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/lock_free_queue.o src/sphere_packing.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o -L.. -lcrystalline
+make[1]: Leaving directory '/workspace/algorithms'
+✓ Algorithms library created
+Compiling [AI]: src/ai/cllm_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_attention.c -o src/ai/cllm_attention.o
+Compiling [AI]: src/ai/cllm_backward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_backward.c -o src/ai/cllm_backward.o
+Compiling [AI]: src/ai/cllm_batch.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_batch.c -o src/ai/cllm_batch.o
+Compiling [AI]: src/ai/cllm_benchmark.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_benchmark.c -o src/ai/cllm_benchmark.o
+Compiling [AI]: src/ai/cllm_cache.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_cache.c -o src/ai/cllm_cache.o
+Compiling [AI]: src/ai/cllm_create.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_create.c -o src/ai/cllm_create.o
+Compiling [AI]: src/ai/cllm_crystalline_advanced.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_advanced.c -o src/ai/cllm_crystalline_advanced.o
+Compiling [AI]: src/ai/cllm_crystalline_attention.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_attention.c -o src/ai/cllm_crystalline_attention.o
+Compiling [AI]: src/ai/cllm_crystalline_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_crystalline_training.c -o src/ai/cllm_crystalline_training.o
+Compiling [AI]: src/ai/cllm_data_loader.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_data_loader.c -o src/ai/cllm_data_loader.o
+Compiling [AI]: src/ai/cllm_embedding.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_embedding.c -o src/ai/cllm_embedding.o
+Compiling [AI]: src/ai/cllm_feedforward.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_feedforward.c -o src/ai/cllm_feedforward.o
+Compiling [AI]: src/ai/cllm_format.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_format.c -o src/ai/cllm_format.o
+Compiling [AI]: src/ai/cllm_fp16.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_fp16.c -o src/ai/cllm_fp16.o
+Compiling [AI]: src/ai/cllm_inference.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_inference.c -o src/ai/cllm_inference.o
+Compiling [AI]: src/ai/cllm_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_init.c -o src/ai/cllm_init.o
+Compiling [AI]: src/ai/cllm_lattice_conversion.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_conversion.c -o src/ai/cllm_lattice_conversion.o
+Compiling [AI]: src/ai/cllm_lattice_embed.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_embed.c -o src/ai/cllm_lattice_embed.o
+Compiling [AI]: src/ai/cllm_lattice_init.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lattice_init.c -o src/ai/cllm_lattice_init.o
+Compiling [AI]: src/ai/cllm_layernorm.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_layernorm.c -o src/ai/cllm_layernorm.o
+Compiling [AI]: src/ai/cllm_lll_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_lll_embeddings.c -o src/ai/cllm_lll_embeddings.o
+Compiling [AI]: src/ai/cllm_loss.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_loss.c -o src/ai/cllm_loss.o
+Compiling [AI]: src/ai/cllm_optimizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_optimizer.c -o src/ai/cllm_optimizer.o
+Compiling [AI]: src/ai/cllm_optimizer_wrapper.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_optimizer_wrapper.c -o src/ai/cllm_optimizer_wrapper.o
+Compiling [AI]: src/ai/cllm_positional.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_positional.c -o src/ai/cllm_positional.o
+Compiling [AI]: src/ai/cllm_production.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_production.c -o src/ai/cllm_production.o
+Compiling [AI]: src/ai/cllm_pure_embeddings.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_embeddings.c -o src/ai/cllm_pure_embeddings.o
+Compiling [AI]: src/ai/cllm_pure_token.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_pure_token.c -o src/ai/cllm_pure_token.o
+Compiling [AI]: src/ai/cllm_recursive_spheres.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_recursive_spheres.c -o src/ai/cllm_recursive_spheres.o
+Compiling [AI]: src/ai/cllm_root_word_modeling.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_root_word_modeling.c -o src/ai/cllm_root_word_modeling.o
+Compiling [AI]: src/ai/cllm_simd_gradient_ops.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_simd_gradient_ops.c -o src/ai/cllm_simd_gradient_ops.o
+Compiling [AI]: src/ai/cllm_simd_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_simd_utils.c -o src/ai/cllm_simd_utils.o
+Compiling [AI]: src/ai/cllm_symmetry.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_symmetry.c -o src/ai/cllm_symmetry.o
+Compiling [AI]: src/ai/cllm_threads.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_threads.c -o src/ai/cllm_threads.o
+Compiling [AI]: src/ai/cllm_tokenizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_tokenizer.c -o src/ai/cllm_tokenizer.o
+Compiling [AI]: src/ai/cllm_train_complete.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_train_complete.c -o src/ai/cllm_train_complete.o
+Compiling [AI]: src/ai/cllm_training.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training.c -o src/ai/cllm_training.o
+Compiling [AI]: src/ai/cllm_training_mt.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_mt.c -o src/ai/cllm_training_mt.o
+Compiling [AI]: src/ai/cllm_training_parallel.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_parallel.c -o src/ai/cllm_training_parallel.o
+Compiling [AI]: src/ai/cllm_training_threaded.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_training_threaded.c -o src/ai/cllm_training_threaded.o
+Compiling [AI]: src/ai/cllm_utils.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_utils.c -o src/ai/cllm_utils.o
+Compiling [AI]: src/ai/cllm_validate.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_validate.c -o src/ai/cllm_validate.o
+Compiling [AI]: src/ai/cllm_vocab_builder.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/cllm_vocab_builder.c -o src/ai/cllm_vocab_builder.o
+Compiling [AI]: src/ai/infrastructure/cllm_backprop.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_backprop.c -o src/ai/infrastructure/cllm_backprop.o
+Compiling [AI]: src/ai/infrastructure/cllm_batch.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_batch.c -o src/ai/infrastructure/cllm_batch.o
+Compiling [AI]: src/ai/infrastructure/cllm_control_process.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_control_process.c -o src/ai/infrastructure/cllm_control_process.o
+Compiling [AI]: src/ai/infrastructure/cllm_lattice_hierarchy.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_lattice_hierarchy.c -o src/ai/infrastructure/cllm_lattice_hierarchy.o
+Compiling [AI]: src/ai/infrastructure/cllm_loss.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_loss.c -o src/ai/infrastructure/cllm_loss.o
+Compiling [AI]: src/ai/infrastructure/cllm_message_queue.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_message_queue.c -o src/ai/infrastructure/cllm_message_queue.o
+Compiling [AI]: src/ai/infrastructure/cllm_optimizer.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_optimizer.c -o src/ai/infrastructure/cllm_optimizer.o
+Compiling [AI]: src/ai/infrastructure/cllm_shared_memory.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_shared_memory.c -o src/ai/infrastructure/cllm_shared_memory.o
+Compiling [AI]: src/ai/infrastructure/cllm_sphere_message.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_sphere_message.c -o src/ai/infrastructure/cllm_sphere_message.o
+Compiling [AI]: src/ai/infrastructure/cllm_sphere_stats.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_sphere_stats.c -o src/ai/infrastructure/cllm_sphere_stats.o
+Compiling [AI]: src/ai/infrastructure/cllm_thread_allocation.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_thread_allocation.c -o src/ai/infrastructure/cllm_thread_allocation.o
+Compiling [AI]: src/ai/infrastructure/cllm_training_loop.c
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -c src/ai/infrastructure/cllm_training_loop.c -o src/ai/infrastructure/cllm_training_loop.o
+Creating CLLM library: libcllm.so
+gcc -shared -o libcllm.so src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o -L. -lcrystalline -lalgorithms
+✓ CLLM library created
+Creating crawler library: libcrawler.so
+gcc -shared -o libcrawler.so src/crawler/crawler_core.o src/crawler/preprocessor.o src/crawler/tokenizer.o src/crawler/continuous_training.o src/crawler/crawler_api.o -L. -lcrystalline -lcllm -lcurl -lpthread
+✓ Crawler library created
+Creating static library: libprimemath.a
+ar rcs libprimemath.a src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o
+✓ Static library created
+Creating shared library: libprimemath.so
+gcc -shared -o libprimemath.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_hierarchical_abacus.o src/core/cllm_mathematical_constants.o src/core/cllm_sphere_position.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o src/ai/cllm_attention.o src/ai/cllm_backward.o src/ai/cllm_batch.o src/ai/cllm_benchmark.o src/ai/cllm_cache.o src/ai/cllm_create.o src/ai/cllm_crystalline_advanced.o src/ai/cllm_crystalline_attention.o src/ai/cllm_crystalline_training.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_inference.o src/ai/cllm_init.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_embed.o src/ai/cllm_lattice_init.o src/ai/cllm_layernorm.o src/ai/cllm_lll_embeddings.o src/ai/cllm_loss.o src/ai/cllm_optimizer.o src/ai/cllm_optimizer_wrapper.o src/ai/cllm_positional.o src/ai/cllm_production.o src/ai/cllm_pure_embeddings.o src/ai/cllm_pure_token.o src/ai/cllm_recursive_spheres.o src/ai/cllm_root_word_modeling.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_threads.o src/ai/cllm_tokenizer.o src/ai/cllm_train_complete.o src/ai/cllm_training.o src/ai/cllm_training_mt.o src/ai/cllm_training_parallel.o src/ai/cllm_training_threaded.o src/ai/cllm_utils.o src/ai/cllm_validate.o src/ai/cllm_vocab_builder.o src/ai/infrastructure/cllm_backprop.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_loss.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/infrastructure/cllm_training_loop.o 
+✓ Shared library created
+Creating document processing library: libdocproc.so
+gcc -shared -o libdocproc.so src/document_processing/cllm_pdf.o src/document_processing/cllm_ocr.o
+✓ Document processing library created
+Building PDF extraction tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_pdf_extract tools/cllm_pdf_extract.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ PDF extraction tool built: tools/cllm_pdf_extract
+Building OCR tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_ocr tools/cllm_ocr.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ OCR tool built: tools/cllm_ocr
+Building combined PDF+OCR tool...
+gcc -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma -o tools/cllm_pdf_ocr tools/cllm_pdf_ocr.c \
+	-L. -ldocproc -Wl,-rpath,'$ORIGIN/..'
+✓ Combined PDF+OCR tool built: tools/cllm_pdf_ocr
+✓ Build complete!
+  Crystalline library: libcrystalline.so
+  CLLM library: libcllm.so
+  Crawler library: libcrawler.so
+  Legacy static: libprimemath.a
+  Legacy shared: libprimemath.so
+  Crawler library: libcrawler.so
