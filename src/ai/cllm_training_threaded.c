@@ -28,6 +28,9 @@ typedef struct {
     int sphere_id;
     int symmetry_group;  // 0-11 for the 12 kissing spheres
     
+    // Reference to parent system
+    struct ThreadedTrainingSystem* system;
+    
     // Local gradient buffers
     float* local_gradients;
     size_t gradient_size;
@@ -47,6 +50,9 @@ typedef struct {
     pthread_cond_t work_done;
     int has_work;
     int work_complete;
+    
+    // Worker thread
+    pthread_t thread;
     
 } SphereTrainingContext;
 
@@ -95,6 +101,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     
     ctx->sphere_id = sphere_id;
     ctx->symmetry_group = symmetry_group;
+    ctx->system = NULL;  // Will be set later
     ctx->gradient_size = gradient_size;
     
     ctx->local_gradients = (float*)calloc(gradient_size, sizeof(float));
@@ -129,61 +136,54 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
     free(ctx);
 }
 
+// Forward declarations
+static void* sphere_worker_thread(void* arg);
+static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
+
 /**
  * Process batch on a sphere (worker thread function)
  */
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training) {
-    if (!ctx->current_batch) return;
+    if (!ctx->current_batch || !training) return;
     
     CLLMBatch* batch = ctx->current_batch;
     
     // Zero local gradients
     memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(float));
     
-    // Forward pass
-    // Note: In a real implementation, we'd need thread-safe forward pass
-    // For now, we'll compute loss and gradients
+    // Process each sequence in the batch
+    float total_loss = 0.0f;
+    int valid_sequences = 0;
     
-    // Compute loss (simplified)
-    float loss = 0.0f;
-    int valid_tokens = 0;
-    
-    for (uint32_t i = 0; i < batch->batch_size * batch->seq_len; i++) {
-        if (batch->attention_mask[i] > 0.5f) {
-            // Simplified loss computation
-            // In real implementation, this would use the model's forward pass
-            loss += 1.0f;  // Placeholder
-            valid_tokens++;
+    for (uint32_t seq = 0; seq < batch->batch_size; seq++) {
+        uint32_t offset = seq * batch->seq_len;
+        
+        // Check if this sequence has valid tokens
+        int has_valid = 0;
+        for (uint32_t i = 0; i < batch->seq_len; i++) {
+            if (batch->attention_mask[offset + i] > 0.5f) {
+                has_valid = 1;
+                break;
+            }
         }
+        
+        if (!has_valid) continue;
+        
+        // Forward pass using the actual model
+        float seq_loss = cllm_forward_training(training, &batch->input_ids[offset]);
+        
+        // Compute loss
+        seq_loss += cllm_compute_loss_training(training, &batch->target_ids[offset]);
+        
+        // Backward pass - compute gradients
+        cllm_backward_training(training, &batch->target_ids[offset]);
+        
+        total_loss += seq_loss;
+        valid_sequences++;
     }
     
-    ctx->batch_loss = (valid_tokens > 0) ? loss / valid_tokens : 0.0f;
-    
-    // Backward pass - compute gradients
-    // In real implementation, this would compute actual gradients
-    // For now, we'll simulate gradient computation
-    for (size_t i = 0; i < ctx->gradient_size && i < 1000; i++) {
-        ctx->local_gradients[i] = (float)(rand() % 100) / 10000.0f;
-    }
-    
+    ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0f;
     ctx->batches_processed++;
-}
-
-/**
- * Sphere worker thread
- */
-static void* sphere_worker_thread(void* arg) {
-    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
-    
-    printf("Sphere %d (group %d) worker thread started\n", 
-           ctx->sphere_id, ctx->symmetry_group);
-    
-    // Note: This is a simplified implementation
-    // In production, worker threads would run continuously
-    // For this demo, we process batches synchronously in the main thread
-    
-    printf("Sphere %d worker thread exiting\n", ctx->sphere_id);
-    return NULL;
 }
 
 /**
@@ -281,12 +281,43 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
             free(system);
             return NULL;
         }
+        // Set system reference
+        system->sphere_contexts[i]->system = system;
+    }
+    
+    // Create worker threads
+    printf("  Creating %d worker threads...\n", system->num_worker_spheres);
+    for (int i = 0; i < system->num_worker_spheres; i++) {
+        int rc = pthread_create(&system->sphere_contexts[i]->thread, NULL, 
+                               sphere_worker_thread, system->sphere_contexts[i]);
+        if (rc != 0) {
+            fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
+            // Stop already created threads
+            system->running = 0;
+            for (int j = 0; j < i; j++) {
+                pthread_mutex_lock(&system->sphere_contexts[j]->lock);
+                pthread_cond_signal(&system->sphere_contexts[j]->work_ready);
+                pthread_mutex_unlock(&system->sphere_contexts[j]->lock);
+                pthread_join(system->sphere_contexts[j]->thread, NULL);
+            }
+            // Cleanup
+            for (int j = 0; j < system->num_worker_spheres; j++) {
+                sphere_context_free(system->sphere_contexts[j]);
+            }
+            free(system->sphere_contexts);
+            threads_free(system->thread_system);
+            free(system->accumulated_gradients);
+            pthread_mutex_destroy(&system->gradient_lock);
+            free(system);
+            return NULL;
+        }
     }
     
     system->epoch_loss = 0.0f;
     system->total_batches = 0;
     
-    printf("  ✓ Threaded training system created successfully\n\n");
+    printf("  ✓ Threaded training system created successfully with %d active threads\n\n", 
+           system->num_worker_spheres);
     
     return system;
 }
@@ -297,16 +328,21 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
 void threaded_training_free(ThreadedTrainingSystem* system) {
     if (!system) return;
     
+    printf("\nStopping worker threads...\n");
     system->running = 0;
     
-    // Wake up all worker threads
+    // Wake up all worker threads and wait for them to exit
     for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i]) {
             pthread_mutex_lock(&system->sphere_contexts[i]->lock);
             pthread_cond_signal(&system->sphere_contexts[i]->work_ready);
             pthread_mutex_unlock(&system->sphere_contexts[i]->lock);
+            
+            // Join the thread
+            pthread_join(system->sphere_contexts[i]->thread, NULL);
         }
     }
+    printf("All worker threads stopped.\n");
     
     // Free sphere contexts
     for (int i = 0; i < system->num_worker_spheres; i++) {
@@ -325,24 +361,73 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
 }
 
 /**
- * Distribute batch to sphere (synchronous for demo)
+ * Worker thread function - processes batches assigned to this sphere
  */
-static void distribute_batch_to_sphere(ThreadedTrainingSystem* system, int sphere_id, 
-                                       CLLMBatch* batch) {
-    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
+static void* sphere_worker_thread(void* arg) {
+    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
+    ThreadedTrainingSystem* system = ctx->system;
     
-    ctx->current_batch = batch;
-    sphere_process_batch(ctx, system->training);
-    ctx->current_batch = NULL;
+    while (system->running) {
+        pthread_mutex_lock(&ctx->lock);
+        
+        // Wait for work
+        while (!ctx->has_work && system->running) {
+            pthread_cond_wait(&ctx->work_ready, &ctx->lock);
+        }
+        
+        if (!system->running) {
+            pthread_mutex_unlock(&ctx->lock);
+            break;
+        }
+        
+        // Process the batch
+        if (ctx->current_batch) {
+            sphere_process_batch(ctx, system->training);
+        }
+        
+        // Signal work complete
+        ctx->work_complete = 1;
+        ctx->has_work = 0;
+        pthread_cond_signal(&ctx->work_done);
+        
+        pthread_mutex_unlock(&ctx->lock);
+    }
+    
+    return NULL;
 }
 
 /**
- * Wait for sphere to complete work (no-op in synchronous mode)
+ * Distribute batch to sphere (asynchronous)
+ */
+static void distribute_batch_to_sphere(ThreadedTrainingSystem* system, int sphere_id, 
+                                      CLLMBatch* batch) {
+    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
+    
+    pthread_mutex_lock(&ctx->lock);
+    
+    ctx->current_batch = batch;
+    ctx->has_work = 1;
+    ctx->work_complete = 0;
+    pthread_cond_signal(&ctx->work_ready);
+    
+    pthread_mutex_unlock(&ctx->lock);
+}
+
+/**
+ * Wait for sphere to complete work
  */
 static void wait_for_sphere(ThreadedTrainingSystem* system, int sphere_id) {
-    (void)system;
-    (void)sphere_id;
-    // No-op in synchronous mode
+    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
+    
+    pthread_mutex_lock(&ctx->lock);
+    
+    while (!ctx->work_complete) {
+        pthread_cond_wait(&ctx->work_done, &ctx->lock);
+    }
+    
+    ctx->current_batch = NULL;
+    
+    pthread_mutex_unlock(&ctx->lock);
 }
 
 /**
@@ -519,7 +604,7 @@ float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
         float val = system->accumulated_gradients[i];
         norm += val * val;
     }
-    norm = sqrtf(norm);
+    norm = prime_sqrtf(norm);
     
     pthread_mutex_unlock(&system->gradient_lock);
     
