@@ -15,9 +15,13 @@ APP_OBJECTS = $(APP_SOURCES:.c=.o)
 # Tab source files in ui/tabs/ subdirectory
 TAB_SOURCES = $(wildcard ui/tabs/*.c)
 TAB_OBJECTS = $(TAB_SOURCES:.c=.o)
+   # UI source files in ui/ subdirectory
+   UI_SOURCES = $(wildcard ui/*.c)
+   UI_OBJECTS = $(UI_SOURCES:.c=.o)
+
 
 # All objects
-ALL_OBJECTS = $(APP_OBJECTS) $(TAB_OBJECTS)
+ALL_OBJECTS = $(APP_OBJECTS) $(UI_OBJECTS) $(TAB_OBJECTS)
 
 # Target executable
 TARGET = hyper_prime_spiral
@@ -34,6 +38,11 @@ $(TARGET): $(ALL_OBJECTS)
 
 # Compile app files
 %.o: %.c
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Compile ui files
+ui/%.o: ui/%.c
 	@echo "Compiling $<..."
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
@@ -54,8 +63,8 @@ debug: clean all
 # Clean
 clean:
 	@echo "Cleaning application..."
-	rm -f $(APP_OBJECTS) $(TAB_OBJECTS) $(TARGET)
-	rm -f ui/tabs/*.o
+	rm -f $(APP_OBJECTS) $(UI_OBJECTS) $(TAB_OBJECTS) $(TARGET)
+	rm -f ui/*.o ui/tabs/*.o
 	@echo "✓ Application cleaned"
 
 # Info
@@ -63,8 +72,9 @@ info:
 	@echo "Application Build Information"
 	@echo "=============================="
 	@echo "App sources: $(words $(APP_SOURCES)) files"
+	@echo "UI sources: $(words $(UI_SOURCES)) files"
 	@echo "Tab sources: $(words $(TAB_SOURCES)) files"
-	@echo "Total sources: $(words $(APP_SOURCES) $(TAB_SOURCES)) files"
+	@echo "Total sources: $(words $(APP_SOURCES) $(UI_SOURCES) $(TAB_SOURCES)) files"
 	@echo ""
 	@echo "Compiler: $(CC)"
 	@echo "Flags: $(CFLAGS)"

@@ -14,6 +14,7 @@
 #include "../../training_thread.h"
 #include "../../ui_layout.h"
 #include "../../input_manager.h"
+   #include "../sphere_visualization.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_training_parallel.h"
@@ -291,6 +292,17 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
             SDL_RenderFillRect(renderer, &progress_fill);
         }
         content_y += 35;
+           
+           // Sphere Visualization - Show kissing spheres architecture
+           int sphere_viz_height = 300;
+           SDL_Rect sphere_bounds = {content_x, content_y, content_w / 2 - 10, sphere_viz_height};
+           draw_sphere_visualization(renderer, state, sphere_bounds);
+           
+           // Sphere Statistics Table - Show detailed per-sphere stats
+           SDL_Rect stats_bounds = {content_x + content_w / 2 + 10, content_y, content_w / 2 - 10, sphere_viz_height};
+           draw_sphere_stats_table(renderer, state, stats_bounds);
+           
+           content_y += sphere_viz_height + 20;
         
         // Loss graph
         if (viz_data.loss_count > 1) {
