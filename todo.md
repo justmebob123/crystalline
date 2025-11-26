@@ -21,10 +21,12 @@
 - [x] Document current test results
 
 ### Day 2: Integrate Kissing Spheres into UI Training
-- [ ] Update `app/training_thread.c` to use `cllm_training_threaded.c`
-- [ ] Add sphere statistics to `app/app_common.h`
-- [ ] Update training thread to create ThreadedTrainingSystem
-- [ ] Update training thread to use batch iterator
+- [x] Update `app/training_thread.c` to use `cllm_training_threaded.c` (ALREADY DONE!)
+- [x] Add sphere statistics to `app/app_common.h` (ALREADY DONE!)
+- [x] Update training thread to create ThreadedTrainingSystem (ALREADY DONE!)
+- [x] Update training thread to use batch iterator (ALREADY DONE!)
+- [x] Implement `update_sphere_stats()` function to extract real statistics
+- [x] Add API functions to get sphere statistics from ThreadedTrainingSystem
 - [ ] Test basic threading integration
 - [ ] Verify 12 worker threads are created
 - [ ] Verify batches distributed across spheres

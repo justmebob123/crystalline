@@ -413,3 +413,46 @@ void threaded_training_print_stats(ThreadedTrainingSystem* system) {
     
     printf("\n");
 }
+/**
+ * Get per-sphere statistics
+ */
+int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
+                                       int sphere_id,
+                                       int* batches_processed,
+                                       float* avg_loss) {
+    if (!system || sphere_id < 0 || sphere_id >= 12) return -1;
+    
+    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
+    if (!ctx) return -1;
+    
+    if (batches_processed) {
+        *batches_processed = ctx->batches_processed;
+    }
+    
+    if (avg_loss) {
+        *avg_loss = ctx->batches_processed > 0 ? 
+                    ctx->batch_loss / ctx->batches_processed : 0.0f;
+    }
+    
+    return 0;
+}
+
+/**
+ * Get total gradient norm
+ */
+float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
+    if (!system || !system->accumulated_gradients) return 0.0f;
+    
+    pthread_mutex_lock(&system->gradient_lock);
+    
+    float norm = 0.0f;
+    for (size_t i = 0; i < system->gradient_size; i++) {
+        float val = system->accumulated_gradients[i];
+        norm += val * val;
+    }
+    norm = sqrtf(norm);
+    
+    pthread_mutex_unlock(&system->gradient_lock);
+    
+    return norm;
+}

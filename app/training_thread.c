@@ -35,17 +35,23 @@ static CLLMBatchIterator* g_batch_iterator = NULL;
 static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system) {
     if (!state || !system) return;
     
-    // This function would extract statistics from the threaded system
-    // and update the AppState for UI rendering
-    // For now, we'll set placeholder values
-    
+    // Extract statistics from each of the 12 kissing spheres
     state->sphere_stats.active_spheres = 12;
-    state->sphere_stats.total_gradient_norm = 0.0f;
+    state->sphere_stats.total_batches = 0;
     
-    // In a full implementation, we'd extract per-sphere statistics
-    // from the ThreadedTrainingSystem and update:
-    // - state->sphere_stats.batches_processed[i]
-    // - state->sphere_stats.avg_loss[i]
+    for (int i = 0; i < 12; i++) {
+        int batches = 0;
+        float loss = 0.0f;
+        
+        if (threaded_training_get_sphere_stats(system, i, &batches, &loss) == 0) {
+            state->sphere_stats.batches_processed[i] = batches;
+            state->sphere_stats.avg_loss[i] = loss;
+            state->sphere_stats.total_batches += batches;
+        }
+    }
+    
+    // Get total gradient norm
+    state->sphere_stats.total_gradient_norm = threaded_training_get_gradient_norm(system);
 }
 
 /**

@@ -49,6 +49,28 @@ float threaded_train_epoch(ThreadedTrainingSystem* system);
  */
 void threaded_training_print_stats(ThreadedTrainingSystem* system);
 
+/**
+ * Get per-sphere statistics
+ * 
+ * @param system Threaded training system
+ * @param sphere_id Sphere ID (0-11)
+ * @param batches_processed Output: number of batches processed by this sphere
+ * @param avg_loss Output: average loss for this sphere
+ * @return 0 on success, -1 on failure
+ */
+int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
+                                       int sphere_id,
+                                       int* batches_processed,
+                                       float* avg_loss);
+
+/**
+ * Get total gradient norm
+ * 
+ * @param system Threaded training system
+ * @return Total gradient norm
+ */
+float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
+
 #ifdef __cplusplus
 }
 #endif
