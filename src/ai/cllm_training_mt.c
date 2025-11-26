@@ -99,13 +99,25 @@ static void* worker_thread(void* arg) {
         target_tokens[tokens_per_batch - 1] = training->tokens[token_offset];
         
         // Forward pass (reads model weights)
+        printf("Thread %d: About to call forward pass for batch %d\n", ctx->thread_id, batch_idx);
+        fflush(stdout);
         float loss = cllm_forward_training(training, input_tokens);
+        printf("Thread %d: Forward pass complete for batch %d, loss=%.4f\n", ctx->thread_id, batch_idx, loss);
+        fflush(stdout);
         
         // Compute loss
+        printf("Thread %d: About to compute loss for batch %d\n", ctx->thread_id, batch_idx);
+        fflush(stdout);
         loss += cllm_compute_loss_training(training, target_tokens);
+        printf("Thread %d: Loss computation complete for batch %d, total_loss=%.4f\n", ctx->thread_id, batch_idx, loss);
+        fflush(stdout);
         
         // Backward pass (writes to thread-local gradients)
+        printf("Thread %d: About to call backward pass for batch %d\n", ctx->thread_id, batch_idx);
+        fflush(stdout);
         cllm_backward_training(training, target_tokens);
+        printf("Thread %d: Backward pass complete for batch %d\n", ctx->thread_id, batch_idx);
+        fflush(stdout);
         
         thread_loss += loss;
         batches_processed++;

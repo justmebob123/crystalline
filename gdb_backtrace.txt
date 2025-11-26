@@ -1,0 +1,49 @@
+[New LWP 6566]
+[New LWP 6567]
+[New LWP 6568]
+[New LWP 6569]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+__futex_abstimed_wait_common64 (private=128, cancel=true, abstime=0x0, op=265, expected=6566, futex_word=0x79c675c98990) at ./nptl/futex-internal.c:57
+57	./nptl/futex-internal.c: No such file or directory.
+
+Thread 5 (Thread 0x79c674c966c0 (LWP 6569) "train_model"):
+#0  0x000079c67bf68800 in cllm_attention_forward_training (training=0x56a3ec339fa0, layer=0, attn_layer=0x56a3ebf61630, input=0x79c67692d010, output=0x79c6763c1010, seq_len=64) at src/ai/cllm_training.c:641
+#1  0x000079c67bf6a76f in cllm_forward_training (training=0x56a3ec339fa0, input_tokens=0x79c664000b70) at src/ai/cllm_training.c:1068
+#2  0x000079c67bf6d927 in worker_thread (arg=0x56a3ebedb080) at src/ai/cllm_training_mt.c:104
+#3  0x000079c67bcf01f5 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:442
+#4  0x000079c67bd708dc in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+
+Thread 4 (Thread 0x79c66ffff6c0 (LWP 6568) "train_model"):
+#0  0x000079c67bf6a939 in cllm_forward_training (training=0x56a3eb7ef280, input_tokens=0x79c660000b70) at src/ai/cllm_training.c:1087
+#1  0x000079c67bf6d927 in worker_thread (arg=0x56a3ebedb060) at src/ai/cllm_training_mt.c:104
+#2  0x000079c67bcf01f5 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:442
+#3  0x000079c67bd708dc in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+
+Thread 3 (Thread 0x79c6754976c0 (LWP 6567) "train_model"):
+#0  0x000079c67bf688c4 in cllm_attention_forward_training (training=0x56a3eb7ecc50, layer=0, attn_layer=0x56a3ebf61630, input=0x79c678c41010, output=0x79c6786d5010, seq_len=64) at src/ai/cllm_training.c:653
+#1  0x000079c67bf6a76f in cllm_forward_training (training=0x56a3eb7ecc50, input_tokens=0x79c668000b70) at src/ai/cllm_training.c:1068
+#2  0x000079c67bf6d927 in worker_thread (arg=0x56a3ebedb040) at src/ai/cllm_training_mt.c:104
+#3  0x000079c67bcf01f5 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:442
+#4  0x000079c67bd708dc in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+
+Thread 2 (Thread 0x79c675c986c0 (LWP 6566) "train_model"):
+#0  0x000079c67bf6a93e in cllm_forward_training (training=0x56a3eb7ea690, input_tokens=0x79c670000b70) at src/ai/cllm_training.c:1087
+#1  0x000079c67bf6d927 in worker_thread (arg=0x56a3ebedb020) at src/ai/cllm_training_mt.c:104
+#2  0x000079c67bcf01f5 in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:442
+#3  0x000079c67bd708dc in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+
+Thread 1 (Thread 0x79c67bc3e080 (LWP 6563) "train_model"):
+#0  __futex_abstimed_wait_common64 (private=128, cancel=true, abstime=0x0, op=265, expected=6566, futex_word=0x79c675c98990) at ./nptl/futex-internal.c:57
+#1  __futex_abstimed_wait_common (futex_word=futex_word@entry=0x79c675c98990, expected=6566, clockid=clockid@entry=0, abstime=abstime@entry=0x0, private=private@entry=128, cancel=cancel@entry=true) at ./nptl/futex-internal.c:87
+#2  0x000079c67bcecf7b in __GI___futex_abstimed_wait_cancelable64 (futex_word=futex_word@entry=0x79c675c98990, expected=<optimized out>, clockid=clockid@entry=0, abstime=abstime@entry=0x0, private=private@entry=128) at ./nptl/futex-internal.c:139
+#3  0x000079c67bcf1ce3 in __pthread_clockjoin_ex (threadid=133893286627008, thread_return=0x0, clockid=0, abstime=0x0, block=<optimized out>) at ./nptl/pthread_join_common.c:102
+#4  0x000079c67bf6ed98 in cllm_train_epoch_mt (training=0x56a3ebf61790, num_threads=4) at src/ai/cllm_training_mt.c:350
+#5  0x000056a3deae501b in train_model ()
+#6  0x000056a3deae46eb in main ()
+A debugging session is active.
+
+	Inferior 1 [process 6563] will be detached.
+
+Quit anyway? (y or n) [answered Y; input not from terminal]
+[Inferior 1 (process 6563) detached]

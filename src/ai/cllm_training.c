@@ -178,7 +178,7 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     // Allocate attention cache for full backward pass (OPTIMIZATION)
     training->attention_cache = (typeof(training->attention_cache))calloc(num_layers, sizeof(*training->attention_cache));
     training->cached_seq_len = config->sequence_length;
-    training->store_attention_weights = 1;  // Enable full attention backward by default
+    training->store_attention_weights = 0;  // Disable expensive attention caching during training (PERFORMANCE FIX)
     
     if (training->attention_cache && model->attention_layers) {
         int max_seq_len = config->sequence_length;
