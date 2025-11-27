@@ -555,6 +555,9 @@ static void* sphere_worker_thread(void* arg) {
     
     int batches_processed = 0;
     
+    printf("[Worker %d] About to check running flag, value=%d\n", ctx->sphere_id, atomic_load(&system->running));
+    fflush(stdout);
+    
     while (atomic_load(&system->running)) {
         printf("[Worker %d] Waiting at barrier Point A...\n", ctx->sphere_id); fflush(stdout);
         // POINT A: Wait for batch assignment from main thread
