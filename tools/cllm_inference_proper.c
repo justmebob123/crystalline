@@ -12,7 +12,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include <math.h>
+#include "../include/prime_float_math.h"
 
 // Forward declarations from cllm_inference.c
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);

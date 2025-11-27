@@ -6,7 +6,7 @@
  */
 
 #include "../app_common.h"
-#include <math.h>
+#include "../../include/prime_float_math.h"
 #include <stdio.h>
 
 #ifndef M_PI
@@ -128,8 +128,8 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     for (int i = 0; i < 12; i++) {
         // Calculate position
         float angle = (i * 2.0f * M_PI) / 12.0f - M_PI / 2.0f; // Start at top
-        int sphere_x = center_x + (int)(arrangement_radius * cos(angle));
-        int sphere_y = center_y + (int)(arrangement_radius * sin(angle));
+        int sphere_x = center_x + (int)(arrangement_radius * prime_cosf(angle));
+        int sphere_y = center_y + (int)(arrangement_radius * prime_sinf(angle));
         
         // Calculate activity level (0.0 to 1.0)
         float activity = 0.0f;
@@ -159,8 +159,8 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
             snprintf(batch_text, sizeof(batch_text), "%d", state->sphere_stats.batches_processed[i]);
             
             // Position text outside the circle
-            int text_x = sphere_x + (int)((sphere_radius + 15) * cos(angle)) - 10;
-            int text_y = sphere_y + (int)((sphere_radius + 15) * sin(angle)) - 6;
+            int text_x = sphere_x + (int)((sphere_radius + 15) * prime_cosf(angle)) - 10;
+            int text_y = sphere_y + (int)((sphere_radius + 15) * prime_sinf(angle)) - 6;
             
             draw_text(renderer, batch_text, text_x, text_y, 
                      (SDL_Color){180, 180, 180, 255});

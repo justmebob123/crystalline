@@ -14,7 +14,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include <math.h>
+#include "../include/prime_float_math.h"
 
 static void print_usage(const char* program_name) {
     printf("Usage: %s [OPTIONS] <model_file> <vocab_file>\n\n", program_name);
@@ -80,7 +80,7 @@ static int sample_top_k(float* logits, int vocab_size, int k, float temperature)
     // Sample from top-k
     float sum = 0.0f;
     for (int i = 0; i < k && i < vocab_size; i++) {
-        scores[i].logit = expf(scores[i].logit);
+        scores[i].logit = prime_expf(scores[i].logit);
         sum += scores[i].logit;
     }
     
