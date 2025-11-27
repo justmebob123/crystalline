@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
-#include "../include/cllm_training_mt.h"
+// Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
 #include "../include/cllm_training_threaded.h"
 #include "../include/cllm_recursive_spheres.h"
 #include "../include/cllm_batch.h"

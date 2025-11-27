@@ -1,41 +1,55 @@
-# CRITICAL DIRECTORY STRUCTURE FIX
+# PHASE 1: FIX COMMAND-LINE TOOL AND REMOVE OLD MT CODE
 
-## SITUATION ANALYSIS
-- [x] Confirmed `/workspace/` is the ACTUAL repository
-- [x] Confirmed `/workspace/crystalline/` is an OLD backup (should be deleted)
-- [x] Confirmed `/workspace/crystalline-repo/` is an OLDER backup (should be deleted)
-- [x] Confirmed MASTER_PLAN.md exists in root and is committed to GitHub
-- [x] Confirmed all source code is in `/workspace/src/`, `/workspace/algorithms/`, etc.
+## CURRENT STATUS
+Directory structure cleanup complete. Now executing Phase 1 of MASTER_PLAN.
 
-## IMMEDIATE ACTIONS REQUIRED
+## PHASE 1 TASKS
 
-### 1. BACKUP VERIFICATION
-- [x] Verify all important files from subdirectories are in root
-- [x] Check for any unique files in crystalline/ that aren't in root (only old docs)
-- [x] Check for any unique files in crystalline-repo/ that aren't in root (none)
+### 1. ANALYZE CURRENT STATE
+- [x] Review tools/train_model.c current implementation
+- [x] Identify all fallback code to old MT system
+- [x] Map dependencies on cllm_training_mt.c
+- [x] Map dependencies on cllm_training_parallel.c
 
-### 2. CLEANUP SUBDIRECTORIES
-- [x] Remove `/workspace/crystalline/` directory completely (69MB freed)
-- [x] Remove `/workspace/crystalline-repo/` directory completely
-- [x] Update .gitignore to prevent future confusion
+**FINDINGS:**
+- tools/train_model.c: Has 2 fallbacks to cllm_train_epoch_mt() (lines 213, 219)
+- src/ai/cllm_train_complete.c: Has 1 fallback to cllm_train_epoch_mt() (line 241)
+- src/ai/cllm_training_parallel.c: UNUSED - only defines function, never called
+- src/crawler/continuous_training.c: Uses cllm_train_epoch_crystalline() which calls cllm_train_epoch() (single-threaded)
 
-### 3. VERIFY REPOSITORY INTEGRITY
-- [x] Confirm all source files are in correct locations
-- [x] Confirm MASTER_PLAN.md is in root
-- [x] Confirm Makefile builds correctly (successful build)
-- [x] Run git status to verify clean state
+### 2. UPDATE COMMAND-LINE TOOL
+- [x] Update tools/train_model.c - remove fallbacks to cllm_train_epoch_mt()
+- [x] Update src/ai/cllm_train_complete.c - remove fallback to cllm_train_epoch_mt()
+- [x] Remove #include "cllm_training_mt.h" from both files
+- [x] Ensure proper error handling when threaded system fails (goto cleanup)
 
-### 4. COMMIT AND PUSH CLEANUP
+### 3. DELETE REDUNDANT FILES
+- [x] Delete src/ai/cllm_training_mt.c
+- [x] Delete src/ai/cllm_training_parallel.c
+- [x] Delete include/cllm_training_mt.h
+- [x] Delete include/cllm_training_parallel.h
+- [x] Makefile uses wildcards, so no update needed
+- [x] Verify no other files depend on deleted code (fixed tools/train_model_recursive.c)
+
+### 4. UPDATE CRAWLER INTEGRATION
+- [x] Update src/crawler/continuous_training.c
+- [x] Replace cllm_train_epoch_crystalline() with threaded_train_epoch()
+- [x] Ensure crawler uses kissing spheres for 5 epochs per file
+- [x] Added fallback to single-threaded if kissing spheres fails
+
+### 5. BUILD AND TEST
+- [x] Clean build (SUCCESS - all libraries built without errors)
+- [x] Fixed cleanup label in train_model.c
+- [x] All old MT code references removed
+- [x] Rebuild train_model tool (SUCCESS - only unused variable warning)
+- [x] Ready for commit
+
+### 6. COMMIT AND PUSH
 - [ ] Stage all changes
-- [ ] Commit with clear message about directory cleanup
+- [ ] Commit with descriptive message
 - [ ] Push to GitHub
 
-### 5. UPDATE MASTER_PLAN.md
-- [ ] Add note about correct directory structure
-- [ ] Document that root workspace is the actual repo
-- [ ] Update any references to subdirectories
-
 ## NOTES
-- The confusion happened because there were THREE .git directories
-- Root workspace has the latest commits (MASTER_PLAN.md, threading fixes, etc.)
-- Subdirectories are just old clones/backups that should never have existed
+- MASTER_PLAN.md is READ-ONLY during execution
+- All changes must maintain kissing spheres architecture
+- Must enforce 12-fold symmetry where applicable

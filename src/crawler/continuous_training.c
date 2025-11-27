@@ -16,6 +16,8 @@
 #include "cllm.h"
 #include "cllm_format.h"
 #include "cllm_utils.h"
+#include "cllm_training_threaded.h"
+#include "cllm_batch.h"
 
 #define MAX_TOKENS_PER_FILE 100000
 

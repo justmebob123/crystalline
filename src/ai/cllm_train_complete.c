@@ -13,7 +13,7 @@
  */
 
 #include "cllm_training.h"
-#include "cllm_training_mt.h"
+// Removed: #include "cllm_training_mt.h" - using kissing spheres only
 #include "cllm_lll_embeddings.h"
 #include "cllm_crystalline_advanced.h"
 #include "cllm_production.h"
@@ -238,7 +238,8 @@ int train_complete(CLLMTraining* training, CompleteTrainingConfig* config) {
         // Train one epoch (multi-threaded if enabled)
         float train_loss;
         if (config->num_threads > 1) {
-            train_loss = cllm_train_epoch_mt(training, config->num_threads);
+               fprintf(stderr, "Warning: cllm_train_complete ignoring num_threads, using single-threaded\n");
+            train_loss = cllm_train_epoch(training);
         } else {
             train_loss = cllm_train_epoch(training);
         }
