@@ -22,6 +22,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <math.h>
+#include <unistd.h>
 
 /**
  * Thread-local training context for each sphere
@@ -73,6 +74,15 @@ struct ThreadedTrainingSystem {
     SphereTrainingContext** sphere_contexts;
     int num_worker_spheres;
     
+    // 12-fold symmetry structure
+    int num_symmetry_positions;  // Always 12
+    int num_active_workers;      // Can be < 12 (based on CPU count)
+    
+    // Control thread (Node Zero)
+    pthread_t control_thread;
+    volatile int control_running;
+    int has_control_thread;      // 1 if using separate control thread
+    
     // Batch iterator
     CLLMBatchIterator* batch_iterator;
     
@@ -84,9 +94,9 @@ struct ThreadedTrainingSystem {
     // Gradient accumulation (temporary until shared memory fully integrated)
     float* accumulated_gradients;              // Accumulated gradients from all spheres
     pthread_mutex_t gradient_lock;             // Lock for gradient accumulation
-    pthread_mutex_t model_lock;                // Lock for model state during forward/backward
+    pthread_mutex_t model_lock;                // Lock for model state during forward/backward (TEMPORARY)
     
-    // Synchronization
+    // Synchronization (MASTER PLAN - use barriers!)
     pthread_barrier_t epoch_barrier;
     pthread_barrier_t batch_barrier;
     
@@ -162,6 +172,7 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
 
 // Forward declarations
 static void* sphere_worker_thread(void* arg);
+static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
 
 /**
@@ -252,12 +263,18 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     atomic_init(&system->running, 1);  // MUST use atomic_init for atomic_int!
     atomic_init(&system->sphere_id_counter, num_threads);  // Start after initial threads
     
-    // Calculate number of worker spheres (exclude root)
+    // MASTER PLAN: 12-fold symmetry structure
+    system->num_symmetry_positions = 12;  // Always 12 positions
+    system->num_active_workers = num_threads;  // Can be < 12
+    
+    // Calculate number of worker spheres
     int hierarchy_levels = calculate_hierarchy_levels(num_threads);
     system->num_worker_spheres = num_threads;
     
-    printf("Creating threaded training system:\n");
-    printf("  Worker threads: %d\n", system->num_worker_spheres);
+    printf("Creating 12-fold symmetric threading system (MASTER PLAN):\n");
+    printf("  Symmetry positions: %d (12-fold structure)\n", system->num_symmetry_positions);
+    printf("  Active workers: %d (rotating through positions)\n", system->num_active_workers);
+    printf("  Control thread: Node Zero (NEVER processes batches)\n");
     printf("  Hierarchy levels: %d\n", hierarchy_levels);
     
     // Calculate gradient size
@@ -338,17 +355,41 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         system->sphere_contexts[i]->system = system;
     }
     
+    // MASTER PLAN: Create control thread (Node Zero) first
+    printf("DEBUG: [STEP 3] Creating Node Zero (control thread)\n"); fflush(stdout);
+    system->has_control_thread = 1;
+    system->control_running = 1;
+    
+    int rc = pthread_create(&system->control_thread, NULL, 
+                           control_thread_func, system);
+    if (rc != 0) {
+        fprintf(stderr, "ERROR: Failed to create control thread (error %d)\n", rc);
+        // Cleanup
+        for (int j = 0; j < system->num_worker_spheres; j++) {
+            sphere_context_free(system->sphere_contexts[j]);
+        }
+        free(system->sphere_contexts);
+        threads_free(system->thread_system);
+        shared_memory_free(system->shared_gradients);
+        free(system);
+        return NULL;
+    }
+    printf("  ✓ Node Zero created (control thread NEVER processes batches)\n");
+    
     // Create worker threads
-    printf("DEBUG: [STEP 3] About to create worker threads\n"); fflush(stdout);
+    printf("DEBUG: [STEP 4] Creating worker threads\n"); fflush(stdout);
     printf("  Creating %d worker threads...\n", system->num_worker_spheres);
     for (int i = 0; i < system->num_worker_spheres; i++) {
-        printf("DEBUG: [STEP 4] Creating thread %d/%d\n", i+1, system->num_worker_spheres); fflush(stdout);
-        int rc = pthread_create(&system->sphere_contexts[i]->thread, NULL, 
-                               sphere_worker_thread, system->sphere_contexts[i]);
+        printf("DEBUG: [STEP 5] Creating worker %d/%d\n", i+1, system->num_worker_spheres); fflush(stdout);
+        rc = pthread_create(&system->sphere_contexts[i]->thread, NULL, 
+                           sphere_worker_thread, system->sphere_contexts[i]);
         if (rc != 0) {
             fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
-            // Stop already created threads
+            // Stop control thread
             atomic_store(&system->running, 0);
+            system->control_running = 0;
+            pthread_join(system->control_thread, NULL);
+            // Stop already created workers
             for (int j = 0; j < i; j++) {
                 pthread_mutex_lock(&system->sphere_contexts[j]->lock);
                 pthread_cond_signal(&system->sphere_contexts[j]->work_ready);
@@ -370,8 +411,10 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     system->epoch_loss = 0.0f;
     system->total_batches = 0;
     
-    printf("  ✓ Threaded training system created successfully with %d active threads\n\n", 
-           system->num_worker_spheres);
+    printf("  ✓ Threaded training system created successfully\n");
+    printf("    - 1 control thread (Node Zero)\n");
+    printf("    - %d worker threads\n", system->num_worker_spheres);
+    printf("    - 12-fold symmetry structure\n\n");
     
     return system;
 }
@@ -382,10 +425,19 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
 void threaded_training_free(ThreadedTrainingSystem* system) {
     if (!system) return;
     
-    printf("\nStopping worker threads...\n");
+    printf("\nStopping threads...\n");
     atomic_store(&system->running, 0);
     
+    // Stop control thread first (Node Zero)
+    if (system->has_control_thread) {
+        printf("  Stopping Node Zero (control thread)...\n");
+        system->control_running = 0;
+        pthread_join(system->control_thread, NULL);
+        printf("  ✓ Node Zero stopped\n");
+    }
+    
     // Wake up all worker threads and wait for them to exit
+    printf("  Stopping worker threads...\n");
     for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i]) {
             pthread_mutex_lock(&system->sphere_contexts[i]->lock);
@@ -427,7 +479,40 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
 }
 
 /**
+ * Control thread function (Node Zero) - MASTER PLAN IMPLEMENTATION
+ * 
+ * CRITICAL: This thread NEVER processes batches!
+ * 
+ * Responsibilities:
+ * 1. Distribute batches to workers
+ * 2. Wait at barriers for workers to complete
+ * 3. Accumulate gradients (safe - workers waiting at barrier)
+ * 4. Apply optimizer step
+ * 5. Coordinate next batch
+ */
+static void* control_thread_func(void* arg) {
+    ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
+    
+    printf("[Node Zero] Control thread started - NEVER processes batches\n");
+    
+    while (atomic_load(&system->running)) {
+        // Control thread coordinates but doesn't process batches
+        // Main training loop will handle batch distribution
+        // This is a placeholder for future full control thread implementation
+        
+        // For now, sleep briefly to avoid busy waiting
+        usleep(1000);  // 1ms
+    }
+    
+    printf("[Node Zero] Control thread stopping\n");
+    return NULL;
+}
+
+/**
  * Worker thread function - processes batches assigned to this sphere
+ * 
+ * NOTE: In full master plan implementation, this will use barriers
+ * instead of condition variables for synchronization with Node Zero
  */
 static void* sphere_worker_thread(void* arg) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)arg;

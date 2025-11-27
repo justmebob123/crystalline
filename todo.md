@@ -17,12 +17,12 @@ Following MASTER PLAN exactly - implementing Option C (FULL architecture)
 - [ ] Control thread applies optimizer step
 - [ ] Test with 1 control + 12 workers
 
-### PHASE 2: 12-Fold Symmetry Enforcement
-- [ ] Force exactly 12 worker threads (no other count allowed)
-- [ ] Assign symmetry groups 0-11 to workers
-- [ ] Verify 12-fold structure
-- [ ] Update initialization to enforce 12 workers
-- [ ] Test symmetry enforcement
+### PHASE 2: 12-Fold Symmetry Structure
+- [ ] Create 12 symmetry positions (0-11)
+- [ ] Allow fewer than 12 active workers (based on CPU count)
+- [ ] Workers rotate through symmetry positions
+- [ ] Maintain 12-fold structure even with fewer workers
+- [ ] Test rotation and reassignment
 
 ### PHASE 3: Barrier Synchronization
 - [ ] Remove per-worker condition variables
