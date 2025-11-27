@@ -426,10 +426,103 @@ app/training_thread.c:start_training()
 - Or are they standalone unused code?
 
 ### Section 6: Integration Plan
-*(To be completed after analysis, before execution)*
+
+#### CRITICAL DISCOVERY: Function Usage Analysis
+
+**OLD Function: `cllm_train_epoch_mt()` - MUST BE REMOVED**
+- Defined in: `src/ai/cllm_training_mt.c:270`
+- Called from:
+  1. `src/ai/cllm_train_complete.c:241` - FALLBACK PATH
+  2. `tools/train_model.c:213` - FALLBACK PATH #1
+  3. `tools/train_model.c:219` - FALLBACK PATH #2
+
+**NEW Function: `threaded_train_epoch()` - CORRECT ONE**
+- Defined in: `src/ai/cllm_training_threaded.c:461`
+- Called from:
+  1. `tools/train_model.c:208` - PRIMARY PATH (but never reached!)
+  2. `app/training_thread.c:145` - WORKING ✓
+
+**THE PROBLEM:**
+The tool has THREE paths:
+1. Line 208: `threaded_train_epoch()` - CORRECT but never reached
+2. Line 213: `cllm_train_epoch_mt()` - FALLBACK #1 (batch_iterator fails)
+3. Line 219: `cllm_train_epoch_mt()` - FALLBACK #2 (threaded_system fails)
+
+The application has ONE path:
+1. Line 145: `threaded_train_epoch()` - WORKING ✓
+
+#### Integration Steps (IN ORDER):
+
+**Step 1: Fix tools/train_model.c**
+- Remove lines 213 and 219 (fallback calls to cllm_train_epoch_mt)
+- Make batch_iterator creation MANDATORY (fail if NULL)
+- Make threaded_system creation MANDATORY (fail if NULL)
+- Add proper error messages
+
+**Step 2: Verify No Other Dependencies**
+- Check `src/ai/cllm_train_complete.c:241`
+- Either update it to use threaded training OR mark as deprecated
+
+**Step 3: Delete Redundant Files**
+- DELETE: `src/ai/cllm_training_mt.c` (only exports cllm_train_epoch_mt)
+- DELETE: `src/ai/cllm_training_parallel.c` (if no unique functions)
+- DELETE: `src/ai/cllm_training_threaded.c.backup`
+
+**Step 4: Update Makefile**
+- Remove cllm_training_mt.o from build
+- Remove cllm_training_parallel.o from build (if deleted)
+
+**Step 5: Test**
+- Build successfully
+- Run application (should still work)
+- Run tool (should now use kissing spheres or fail clearly)
 
 ### Section 7: Deletion Plan
-*(To be completed after analysis, before execution)*
+
+#### Files to Delete (After Verification)
+
+**CONFIRMED DELETE:**
+1. `src/ai/cllm_training_threaded.c.backup`
+   - Reason: Backup file, not needed in repo
+   - Risk: NONE
+   - Action: Delete immediately
+
+**HIGH PRIORITY DELETE:**
+2. `src/ai/cllm_training_mt.c`
+   - Reason: OLD implementation, only exports `cllm_train_epoch_mt()`
+   - Used by: tools/train_model.c (fallback), cllm_train_complete.c (fallback)
+   - Risk: MEDIUM - Need to update callers first
+   - Action: Delete after fixing callers
+
+**ANALYZE BEFORE DELETE:**
+3. `src/ai/cllm_training_parallel.c`
+   - Reason: Possibly redundant with threaded
+   - Risk: UNKNOWN - Need to check for unique functions
+   - Action: Analyze exports, then decide
+
+4. `src/ai/cllm_train_complete.c`
+   - Reason: May be wrapper with useful features
+   - Risk: UNKNOWN - Need to check if used
+   - Action: Analyze usage, possibly keep but update
+
+5. `src/ai/cllm_crystalline_training.c`
+   - Reason: May have special optimizations
+   - Risk: UNKNOWN - Need to check if integrated
+   - Action: Analyze, possibly merge into main training
+
+#### Markdown Files to Delete (After This Session)
+
+**DELETE ALL THESE (Created in this session):**
+1. `PERFORMANCE_ANALYSIS.md` - Consolidated into MASTER_PLAN
+2. `CRITICAL_FINDINGS.md` - Consolidated into MASTER_PLAN
+3. `COMPREHENSIVE_ACTION_PLAN.md` - Consolidated into MASTER_PLAN
+4. `FINAL_COMPREHENSIVE_ANALYSIS.md` - Consolidated into MASTER_PLAN
+5. `CODEBASE_STRUCTURE.txt` - Temporary analysis file
+
+**KEEP:**
+- `MASTER_PLAN.md` - Master reference
+- `todo.md` - Evolving task list
+- `README.md` - Project documentation
 
 ---
 
