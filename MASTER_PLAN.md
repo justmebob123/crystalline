@@ -26,6 +26,44 @@ Analyze every MD file and every line of code to map all fixes and relationships.
 ### RULE 5: NO DELETIONS UNTIL ANALYSIS IS COMPLETE AND APPROVED
 Document everything first, then execute with approval.
 
+### RULE 6: FIX HTML ENTITIES IMMEDIATELY WHEN THEY OCCUR
+When creating files through the AI interface, HTML entities may be introduced.
+
+**Problem:** Characters like `&amp;&amp;` become `&amp;amp;&amp;amp;`, `<` becomes `&amp;lt;`, etc.
+
+**Solution:** Use the HTML entity fixer tool immediately:
+
+```bash
+# Python version (recommended - easier to use)
+python3 tools/fix_html_entities.py <file>
+
+# C version (compile first)
+gcc -o tools/fix_html_entities tools/fix_html_entities.c
+./tools/fix_html_entities <file>
+```
+
+**Example:**
+```bash
+# After creating a file with potential HTML entities
+python3 tools/fix_html_entities.py src/ai/cllm_threads.c
+
+# Verify the fix
+grep "&amp;amp;" src/ai/cllm_threads.c  # Should return nothing
+```
+
+**When to use:**
+- Immediately after creating any C/C++ source file
+- After any file creation that contains operators like &amp;&amp;, <, >, "
+- Before attempting to compile
+- If you see compilation errors about undeclared identifiers like `amp`
+
+**Entities fixed:**
+- `&amp;amp;` → `&amp;`
+- `&amp;lt;` → `<`
+- `&amp;gt;` → `>`
+- `&amp;quot;` → `"`
+- `&amp;#39;` → `'`
+
 ---
 
 ## 🎯 COMPREHENSIVE OBJECTIVES
