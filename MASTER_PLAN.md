@@ -754,7 +754,7 @@ app/training_thread.c:start_training()
 
 ### Section 6: Integration Plan
 
-#### CRITICAL DISCOVERY: Function Usage Analysis
+#### CRITICAL DISCOVERY #1: Function Usage Analysis
 
 **OLD Function: `cllm_train_epoch_mt()` - MUST BE REMOVED**
 - Defined in: `src/ai/cllm_training_mt.c:270`
@@ -803,6 +803,47 @@ The application has ONE path:
 - Build successfully
 - Run application (should still work)
 - Run tool (should now use kissing spheres or fail clearly)
+
+---
+
+#### CRITICAL DISCOVERY #2: Multiple Training Implementations Actually In Use
+
+**USAGE ANALYSIS:**
+1. `cllm_train_epoch()` (base single-threaded): 3 calls
+2. `cllm_train_epoch_mt()` (OLD multi-threading): 3 calls - **DELETE**
+3. `threaded_train_epoch()` (NEW kissing spheres): 2 calls - **KEEP**
+4. `cllm_train_epoch_parallel()`: 0 calls - **DELETE**
+5. `cllm_train_epoch_crystalline()`: 4 calls - **KEEP & MERGE**
+6. `train_complete()`: 0 calls - **DELETE**
+7. `sphere_hierarchy_train()` (recursive): 1 call - **KEEP**
+
+**CRITICAL FINDING:**
+- **Application (`app/cllm_integration.c`)** uses `cllm_train_epoch_crystalline()` NOT kissing spheres!
+- **Crawler (`src/crawler/continuous_training.c`)** uses `cllm_train_epoch_crystalline()` NOT kissing spheres!
+- **Training thread (`app/training_thread.c`)** uses `threaded_train_epoch()` (kissing spheres) ✓
+- **Tool (`tools/train_model.c`)** tries to use `threaded_train_epoch()` but falls back to `cllm_train_epoch_mt()`
+- **Recursive tool (`tools/train_model_recursive.c`)** uses `sphere_hierarchy_train()`
+
+**TWO SEPARATE ARCHITECTURES:**
+1. **Flat Kissing Spheres** (`cllm_training_threaded.c` + `cllm_threads.c`)
+   - Used by: training_thread.c, train_model.c (intended)
+   - Features: 12-fold symmetry, flat hierarchy
+   
+2. **Recursive Sphere Hierarchy** (`cllm_recursive_spheres.c`)
+   - Used by: train_model_recursive.c
+   - Features: Infinite recursive depth, fractal tree
+
+**CRYSTALLINE TRAINING:**
+- `cllm_crystalline_training.c` has special optimizations (GCD similarity, Ulam spiral)
+- Currently uses standard forward/backward (optimizations disabled)
+- Used by application and crawler
+- **NEEDS: Integration with kissing spheres**
+
+**INFRASTRUCTURE FILES:**
+- Most infrastructure files (12 files, 300KB+) are NOT being used
+- Only used: cllm_batch.c (11 calls), cllm_lattice_hierarchy.c (5 calls), cllm_sphere_message.c (11 calls)
+- Unused: cllm_control_process.c, cllm_training_loop.c, cllm_optimizer.c, cllm_loss.c, etc.
+- **DECISION NEEDED**: Keep for future or delete unused infrastructure?
 
 ### Section 7: Deletion Plan
 
