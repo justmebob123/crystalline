@@ -103,6 +103,262 @@ The crystalline optimizations exist but are not integrated with the actual train
 
 
 
+
+### OBJECTIVE 2B: Remove ALL Legacy Loss Functions
+**Purpose: Complete the crystalline design by removing standard cross-entropy**
+
+**Critical Understanding:**
+- The crystalline GCD-based approach IS the design, not an "optimization"
+- "Standard cross-entropy" is legacy code that must be removed
+- No toggles, no fallbacks, no conditional paths
+
+**Current Problem:**
+- We added `use_crystalline_optimizations` flag (backwards thinking!)
+- Standard cross-entropy still exists as fallback
+- Implies crystalline is optional - IT'S NOT
+
+**Tasks:**
+- [ ] Remove `cllm_compute_loss_training()` function (standard cross-entropy)
+- [ ] Remove the conditional flag check in `cllm_train_epoch()`
+- [ ] Make `cllm_compute_loss_crystalline()` the ONLY loss function
+- [ ] Rename `cllm_compute_loss_crystalline()` to `cllm_compute_loss()`
+- [ ] Remove `use_crystalline_optimizations` flag from config struct
+- [ ] Update all callers to use crystalline loss directly
+- [ ] Remove any references to "standard" loss in comments/docs
+
+**Related Files:**
+- `src/ai/cllm_training.c` - Remove standard loss function
+- `src/ai/cllm_crystalline_training.c` - Simplify (no flag needed)
+- `include/cllm_training.h` - Remove flag, update declarations
+
+
+### OBJECTIVE 2C: Rename "Crystalline" to Default
+**Purpose: Stop treating crystalline as special - it's the only design**
+
+**Current Problem:**
+- Functions named `*_crystalline()` imply there's a non-crystalline version
+- This is confusing - crystalline IS the design
+- Should just be the default implementation
+
+**Tasks:**
+- [ ] Rename `cllm_train_epoch_crystalline()` to `cllm_train_epoch()`
+- [ ] Rename `cllm_compute_loss_crystalline()` to `cllm_compute_loss()`
+- [ ] Remove the old `cllm_train_epoch()` (it's legacy)
+- [ ] Update all callers throughout codebase
+- [ ] Update documentation to reflect crystalline as default
+- [ ] Remove "_crystalline" suffix from all function names
+- [ ] Crystalline is not special - it's the ONLY implementation
+
+**Related Files:**
+- `src/ai/cllm_training.c`
+- `src/ai/cllm_crystalline_training.c`
+- `src/crawler/continuous_training.c`
+- `tools/train_model.c`
+
+
+### OBJECTIVE 2D: Remove ALL "Standard" and "Legacy" Code
+**Purpose: Clean codebase of all non-crystalline implementations**
+
+**Files to Delete:**
+- [ ] `src/ai/cllm_training_mt.c` - Old multi-threading
+- [ ] `src/ai/cllm_training_parallel.c` - Unused parallel code
+- [ ] `src/ai/cllm_train_complete.c` - Legacy training wrapper
+- [ ] `include/cllm_training_mt.h`
+- [ ] `include/cllm_training_parallel.h`
+- [ ] `include/cllm_train_complete.h`
+
+**Functions to Delete:**
+- [ ] `cllm_compute_loss_training()` - Standard cross-entropy
+- [ ] `cllm_train_epoch_mt()` - Old MT training
+- [ ] `cllm_train_epoch_parallel()` - Unused parallel
+- [ ] Any other `*_standard()` or `*_legacy()` functions
+
+**Search and Destroy:**
+- [ ] Search entire codebase for "standard", "legacy", "old", "fallback"
+- [ ] Identify all non-crystalline implementations
+- [ ] Delete all legacy code
+- [ ] Update Makefile to remove deleted files
+- [ ] Verify build after deletions
+- [ ] Remove all fallback code paths
+
+
+### OBJECTIVE 3A: Crystalline Math Everywhere
+**Purpose: Ensure NO standard math library usage anywhere**
+
+**Current State:**
+- Core libraries verified to not use math.h
+- Need to verify ENTIRE codebase
+
+**Tasks:**
+- [ ] Search ALL files for `#include <math.h>`
+- [ ] Search ALL files for standard math functions:
+  - sin, cos, tan, asin, acos, atan, atan2
+  - exp, log, log10, log2
+  - sqrt, cbrt, pow
+  - ceil, floor, round, trunc
+  - fabs, fmod, remainder
+- [ ] Replace any found with crystalline equivalents:
+  - prime_sinf, prime_cosf, prime_tanf
+  - prime_expf, prime_logf
+  - prime_sqrtf, prime_powf
+  - prime_fabsf, prime_fmodf
+- [ ] Verify NO external math dependencies
+- [ ] Document crystalline math usage
+- [ ] Add verification script to prevent future math.h usage
+
+**Related Files:**
+- ALL .c and .h files in the project
+
+
+### OBJECTIVE 4A: Static Libraries as Primary
+**Purpose: Make static libraries the default, shared libraries optional**
+
+**Current Problem:**
+- Build system treats shared libraries (.so) as primary
+- Static libraries (.a) added as afterthought
+- Should be reversed - static is primary for deployment
+
+**Tasks:**
+- [ ] Update Makefile to build static libraries first
+- [ ] Make shared libraries optional (--enable-shared flag)
+- [ ] Update documentation to recommend static linking
+- [ ] Test all tools with static libraries
+- [ ] Verify no shared library dependencies in production
+- [ ] Update installation instructions
+- [ ] Ensure static libraries are complete and self-contained
+
+**Related Files:**
+- `Makefile`
+- `algorithms/Makefile`
+- Documentation files
+
+
+### OBJECTIVE 5A: Kissing Spheres as ONLY Threading
+**Purpose: Remove all non-kissing-spheres threading code**
+
+**Current Problem:**
+- Multiple threading implementations exist
+- Fallbacks to old MT code in tools/train_model.c
+- Should be kissing spheres ONLY
+
+**Tasks:**
+- [ ] Remove ALL fallbacks to old threading
+- [ ] Make kissing spheres mandatory (no single-threaded fallback)
+- [ ] Remove `cllm_train_epoch_mt()` completely
+- [ ] Update tools to require kissing spheres
+- [ ] Document kissing spheres as the only threading model
+- [ ] Remove any single-threaded training paths
+- [ ] Ensure all training goes through kissing spheres
+
+**Related Files:**
+- `tools/train_model.c` - Remove fallbacks
+- `src/ai/cllm_training_threaded.c` - Main implementation
+- `src/crawler/continuous_training.c` - Update to use kissing spheres
+
+
+### OBJECTIVE 6A: Dynamic 12-Fold Symmetry with Thread Rotation
+**Purpose: Implement dynamic 12-fold symmetry that adapts to CPU availability**
+
+**Critical Understanding:**
+- 12-fold symmetry is about the CRYSTALLINE LATTICE ABACUS and MEMORY STRUCTURE
+- Thread count is limited by CPU availability (not forced to multiples of 12)
+- Threads can ROTATE through the 12 positions in the symmetry structure
+- Control thread manages work assignment dynamically
+- Structural integrity maintained even with fewer than 12 threads
+
+**Implementation:**
+- [ ] 12-fold memory structure (always 12 positions in the lattice)
+- [ ] Dynamic thread allocation (1 to N threads based on CPU)
+- [ ] Thread rotation: threads move through the 12 positions
+- [ ] Control thread assigns work to maintain symmetry
+- [ ] Threads can pause/alternate roles to prevent overload
+- [ ] Batch processing respects 12-fold structure
+- [ ] No more active threads than CPU cores available
+- [ ] Implement position rotation algorithm
+- [ ] Track which thread is at which position
+- [ ] Ensure even distribution across positions
+
+**Example:**
+- 4 CPU cores → 3 worker threads + 1 control thread
+- 3 workers rotate through 12 positions in the crystalline lattice
+- Each thread processes multiple positions in the 12-fold structure
+- Control thread manages rotation and work assignment
+
+**Related Files:**
+- `src/ai/cllm_training_threaded.c` - Thread rotation logic
+- `src/ai/cllm_threads.c` - 12-fold symmetry structure
+- `src/ai/infrastructure/cllm_thread_allocation.c` - Dynamic allocation
+- `src/core/cllm_hierarchical_abacus.c` - Crystalline lattice structure
+
+
+### OBJECTIVE 7A: Node Zero Control Thread with Dynamic Work Assignment
+**Purpose: Implement control thread that manages work assignment without overloading CPU**
+
+**Critical Understanding:**
+- Control thread NEVER processes batches
+- Manages work assignment across available threads
+- Can pause threads to prevent CPU overload
+- Allows threads to alternate roles when processing batches
+- Maintains 12-fold symmetry through dynamic assignment
+- Ensures no more active threads than CPU cores
+
+**Implementation:**
+- [ ] Node zero control thread (never processes batches)
+- [ ] Dynamic work assignment based on CPU availability
+- [ ] Thread pausing mechanism to prevent overload
+- [ ] Role alternation for batch processing
+- [ ] 12-fold symmetry maintenance through rotation
+- [ ] CPU core detection and thread limiting
+- [ ] Load balancing across available threads
+- [ ] Statistics collection and monitoring
+- [ ] Coordination logic for worker threads
+
+**Control Thread Responsibilities:**
+- Monitor CPU availability
+- Assign work to maintain 12-fold symmetry
+- Rotate threads through lattice positions
+- Pause/resume threads as needed
+- Prevent overloading
+- Collect statistics
+- Never process batches itself
+
+**Related Files:**
+- `src/ai/cllm_training_threaded.c` - Control thread implementation
+- `src/ai/infrastructure/cllm_control_process.c` - Work assignment logic
+- `src/ai/infrastructure/cllm_thread_allocation.c` - Dynamic allocation
+
+
+### OBJECTIVE 8A: Remove ALL Conditional Compilation
+**Purpose: One codebase, one design, no toggles**
+
+**Current Problem:**
+- Feature flags everywhere
+- Conditional compilation (#ifdef blocks)
+- Multiple code paths for same functionality
+- "Enable X" configuration options
+
+**Tasks:**
+- [ ] Remove all feature flags from config structs
+- [ ] Remove all #ifdef blocks for features
+- [ ] One implementation per function (no alternatives)
+- [ ] No "enable_X" configuration options
+- [ ] Crystalline design is always active
+- [ ] No compile-time toggles
+- [ ] No runtime toggles
+- [ ] Single code path for each operation
+
+**Philosophy:**
+- If it's in the codebase, it's active
+- No optional features
+- No legacy compatibility modes
+- Complete commitment to the design
+
+**Related Files:**
+- ALL source files
+- Configuration headers
+- Build system files
+
+
 ### OBJECTIVE 3: Integrate Kissing Spheres into Application UI
 - [ ] Analyze current `tab_training.c` implementation (932 lines)
 - [ ] Identify what training visualization currently shows

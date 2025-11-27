@@ -1,84 +1,104 @@
-# OBJECTIVE 2A: Integrate Crystalline GCD Optimizations - COMPLETE ✅
+# MASTER PLAN UPDATED WITH 9 NEW OBJECTIVES
 
 ## What Was Done
 
-### Phase 1: Wire Crystalline Loss into Training ✅
-- [x] Added `use_crystalline_optimizations` flag to `CLLMTrainingConfig` struct
-- [x] Added `cllm_compute_loss_crystalline()` declaration to header
-- [x] Modified `cllm_train_epoch()` to conditionally use crystalline loss
-- [x] Updated `cllm_train_epoch_crystalline()` to enable the flag
-- [x] Build successful - all changes compile cleanly
+### Added 9 Critical Objectives to MASTER_PLAN.md
 
-## Implementation Details
+Based on deep analysis of conversation history and user feedback, identified fundamental misunderstanding in current implementation:
 
-### Changes Made:
+**Key Insight:** "Standard" = "Legacy" = "Delete it"
+- Crystalline IS the design, not an "optimization"
+- No toggles, no fallbacks, no conditional paths
+- Complete commitment to crystalline architecture
 
-1. **include/cllm_training.h**
-   - Added `int use_crystalline_optimizations` flag to `CLLMTrainingConfig`
-   - Added declaration for `cllm_compute_loss_crystalline()`
+### New Objectives Added:
 
-2. **src/ai/cllm_training.c**
-   - Modified loss computation in `cllm_train_epoch()` to check flag:
-     ```c
-     if (training->config.use_crystalline_optimizations) {
-         loss = cllm_compute_loss_crystalline(...);  // GCD-based (20-400x faster)
-     } else {
-         loss = cllm_compute_loss_training(...);     // Standard cross-entropy
-     }
-     ```
+1. **OBJECTIVE 2B**: Remove ALL Legacy Loss Functions
+   - Delete standard cross-entropy
+   - Make crystalline GCD loss the ONLY implementation
+   - Remove the backwards `use_crystalline_optimizations` flag
 
-3. **src/ai/cllm_crystalline_training.c**
-   - Updated `cllm_train_epoch_crystalline()` to enable the flag before training
-   - Restores original flag value after training completes
+2. **OBJECTIVE 2C**: Rename "Crystalline" to Default
+   - Remove "_crystalline" suffixes from function names
+   - Crystalline is not special - it's the ONLY implementation
 
-### How It Works:
+3. **OBJECTIVE 2D**: Remove ALL "Standard" and "Legacy" Code
+   - Delete cllm_training_mt.c, cllm_training_parallel.c, cllm_train_complete.c
+   - Search and destroy all "standard", "legacy", "old", "fallback" code
 
-**Before (BROKEN):**
-- `cllm_train_epoch_crystalline()` → `cllm_train_epoch()` → standard loss
-- Optimizations completely bypassed ❌
+4. **OBJECTIVE 3A**: Crystalline Math Everywhere
+   - Remove ALL math.h usage
+   - Replace with crystalline equivalents
+   - Zero external math dependencies
 
-**After (FIXED):**
-- `cllm_train_epoch_crystalline()` → sets flag → `cllm_train_epoch()` → crystalline loss
-- Optimizations now active! ✅
+5. **OBJECTIVE 4A**: Static Libraries as Primary
+   - Build static first, shared optional
+   - Recommend static linking for deployment
 
-### The Optimization:
+6. **OBJECTIVE 5A**: Kissing Spheres as ONLY Threading
+   - Remove all non-kissing-spheres threading
+   - No fallbacks, mandatory kissing spheres
 
-**GCD-Based Similarity:**
-- Uses Euclidean algorithm: O(log n) complexity
-- Standard dot product: O(n) complexity
-- **20-400x faster** for related tokens
+7. **OBJECTIVE 6A**: Dynamic 12-Fold Symmetry with Thread Rotation
+   - 12-fold MEMORY STRUCTURE (not thread count)
+   - Threads rotate through 12 positions in crystalline lattice
+   - Dynamic allocation based on CPU availability
+   - Control thread manages rotation
 
-**Ulam Spiral Locality:**
-- Maps tokens to 3D spiral positions
-- Tokens close in spiral are semantically related
-- Improves cache locality
+8. **OBJECTIVE 7A**: Node Zero Control Thread with Dynamic Work Assignment
+   - Control thread NEVER processes batches
+   - Manages work assignment dynamically
+   - Can pause threads to prevent CPU overload
+   - Maintains 12-fold symmetry through rotation
 
-**Combined Loss:**
-- 70% GCD similarity + 30% spatial similarity
-- Converted to negative log probability
+9. **OBJECTIVE 8A**: Remove ALL Conditional Compilation
+   - No feature flags
+   - One implementation per function
+   - No toggles
+
+## Philosophy Shift
+
+**OLD (WRONG) THINKING:**
+- Crystalline is an "optimization" you can enable
+- Standard implementations are the baseline
+- Multiple code paths for flexibility
+
+**NEW (CORRECT) THINKING:**
+- Crystalline IS the design, not an option
+- "Standard" means "legacy" means "delete it"
+- One implementation, one design, no toggles
+- Complete commitment to crystalline architecture
+
+## Critical Understanding: 12-Fold Symmetry
+
+**The 12-fold symmetry is in the CRYSTALLINE LATTICE ABACUS:**
+- Memory structure has 12 positions
+- Threads rotate through these positions
+- Can have fewer threads than positions
+- Control thread manages the rotation
+- Maintains structural integrity regardless of thread count
+
+**Example with 4 CPU cores:**
+```
+12-Fold Lattice Positions: [0] [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11]
+                            ↓   ↓   ↓   ↓   ↓   ↓   ↓   ↓   ↓   ↓    ↓    ↓
+3 Worker Threads:          [T1] [T2] [T3] [T1] [T2] [T3] [T1] [T2] [T3] [T1] [T2] [T3]
+                            ↑                                                          
+                         Threads rotate through positions
+```
 
 ## Next Steps
 
-### Phase 2: Integrate with Kissing Spheres (TODO)
-- [ ] Test crystalline optimizations with threaded training
-- [ ] Verify thread safety of GCD computation
-- [ ] Ensure no race conditions in Ulam distance calculation
-- [ ] Test with 64-thread kissing spheres architecture
+Ready to begin execution of objectives. Awaiting user direction on which objective to tackle first.
 
-### Phase 3: Benchmark Performance (TODO)
-- [ ] Measure training speed with vs without crystalline optimizations
-- [ ] Verify 20-400x speedup claim
-- [ ] Test on various model sizes
-- [ ] Document performance improvements
+**High Priority Candidates:**
+- OBJECTIVE 2B: Remove legacy loss functions (fixes the backwards flag we just added)
+- OBJECTIVE 2D: Remove all legacy code (major cleanup)
+- OBJECTIVE 5A: Kissing spheres as only threading (removes fallbacks)
 
-### Phase 4: Verify Correctness (TODO)
-- [ ] Compare crystalline loss vs standard cross-entropy loss
-- [ ] Ensure model still learns properly
-- [ ] Test on various datasets
-- [ ] Validate convergence behavior
+## Status
 
-## Status: PHASE 1 COMPLETE ✅
-
-The bypass has been removed! Crystalline optimizations are now properly wired into the training pipeline.
-
-**Ready to commit and test.**
+- ✅ 9 new objectives added to MASTER_PLAN.md
+- ✅ Philosophy shift documented
+- ✅ 12-fold symmetry clarified
+- ⏳ Ready for execution
