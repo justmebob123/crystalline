@@ -78,6 +78,31 @@ This master plan contains OBJECTIVES ONLY - it is a static list of WHAT needs to
 - [ ] Update Makefile
 
 
+### OBJECTIVE 2A: Integrate Crystalline GCD Optimizations
+**Purpose: Wire crystalline optimizations into training pipeline**
+
+The crystalline optimizations exist but are not integrated with the actual training loop.
+
+**Current State:**
+- GCD-based similarity implemented (20-400x faster than dot product)
+- Ulam spiral locality implemented (spatial cache optimization)
+- Crystalline loss computation implemented
+- BUT: `cllm_train_epoch_crystalline()` just calls standard `cllm_train_epoch()`
+- The optimizations are bypassed
+
+**Tasks:**
+- [ ] Wire `cllm_compute_loss_crystalline()` into actual loss computation
+- [ ] Integrate GCD similarity with kissing spheres training
+- [ ] Integrate Ulam spiral locality with batch processing
+- [ ] Add configuration option to enable/disable crystalline optimizations
+- [ ] Benchmark performance improvement (expecting 20-400x speedup)
+- [ ] Verify correctness of GCD-based similarity vs standard dot product
+- [ ] Test with various model sizes and datasets
+- [ ] Document performance characteristics
+- [ ] Update training pipeline to use crystalline loss when enabled
+
+
+
 ### OBJECTIVE 3: Integrate Kissing Spheres into Application UI
 - [ ] Analyze current `tab_training.c` implementation (932 lines)
 - [ ] Identify what training visualization currently shows
