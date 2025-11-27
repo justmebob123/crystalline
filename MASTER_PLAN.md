@@ -935,9 +935,10 @@ The application has ONE path:
 - Delete cllm_training_mt.c
 - Delete cllm_training_parallel.c
 
-**PHASE 2: Integrate Crawler with Kissing Spheres (MEDIUM PRIORITY)**
+**PHASE 2: Integrate Crawler with Kissing Spheres (HIGH PRIORITY)**
 - Update continuous_training.c to use threaded_train_epoch()
-- Or keep single-threaded for simplicity (it's continuous background training)
+- Single-threaded is OLD CODE and must be removed/updated
+- Crawler does 5 epochs per file - should use kissing spheres for speed
 
 **PHASE 3: Implement Node Zero Control Thread (HIGH PRIORITY)**
 - Modify cllm_training_threaded.c
@@ -958,6 +959,33 @@ The application has ONE path:
 - Check if SIMD functions are called in hot paths
 - Add SIMD to forward/backward if missing
 
+## 🔍 FINAL VERIFICATION COMPLETE
+
+### Additional Files Checked:
+- ✅ Demos: threaded_training_demo.c uses kissing spheres correctly
+- ✅ No other main() functions using old training
+- ✅ All pthread_create usage identified (5 files)
+- ✅ Crawler needs update (uses single-threaded via crystalline wrapper)
+- ✅ No missed training entry points
+
+### Files Using Single-Threaded Training (ALL MUST BE UPDATED):
+1. `src/ai/cllm_crystalline_training.c:196` → calls cllm_train_epoch()
+2. `src/ai/cllm_train_complete.c:243` → calls cllm_train_epoch()  
+3. `tools/train_model.c:222` → calls cllm_train_epoch() (fallback #3)
+4. `src/crawler/continuous_training.c:183` → calls cllm_train_epoch_crystalline() → cllm_train_epoch()
+
+### Files With Threading (5 total):
+1. `src/ai/cllm_training_threaded.c` - KEEP (kissing spheres)
+2. `src/ai/cllm_threads.c` - KEEP (kissing spheres implementation)
+3. `src/ai/cllm_recursive_spheres.c` - KEEP (recursive hierarchy)
+4. `src/ai/cllm_training_mt.c` - DELETE (old simple MT)
+5. `src/ai/cllm_training_parallel.c` - DELETE (unused, 0 calls)
+
+### Backup Directories Found (IGNORE):
+- `crystalline/` - old backup
+- `crystalline-repo/` - old backup
+- Focus only on main `/workspace` directory
+
 ## ✅ EXECUTION CHECKLIST (DO NOT START UNTIL ANALYSIS APPROVED)
 
 - [ ] Analysis complete and approved
@@ -973,3 +1001,4 @@ The application has ONE path:
 ---
 
 **END OF MASTER PLAN**
+**STATUS: READ-ONLY - DO NOT MODIFY WITHOUT EXPLICIT APPROVAL**
