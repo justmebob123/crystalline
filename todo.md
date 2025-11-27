@@ -1,52 +1,70 @@
 # TODO - Crystalline CLLM Master Plan Execution
 
-## Current Focus: OBJECTIVE 7A - Phase 4: Complete Dynamic Thread Spawning
+## Current Focus: OBJECTIVE 7A - Phase 4: Complete Dynamic Thread Spawning (IN PROGRESS)
 
-**Context**: We completed Phase 1-3 of OBJECTIVE 7A (control/worker distinction, recursive distribution, spawning infrastructure). Now we need to complete Phase 4: actual dynamic spawning implementation.
+### Progress Update
 
-### OBJECTIVE 7A - Phase 4: Complete Dynamic Spawning (IN PROGRESS)
+**Infrastructure Complete ✅:**
+1. ✅ Added `user_data` field to `CLLMLatticeHierarchy` structure
+2. ✅ Added `sphere_id_counter` to `ThreadedTrainingSystem` structure
+3. ✅ Set `user_data` for all spheres to point to training system
+4. ✅ Created helper function `threaded_training_get_next_sphere_id()`
 
-**What's Already Done:**
-- ✅ Phase 1: Control vs Worker thread distinction implemented
-- ✅ Phase 2: Recursive work distribution verified (emergent from state machine)
-- ✅ Phase 3: Dynamic spawning/termination infrastructure created
-  - `sphere_can_spawn_children()` - checks if spawning allowed
-  - `sphere_spawn_child()` - creates and starts child thread
-  - `sphere_terminate_child()` - stops and frees child thread
-  - `sphere_check_spawn_children()` - decision logic
-  - `sphere_check_terminate_children()` - cleanup logic
+**Implementation Pending:**
+1. ⏳ Implement actual spawning logic in `cllm_threads.c` CONTROLLING state
+2. ⏳ Implement actual termination logic in `cllm_threads.c` CONTROLLING state
+3. ⏳ Test dynamic spawning with varying workloads
+4. ⏳ Fix any compilation errors
+5. ⏳ Verify 12-fold symmetry maintained
 
-**What Needs to Be Done:**
+### What Needs to Be Done Next
 
-1. **Add Global Sphere ID Counter to ThreadSystem**
-   - [ ] Add `atomic_uint sphere_id_counter` to ThreadedTrainingSystem structure
-   - [ ] Initialize in `threaded_training_create()`
-   - [ ] Use atomic increment when spawning new spheres
+**Step 1: Implement Spawning Logic in cllm_threads.c**
+- Replace TODO at line ~159 with actual spawning code
+- Use `threaded_training_get_next_sphere_id(sphere->user_data)` to get next ID
+- Call `sphere_spawn_child(sphere, next_id, next_id)` for each child
+- Set `child->user_data = sphere->user_data` for new children
+- Handle errors gracefully
 
-2. **Implement Actual Spawning in CONTROLLING State**
-   - [ ] Replace TODO in `cllm_threads_spawn.c` with actual spawning logic
-   - [ ] Use `sphere_check_spawn_children()` to determine how many to spawn
-   - [ ] Call `sphere_spawn_child()` for each new thread
-   - [ ] Maintain 12-fold symmetry (spawn 1, 3, 6, or 12 at a time)
+**Step 2: Implement Termination Logic in cllm_threads.c**
+- Replace TODO at line ~199 with actual termination code
+- Iterate through children and find idle ones
+- Call `sphere_terminate_child(sphere, child)` for each idle child
+- Handle thread cleanup carefully
+- Adjust loop index after termination (num_children decreases)
 
-3. **Implement Actual Termination**
-   - [ ] Replace TODO in termination logic with actual cleanup
-   - [ ] Call `sphere_terminate_child()` for idle children
-   - [ ] Ensure proper memory cleanup
-   - [ ] Verify no memory leaks
+**Step 3: Test and Verify**
+- Build and fix any compilation errors
+- Test with varying workloads
+- Verify dynamic expansion behavior
+- Verify dynamic collapse behavior
+- Verify 12-fold symmetry maintained
 
-4. **Fix Thread Termination Hang**
-   - [ ] Investigate deadlock in termination sequence
-   - [ ] Add proper cleanup for CONTROLLING state
-   - [ ] Ensure clean shutdown of all threads
+### Technical Details
 
-5. **Test Dynamic Spawning**
-   - [ ] Test with varying workloads
-   - [ ] Verify dynamic expansion behavior
-   - [ ] Verify dynamic collapse behavior
-   - [ ] Verify 12-fold symmetry maintained
+**Helper Function:**
+```c
+int threaded_training_get_next_sphere_id(void* user_data);
+```
+- Takes `void*` to avoid circular dependencies
+- Returns next available sphere ID atomically
+- Returns -1 on error
 
-### After OBJECTIVE 7A Phase 4:
+**Spawning Pattern:**
+- Check every 100 work items if spawning needed
+- Spawn 1, 3, 6, or 12 children to maintain symmetry
+- Each child gets unique ID from atomic counter
+- Each child inherits user_data pointer
+
+**Termination Pattern:**
+- Check when no work to distribute
+- Terminate idle children (> 50% idle)
+- Keep at least 1 child to maintain control status
+- Proper thread cleanup with pthread_join
+
+---
+
+## After OBJECTIVE 7A Phase 4
 
 **Next Objective: OBJECTIVE 8A - Remove ALL Conditional Compilation**
 - Remove feature flags
@@ -97,6 +115,12 @@
 - Created complete dynamic spawning/termination API
 - Infrastructure complete, actual spawning pending
 
+### OBJECTIVE 7A - Phase 4: Infrastructure ✅
+- Added user_data field to CLLMLatticeHierarchy
+- Added sphere_id_counter to ThreadedTrainingSystem
+- Created helper function for getting next sphere ID
+- Set user_data for all spheres
+
 ---
 
 ## Build Status
@@ -117,38 +141,44 @@
 - Unused functions (2)
 - Redefined macros (2)
 
-**Note**: Per RULE 7, we should fix these warnings, but let's complete OBJECTIVE 7A Phase 4 first since we're so close.
+**Note**: Will fix warnings after completing OBJECTIVE 7A Phase 4
 
 ---
 
 ## Git Status
 
 **Repository**: justmebob123/crystalline (main branch)
-**Latest Commit**: 065e0c0 - docs: Add Phase 2 completion summary
+**Latest Commit**: b97d6e7 - WIP: OBJECTIVE 7A Phase 4 - Infrastructure for dynamic spawning
 **Status**: All changes committed and pushed ✅
 
 ---
 
 ## Next Actions
 
-1. **Complete OBJECTIVE 7A Phase 4** (current focus)
-   - Add global sphere_id counter
-   - Implement actual spawning logic
-   - Implement actual termination logic
-   - Fix thread termination hang
-   - Test dynamic spawning
+1. **Implement spawning logic in cllm_threads.c** (immediate)
+   - Add include for cllm_training_threaded.h
+   - Replace TODO with actual spawning code
+   - Use helper function to get next sphere ID
 
-2. **Then move to OBJECTIVE 8A** (next objective)
+2. **Implement termination logic in cllm_threads.c** (immediate)
+   - Replace TODO with actual termination code
+   - Handle thread cleanup carefully
+
+3. **Build and test** (immediate)
+   - Fix any compilation errors
+   - Test dynamic spawning behavior
+
+4. **Then move to OBJECTIVE 8A** (next objective)
    - Remove conditional compilation
    - Remove feature flags
 
-3. **Then fix build warnings** (per RULE 7)
+5. **Then fix build warnings** (per RULE 7)
    - Fix high-priority warnings (19)
    - Fix medium-priority warnings (13)
    - Document low-priority warnings (24)
 
 ---
 
-**Last Updated**: Back on track - OBJECTIVE 7A Phase 4
-**Current Objective**: OBJECTIVE 7A - Phase 4: Complete Dynamic Thread Spawning
+**Last Updated**: OBJECTIVE 7A Phase 4 - Infrastructure complete, implementation pending
+**Current Task**: Implement actual spawning/termination logic in cllm_threads.c
 **Next Objective**: OBJECTIVE 8A - Remove ALL Conditional Compilation
