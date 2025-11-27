@@ -308,10 +308,10 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     pthread_mutex_init(&system->gradient_lock, NULL);
     pthread_mutex_init(&system->model_lock, NULL);
     
-    // Initialize barriers for N worker threads + 1 control thread
-    // Total participants: num_threads (workers) + 1 (control thread)
-    pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 1);
-    pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 1);
+    // Initialize barriers for N worker threads + 1 control thread + 1 main thread
+    // Total participants: num_threads (workers) + 1 (control) + 1 (main)
+    pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 2);
+    pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 2);
     
     // Create thread system with calculated hierarchy
     system->thread_system = threads_create(hierarchy_levels);
@@ -496,31 +496,38 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
  * 5. Coordinate next batch
  */
 /**
- * Node Zero (Control Thread) - PHASE 2: Placeholder
+ * Node Zero (Control Thread) - PHASE 3: Barrier Synchronization
  * 
  * CRITICAL: This thread NEVER processes batches (master plan requirement)
  * 
- * PHASE 2 STATUS:
- * - Control thread exists and is created
- * - Currently just a placeholder that sleeps
- * - Phase 3 will implement full barrier-based coordination
- * - For now, main thread (threaded_train_epoch) handles batch distribution
- * 
- * FUTURE (Phase 3):
- * - Will use barriers for synchronization
- * - Will coordinate batch distribution
- * - Will manage gradient accumulation
+ * PHASE 3 IMPLEMENTATION:
+ * - Participates in barrier synchronization
+ * - Coordinates with main thread and workers
+ * - Synchronizes at Point A (batch distribution)
+ * - Synchronizes at Point B (batch completion)
  */
 static void* control_thread_func(void* arg) {
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
     
     printf("[Node Zero] Control thread started - NEVER processes batches\n");
-    printf("[Node Zero] Phase 2: Placeholder mode (Phase 3 will add barrier coordination)\n");
+    printf("[Node Zero] Phase 3: Barrier synchronization mode\n");
     
     while (atomic_load(&system->running)) {
-        // Placeholder: just sleep
-        // Phase 3 will implement barrier-based coordination here
-        usleep(1000);  // 1ms
+        printf("[Node Zero] Waiting at barrier Point A...\n"); fflush(stdout);
+        // POINT A: Wait for batch distribution
+        pthread_barrier_wait(&system->batch_barrier);
+        
+        printf("[Node Zero] Passed Point A\n"); fflush(stdout);
+        // Check if we should stop
+        if (!atomic_load(&system->running)) {
+            break;
+        }
+        
+        printf("[Node Zero] Waiting at barrier Point B...\n"); fflush(stdout);
+        // POINT B: Wait for batch completion
+        pthread_barrier_wait(&system->batch_barrier);
+        
+        printf("[Node Zero] Passed Point B\n"); fflush(stdout);
     }
     
     printf("[Node Zero] Control thread stopping\n");
@@ -528,14 +535,15 @@ static void* control_thread_func(void* arg) {
 }
 
 /**
- * Worker thread function - PHASE 2: Condition Variables (unchanged)
+ * Worker thread function - PHASE 3: Barrier Synchronization
  * 
- * Workers process batches assigned by main thread via distribute_batch_to_sphere()
+ * Workers process batches assigned by main thread
+ * Synchronization via barriers (no condition variables)
  * 
- * PHASE 2 STATUS:
- * - Still using condition variables for synchronization
- * - Phase 3 will migrate to barrier-based synchronization
- * - Keeping existing working code for now
+ * PHASE 3 IMPLEMENTATION:
+ * - Wait at barrier for batch assignment (Point A)
+ * - Process assigned batch
+ * - Wait at barrier to signal completion (Point B)
  */
 static void* sphere_worker_thread(void* arg) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
@@ -545,70 +553,44 @@ static void* sphere_worker_thread(void* arg) {
            ctx->sphere_id, ctx->symmetry_group);
     fflush(stdout);
     
+    int batches_processed = 0;
+    
     while (atomic_load(&system->running)) {
-        pthread_mutex_lock(&ctx->lock);
+        printf("[Worker %d] Waiting at barrier Point A...\n", ctx->sphere_id); fflush(stdout);
+        // POINT A: Wait for batch assignment from main thread
+        pthread_barrier_wait(&system->batch_barrier);
         
-        // Wait for work
-        while (!ctx->has_work && atomic_load(&system->running)) {
-            pthread_cond_wait(&ctx->work_ready, &ctx->lock);
-        }
-        
+        printf("[Worker %d] Passed Point A\n", ctx->sphere_id); fflush(stdout);
+        // Check if we should stop
         if (!atomic_load(&system->running)) {
-            pthread_mutex_unlock(&ctx->lock);
             break;
         }
         
-        // Process the batch
+        // Process the batch if assigned
         if (ctx->current_batch) {
+            printf("[Worker %d] Processing batch...\n", ctx->sphere_id); fflush(stdout);
             sphere_process_batch(ctx, system->training);
+            batches_processed++;
+            printf("[Worker %d] Batch processed\n", ctx->sphere_id); fflush(stdout);
         }
         
-        // Signal work complete
-        ctx->work_complete = 1;
-        ctx->has_work = 0;
-        pthread_cond_signal(&ctx->work_done);
+        printf("[Worker %d] Waiting at barrier Point B...\n", ctx->sphere_id); fflush(stdout);
+        // POINT B: Signal completion to main thread
+        pthread_barrier_wait(&system->batch_barrier);
         
-        pthread_mutex_unlock(&ctx->lock);
+        printf("[Worker %d] Passed Point B\n", ctx->sphere_id); fflush(stdout);
     }
     
-    printf("[Worker %d] Thread stopping\n", ctx->sphere_id);
+    printf("[Worker %d] Thread stopping (processed %d batches)\n", 
+           ctx->sphere_id, batches_processed);
     
     return NULL;
 }
 
 /**
- * Distribute batch to sphere (asynchronous)
+ * PHASE 3: Removed distribute_batch_to_sphere() and wait_for_sphere()
+ * Now using barrier synchronization instead of condition variables
  */
-static void distribute_batch_to_sphere(ThreadedTrainingSystem* system, int sphere_id, 
-                                      CLLMBatch* batch) {
-    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
-    
-    pthread_mutex_lock(&ctx->lock);
-    
-    ctx->current_batch = batch;
-    ctx->has_work = 1;
-    ctx->work_complete = 0;
-    pthread_cond_signal(&ctx->work_ready);
-    
-    pthread_mutex_unlock(&ctx->lock);
-}
-
-/**
- * Wait for sphere to complete work
- */
-static void wait_for_sphere(ThreadedTrainingSystem* system, int sphere_id) {
-    SphereTrainingContext* ctx = system->sphere_contexts[sphere_id];
-    
-    pthread_mutex_lock(&ctx->lock);
-    
-    while (!ctx->work_complete) {
-        pthread_cond_wait(&ctx->work_done, &ctx->lock);
-    }
-    
-    ctx->current_batch = NULL;
-    
-    pthread_mutex_unlock(&ctx->lock);
-}
 
 /**
  * Validate gradients for NaN/Inf values
@@ -773,15 +755,20 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         printf("Processing batch group %d (%d batches across %d spheres)...\n",
                batch_count / system->num_worker_spheres + 1, batches_loaded, batches_loaded);
         
-        // Distribute batches to spheres
+        // PHASE 3: Assign batches to workers (no signaling yet)
         for (int i = 0; i < batches_loaded; i++) {
-            distribute_batch_to_sphere(system, i, batches[i]);
+            system->sphere_contexts[i]->current_batch = batches[i];
         }
         
-        // Wait for all spheres to complete
-        for (int i = 0; i < batches_loaded; i++) {
-            wait_for_sphere(system, i);
-        }
+        printf("  [Main] Waiting at barrier Point A...\n"); fflush(stdout);
+        // POINT A: Release workers to process batches
+        pthread_barrier_wait(&system->batch_barrier);
+        
+        printf("  [Main] Passed Point A, waiting at Point B...\n"); fflush(stdout);
+        // POINT B: Wait for workers to complete
+        pthread_barrier_wait(&system->batch_barrier);
+        
+        printf("  [Main] Passed Point B\n"); fflush(stdout);
         
         // Accumulate gradients
         accumulate_gradients(system);
