@@ -510,24 +510,19 @@ static void* control_thread_func(void* arg) {
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
     
     printf("[Node Zero] Control thread started - NEVER processes batches\n");
-    printf("[Node Zero] Phase 3: Barrier synchronization mode\n");
+    printf("[Node Zero] Using barrier synchronization\n");
     
     while (atomic_load(&system->running)) {
-        printf("[Node Zero] Waiting at barrier Point A...\n"); fflush(stdout);
         // POINT A: Wait for batch distribution
         pthread_barrier_wait(&system->batch_barrier);
         
-        printf("[Node Zero] Passed Point A\n"); fflush(stdout);
         // Check if we should stop
         if (!atomic_load(&system->running)) {
             break;
         }
         
-        printf("[Node Zero] Waiting at barrier Point B...\n"); fflush(stdout);
         // POINT B: Wait for batch completion
         pthread_barrier_wait(&system->batch_barrier);
-        
-        printf("[Node Zero] Passed Point B\n"); fflush(stdout);
     }
     
     printf("[Node Zero] Control thread stopping\n");
@@ -555,15 +550,10 @@ static void* sphere_worker_thread(void* arg) {
     
     int batches_processed = 0;
     
-    printf("[Worker %d] About to check running flag, value=%d\n", ctx->sphere_id, atomic_load(&system->running));
-    fflush(stdout);
-    
     while (atomic_load(&system->running)) {
-        printf("[Worker %d] Waiting at barrier Point A...\n", ctx->sphere_id); fflush(stdout);
         // POINT A: Wait for batch assignment from main thread
         pthread_barrier_wait(&system->batch_barrier);
         
-        printf("[Worker %d] Passed Point A\n", ctx->sphere_id); fflush(stdout);
         // Check if we should stop
         if (!atomic_load(&system->running)) {
             break;
@@ -571,17 +561,12 @@ static void* sphere_worker_thread(void* arg) {
         
         // Process the batch if assigned
         if (ctx->current_batch) {
-            printf("[Worker %d] Processing batch...\n", ctx->sphere_id); fflush(stdout);
             sphere_process_batch(ctx, system->training);
             batches_processed++;
-            printf("[Worker %d] Batch processed\n", ctx->sphere_id); fflush(stdout);
         }
         
-        printf("[Worker %d] Waiting at barrier Point B...\n", ctx->sphere_id); fflush(stdout);
         // POINT B: Signal completion to main thread
         pthread_barrier_wait(&system->batch_barrier);
-        
-        printf("[Worker %d] Passed Point B\n", ctx->sphere_id); fflush(stdout);
     }
     
     printf("[Worker %d] Thread stopping (processed %d batches)\n", 
@@ -763,15 +748,11 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
             system->sphere_contexts[i]->current_batch = batches[i];
         }
         
-        printf("  [Main] Waiting at barrier Point A...\n"); fflush(stdout);
         // POINT A: Release workers to process batches
         pthread_barrier_wait(&system->batch_barrier);
         
-        printf("  [Main] Passed Point A, waiting at Point B...\n"); fflush(stdout);
         // POINT B: Wait for workers to complete
         pthread_barrier_wait(&system->batch_barrier);
-        
-        printf("  [Main] Passed Point B\n"); fflush(stdout);
         
         // Accumulate gradients
         accumulate_gradients(system);
