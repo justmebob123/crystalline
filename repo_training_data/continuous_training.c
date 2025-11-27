@@ -1,0 +1,417 @@
+/**
+ * Continuous Training System
+ * 
+ * Monitors training queue and trains on new files as they arrive
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/stat.h>
+#include <time.h>
+#include "cllm_training.h"
+#include "cllm.h"
+#include "cllm_format.h"
+#include "cllm_utils.h"
+#include "cllm_training_threaded.h"
+#include "cllm_batch.h"
+
+#define MAX_TOKENS_PER_FILE 100000
+
+/**
+ * Get current timestamp string
+ */
+static void get_timestamp(char* buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    strftime(buffer, size, "[%H:%M:%S]", tm_info);
+}
+
+typedef struct {
+    char data_dir[1024];
+    char model_path[1024];
+    CLLMModel* model;
+    CLLMTraining* training;
+    int running;
+    int files_trained;
+    int num_threads;
+    pthread_mutex_t lock;
+} ContinuousTrainingState;
+
+/**
+ * Check if file is locked by another thread
+ */
+static int is_file_locked(const char* filepath) {
+    char lockpath[2048];
+    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    return access(lockpath, F_OK) == 0;
+}
+
+/**
+ * Create lock file
+ */
+static int create_lock(const char* filepath) {
+    char lockpath[2048];
+    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    
+    FILE* f = fopen(lockpath, "w");
+    if (!f) return -1;
+    
+    fprintf(f, "%d\n", getpid());
+    fclose(f);
+    return 0;
+}
+
+/**
+ * Remove lock file
+ */
+static void remove_lock(const char* filepath) {
+    char lockpath[2048];
+    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    unlink(lockpath);
+}
+
+/**
+ * Load tokens from file
+ */
+static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t* num_tokens) {
+    FILE* f = fopen(filepath, "r");
+    if (!f) {
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s Cannot open: %s\n", timestamp, filepath);
+        return -1;
+    }
+    
+    // Skip header lines and read token line
+    char line[4096];
+    int found = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] != '#') {
+            found = 1;
+            break;
+        }
+    }
+    fclose(f);
+    
+    if (!found) {
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        fprintf(stderr, "%s No tokens in: %s\n", timestamp, filepath);
+        return -1;
+    }
+    
+    // Count tokens
+    int count = 0;
+    char* p = line;
+    while (*p) {
+        while (*p && (*p == ' ' || *p == '\t' || *p == '\n')) p++;
+        if (*p) {
+            count++;
+            while (*p && *p != ' ' && *p != '\t' && *p != '\n') p++;
+        }
+    }
+    
+    if (count == 0) {
+        return -1;
+    }
+    
+    // Allocate
+    *tokens = (uint32_t*)malloc(count * sizeof(uint32_t));
+    if (!*tokens) return -1;
+    
+    // Parse tokens
+    int i = 0;
+    p = line;
+    char token[256];
+    while (*p && i < count) {
+        while (*p && (*p == ' ' || *p == '\t' || *p == '\n')) p++;
+        if (!*p) break;
+        
+        int j = 0;
+        while (*p && *p != ' ' && *p != '\t' && *p != '\n' && j < 255) {
+            token[j++] = *p++;
+        }
+        token[j] = '\0';
+        
+        // Hash to ID
+        unsigned long hash = 5381;
+        for (char* tp = token; *tp; tp++) {
+            hash = ((hash << 5) + hash) + *tp;
+        }
+        (*tokens)[i++] = (uint32_t)(hash % 10000);
+    }
+    
+    *num_tokens = i;
+    return 0;
+}
+
+
+/**
+ * Train on one file
+ */
+static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
+    printf("\n=== Training on file ===\n");
+    printf("File: %s\n", filepath);
+    
+    // Load tokens
+    uint32_t* tokens = NULL;
+    size_t num_tokens = 0;
+    
+    if (load_tokens_from_file(filepath, &tokens, &num_tokens) != 0) {
+        fprintf(stderr, "Failed to load tokens from: %s\n", filepath);
+        return -1;
+    }
+    
+    printf("Loaded %zu tokens\n", num_tokens);
+    
+    // Update training data
+    if (state->training->tokens) {
+        free(state->training->tokens);
+    }
+    state->training->tokens = tokens;
+    state->training->num_tokens = num_tokens;
+    
+    // Train for N epochs
+    int epochs = 5;
+    float total_loss = 0.0f;
+    
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        extern float cllm_train_epoch_crystalline(CLLMTraining* training);
+        float loss = cllm_train_epoch_crystalline(state->training);
+        total_loss += loss;
+        printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
+    }
+    
+    float avg_loss = total_loss / epochs;
+    printf("✓ Training complete: avg loss = %.4f\n", avg_loss);
+    
+    // Save model
+    // cllm_write_model is declared in cllm_format.h
+    if (cllm_write_model(state->model, state->model_path) == 0) {
+        printf("✓ Model saved: %s\n", state->model_path);
+    }
+    
+    return 0;
+}
+
+/**
+ * Move file to trained directory
+ */
+static int move_to_trained(const char* data_dir, const char* filename) {
+    char src[2048];
+    char dst[2048];
+    
+    snprintf(src, sizeof(src), "%s/training_queue/%s", data_dir, filename);
+    snprintf(dst, sizeof(dst), "%s/trained/%s", data_dir, filename);
+    
+    if (rename(src, dst) != 0) {
+        fprintf(stderr, "Failed to move file: %s\n", filename);
+        return -1;
+    }
+    
+    printf("✓ Moved to trained: %s\n", filename);
+    return 0;
+}
+
+/**
+ * Training worker thread
+ */
+static void* training_worker_thread(void* arg) {
+    ContinuousTrainingState* state = (ContinuousTrainingState*)arg;
+    
+    char queue_dir[2048];
+    snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
+    
+    while (state->running) {
+        DIR* dir = opendir(queue_dir);
+        if (!dir) {
+            sleep(5);
+            continue;
+        }
+        
+        struct dirent* entry;
+        int found_file = 0;
+        
+        while ((entry = readdir(dir)) != NULL) {
+            if (entry->d_name[0] == '.') continue;
+            if (strstr(entry->d_name, ".tok") == NULL) continue;
+            
+            char filepath[2048];
+            snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
+            
+            // Check if locked
+            if (is_file_locked(filepath)) {
+                continue;
+            }
+            
+            // Try to lock
+            if (create_lock(filepath) != 0) {
+                continue;
+            }
+            
+            // Train on file
+            if (train_on_file(state, filepath) == 0) {
+                // Move to trained
+                move_to_trained(state->data_dir, entry->d_name);
+                
+                pthread_mutex_lock(&state->lock);
+                state->files_trained++;
+                pthread_mutex_unlock(&state->lock);
+            }
+            
+            // Remove lock
+            remove_lock(filepath);
+            
+            found_file = 1;
+            break;  // Process one file at a time per thread
+        }
+        
+        closedir(dir);
+        
+        if (!found_file) {
+            sleep(5);  // Wait for new files
+        }
+    }
+    
+    return NULL;
+}
+
+/**
+ * Initialize continuous training
+ */
+ContinuousTrainingState* continuous_training_init(const char* data_dir, const char* model_path, 
+                                                   CLLMModel* model, int num_threads) {
+    ContinuousTrainingState* state = (ContinuousTrainingState*)calloc(1, sizeof(ContinuousTrainingState));
+    if (!state) return NULL;
+    
+    strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
+    strncpy(state->model_path, model_path, sizeof(state->model_path) - 1);
+    state->running = 1;
+    state->files_trained = 0;
+    state->num_threads = num_threads;
+    pthread_mutex_init(&state->lock, NULL);
+    
+    // NEW: Load or create model if not provided
+    if (model) {
+        state->model = model;
+    } else {
+        // Try to load existing model
+        state->model = cllm_read_model(model_path);
+        if (!state->model) {
+            // Create new model with default configuration
+            char timestamp[32];
+            get_timestamp(timestamp, sizeof(timestamp));
+            printf("%s No existing model found, creating new model...\n", timestamp);
+            
+            // Create default config
+            // NOTE: These are conservative defaults. The system supports:
+            // - vocab_size: 100K-250K+ for multilingual models
+            // - embedding_dim: 1024-8192+ (dynamic, no hardcoded limits)
+            // - max_seq_len: 2048-4096+ for long-range dependencies
+            CLLMConfig default_config = {
+                .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
+                .embedding_dim = 1024,    // Increased from 512 (better representations)
+                .num_layers = 6,
+                .num_heads = 8,
+                .ff_dim = 4096,           // Increased from 2048 (more capacity)
+                .max_seq_len = 1024,      // Increased from 512 (longer context)
+                .dropout = 0.1f
+            };
+            state->model = cllm_create_model(&default_config);
+            if (!state->model) {
+                fprintf(stderr, "%s Failed to create model\n", timestamp);
+                free(state);
+                return NULL;
+            }
+        }
+    }
+    
+    // Initialize training state
+    // NOTE: Increased sequence_length for better long-range dependency learning
+    CLLMTrainingConfig config = {
+        .num_epochs = 100,  // Dynamic - will train until convergence or max_steps
+        .batch_size = 4,
+        .sequence_length = 256,   // Increased from 32 (8x longer context)
+        .learning_rate = 0.001f,
+        .weight_decay = 0.01f,
+        .gradient_clip = 1.0f,
+        .warmup_steps = 100,
+        .save_every = 5,
+        .eval_interval = 100,
+        .max_steps = 10000,
+        .lr_decay_factor = 0.1f,
+        .lr_decay_steps = 1000,
+        .min_lr = 1e-6f,
+        .gradient_accumulation_steps = 4,  // Accumulate over 4 steps (effective batch size = 16)
+        .use_mixed_precision = 0,          // Disabled by default (enable for 2-3x speedup)
+        .loss_scale = 1024.0f,
+        .loss_scale_growth = 2.0f,
+        .loss_scale_backoff = 0.5f,
+        .loss_scale_window = 2000
+    };
+    strcpy(config.optimizer, "adam");
+    strcpy(config.lr_scheduler, "cosine");  // Use cosine decay by default
+    
+    state->training = cllm_training_init(state->model, &config);
+    if (!state->training) {
+        free(state);
+        return NULL;
+    }
+    
+    return state;
+}
+
+/**
+ * Start training threads
+ */
+int continuous_training_start(ContinuousTrainingState* state, pthread_t* threads) {
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    
+    printf("%s === CONTINUOUS TRAINING STARTED ===\n", timestamp);
+    printf("%s Threads: %d\n", timestamp, state->num_threads);
+    printf("%s Model: %s\n", timestamp, state->model_path);
+    
+    for (int i = 0; i < state->num_threads; i++) {
+        if (pthread_create(&threads[i], NULL, training_worker_thread, state) != 0) {
+            fprintf(stderr, "%s Failed to create training thread %d\n", timestamp, i);
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * Stop training threads
+ */
+void continuous_training_stop(ContinuousTrainingState* state, pthread_t* threads) {
+    state->running = 0;
+    
+    for (int i = 0; i < state->num_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    char timestamp[32];
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s === CONTINUOUS TRAINING STOPPED ===\n", timestamp);
+    printf("%s Total files trained: %d\n", timestamp, state->files_trained);
+}
+
+/**
+ * Cleanup continuous training
+ */
+void continuous_training_cleanup(ContinuousTrainingState* state) {
+    if (!state) return;
+    
+    if (state->training) {
+        cllm_training_free(state->training);
+    }
+    
+    pthread_mutex_destroy(&state->lock);
+    free(state);
+}

@@ -1,0 +1,175 @@
+src/
+├── ai
+│   ├── cllm_attention.c
+│   ├── cllm_backward.c
+│   ├── cllm_batch.c
+│   ├── cllm_benchmark.c
+│   ├── cllm_cache.c
+│   ├── cllm_create.c
+│   ├── cllm_crystalline_advanced.c
+│   ├── cllm_crystalline_attention.c
+│   ├── cllm_crystalline_training.c
+│   ├── cllm_data_loader.c
+│   ├── cllm_embedding.c
+│   ├── cllm_feedforward.c
+│   ├── cllm_format.c
+│   ├── cllm_fp16.c
+│   ├── cllm_inference.c
+│   ├── cllm_init.c
+│   ├── cllm_lattice_conversion.c
+│   ├── cllm_lattice_embed.c
+│   ├── cllm_lattice_init.c
+│   ├── cllm_layernorm.c
+│   ├── cllm_lll_embeddings.c
+│   ├── cllm_loss.c
+│   ├── cllm_optimizer.c
+│   ├── cllm_optimizer_wrapper.c
+│   ├── cllm_positional.c
+│   ├── cllm_production.c
+│   ├── cllm_pure_embeddings.c
+│   ├── cllm_pure_token.c
+│   ├── cllm_recursive_spheres.c
+│   ├── cllm_root_word_modeling.c
+│   ├── cllm_simd_gradient_ops.c
+│   ├── cllm_simd_utils.c
+│   ├── cllm_symmetry.c
+│   ├── cllm_threads.c
+│   ├── cllm_tokenizer.c
+│   ├── cllm_train_complete.c
+│   ├── cllm_training.c
+│   ├── cllm_training_mt.c
+│   ├── cllm_training_parallel.c
+│   ├── cllm_training_threaded.c
+│   ├── cllm_training_threaded.c.backup
+│   ├── cllm_utils.c
+│   ├── cllm_validate.c
+│   ├── cllm_vocab_builder.c
+│   └── infrastructure
+│       ├── cllm_backprop.c
+│       ├── cllm_batch.c
+│       ├── cllm_control_process.c
+│       ├── cllm_lattice_hierarchy.c
+│       ├── cllm_loss.c
+│       ├── cllm_message_queue.c
+│       ├── cllm_optimizer.c
+│       ├── cllm_shared_memory.c
+│       ├── cllm_sphere_message.c
+│       ├── cllm_sphere_stats.c
+│       ├── cllm_thread_allocation.c
+│       └── cllm_training_loop.c
+├── core
+│   ├── bigfixed_constants.c
+│   ├── bigfixed_core.c
+│   ├── bigint_conversions.c
+│   ├── bigint_core.c
+│   ├── bigint_ntt.c
+│   ├── cllm_angular_position.c
+│   ├── cllm_hierarchical_abacus.c
+│   ├── cllm_mathematical_constants.c
+│   ├── cllm_sphere_position.c
+│   ├── crystal_abacus.c
+│   └── prime_lowlevel.c
+├── crawler
+│   ├── continuous_training.c
+│   ├── crawler_api.c
+│   ├── crawler_core.c
+│   ├── preprocessor.c
+│   └── tokenizer.c
+├── document_processing
+│   ├── cllm_ocr.c
+│   └── cllm_pdf.c
+├── geometry
+│   ├── lattice_algorithms.c
+│   ├── prime_coords.c
+│   ├── prime_hyperdim.c
+│   ├── prime_lattice.c
+│   ├── prime_lattice_core.c
+│   ├── prime_lattice_geometry.c
+│   ├── prime_matrix.c
+│   └── prime_rainbow.c
+└── transcendental
+    ├── prime_basic.c
+    ├── prime_bigint_transcendental.c
+    ├── prime_float_math.c
+    ├── prime_math.c
+    └── prime_math_custom.c
+app/
+├── Makefile
+├── Makefile.organized
+├── all_modes.h
+├── analysis_manager.c
+├── analysis_manager.h
+├── app_common.h
+├── calculator.c
+├── cllm_integration.c
+├── cllm_integration.h
+├── clock_4d.c
+├── clock_abacus.c
+├── clock_abacus.h
+├── clock_crystalline.c
+├── clock_folding.c
+├── color_utils.c
+├── crawler_thread.c
+├── crawler_thread.h
+├── frequency_rings.c
+├── input_manager.c
+├── input_manager.h
+├── io.c
+├── lattice_cache.c
+├── lattice_cache.h
+├── lattice_helpers.c
+├── lattice_helpers.h
+├── lattice_utils.c
+├── lattice_utils.h
+├── main.c
+├── natural_prime_lattice.c
+├── nested_clocks.c
+├── prime_input.c
+├── ring_evolution.c
+├── simple_dialog.c
+├── simple_dialog.h
+├── spheres.c
+├── text_input.c
+├── text_input.h
+├── ui
+│   ├── sphere_visualization.c
+│   ├── sphere_visualization.h
+│   ├── tabs
+│   │   ├── tab_adapters.c
+│   │   ├── tab_benchmark.c
+│   │   ├── tab_llm.c
+│   │   ├── tab_research.c
+│   │   └── tab_training.c
+│   └── tabs.h
+├── ui.c
+├── ui_layout.c
+├── ui_layout.h
+├── ulam_clock_spiral.c
+├── visualization.c
+├── workspace.c
+└── workspace.h
+tools/
+├── Makefile
+├── cllm_crawler.c
+├── cllm_inference.c
+├── cllm_inference_fixed
+├── cllm_inference_fixed.c
+├── cllm_inference_proper
+├── cllm_inference_proper.c
+├── cllm_ocr
+├── cllm_ocr.c
+├── cllm_pdf_extract
+├── cllm_pdf_extract.c
+├── cllm_pdf_ocr
+├── cllm_pdf_ocr.c
+├── cllm_tokenize.c
+├── cllm_vocab_build.c
+├── fix_html_entities
+├── fix_html_entities.c
+├── train_model
+├── train_model.c
+├── train_model_recursive.c
+├── web_scraper
+└── web_scraper.c
+
+12 directories, 161 files

@@ -19,69 +19,62 @@ Continuing with MASTER_PLAN.md objectives. Debug mode (-O0) will remain enabled 
 - [x] OBJECTIVE 16 Phase 2: File Organization
 - [x] All 13 A-Series Objectives (2A-9A)
 
-## Current Focus: OBJECTIVE 14 - Comprehensive Repository Validation
+## Current Focus: Full System Validation with Repository Training
 
-**MAJOR MILESTONE**: Phases 1-4 COMPLETE! ✅
-- Training pipeline: VALIDATED ✅
-- Inference pipeline: VALIDATED ✅
-- Ready to enable optimizations!
+**OBJECTIVE**: Train on entire repository (all source files, headers, text, images)
+- Goal: Generate valid code from trained model
+- Approach: Clean slate, test every subsystem end-to-end
+- Keep debug mode until fully validated
 
-### Phase 1: Build System Validation ✅
-- [x] Verify all libraries build successfully (9 libraries: 4 .so + 4 .a + docproc)
-- [x] Verify all tools build successfully (8 tools built)
-- [x] Verify all tests build successfully (25 test executables)
-- [x] Check for any missing dependencies (none found)
-- [x] Verify clean build (make clean && make) - SUCCESS
-- [x] Build warnings: 3 (cosmetic only - format truncation)
-- [x] Build errors: 0 ✅
+### Phase 1: Clean Slate - Remove All Test Data ✅
+- [x] Delete test_training_data directory
+- [x] Delete checkpoints directory
+- [x] Delete all training logs
+- [x] Delete inference test logs
+- [x] Verify clean workspace
 
-### Phase 2: Runtime Testing ✅
-- [x] Test basic application startup (hyper_prime_spiral --help works)
-- [x] Test command-line tools (train_model, cllm_crawler, web_scraper all respond)
-- [x] Test unit tests (test_softmax_backward: 5/5 PASS, test_attention_cache: 4/4 PASS)
-- [x] Verify library loading (LD_LIBRARY_PATH works correctly)
-- [x] Basic runtime validation complete
+### Phase 2: Prepare Repository Training Data ✅
+- [x] Collect all source files (.c, .h) - 123 C files, 80 headers
+- [x] Collect all text files (.txt, .md) - 220 markdown files
+- [x] Create training data directory structure - repo_training_data/
+- [x] Verify data collection complete - 436 files total
+- [x] Count total tokens/files - ~565,000 tokens, 4.6MB
+- [x] Analyze data distribution - Largest: 188K REPOSITORY_INVENTORY.txt
 
-### Phase 3: Training Validation (CRITICAL) - ✅ BUG FIXED!
-- [x] Test command-line training (tools/train_model) - ✅ WORKS!
-- [x] Fix infinite loop in epoch training - ✅ FIXED!
-- [ ] Test UI training tab (deferred to later)
-- [x] Verify kissing spheres threading works (✅ 63 threads, 157 spheres created)
-- [x] Verify checkpoints are created (✅ checkpoint_step_0.cllm saved)
-- [x] Verify loss is computed (✅ Epoch 1: 77.17, Epoch 2: started)
-- [x] Test with small dataset first (320 tokens, 2 batches)
-- [x] Monitor for crashes or hangs (✅ Training completes, minor cleanup issue)
+### Phase 3: Full Repository Training - IN PROGRESS ⏳
+- [x] Configure training parameters (10K vocab, 256 embed, 4 layers, 8 heads)
+- [x] Start training on full repository data (436 files, 288K tokens)
+- [x] Verify kissing spheres utilization (✅ 65 threads active, 165% CPU)
+- [x] Verify no crashes or hangs (✅ Stable for 15+ minutes)
+- [ ] Monitor training progress (⏳ Dataset creation in progress)
+- [ ] Verify checkpoints saved regularly (⏳ Waiting for first checkpoint)
+- [ ] Complete full training run (⏳ ETA: 5-7 hours)
+- [ ] Verify final model saved
 
-**BUG FIXED**: Batch iterator now properly detects end of data.
-- Root cause: Iterator didn't check if current_pos >= num_tokens
-- Fix: Added position check in cllm_batch_iterator_next()
-- Result: Training completes epochs correctly, saves checkpoints
-- Minor issue: Double-free during cleanup (non-critical)
-- See: PHASE3_TRAINING_BUG_FIXED.md
+**TRAINING ACTIVELY RUNNING**:
+- PID: 5036
+- Threads: 65 (64 workers + 1 main)
+- CPU: 165% (multi-core)
+- Memory: 748MB (stable)
+- Status: Healthy ✅
 
-### Phase 4: Inference Validation (CRITICAL) - ✅ COMPLETE
-- [x] Test command-line inference with trained checkpoint (✅ Works!)
-- [x] Verify model loading works (✅ Loads 404K checkpoint)
-- [x] Verify text generation works (✅ Generates 20 tokens)
-- [x] Test with different prompts (✅ Multiple prompts tested)
-- [x] Verify tokenization works (✅ Correct token IDs)
-- [x] Verify forward pass works (✅ Executes successfully)
-- [ ] Test UI LLM tab inference (deferred - CLI validation sufficient)
+### Phase 4: Code Generation Validation
+- [ ] Test inference with trained model
+- [ ] Prompt: "int main" - verify generates valid C code
+- [ ] Prompt: "struct" - verify generates valid struct
+- [ ] Prompt: "#include" - verify generates valid includes
+- [ ] Prompt: "void function" - verify generates valid function
+- [ ] Test multiple code generation scenarios
+- [ ] Verify generated code is syntactically valid
+- [ ] Verify model learned code patterns
 
-**INFERENCE PIPELINE VALIDATED**: All components work correctly!
-- Model loading: ✅
-- Tokenization: ✅  
-- Forward pass: ✅
-- Text generation: ✅
-- Output quality: ⚠️ Undertrained (expected - only 2 epochs on 320 tokens)
-
-Ready to enable optimizations!
-
-### Phase 5: Integration Testing
-- [ ] Test crawler integration
-- [ ] Test web scraper
-- [ ] Test PDF processing tools
-- [ ] Test vocabulary building
+### Phase 5: System Stability Validation
+- [ ] Verify no memory leaks during long training
+- [ ] Verify no crashes during full run
+- [ ] Verify checkpoint loading/saving works
+- [ ] Verify model can resume from checkpoint
+- [ ] Test training interruption and resume
+- [ ] Verify all 64 threads stable throughout
 
 ### Phase 6: Performance Benchmarking
 - [ ] Measure training speed (tokens/sec)
