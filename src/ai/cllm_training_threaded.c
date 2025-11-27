@@ -174,6 +174,7 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
 static void* sphere_worker_thread(void* arg);
 static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
+static void accumulate_gradients(ThreadedTrainingSystem* system);
 
 /**
  * Process batch on a sphere (worker thread function)
@@ -307,7 +308,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     pthread_mutex_init(&system->gradient_lock, NULL);
     pthread_mutex_init(&system->model_lock, NULL);
     
-    // Initialize barriers for N threads + 1 main thread
+    // Initialize barriers for N worker threads + 1 control thread
+    // Total participants: num_threads (workers) + 1 (control thread)
     pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 1);
     pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 1);
     
@@ -416,6 +418,9 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     printf("    - %d worker threads\n", system->num_worker_spheres);
     printf("    - 12-fold symmetry structure\n\n");
     
+    // Give threads time to initialize before returning
+    usleep(10000);  // 10ms - allow worker threads to start and enter wait state
+    
     return system;
 }
 
@@ -490,17 +495,31 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
  * 4. Apply optimizer step
  * 5. Coordinate next batch
  */
+/**
+ * Node Zero (Control Thread) - PHASE 2: Placeholder
+ * 
+ * CRITICAL: This thread NEVER processes batches (master plan requirement)
+ * 
+ * PHASE 2 STATUS:
+ * - Control thread exists and is created
+ * - Currently just a placeholder that sleeps
+ * - Phase 3 will implement full barrier-based coordination
+ * - For now, main thread (threaded_train_epoch) handles batch distribution
+ * 
+ * FUTURE (Phase 3):
+ * - Will use barriers for synchronization
+ * - Will coordinate batch distribution
+ * - Will manage gradient accumulation
+ */
 static void* control_thread_func(void* arg) {
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
     
     printf("[Node Zero] Control thread started - NEVER processes batches\n");
+    printf("[Node Zero] Phase 2: Placeholder mode (Phase 3 will add barrier coordination)\n");
     
     while (atomic_load(&system->running)) {
-        // Control thread coordinates but doesn't process batches
-        // Main training loop will handle batch distribution
-        // This is a placeholder for future full control thread implementation
-        
-        // For now, sleep briefly to avoid busy waiting
+        // Placeholder: just sleep
+        // Phase 3 will implement barrier-based coordination here
         usleep(1000);  // 1ms
     }
     
@@ -509,14 +528,22 @@ static void* control_thread_func(void* arg) {
 }
 
 /**
- * Worker thread function - processes batches assigned to this sphere
+ * Worker thread function - PHASE 2: Condition Variables (unchanged)
  * 
- * NOTE: In full master plan implementation, this will use barriers
- * instead of condition variables for synchronization with Node Zero
+ * Workers process batches assigned by main thread via distribute_batch_to_sphere()
+ * 
+ * PHASE 2 STATUS:
+ * - Still using condition variables for synchronization
+ * - Phase 3 will migrate to barrier-based synchronization
+ * - Keeping existing working code for now
  */
 static void* sphere_worker_thread(void* arg) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
     ThreadedTrainingSystem* system = ctx->system;
+    
+    printf("[Worker %d] Thread started (symmetry group %d)\n", 
+           ctx->sphere_id, ctx->symmetry_group);
+    fflush(stdout);
     
     while (atomic_load(&system->running)) {
         pthread_mutex_lock(&ctx->lock);
@@ -543,6 +570,8 @@ static void* sphere_worker_thread(void* arg) {
         
         pthread_mutex_unlock(&ctx->lock);
     }
+    
+    printf("[Worker %d] Thread stopping\n", ctx->sphere_id);
     
     return NULL;
 }
