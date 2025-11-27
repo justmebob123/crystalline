@@ -18,9 +18,7 @@ ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = libcllm.so
 CRAWLER_LIB = libcrawler.so
 
-# Legacy names (for backwards compatibility)
-STATIC_LIB = libprimemath.a
-SHARED_LIB = libprimemath.so
+# Removed legacy monolithic libraries - use modular libraries instead
 
 # Installation directories
 PREFIX = /usr/local
@@ -64,13 +62,12 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB) tools
+all: $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) tools
 	@echo "✓ Build complete!"
 	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
 	@echo "  CLLM library: $(CLLM_LIB)"
 	@echo "  Crawler library: $(CRAWLER_LIB)"
-	@echo "  Legacy static: $(STATIC_LIB)"
-	@echo "  Legacy shared: $(SHARED_LIB)"
+
 	@echo "  Crawler library: $(CRAWLER_LIB)"
 
 # ============================================================================
@@ -98,22 +95,7 @@ $(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms
 	@echo "✓ CLLM library created"
 
-# ============================================================================
-# Legacy Libraries (for backwards compatibility)
-# ============================================================================
-
-
-# Static library
-$(STATIC_LIB): $(ALL_OBJECTS)
-	@echo "Creating static library: $@"
-	$(AR) $(ARFLAGS) $@ $^
-	@echo "✓ Static library created"
-
-# Shared library
-$(SHARED_LIB): $(ALL_OBJECTS)
-	@echo "Creating shared library: $@"
-	$(CC) -shared -o $@ $^ $(LDFLAGS)
-	@echo "✓ Shared library created"
+# Removed legacy monolithic libraries
 
 # ============================================================================
 # Compilation Rules

@@ -333,7 +333,7 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     // Initialize training state
     // NOTE: Increased sequence_length for better long-range dependency learning
     CLLMTrainingConfig config = {
-        .num_epochs = 5,
+        .num_epochs = 100,  // Dynamic - will train until convergence or max_steps
         .batch_size = 4,
         .sequence_length = 256,   // Increased from 32 (8x longer context)
         .learning_rate = 0.001f,
