@@ -15,6 +15,7 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "cllm_threads.h"
 #include "cllm_threads_spawn.h"
+#include "cllm_training_threaded.h"
 #include "cllm_training.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -156,9 +157,40 @@ static void* sphere_worker_thread(void* arg) {
                                          sphere->debug_name, num_to_spawn, 
                                          atomic_load(&sphere->work_queue_size));
                                   
-                                  // TODO: Implement actual spawning
-                                  // Need to track next_sphere_id globally
-                                  // For now, just log the intent
+                                     // Get training system from user_data
+                                     void* training_system = sphere->user_data;
+                                     
+                                     if (training_system) {
+                                         // Spawn the requested number of children
+                                         for (int spawn_i = 0; spawn_i < num_to_spawn; spawn_i++) {
+                                             // Get next sphere ID using helper function
+                                             int next_id = threaded_training_get_next_sphere_id(training_system);
+                                             
+                                             if (next_id < 0) {
+                                                 fprintf(stderr, "[SPAWN ERROR] %s: Failed to get next sphere ID\n",
+                                                         sphere->debug_name);
+                                                 break;
+                                             }
+                                             
+                                             // Spawn child with unique ID
+                                             CLLMLatticeHierarchy* child = sphere_spawn_child(
+                                                 sphere, next_id, next_id);
+                                             
+                                             if (child) {
+                                                 // Set user_data for the new child
+                                                 child->user_data = training_system;
+                                                 
+                                                 printf("[SPAWN SUCCESS] %s spawned child %s (ID: %d)\n",
+                                                        sphere->debug_name, child->debug_name, next_id);
+                                             } else {
+                                                 fprintf(stderr, "[SPAWN FAILED] %s failed to spawn child\n",
+                                                         sphere->debug_name);
+                                             }
+                                         }
+                                     } else {
+                                         fprintf(stderr, "[SPAWN ERROR] %s: user_data is NULL\n",
+                                                 sphere->debug_name);
+                                     }
                               }
                           }
                        } else {
@@ -170,8 +202,38 @@ static void* sphere_worker_thread(void* arg) {
                               printf("[DYNAMIC] %s: Should terminate %d idle children\n",
                                      sphere->debug_name, num_to_terminate);
                               
-                              // TODO: Implement actual termination
-                              // Need to handle thread cleanup carefully
+                                 // Terminate idle children
+                                 int terminated_count = 0;
+                                 
+                                 // Iterate through children and terminate idle ones
+                                 for (int term_i = 0; term_i < sphere->num_children && terminated_count < num_to_terminate; term_i++) {
+                                     CLLMLatticeHierarchy* child = sphere->children[term_i];
+                                     
+                                     // Check if child is idle
+                                     int child_state = atomic_load(&child->state);
+                                     size_t child_queue_size = atomic_load(&child->work_queue_size);
+                                     
+                                     if (child_state == HIERARCHY_STATE_IDLE && child_queue_size == 0) {
+                                         printf("[TERMINATE] %s terminating idle child %s\n",
+                                                sphere->debug_name, child->debug_name);
+                                         
+                                         // Terminate the child
+                                         if (sphere_terminate_child(sphere, child) == 0) {
+                                             terminated_count++;
+                                             // Note: sphere->num_children is decremented by sphere_terminate_child
+                                             // So we need to adjust the loop index
+                                             term_i--;
+                                         } else {
+                                             fprintf(stderr, "[TERMINATE FAILED] %s failed to terminate child %s\n",
+                                                     sphere->debug_name, child->debug_name);
+                                         }
+                                     }
+                                 }
+                                 
+                                 if (terminated_count > 0) {
+                                     printf("[TERMINATE SUCCESS] %s terminated %d idle children\n",
+                                            sphere->debug_name, terminated_count);
+                                 }
                           }
                           
                            atomic_store(&sphere->state, HIERARCHY_STATE_READY);
