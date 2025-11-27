@@ -8,7 +8,7 @@
 # Compiler and flags
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -mavx2 -mfma
 LDFLAGS = 
 ARFLAGS = rcs
 
@@ -291,7 +291,7 @@ clean:
 # Debug Build
 # ============================================================================
 
-debug: CFLAGS += -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined
+debug: CFLAGS += -g -O2 -DDEBUG -fsanitize=address -fsanitize=undefined
 debug: LDFLAGS += -fsanitize=address -fsanitize=undefined
 debug: clean all
 	@echo "✓ Debug build complete"

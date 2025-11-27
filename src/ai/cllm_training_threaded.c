@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <math.h>
 
 /**
  * Thread-local training context for each sphere
@@ -53,8 +54,8 @@ typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t work_ready;
     pthread_cond_t work_done;
-    int has_work;
-    int work_complete;
+    volatile int has_work;        // MUST be volatile - checked without lock in some paths!
+    volatile int work_complete;   // MUST be volatile - checked without lock in some paths!
     
     // Worker thread
     pthread_t thread;
@@ -83,6 +84,7 @@ struct ThreadedTrainingSystem {
     // Gradient accumulation (temporary until shared memory fully integrated)
     float* accumulated_gradients;              // Accumulated gradients from all spheres
     pthread_mutex_t gradient_lock;             // Lock for gradient accumulation
+    pthread_mutex_t model_lock;                // Lock for model state during forward/backward
     
     // Synchronization
     pthread_barrier_t epoch_barrier;
@@ -91,7 +93,7 @@ struct ThreadedTrainingSystem {
     // Statistics
     float epoch_loss;
     int total_batches;
-    int running;
+    atomic_int running;  // MUST be atomic - accessed by multiple threads without lock!
 
     // Phase 4: Dynamic spawning
     atomic_uint sphere_id_counter;  // Global counter for assigning sphere IDs
@@ -191,14 +193,19 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         
         if (!has_valid) continue;
         
+        // CRITICAL: Lock model state during forward/backward to prevent race conditions
+        pthread_mutex_lock(&ctx->system->model_lock);
+        
         // Forward pass using the actual model
         float seq_loss = cllm_forward_training(training, &batch->input_ids[offset]);
         
         // Compute loss
         seq_loss += cllm_compute_loss(training, &batch->input_ids[offset], &batch->target_ids[offset], batch->seq_len);
         
-        // Backward pass - compute gradients to local buffer (no race condition!)
+        // Backward pass - compute gradients to local buffer
         cllm_backward_training(training, &batch->target_ids[offset], ctx->local_gradients);
+        
+        pthread_mutex_unlock(&ctx->system->model_lock);
         
         total_loss += seq_loss;
         valid_sequences++;
@@ -242,7 +249,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     system->training = training;
     system->batch_iterator = batch_iterator;
-    system->running = 1;
+    atomic_init(&system->running, 1);  // MUST use atomic_init for atomic_int!
     atomic_init(&system->sphere_id_counter, num_threads);  // Start after initial threads
     
     // Calculate number of worker spheres (exclude root)
@@ -281,6 +288,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // Initialize gradient lock
     pthread_mutex_init(&system->gradient_lock, NULL);
+    pthread_mutex_init(&system->model_lock, NULL);
     
     // Initialize barriers for N threads + 1 main thread
     pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 1);
@@ -340,7 +348,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         if (rc != 0) {
             fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
             // Stop already created threads
-            system->running = 0;
+            atomic_store(&system->running, 0);
             for (int j = 0; j < i; j++) {
                 pthread_mutex_lock(&system->sphere_contexts[j]->lock);
                 pthread_cond_signal(&system->sphere_contexts[j]->work_ready);
@@ -375,7 +383,7 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     if (!system) return;
     
     printf("\nStopping worker threads...\n");
-    system->running = 0;
+    atomic_store(&system->running, 0);
     
     // Wake up all worker threads and wait for them to exit
     for (int i = 0; i < system->num_worker_spheres; i++) {
@@ -411,6 +419,7 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     
     // Destroy gradient lock
     pthread_mutex_destroy(&system->gradient_lock);
+    pthread_mutex_destroy(&system->model_lock);
     
     pthread_barrier_destroy(&system->epoch_barrier);
     pthread_barrier_destroy(&system->batch_barrier);
@@ -424,15 +433,15 @@ static void* sphere_worker_thread(void* arg) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
     ThreadedTrainingSystem* system = ctx->system;
     
-    while (system->running) {
+    while (atomic_load(&system->running)) {
         pthread_mutex_lock(&ctx->lock);
         
         // Wait for work
-        while (!ctx->has_work && system->running) {
+        while (!ctx->has_work && atomic_load(&system->running)) {
             pthread_cond_wait(&ctx->work_ready, &ctx->lock);
         }
         
-        if (!system->running) {
+        if (!atomic_load(&system->running)) {
             pthread_mutex_unlock(&ctx->lock);
             break;
         }
@@ -488,6 +497,55 @@ static void wait_for_sphere(ThreadedTrainingSystem* system, int sphere_id) {
 }
 
 /**
+ * Validate gradients for NaN/Inf values
+ */
+static int validate_gradients(float* gradients, size_t size, const char* source) {
+    int nan_count = 0;
+    int inf_count = 0;
+    
+    for (size_t i = 0; i < size; i++) {
+        if (isnan(gradients[i])) {
+            nan_count++;
+            if (nan_count <= 5) {  // Only log first 5
+                fprintf(stderr, "ERROR: NaN gradient in %s at index %zu\n", source, i);
+            }
+        } else if (isinf(gradients[i])) {
+            inf_count++;
+            if (inf_count <= 5) {  // Only log first 5
+                fprintf(stderr, "ERROR: Inf gradient in %s at index %zu: %f\n", source, i, gradients[i]);
+            }
+        }
+    }
+    
+    if (nan_count > 0 || inf_count > 0) {
+        fprintf(stderr, "ERROR: %s has %d NaN and %d Inf gradients (total size: %zu)\n", 
+                source, nan_count, inf_count, size);
+        return 0;
+    }
+    
+    return 1;
+}
+
+/**
+ * Clip gradients to prevent overflow
+ */
+static void clip_gradients(float* gradients, size_t size, float max_norm) {
+    float norm = 0.0f;
+    for (size_t i = 0; i < size; i++) {
+        norm += gradients[i] * gradients[i];
+    }
+    norm = sqrtf(norm);
+    
+    if (norm > max_norm) {
+        float scale = max_norm / norm;
+        for (size_t i = 0; i < size; i++) {
+            gradients[i] *= scale;
+        }
+        printf("  Clipped gradients: norm %.4f -> %.4f\n", norm, max_norm);
+    }
+}
+
+/**
  * Accumulate gradients from all spheres (using shared memory)
  */
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
@@ -496,19 +554,41 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     // Zero accumulated gradients
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
     
+    int valid_spheres = 0;
+    
     // Sum gradients from all spheres
     for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         if (!ctx || !ctx->local_gradients) continue;
         
+        // Validate gradients before accumulation
+        char source[64];
+        snprintf(source, sizeof(source), "Sphere %d", i);
+        if (!validate_gradients(ctx->local_gradients, ctx->gradient_size, source)) {
+            fprintf(stderr, "WARNING: Skipping sphere %d due to invalid gradients\n", i);
+            continue;
+        }
+        
+        // Clip gradients to prevent overflow
+        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
+        
         for (size_t j = 0; j < system->gradient_size; j++) {
             system->accumulated_gradients[j] += ctx->local_gradients[j];
         }
+        
+        valid_spheres++;
     }
     
-    // Average gradients across all spheres
-    for (size_t i = 0; i < system->gradient_size; i++) {
-        system->accumulated_gradients[i] /= (float)system->num_worker_spheres;
+    // Average gradients across valid spheres only
+    if (valid_spheres > 0) {
+        for (size_t i = 0; i < system->gradient_size; i++) {
+            system->accumulated_gradients[i] /= (float)valid_spheres;
+        }
+    }
+    
+    // Final validation of accumulated gradients
+    if (!validate_gradients(system->accumulated_gradients, system->gradient_size, "Accumulated")) {
+        fprintf(stderr, "CRITICAL: Accumulated gradients are invalid!\n");
     }
 }
 
