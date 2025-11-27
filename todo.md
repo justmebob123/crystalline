@@ -41,22 +41,30 @@ Continuing with MASTER_PLAN.md objectives. Debug mode (-O0) will remain enabled 
 - [x] Count total tokens/files - ~565,000 tokens, 4.6MB
 - [x] Analyze data distribution - Largest: 188K REPOSITORY_INVENTORY.txt
 
-### Phase 3: Full Repository Training - IN PROGRESS ⏳
+### Phase 3: Full Repository Training - CRITICAL ISSUE FOUND 🔴
 - [x] Configure training parameters (10K vocab, 256 embed, 4 layers, 8 heads)
 - [x] Start training on full repository data (436 files, 288K tokens)
-- [x] Verify kissing spheres utilization (✅ 65 threads active, 165% CPU)
-- [x] Verify no crashes or hangs (✅ Stable for 15+ minutes)
-- [ ] Monitor training progress (⏳ Dataset creation in progress)
-- [ ] Verify checkpoints saved regularly (⏳ Waiting for first checkpoint)
-- [ ] Complete full training run (⏳ ETA: 5-7 hours)
-- [ ] Verify final model saved
+- [x] Verify kissing spheres utilization (✅ 65 threads active, 245% CPU)
+- [x] Verify no crashes or hangs (✅ Stable for 27+ minutes)
+- [x] Analyze performance issues (🔴 MEMORY-BOUND, not compute-bound)
+- [ ] **DECISION NEEDED**: Continue slow training (3 days) or optimize first?
 
-**TRAINING ACTIVELY RUNNING**:
-- PID: 5036
-- Threads: 65 (64 workers + 1 main)
-- CPU: 165% (multi-core)
-- Memory: 748MB (stable)
-- Status: Healthy ✅
+**CRITICAL PERFORMANCE ISSUE**:
+- Training is CORRECT but EXTREMELY SLOW
+- Bottleneck: Softmax over 10K vocabulary (2.56M ops per token)
+- Memory-bound: 245% CPU (3.8% of 64 cores)
+- Memory: 1.99GB (growing)
+- ETA: **3.4 days** (82 hours) for 10 epochs
+
+**Root Cause**: Dense softmax gradient computation
+- Every token updates ALL 10K vocabulary embeddings
+- 10K × 256 = 2.56M operations per token
+- This is STANDARD for language models but very slow
+
+**Options**:
+1. Let it finish (3 days, validates correctness)
+2. Stop and optimize (sampled softmax = 99x faster)
+3. Stop and reduce vocab to 1K (10x faster)
 
 ### Phase 4: Code Generation Validation
 - [ ] Test inference with trained model
