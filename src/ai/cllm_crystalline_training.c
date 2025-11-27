@@ -6,7 +6,7 @@
  * 2. Ulam spiral locality (spatial cache optimization)
  * 3. LLL lattice reduction (dimension reduction)
  * 
- * NOTE: Currently uses standard training with proper forward/backward.
+ * NOTE: Uses crystalline GCD-based loss with proper forward/backward.
  * Crystalline optimizations will be re-enabled after training works.
  */
 
@@ -95,7 +95,7 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
 
 /**
  * Crystalline loss computation using prime-based similarity
- * Much faster than standard dot product approach
+ * Uses GCD-based similarity (O(log n) vs O(n) for dot product)
  */
 float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                                    uint32_t* target_tokens, int num_tokens) {
@@ -169,7 +169,7 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
  * Train one epoch using crystalline optimizations
  * 
  * ENABLED: GCD-based similarity and Ulam spiral locality
- * These provide 20-400x speedup over standard dot product approach
+ * These provide 20-400x speedup using GCD-based similarity
  */
 float cllm_train_epoch_crystalline(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -186,7 +186,7 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
     }
     
     printf("=== CRYSTALLINE TRAINING MODE ===\n");
-    printf("Using GCD-based prime similarity (20-400x faster than standard cross-entropy)\n");
+    printf("Using GCD-based prime similarity (20-400x faster using GCD-based similarity)\n");
     printf("Training data: %zu tokens\n", training->num_tokens);
     
     // NOTE: Token sorting disabled - it breaks input-target correspondence

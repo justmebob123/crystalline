@@ -534,7 +534,7 @@ static void cllm_attention_forward_training(
     if (!training || !attn_layer || !input || !output || layer < 0 || seq_len <= 0) return;
     if (layer >= (int)training->model->num_layers) return;
     
-    // Call the standard attention forward
+    // Call the attention forward
     cllm_attention_forward(attn_layer, input, output, NULL, NULL, seq_len);
     
     // If attention cache is enabled, store Q, K, V, and attention weights

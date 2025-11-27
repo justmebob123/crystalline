@@ -15,7 +15,6 @@
 #include "../include/cllm_format.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
-#include "../include/cllm_training_parallel.h"
 #include "../include/cllm_crystalline_training.h"
 #include <stdlib.h>
 #include <string.h>
