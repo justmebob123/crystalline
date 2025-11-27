@@ -395,9 +395,32 @@ The infrastructure exists (children array, parent pointer, work queues), but:
    - Keeps at least 1 child
 
 **Next Steps:**
-- [ ] Integrate into CONTROLLING state handler
-- [ ] Add periodic spawning checks
+- [x] Integrate into CONTROLLING state handler
+- [x] Add periodic spawning checks (every 100 work items)
+- [x] Add termination checks (when no work)
+- [ ] Implement actual spawning (need global sphere_id tracking)
+- [ ] Implement actual termination (need careful cleanup)
 - [ ] Test dynamic behavior
+
+**Integration Complete:**
+
+Added to CONTROLLING state in `src/ai/cllm_threads.c`:
+1. **Spawning Check** (every 100 work items):
+   - Calls `sphere_check_spawn_children(sphere, 50)`
+   - Logs intent to spawn if threshold met
+   - TODO: Implement actual spawning
+
+2. **Termination Check** (when no work):
+   - Calls `sphere_check_terminate_children(sphere, 10)`
+   - Logs intent to terminate if children idle
+   - TODO: Implement actual termination
+
+**Remaining Work:**
+- Need global sphere_id counter for spawning
+- Need careful thread cleanup for termination
+- Need to update ThreadSystem structure to track dynamic spheres
+
+**Status:** Phase 3 infrastructure complete, actual spawning/termination pending
 
 **Analysis Complete:**
 

@@ -14,6 +14,7 @@
 
 #include "ai/cllm_lattice_hierarchy.h"
 #include "cllm_threads.h"
+#include "cllm_threads_spawn.h"
 #include "cllm_training.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -143,8 +144,36 @@ static void* sphere_worker_thread(void* arg) {
                                
                                next_child_counter++;
                            }
+                          
+                          // Check if we should spawn more children (every 100 work items)
+                          static _Thread_local int spawn_check_counter = 0;
+                          if (++spawn_check_counter >= 100) {
+                              spawn_check_counter = 0;
+                              
+                              int num_to_spawn = sphere_check_spawn_children(sphere, 50);
+                              if (num_to_spawn > 0) {
+                                  printf("[DYNAMIC] %s: Spawning %d children (queue size: %zu)\n",
+                                         sphere->debug_name, num_to_spawn, 
+                                         atomic_load(&sphere->work_queue_size));
+                                  
+                                  // TODO: Implement actual spawning
+                                  // Need to track next_sphere_id globally
+                                  // For now, just log the intent
+                              }
+                          }
                        } else {
                            // No more work to distribute
+                          
+                          // Check if we should terminate idle children
+                          int num_to_terminate = sphere_check_terminate_children(sphere, 10);
+                          if (num_to_terminate > 0) {
+                              printf("[DYNAMIC] %s: Should terminate %d idle children\n",
+                                     sphere->debug_name, num_to_terminate);
+                              
+                              // TODO: Implement actual termination
+                              // Need to handle thread cleanup carefully
+                          }
+                          
                            atomic_store(&sphere->state, HIERARCHY_STATE_READY);
                        }
                    }
