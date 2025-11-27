@@ -180,6 +180,9 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                config->batch_size, config->sequence_length);
         
         // Create batch iterator for kissing spheres architecture
+        printf("DEBUG: About to create batch_iterator\n");
+        fflush(stdout);
+        
         CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
             training->tokens,
             training->num_tokens,
@@ -190,6 +193,10 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         );
         
         printf("DEBUG: batch_iterator = %p\n", (void*)batch_iterator);
+        fflush(stdout);
+        
+        printf("DEBUG: About to create threaded_system...\n");
+        fflush(stdout);
         
         if (!batch_iterator) {
             fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create batch iterator\n");
@@ -198,6 +205,9 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         }
         
         // Use kissing spheres architecture (MANDATORY)
+        printf("DEBUG: About to create threaded_system with %d threads\n", num_threads);
+        fflush(stdout);
+        
         ThreadedTrainingSystem* threaded_system = threaded_training_create(
             training,
             batch_iterator,
@@ -205,6 +215,7 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         );
         
         printf("DEBUG: threaded_system = %p\n", (void*)threaded_system);
+        fflush(stdout);
         
         if (!threaded_system) {
             fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create threaded system\n");
