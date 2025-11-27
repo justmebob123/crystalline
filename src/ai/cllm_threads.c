@@ -53,7 +53,16 @@ static void* sphere_worker_thread(void* arg) {
             case HIERARCHY_STATE_READY:
                 // Check for work
                 if (atomic_load(&sphere->work_queue_size) > 0) {
-                    atomic_store(&sphere->state, HIERARCHY_STATE_PROCESSING);
+                    // Decide: Am I a control thread or a worker thread?
+                    if (sphere->num_children > 0) {
+                        // I have children - become CONTROL thread
+                        // Control threads distribute work, never process
+                        atomic_store(&sphere->state, HIERARCHY_STATE_CONTROLLING);
+                    } else {
+                        // I have no children - remain WORKER thread
+                        // Worker threads process work themselves
+                        atomic_store(&sphere->state, HIERARCHY_STATE_PROCESSING);
+                    }
                 } else {
                     // Try to steal work from siblings
                     if (sphere->enable_work_stealing && sphere->num_siblings > 0) {
@@ -61,7 +70,12 @@ static void* sphere_worker_thread(void* arg) {
                             CLLMLatticeHierarchy* sibling = sphere->siblings[i];
                             uint64_t stolen_work;
                             if (lattice_hierarchy_steal_work(sphere, sibling, &stolen_work) == 0) {
-                                atomic_store(&sphere->state, HIERARCHY_STATE_PROCESSING);
+                                // Check again: control or worker?
+                                if (sphere->num_children > 0) {
+                                    atomic_store(&sphere->state, HIERARCHY_STATE_CONTROLLING);
+                                } else {
+                                    atomic_store(&sphere->state, HIERARCHY_STATE_PROCESSING);
+                                }
                                 break;
                             }
                         }
@@ -74,7 +88,7 @@ static void* sphere_worker_thread(void* arg) {
                 }
                 break;
                 
-            case HIERARCHY_STATE_PROCESSING:
+            case HIERARCHY_STATE_PROCESSING:  // WORKER THREAD (no children)
                 // Get work from queue
                 {
                     uint64_t work_item;
@@ -99,6 +113,42 @@ static void* sphere_worker_thread(void* arg) {
                     }
                 }
                 break;
+                   
+               case HIERARCHY_STATE_CONTROLLING:
+                   // CONTROL THREAD: Distribute work to children (never process myself)
+                   {
+                       // Get work from my queue
+                       uint64_t work_item;
+                       if (lattice_hierarchy_get_work(sphere, &work_item) == 0) {
+                           // Distribute to children using round-robin
+                           // Use sphere_id as seed for round-robin to avoid contention
+                           static _Thread_local int next_child_counter = 0;
+                           int next_child = (sphere->sphere_id + next_child_counter) % sphere->num_children;
+                           
+                           if (sphere->num_children > 0) {
+                               // Find next available child
+                               int child_idx = next_child;
+                               CLLMLatticeHierarchy* child = sphere->children[child_idx];
+                               
+                               // Add work to child's queue
+                               lattice_hierarchy_add_work(child, work_item);
+                               
+                               // Wake up child if idle
+                               pthread_mutex_lock(&child->state_mutex);
+                               if (atomic_load(&child->state) == HIERARCHY_STATE_IDLE) {
+                                   atomic_store(&child->state, HIERARCHY_STATE_READY);
+                                   pthread_cond_signal(&child->work_available);
+                               }
+                               pthread_mutex_unlock(&child->state_mutex);
+                               
+                               next_child_counter++;
+                           }
+                       } else {
+                           // No more work to distribute
+                           atomic_store(&sphere->state, HIERARCHY_STATE_READY);
+                       }
+                   }
+                   break;
                 
             case HIERARCHY_STATE_IDLE:
                 // Wait for work or state change

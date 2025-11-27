@@ -12,7 +12,11 @@ This session completed 3 major objectives:
 
 ---
 
-## Current Status: Ready for Next Objective
+## Current Status: Starting OBJECTIVE 7A - Recursive Control Threads
+
+Next objective: Implement recursive control hierarchy where each thread can manage 12 children.
+
+---
 
 ## OBJECTIVE 2C: Rename "Crystalline" to Default
 
@@ -208,28 +212,95 @@ For N CPUs, optimal depth D where:
 
 ---
 
+---
+
+## OBJECTIVE 7A: Recursive Control Threads with Dynamic Work Assignment (CURRENT)
+
+**Goal:** Implement recursive control hierarchy where each thread can manage 12 children.
+
+**Critical Understanding:**
+- EVERY thread can be a control thread for 12 children
+- Control threads at any level NEVER process batches
+- Only leaf worker threads (no children) process batches
+- Creates infinite recursive hierarchy
+- Dynamic depth based on workload and CPU availability
+
+**Thread State Transitions:**
+- Worker → Control: When spawning children, stops processing batches
+- Control → Worker: When children terminate, resumes processing batches
+- Leaf workers: Always process batches (no children)
+- Non-leaf controls: Never process batches (have children)
+
+### Analysis Complete ✅
+
+**Current Implementation:**
+- `sphere_worker_thread()` in `src/ai/cllm_threads.c`
+- State machine with 9 states (INITIALIZING, READY, PROCESSING, WAITING, ACCUMULATING, UPDATING, IDLE, TERMINATING, TERMINATED)
+- Currently: All threads process work (no control/worker distinction)
+- Work distribution: Only to Level 1 spheres from root
+- No dynamic child spawning
+- No recursive work distribution
+
+**Key Insight:**
+The infrastructure exists (children array, parent pointer, work queues), but:
+1. Children are created at startup, not dynamically
+2. All threads process work (no control-only threads)
+3. Work only distributed to Level 1, not recursively
+
+**What Needs to Change:**
+1. Add HIERARCHY_STATE_CONTROLLING state
+2. Modify PROCESSING state to check: "Do I have children?"
+   - If YES: Distribute work to children (become control)
+   - If NO: Process work myself (remain worker)
+3. Add dynamic child spawning logic
+4. Add recursive work distribution
+5. Add CPU monitoring for expansion/collapse decisions
+
+### Implementation Tasks:
+- [x] Analyze current sphere_worker_thread() implementation
+- [x] Add HIERARCHY_STATE_CONTROLLING to HierarchyState enum
+- [x] Modify sphere_worker_thread() to check for children
+- [x] Implement control thread logic (distribute work, never process)
+- [x] Implement worker thread logic (process work, no children)
+- [x] Test role assignment (13 control + 51 worker = 64 threads) ✅
+- [ ] Add recursive work distribution function (currently only 1 level deep)
+- [ ] Add CPU availability monitoring
+- [ ] Implement dynamic child spawning (expansion)
+- [ ] Implement dynamic child termination (collapse)
+- [ ] Test with varying workloads
+- [ ] Fix thread termination (test hangs on stop)
+
+### Progress Summary:
+
+**PHASE 1 COMPLETE** ✅
+- Added HIERARCHY_STATE_CONTROLLING state
+- Threads with children become CONTROL threads
+- Threads without children remain WORKER threads
+- Control threads distribute work to children (round-robin)
+- Worker threads process work themselves
+
+**Test Results:**
+- 64 CPUs → 13 control + 51 worker threads
+- Root: CONTROL (12 children)
+- Level 1 (12 spheres): ALL CONTROL (4-5 children each)
+- Level 2 (51 spheres): ALL WORKER (0 children)
+- Role assignment: ✅ CORRECT
+
+**Known Issue:**
+- Thread termination hangs (needs investigation)
+
+**Next Steps:**
+- Fix termination issue
+- Implement recursive work distribution (multi-level)
+- Add dynamic spawning/collapse
+
+---
+
 ## UPCOMING HIGH-PRIORITY OBJECTIVES
-
-### OBJECTIVE 3A: Crystalline Math Everywhere
-- [ ] Audit all math.h usage in codebase
-- [ ] Replace with crystalline math equivalents
-- [ ] Verify prime_float_math.h coverage
-- [ ] Remove any remaining math.h dependencies
-
-### OBJECTIVE 6A: Infinite Recursive Self-Similar 12-Fold Symmetry
-- [ ] Implement recursive sphere spawning
-- [ ] Each worker can become control for 12 children
-- [ ] Dynamic depth based on CPU availability
-- [ ] Maintain 12-fold symmetry at each level
-
-### OBJECTIVE 7A: Recursive Control Threads with Dynamic Work Assignment
-- [ ] Implement control thread work distribution
-- [ ] Thread rotation through 12 lattice positions
-- [ ] Dynamic work assignment based on load
-- [ ] Parent-child communication protocol
 
 ### OBJECTIVE 9A: Integrate Recursive Spheres with Infinite Threading Hierarchy
 - [ ] Connect flat kissing spheres with recursive hierarchy
-- [ ] Implement depth-based thread spawning
+- [ ] Map each thread to its sphere
+- [ ] Use sphere geometry for thread relationships
 - [ ] Test with varying thread counts
 - [ ] Verify fractal scaling behavior

@@ -41,7 +41,8 @@ typedef struct CLLMLatticeHierarchy CLLMLatticeHierarchy;
 typedef enum {
     HIERARCHY_STATE_INITIALIZING,   // Being initialized
     HIERARCHY_STATE_READY,           // Ready to process
-    HIERARCHY_STATE_PROCESSING,      // Currently processing
+    HIERARCHY_STATE_PROCESSING,      // Currently processing (leaf worker)
+    HIERARCHY_STATE_CONTROLLING,     // Controlling children (non-leaf)
     HIERARCHY_STATE_WAITING,         // Waiting for synchronization
     HIERARCHY_STATE_ACCUMULATING,    // Accumulating gradients
     HIERARCHY_STATE_UPDATING,        // Updating weights
