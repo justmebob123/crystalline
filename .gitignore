@@ -55,6 +55,7 @@ test_*
 !MASTER_PLAN.md
 !VALIDATION_CHECKLIST.md
 !BUILD_VALIDATION_REPORT.md
+!PHASE2_SUMMARY.md
 outputs/
 summarized_conversations/
 crystalline/
