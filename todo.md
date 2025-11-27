@@ -41,30 +41,30 @@ Continuing with MASTER_PLAN.md objectives. Debug mode (-O0) will remain enabled 
 - [x] Count total tokens/files - ~565,000 tokens, 4.6MB
 - [x] Analyze data distribution - Largest: 188K REPOSITORY_INVENTORY.txt
 
-### Phase 3: Full Repository Training - CRITICAL ISSUE FOUND 🔴
-- [x] Configure training parameters (10K vocab, 256 embed, 4 layers, 8 heads)
-- [x] Start training on full repository data (436 files, 288K tokens)
-- [x] Verify kissing spheres utilization (✅ 65 threads active, 245% CPU)
-- [x] Verify no crashes or hangs (✅ Stable for 27+ minutes)
-- [x] Analyze performance issues (🔴 MEMORY-BOUND, not compute-bound)
-- [ ] **DECISION NEEDED**: Continue slow training (3 days) or optimize first?
+### Phase 3: Optimized Training - IN PROGRESS ⏳
+- [x] Analyze performance bottleneck (memory-bound softmax)
+- [x] Stop slow training (was 3.4 days ETA)
+- [x] Implement optimized configuration (1K vocab, 128 embed, 2 layers)
+- [x] Start optimized training (PID: 5929)
+- [x] Dataset created (1.7MB, 151K tokens)
+- [x] Vocabulary built (1K tokens, 20KB)
+- [ ] Wait for model creation and training start
+- [ ] Monitor progress (⏳ Currently creating training batches)
+- [ ] Verify checkpoints saved
+- [ ] Complete 10 epochs
 
-**CRITICAL PERFORMANCE ISSUE**:
-- Training is CORRECT but EXTREMELY SLOW
-- Bottleneck: Softmax over 10K vocabulary (2.56M ops per token)
-- Memory-bound: 245% CPU (3.8% of 64 cores)
-- Memory: 1.99GB (growing)
-- ETA: **3.4 days** (82 hours) for 10 epochs
+**OPTIMIZED CONFIGURATION**:
+- Vocabulary: 1,000 tokens (10x reduction)
+- Embedding: 128 dim (2x reduction)
+- Layers: 2 (2x reduction)
+- Memory: 291MB (down from 1.99GB - 6.8x reduction)
+- Expected time: ~2 hours (down from 3.4 days - 40x faster)
 
-**Root Cause**: Dense softmax gradient computation
-- Every token updates ALL 10K vocabulary embeddings
-- 10K × 256 = 2.56M operations per token
-- This is STANDARD for language models but very slow
-
-**Options**:
-1. Let it finish (3 days, validates correctness)
-2. Stop and optimize (sampled softmax = 99x faster)
-3. Stop and reduce vocab to 1K (10x faster)
+**Current Status**:
+- PID: 5929
+- Runtime: 3:48
+- Memory: 291MB (stable)
+- Status: Creating training dataset
 
 ### Phase 4: Code Generation Validation
 - [ ] Test inference with trained model
