@@ -52,6 +52,9 @@ test_*
 *.md
 !README.md
 !ARCHITECTURE.md
+!MASTER_PLAN.md
+!VALIDATION_CHECKLIST.md
+!BUILD_VALIDATION_REPORT.md
 outputs/
 summarized_conversations/
 crystalline/
