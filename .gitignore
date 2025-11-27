@@ -61,3 +61,19 @@ crystalline-repo/
 crystalline/
 crystalline-repo/
 */.git/
+
+# Large log files and outputs
+test_kissing_spheres.log
+outputs/
+training_data/
+training_logs/
+checkpoints*/
+*.log
+
+# Build artifacts
+*.a
+*.so
+*.o
+
+# Temporary files
+REPOSITORY_INVENTORY.txt
