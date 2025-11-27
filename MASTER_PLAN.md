@@ -1307,3 +1307,296 @@ This is a MANDATORY comprehensive audit of the entire codebase. Every single fil
 
 ---
 
+
+### OBJECTIVE 16: Clean Up Technical Debt and Incomplete Integrations
+
+**Purpose: Identify and eliminate incomplete integrations, redundant files, and technical debt**
+
+**Critical Understanding:**
+- Multiple files exist that represent incomplete upgrades or integrations
+- Some files duplicate functionality that should be unified
+- Adapter layers indicate incomplete architectural transitions
+- Files that include deleted headers indicate broken dependencies
+
+---
+
+#### 16.1: Identify Incomplete Integration Files
+
+**Examples Found:**
+- [ ] `tools/train_model_recursive.c` - Includes deleted `cllm_recursive_spheres.h`
+  - Should be merged into main `train_model.c` with `--recursive-depth` option
+  - Or deleted if functionality already exists in `train_model.c`
+  - Represents incomplete integration of recursive sphere architecture
+
+- [ ] `app/ui/tabs/tab_adapters.c` - Adapter layer for old tab system
+  - Indicates incomplete upgrade to new tab architecture
+  - Should be eliminated by completing the architectural transition
+  - Adapters are a code smell indicating incomplete refactoring
+
+**Analysis Required:**
+- [ ] Search for all files with "adapter" in name or purpose
+- [ ] Search for files including deleted headers
+- [ ] Search for files with "old", "legacy", "deprecated" in comments
+- [ ] Search for duplicate implementations of same functionality
+- [ ] Search for files with "TODO: integrate" or similar comments
+
+---
+
+#### 16.2: Analyze Duplicate Functionality
+
+**Methodology:**
+1. **Identify Duplicate Training Tools**
+   - [ ] Compare `train_model.c` vs `train_model_recursive.c`
+   - [ ] Document unique features in each
+   - [ ] Determine if features can be merged
+   - [ ] Create unified implementation plan
+
+2. **Identify Duplicate Inference Tools**
+   - [ ] Check for multiple inference implementations
+   - [ ] Document differences
+   - [ ] Determine canonical version
+
+3. **Identify Duplicate Utilities**
+   - [ ] Search for similar functionality across tools
+   - [ ] Document overlapping code
+   - [ ] Create shared library plan
+
+**Deliverables:**
+- [ ] Duplicate functionality matrix
+- [ ] Merge/delete recommendations
+- [ ] Unified implementation plan
+
+---
+
+#### 16.3: Adapter Layer Elimination
+
+**Purpose: Complete architectural transitions to eliminate adapter layers**
+
+**Current Adapters:**
+- [ ] `tab_adapters.c` - Tab system adapter
+  - **Problem**: Indicates incomplete tab system upgrade
+  - **Solution**: Complete the new tab architecture
+  - **Action**: Eliminate adapter by finishing migration
+
+**Analysis:**
+- [ ] Document what the adapter bridges
+- [ ] Identify why transition was incomplete
+- [ ] Create plan to complete transition
+- [ ] Test without adapter
+- [ ] Remove adapter code
+
+**Success Criteria:**
+- No adapter files remain
+- All code uses new architecture directly
+- No bridge/wrapper layers for architectural transitions
+
+---
+
+#### 16.4: Broken Dependencies Audit
+
+**Purpose: Find and fix all broken dependencies**
+
+**Known Issues:**
+- [ ] `train_model_recursive.c` includes deleted `cllm_recursive_spheres.h`
+
+**Audit Process:**
+1. **Find Broken Includes**
+   ```bash
+   # Find all includes
+   grep -rn "#include" --include="*.c" --include="*.h" > includes.txt
+   
+   # Check each include against actual files
+   # Report missing headers
+   ```
+
+2. **Find Broken Function Calls**
+   - [ ] Search for calls to deleted functions
+   - [ ] Search for calls to renamed functions
+   - [ ] Verify all external function declarations
+
+3. **Find Broken Links**
+   - [ ] Check Makefile for deleted files
+   - [ ] Verify all linked libraries exist
+   - [ ] Check for orphaned object files
+
+**Deliverables:**
+- [ ] Broken dependencies report
+- [ ] Fix plan for each issue
+- [ ] Updated build system
+
+---
+
+#### 16.5: Incomplete Feature Integration
+
+**Purpose: Identify features that were partially integrated**
+
+**Signs of Incomplete Integration:**
+- Code that's commented out with "TODO"
+- Functions that are defined but never called
+- Configuration options that don't work
+- UI elements that don't have handlers
+- CLI options that are parsed but ignored
+
+**Analysis:**
+- [ ] Search for "TODO" comments
+- [ ] Search for "FIXME" comments
+- [ ] Search for "HACK" comments
+- [ ] Search for "XXX" comments
+- [ ] Find unused functions
+- [ ] Find unimplemented handlers
+
+**For Each Issue:**
+- [ ] Document what was intended
+- [ ] Determine if still needed
+- [ ] Either complete or remove
+- [ ] Update documentation
+
+---
+
+#### 16.6: File Naming Inconsistencies
+
+**Purpose: Identify files with inconsistent or confusing names**
+
+**Examples:**
+- Files with version suffixes (_v2, _new, _old)
+- Files with status suffixes (_broken, _fixed, _working)
+- Files with temporary names (temp_, test_, tmp_)
+- Files with redundant names (cllm_cllm_*, train_train_*)
+
+**Analysis:**
+- [ ] List all files with suspicious names
+- [ ] Determine canonical name for each
+- [ ] Create rename plan
+- [ ] Update all references
+- [ ] Execute renames
+
+---
+
+#### 16.7: Code Consolidation Plan
+
+**Purpose: Merge duplicate/similar functionality into unified implementations**
+
+**Consolidation Targets:**
+
+1. **Training Tools**
+   - [ ] Merge `train_model.c` and `train_model_recursive.c`
+   - [ ] Create single tool with `--recursive-depth` option
+   - [ ] Ensure all features from both are preserved
+   - [ ] Delete redundant file
+
+2. **Tab System**
+   - [ ] Complete new tab architecture
+   - [ ] Remove adapter layer
+   - [ ] Ensure all tabs use consistent patterns
+   - [ ] Delete adapter file
+
+3. **Utility Functions**
+   - [ ] Identify duplicate utility functions across tools
+   - [ ] Move to shared library
+   - [ ] Update all tools to use shared version
+   - [ ] Remove duplicates
+
+**Consolidation Process:**
+1. Document all features in each version
+2. Create unified feature set
+3. Implement consolidated version
+4. Test thoroughly
+5. Update all references
+6. Delete old versions
+7. Update documentation
+
+---
+
+#### 16.8: Build System Cleanup
+
+**Purpose: Remove references to deleted/merged files**
+
+**Tasks:**
+- [ ] Audit Makefile for deleted files
+- [ ] Remove build rules for merged files
+- [ ] Update dependencies
+- [ ] Clean up object file lists
+- [ ] Verify clean build
+
+**Verification:**
+- [ ] `make clean && make` succeeds
+- [ ] No warnings about missing files
+- [ ] All tools build correctly
+- [ ] No orphaned build artifacts
+
+---
+
+#### 16.9: Documentation Cleanup
+
+**Purpose: Update documentation to reflect consolidations**
+
+**Tasks:**
+- [ ] Update README for merged tools
+- [ ] Remove documentation for deleted files
+- [ ] Update architecture diagrams
+- [ ] Update API documentation
+- [ ] Update user guides
+
+**Verification:**
+- [ ] No references to deleted files
+- [ ] All examples use current tools
+- [ ] Architecture docs match reality
+- [ ] No broken links
+
+---
+
+#### 16.10: Deliverables
+
+**Analysis Documents:**
+- [ ] Technical debt inventory
+- [ ] Duplicate functionality matrix
+- [ ] Broken dependencies report
+- [ ] Incomplete features list
+- [ ] File naming issues list
+- [ ] Consolidation plan
+
+**Code Changes:**
+- [ ] Merge train_model tools
+- [ ] Remove adapter layer
+- [ ] Fix broken dependencies
+- [ ] Complete incomplete features (or remove)
+- [ ] Rename inconsistent files
+- [ ] Consolidate duplicate code
+
+**Documentation:**
+- [ ] Updated README
+- [ ] Updated architecture docs
+- [ ] Updated user guides
+- [ ] Updated API docs
+
+**Verification:**
+- [ ] Clean build with zero warnings
+- [ ] All tests pass
+- [ ] No broken dependencies
+- [ ] No adapter layers
+- [ ] No duplicate functionality
+- [ ] Consistent file naming
+- [ ] Complete feature implementations
+
+---
+
+**Success Criteria:**
+- Zero adapter files
+- Zero broken dependencies
+- Zero duplicate implementations
+- Zero incomplete integrations
+- Consistent file naming throughout
+- Clean, maintainable codebase
+- Complete feature implementations
+- Accurate documentation
+
+**Priority:** HIGH - Technical debt accumulates and makes future work harder
+
+**Related Files:**
+- `tools/train_model_recursive.c` - Needs merge or deletion
+- `app/ui/tabs/tab_adapters.c` - Needs elimination
+- Any file with "adapter", "old", "legacy", "temp" in name
+- Any file including deleted headers
+
+---
+
