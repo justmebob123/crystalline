@@ -326,9 +326,104 @@ The infrastructure exists (children array, parent pointer, work queues), but:
 - Thread termination hangs (needs investigation)
 
 **Next Steps:**
-- [ ] PHASE 2: Implement recursive work distribution (multi-level)
-- [ ] Fix termination issue
-- [ ] PHASE 3: Add dynamic spawning/collapse
+- [x] PHASE 2: Implement recursive work distribution (multi-level) ✅ Already working!
+- [ ] Fix termination issue (investigate deadlock)
+- [ ] PHASE 3: Add dynamic spawning/collapse (CURRENT)
+
+---
+
+## OBJECTIVE 7A - PHASE 3: Dynamic Child Spawning (STARTING)
+
+**Goal:** Implement dynamic thread spawning where threads can create children on-demand based on workload.
+
+**Current State:**
+- All threads are created at startup (static hierarchy)
+- Thread count is fixed based on CPU count
+- No dynamic expansion or collapse
+
+**What We Need:**
+- Threads can spawn children when workload increases
+- Threads can terminate children when workload decreases
+- CPU availability monitoring
+- Load-based decision making
+- Maintain 12-fold symmetry when spawning
+
+**Implementation Plan:**
+- [x] Analyze current thread creation in threads_create_dynamic()
+- [x] Design dynamic spawning mechanism
+- [x] Implement CPU load monitoring (via sysinfo)
+- [x] Implement spawn_children() function
+- [x] Implement terminate_children() function
+- [x] Add workload threshold logic
+- [ ] Integrate spawning into CONTROLLING state
+- [ ] Test with varying workloads
+- [ ] Verify proper cleanup
+
+**Implementation Complete:**
+
+**New Files Created:**
+- `src/ai/cllm_threads_spawn.c` - Dynamic spawning implementation
+- `include/cllm_threads_spawn.h` - Public API
+
+**Key Functions:**
+1. `sphere_can_spawn_children()` - Checks if spawning is allowed
+   - Verifies < 12 children (12-fold symmetry)
+   - Checks work queue size > threshold
+   - Monitors CPU load (< 80% threshold)
+   - Verifies CPU availability
+
+2. `sphere_spawn_child()` - Creates and starts a child thread
+   - Creates sphere with `lattice_hierarchy_create()`
+   - Adds to parent with `lattice_hierarchy_add_child()`
+   - Starts thread with `pthread_create()`
+   - Maintains symmetry group assignment
+
+3. `sphere_terminate_child()` - Stops and frees a child
+   - Signals termination
+   - Waits with `pthread_join()`
+   - Removes from parent's children array
+   - Frees resources
+
+4. `sphere_check_spawn_children()` - Decision logic
+   - Returns number of children to spawn (0, 1, 3, 6, or 12)
+   - Based on work queue size
+   - Maintains symmetry
+
+5. `sphere_check_terminate_children()` - Cleanup logic
+   - Counts idle children
+   - Terminates if > 50% idle
+   - Keeps at least 1 child
+
+**Next Steps:**
+- [ ] Integrate into CONTROLLING state handler
+- [ ] Add periodic spawning checks
+- [ ] Test dynamic behavior
+
+**Analysis Complete:**
+
+**Current Thread Creation:**
+1. `lattice_hierarchy_create()` - Creates a sphere structure
+2. `lattice_hierarchy_add_child()` - Links parent-child relationship
+3. `pthread_create()` - Starts the actual thread
+4. All done at startup in `threads_create_dynamic()`
+
+**Dynamic Spawning Strategy:**
+1. Monitor work queue size in each control thread
+2. If queue size > threshold AND CPU available:
+   - Create new child sphere with `lattice_hierarchy_create()`
+   - Add to parent with `lattice_hierarchy_add_child()`
+   - Start thread with `pthread_create()`
+   - Maintain 12-fold symmetry (spawn in groups of 12)
+3. If queue size < threshold AND children idle:
+   - Signal children to terminate
+   - Wait for thread completion with `pthread_join()`
+   - Free sphere with `lattice_hierarchy_free()`
+
+**Key Functions Needed:**
+- `sphere_can_spawn_children()` - Check if spawning is allowed
+- `sphere_spawn_child()` - Create and start a single child
+- `sphere_terminate_child()` - Stop and free a child
+- CPU monitoring via `/proc/stat` or `sysconf()`
 
 ---
 
