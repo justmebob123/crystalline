@@ -95,6 +95,7 @@ void cllm_sphere_stats_record_prime(SphereStatistics* stats,
 void cllm_sphere_stats_record_batch(SphereStatistics* stats,
                                     uint64_t batch_size,
                                     uint64_t batch_time_ns) {
+    (void)batch_size; // Reserved for future batch size tracking
     if (!stats) return;
     
     atomic_fetch_add(&stats->batches_completed, 1);

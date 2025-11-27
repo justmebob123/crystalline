@@ -278,6 +278,7 @@ float loss_cross_entropy_forward(
     float epsilon,
     Tensor** per_sample_loss
 ) {
+    (void)epsilon; // Reserved for future numerical stability improvements
     if (!predictions || !targets) return NAN;
     
     size_t batch_size = predictions->shape[0];
@@ -366,6 +367,7 @@ Tensor* loss_cross_entropy_backward(
     float label_smoothing,
     float epsilon
 ) {
+    (void)epsilon; // Reserved for future numerical stability improvements
     if (!predictions || !targets) return NULL;
     
     size_t batch_size = predictions->shape[0];

@@ -11,7 +11,10 @@
 #include "../include/cllm_utils.h"
 #include "../include/prime_float_math.h"
 
+// Use GOLDEN_RATIO from prime_types.h (included via cllm_format.h)
+#ifndef GOLDEN_RATIO
 #define GOLDEN_RATIO 1.618033988749895
+#endif
 #define SYMMETRY_ORDER 12
 #define PI 3.14159265358979323846
 

@@ -576,6 +576,7 @@ float backprop_verify_gradients(
     const Tensor* targets,
     float epsilon
 ) {
+    (void)epsilon; // Reserved for future numerical gradient checking
     if (!ctx || !loss_comp || !predictions || !targets) return -1.0f;
     
     // Numerical gradient checking

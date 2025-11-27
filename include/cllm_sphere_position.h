@@ -25,10 +25,16 @@ extern "C" {
  * - Range [0, 143999] = 144000 possibilities
  */
 
-// Mathematical constants
+// Mathematical constants - use definitions from prime_types.h
+#ifndef VECTOR_CULMINATION
 #define VECTOR_CULMINATION 144000
+#endif
+#ifndef TWIN_PRIME_LOWER
 #define TWIN_PRIME_LOWER 143999
+#endif
+#ifndef TWIN_PRIME_UPPER
 #define TWIN_PRIME_UPPER 144001
+#endif
 #define EINSTEIN_LAMBDA_NUMERATOR 3
 #define EINSTEIN_LAMBDA_DENOMINATOR 144000
 

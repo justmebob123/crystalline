@@ -1,4 +1,6 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include "../include/prime_math_custom.h"
 #include "../include/prime_math.h"
 

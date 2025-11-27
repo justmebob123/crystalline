@@ -337,6 +337,7 @@ bool control_process_end_epoch(ControlProcess* cp) {
 }
 
 bool control_process_wait_epoch_complete(ControlProcess* cp, double timeout_seconds) {
+    (void)timeout_seconds; // Reserved for future timeout implementation
     if (!cp) return false;
     
     pthread_mutex_lock(&cp->epoch_mutex);
@@ -526,6 +527,7 @@ bool control_process_check_sphere_health(ControlProcess* cp, uint32_t sphere_id)
 }
 
 bool control_process_recover_sphere(ControlProcess* cp, uint32_t sphere_id) {
+    (void)sphere_id; // Reserved for future sphere recovery implementation
     if (!cp) return false;
     
     // TODO: Implement sphere recovery logic
@@ -545,6 +547,7 @@ bool control_process_recover_sphere(ControlProcess* cp, uint32_t sphere_id) {
 
 bool control_process_broadcast_weights(ControlProcess* cp, const double* weights, 
                                        size_t weight_count) {
+    (void)weight_count; // Reserved for future weight validation
     if (!cp || !weights) return false;
     
     pthread_mutex_lock(&cp->hierarchy_mutex);
@@ -594,6 +597,7 @@ bool control_process_collect_gradients(ControlProcess* cp, double* gradients,
 }
 
 bool control_process_synchronize_all(ControlProcess* cp, double timeout_seconds) {
+    (void)timeout_seconds; // Reserved for future timeout implementation
     if (!cp) return false;
     
     // Wait at global barrier

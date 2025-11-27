@@ -357,34 +357,6 @@ int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* tar
  * Cache embeddings for entire batch (OPTIMIZATION)
  * Pre-fetches all embeddings to improve cache locality
  */
-static void cache_batch_embeddings(CLLMTraining* training, uint32_t* input_tokens, 
-                                   uint32_t* target_tokens, int num_tokens) {
-    if (!training || !input_tokens || !target_tokens || num_tokens <= 0) return;
-    
-    CLLMModel* model = training->model;
-    uint64_t embed_dim = model->embedding_dim;
-    
-    // Cache input embeddings
-    for (int i = 0; i < num_tokens && i < training->cached_batch_size; i++) {
-        uint32_t token_id = input_tokens[i];
-        if (token_id < model->vocab_size) {
-            float* src = &model->embeddings.embeddings[token_id * embed_dim];
-            float* dst = &training->cached_input_embeddings[i * embed_dim];
-            memcpy(dst, src, embed_dim * sizeof(float));
-        }
-    }
-    
-    // Cache target embeddings
-    for (int i = 0; i < num_tokens && i < training->cached_batch_size; i++) {
-        uint32_t token_id = target_tokens[i];
-        if (token_id < model->vocab_size) {
-            float* src = &model->embeddings.embeddings[token_id * embed_dim];
-            float* dst = &training->cached_target_embeddings[i * embed_dim];
-            memcpy(dst, src, embed_dim * sizeof(float));
-        }
-    }
-}
-
 /**
  * Get cached embedding for token at index (OPTIMIZATION)
  */

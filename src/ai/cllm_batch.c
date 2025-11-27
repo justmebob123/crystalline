@@ -17,7 +17,7 @@
 /**
  * Batch Structure
  */
-typedef struct {
+typedef struct CLLMBatch {
     uint32_t* input_ids;        // [batch_size * seq_len]
     uint32_t* target_ids;       // [batch_size * seq_len]
     float* attention_mask;      // [batch_size * seq_len]
@@ -25,6 +25,9 @@ typedef struct {
     uint32_t seq_len;
     uint32_t num_valid_tokens;  // Total non-padding tokens
 } CLLMBatch;
+
+// Forward declaration
+void cllm_batch_free(CLLMBatch* batch);
 
 /**
  * Batch Iterator Structure
