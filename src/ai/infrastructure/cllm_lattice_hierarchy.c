@@ -143,6 +143,7 @@ CLLMLatticeHierarchy* lattice_hierarchy_create(
     
     // Set debug name
     snprintf(sphere->debug_name, sizeof(sphere->debug_name),
+    sphere->user_data = NULL;  // Initialize to NULL
              "Sphere-%d-L%d-G%d-T%d",
              sphere_id, hierarchy_level, sphere->primary_symmetry_group, physical_thread_id);
     

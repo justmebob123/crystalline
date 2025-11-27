@@ -221,6 +221,9 @@ struct CLLMLatticeHierarchy {
     uint64_t start_time_ns;          // When processing started
     uint64_t total_processing_time_ns; // Total processing time
     
+    // User data (for application-specific context)
+    void* user_data;                 // Application-specific data pointer
+
     char debug_name[64];             // Debug name for logging
 };
 

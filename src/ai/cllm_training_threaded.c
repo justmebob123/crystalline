@@ -83,6 +83,9 @@ typedef struct {
     float epoch_loss;
     int total_batches;
     int running;
+
+    // Phase 4: Dynamic spawning
+    atomic_uint sphere_id_counter;  // Global counter for assigning sphere IDs
     
     // Phase 2: Streaming accumulation
     int* sphere_completion_flags;
@@ -220,6 +223,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     system->training = training;
     system->batch_iterator = batch_iterator;
     system->running = 1;
+    atomic_init(&system->sphere_id_counter, num_threads);  // Start after initial threads
     
     // Calculate number of worker spheres (exclude root)
     int hierarchy_levels = calculate_hierarchy_levels(num_threads);
@@ -253,7 +257,12 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         free(system);
         return NULL;
     }
-    
+
+    // Set user_data for all spheres to point to the training system
+    // This allows spawning logic to access the sphere_id_counter
+    for (int i = 0; i < system->thread_system->total_spheres; i++) {
+        system->thread_system->all_spheres[i]->user_data = system;
+    }
     // Allocate dynamic sphere contexts array
     system->sphere_contexts = (SphereTrainingContext**)calloc(system->num_worker_spheres, 
                                                                sizeof(SphereTrainingContext*));
@@ -617,4 +626,22 @@ float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
 int threaded_training_get_num_workers(ThreadedTrainingSystem* system) {
     if (!system) return 0;
     return system->num_worker_spheres;
+}
+
+/**
+ * Get next sphere ID for dynamic spawning
+ * 
+ * This function is called from cllm_threads.c when spawning new children.
+ * It atomically increments and returns the next available sphere ID.
+ * 
+ * @param user_data Pointer to ThreadedTrainingSystem (from sphere->user_data)
+ * @return Next available sphere ID
+ */
+int threaded_training_get_next_sphere_id(void* user_data) {
+    if (!user_data) return -1;
+    
+    ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)user_data;
+    unsigned int next_id = atomic_fetch_add(&system->sphere_id_counter, 1);
+    
+    return (int)next_id;
 }

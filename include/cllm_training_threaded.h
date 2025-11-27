@@ -10,6 +10,17 @@
 #include "cllm_training.h"
 #include "cllm_batch.h"
 
+/**
+ * Get next sphere ID for dynamic spawning
+ *
+ * Helper function for cllm_threads.c to get the next available sphere ID
+ * when dynamically spawning children.
+ *
+ * @param user_data Pointer to ThreadedTrainingSystem (from sphere->user_data)
+ * @return Next available sphere ID, or -1 on error
+ */
+int threaded_training_get_next_sphere_id(void* user_data);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,6 +91,17 @@ float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
  * @return Number of worker spheres
  */
 int threaded_training_get_num_workers(ThreadedTrainingSystem* system);
+
+/**
+ * Get next sphere ID for dynamic spawning
+ *
+ * Helper function for cllm_threads.c to get the next available sphere ID
+ * when dynamically spawning children.
+ *
+ * @param user_data Pointer to ThreadedTrainingSystem (from sphere->user_data)
+ * @return Next available sphere ID, or -1 on error
+ */
+int threaded_training_get_next_sphere_id(void* user_data);
 
 #ifdef __cplusplus
 }
