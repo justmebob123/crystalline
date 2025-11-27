@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c11
-LDFLAGS = -L.. -lprimemath -lm
+LDFLAGS = -L.. -lcllm -lcrystalline -lalgorithms -lpthread -lm
 INCLUDES = -I../include
 
 # All demo source files

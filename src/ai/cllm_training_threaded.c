@@ -15,6 +15,7 @@
 #include "cllm_batch.h"
 #include "cllm_simd_gradient_ops.h"
 #include "ai/cllm_lattice_hierarchy.h"
+#include "ai/cllm_shared_memory.h"
 #include "prime_float_math.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,13 +35,14 @@ typedef struct {
     // Reference to parent system
     ThreadedTrainingSystem* system;
     
-    // Local gradient buffers
-    float* local_gradients;
-    size_t gradient_size;
+    // Shared memory access (kissing spheres architecture)
+    SharedMemoryRegion* shared_gradients;  // Reference to shared gradient buffer
+    size_t gradient_segment_start;         // This sphere's lock-free segment start
+    size_t gradient_segment_end;           // This sphere's lock-free segment end
     
-    // Segment ownership (lock-free)
-    size_t segment_start;
-    size_t segment_end;
+    // Legacy fields (for compatibility during transition)
+    float* local_gradients;  // TODO: Remove after shared memory integration
+    size_t gradient_size;
     
     // Batch processing
     CLLMBatch* current_batch;
@@ -73,10 +75,14 @@ struct ThreadedTrainingSystem {
     // Batch iterator
     CLLMBatchIterator* batch_iterator;
     
-    // Global gradient accumulation (lock-free segments)
-    float* accumulated_gradients;
+    // Shared memory regions (kissing spheres architecture)
+    SharedMemoryRegion* shared_gradients;      // Single shared gradient buffer
+    SharedMemoryRegion* shared_model_weights;  // Shared model weights (read-only)
     size_t gradient_size;
-    pthread_mutex_t gradient_lock;  // Only for boundaries
+    
+    // Gradient accumulation (temporary until shared memory fully integrated)
+    float* accumulated_gradients;              // Accumulated gradients from all spheres
+    pthread_mutex_t gradient_lock;             // Lock for gradient accumulation
     
     // Synchronization
     pthread_barrier_t epoch_barrier;
@@ -100,7 +106,9 @@ struct ThreadedTrainingSystem {
  * Initialize sphere training context
  */
 static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_group, 
-                                                     size_t gradient_size) {
+                                                     size_t gradient_size,
+                                                     SharedMemoryRegion* shared_gradients,
+                                                     int num_spheres) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)calloc(1, sizeof(SphereTrainingContext));
     if (!ctx) return NULL;
     
@@ -109,6 +117,15 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->system = NULL;  // Will be set later
     ctx->gradient_size = gradient_size;
     
+    // Use shared memory instead of local allocation
+    ctx->shared_gradients = shared_gradients;
+    
+    // Assign lock-free segment for this sphere
+    size_t segment_size = gradient_size / num_spheres;
+    ctx->gradient_segment_start = sphere_id * segment_size;
+    ctx->gradient_segment_end = (sphere_id + 1) * segment_size;
+    
+    // Keep local_gradients for now (compatibility during transition)
     ctx->local_gradients = (float*)calloc(gradient_size, sizeof(float));
     if (!ctx->local_gradients) {
         free(ctx);
@@ -180,8 +197,8 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // Compute loss
         seq_loss += cllm_compute_loss(training, &batch->input_ids[offset], &batch->target_ids[offset], batch->seq_len);
         
-        // Backward pass - compute gradients
-        cllm_backward_training(training, &batch->target_ids[offset]);
+        // Backward pass - compute gradients to local buffer (no race condition!)
+        cllm_backward_training(training, &batch->target_ids[offset], ctx->local_gradients);
         
         total_loss += seq_loss;
         valid_sequences++;
@@ -238,13 +255,30 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     // Calculate gradient size
     system->gradient_size = training->model->vocab_size * training->model->embedding_dim;
     
-    // Allocate global gradient accumulation buffer
-    system->accumulated_gradients = (float*)calloc(system->gradient_size, sizeof(float));
-    if (!system->accumulated_gradients) {
+    // Create shared gradient buffer (kissing spheres architecture)
+    system->shared_gradients = shared_memory_create(
+        system->gradient_size * sizeof(float),
+        SHARED_LOCKED_WRITE  // Multiple writers allowed
+    );
+    if (!system->shared_gradients) {
+        fprintf(stderr, "Failed to create shared gradient buffer\n");
         free(system);
         return NULL;
     }
     
+    printf("  ✓ Created shared gradient buffer: %.2f MB\n", 
+           (system->gradient_size * sizeof(float)) / (1024.0f * 1024.0f));
+    
+    // Allocate accumulated gradients buffer (temporary until shared memory fully integrated)
+    system->accumulated_gradients = (float*)calloc(system->gradient_size, sizeof(float));
+    if (!system->accumulated_gradients) {
+        fprintf(stderr, "Failed to allocate accumulated gradients buffer\n");
+        shared_memory_free(system->shared_gradients);
+        free(system);
+        return NULL;
+    }
+    
+    // Initialize gradient lock
     pthread_mutex_init(&system->gradient_lock, NULL);
     
     // Initialize barriers for N threads + 1 main thread
@@ -254,8 +288,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     // Create thread system with calculated hierarchy
     system->thread_system = threads_create(hierarchy_levels);
     if (!system->thread_system) {
-        free(system->accumulated_gradients);
-        pthread_mutex_destroy(&system->gradient_lock);
+        shared_memory_free(system->shared_gradients);
         free(system);
         return NULL;
     }
@@ -270,8 +303,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
                                                                sizeof(SphereTrainingContext*));
     if (!system->sphere_contexts) {
         threads_free(system->thread_system);
-        free(system->accumulated_gradients);
-        pthread_mutex_destroy(&system->gradient_lock);
+        shared_memory_free(system->shared_gradients);
         free(system);
         return NULL;
     }
@@ -279,7 +311,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     // Create sphere contexts for all worker spheres
     for (int i = 0; i < system->num_worker_spheres; i++) {
         int symmetry_group = i % 12; // Distribute across 12 symmetry groups
-        system->sphere_contexts[i] = sphere_context_create(i, symmetry_group, system->gradient_size);
+        system->sphere_contexts[i] = sphere_context_create(i, symmetry_group, system->gradient_size,
+                                                           system->shared_gradients, system->num_worker_spheres);
         if (!system->sphere_contexts[i]) {
             // Cleanup on failure
             for (int j = 0; j < i; j++) {
@@ -287,8 +320,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
             }
             free(system->sphere_contexts);
             threads_free(system->thread_system);
-            free(system->accumulated_gradients);
-            pthread_mutex_destroy(&system->gradient_lock);
+            shared_memory_free(system->shared_gradients);
             free(system);
             return NULL;
         }
@@ -317,8 +349,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
             }
             free(system->sphere_contexts);
             threads_free(system->thread_system);
-            free(system->accumulated_gradients);
-            pthread_mutex_destroy(&system->gradient_lock);
+            shared_memory_free(system->shared_gradients);
             free(system);
             return NULL;
         }
@@ -364,8 +395,19 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     free(system->sphere_contexts);
     
     threads_free(system->thread_system);
+    
+    // Free shared memory regions
+    shared_memory_free(system->shared_gradients);
+    if (system->shared_model_weights) {
+        shared_memory_free(system->shared_model_weights);
+    }
+    
+    // Free accumulated gradients buffer
     free(system->accumulated_gradients);
+    
+    // Destroy gradient lock
     pthread_mutex_destroy(&system->gradient_lock);
+    
     pthread_barrier_destroy(&system->epoch_barrier);
     pthread_barrier_destroy(&system->batch_barrier);
     free(system);
@@ -442,10 +484,10 @@ static void wait_for_sphere(ThreadedTrainingSystem* system, int sphere_id) {
 }
 
 /**
- * Accumulate gradients from all spheres
+ * Accumulate gradients from all spheres (using shared memory)
  */
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
-    pthread_mutex_lock(&system->gradient_lock);
+    if (!system || !system->accumulated_gradients) return;
     
     // Zero accumulated gradients
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
@@ -453,17 +495,17 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     // Sum gradients from all spheres
     for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
+        if (!ctx || !ctx->local_gradients) continue;
+        
         for (size_t j = 0; j < system->gradient_size; j++) {
             system->accumulated_gradients[j] += ctx->local_gradients[j];
         }
     }
     
-    // Average gradients
+    // Average gradients across all spheres
     for (size_t i = 0; i < system->gradient_size; i++) {
         system->accumulated_gradients[i] /= (float)system->num_worker_spheres;
     }
-    
-    pthread_mutex_unlock(&system->gradient_lock);
 }
 
 /**
@@ -568,10 +610,16 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         }
         free(batches);
         
-        // Apply gradients to model (simplified)
-        // In real implementation, this would call the optimizer
+        // Apply accumulated gradients to model
         pthread_mutex_lock(&system->gradient_lock);
-        // Apply accumulated_gradients to model weights
+        
+        // Copy accumulated gradients to training object
+        memcpy(system->training->gradients, system->accumulated_gradients, 
+               system->gradient_size * sizeof(float));
+        
+        // Apply gradients using Adam optimizer
+        cllm_optimizer_step_adam(system->training);
+        
         pthread_mutex_unlock(&system->gradient_lock);
     }
     

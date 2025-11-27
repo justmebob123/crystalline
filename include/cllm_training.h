@@ -206,6 +206,6 @@ void cllm_training_cleanup(CLLMTraining* training);
 
 /* Training step functions (used by multi-threading and production features) */
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
-void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer);
 
 #endif /* CLLM_TRAINING_H */

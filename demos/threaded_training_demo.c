@@ -179,7 +179,8 @@ int main(void) {
     
     ThreadedTrainingSystem* threaded_system = threaded_training_create(
         training, 
-        batch_iter
+        batch_iter,
+        12  // 12 worker threads
     );
     
     if (!threaded_system) {

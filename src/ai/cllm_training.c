@@ -813,7 +813,7 @@ static void attention_backward_full(
 // Train for one epoch
 // Forward declarations
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
-void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer);
 
 float cllm_train_epoch(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -872,7 +872,7 @@ float cllm_train_epoch(CLLMTraining* training) {
         num_batches++;
         
         // Backward pass with cross-entropy gradients
-        cllm_backward_training(training, target_tokens);
+        cllm_backward_training(training, target_tokens, NULL);
         
         // DIAGNOSTIC: Check gradient magnitudes
         if (num_batches == 1 || num_batches % 5 == 0) {
@@ -1060,8 +1060,12 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
 /**
  * Backward pass with cross-entropy gradients
  */
-void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer) {
     if (!training || !target_tokens) return;
+    
+    // Use provided gradient buffer if given, otherwise use training->gradients
+    float* gradients = gradient_buffer ? gradient_buffer : training->gradients;
+    if (!gradients) return;
     
     CLLMModel* model = training->model;
     int batch_size = training->config.batch_size;
@@ -1126,7 +1130,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens) {
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* grad_embed = &training->gradients[v * embed_dim];
+                float* grad_embed = &gradients[v * embed_dim];
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     grad_embed[d] += grad_log[v] * hidden[d];
                 }
