@@ -410,7 +410,7 @@ int lattice_hierarchy_wait_for_state(CLLMLatticeHierarchy* sphere,
     
     if (timeout_ms == 0) {
         // No timeout - wait indefinitely
-        while (atomic_load(&sphere->state) != target_state) {
+        while ((HierarchyState)atomic_load(&sphere->state) != target_state) {
             pthread_cond_wait(&sphere->state_changed, &sphere->state_mutex);
         }
         pthread_mutex_unlock(&sphere->state_mutex);
@@ -427,7 +427,7 @@ int lattice_hierarchy_wait_for_state(CLLMLatticeHierarchy* sphere,
         }
         
         int result = 1;
-        while (atomic_load(&sphere->state) != target_state) {
+        while ((HierarchyState)atomic_load(&sphere->state) != target_state) {
             int rc = pthread_cond_timedwait(&sphere->state_changed, 
                                            &sphere->state_mutex, &ts);
             if (rc == ETIMEDOUT) {

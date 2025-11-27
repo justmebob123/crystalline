@@ -191,7 +191,7 @@ bool control_process_stop(ControlProcess* cp) {
         SphereMessage* msg = sphere_message_create(MSG_CHILD_TERMINATE, 
                                                    MSG_PRIORITY_CRITICAL, 0, 0);
         if (msg) {
-            lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+            lattice_hierarchy_send_message(cp->root_sphere, cp->root_sphere, msg);
             sphere_message_free(msg);
         }
     }
@@ -284,7 +284,7 @@ bool control_process_start_epoch(ControlProcess* cp, uint32_t total_batches) {
         if (msg) {
             sphere_message_set_epoch(msg, cp->epoch_state.current_epoch, total_batches, 
                                     cp->config.learning_rate);
-            lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+            lattice_hierarchy_send_message(cp->root_sphere, cp->root_sphere, msg);
             sphere_message_free(msg);
         }
     }
@@ -321,7 +321,7 @@ bool control_process_end_epoch(ControlProcess* cp) {
             sphere_message_set_epoch(msg, cp->epoch_state.current_epoch, 
                                     cp->epoch_state.completed_batches,
                                     cp->config.learning_rate);
-            lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+            lattice_hierarchy_send_message(cp->root_sphere, cp->root_sphere, msg);
             sphere_message_free(msg);
         }
     }
@@ -453,17 +453,17 @@ bool control_process_terminate_sphere(ControlProcess* cp, uint32_t sphere_id) {
     SphereMessage* msg = sphere_message_create(MSG_CHILD_TERMINATE, 
                                                MSG_PRIORITY_CRITICAL, 0, sphere_id);
     if (msg) {
-        lattice_hierarchy_send_message(sphere, msg, false);
+        lattice_hierarchy_send_message(sphere, sphere, msg);
         sphere_message_free(msg);
     }
     
     // Remove from parent's children
     CLLMLatticeHierarchy* parent = sphere->parent;
     if (parent) {
-        for (uint32_t i = 0; i < parent->num_children; i++) {
+        for (uint32_t i = 0; i < (uint32_t)parent->num_children; i++) {
             if (parent->children[i] == sphere) {
                 // Shift remaining children
-                for (uint32_t j = i; j < parent->num_children - 1; j++) {
+                for (uint32_t j = i; j < (uint32_t)(parent->num_children - 1); j++) {
                     parent->children[j] = parent->children[j + 1];
                 }
                 parent->num_children--;
@@ -562,7 +562,7 @@ bool control_process_broadcast_weights(ControlProcess* cp, const double* weights
                                                MSG_PRIORITY_HIGH, 0, 0);
     if (msg) {
         // Broadcast to all spheres
-        lattice_hierarchy_send_message(cp->root_sphere, msg, false);
+        lattice_hierarchy_send_message(cp->root_sphere, cp->root_sphere, msg);
         sphere_message_free(msg);
     }
     
@@ -822,7 +822,7 @@ static bool collect_statistics_recursive(CLLMLatticeHierarchy* sphere,
     cllm_sphere_stats_merge(stats, &sphere->stats);
     
     // Recursively collect from children
-    for (uint32_t i = 0; i < sphere->num_children; i++) {
+    for (uint32_t i = 0; i < (uint32_t)sphere->num_children; i++) {
         collect_statistics_recursive(sphere->children[i], stats);
     }
     
@@ -833,12 +833,12 @@ static CLLMLatticeHierarchy* find_sphere_recursive(CLLMLatticeHierarchy* sphere,
                                                      uint32_t sphere_id) {
     if (!sphere) return NULL;
     
-    if (sphere->sphere_id == sphere_id) {
+    if ((uint32_t)sphere->sphere_id == sphere_id) {
         return sphere;
     }
     
     // Search children
-    for (uint32_t i = 0; i < sphere->num_children; i++) {
+    for (uint32_t i = 0; i < (uint32_t)sphere->num_children; i++) {
         CLLMLatticeHierarchy* found = find_sphere_recursive(sphere->children[i], 
                                                               sphere_id);
         if (found) return found;
@@ -853,7 +853,7 @@ static uint32_t count_spheres_recursive(const CLLMLatticeHierarchy* sphere) {
     uint32_t count = 1; // Count this sphere
     
     // Count children
-    for (uint32_t i = 0; i < sphere->num_children; i++) {
+    for (uint32_t i = 0; i < (uint32_t)sphere->num_children; i++) {
         count += count_spheres_recursive(sphere->children[i]);
     }
     

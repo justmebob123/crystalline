@@ -24,12 +24,15 @@
 /**
  * Thread-local training context for each sphere
  */
+// Forward declaration
+typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
+
 typedef struct {
     int sphere_id;
     int symmetry_group;  // 0-11 for the 12 kissing spheres
     
     // Reference to parent system
-    struct ThreadedTrainingSystem* system;
+    ThreadedTrainingSystem* system;
     
     // Local gradient buffers
     float* local_gradients;
@@ -59,7 +62,7 @@ typedef struct {
 /**
  * Multi-threaded training system
  */
-typedef struct {
+struct ThreadedTrainingSystem {
     CLLMTraining* training;
     ThreadSystem* thread_system;
     
@@ -91,8 +94,7 @@ typedef struct {
     int* sphere_completion_flags;
     pthread_mutex_t completion_lock;
     pthread_cond_t completion_cond;
-    
-} ThreadedTrainingSystem;
+};
 
 /**
  * Initialize sphere training context
