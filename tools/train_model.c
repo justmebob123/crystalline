@@ -19,7 +19,7 @@
 #include "../include/cllm_training.h"
 // Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
 #include "../include/cllm_training_threaded.h"
-#include "../include/cllm_recursive_spheres.h"
+// Removed: #include "../include/cllm_recursive_spheres.h" - RecursiveSphere was duplicate code, deleted
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_data_loader.h"

@@ -9,7 +9,7 @@ all: $(TOOLS)
 
 web_scraper: web_scraper.c
 	@echo "Building web_scraper..."
-	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcllm -lcrystalline -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ web_scraper built"
 
 train_model: train_model.c
@@ -19,7 +19,7 @@ train_model: train_model.c
 
 cllm_crawler: cllm_crawler.c
 	@echo "Building cllm_crawler..."
-	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	$(CC) $(CFLAGS) -o $@ $< -L.. -lcrawler -lcllm -lcrystalline -lcurl -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ cllm_crawler built"
 
 clean:

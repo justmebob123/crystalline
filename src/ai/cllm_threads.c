@@ -36,7 +36,7 @@
  * 3. Accumulates gradients
  * 4. Synchronizes at barriers
  */
-static void* sphere_worker_thread(void* arg) {
+void* lattice_sphere_worker_thread(void* arg) {
     CLLMLatticeHierarchy* sphere = (CLLMLatticeHierarchy*)arg;
     
     printf("[%s] Thread started (Level %d, Group %d)\n", 
@@ -471,7 +471,7 @@ int threads_start(ThreadSystem* system) {
     for (int i = 0; i < system->total_spheres; i++) {
         CLLMLatticeHierarchy* sphere = system->all_spheres[i];
         
-        if (pthread_create(&system->threads[i], NULL, sphere_worker_thread, sphere) != 0) {
+        if (pthread_create(&system->threads[i], NULL, lattice_sphere_worker_thread, sphere) != 0) {
             fprintf(stderr, "ERROR: Failed to create thread for sphere %d\n", i);
             return -1;
         }

@@ -20,7 +20,7 @@
 #include <sys/sysinfo.h>
 
 // Forward declaration of worker thread function
-extern void* sphere_worker_thread(void* arg);
+extern void* lattice_sphere_worker_thread(void* arg);
 
 /**
  * Get current CPU load average
@@ -120,7 +120,7 @@ CLLMLatticeHierarchy* sphere_spawn_child(CLLMLatticeHierarchy* parent,
     }
     
     // Start worker thread
-    if (pthread_create(&child->thread, NULL, sphere_worker_thread, child) != 0) {
+    if (pthread_create(&child->thread, NULL, lattice_sphere_worker_thread, child) != 0) {
         fprintf(stderr, "ERROR: Failed to create worker thread\n");
         // Note: Child is already added to parent, need to handle cleanup carefully
         return NULL;

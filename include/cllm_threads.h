@@ -122,3 +122,5 @@ static inline uint64_t get_time_ns(void) {
 int get_num_cpu_cores(void);
 
 #endif // CLLM_KISSING_SPHERES_THREADING_H
+// Worker thread function (used by dynamic spawning)
+void* lattice_sphere_worker_thread(void* arg);
