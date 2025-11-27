@@ -685,7 +685,9 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
     printf("\nStarting multi-threaded epoch training...\n");
     printf("Using %d worker threads for parallel batch processing\n\n", system->num_worker_spheres);
     
+    printf("DEBUG: About to reset batch iterator\n"); fflush(stdout);
     cllm_batch_iterator_reset(system->batch_iterator);
+    printf("DEBUG: Batch iterator reset complete\n"); fflush(stdout);
     
     float epoch_loss = 0.0f;
     int batch_count = 0;
@@ -695,38 +697,53 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
     size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
     
     while (1) {
+        printf("DEBUG: Allocating batch array for %d workers\n", system->num_worker_spheres); fflush(stdout);
         CLLMBatch** batches = (CLLMBatch**)calloc(system->num_worker_spheres, sizeof(CLLMBatch*));
-        if (!batches) break;
+        if (!batches) {
+            printf("DEBUG: Failed to allocate batch array\n"); fflush(stdout);
+            break;
+        }
         
         int batches_loaded = 0;
         
+        printf("DEBUG: Loading batches...\n"); fflush(stdout);
         // Load up to N batches (one per worker sphere)
         for (int i = 0; i < system->num_worker_spheres; i++) {
+            printf("DEBUG: Loading batch %d/%d\n", i+1, system->num_worker_spheres); fflush(stdout);
             batches[i] = cllm_batch_iterator_next(system->batch_iterator);
+            printf("DEBUG: Batch %d loaded: %p\n", i+1, (void*)batches[i]); fflush(stdout);
             if (batches[i]) {
                 batches_loaded++;
             } else {
                 // Iterator returned NULL - no more batches
+                printf("DEBUG: No more batches at index %d\n", i); fflush(stdout);
                 break;
             }
         }
+        printf("DEBUG: Loaded %d batches total\n", batches_loaded); fflush(stdout);
         
         // If no batches loaded, we're done with the epoch
         if (batches_loaded == 0) {
+            printf("DEBUG: No batches loaded, breaking\n"); fflush(stdout);
             free(batches);
             break;
         }
         
+        printf("DEBUG: Checking if first batch group (total_batch_groups=%d)\n", total_batch_groups); fflush(stdout);
         // Debug: Show actual batch count
         if (total_batch_groups == 0) {
             printf("First batch group: loaded %d batches\n", batches_loaded);
         }
         
+        printf("DEBUG: Incrementing total_batch_groups\n"); fflush(stdout);
+        
         total_batch_groups++;
         
+        printf("DEBUG: total_batch_groups=%d, checking safety\n", total_batch_groups); fflush(stdout);
         // Safety check: prevent infinite loops
         // Allow some margin since batch_groups != batches (multiple batches per group)
         int max_batch_groups = (int)total_batches_in_epoch + 10;
+        printf("DEBUG: max_batch_groups=%d\n", max_batch_groups); fflush(stdout);
         if (total_batch_groups > max_batch_groups) {
             printf("WARNING: Processed more batch groups (%d) than expected (max %d). Breaking to prevent infinite loop.\n",
                    total_batch_groups, max_batch_groups);
@@ -740,8 +757,10 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
             break;
         }
         
+        printf("DEBUG: Safety check passed, about to print processing message\n"); fflush(stdout);
         printf("Processing batch group %d (%d batches across %d spheres)...\n",
                batch_count / system->num_worker_spheres + 1, batches_loaded, batches_loaded);
+        printf("DEBUG: Processing message printed\n"); fflush(stdout);
         
         // PHASE 3: Assign batches to workers (no signaling yet)
         for (int i = 0; i < batches_loaded; i++) {
