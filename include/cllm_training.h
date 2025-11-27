@@ -50,6 +50,9 @@ typedef struct {
     float loss_scale_growth;          // Growth factor for dynamic loss scaling (default: 2.0)
     float loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
     int loss_scale_window;            // Steps before increasing loss scale (default: 2000)
+    
+    // Crystalline optimizations
+    int use_crystalline_optimizations; // Enable GCD-based similarity and Ulam spiral locality (default: 0)
 } CLLMTrainingConfig;
 
 /*
@@ -206,6 +209,7 @@ void cllm_training_cleanup(CLLMTraining* training);
 /* Training step functions (used by multi-threading and production features) */
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
+float cllm_compute_loss_crystalline(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
 
 #endif /* CLLM_TRAINING_H */

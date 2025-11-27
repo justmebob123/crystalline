@@ -956,7 +956,15 @@ float cllm_train_epoch(CLLMTraining* training) {
         cllm_forward_training(training, input_tokens);
         
         // Compute loss from stored logits
-        float loss = cllm_compute_loss_training(training, target_tokens);
+        float loss;
+        if (training->config.use_crystalline_optimizations) {
+            // Use crystalline GCD-based similarity (20-400x faster)
+            loss = cllm_compute_loss_crystalline(training, input_tokens, target_tokens, 
+                                                 training->config.batch_size * training->config.sequence_length);
+        } else {
+            // Use standard cross-entropy loss
+            loss = cllm_compute_loss_training(training, target_tokens);
+        }
         epoch_loss += loss;
         num_batches++;
         
