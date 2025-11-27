@@ -173,58 +173,52 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         
         // Use kissing spheres multi-threaded training for better performance
         float epoch_loss;
-        if (num_threads > 1) {
-            // Debug: Check training data availability
-            printf("DEBUG: training->tokens = %p, training->num_tokens = %zu\n", 
-                   (void*)training->tokens, training->num_tokens);
-            printf("DEBUG: batch_size = %d, sequence_length = %d\n",
-                   config->batch_size, config->sequence_length);
-            
-            // Create batch iterator for kissing spheres architecture
-            CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
-                training->tokens,
-                training->num_tokens,
-                config->batch_size,
-                config->sequence_length,
-                0,  // shuffle = false (maintain order)
-                0   // drop_last = false (use all data)
-            );
-            
-            printf("DEBUG: batch_iterator = %p\n", (void*)batch_iterator);
-            
-            if (batch_iterator) {
-                // Use kissing spheres architecture
-                ThreadedTrainingSystem* threaded_system = threaded_training_create(
-                    training,
-                    batch_iterator,
-                    num_threads
-                );
-                
-                printf("DEBUG: threaded_system = %p\n", (void*)threaded_system);
-                
-                if (threaded_system) {
-                       printf("\u2713 Using Kissing Spheres Architecture with %d worker threads\n", 
-                              threaded_training_get_num_workers(threaded_system));
-                       epoch_loss = threaded_train_epoch(threaded_system);
-                       threaded_training_print_stats(threaded_system);
-                       threaded_training_free(threaded_system);
-                   } else {
-                       fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create threaded system\n");
-                       fprintf(stderr, "Cannot proceed without kissing spheres architecture\n");
-                       cllm_batch_iterator_free(batch_iterator);
-                       goto cleanup;
-                   }
-                   
-                   cllm_batch_iterator_free(batch_iterator);
-               } else {
-                   fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create batch iterator\n");
-                   fprintf(stderr, "Cannot proceed without batch processing\n");
-                   goto cleanup;
-               }
-           } else {
-               fprintf(stderr, "Warning: Single-threaded mode (num_threads=0)\n");
-               epoch_loss = cllm_train_epoch(training);
+        // ALWAYS use kissing spheres architecture (no single-threaded fallback)
+        printf("DEBUG: training->tokens = %p, training->num_tokens = %zu\n", 
+               (void*)training->tokens, training->num_tokens);
+        printf("DEBUG: batch_size = %d, sequence_length = %d\n",
+               config->batch_size, config->sequence_length);
+        
+        // Create batch iterator for kissing spheres architecture
+        CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+            training->tokens,
+            training->num_tokens,
+            config->batch_size,
+            config->sequence_length,
+            0,  // shuffle = false (maintain order)
+            0   // drop_last = false (use all data)
+        );
+        
+        printf("DEBUG: batch_iterator = %p\n", (void*)batch_iterator);
+        
+        if (!batch_iterator) {
+            fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create batch iterator\n");
+            fprintf(stderr, "Cannot proceed without batch processing\n");
+            goto cleanup;
         }
+        
+        // Use kissing spheres architecture (MANDATORY)
+        ThreadedTrainingSystem* threaded_system = threaded_training_create(
+            training,
+            batch_iterator,
+            num_threads
+        );
+        
+        printf("DEBUG: threaded_system = %p\n", (void*)threaded_system);
+        
+        if (!threaded_system) {
+            fprintf(stderr, "\u2717 CRITICAL ERROR: Failed to create threaded system\n");
+            fprintf(stderr, "Cannot proceed without kissing spheres architecture\n");
+            cllm_batch_iterator_free(batch_iterator);
+            goto cleanup;
+        }
+        
+        printf("\u2713 Using Kissing Spheres Architecture with %d worker threads\n", 
+               threaded_training_get_num_workers(threaded_system));
+        epoch_loss = threaded_train_epoch(threaded_system);
+        threaded_training_print_stats(threaded_system);
+        threaded_training_free(threaded_system);
+        cllm_batch_iterator_free(batch_iterator);
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
