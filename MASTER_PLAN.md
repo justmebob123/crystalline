@@ -894,6 +894,70 @@ The application has ONE path:
 
 ---
 
+## 📊 COMPREHENSIVE ANALYSIS RESULTS
+
+### TRAINING IMPLEMENTATIONS - ACTUAL USAGE
+
+**CURRENTLY IN USE:**
+1. **Application Training Tab** → training_thread.c → threaded_train_epoch() ✅ CORRECT (kissing spheres)
+2. **Crawler Continuous Training** → cllm_train_epoch_crystalline() → cllm_train_epoch() (single-threaded)
+3. **Command-line Tool** → train_model.c → Falls back to cllm_train_epoch_mt() ❌ WRONG (old MT)
+4. **Recursive Tool** → train_model_recursive.c → sphere_hierarchy_train() ✅ CORRECT (recursive spheres)
+
+**NOT USED (CAN DELETE):**
+- app_train_epoch() in cllm_integration.c - DEFINED but NEVER CALLED
+- cllm_train_epoch_parallel() - 0 calls
+- train_complete() - 0 calls
+- Most infrastructure files (cllm_control_process.c, cllm_training_loop.c, etc.)
+
+### WHAT ACTUALLY WORKS
+
+**✅ WORKING CORRECTLY:**
+1. Application training tab uses kissing spheres
+2. Sphere visualization exists and works
+3. Crystalline math is integrated (31 instances)
+4. SIMD headers are included
+5. 12-fold symmetry implemented in cllm_threads.c
+6. Recursive spheres implemented for infinite scaling
+
+**❌ BROKEN:**
+1. Command-line tool falls back to old MT (prevents kissing spheres)
+2. Crawler uses single-threaded training (could use kissing spheres)
+3. No dedicated control thread (node zero)
+4. Thread count not enforcing 12-fold symmetry
+5. Infrastructure files mostly unused
+
+### INTEGRATION STRATEGY
+
+**PHASE 1: Fix Command-Line Tool (HIGH PRIORITY)**
+- Remove fallback to cllm_train_epoch_mt()
+- Force kissing spheres or fail clearly
+- Delete cllm_training_mt.c
+- Delete cllm_training_parallel.c
+
+**PHASE 2: Integrate Crawler with Kissing Spheres (MEDIUM PRIORITY)**
+- Update continuous_training.c to use threaded_train_epoch()
+- Or keep single-threaded for simplicity (it's continuous background training)
+
+**PHASE 3: Implement Node Zero Control Thread (HIGH PRIORITY)**
+- Modify cllm_training_threaded.c
+- Add dedicated control thread that never processes batches
+- Enforce 12-fold symmetry in thread allocation
+
+**PHASE 4: Clean Up Unused Code (LOW PRIORITY)**
+- Delete unused infrastructure files OR
+- Document as "future expansion" and keep
+
+**PHASE 5: Merge Crystalline Optimizations (MEDIUM PRIORITY)**
+- cllm_crystalline_training.c has GCD similarity optimization
+- Currently disabled - needs integration with kissing spheres
+- Merge optimizations into main training loop
+
+**PHASE 6: Verify SIMD Usage (MEDIUM PRIORITY)**
+- SIMD headers included but need to verify actual usage
+- Check if SIMD functions are called in hot paths
+- Add SIMD to forward/backward if missing
+
 ## ✅ EXECUTION CHECKLIST (DO NOT START UNTIL ANALYSIS APPROVED)
 
 - [ ] Analysis complete and approved
