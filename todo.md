@@ -1,5 +1,25 @@
 # TODO: FULL MASTER PLAN IMPLEMENTATION (Option C)
 
+## 🔒 CRITICAL RULES (READ EVERY TIME)
+
+### RULE 2: ALWAYS COMMIT WITH CORRECT AUTHENTICATION
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+### RULE 3: MASTER_PLAN.md IS READ-ONLY
+- Never edit without explicit approval
+- Contains OBJECTIVES ONLY, no status updates
+- Status tracking happens in todo.md ONLY
+
+### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
+- Build with -Wall -Wextra
+- Zero warnings required before moving forward
+
+---
+
 ## 🎯 CURRENT OBJECTIVE: Implement Complete Threading Architecture
 
 Following MASTER PLAN exactly - implementing Option C (FULL architecture)
