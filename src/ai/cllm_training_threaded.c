@@ -224,6 +224,7 @@ static int calculate_hierarchy_levels(int num_threads) {
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
                                                   CLLMBatchIterator* batch_iterator,
                                                   int num_threads) {
+    printf("DEBUG: [ENTER] threaded_training_create, num_threads=%d\n", num_threads); fflush(stdout);
     if (!training || !batch_iterator) return NULL;
     
     // Auto-detect thread count if not specified
@@ -287,6 +288,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // Create thread system with calculated hierarchy
     system->thread_system = threads_create(hierarchy_levels);
+    printf("DEBUG: [STEP 2] threads_create returned: %p\n", (void*)system->thread_system); fflush(stdout);
     if (!system->thread_system) {
         shared_memory_free(system->shared_gradients);
         free(system);
@@ -329,8 +331,10 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     }
     
     // Create worker threads
+    printf("DEBUG: [STEP 3] About to create worker threads\n"); fflush(stdout);
     printf("  Creating %d worker threads...\n", system->num_worker_spheres);
     for (int i = 0; i < system->num_worker_spheres; i++) {
+        printf("DEBUG: [STEP 4] Creating thread %d/%d\n", i+1, system->num_worker_spheres); fflush(stdout);
         int rc = pthread_create(&system->sphere_contexts[i]->thread, NULL, 
                                sphere_worker_thread, system->sphere_contexts[i]);
         if (rc != 0) {

@@ -1,0 +1,17 @@
+--- a/src/ai/cllm_training_threaded.c
++++ b/src/ai/cllm_training_threaded.c
+@@ -224,8 +224,13 @@ static void* sphere_worker_thread(void* arg) {
+ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
+                                                  CLLMBatchIterator* batch_iterator,
+                                                  int num_threads) {
++    printf("DEBUG: [ENTER] threaded_training_create, num_threads=%d\n", num_threads);
++    fflush(stdout);
++    
+     if (!training || !batch_iterator) return NULL;
+     
++    printf("DEBUG: [STEP 1] Validation passed\n");
++    fflush(stdout);
++    
+     // Auto-detect thread count if not specified
+     if (num_threads <= 0) {
+         num_threads = get_num_cpu_cores();
