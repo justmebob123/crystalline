@@ -151,7 +151,7 @@ float evaluate_validation(CLLMTraining* training, ValidationSet* val_set) {
         
         // Forward pass only (no backward)
         float loss = cllm_forward_training(training, input_tokens);
-        loss += cllm_compute_loss_training(training, target_tokens);
+        loss += cllm_compute_loss(training, input_tokens, target_tokens, batch_tokens);
         
         total_loss += loss;
         num_batches++;

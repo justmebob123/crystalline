@@ -34,7 +34,7 @@ typedef struct {
 // ============================================================================
 
 /**
- * Create kissing spheres system
+ * Create kissing spheres system (fixed levels)
  * 
  * @param num_levels Number of hierarchy levels (1-4)
  *                   Level 0: 1 root sphere
@@ -44,6 +44,22 @@ typedef struct {
  * @return New system, or NULL on error
  */
 ThreadSystem* threads_create(int num_levels);
+
+/**
+ * Create dynamic kissing spheres system (optimal for CPU count)
+ * 
+ * Creates a hierarchical system optimized for the given number of CPUs.
+ * Automatically calculates optimal depth and sphere distribution.
+ * 
+ * Strategy:
+ * - Level 0: Always 1 (root control)
+ * - Level 1: Up to 12 (kissing spheres)
+ * - Level 2+: Distribute remaining CPUs evenly
+ * 
+ * @param num_cpus Number of CPU cores to utilize
+ * @return New system, or NULL on error
+ */
+ThreadSystem* threads_create_dynamic(int num_cpus);
 
 /**
  * Free kissing spheres system

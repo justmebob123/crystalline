@@ -173,7 +173,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         float seq_loss = cllm_forward_training(training, &batch->input_ids[offset]);
         
         // Compute loss
-        seq_loss += cllm_compute_loss_training(training, &batch->target_ids[offset]);
+        seq_loss += cllm_compute_loss(training, &batch->input_ids[offset], &batch->target_ids[offset], batch->seq_len);
         
         // Backward pass - compute gradients
         cllm_backward_training(training, &batch->target_ids[offset]);
