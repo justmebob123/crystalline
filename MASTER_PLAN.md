@@ -14,11 +14,28 @@ git commit -m "descriptive message"
 git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
 ```
 
-### RULE 3: THIS FILE CONTAINS OBJECTIVES ONLY - NO STATUS UPDATES
-- This file lists WHAT needs to be done (objectives)
-- Status tracking happens in todo.md (WHEN/HOW it's done)
-- Never mark objectives as complete in this file
-- Only add new objectives with explicit approval
+### ⚠️ RULE 3: THIS FILE IS READ-ONLY - DO NOT EDIT WITHOUT EXPLICIT APPROVAL ⚠️
+
+**CRITICAL**: This file contains OBJECTIVES ONLY - NO status updates, NO ephemeral information.
+
+**NEVER ADD TO THIS FILE**:
+- ❌ Status updates or completion markers
+- ❌ Progress percentages or tracking
+- ❌ Time estimates or effort calculations
+- ❌ "Current focus" or "what I'm working on"
+- ❌ Known issues or bug tracking
+- ❌ Quick references or summaries
+- ❌ New objectives without asking first
+
+**ALWAYS REMEMBER**:
+- ✅ This file contains STATIC STRUCTURAL DESIGN only
+- ✅ Status tracking happens in todo.md ONLY
+- ✅ Ask user before adding ANY new objectives
+- ✅ Read OBJECTIVE 0 first every time
+- ✅ This file defines WHAT to do, not WHEN or HOW
+- ✅ Keep all information STATIC and ARCHITECTURAL
+
+**Violation of this rule is a critical error.**
 
 ### RULE 4: COMPLETE BIDIRECTIONAL ANALYSIS BEFORE ANY DELETIONS
 Analyze every MD file and every line of code to map all fixes and relationships.
