@@ -22,7 +22,7 @@ float crystalline_gcd_similarity(uint32_t token1, uint32_t token2);
  * Compute crystalline loss using prime-based similarity
  * Much faster than standard dot product approach
  */
-float cllm_compute_loss_crystalline(CLLMTraining* training, uint32_t* input_tokens, 
+float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                                    uint32_t* target_tokens, int num_tokens);
 
 /**

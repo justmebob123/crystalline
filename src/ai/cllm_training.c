@@ -397,67 +397,6 @@ static inline float* get_cached_target_embedding(CLLMTraining* training, int ind
 }
 
 // Forward pass (compute loss)
-float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens __attribute__((unused))) {
-    if (!training || !input_tokens || !target_tokens) return 0.0f;
-    
-    // Cache all embeddings for batch (OPTIMIZATION)
-    cache_batch_embeddings(training, input_tokens, target_tokens, num_tokens);
-    
-    float total_loss = 0.0f;
-    int count = 0;
-    uint64_t embed_dim = training->model->embedding_dim;
-    
-    // Simplified loss computation using cached embeddings
-    for (int i = 0; i < num_tokens; i++) {
-        uint32_t input = input_tokens[i];
-        uint32_t target = target_tokens[i];
-        
-        if (input < training->model->vocab_size && target < training->model->vocab_size) {
-            float* input_embed;
-            float* target_embed;
-            
-            // Use cached embeddings if within cache bounds (OPTIMIZATION)
-            if (i < training->cached_batch_size) {
-                input_embed = get_cached_input_embedding(training, i);
-                target_embed = get_cached_target_embedding(training, i);
-            } else {
-                // Fallback to direct lookup for tokens beyond cache
-                input_embed = &training->model->embeddings.embeddings[input * embed_dim];
-                target_embed = &training->model->embeddings.embeddings[target * embed_dim];
-            }
-            
-            // Use GCD-based similarity for crystalline optimization (20-400x faster)
-            // This leverages prime factorization structure of tokens
-            float similarity;
-            
-            // Use GCD similarity if tokens are non-zero (prime-based)
-            if (input > 0 && target > 0) {
-                // Compute GCD (shared prime factors)
-                uint32_t a = input, b = target;
-                while (b != 0) {
-                    uint32_t temp = b;
-                    b = a % b;
-                    a = temp;
-                }
-                uint32_t shared = a;
-                
-                // Normalize to [0, 1]
-                uint32_t max_val = input > target ? input : target;
-                similarity = (float)shared / (float)max_val;
-            } else {
-                // Fallback to dot product for special tokens
-                similarity = dot_product(input_embed, target_embed, embed_dim);
-            }
-            
-            // Convert to loss (negative log likelihood approximation)
-            float clamped = similarity > 1e-10f ? similarity : 1e-10f;
-            total_loss += -prime_logf(clamped);
-            count++;
-        }
-    }
-    
-    return count > 0 ? total_loss / count : 0.0f;
-}
 
 // Forward declaration
 // cllm_backward is now implemented in cllm_backward.c
@@ -902,7 +841,6 @@ static void attention_backward_full(
 // Train for one epoch
 // Forward declarations
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
-float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens);
 
 float cllm_train_epoch(CLLMTraining* training) {
@@ -955,16 +893,9 @@ float cllm_train_epoch(CLLMTraining* training) {
         // Forward pass with activation storage
         cllm_forward_training(training, input_tokens);
         
-        // Compute loss from stored logits
-        float loss;
-        if (training->config.use_crystalline_optimizations) {
-            // Use crystalline GCD-based similarity (20-400x faster)
-            loss = cllm_compute_loss_crystalline(training, input_tokens, target_tokens, 
-                                                 training->config.batch_size * training->config.sequence_length);
-        } else {
-            // Use standard cross-entropy loss
-            loss = cllm_compute_loss_training(training, target_tokens);
-        }
+        // Compute loss using GCD-based similarity (O(log n) vs O(n) for dot product)
+        float loss = cllm_compute_loss(training, input_tokens, target_tokens, 
+                                                   training->config.batch_size * training->config.sequence_length);
         epoch_loss += loss;
         num_batches++;
         
@@ -1153,65 +1084,6 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
 /**
  * Compute cross-entropy loss from stored logits
  */
-float cllm_compute_loss_training(CLLMTraining* training, uint32_t* target_tokens) {
-    int batch_size = training->config.batch_size;
-    int seq_len = training->config.sequence_length;
-    uint32_t vocab_size = training->model->vocab_size;
-    
-    float total_loss = 0.0f;
-    int count = 0;
-    
-    for (int b = 0; b < batch_size; b++) {
-        for (int s = 0; s < seq_len; s++) {
-            int idx = b * seq_len + s;
-            uint32_t target = target_tokens[idx];
-            if (target >= vocab_size) continue;
-            
-            float* logits = &training->logits[idx * vocab_size];
-            
-            // Find max for numerical stability
-            float max_logit = logits[0];
-            for (uint32_t v = 1; v < vocab_size; v++) {
-                if (logits[v] > max_logit) max_logit = logits[v];
-            }
-            
-            // Clip max_logit to prevent overflow
-            if (max_logit > 50.0f) max_logit = 50.0f;
-            if (max_logit < -50.0f) max_logit = -50.0f;
-            
-            // Compute softmax denominator with clipping
-            float sum_exp = 0.0f;
-            for (uint32_t v = 0; v < vocab_size; v++) {
-                float exp_val = prime_expf(logits[v] - max_logit);
-                if (exp_val > 1e10f) exp_val = 1e10f;  // Prevent overflow
-                sum_exp += exp_val;
-            }
-            
-            // Prevent log(0)
-            if (sum_exp < 1e-10f) sum_exp = 1e-10f;
-            
-            // Compute log probability
-            float log_prob = (logits[target] - max_logit) - prime_logf(sum_exp);
-            
-            // Clip log_prob to reasonable range
-            if (log_prob > 0.0f) log_prob = 0.0f;        // Can't be positive
-            if (log_prob < -100.0f) log_prob = -100.0f;  // Prevent extreme negatives
-            
-            // Loss is negative log probability
-            float loss = -log_prob;
-            
-            // Sanity check - loss should be positive and reasonable
-            if (loss < 0.0f) loss = 0.0f;
-            if (loss > 100.0f) loss = 100.0f;
-            if (prime_isnanf(loss) || prime_isinff(loss)) loss = 10.0f;
-            
-            total_loss += loss;
-            count++;
-        }
-    }
-    
-    return count > 0 ? total_loss / count : 0.0f;
-}
 
 /**
  * Backward pass with cross-entropy gradients

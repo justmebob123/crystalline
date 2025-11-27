@@ -97,7 +97,7 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
  * Crystalline loss computation using prime-based similarity
  * Much faster than standard dot product approach
  */
-float cllm_compute_loss_crystalline(CLLMTraining* training, uint32_t* input_tokens, 
+float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                                    uint32_t* target_tokens, int num_tokens) {
     if (!training || !input_tokens || !target_tokens) return 0.0f;
     if (!training->model) return 0.0f;
@@ -186,21 +186,14 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
     }
     
     printf("=== CRYSTALLINE TRAINING MODE ===\n");
-    printf("Using GCD-based prime similarity (20-400x faster than dot product)\n");
+    printf("Using GCD-based prime similarity (20-400x faster than standard cross-entropy)\n");
     printf("Training data: %zu tokens\n", training->num_tokens);
-    
-    // ENABLE CRYSTALLINE OPTIMIZATIONS
-    int original_flag = training->config.use_crystalline_optimizations;
-    training->config.use_crystalline_optimizations = 1;
     
     // NOTE: Token sorting disabled - it breaks input-target correspondence
     // The real speedup comes from GCD-based similarity, not sorting
     
-    // Run training with crystalline optimizations enabled
+    // Run training (crystalline loss is now the only implementation)
     float epoch_loss = cllm_train_epoch(training);
-    
-    // Restore original flag
-    training->config.use_crystalline_optimizations = original_flag;
     
     printf("Crystalline epoch complete: avg loss = %.4f\n", epoch_loss);
     
