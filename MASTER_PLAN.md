@@ -1,6 +1,20 @@
 # MASTER PLAN - CRYSTALLINE CLLM INTEGRATION
 **STATUS: ANALYSIS PHASE**
-**LAST UPDATED: 2025-11-27 01:05 UTC**
+**LAST UPDATED: 2025-11-27 02:15 UTC**
+
+---
+
+## 🚨 CRITICAL: REPOSITORY STRUCTURE CLARIFICATION
+
+**THE REPOSITORY IS AT `/workspace/` (ROOT DIRECTORY)**
+
+- ✅ **CORRECT**: `/workspace/` is the actual Git repository
+- ✅ **CORRECT**: All source code is in `/workspace/src/`, `/workspace/algorithms/`, etc.
+- ✅ **CORRECT**: MASTER_PLAN.md is at `/workspace/MASTER_PLAN.md`
+- ❌ **REMOVED**: `/workspace/crystalline/` was an old backup (deleted)
+- ❌ **REMOVED**: `/workspace/crystalline-repo/` was an older backup (deleted)
+
+**DO NOT create nested repositories or subdirectories with .git folders.**
 
 ---
 

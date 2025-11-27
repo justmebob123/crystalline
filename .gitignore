@@ -56,3 +56,8 @@ outputs/
 summarized_conversations/
 crystalline/
 crystalline-repo/
+
+# Prevent accidental nested repositories
+crystalline/
+crystalline-repo/
+*/.git/

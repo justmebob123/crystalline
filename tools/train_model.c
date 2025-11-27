@@ -130,6 +130,11 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
     // Auto-detect CPU count if not specified
     if (num_threads == 0) {
         num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+        if (num_threads > 1) {
+            num_threads--;  // Reserve 1 core for main thread (CPU-1)
+            printf("Auto-detected %d CPU cores, using %d worker threads (CPU-1)\n", 
+                   num_threads + 1, num_threads);
+        }
         if (num_threads < 1) num_threads = 1;
     }
     printf("Using %d threads for training\n\n", num_threads);
@@ -169,6 +174,12 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         // Use kissing spheres multi-threaded training for better performance
         float epoch_loss;
         if (num_threads > 1) {
+            // Debug: Check training data availability
+            printf("DEBUG: training->tokens = %p, training->num_tokens = %zu\n", 
+                   (void*)training->tokens, training->num_tokens);
+            printf("DEBUG: batch_size = %d, sequence_length = %d\n",
+                   config->batch_size, config->sequence_length);
+            
             // Create batch iterator for kissing spheres architecture
             CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
                 training->tokens,
@@ -179,6 +190,8 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                 0   // drop_last = false (use all data)
             );
             
+            printf("DEBUG: batch_iterator = %p\n", (void*)batch_iterator);
+            
             if (batch_iterator) {
                 // Use kissing spheres architecture
                 ThreadedTrainingSystem* threaded_system = threaded_training_create(
@@ -187,14 +200,16 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                     num_threads
                 );
                 
+                printf("DEBUG: threaded_system = %p\n", (void*)threaded_system);
+                
                 if (threaded_system) {
-                    printf("Using Kissing Spheres Architecture with %d worker threads\n", 
+                    printf("\u2713 Using Kissing Spheres Architecture with %d worker threads\n", 
                            threaded_training_get_num_workers(threaded_system));
                     epoch_loss = threaded_train_epoch(threaded_system);
                     threaded_training_print_stats(threaded_system);
                     threaded_training_free(threaded_system);
                 } else {
-                    printf("Warning: Failed to create threaded system, falling back to simple MT\n");
+                    printf("\u2717 Warning: Failed to create threaded system, falling back to simple MT\n");
                     epoch_loss = cllm_train_epoch_mt(training, num_threads);
                 }
                 

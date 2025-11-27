@@ -1,58 +1,41 @@
-# PROPER INTEGRATION ACTION PLAN
+# CRITICAL DIRECTORY STRUCTURE FIX
 
-## CURRENT STATUS ANALYSIS
+## SITUATION ANALYSIS
+- [x] Confirmed `/workspace/` is the ACTUAL repository
+- [x] Confirmed `/workspace/crystalline/` is an OLD backup (should be deleted)
+- [x] Confirmed `/workspace/crystalline-repo/` is an OLDER backup (should be deleted)
+- [x] Confirmed MASTER_PLAN.md exists in root and is committed to GitHub
+- [x] Confirmed all source code is in `/workspace/src/`, `/workspace/algorithms/`, etc.
 
-### What EXISTS and WORKS:
-1. ✅ Kissing spheres architecture (`cllm_threads.c`, `cllm_training_threaded.c`)
-2. ✅ SIMD optimizations (`cllm_simd_gradient_ops.c`, `cllm_simd_utils.c`)
-3. ✅ Crystalline math library (entire `src/transcendental/`, `src/geometry/`)
-4. ✅ Recursive spheres (`cllm_recursive_spheres.c`)
-5. ✅ Complete crawler pipeline (`src/crawler/`)
-6. ✅ Application UI using threaded training (`app/training_thread.c`)
-7. ✅ Infrastructure for control process (`src/ai/infrastructure/`)
+## IMMEDIATE ACTIONS REQUIRED
 
-### What's BROKEN:
-1. ❌ `tools/train_model.c` falls back to old `cllm_train_epoch_mt` 
-2. ❌ Multiple redundant training implementations confusing the system
-3. ❌ Thread count using 64 instead of enforcing 12-fold symmetry
-4. ❌ No dedicated control thread (node zero)
+### 1. BACKUP VERIFICATION
+- [x] Verify all important files from subdirectories are in root
+- [x] Check for any unique files in crystalline/ that aren't in root (only old docs)
+- [x] Check for any unique files in crystalline-repo/ that aren't in root (none)
 
-## EXECUTION PLAN
+### 2. CLEANUP SUBDIRECTORIES
+- [x] Remove `/workspace/crystalline/` directory completely (69MB freed)
+- [x] Remove `/workspace/crystalline-repo/` directory completely
+- [x] Update .gitignore to prevent future confusion
 
-### PHASE 1: Fix tools/train_model.c [IMMEDIATE]
-- [x] Add debug logging (DONE)
-- [ ] Test to see why batch_iterator or threaded_system creation fails
-- [ ] Fix the root cause
-- [ ] Remove fallback to cllm_train_epoch_mt
-- [ ] Enforce 12-fold thread counts (12, 24, 36, 48, 60)
+### 3. VERIFY REPOSITORY INTEGRITY
+- [x] Confirm all source files are in correct locations
+- [x] Confirm MASTER_PLAN.md is in root
+- [x] Confirm Makefile builds correctly (successful build)
+- [x] Run git status to verify clean state
 
-### PHASE 2: Remove Redundant Code
-- [ ] Delete `src/ai/cllm_training_mt.c` (old implementation)
-- [ ] Delete `src/ai/cllm_training_parallel.c` (redundant)
-- [ ] Keep only: `cllm_training.c` (core) + `cllm_training_threaded.c` (kissing spheres)
-- [ ] Update all references
+### 4. COMMIT AND PUSH CLEANUP
+- [ ] Stage all changes
+- [ ] Commit with clear message about directory cleanup
+- [ ] Push to GitHub
 
-### PHASE 3: Implement Control Thread (Node Zero)
-- [ ] Modify `cllm_training_threaded.c` to have dedicated control thread
-- [ ] Control thread coordinates but never processes batches
-- [ ] Enforce 12-fold symmetry in worker allocation
+### 5. UPDATE MASTER_PLAN.md
+- [ ] Add note about correct directory structure
+- [ ] Document that root workspace is the actual repo
+- [ ] Update any references to subdirectories
 
-### PHASE 4: Verify Complete Pipeline
-- [ ] Test: Crawler → Preprocessor → Tokenizer → Training → Inference
-- [ ] Verify all using crystalline math
-- [ ] Verify all using SIMD where applicable
-- [ ] Verify kissing spheres architecture active
-
-### PHASE 5: Update Application
-- [ ] Verify `app/training_thread.c` works correctly (already uses threaded training)
-- [ ] Update UI to show sphere statistics properly
-- [ ] Test complete application workflow
-
-### PHASE 6: Clean Up My Mess
-- [ ] Delete all markdown files I created
-- [ ] Delete test directories
-- [ ] Consolidate documentation into proper README updates
-
-## IMMEDIATE NEXT STEP
-
-Run a test with debug build to see exactly why batch_iterator or threaded_system creation is failing.
+## NOTES
+- The confusion happened because there were THREE .git directories
+- Root workspace has the latest commits (MASTER_PLAN.md, threading fixes, etc.)
+- Subdirectories are just old clones/backups that should never have existed
