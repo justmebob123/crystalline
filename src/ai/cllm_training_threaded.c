@@ -481,6 +481,9 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
     int batch_count = 0;
     
     // Process batches in groups (one per sphere)
+    int total_batch_groups = 0;
+    size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
+    
     while (1) {
         CLLMBatch** batches = (CLLMBatch**)calloc(system->num_worker_spheres, sizeof(CLLMBatch*));
         if (!batches) break;
@@ -493,11 +496,36 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
             if (batches[i]) {
                 batches_loaded++;
             } else {
+                // Iterator returned NULL - no more batches
                 break;
             }
         }
         
+        // If no batches loaded, we're done with the epoch
         if (batches_loaded == 0) {
+            free(batches);
+            break;
+        }
+        
+        // Debug: Show actual batch count
+        if (total_batch_groups == 0) {
+            printf("First batch group: loaded %d batches\n", batches_loaded);
+        }
+        
+        total_batch_groups++;
+        
+        // Safety check: prevent infinite loops
+        // Allow some margin since batch_groups != batches (multiple batches per group)
+        int max_batch_groups = (int)total_batches_in_epoch + 10;
+        if (total_batch_groups > max_batch_groups) {
+            printf("WARNING: Processed more batch groups (%d) than expected (max %d). Breaking to prevent infinite loop.\n",
+                   total_batch_groups, max_batch_groups);
+            // Free any remaining batches before breaking
+            for (int i = 0; i < system->num_worker_spheres; i++) {
+                if (batches[i]) {
+                    cllm_batch_free(batches[i]);
+                }
+            }
             free(batches);
             break;
         }
@@ -530,10 +558,12 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         
         printf("  Batch group loss: %.4f\n", batch_group_loss);
         
-        // Free batches
+        // Free batches and clear sphere context pointers
         for (int i = 0; i < batches_loaded; i++) {
             if (batches[i]) {
                 cllm_batch_free(batches[i]);
+                // Clear the pointer in the sphere context to avoid double-free
+                system->sphere_contexts[i]->current_batch = NULL;
             }
         }
         free(batches);

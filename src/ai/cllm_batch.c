@@ -125,6 +125,11 @@ void cllm_batch_iterator_reset(CLLMBatchIterator* iter) {
 CLLMBatch* cllm_batch_iterator_next(CLLMBatchIterator* iter) {
     if (!iter) return NULL;
     
+    // Check if we've already processed all data
+    if (iter->current_pos >= iter->num_tokens) {
+        return NULL;  // No more data
+    }
+    
     // Check if we have enough tokens left
     // We need +1 because each position needs a next token for target
     size_t tokens_needed = iter->batch_size * iter->seq_len + 1;
