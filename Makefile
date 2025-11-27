@@ -12,13 +12,17 @@ CFLAGS = -Wall -Wextra -g -O0 -fPIC -I./include -mavx2 -mfma
 LDFLAGS = 
 ARFLAGS = rcs
 
-# Library names
+# Library names - Shared (.so)
 CRYSTALLINE_LIB = libcrystalline.so
 ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = libcllm.so
 CRAWLER_LIB = libcrawler.so
 
-# Removed legacy monolithic libraries - use modular libraries instead
+# Library names - Static (.a)
+CRYSTALLINE_STATIC = libcrystalline.a
+ALGORITHMS_STATIC = libalgorithms.a
+CLLM_STATIC = libcllm.a
+CRAWLER_STATIC = libcrawler.a
 
 # Installation directories
 PREFIX = /usr/local
@@ -62,13 +66,18 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) tools
+all: $(CRYSTALLINE_LIB) $(CRYSTALLINE_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
 	@echo "✓ Build complete!"
-	@echo "  Crystalline library: $(CRYSTALLINE_LIB)"
-	@echo "  CLLM library: $(CLLM_LIB)"
-	@echo "  Crawler library: $(CRAWLER_LIB)"
-
-	@echo "  Crawler library: $(CRAWLER_LIB)"
+	@echo "  Shared Libraries:"
+	@echo "    - $(CRYSTALLINE_LIB)"
+	@echo "    - $(ALGORITHMS_LIB)"
+	@echo "    - $(CLLM_LIB)"
+	@echo "    - $(CRAWLER_LIB)"
+	@echo "  Static Libraries:"
+	@echo "    - $(CRYSTALLINE_STATIC)"
+	@echo "    - $(ALGORITHMS_STATIC)"
+	@echo "    - $(CLLM_STATIC)"
+	@echo "    - $(CRAWLER_STATIC)"
 
 # ============================================================================
 # Three Independent Libraries
@@ -78,22 +87,38 @@ all: $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_L
 CRYSTALLINE_OBJECTS = $(CORE_OBJECTS) $(TRANS_OBJECTS) $(GEOM_OBJECTS)
 
 $(CRYSTALLINE_LIB): $(CRYSTALLINE_OBJECTS)
-	@echo "Creating crystalline library: $@"
+	@echo "Creating crystalline shared library: $@"
 	$(CC) -shared -o $@ $^
-	@echo "✓ Crystalline library created"
+	@echo "✓ Crystalline shared library created"
+
+$(CRYSTALLINE_STATIC): $(CRYSTALLINE_OBJECTS)
+	@echo "Creating crystalline static library: $@"
+	$(AR) $(ARFLAGS) $@ $^
+	@echo "✓ Crystalline static library created"
 
 # 3. CLLM Library (AI/language model - depends on crystalline and algorithms)
 # 2. Algorithms Library (mathematical algorithms - depends on crystalline)
 $(ALGORITHMS_LIB): $(CRYSTALLINE_LIB)
-	@echo "Building algorithms library..."
+	@echo "Building algorithms shared library..."
 	@$(MAKE) -C algorithms
 	@cp algorithms/$(ALGORITHMS_LIB) .
-	@echo "✓ Algorithms library created"
+	@echo "✓ Algorithms shared library created"
+
+$(ALGORITHMS_STATIC): $(CRYSTALLINE_STATIC)
+	@echo "Building algorithms static library..."
+	@$(MAKE) -C algorithms static
+	@cp algorithms/$(ALGORITHMS_STATIC) .
+	@echo "✓ Algorithms static library created"
 
 $(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
-	@echo "Creating CLLM library: $@"
+	@echo "Creating CLLM shared library: $@"
 	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms
-	@echo "✓ CLLM library created"
+	@echo "✓ CLLM shared library created"
+
+$(CLLM_STATIC): $(AI_OBJECTS) $(CRYSTALLINE_STATIC) $(ALGORITHMS_STATIC)
+	@echo "Creating CLLM static library: $@"
+	$(AR) $(ARFLAGS) $@ $(AI_OBJECTS)
+	@echo "✓ CLLM static library created"
 
 # Removed legacy monolithic libraries
 
@@ -283,9 +308,14 @@ CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 
 $(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(CLLM_LIB)
-	@echo "Creating crawler library: $@"
+	@echo "Creating crawler shared library: $@"
 	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread
-	@echo "✓ Crawler library created"
+	@echo "✓ Crawler shared library created"
+
+$(CRAWLER_STATIC): $(CRAWLER_OBJECTS) $(CLLM_STATIC)
+	@echo "Creating crawler static library: $@"
+	$(AR) $(ARFLAGS) $@ $(CRAWLER_OBJECTS)
+	@echo "✓ Crawler static library created"
 
 # ============================================================================
 # Crawler CLI Tool (uses libcrawler.so)

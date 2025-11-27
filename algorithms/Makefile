@@ -1,8 +1,10 @@
-# Makefile for libalgorithms.so - Mathematical Algorithms Library
+# Makefile for libalgorithms - Mathematical Algorithms Library
 
 CC = gcc
+AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 LDFLAGS = -shared
+ARFLAGS = rcs
 INCLUDES = -I./include -I../include
 
 # Source files
@@ -22,25 +24,35 @@ SOURCES = src/numerical.c \
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
 
-# Output library
-LIBRARY = libalgorithms.so
+# Output libraries
+SHARED_LIB = libalgorithms.so
+STATIC_LIB = libalgorithms.a
 CRYSTALLINE_LIB = ../libcrystalline.so
-# Crystalline library dependency
 
-.PHONY: all clean install
+.PHONY: all static clean install
 
-all: $(LIBRARY)
-$(LIBRARY): $(OBJECTS) $(CRYSTALLINE_LIB)
+all: $(SHARED_LIB)
+
+$(SHARED_LIB): $(OBJECTS) $(CRYSTALLINE_LIB)
+	@echo "Creating shared algorithms library: $@"
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline
+	@echo "✓ Shared algorithms library created"
+
+static: $(STATIC_LIB)
+
+$(STATIC_LIB): $(OBJECTS)
+	@echo "Creating static algorithms library: $@"
+	$(AR) $(ARFLAGS) $@ $(OBJECTS)
+	@echo "✓ Static algorithms library created"
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) $(LIBRARY)
+	rm -f $(OBJECTS) $(SHARED_LIB) $(STATIC_LIB)
 
-install: $(LIBRARY)
-	cp $(LIBRARY) /usr/local/lib/
+install: $(SHARED_LIB) $(STATIC_LIB)
+	cp $(SHARED_LIB) $(STATIC_LIB) /usr/local/lib/
 	cp include/*.h /usr/local/include/
 	ldconfig
 
