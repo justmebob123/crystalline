@@ -64,6 +64,33 @@ grep "&amp;amp;" src/ai/cllm_threads.c  # Should return nothing
 - `&amp;quot;` → `"`
 - `&amp;#39;` → `'`
 
+### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
+All code must compile with zero warnings before moving to the next objective.
+
+**Requirements:**
+- Build with -Wall -Wextra flags enabled
+- Address ALL warnings, not just errors
+- Categorize warnings by priority (High, Medium, Low)
+- Fix high-priority warnings immediately
+- Document any warnings that cannot be fixed
+
+**Process:**
+1. Run full clean build: `make clean && make 2>&1 | tee build.log`
+2. Count warnings: `grep -c "warning:" build.log`
+3. If warnings > 0:
+   - Categorize by type and priority
+   - Fix high-priority warnings first
+   - Fix medium-priority warnings next
+   - Document low-priority warnings if cannot fix
+4. Rebuild and verify: `make clean && make`
+5. Only proceed when warning count = 0 (or all documented)
+
+**Warning Priority:**
+- **High**: Type mismatches, incompatible pointers, implicit declarations
+- **Medium**: Sign comparisons, unused parameters, macro redefinitions
+- **Low**: Format truncation, unused functions
+
+
 ---
 
 ## 🎯 COMPREHENSIVE OBJECTIVES

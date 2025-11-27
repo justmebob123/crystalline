@@ -1,87 +1,57 @@
 # TODO - Crystalline CLLM Master Plan Execution
 
-## Current Focus: OBJECTIVE 14 - Comprehensive Repository Validation
+## Current Focus: OBJECTIVE 7A - Phase 4: Complete Dynamic Thread Spawning
 
-### Phase 1: Initial Cleanup ✅ COMPLETE
+**Context**: We completed Phase 1-3 of OBJECTIVE 7A (control/worker distinction, recursive distribution, spawning infrastructure). Now we need to complete Phase 4: actual dynamic spawning implementation.
 
-- [x] Remove all compiled object files from source directories (99 files removed)
-- [x] Update .gitignore to prevent future compiled file commits
-- [x] Create comprehensive file inventory (analyze_repository.py)
-- [x] Generate validation reports
-- [x] Create VALIDATION_CHECKLIST.md
-- [x] Commit and push all changes
+### OBJECTIVE 7A - Phase 4: Complete Dynamic Spawning (IN PROGRESS)
 
-**Results:**
-- Zero .o files in source tree ✅
-- Comprehensive inventory generated ✅
-- 2,363 files analyzed and categorized ✅
-- Critical issues identified ✅
+**What's Already Done:**
+- ✅ Phase 1: Control vs Worker thread distinction implemented
+- ✅ Phase 2: Recursive work distribution verified (emergent from state machine)
+- ✅ Phase 3: Dynamic spawning/termination infrastructure created
+  - `sphere_can_spawn_children()` - checks if spawning allowed
+  - `sphere_spawn_child()` - creates and starts child thread
+  - `sphere_terminate_child()` - stops and frees child thread
+  - `sphere_check_spawn_children()` - decision logic
+  - `sphere_check_terminate_children()` - cleanup logic
 
-### Phase 2: Source Code Validation (NEXT - READY TO START)
+**What Needs to Be Done:**
 
-**Immediate Actions:**
-1. Delete large log files (672 MB total)
-   - test_kissing_spheres.log (336 MB)
-   - outputs/workspace_output_KISSING_SPHERES_TRAINING_251.txt (336 MB)
+1. **Add Global Sphere ID Counter to ThreadSystem**
+   - [ ] Add `atomic_uint sphere_id_counter` to ThreadedTrainingSystem structure
+   - [ ] Initialize in `threaded_training_create()`
+   - [ ] Use atomic increment when spawning new spheres
 
-2. Run full build verification
-   - make clean
-   - make (verify zero warnings)
-   - make test (verify all tests pass)
+2. **Implement Actual Spawning in CONTROLLING State**
+   - [ ] Replace TODO in `cllm_threads_spawn.c` with actual spawning logic
+   - [ ] Use `sphere_check_spawn_children()` to determine how many to spawn
+   - [ ] Call `sphere_spawn_child()` for each new thread
+   - [ ] Maintain 12-fold symmetry (spawn 1, 3, 6, or 12 at a time)
 
-3. Validate priority C source files:
-   - [ ] src/ai/cllm_training_threaded.c (threading core)
-   - [ ] src/ai/cllm_training.c (training core)
-   - [ ] src/ai/cllm_crystalline_training.c (crystalline integration)
-   - [ ] src/ai/cllm_threads.c (thread management)
-   - [ ] src/ai/cllm_threads_dynamic.c (dynamic threading)
-   - [ ] src/ai/cllm_threads_spawn.c (thread spawning)
-   - [ ] src/ai/cllm_recursive_spheres.c (recursive geometry)
+3. **Implement Actual Termination**
+   - [ ] Replace TODO in termination logic with actual cleanup
+   - [ ] Call `sphere_terminate_child()` for idle children
+   - [ ] Ensure proper memory cleanup
+   - [ ] Verify no memory leaks
 
-4. Check for HTML entity issues in all C files
-   - Use tools/fix_html_entities.py as needed
+4. **Fix Thread Termination Hang**
+   - [ ] Investigate deadlock in termination sequence
+   - [ ] Add proper cleanup for CONTROLLING state
+   - [ ] Ensure clean shutdown of all threads
 
-5. Verify crystalline math usage (no math.h)
-   - grep -r "math.h" src/ include/
-   - Should return zero results in core libraries
+5. **Test Dynamic Spawning**
+   - [ ] Test with varying workloads
+   - [ ] Verify dynamic expansion behavior
+   - [ ] Verify dynamic collapse behavior
+   - [ ] Verify 12-fold symmetry maintained
 
-### Phase 3: Documentation Validation (PENDING)
-- [ ] Review all 197 markdown files
-- [ ] Consolidate duplicate documentation
-- [ ] Remove obsolete documentation
-- [ ] Update README.md with current state
+### After OBJECTIVE 7A Phase 4:
 
-### Phase 4: Data File Validation (PENDING)
-- [ ] Review 1,746 text files
-- [ ] Consolidate checkpoint directories (9+ directories)
-- [ ] Organize test data
-- [ ] Clean up large files
-
-### Phase 5-10: Remaining Validation Phases (PENDING)
-- See VALIDATION_CHECKLIST.md for details
-
----
-
-## Repository Statistics
-
-**Current State:**
-- Total Files: 2,363
-- Git Tracked: 475 (20%)
-- Untracked: 1,888 (80%)
-- Total Size: 735.9 MB
-- **Target Size**: < 100 MB
-
-**Source Code:**
-- C Files: 214 (75,100 lines)
-- Headers: 94 (16,089 lines)
-- Python: 6 (719 lines)
-- Shell: 21 (1,981 lines)
-- Documentation: 197 (52,579 lines)
-
-**Critical Issues:**
-1. Large log files: 672 MB (needs deletion)
-2. Multiple checkpoint dirs: 9+ directories (needs consolidation)
-3. Untracked files: 1,888 files (needs review)
+**Next Objective: OBJECTIVE 8A - Remove ALL Conditional Compilation**
+- Remove feature flags
+- Remove conditional compilation (#ifdef blocks)
+- One codebase, one design, no toggles
 
 ---
 
@@ -123,36 +93,62 @@
 - Discovered recursive distribution already working
 - Emergent behavior from state machine design
 
-### OBJECTIVE 7A - Phase 3: Dynamic Thread Spawning ✅ (Infrastructure)
+### OBJECTIVE 7A - Phase 3: Dynamic Thread Spawning Infrastructure ✅
 - Created complete dynamic spawning/termination API
 - Infrastructure complete, actual spawning pending
 
-### OBJECTIVE 14 - Phase 1: Initial Cleanup ✅
-- Removed all compiled object files
-- Updated .gitignore comprehensively
-- Created repository analysis tools
-- Generated comprehensive inventory
-- Created validation checklist
+---
+
+## Build Status
+
+**Current Build**: 56 warnings (from Phase 2 validation)
+**Target**: 0 warnings (per RULE 7)
+
+**High Priority Warnings (19):**
+- Type compatibility issues (7)
+- Macro redefinitions (12)
+
+**Medium Priority Warnings (13):**
+- Sign comparisons (7)
+- Unused parameters (6)
+
+**Low Priority Warnings (24):**
+- Format truncation (8)
+- Unused functions (2)
+- Redefined macros (2)
+
+**Note**: Per RULE 7, we should fix these warnings, but let's complete OBJECTIVE 7A Phase 4 first since we're so close.
 
 ---
 
 ## Git Status
 
 **Repository**: justmebob123/crystalline (main branch)
-**Latest Commit**: f6eb62b - OBJECTIVE 14 Phase 1 complete
+**Latest Commit**: 065e0c0 - docs: Add Phase 2 completion summary
 **Status**: All changes committed and pushed ✅
 
 ---
 
 ## Next Actions
 
-1. **Delete large log files** (immediate - will save 672 MB)
-2. **Run full build verification** (immediate)
-3. **Validate core C source files** (high priority)
-4. **Consolidate checkpoint directories** (high priority)
-5. **Continue with Phase 2 validation** (ongoing)
+1. **Complete OBJECTIVE 7A Phase 4** (current focus)
+   - Add global sphere_id counter
+   - Implement actual spawning logic
+   - Implement actual termination logic
+   - Fix thread termination hang
+   - Test dynamic spawning
+
+2. **Then move to OBJECTIVE 8A** (next objective)
+   - Remove conditional compilation
+   - Remove feature flags
+
+3. **Then fix build warnings** (per RULE 7)
+   - Fix high-priority warnings (19)
+   - Fix medium-priority warnings (13)
+   - Document low-priority warnings (24)
 
 ---
 
-**Last Updated**: OBJECTIVE 14 Phase 1 Complete
-**Ready For**: Phase 2 - Source Code Validation
+**Last Updated**: Back on track - OBJECTIVE 7A Phase 4
+**Current Objective**: OBJECTIVE 7A - Phase 4: Complete Dynamic Thread Spawning
+**Next Objective**: OBJECTIVE 8A - Remove ALL Conditional Compilation
