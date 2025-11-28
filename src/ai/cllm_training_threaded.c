@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 3A: Removed - using crystalline math only
 #include <unistd.h>
 
 /**
@@ -1152,12 +1152,12 @@ static int validate_gradients(float* gradients, size_t size, const char* source)
     int inf_count = 0;
     
     for (size_t i = 0; i < size; i++) {
-        if (isnan(gradients[i])) {
+        if (prime_isnanf(gradients[i])) {
             nan_count++;
             if (nan_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: NaN gradient in %s at index %zu\n", source, i);
             }
-        } else if (isinf(gradients[i])) {
+        } else if (prime_isinff(gradients[i])) {
             inf_count++;
             if (inf_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: Inf gradient in %s at index %zu: %f\n", source, i, gradients[i]);
@@ -1182,7 +1182,7 @@ static void clip_gradients(float* gradients, size_t size, float max_norm) {
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    norm = sqrtf(norm);
+    norm = prime_sqrtf(norm);
     
     if (norm > max_norm) {
         float scale = max_norm / norm;
