@@ -4,6 +4,9 @@
 #include "cllm_training.h"
 #include "cllm_batch.h"
 
+// Forward declarations
+typedef struct CLLMBatchIterator CLLMBatchIterator;
+
 /**
  * CLLM Hierarchical Training System
  * 
