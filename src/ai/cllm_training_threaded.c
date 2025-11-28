@@ -17,6 +17,8 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_control_process.h"
+#include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
+#include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "prime_float_math.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -70,6 +72,10 @@ struct SphereTrainingContext {
     int num_children;                          // Number of active children
     SphereTrainingContext* parent;             // Parent context (NULL for root)
     CLLMLatticeHierarchy* hierarchy_node;      // Corresponding hierarchy node
+    
+    // PHASE 7: Sphere Integration
+    SphereStatistics sphere_stats;             // Sphere statistics tracking
+    void* sphere_geometry;                     // Sphere geometry data (future)
 };
 
 /**
@@ -175,6 +181,10 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->num_children = 0;
     ctx->parent = NULL;          // Will be set if spawned
     ctx->hierarchy_node = NULL;  // Will be linked to hierarchy
+    
+    // PHASE 7: Initialize sphere statistics
+    cllm_sphere_stats_init(&ctx->sphere_stats, symmetry_group, 0);
+    ctx->sphere_geometry = NULL;  // Future: sphere geometry data
     return ctx;
 }
 
@@ -260,6 +270,9 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     
     ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0f;
     ctx->batches_processed++;
+    
+    // PHASE 7: Record sphere statistics
+    cllm_sphere_stats_record_batch(&ctx->sphere_stats, ctx->batch_loss, valid_sequences);
     
     // PHASE 4: Lock-free gradient accumulation
     // Each worker writes ONLY to its own segment (no locking needed)
