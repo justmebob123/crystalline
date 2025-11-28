@@ -19,6 +19,7 @@
 #include "../include/prime_float_math.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
+#include "../include/ai/cllm_simple_loss.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
@@ -94,17 +95,7 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
     return pos;
 }
 
-/**
- * Compute distance between tokens in Ulam spiral
- */
-static float ulam_distance(uint32_t token1, uint32_t token2) {
-    UlamPosition pos1 = compute_ulam_position(token1);
-    UlamPosition pos2 = compute_ulam_position(token2);
-    
-    int dx = pos1.x - pos2.x;
-    int dy = pos1.y - pos2.y;
-    return prime_sqrtf((float)(dx*dx + dy*dy));
-}
+// REMOVED: ulam_distance() - No longer used after switching to pure crystalline loss with clock lattice
 
 /**
  * Pure Crystalline Loss Function (ASI Design - Phase 1)
@@ -176,44 +167,9 @@ float cllm_compute_crystalline_loss(
     return count > 0 ? total_loss / count : 0.0f;
 }
 
-/**
- * LEGACY: Old crystalline loss (uses token_id, not prime_encoding)
- * Kept for comparison only - DO NOT USE
- */
-float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
-                        uint32_t* target_tokens, int num_tokens) {
-    if (!training || !input_tokens || !target_tokens) return 0.0f;
-    if (!training->model) return 0.0f;
-    
-    // LEGACY: This uses token_id for GCD, which is WRONG
-    // Use cllm_compute_crystalline_loss() instead
-    float total_loss = 0.0f;
-    int count = 0;
-    
-    int safe_num_tokens = num_tokens;
-    if (safe_num_tokens > training->config.batch_size * training->config.sequence_length) {
-        fprintf(stderr, "WARNING: num_tokens (%d) exceeds batch size, clamping\n", num_tokens);
-        safe_num_tokens = training->config.batch_size * training->config.sequence_length;
-    }
-    
-    for (int i = 0; i < safe_num_tokens; i++) {
-        uint32_t input = input_tokens[i];
-        uint32_t target = target_tokens[i];
-        
-        if (input >= training->model->vocab_size || target >= training->model->vocab_size) {
-            continue;
-        }
-        
-        float similarity = crystalline_gcd_similarity(input + 1, target + 1);
-        float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
-        float combined = 0.7f * similarity + 0.3f * spatial_similarity;
-        float clamped = combined > 1e-10f ? combined : 1e-10f;
-        total_loss += -prime_logf(clamped);
-        count++;
-    }
-    
-    return count > 0 ? total_loss / count : 0.0f;
-}
+// REMOVED: Legacy cllm_compute_loss() function (lines 178-216)
+// This function was DEPRECATED and WRONG - it used token IDs for GCD instead of learned prime encodings.
+// All code now uses cllm_compute_crystalline_loss() which correctly uses model->tokens[id].prime_encoding.
 
 /**
  * Sort tokens by Ulam spiral position for better cache locality
@@ -1090,8 +1046,8 @@ float cllm_train_epoch(CLLMTraining* training) {
         // Forward pass with activation storage
         cllm_forward_training(training, input_tokens);
         
-        // Compute loss using GCD-based similarity (O(log n) vs O(n) for dot product)
-        float loss = cllm_compute_loss(training, input_tokens, target_tokens, 
+        // Compute loss using PURE CRYSTALLINE LOSS (GCD-based with learned prime encodings)
+        float loss = cllm_compute_crystalline_loss(training->model, input_tokens, target_tokens, 
                                                    training->config.batch_size * training->config.sequence_length);
         epoch_loss += loss;
         num_batches++;

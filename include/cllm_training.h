@@ -146,7 +146,8 @@ typedef struct {
 
 /* Loss computation functions */
 // OBJECTIVE 2B: Only crystalline loss remains - standard loss functions removed
-float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
+// REMOVED: float cllm_compute_loss() - Legacy function that used token IDs instead of prime encodings
+// Use cllm_compute_crystalline_loss() from cllm_simple_loss.h instead
 float cllm_compute_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size);
 float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
 

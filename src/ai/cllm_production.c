@@ -10,6 +10,7 @@
  */
 
 #include "cllm_training.h"
+#include "ai/cllm_simple_loss.h"
 #include "cllm_format.h"
 #include <stdlib.h>
 #include <string.h>
@@ -151,7 +152,7 @@ float evaluate_validation(CLLMTraining* training, ValidationSet* val_set) {
         
         // Forward pass only (no backward)
         float loss = cllm_forward_training(training, input_tokens);
-        loss += cllm_compute_loss(training, input_tokens, target_tokens, batch_tokens);
+        loss += cllm_compute_crystalline_loss(training->model, input_tokens, target_tokens, batch_tokens);
         
         total_loss += loss;
         num_batches++;
