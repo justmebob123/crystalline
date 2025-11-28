@@ -180,8 +180,9 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     float total_loss = 0.0f;
     
     for (int epoch = 0; epoch < epochs; epoch++) {
-        extern float cllm_train_epoch_crystalline(CLLMTraining* training);
-        float loss = cllm_train_epoch_crystalline(state->training);
+        // OBJECTIVE 2C: Use cllm_train_epoch directly (crystalline is the default)
+        extern float cllm_train_epoch(CLLMTraining* training);
+        float loss = cllm_train_epoch(state->training);
         total_loss += loss;
         printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
     }

@@ -171,6 +171,9 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
  * ENABLED: GCD-based similarity and Ulam spiral locality
  * These provide 20-400x speedup using GCD-based similarity
  */
+// OBJECTIVE 2C: Wrapper function removed - use cllm_train_epoch() directly
+// Crystalline is the default implementation, not an optional mode
+/*
 float cllm_train_epoch_crystalline(CLLMTraining* training) {
     if (!training) return 0.0f;
     
@@ -199,3 +202,4 @@ float cllm_train_epoch_crystalline(CLLMTraining* training) {
     
     return epoch_loss;
 }
+*/

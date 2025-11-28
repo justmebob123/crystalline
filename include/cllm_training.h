@@ -145,14 +145,8 @@ typedef struct {
 } CLLMTraining;
 
 /* Loss computation functions */
+// OBJECTIVE 2B: Only crystalline loss remains - standard loss functions removed
 float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
-float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size);
-void cllm_compute_loss_gradient(float* logits, uint32_t target, float* grad_output, int vocab_size);
-float cllm_compute_batch_loss(float* logits, uint32_t* targets, int batch_size, int vocab_size);
-float cllm_compute_perplexity(float loss);
-float cllm_compute_label_smoothing_loss(float* logits, uint32_t target, int vocab_size, float smoothing);
-float cllm_compute_kl_divergence(float* logits, float* target_dist, int vocab_size);
-float cllm_compute_sequence_loss(float* logits, uint32_t* targets, int seq_len, int vocab_size);
 float cllm_compute_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size);
 float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
 

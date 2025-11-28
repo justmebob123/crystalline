@@ -34,6 +34,7 @@ void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens);
  * Train one epoch using crystalline optimizations
  * Expected speedup: 20-400x over standard training
  */
-float cllm_train_epoch_crystalline(CLLMTraining* training);
+// OBJECTIVE 2C: Removed - use cllm_train_epoch() directly (crystalline is the default)
+// float cllm_train_epoch_crystalline(CLLMTraining* training);
 
 #endif /* CLLM_CRYSTALLINE_TRAINING_H */
