@@ -2,7 +2,8 @@
 
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra -O2 -fPIC -I.
+CFLAGS = -Wall -Wextra -O2 -fPIC -I. $(shell pkg-config --cflags libzip libxml-2.0)
+LDFLAGS = $(shell pkg-config --libs libzip libxml-2.0)
 ARFLAGS = rcs
 
 # Source files
@@ -11,8 +12,9 @@ FORMAT_SOURCES = formats/simple_formats.c formats/cli_extractors.c \
                  formats/office_xml.c formats/odf.c formats/epub.c \
                  formats/yaml.c formats/html.c formats/email.c \
                  formats/archive.c
+UTIL_SOURCES = utils/zip_utils.c utils/xml_utils.c
 
-SOURCES = $(CORE_SOURCES) $(FORMAT_SOURCES)
+SOURCES = $(CORE_SOURCES) $(FORMAT_SOURCES) $(UTIL_SOURCES)
 OBJECTS = $(SOURCES:.c=.o)
 
 # Library names
@@ -25,7 +27,7 @@ all: $(SHARED_LIB) $(STATIC_LIB)
 # Shared library
 $(SHARED_LIB): $(OBJECTS)
 	@echo "Creating document processing shared library: $@"
-	$(CC) -shared -o $@ $(OBJECTS)
+	$(CC) -shared -o $@ $(OBJECTS) $(LDFLAGS)
 	@echo "✓ Document processing shared library created"
 
 # Static library
