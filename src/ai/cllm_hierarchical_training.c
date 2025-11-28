@@ -58,50 +58,73 @@ struct HierarchicalTrainingSystem {
 };
 
 /**
- * Calculate optimal hierarchy structure for given thread count
+ * Calculate optimal hierarchy structure based on model symmetry
+ * 
+ * The model structure dictates the hierarchy:
+ * - Model has symmetry_order (typically 12)
+ * - Create one Level-1 control per symmetry group
+ * - Distribute remaining threads as Level-2 workers
  */
-static void calculate_hierarchy_structure(int total_threads, int* num_level1, int* num_level2) {
+static void calculate_hierarchy_structure(int total_threads, int model_symmetry_order,
+                                          int* num_level1, int* num_level2) {
     if (total_threads <= 1) {
         *num_level1 = 0;
         *num_level2 = 0;
         return;
     }
     
-    if (total_threads <= 13) {
-        // Small: just root + workers
+    if (total_threads <= model_symmetry_order + 1) {
+        // Small: just root + workers (no intermediate level)
         *num_level1 = total_threads - 1;
         *num_level2 = 0;
         return;
     }
     
-    // Optimal: root + 12 Level-1 controls + remaining workers
-    *num_level1 = 12;
-    *num_level2 = total_threads - 1 - 12;
+    // Optimal: root + symmetry_order Level-1 controls + remaining workers
+    // This matches the model's natural structure
+    *num_level1 = model_symmetry_order;
+    *num_level2 = total_threads - 1 - model_symmetry_order;
+    
+    printf("  Hierarchy matches model symmetry:\n");
+    printf("    Model symmetry order: %d\n", model_symmetry_order);
+    printf("    Level-1 controls: %d (one per symmetry group)\n", *num_level1);
+    printf("    Level-2 workers: %d (distributed across groups)\n", *num_level2);
 }
 
 /**
- * Create recursive sphere hierarchy
+ * Create recursive sphere hierarchy based on model structure
  */
 static int create_sphere_hierarchy(HierarchicalTrainingSystem* system) {
+    // Get model symmetry order (typically 12)
+    int model_symmetry_order = system->training->model->header.symmetry_order;
+    
+    if (model_symmetry_order == 0) {
+        fprintf(stderr, "WARNING: Model symmetry_order is 0, defaulting to 12\n");
+        model_symmetry_order = 12;
+    }
+    
     int num_level1, num_level2;
-    calculate_hierarchy_structure(system->total_threads, &num_level1, &num_level2);
+    calculate_hierarchy_structure(system->total_threads, model_symmetry_order, 
+                                   &num_level1, &num_level2);
     
     system->num_level1 = num_level1;
     system->num_level2 = num_level2;
     
-    printf("Creating hierarchy:\n");
+    printf("Creating hierarchy based on model structure:\n");
     printf("  Level 0: 1 root (Node Zero)\n");
-    printf("  Level 1: %d spheres\n", num_level1);
-    printf("  Level 2: %d spheres\n", num_level2);
+    printf("  Level 1: %d spheres (one per symmetry group)\n", num_level1);
+    printf("  Level 2: %d spheres (workers)\n", num_level2);
     
     // Create Level 1 spheres (children of root)
+    // Each Level-1 sphere corresponds to one symmetry group from the model
     for (int i = 0; i < num_level1; i++) {
-        int symmetry_group = i % 12;
+        // Symmetry group matches model structure
+        int symmetry_group = i % model_symmetry_order;
         
         CLLMLatticeHierarchy* level1_sphere = lattice_hierarchy_create(
             i + 1,                    // sphere_id
             1,                        // hierarchy_level
-            &symmetry_group,          // symmetry_groups
+            &symmetry_group,          // symmetry_groups (matches model!)
             1,                        // num_symmetry_groups
             i + 1,                    // physical_thread_id
             system->root              // parent
@@ -111,6 +134,8 @@ static int create_sphere_hierarchy(HierarchicalTrainingSystem* system) {
             fprintf(stderr, "ERROR: Failed to create Level 1 sphere %d\n", i);
             return -1;
         }
+        
+        printf("  Created Level-1 sphere %d for symmetry group %d\n", i, symmetry_group);
         
         // Add as child to root
         if (lattice_hierarchy_add_child(system->root, level1_sphere) != 0) {
@@ -235,6 +260,57 @@ static void* sphere_thread_func(void* arg) {
     return NULL;
 }
 
+
+/**
+ * Distribute batch by token symmetry groups
+ * 
+ * Each token in the batch has a symmetry_group (0-11).
+ * We analyze the batch and send it to the Level-1 control
+ * that handles the most tokens in this batch.
+ */
+static int get_dominant_symmetry_group(CLLMBatch* batch, CLLMModel* model) {
+    if (!batch || !model || batch->batch_size == 0) {
+        return 0;  // Default to group 0
+    }
+    
+    // Count tokens per symmetry group
+    int group_counts[12] = {0};
+    int model_symmetry_order = model->header.symmetry_order;
+    
+    if (model_symmetry_order == 0) {
+        model_symmetry_order = 12;
+    }
+    
+    // Analyze batch tokens
+    for (uint32_t i = 0; i < batch->batch_size * batch->seq_len; i++) {
+        uint32_t token_id = batch->input_ids[i];
+        
+        if (token_id < model->vocab_size && model->tokens) {
+            // Get token's symmetry group from model
+            uint32_t group = model->tokens[token_id].symmetry_group;
+            if (group < 12) {
+                group_counts[group]++;
+            }
+        } else {
+            // Fallback: use token_id % symmetry_order
+            uint32_t group = token_id % model_symmetry_order;
+            group_counts[group]++;
+        }
+    }
+    
+    // Find dominant group
+    int max_count = 0;
+    int dominant_group = 0;
+    for (int g = 0; g < model_symmetry_order && g < 12; g++) {
+        if (group_counts[g] > max_count) {
+            max_count = group_counts[g];
+            dominant_group = g;
+        }
+    }
+    
+    return dominant_group;
+}
+
 /**
  * Root control thread (Node Zero)
  */
@@ -249,7 +325,9 @@ static void* root_control_thread(void* arg) {
     cllm_batch_iterator_reset(system->batch_iterator);
     
     int batches_distributed = 0;
-    int current_child = 0;  // Round-robin distribution
+    int group_distribution[12] = {0};  // Track distribution per group
+    CLLMModel* model = system->training->model;
+    printf("[Node Zero] Using symmetry-based distribution (not round-robin)\n");
     
     while (atomic_load(&system->running)) {
         // Get next batch
@@ -260,8 +338,22 @@ static void* root_control_thread(void* arg) {
             break;
         }
         
-        // Distribute to Level-1 child (round-robin)
-        CLLMLatticeHierarchy* target = root->children[current_child];
+        // Determine which symmetry group this batch belongs to
+        int symmetry_group = get_dominant_symmetry_group(batch, model);
+        
+        // Find Level-1 control for this symmetry group
+        CLLMLatticeHierarchy* target = NULL;
+        for (int i = 0; i < root->num_children; i++) {
+            if (root->children[i]->primary_symmetry_group == symmetry_group) {
+                target = root->children[i];
+                break;
+            }
+        }
+        
+        if (!target) {
+            // Fallback: use modulo
+            target = root->children[symmetry_group % root->num_children];
+        }
         
         // Create message
         SphereMessage* msg = (SphereMessage*)malloc(sizeof(SphereMessage));
@@ -275,6 +367,8 @@ static void* root_control_thread(void* arg) {
         msg->priority = MSG_PRIORITY_NORMAL;
         msg->sender_id = 0;
         msg->receiver_id = target->sphere_id;
+        msg->sender_symmetry_group = -1;  // Root has all groups
+        msg->receiver_symmetry_group = symmetry_group;
         
         // Store batch pointer in generic_data
         msg->payload.generic_data[0] = (uint64_t)(uintptr_t)batch;
@@ -284,20 +378,29 @@ static void* root_control_thread(void* arg) {
         
         // Send to child
         if (!message_queue_enqueue(target->inbox, msg)) {
-            fprintf(stderr, "[Node Zero] ERROR: Failed to send message to child %d\n", current_child);
+            fprintf(stderr, "[Node Zero] ERROR: Failed to send message to child (group %d)\n", symmetry_group);
             free(msg);
             continue;
         }
         
         batches_distributed++;
-        current_child = (current_child + 1) % root->num_children;
+        group_distribution[symmetry_group]++;
         
         if (batches_distributed % 100 == 0) {
-            printf("[Node Zero] Distributed %d batches\n", batches_distributed);
+            printf("[Node Zero] Distributed %d batches (by symmetry group)\n", batches_distributed);
         }
     }
     
     printf("[Node Zero] All %d batches distributed\n", batches_distributed);
+    
+    // Show distribution by symmetry group
+    printf("[Node Zero] Distribution by symmetry group:\n");
+    for (int g = 0; g < 12; g++) {
+        if (group_distribution[g] > 0) {
+            printf("  Group %2d: %d batches (%.1f%%)\n", g, group_distribution[g],
+                   100.0 * group_distribution[g] / batches_distributed);
+        }
+    }
     system->total_batches = batches_distributed;
     
     // Signal epoch done
