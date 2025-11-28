@@ -1918,11 +1918,11 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
  * Workers pull batches from work queue (no barriers!)
  * Main thread pushes batches and waits for completion
  */
-float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
+float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch) {
     if (!system) return 0.0f;
     
     printf("\n=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===\n");
-    printf("Using %d worker threads (lock-free work queue)\n", system->num_worker_spheres);
+    printf("Epoch %d - Using %d worker threads (lock-free work queue)\n", current_epoch + 1, system->num_worker_spheres);
     
     // UI Integration: Update framework status
     if (system->metrics) {
@@ -1950,7 +1950,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     
     // UI Integration: Initialize epoch metrics
     if (system->metrics) {
-        cllm_metrics_update_training_progress(system->metrics, 0, 0, total_batches_in_epoch);
+        cllm_metrics_update_training_progress(system->metrics, current_epoch, 0, total_batches_in_epoch);
         system->metrics->training.elapsed_time_seconds = 0.0;
         system->metrics->training.estimated_time_remaining_seconds = 0.0;
         system->metrics->training.batches_per_second = 0.0f;
@@ -1983,7 +1983,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
             
             // UI Integration: Update step progress
         if (system->metrics) {
-            cllm_metrics_update_training_progress(system->metrics, 0, batches_pushed, total_batches_in_epoch);
+            cllm_metrics_update_training_progress(system->metrics, current_epoch, batches_pushed, total_batches_in_epoch);
                 
                 // Calculate timing metrics
                 double elapsed = difftime(time(NULL), epoch_start_time);

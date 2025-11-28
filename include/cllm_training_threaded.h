@@ -136,9 +136,10 @@ void threaded_training_free(ThreadedTrainingSystem* system);
  * Includes real-time UI metrics updates and timing estimates.
  * 
  * @param system Threaded training system
+ * @param current_epoch Current epoch number (for metrics display)
  * @return Average epoch loss
  */
-float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system);
+float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch);
 
 /**
  * Print threading statistics

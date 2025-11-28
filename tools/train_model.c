@@ -207,7 +207,7 @@ ThreadedTrainingSystem* threaded_system = threaded_training_create(
         cllm_batch_iterator_reset(batch_iterator);
         
            // Train one epoch (lock-free work queue)
-           float epoch_loss = threaded_train_epoch_lockfree(threaded_system);
+           float epoch_loss = threaded_train_epoch_lockfree(threaded_system, epoch);
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);

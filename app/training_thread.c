@@ -67,8 +67,8 @@ static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
             state->sphere_stats.avg_loss[i] = metrics->training.current_loss;
             state->sphere_stats.total_batches += thread->batches_processed;
             
-            // Count active threads
-            if (thread->state == 1 || thread->state == 3) {  // WORKING or WAITING
+            // Count active threads (WORKING, WAITING, or CONTROL)
+            if (thread->state == 1 || thread->state == 2 || thread->state == 3) {  // WORKING, CONTROL, or WAITING
                 state->sphere_stats.active_spheres++;
             }
         }
@@ -225,7 +225,7 @@ void* training_thread_func(void* arg) {
                state->training_current_epoch + 1, state->training_epochs);
         
         // Train one epoch using lock-free work queue (Phase 2B)
-        float loss = threaded_train_epoch_lockfree(g_threaded_system);
+        float loss = threaded_train_epoch_lockfree(g_threaded_system, state->training_current_epoch);
         
         // Update state (thread-safe)
         pthread_mutex_lock(&training_mutex);

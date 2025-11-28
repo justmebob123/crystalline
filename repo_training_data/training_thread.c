@@ -142,7 +142,7 @@ void* training_thread_func(void* arg) {
                state->training_current_epoch + 1, state->training_epochs);
         
         // Train one epoch using 12-way parallelization
-        float loss = threaded_train_epoch_lockfree(g_threaded_system);
+        float loss = threaded_train_epoch_lockfree(g_threaded_system, state->training_current_epoch);
         
         // Update state (thread-safe)
         pthread_mutex_lock(&training_mutex);

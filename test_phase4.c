@@ -74,7 +74,7 @@ int main() {
     printf("  Active workers: %d\n", threaded_training_get_num_workers(system));
     
     printf("\nRunning 1 epoch...\n");
-    float loss = threaded_train_epoch_lockfree(system);
+    float loss = threaded_train_epoch_lockfree(system, 0);
     printf("✓ Epoch complete, loss: %.4f\n", loss);
     
     printf("\nChecking gradient norm...\n");
