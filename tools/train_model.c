@@ -18,7 +18,8 @@
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 // Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
-#include "../include/cllm_training_threaded.h"
+// Removed: #include "../include/cllm_training_threaded.h" - replaced with hierarchical
+#include "../include/ai/cllm_hierarchical_training.h"
 // Removed: #include "../include/cllm_recursive_spheres.h" - RecursiveSphere was duplicate code, deleted
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
@@ -173,15 +174,16 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         goto cleanup;
     }
     
-    ThreadedTrainingSystem* threaded_system = threaded_training_create(
-        training, batch_iterator, num_threads);
-    if (!threaded_system) {
-        cllm_batch_iterator_free(batch_iterator);
-        fprintf(stderr, "Failed to create threaded system\n");
-        goto cleanup;
-    }
-    printf("✓ Threaded system with %d workers\n\n", num_threads);
-    
+HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
+           training, num_threads, batch_iterator);
+       if (!hierarchical_system) {
+           cllm_batch_iterator_free(batch_iterator);
+           fprintf(stderr, "Failed to create hierarchical training system\n");
+           goto cleanup;
+       }
+       printf("✓ Hierarchical training system with %d threads\n", num_threads);
+       printf("  Architecture: 1 root + 12 Level-1 controls + %d workers\n", num_threads - 13);
+       printf("  Using model's 12-fold symmetry structure\n\n");    
     for (int epoch = 0; epoch < config->num_epochs; epoch++) {
         training->current_epoch = epoch;
         
@@ -193,9 +195,8 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         // Reset batch iterator for new epoch
         cllm_batch_iterator_reset(batch_iterator);
         
-        // Train one epoch (reusing threaded system)
-        float epoch_loss = threaded_train_epoch(threaded_system);
-        threaded_training_print_stats(threaded_system);
+           // Train one epoch (reusing hierarchical system)
+           float epoch_loss = hierarchical_train_epoch(hierarchical_system);
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
@@ -217,9 +218,9 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         }
     }
     
-    // Cleanup threaded system after all epochs
-    threaded_training_free(threaded_system);
-    cllm_batch_iterator_free(batch_iterator);
+       // Cleanup hierarchical system after all epochs
+       hierarchical_training_free(hierarchical_system);
+       cllm_batch_iterator_free(batch_iterator);
     
     
     time_t end_time = time(NULL);

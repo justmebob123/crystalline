@@ -189,7 +189,7 @@ static int create_sphere_hierarchy(HierarchicalTrainingSystem* system) {
         printf("  Created Level-1 sphere %d for symmetry group %d\n", i, symmetry_group);
         
         // Add as child to root
-        if (lattice_hierarchy_add_child(system->root, level1_sphere) != 0) {
+        if (lattice_hierarchy_add_child(system->root, level1_sphere) == 0) {
             fprintf(stderr, "ERROR: Failed to add Level 1 sphere %d to root\n", i);
             return -1;
         }
@@ -222,7 +222,7 @@ static int create_sphere_hierarchy(HierarchicalTrainingSystem* system) {
             }
             
             // Add as child to Level 1 sphere
-            if (lattice_hierarchy_add_child(parent, level2_sphere) != 0) {
+            if (lattice_hierarchy_add_child(parent, level2_sphere) == 0) {
                 fprintf(stderr, "ERROR: Failed to add Level 2 sphere %d to parent\n", i);
                 return -1;
             }

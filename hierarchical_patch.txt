@@ -1,0 +1,10 @@
+HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
+           training, num_threads, batch_iterator);
+       if (!hierarchical_system) {
+           cllm_batch_iterator_free(batch_iterator);
+           fprintf(stderr, "Failed to create hierarchical training system\n");
+           goto cleanup;
+       }
+       printf("✓ Hierarchical training system with %d threads\n", num_threads);
+       printf("  Architecture: 1 root + 12 Level-1 controls + %d workers\n", num_threads - 13);
+       printf("  Using model's 12-fold symmetry structure\n\n");
