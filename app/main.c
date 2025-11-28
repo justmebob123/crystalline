@@ -138,6 +138,13 @@ AppState* init_app(void) {
         printf("Warning: Could not create recording surface\n");
     }
     
+    // Initialize terminal output buffer
+    state->terminal_buffer = calloc(1, sizeof(TerminalBuffer));
+    if (state->terminal_buffer) {
+        terminal_buffer_init(state->terminal_buffer);
+        printf("✓ Terminal output buffer initialized\n");
+    }
+    
     // Initialize CLLM system
     printf("\n=== Initializing CLLM System ===\n");
     state->cllm_model = NULL;
@@ -234,6 +241,11 @@ void cleanup(AppState* state) {
     // NEW: Free lattice cache
     if (state->lattice_cache) {
         lattice_cache_free(state->lattice_cache);
+    }
+    
+    // Free terminal buffer
+    if (state->terminal_buffer) {
+        free(state->terminal_buffer);
     }
     
     if (state->renderer) SDL_DestroyRenderer(state->renderer);

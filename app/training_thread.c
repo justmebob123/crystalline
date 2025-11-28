@@ -146,6 +146,17 @@ void* training_thread_func(void* arg) {
     printf("  Dataset: %zu tokens\n", num_tokens);
     printf("  Batch requirements: %zu tokens per batch\n", tokens_per_batch);
     
+    // Add to terminal buffer for UI display
+    if (state->terminal_buffer) {
+        char line[256];
+        snprintf(line, sizeof(line), "Validating dataset size...");
+        terminal_buffer_add_line(state->terminal_buffer, line);
+        snprintf(line, sizeof(line), "  Dataset: %zu tokens", num_tokens);
+        terminal_buffer_add_line(state->terminal_buffer, line);
+        snprintf(line, sizeof(line), "  Batch requirements: %zu tokens per batch", tokens_per_batch);
+        terminal_buffer_add_line(state->terminal_buffer, line);
+    }
+    
     // Auto-adjust batch size if dataset too small
     if (num_tokens < tokens_per_batch) {
         int max_batch_size = num_tokens / state->cllm_training->config.sequence_length;
@@ -156,6 +167,20 @@ void* training_thread_func(void* arg) {
         printf("  Available: %zu tokens\n", num_tokens);
         printf("  Auto-adjusting batch_size: %d -> %d\n\n", 
                state->cllm_training->config.batch_size, max_batch_size);
+        
+        // Add to terminal buffer
+        if (state->terminal_buffer) {
+            char line[256];
+            snprintf(line, sizeof(line), "⚠️  WARNING: Dataset too small!");
+            terminal_buffer_add_line(state->terminal_buffer, line);
+            snprintf(line, sizeof(line), "  Required: %zu tokens per batch", tokens_per_batch);
+            terminal_buffer_add_line(state->terminal_buffer, line);
+            snprintf(line, sizeof(line), "  Available: %zu tokens", num_tokens);
+            terminal_buffer_add_line(state->terminal_buffer, line);
+            snprintf(line, sizeof(line), "  Auto-adjusting batch_size: %d -> %d", 
+                    state->cllm_training->config.batch_size, max_batch_size);
+            terminal_buffer_add_line(state->terminal_buffer, line);
+        }
         
         state->cllm_training->config.batch_size = max_batch_size;
         tokens_per_batch = max_batch_size * state->cllm_training->config.sequence_length;
@@ -200,6 +225,19 @@ void* training_thread_func(void* arg) {
     printf("  Batch size: %d sequences\n", state->cllm_training->config.batch_size);
     printf("  Sequence length: %d tokens\n", state->cllm_training->config.sequence_length);
     printf("  Tokens per batch: %zu\n", tokens_per_batch);
+    
+    // Add to terminal buffer
+    if (state->terminal_buffer) {
+        char line[256];
+        snprintf(line, sizeof(line), "✓ Batch iterator created");
+        terminal_buffer_add_line(state->terminal_buffer, line);
+        snprintf(line, sizeof(line), "  Total batches: %zu", num_batches);
+        terminal_buffer_add_line(state->terminal_buffer, line);
+        snprintf(line, sizeof(line), "  Batch size: %d sequences", state->cllm_training->config.batch_size);
+        terminal_buffer_add_line(state->terminal_buffer, line);
+        snprintf(line, sizeof(line), "  Tokens per batch: %zu", tokens_per_batch);
+        terminal_buffer_add_line(state->terminal_buffer, line);
+    }
     
     if (num_batches == 0) {
         printf("\n❌ ERROR: No batches available for training!\n");
@@ -284,6 +322,14 @@ void* training_thread_func(void* arg) {
         printf("Epoch %d/%d - Training with 12 kissing spheres...\n",
                state->training_current_epoch + 1, state->training_epochs);
         
+        // Add to terminal buffer
+        if (state->terminal_buffer) {
+            char line[256];
+            snprintf(line, sizeof(line), "Epoch %d/%d - Training...", 
+                    state->training_current_epoch + 1, state->training_epochs);
+            terminal_buffer_add_line(state->terminal_buffer, line);
+        }
+        
         // Train one epoch using lock-free work queue (Phase 2B)
         float loss = threaded_train_epoch_lockfree(g_threaded_system, state->training_current_epoch);
         
@@ -299,6 +345,14 @@ void* training_thread_func(void* arg) {
         
         printf("✓ Epoch %d complete - Loss: %.4f\n\n", 
                state->training_current_epoch, loss);
+        
+        // Add to terminal buffer
+        if (state->terminal_buffer) {
+            char line[256];
+            snprintf(line, sizeof(line), "✓ Epoch %d complete - Loss: %.4f", 
+                    state->training_current_epoch, loss);
+            terminal_buffer_add_line(state->terminal_buffer, line);
+        }
         
         // Yield to UI thread for responsive updates
         SDL_Delay(10);

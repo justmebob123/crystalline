@@ -605,6 +605,19 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, "Continuously crawling and training...", 
                  crawler_status.x + 10, crawler_status.y + 46, text_color);
     }
+    
+    // Draw terminal output window at bottom (if training in progress)
+    if (state->training_in_progress && state->terminal_buffer) {
+        int terminal_height = 200;
+        int terminal_y = viz_area_rect.y + viz_area_rect.h - terminal_height;
+        SDL_Rect terminal_bounds = {
+            viz_area_rect.x,
+            terminal_y,
+            viz_area_rect.w,
+            terminal_height
+        };
+        draw_terminal_output(renderer, state, terminal_bounds);
+    }
 }
 
 /**
@@ -1143,6 +1156,74 @@ void handle_training_tab_keydown(AppState* state, int key) {
 void handle_training_tab_text_input(AppState* state, const char* text) {
     (void)state;
     (void)text;
+}
+
+/**
+ * Draw terminal output window
+ */
+void draw_terminal_output(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds) {
+    if (!renderer || !state || !state->terminal_buffer) return;
+    
+    SDL_Color bg_color = {20, 20, 25, 255};
+    SDL_Color text_color = {180, 180, 180, 255};
+    SDL_Color header_color = {100, 150, 200, 255};
+    SDL_Color border_color = {60, 60, 70, 255};
+    
+    // Draw background
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+    SDL_RenderFillRect(renderer, &bounds);
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer, border_color.r, border_color.g, border_color.b, 255);
+    SDL_RenderDrawRect(renderer, &bounds);
+    
+    // Draw header
+    draw_text(renderer, "TERMINAL OUTPUT", bounds.x + 10, bounds.y + 5, header_color);
+    
+    // Draw auto-scroll indicator
+    const char* scroll_status = state->terminal_buffer->auto_scroll ? "[Auto-scroll: ON]" : "[Auto-scroll: OFF]";
+    draw_text(renderer, scroll_status, bounds.x + bounds.w - 150, bounds.y + 5, 
+             state->terminal_buffer->auto_scroll ? (SDL_Color){100, 255, 100, 255} : (SDL_Color){255, 100, 100, 255});
+    
+    // Calculate text area
+    int text_x = bounds.x + 10;
+    int text_y = bounds.y + 25;
+    int text_w = bounds.w - 20;
+    int text_h = bounds.h - 30;
+    int line_height = 14;
+    int max_visible_lines = text_h / line_height;
+    
+    // Draw lines from buffer
+    int line_count = terminal_buffer_get_line_count(state->terminal_buffer);
+    int start_line = line_count - max_visible_lines - state->terminal_buffer->scroll_offset;
+    if (start_line < 0) start_line = 0;
+    
+    int y = text_y;
+    for (int i = start_line; i < line_count && y < bounds.y + bounds.h - 5; i++) {
+        const char* line = terminal_buffer_get_line(state->terminal_buffer, i);
+        
+        // Truncate line if too long
+        char display_line[256];
+        int max_chars = text_w / 7;  // Approximate characters per line
+        if (strlen(line) > (size_t)max_chars) {
+            snprintf(display_line, sizeof(display_line), "%.240s...", line);
+        } else {
+            strncpy(display_line, line, sizeof(display_line) - 1);
+            display_line[sizeof(display_line) - 1] = '\0';
+        }
+        
+        draw_text(renderer, display_line, text_x, y, text_color);
+        y += line_height;
+    }
+    
+    // Draw scroll indicator if not at bottom
+    if (state->terminal_buffer->scroll_offset > 0) {
+        char scroll_info[64];
+        snprintf(scroll_info, sizeof(scroll_info), "↑ %d more lines above", 
+                state->terminal_buffer->scroll_offset);
+        draw_text(renderer, scroll_info, bounds.x + bounds.w / 2 - 80, bounds.y + bounds.h - 15,
+                 (SDL_Color){255, 200, 100, 255});
+    }
 }
 
 /**

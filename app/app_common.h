@@ -20,6 +20,7 @@
 #include "../include/cllm_training.h"
 #include "../include/cllm_metrics.h"
 #include "lattice_cache.h"
+#include "terminal_output.h"
 
 // Video-friendly dimensions (16:9 aspect ratio)
 #define WINDOW_WIDTH 1600
@@ -295,6 +296,9 @@ typedef struct {
     
     // UI Integration: Real-time metrics from training system
     CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h
+    
+    // Terminal output buffer for training tab
+    TerminalBuffer* terminal_buffer;  // Defined in terminal_output.h
 } AppState;
 
 // Utility functions - use library versions where available
@@ -346,6 +350,8 @@ void handle_llm_tab_key(AppState* state, SDL_Keycode key);
 // Function declarations from tab_training.c
 void draw_training_tab(SDL_Renderer* renderer, AppState* state);
 void handle_training_tab_click(AppState* state, int x, int y);
+void draw_terminal_output(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds);
+void update_training_visualization(AppState* state);
 void handle_training_tab_text_input(AppState* state, const char* text);
 void handle_training_tab_keydown(AppState* state, SDL_Keycode key);
 bool handle_training_tab_event(AppState* state, SDL_Event* event);
