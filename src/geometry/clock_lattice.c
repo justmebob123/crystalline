@@ -35,7 +35,7 @@
 BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
     BabylonianClockPosition pos;
     
-    if (prime_index <= 12) {
+    if (prime_index < 12) {
         // Ring 0: Hours (12 positions) - OUTER
         pos.ring = 0;
         pos.position = prime_index;
@@ -44,7 +44,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.angle = (pos.position - 3) * (2.0 * PRIME_PI / 12.0);
         pos.radius = 0.25;  // Outer ring (25% from center)
         
-    } else if (prime_index <= 72) {
+    } else if (prime_index < 72) {
         // Ring 1: Minutes (60 positions)
         pos.ring = 1;
         pos.position = prime_index - 12;
@@ -52,14 +52,14 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
         pos.radius = 0.50;  // 50% from center
         
-    } else if (prime_index <= 132) {
+    } else if (prime_index < 132) {
         // Ring 2: Seconds (60 positions)
         pos.ring = 2;
         pos.position = prime_index - 72;
         pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
         pos.radius = 0.75;  // 75% from center
         
-    } else if (prime_index <= 232) {
+    } else if (prime_index < 232) {
         // Ring 3: Milliseconds (100 positions) - INNER
         pos.ring = 3;
         pos.position = prime_index - 132;
