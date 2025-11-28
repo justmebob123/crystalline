@@ -316,7 +316,9 @@ debug: clean all
 
 CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
                   src/crawler/tokenizer.c src/crawler/continuous_training.c \
-                  src/crawler/crawler_api.c src/crawler/file_processor.c
+                  src/crawler/crawler_api.c src/crawler/file_processor.c \
+                  src/crawler/prime_randomization.c src/crawler/link_management.c \
+                  src/crawler/url_patterns.c
 CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 

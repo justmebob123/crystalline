@@ -56,6 +56,7 @@ typedef enum {
     TAB_LLM,           // NEW: LLM Interaction tab
     TAB_TRAINING,      // NEW: Training tab
     TAB_RESEARCH,      // NEW: Research data browser tab
+    TAB_CRAWLER,       // NEW: Web Crawler control tab
     TAB_COUNT
 } TabMode;
 

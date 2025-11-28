@@ -5,6 +5,7 @@
 #include "../include/cllm_format.h"
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
+#include "ui/tabs/tab_crawler.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
@@ -731,6 +732,9 @@ void render(AppState* state) {
             break;
         case TAB_RESEARCH:
             draw_research_tab(state->renderer, state);
+            break;
+        case TAB_CRAWLER:
+            draw_crawler_tab(state);
             break;
         case TAB_COUNT:
             break;
