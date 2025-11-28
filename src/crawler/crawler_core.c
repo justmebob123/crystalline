@@ -17,11 +17,19 @@
 #include <sys/types.h>
 #include <curl/curl.h>
 #include <pthread.h>
+   #include <stdbool.h>
+   #include "../../include/crawler.h"
 
 #define MAX_URL_LENGTH 2048
 #define MAX_PAGE_SIZE (10 * 1024 * 1024)  // 10MB max page size
-#define MIN_DELAY_SECONDS 2
-#define MAX_DELAY_SECONDS 5
+
+// Global rate limiting configuration (can be changed at runtime)
+static int g_min_delay_seconds = 2;
+static int g_max_delay_seconds = 5;
+static int g_delay_minutes = 0;
+static bool g_use_random_delay = true;
+static float g_requests_per_minute = 0.0f;
+static pthread_mutex_t g_rate_config_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Get current timestamp string
@@ -32,22 +40,22 @@ static void get_timestamp(char* buffer, size_t size) {
     strftime(buffer, size, "[%H:%M:%S]", tm_info);
 }
 
-typedef struct {
+   typedef struct {
     char* data;
     size_t size;
     size_t capacity;
 } MemoryBuffer;
-
-typedef struct {
+   struct CrawlerStateInternal {
     char data_dir[1024];
     char start_url[MAX_URL_LENGTH];
     int max_pages;
     int pages_crawled;
     int running;
+    int paused;  // NEW: Pause state
     pthread_mutex_t lock;
     FILE* links_to_crawl;
     FILE* links_crawled;
-} CrawlerStateInternal;
+   };
 
 /**
  * Initialize crawler state (internal function)
@@ -61,6 +69,7 @@ CrawlerStateInternal* crawler_internal_init(const char* data_dir, const char* st
     state->max_pages = max_pages;
     state->pages_crawled = 0;
     state->running = 1;
+    state->paused = 0;  // Not paused initially
     pthread_mutex_init(&state->lock, NULL);
     
     // Create directory structure
@@ -324,11 +333,42 @@ void* crawler_thread_func(void* arg) {
         
         free(buffer.data);
         
-        // Rate limiting: random delay between MIN and MAX seconds
-        int delay = MIN_DELAY_SECONDS + (rand() % (MAX_DELAY_SECONDS - MIN_DELAY_SECONDS + 1));
+        // Rate limiting: configurable delay
+        pthread_mutex_lock(&g_rate_config_mutex);
+        int delay;
+        
+        if (g_requests_per_minute > 0.0f) {
+            // Use requests per minute
+            delay = (int)(60.0f / g_requests_per_minute);
+        } else if (g_delay_minutes > 0) {
+            // Use minutes
+            delay = g_delay_minutes * 60;
+        } else if (g_use_random_delay) {
+            // Random delay between min and max
+            delay = g_min_delay_seconds + (rand() % (g_max_delay_seconds - g_min_delay_seconds + 1));
+        } else {
+            // Fixed delay
+            delay = g_min_delay_seconds;
+        }
+        pthread_mutex_unlock(&g_rate_config_mutex);
+        
         get_timestamp(timestamp, sizeof(timestamp));
-        printf("%s Waiting %d seconds...\n", timestamp, delay);
-        sleep(delay);
+        if (delay >= 60) {
+            printf("%s Waiting %d minutes %d seconds...\n", timestamp, delay / 60, delay % 60);
+        } else {
+            printf("%s Waiting %d seconds...\n", timestamp, delay);
+        }
+        
+        // Check for pause during delay
+        for (int i = 0; i < delay && state->running && !state->paused; i++) {
+            sleep(1);
+        }
+        
+        // Handle pause
+        while (state->paused && state->running) {
+            printf("%s Crawler paused. Waiting...\n", timestamp);
+            sleep(5);
+        }
     }
     
     get_timestamp(timestamp, sizeof(timestamp));
@@ -337,3 +377,74 @@ void* crawler_thread_func(void* arg) {
     
     return NULL;
 }
+
+// ============================================================================
+// RATE LIMITING API
+// ============================================================================
+
+void crawler_set_rate_limit(CrawlerState* state, int min_seconds, int max_seconds) {
+    (void)state;  // State not needed for global config
+    pthread_mutex_lock(&g_rate_config_mutex);
+    g_min_delay_seconds = min_seconds;
+    g_max_delay_seconds = max_seconds;
+    g_delay_minutes = 0;
+    g_requests_per_minute = 0.0f;
+    g_use_random_delay = (min_seconds != max_seconds);
+    pthread_mutex_unlock(&g_rate_config_mutex);
+    
+    printf("Rate limit set: %d-%d seconds between requests\n", min_seconds, max_seconds);
+}
+
+void crawler_set_rate_limit_rpm(CrawlerState* state, float rpm) {
+    (void)state;
+    pthread_mutex_lock(&g_rate_config_mutex);
+    g_requests_per_minute = rpm;
+    g_min_delay_seconds = (int)(60.0f / rpm);
+    g_max_delay_seconds = g_min_delay_seconds;
+    g_delay_minutes = 0;
+    g_use_random_delay = false;
+    pthread_mutex_unlock(&g_rate_config_mutex);
+    
+    printf("Rate limit set: %.2f requests per minute (1 request every %.1f seconds)\n", 
+           rpm, 60.0f / rpm);
+}
+
+void crawler_set_rate_limit_minutes(CrawlerState* state, int minutes) {
+    (void)state;
+    pthread_mutex_lock(&g_rate_config_mutex);
+    g_delay_minutes = minutes;
+    g_min_delay_seconds = 0;
+    g_max_delay_seconds = 0;
+    g_requests_per_minute = 0.0f;
+    g_use_random_delay = false;
+    pthread_mutex_unlock(&g_rate_config_mutex);
+    
+    printf("Rate limit set: %d minutes between requests\n", minutes);
+}
+
+// ============================================================================
+// PAUSE/RESUME API
+// ============================================================================
+
+void crawler_pause(CrawlerState* state) {
+    if (!state) return;
+    CrawlerStateInternal* internal = (CrawlerStateInternal*)state;
+    
+    pthread_mutex_lock(&internal->lock);
+    internal->paused = 1;
+    pthread_mutex_unlock(&internal->lock);
+    
+    printf("Crawler paused. Call crawler_resume() to continue.\n");
+}
+
+void crawler_resume(CrawlerState* state) {
+    if (!state) return;
+    CrawlerStateInternal* internal = (CrawlerStateInternal*)state;
+    
+    pthread_mutex_lock(&internal->lock);
+    internal->paused = 0;
+    pthread_mutex_unlock(&internal->lock);
+    
+    printf("Crawler resumed.\n");
+}
+

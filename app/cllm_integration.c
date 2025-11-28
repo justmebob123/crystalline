@@ -117,6 +117,85 @@ CLLMModel* app_create_cllm_model_large(void) {
     return model;
 }
 
+// Huge model (1.5B parameters) - GPT-2 XL equivalent
+CLLMModel* app_create_cllm_model_huge(void) {
+    printf("Creating HUGE CLLM model (1.5B parameters)...\n");
+    printf("WARNING: Requires ~6GB RAM for inference, ~24GB for training\n");
+    
+    CLLMConfig config = {
+        .vocab_size = 50000,
+        .embedding_dim = 1600,
+        .num_layers = 48,
+        .num_heads = 25,
+        .ff_dim = 6400,
+        .max_seq_len = 2048,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
+    }
+    
+    printf("✓ HUGE model created (50K vocab, 48 layers, 1600 dim)\n");
+    printf("  Parameters: ~1.5B (GPT-2 XL equivalent)\n");
+    return model;
+}
+
+// Massive model (3B parameters) - GPT-3 Small equivalent
+CLLMModel* app_create_cllm_model_massive(void) {
+    printf("Creating MASSIVE CLLM model (3B parameters)...\n");
+    printf("WARNING: Requires ~12GB RAM for inference, ~48GB for training\n");
+    
+    CLLMConfig config = {
+        .vocab_size = 50000,
+        .embedding_dim = 2048,
+        .num_layers = 64,
+        .num_heads = 32,
+        .ff_dim = 8192,
+        .max_seq_len = 4096,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
+    }
+    
+    printf("✓ MASSIVE model created (50K vocab, 64 layers, 2048 dim)\n");
+    printf("  Parameters: ~3B (GPT-3 Small equivalent)\n");
+    return model;
+}
+
+// Astronomical model (7B parameters) - LLaMA-7B equivalent
+CLLMModel* app_create_cllm_model_astronomical(void) {
+    printf("Creating ASTRONOMICAL CLLM model (7B parameters)...\n");
+    printf("WARNING: Requires ~28GB RAM for inference, ~112GB for training\n");
+    printf("         Recommended: 32GB+ RAM, GPU with 24GB+ VRAM\n");
+    
+    CLLMConfig config = {
+        .vocab_size = 50000,
+        .embedding_dim = 4096,
+        .num_layers = 32,
+        .num_heads = 32,
+        .ff_dim = 11008,
+        .max_seq_len = 4096,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
+    }
+    
+    printf("✓ ASTRONOMICAL model created (50K vocab, 32 layers, 4096 dim)\n");
+    printf("  Parameters: ~7B (LLaMA-7B equivalent)\n");
+    return model;
+}
+
 // Auto-size based on dataset
 CLLMModel* app_create_cllm_model_auto(size_t dataset_size_mb) {
     if (dataset_size_mb < 50) {
@@ -125,9 +204,18 @@ CLLMModel* app_create_cllm_model_auto(size_t dataset_size_mb) {
     } else if (dataset_size_mb < 500) {
         printf("Dataset 50-500MB: Creating MEDIUM model\n");
         return app_create_cllm_model_medium();
-    } else {
-        printf("Dataset > 500MB: Creating LARGE model\n");
+    } else if (dataset_size_mb < 2000) {
+        printf("Dataset 500MB-2GB: Creating LARGE model\n");
         return app_create_cllm_model_large();
+    } else if (dataset_size_mb < 10000) {
+        printf("Dataset 2GB-10GB: Creating HUGE model\n");
+        return app_create_cllm_model_huge();
+    } else if (dataset_size_mb < 50000) {
+        printf("Dataset 10GB-50GB: Creating MASSIVE model\n");
+        return app_create_cllm_model_massive();
+    } else {
+        printf("Dataset > 50GB: Creating ASTRONOMICAL model\n");
+        return app_create_cllm_model_astronomical();
     }
 }
 

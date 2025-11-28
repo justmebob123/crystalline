@@ -376,11 +376,12 @@ static void draw_model_browser_panel(SDL_Renderer* renderer, int x, int y, int w
     draw_text(renderer, "Close", close_btn.x + btn_width/2 - 20, close_btn.y + 8, text_color);
 }
 
-// Draw model size selection dialog
+// Draw model size selection dialog with scrolling
+static int model_dialog_scroll = 0;
+
 static void draw_model_size_dialog(SDL_Renderer* renderer, int x, int y, int width, int height) {
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color bg_color = {30, 30, 40, 255};
-    SDL_Color button_color = {60, 80, 100, 255};
     
     // Draw panel background
     SDL_Rect panel = {x, y, width, height};
@@ -393,61 +394,92 @@ static void draw_model_size_dialog(SDL_Renderer* renderer, int x, int y, int wid
     draw_text(renderer, "SELECT MODEL SIZE", x + width/2 - 80, y + 15, 
              (SDL_Color){100, 150, 200, 255});
     
-    int btn_y = y + 50;
+    // Scrollable area
+    int content_y = y + 50 - model_dialog_scroll;
     int btn_width = width - 40;
-    int btn_height = 80;
-    int spacing = 20;
+    int btn_height = 70;
+    int spacing = 12;
     
     // Small model button
-    SDL_Rect small_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_Rect small_btn = {x + 20, content_y, btn_width, btn_height};
     SDL_SetRenderDrawColor(renderer, 60, 100, 60, 255);
     SDL_RenderFillRect(renderer, &small_btn);
     SDL_SetRenderDrawColor(renderer, 100, 150, 100, 255);
     SDL_RenderDrawRect(renderer, &small_btn);
-    draw_text(renderer, "SMALL MODEL", small_btn.x + 10, small_btn.y + 10, 
+    draw_text(renderer, "SMALL - 117M params", small_btn.x + 10, small_btn.y + 8, 
              (SDL_Color){150, 255, 150, 255});
-    draw_text(renderer, "117M parameters (GPT-2 small)", small_btn.x + 10, small_btn.y + 30, text_color);
-    draw_text(renderer, "30K vocab, 12 layers, 768 dim", small_btn.x + 10, small_btn.y + 48, 
+    draw_text(renderer, "30K vocab, 12 layers | GPT-2 Small", small_btn.x + 10, small_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~500MB | Good for testing", small_btn.x + 10, small_btn.y + 44, 
              (SDL_Color){180, 180, 180, 255});
-    draw_text(renderer, "Good for testing", small_btn.x + 10, small_btn.y + 64, 
-             (SDL_Color){150, 150, 150, 255});
-    
-    btn_y += btn_height + spacing;
+    content_y += btn_height + spacing;
     
     // Medium model button
-    SDL_Rect medium_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_Rect medium_btn = {x + 20, content_y, btn_width, btn_height};
     SDL_SetRenderDrawColor(renderer, 80, 100, 120, 255);
     SDL_RenderFillRect(renderer, &medium_btn);
     SDL_SetRenderDrawColor(renderer, 120, 150, 180, 255);
     SDL_RenderDrawRect(renderer, &medium_btn);
-    draw_text(renderer, "MEDIUM MODEL (RECOMMENDED)", medium_btn.x + 10, medium_btn.y + 10, 
+    draw_text(renderer, "MEDIUM - 345M params (RECOMMENDED)", medium_btn.x + 10, medium_btn.y + 8, 
              (SDL_Color){150, 200, 255, 255});
-    draw_text(renderer, "345M parameters (GPT-2 medium)", medium_btn.x + 10, medium_btn.y + 30, text_color);
-    draw_text(renderer, "50K vocab, 24 layers, 1024 dim", medium_btn.x + 10, medium_btn.y + 48, 
+    draw_text(renderer, "50K vocab, 24 layers | GPT-2 Medium", medium_btn.x + 10, medium_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~1.5GB | Best balance", medium_btn.x + 10, medium_btn.y + 44, 
              (SDL_Color){180, 180, 180, 255});
-    draw_text(renderer, "Best balance of quality and speed", medium_btn.x + 10, medium_btn.y + 64, 
-             (SDL_Color){150, 150, 150, 255});
-    
-    btn_y += btn_height + spacing;
+    content_y += btn_height + spacing;
     
     // Large model button
-    SDL_Rect large_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_Rect large_btn = {x + 20, content_y, btn_width, btn_height};
     SDL_SetRenderDrawColor(renderer, 100, 80, 60, 255);
     SDL_RenderFillRect(renderer, &large_btn);
     SDL_SetRenderDrawColor(renderer, 150, 120, 80, 255);
     SDL_RenderDrawRect(renderer, &large_btn);
-    draw_text(renderer, "LARGE MODEL", large_btn.x + 10, large_btn.y + 10, 
+    draw_text(renderer, "LARGE - 762M params", large_btn.x + 10, large_btn.y + 8, 
              (SDL_Color){255, 200, 150, 255});
-    draw_text(renderer, "762M parameters (GPT-2 large)", large_btn.x + 10, large_btn.y + 30, text_color);
-    draw_text(renderer, "50K vocab, 36 layers, 1280 dim", large_btn.x + 10, large_btn.y + 48, 
+    draw_text(renderer, "50K vocab, 36 layers | GPT-2 Large", large_btn.x + 10, large_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~3GB | High quality", large_btn.x + 10, large_btn.y + 44, 
              (SDL_Color){180, 180, 180, 255});
-    draw_text(renderer, "Highest quality (requires more RAM)", large_btn.x + 10, large_btn.y + 64, 
-             (SDL_Color){150, 150, 150, 255});
+    content_y += btn_height + spacing;
     
-    btn_y += btn_height + spacing;
+    // Huge model button
+    SDL_Rect huge_btn = {x + 20, content_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 120, 80, 120, 255);
+    SDL_RenderFillRect(renderer, &huge_btn);
+    SDL_SetRenderDrawColor(renderer, 180, 120, 180, 255);
+    SDL_RenderDrawRect(renderer, &huge_btn);
+    draw_text(renderer, "HUGE - 1.5B params", huge_btn.x + 10, huge_btn.y + 8, 
+             (SDL_Color){255, 180, 255, 255});
+    draw_text(renderer, "50K vocab, 48 layers | GPT-2 XL", huge_btn.x + 10, huge_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~6GB | Professional grade", huge_btn.x + 10, huge_btn.y + 44, 
+             (SDL_Color){180, 180, 180, 255});
+    content_y += btn_height + spacing;
+    
+    // Massive model button
+    SDL_Rect massive_btn = {x + 20, content_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 140, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &massive_btn);
+    SDL_SetRenderDrawColor(renderer, 200, 100, 100, 255);
+    SDL_RenderDrawRect(renderer, &massive_btn);
+    draw_text(renderer, "MASSIVE - 3B params", massive_btn.x + 10, massive_btn.y + 8, 
+             (SDL_Color){255, 150, 150, 255});
+    draw_text(renderer, "50K vocab, 64 layers | GPT-3 Small", massive_btn.x + 10, massive_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~12GB | Enterprise grade", massive_btn.x + 10, massive_btn.y + 44, 
+             (SDL_Color){180, 180, 180, 255});
+    content_y += btn_height + spacing;
+    
+    // Astronomical model button
+    SDL_Rect astro_btn = {x + 20, content_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 160, 120, 40, 255);
+    SDL_RenderFillRect(renderer, &astro_btn);
+    SDL_SetRenderDrawColor(renderer, 220, 180, 80, 255);
+    SDL_RenderDrawRect(renderer, &astro_btn);
+    draw_text(renderer, "ASTRONOMICAL - 7B params", astro_btn.x + 10, astro_btn.y + 8, 
+             (SDL_Color){255, 220, 100, 255});
+    draw_text(renderer, "50K vocab, 32 layers | LLaMA-7B", astro_btn.x + 10, astro_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~28GB | State-of-the-art", astro_btn.x + 10, astro_btn.y + 44, 
+             (SDL_Color){180, 180, 180, 255});
+    content_y += btn_height + spacing;
     
     // Cancel button
-    SDL_Rect cancel_btn = {x + width/2 - 50, btn_y, 100, 30};
+    SDL_Rect cancel_btn = {x + width/2 - 50, y + height - 45, 100, 30};
     SDL_SetRenderDrawColor(renderer, 80, 60, 60, 255);
     SDL_RenderFillRect(renderer, &cancel_btn);
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
@@ -990,69 +1022,119 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     // Handle model size dialog clicks
     if (model_size_dialog_visible) {
         int panel_w = 500;
-        int panel_h = 450;
+        int panel_h = 600;  // Increased height for more buttons
         int panel_x = (WINDOW_WIDTH - panel_w) / 2;
         int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
         
         // Check which button was clicked
-        int btn_y = panel_y + 50;
+        int content_y = panel_y + 50 - model_dialog_scroll;
         int btn_width = panel_w - 40;
-        int btn_height = 80;
-        int spacing = 20;
+        int btn_height = 70;
+        int spacing = 12;
         
         // Small button
-        SDL_Rect small_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        SDL_Rect small_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= small_btn.x && x <= small_btn.x + small_btn.w &&
-            y >= small_btn.y && y <= small_btn.y + small_btn.h) {
-            printf("Creating SMALL model...\n");
+            y >= small_btn.y && y <= small_btn.y + small_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating SMALL model (117M params)...\n");
             state->cllm_model = app_create_cllm_model_small();
             if (state->cllm_model) {
                 if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
                 state->cllm_inference = cllm_inference_init(state->cllm_model);
             }
             model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
             return;
         }
-        
-        btn_y += btn_height + spacing;
+        content_y += btn_height + spacing;
         
         // Medium button
-        SDL_Rect medium_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        SDL_Rect medium_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= medium_btn.x && x <= medium_btn.x + medium_btn.w &&
-            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h) {
-            printf("Creating MEDIUM model...\n");
+            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating MEDIUM model (345M params)...\n");
             state->cllm_model = app_create_cllm_model_medium();
             if (state->cllm_model) {
                 if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
                 state->cllm_inference = cllm_inference_init(state->cllm_model);
             }
             model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
             return;
         }
-        
-        btn_y += btn_height + spacing;
+        content_y += btn_height + spacing;
         
         // Large button
-        SDL_Rect large_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        SDL_Rect large_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= large_btn.x && x <= large_btn.x + large_btn.w &&
-            y >= large_btn.y && y <= large_btn.y + large_btn.h) {
-            printf("Creating LARGE model...\n");
+            y >= large_btn.y && y <= large_btn.y + large_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating LARGE model (762M params)...\n");
             state->cllm_model = app_create_cllm_model_large();
             if (state->cllm_model) {
                 if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
                 state->cllm_inference = cllm_inference_init(state->cllm_model);
             }
             model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
             return;
         }
+        content_y += btn_height + spacing;
         
-        btn_y += btn_height + spacing;
+        // Huge button
+        SDL_Rect huge_btn = {panel_x + 20, content_y, btn_width, btn_height};
+        if (x >= huge_btn.x && x <= huge_btn.x + huge_btn.w &&
+            y >= huge_btn.y && y <= huge_btn.y + huge_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating HUGE model (1.5B params)...\n");
+            state->cllm_model = app_create_cllm_model_huge();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
+            return;
+        }
+        content_y += btn_height + spacing;
         
-        // Cancel button
-        SDL_Rect cancel_btn = {panel_x + panel_w/2 - 50, btn_y, 100, 30};
+        // Massive button
+        SDL_Rect massive_btn = {panel_x + 20, content_y, btn_width, btn_height};
+        if (x >= massive_btn.x && x <= massive_btn.x + massive_btn.w &&
+            y >= massive_btn.y && y <= massive_btn.y + massive_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating MASSIVE model (3B params)...\n");
+            state->cllm_model = app_create_cllm_model_massive();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
+            return;
+        }
+        content_y += btn_height + spacing;
+        
+        // Astronomical button
+        SDL_Rect astro_btn = {panel_x + 20, content_y, btn_width, btn_height};
+        if (x >= astro_btn.x && x <= astro_btn.x + astro_btn.w &&
+            y >= astro_btn.y && y <= astro_btn.y + astro_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating ASTRONOMICAL model (7B params)...\n");
+            printf("WARNING: This will use ~28GB RAM!\n");
+            state->cllm_model = app_create_cllm_model_astronomical();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
+            return;
+        }
+        content_y += btn_height + spacing;
+        
+        // Cancel button (fixed at bottom)
+        SDL_Rect cancel_btn = {panel_x + panel_w/2 - 50, panel_y + panel_h - 45, 100, 30};
         if (x >= cancel_btn.x && x <= cancel_btn.x + cancel_btn.w &&
             y >= cancel_btn.y && y <= cancel_btn.y + cancel_btn.h) {
             model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
             return;
         }
         
@@ -1060,6 +1142,7 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x < panel_x || x > panel_x + panel_w ||
             y < panel_y || y > panel_y + panel_h) {
             model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
         }
         return;
     }

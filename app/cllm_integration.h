@@ -16,10 +16,13 @@
 
 // Model creation and initialization
 // Model creation functions
-CLLMModel* app_create_cllm_model_default(void);  // Now uses SMALL (117M params)
-CLLMModel* app_create_cllm_model_small(void);    // 117M parameters (GPT-2 small)
-CLLMModel* app_create_cllm_model_medium(void);   // 345M parameters (GPT-2 medium)
-CLLMModel* app_create_cllm_model_large(void);    // 762M parameters (GPT-2 large)
+CLLMModel* app_create_cllm_model_default(void);        // Now uses SMALL (117M params)
+CLLMModel* app_create_cllm_model_small(void);          // 117M parameters (GPT-2 small)
+CLLMModel* app_create_cllm_model_medium(void);         // 345M parameters (GPT-2 medium)
+CLLMModel* app_create_cllm_model_large(void);          // 762M parameters (GPT-2 large)
+CLLMModel* app_create_cllm_model_huge(void);           // 1.5B parameters (GPT-2 XL)
+CLLMModel* app_create_cllm_model_massive(void);        // 3B parameters (GPT-3 small)
+CLLMModel* app_create_cllm_model_astronomical(void);   // 7B parameters (LLaMA-7B)
 CLLMModel* app_create_cllm_model_auto(size_t dataset_size_mb);  // Auto-size based on data
 CLLMModel* app_create_cllm_model_custom(uint32_t vocab_size,
                                          uint32_t embedding_dim,

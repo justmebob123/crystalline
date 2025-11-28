@@ -80,11 +80,56 @@ CrawlerState* crawler_state_init_threaded(const char* data_dir, const char* star
                                           int max_pages, int num_threads);
 
 /**
+ * Crawler rate limiting configuration
+ */
+typedef struct {
+    int min_delay_seconds;      // Minimum delay between requests (default: 2)
+    int max_delay_seconds;      // Maximum delay for randomization (default: 5)
+    int delay_minutes;          // Optional: delay in minutes (0 = use seconds)
+    bool use_random_delay;      // Randomize delays (default: true)
+    float requests_per_minute;  // Alternative rate limit (0 = use delay_seconds)
+} CrawlerRateConfig;
+
+/**
+ * Set crawler rate limiting
+ * @param state Crawler state
+ * @param min_seconds Minimum delay in seconds
+ * @param max_seconds Maximum delay in seconds (for randomization)
+ */
+void crawler_set_rate_limit(CrawlerState* state, int min_seconds, int max_seconds);
+
+/**
+ * Set crawler rate limiting by requests per minute
+ * @param state Crawler state
+ * @param rpm Requests per minute (e.g., 10.0 = 1 request every 6 seconds)
+ */
+void crawler_set_rate_limit_rpm(CrawlerState* state, float rpm);
+
+/**
+ * Set crawler rate limiting in minutes
+ * @param state Crawler state
+ * @param minutes Delay in minutes between requests
+ */
+void crawler_set_rate_limit_minutes(CrawlerState* state, int minutes);
+
+/**
  * Start the crawler (spawns all threads internally)
  * @param state Crawler state
  * @return 0 on success, -1 on error
  */
 int crawler_start(CrawlerState* state);
+
+/**
+ * Pause the crawler (can be resumed)
+ * @param state Crawler state
+ */
+void crawler_pause(CrawlerState* state);
+
+/**
+ * Resume the crawler from paused state
+ * @param state Crawler state
+ */
+void crawler_resume(CrawlerState* state);
 
 /**
  * Stop the crawler (stops all threads)
