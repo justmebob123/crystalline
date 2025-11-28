@@ -1,6 +1,14 @@
 /*
- * CLLM Training Pipeline
- * Training system for Crystalline Lattice Language Models
+ * CLLM Training Pipeline - Core Training Operations
+ * 
+ * This file contains the core training operations:
+ * - Crystalline loss computation (GCD-based, O(log n))
+ * - Forward/backward passes
+ * - Optimizer steps
+ * - Checkpoint management
+ * 
+ * For parallel training, use cllm_training_threaded.c
+ * The functions here are used as building blocks by the parallel system.
  */
 
 #include <stdio.h>
@@ -14,10 +22,165 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
-#include "../include/cllm_crystalline_training.h"
+// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
 
 #define MAX_BATCH_SIZE 128
 #define MAX_SEQUENCE_LENGTH 2048
+
+// ============================================================================
+// Crystalline Loss Functions (Consolidated from cllm_crystalline_training.c)
+// ============================================================================
+
+/**
+ * Compute GCD of two numbers (Euclidean algorithm)
+ * O(log n) complexity vs O(n) for dot product
+ */
+static uint32_t gcd(uint32_t a, uint32_t b) {
+    while (b != 0) {
+        uint32_t temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+/**
+ * Prime-based similarity using GCD
+ * Much faster than dot product for related tokens
+ */
+float crystalline_gcd_similarity(uint32_t token1, uint32_t token2) {
+    if (token1 == 0 || token2 == 0) return 0.0f;
+    
+    // Compute GCD (shared prime factors)
+    uint32_t shared = gcd(token1, token2);
+    
+    // Normalize to [0, 1]
+    uint32_t max_val = token1 > token2 ? token1 : token2;
+    return (float)shared / (float)max_val;
+}
+
+/**
+ * Ulam spiral position
+ */
+typedef struct {
+    int x;
+    int y;
+} UlamPosition;
+
+static UlamPosition compute_ulam_position(uint32_t token_id) {
+    UlamPosition pos = {0, 0};
+    if (token_id == 0) return pos;
+    
+    // Ulam spiral: start at origin, spiral outward
+    int n = (int)token_id;
+    int k = (int)prime_sqrtf((float)n);
+    int ring = (k + 1) / 2;
+    int offset = n - (2*ring - 1) * (2*ring - 1);
+    
+    if (offset < 2*ring) {
+        pos.x = ring;
+        pos.y = -ring + offset;
+    } else if (offset < 4*ring) {
+        pos.x = ring - (offset - 2*ring);
+        pos.y = ring;
+    } else if (offset < 6*ring) {
+        pos.x = -ring;
+        pos.y = ring - (offset - 4*ring);
+    } else {
+        pos.x = -ring + (offset - 6*ring);
+        pos.y = -ring;
+    }
+    
+    return pos;
+}
+
+/**
+ * Compute distance between tokens in Ulam spiral
+ */
+static float ulam_distance(uint32_t token1, uint32_t token2) {
+    UlamPosition pos1 = compute_ulam_position(token1);
+    UlamPosition pos2 = compute_ulam_position(token2);
+    
+    int dx = pos1.x - pos2.x;
+    int dy = pos1.y - pos2.y;
+    return prime_sqrtf((float)(dx*dx + dy*dy));
+}
+
+/**
+ * Crystalline loss computation using prime-based similarity
+ * Uses GCD-based similarity (O(log n) vs O(n) for dot product)
+ */
+float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
+                        uint32_t* target_tokens, int num_tokens) {
+    if (!training || !input_tokens || !target_tokens) return 0.0f;
+    if (!training->model) return 0.0f;
+    
+    float total_loss = 0.0f;
+    int count = 0;
+    
+    // Safety: limit num_tokens to prevent buffer overflow
+    int safe_num_tokens = num_tokens;
+    if (safe_num_tokens > training->config.batch_size * training->config.sequence_length) {
+        fprintf(stderr, "WARNING: num_tokens (%d) exceeds batch size, clamping\n", num_tokens);
+        safe_num_tokens = training->config.batch_size * training->config.sequence_length;
+    }
+    
+    for (int i = 0; i < safe_num_tokens; i++) {
+        uint32_t input = input_tokens[i];
+        uint32_t target = target_tokens[i];
+        
+        // Bounds check
+        if (input >= training->model->vocab_size || target >= training->model->vocab_size) {
+            continue;
+        }
+        
+        // Use prime-based similarity (O(log n) vs O(n) for dot product)
+        // Add 1 to avoid zero (which breaks GCD and log)
+        float similarity = crystalline_gcd_similarity(input + 1, target + 1);
+        
+        // Add spatial locality bonus (tokens close in Ulam spiral are related)
+        float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
+        
+        // Combined similarity
+        float combined = 0.7f * similarity + 0.3f * spatial_similarity;
+        
+        // Convert to loss
+        float clamped = combined > 1e-10f ? combined : 1e-10f;
+        total_loss += -prime_logf(clamped);
+        count++;
+    }
+    
+    return count > 0 ? total_loss / count : 0.0f;
+}
+
+/**
+ * Sort tokens by Ulam spiral position for better cache locality
+ */
+void crystalline_sort_by_locality(uint32_t* tokens, int num_tokens) {
+    if (!tokens || num_tokens <= 1) return;
+    
+    // Simple bubble sort by Ulam position (good enough for small batches)
+    for (int i = 0; i < num_tokens - 1; i++) {
+        for (int j = 0; j < num_tokens - i - 1; j++) {
+            UlamPosition pos1 = compute_ulam_position(tokens[j]);
+            UlamPosition pos2 = compute_ulam_position(tokens[j+1]);
+            
+            // Sort by Manhattan distance from origin
+            int dist1 = abs(pos1.x) + abs(pos1.y);
+            int dist2 = abs(pos2.x) + abs(pos2.y);
+            
+            if (dist1 > dist2) {
+                uint32_t temp = tokens[j];
+                tokens[j] = tokens[j+1];
+                tokens[j+1] = temp;
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Training Functions
+// ============================================================================
 
 // Initialize training state
 CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {

@@ -175,17 +175,55 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     state->training->tokens = tokens;
     state->training->num_tokens = num_tokens;
     
-    // Train for N epochs
+    // Train for N epochs using parallel system
     int epochs = 5;
     float total_loss = 0.0f;
     
+    // Create parallel training system (use all available cores)
+    int num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_threads > 1) num_threads--;  // Reserve 1 for main thread
+    if (num_threads < 1) num_threads = 1;
+    
+    // Create batch iterator
+    CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+        state->training->tokens,
+        state->training->num_tokens,
+        state->training->config.batch_size,
+        state->training->config.sequence_length,
+        0,  // shuffle = false
+        0   // drop_last = false
+    );
+    
+    if (!batch_iterator) {
+        fprintf(stderr, "Failed to create batch iterator\n");
+        return -1;
+    }
+    
+    // Create parallel training system
+    ThreadedTrainingSystem* threaded_system = threaded_training_create(
+        state->training,
+        batch_iterator,
+        num_threads
+    );
+    
+    if (!threaded_system) {
+        fprintf(stderr, "Failed to create parallel training system\n");
+        cllm_batch_iterator_free(batch_iterator);
+        return -1;
+    }
+    
+    printf("Using %d parallel workers for training\n", num_threads);
+    
     for (int epoch = 0; epoch < epochs; epoch++) {
-        // OBJECTIVE 2C: Use cllm_train_epoch directly (crystalline is the default)
-        extern float cllm_train_epoch(CLLMTraining* training);
-        float loss = cllm_train_epoch(state->training);
+        // Use parallel training (crystalline loss, multi-threaded)
+        float loss = threaded_train_epoch(threaded_system);
         total_loss += loss;
         printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
     }
+    
+    // Cleanup parallel system
+    threaded_training_free(threaded_system);
+    cllm_batch_iterator_free(batch_iterator);
     
     float avg_loss = total_loss / epochs;
     printf("✓ Training complete: avg loss = %.4f\n", avg_loss);

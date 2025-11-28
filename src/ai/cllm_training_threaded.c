@@ -1,13 +1,23 @@
 /**
- * CLLM Multi-Threaded Training with Kissing Spheres Architecture
+ * CLLM Parallel Training System - Main Training API
  * 
- * Integrates the 12-fold kissing spheres threading system into the training loop
- * for parallel batch processing and gradient accumulation.
+ * This is the PRIMARY training system for CLLM.
+ * Uses 12-fold kissing spheres architecture for parallel batch processing.
  * 
- * Phase 2 Optimizations:
- * - Lock-free segment-based gradient accumulation
- * - SIMD-optimized gradient operations
- * - Streaming accumulation (overlap computation with updates)
+ * Features:
+ * - Parallel batch processing across N worker threads
+ * - Thread-local activation buffers (no locking during forward/backward)
+ * - Lock-free gradient accumulation via barriers
+ * - Crystalline loss computation (GCD-based, O(log n))
+ * - 12-fold symmetry structure (infinite recursive self-similar)
+ * 
+ * Usage:
+ *   ThreadedTrainingSystem* system = threaded_training_create(training, batch_iterator, num_threads);
+ *   float loss = threaded_train_epoch(system);
+ *   threaded_training_free(system);
+ * 
+ * This is NOT an optional "threaded" version - it's the main implementation.
+ * The "threaded" name is legacy and will be renamed in future refactoring.
  */
 
 #include "cllm_training.h"
