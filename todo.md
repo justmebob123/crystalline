@@ -295,11 +295,38 @@ enum VisualizationMode {
 6. Enhanced preprocessing progress bar with percentage
 
 ### Next Session Priorities
+
+**Option A: Complete Training Tab Enhancements (1.5 hours)**
 1. Terminal output window (45 min)
 2. Collapsible panels (45 min)
-3. Advanced features (3-4 hours):
-   - Recursive sub-spheres
-   - Zoom and mouse-over
-   - 3D visualization
-   - 2D/3D toggle
-   - Model export
+
+**Option B: LLM Tab Comprehensive Enhancement (6 hours)**
+1. Model Management UI (2 hours)
+   - Model directory browser
+   - Model selection and loading
+   - Detailed model stats
+   - Export functionality
+   - Overwrite confirmation
+2. Thread Management (1.5 hours)
+   - Thread list UI
+   - Thread creation/deletion/switching
+   - Thread persistence and export
+3. Enhanced Parameters (1 hour)
+   - Extended token range (1-4096)
+   - Top-K, Top-P, penalties
+   - Stop sequences, seed
+4. Loading Indicator (30 min)
+   - "Thinking" animation
+   - Token generation progress
+5. UI Polish (1 hour)
+   - Collapsible sections
+   - Keyboard shortcuts
+   - Context menus
+
+**Option C: Training Tab Advanced Features (3-4 hours)**
+- Recursive sub-spheres
+- Zoom and mouse-over
+- 3D visualization
+- 2D/3D toggle
+
+See: LLM_TAB_ENHANCEMENT_PLAN.md for complete details
