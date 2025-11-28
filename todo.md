@@ -33,10 +33,10 @@ See: DUPLICATE_FUNCTIONS_ANALYSIS.md for full details
 - [x] Run `make tools` - SUCCESS
 - [x] Verify zero errors, zero warnings (except pre-existing)
 
-### 1.4 Commit Changes
-- [ ] Git add all changes
-- [ ] Commit with message: "Remove legacy threaded_train_epoch() function"
-- [ ] Push to main branch
+### 1.4 Commit Changes ✅
+- [x] Git add all changes
+- [x] Commit with message: "Remove legacy threaded_train_epoch() function"
+- [x] Push to main branch (commit 929681b)
 
 ---
 
