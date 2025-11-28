@@ -69,31 +69,33 @@ Based on MASTER_PLAN.md (2905 lines):
 **Benchmark Tab (tab_benchmark.c):**
 - ⚠️ MINIMAL IMPLEMENTATION (placeholder)
 
-## Phase 2: Compile Missing Tools (IN PROGRESS)
-- [x] Update Makefile to compile ALL tools (added to tools: target)
-- [x] Attempt compilation - FOUND CRITICAL ISSUES
-- [ ] Fix cllm_tokenize - uses OLD API (cllm_tokenize vs cllm_tokenizer_encode)
-- [ ] Fix cllm_vocab_build - check API compatibility
-- [ ] Fix other tools - verify API compatibility
-- [ ] Compile cllm_inference ✅ SUCCESS
-- [ ] Compile cllm_tokenize ❌ API MISMATCH
-- [ ] Compile cllm_vocab_build (pending)
-- [ ] Compile init_lattice_embeddings (pending)
-- [ ] Compile benchmark_ntt_attention (pending)
-- [ ] Compile validate_kissing_spheres (pending)
-- [ ] Compile analyze_cymatic_resonance (pending)
-- [ ] Compile visualize_angular_positions (pending)
-- [ ] Test each compiled tool
+## Phase 2: Fix Tool API Mismatches (NEXT PRIORITY)
+- [x] Update Makefile to compile ALL tools
+- [x] Comprehensive bidirectional analysis complete
+- [x] Identified 14 tools with API mismatches
+- [ ] Fix cllm_tokenize.c API calls
+- [ ] Fix cllm_vocab_build.c API calls
+- [ ] Fix remaining 12 tools
+- [ ] Compile all fixed tools
+- [ ] Test each tool
 - [ ] Document tool usage
 
-## CRITICAL ISSUE DISCOVERED: API MISMATCH
-**Problem:** Tool source code uses OLD function names that don't exist in current library
-**Example:** 
-- Tool calls: `cllm_tokenize()`, `cllm_detokenize()`, `cllm_load_vocabulary()`
-- Library has: `cllm_tokenizer_encode()`, `cllm_tokenizer_decode()`, `cllm_load_vocab()`
-**Impact:** Tools are OUT OF SYNC with library implementation
-**Required:** Update ALL tool source code to match current library API
-**Priority:** CRITICAL - tools are unusable without this fix
+## API Mismatch Details
+**Root Cause:** Tools written for older library version, never updated
+**Affected:** 14 out of 20 tools
+**Fix Required:** Update function calls to match current library API
+
+**Common Mismatches:**
+- OLD: cllm_tokenize() → NEW: cllm_tokenizer_encode()
+- OLD: cllm_detokenize() → NEW: cllm_tokenizer_decode()
+- OLD: cllm_load_vocabulary() → NEW: cllm_load_vocab()
+
+## Phase 3: Complete Implementation Verification
+- [ ] Test all compiled tools end-to-end
+- [ ] Verify UI tabs work with tools
+- [ ] Add integration tests
+- [ ] Complete Research tab (low priority)
+- [ ] Complete Benchmark tab (low priority)
 
 ## Phase 1: Test Babylonian Clock Visualization ✅ COMPLETE
 - [x] Build the application (SUCCESS - 1 warning only)
