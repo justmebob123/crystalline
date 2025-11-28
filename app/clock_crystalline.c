@@ -1,35 +1,26 @@
 // clock_crystalline.c - Crystalline Lattice Clock Transformation
-// ULTRA-FAST VERSION - No expensive library calls, pure geometric transformation
+// CORRECT BABYLONIAN CLOCK STRUCTURE - Maps primes to clock ticks
 
 #include "app_common.h"
+#include "../include/clock_lattice.h"
 
-// Simple, fast crystalline transformation without expensive library calls
-// This uses a simplified version that's fast enough for real-time rendering
+// Get Babylonian clock position for visualization
+// This uses the CORRECT clock tick mapping (not spiral)
 void get_crystalline_position_fast(int prime, uint64_t prime_index, double *angle, double *radius, AppState* state) {
-    // Simple transformation based on prime index and value
-    // This is MUCH faster than calling theta_n() and r_n()
+    // Use the correct Babylonian clock mapping
+    BabylonianClockPosition pos = map_prime_index_to_clock((int)prime_index);
     
-    // Base angle from prime index (distributes around clock)
-    double base_angle = ((double)prime_index * 2.0 * PRIME_PI / 12.0);
+    // Return angle and radius for visualization
+    *angle = pos.angle;
+    *radius = pos.radius * 350.0 * state->zoom;  // Scale to screen size
     
-    // Add offset based on prime value (creates spiral)
-    double prime_offset = ((double)(prime % 360)) * (PRIME_PI / 180.0);
-    
-    // Combine for final angle
-    *angle = base_angle + prime_offset * 0.1;
-    
-    // Normalize to 0-2π
-    double two_pi = 2.0 * PRIME_PI;
-    while (*angle < 0) *angle += two_pi;
-    while (*angle >= two_pi) *angle -= two_pi;
-    
-    // Simple radius based on prime magnitude
-    double log_prime = prime_log((double)prime) / prime_log(10.0);
-    *radius = (log_prime * 100.0) * state->zoom;
+    // Add small perturbation based on prime's modular relationships
+    PrimeModular pm = get_prime_modular((uint64_t)prime);
+    *angle += 0.01 * (pm.mod_12 / 12.0);  // Small variation based on mod 12
 }
 
 // Draw clock sudoku with crystalline lattice transformation
-// PURE PRIME VISUALIZATION - No manual lines or rings!
+// BABYLONIAN CLOCK STRUCTURE - Shows true ring structure
 void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
     int cx = RENDER_WIDTH / 2;
     int cy = WINDOW_HEIGHT / 2;
@@ -38,12 +29,88 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
     cx += (int)state->offset_x;
     cy += (int)state->offset_y;
     
-    // Draw ONLY the primes - let them form the pattern naturally!
-    // NO manual lines, NO manual rings - pure prime distribution
+    double base_radius = 350.0 * state->zoom;
     
-    for (int i = 0; i < state->visible_primes && i < MAX_PRIMES; i++) {
+    // Draw the four Babylonian rings
+    SDL_Color ring_colors[] = {
+        {80, 80, 120, 255},    // Ring 0: Hours (outer)
+        {80, 120, 80, 255},    // Ring 1: Minutes
+        {120, 80, 80, 255},    // Ring 2: Seconds
+        {120, 120, 80, 255}    // Ring 3: Milliseconds (inner)
+    };
+    
+    double ring_radii[] = {
+        base_radius * 0.25,  // Hours (outer)
+        base_radius * 0.50,  // Minutes
+        base_radius * 0.75,  // Seconds
+        base_radius * 1.00   // Milliseconds (inner)
+    };
+    
+    // Draw rings
+    for (int ring = 0; ring < 4; ring++) {
+        SDL_SetRenderDrawColor(renderer, ring_colors[ring].r, 
+                              ring_colors[ring].g, ring_colors[ring].b, 128);
+        
+        for (int i = 0; i < 360; i++) {
+            double angle = i * PRIME_PI / 180.0;
+            int x = cx + (int)(ring_radii[ring] * prime_cos(angle));
+            int y = cy + (int)(ring_radii[ring] * prime_sin(angle));
+            if (x >= 0 && x < RENDER_WIDTH && y >= 0 && y < WINDOW_HEIGHT) {
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+        }
+    }
+    
+    // Draw clock ticks (12, 3, 6, 9 o'clock)
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    for (int hour = 0; hour < 12; hour++) {
+        double angle = (hour - 3) * (2.0 * PRIME_PI / 12.0);  // 3 o'clock = 0°
+        int x1 = cx + (int)(ring_radii[0] * 0.9 * prime_cos(angle));
+        int y1 = cy + (int)(ring_radii[0] * 0.9 * prime_sin(angle));
+        int x2 = cx + (int)(ring_radii[3] * 1.1 * prime_cos(angle));
+        int y2 = cy + (int)(ring_radii[3] * 1.1 * prime_sin(angle));
+        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+    }
+    
+    // Highlight sacred positions
+    // 3 o'clock (π)
+    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);  // Gold
+    double pi_angle = 0.0;  // 3 o'clock
+    int pi_x = cx + (int)(ring_radii[0] * prime_cos(pi_angle));
+    int pi_y = cy + (int)(ring_radii[0] * prime_sin(pi_angle));
+    for (int dy = -4; dy <= 4; dy++) {
+        for (int dx = -4; dx <= 4; dx++) {
+            if (dx*dx + dy*dy <= 16) {
+                SDL_RenderDrawPoint(renderer, pi_x + dx, pi_y + dy);
+            }
+        }
+    }
+    
+    // 12 o'clock (top)
+    double top_angle = -PRIME_PI / 2.0;
+    int top_x = cx + (int)(ring_radii[0] * prime_cos(top_angle));
+    int top_y = cy + (int)(ring_radii[0] * prime_sin(top_angle));
+    for (int dy = -4; dy <= 4; dy++) {
+        for (int dx = -4; dx <= 4; dx++) {
+            if (dx*dx + dy*dy <= 16) {
+                SDL_RenderDrawPoint(renderer, top_x + dx, top_y + dy);
+            }
+        }
+    }
+    
+    // Draw primes at their clock positions
+    
+    // Draw primes (first 232 for the four rings)
+    int max_primes = 232;
+    if (state->visible_primes < max_primes) max_primes = state->visible_primes;
+    if (max_primes > MAX_PRIMES) max_primes = MAX_PRIMES;
+    
+    for (int i = 0; i < max_primes; i++) {
         int prime = state->primes[i];
         uint64_t prime_index = (uint64_t)(i + 1);
+        
+        // Get Babylonian clock position
+        BabylonianClockPosition pos = map_prime_index_to_clock((int)prime_index);
         
         double angle, radius;
         get_crystalline_position_fast(prime, prime_index, &angle, &radius, state);
@@ -57,19 +124,20 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
             continue;
         }
         
-        // Color based on magnitude
-        SDL_Color prime_color;
-        if (prime < 100) {
-            prime_color = (SDL_Color){150, 220, 255, 255};  // Blue
-        } else if (prime < 1000) {
-            prime_color = (SDL_Color){150, 255, 200, 255};  // Green
-        } else {
-            prime_color = (SDL_Color){255, 220, 150, 255};  // Orange
+        // Color based on ring (Babylonian structure)
+        SDL_Color prime_color = ring_colors[pos.ring];
+        prime_color.r += 100;  // Brighten for visibility
+        prime_color.g += 100;
+        prime_color.b += 100;
+        
+        // Highlight if sacred position
+        if (is_sacred_position(pos)) {
+            prime_color = (SDL_Color){255, 255, 0, 255};  // Yellow for sacred
         }
         
         // Highlight analyzed number
         if (state->number_analysis.number == prime) {
-            prime_color = (SDL_Color){255, 255, 0, 255};  // Bright yellow
+            prime_color = (SDL_Color){255, 0, 255, 255};  // Magenta for analyzed
             // Draw larger for visibility
             SDL_SetRenderDrawColor(renderer, prime_color.r, prime_color.g, prime_color.b, prime_color.a);
             for (int dy = -5; dy <= 5; dy++) {
