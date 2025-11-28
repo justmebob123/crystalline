@@ -93,7 +93,7 @@ struct ThreadedTrainingSystem {
     
     // Gradient accumulation (temporary until shared memory fully integrated)
     float* accumulated_gradients;              // Accumulated gradients from all spheres
-    pthread_mutex_t gradient_lock;             // Lock for gradient accumulation
+    // pthread_mutex_t gradient_lock;             // PHASE 4: Removed - using lock-free accumulation
     pthread_mutex_t model_lock;                // Lock for model state during forward/backward (TEMPORARY)
     
     // Synchronization (MASTER PLAN - use barriers!)
@@ -175,6 +175,9 @@ static void* sphere_worker_thread(void* arg);
 static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
 static void accumulate_gradients(ThreadedTrainingSystem* system);
+static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system);  // PHASE 4
+static int validate_gradients(float* gradients, size_t size, const char* source);
+static void clip_gradients(float* gradients, size_t size, float max_norm);
 
 /**
  * Process batch on a sphere (worker thread function)
@@ -225,6 +228,14 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     
     ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0f;
     ctx->batches_processed++;
+    
+    // PHASE 4: Lock-free gradient accumulation
+    // Each worker writes ONLY to its own segment (no locking needed)
+    // This is safe because each worker has exclusive access to its segment
+    ThreadedTrainingSystem* system = ctx->system;
+    for (size_t i = ctx->gradient_segment_start; i < ctx->gradient_segment_end && i < ctx->gradient_size; i++) {
+        system->accumulated_gradients[i] = ctx->local_gradients[i];
+    }
 }
 
 /**
@@ -305,7 +316,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     }
     
     // Initialize gradient lock
-    pthread_mutex_init(&system->gradient_lock, NULL);
+    // pthread_mutex_init(&system->gradient_lock, NULL);  // PHASE 4: Removed
     pthread_mutex_init(&system->model_lock, NULL);
     
     // Initialize barriers for N worker threads + 1 control thread + 1 main thread
@@ -475,7 +486,7 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     free(system->accumulated_gradients);
     
     // Destroy gradient lock
-    pthread_mutex_destroy(&system->gradient_lock);
+    // pthread_mutex_destroy(&system->gradient_lock);  // PHASE 4: Removed
     pthread_mutex_destroy(&system->model_lock);
     
     pthread_barrier_destroy(&system->epoch_barrier);
@@ -510,7 +521,7 @@ static void* control_thread_func(void* arg) {
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
     
     printf("[Node Zero] Control thread started - NEVER processes batches\n");
-    printf("[Node Zero] Using barrier synchronization\n");
+    printf("[Node Zero] Using barrier synchronization + lock-free gradient accumulation\n");
     
     while (atomic_load(&system->running)) {
         // POINT A: Wait for batch distribution
@@ -521,8 +532,16 @@ static void* control_thread_func(void* arg) {
             break;
         }
         
+        // Workers are now processing batches...
+        // Control thread waits at next barrier
+        
         // POINT B: Wait for batch completion
         pthread_barrier_wait(&system->batch_barrier);
+        
+        // PHASE 4: After Point B, workers are waiting at barrier
+        // Safe to read their gradient segments and accumulate
+        // This is lock-free because workers are blocked at barrier
+        accumulate_gradients_lockfree(system);
     }
     
     printf("[Node Zero] Control thread stopping\n");
@@ -579,6 +598,54 @@ static void* sphere_worker_thread(void* arg) {
  * PHASE 3: Removed distribute_batch_to_sphere() and wait_for_sphere()
  * Now using barrier synchronization instead of condition variables
  */
+
+/**
+ * PHASE 4: Lock-free gradient accumulation
+ * Control thread reads all worker segments at barrier (safe - workers are waiting)
+ */
+static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system) {
+    if (!system || !system->accumulated_gradients) return;
+    
+    // Workers are waiting at barrier - safe to read their segments
+    // Zero the accumulated gradients first
+    memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
+    
+    int valid_workers = 0;
+    
+    // Sum gradients from all worker segments
+    for (int i = 0; i < system->num_worker_spheres; i++) {
+        SphereTrainingContext* ctx = system->sphere_contexts[i];
+        if (!ctx || !ctx->local_gradients) continue;
+        
+        // Validate gradients before accumulation
+        char source[64];
+        snprintf(source, sizeof(source), "Worker %d", i);
+        if (!validate_gradients(ctx->local_gradients, ctx->gradient_size, source)) {
+            fprintf(stderr, "WARNING: Skipping invalid gradients from worker %d\n", i);
+            continue;
+        }
+        
+        // Clip gradients to prevent overflow
+        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
+        
+        // Accumulate from this worker's segment
+        // Each worker has already written to its segment in accumulated_gradients
+        // So we just need to sum from their local_gradients
+        for (size_t j = 0; j < system->gradient_size; j++) {
+            system->accumulated_gradients[j] += ctx->local_gradients[j];
+        }
+        
+        valid_workers++;
+    }
+    
+    // Average the gradients
+    if (valid_workers > 0) {
+        float scale = 1.0f / valid_workers;
+        for (size_t i = 0; i < system->gradient_size; i++) {
+            system->accumulated_gradients[i] *= scale;
+        }
+    }
+}
 
 /**
  * Validate gradients for NaN/Inf values
@@ -798,8 +865,9 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         }
         free(batches);
         
-        // Apply accumulated gradients to model
-        pthread_mutex_lock(&system->gradient_lock);
+        // PHASE 4: Lock-free gradient accumulation
+        // Control thread has already accumulated gradients at barrier
+        // Safe to read and apply without locking
         
         // Copy accumulated gradients to training object
         memcpy(system->training->gradients, system->accumulated_gradients, 
@@ -807,8 +875,6 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         
         // Apply gradients using Adam optimizer
         cllm_optimizer_step_adam(system->training);
-        
-        pthread_mutex_unlock(&system->gradient_lock);
     }
     
     float avg_loss = (batch_count > 0) ? epoch_loss / (batch_count / (float)system->num_worker_spheres) : 0.0f;
@@ -874,16 +940,13 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
 float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return 0.0f;
     
-    pthread_mutex_lock(&system->gradient_lock);
-    
+       // PHASE 4: Lock-free - safe to read after barrier synchronization
     float norm = 0.0f;
     for (size_t i = 0; i < system->gradient_size; i++) {
         float val = system->accumulated_gradients[i];
         norm += val * val;
     }
     norm = prime_sqrtf(norm);
-    
-    pthread_mutex_unlock(&system->gradient_lock);
     
     return norm;
 }
