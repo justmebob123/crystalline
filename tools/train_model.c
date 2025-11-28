@@ -185,16 +185,16 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         goto cleanup;
     }
     
-HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
-           training, num_threads, batch_iterator);
-       if (!hierarchical_system) {
+ThreadedTrainingSystem* threaded_system = threaded_training_create(
+           training, batch_iterator, num_threads);
+       if (!threaded_system) {
            cllm_batch_iterator_free(batch_iterator);
-           fprintf(stderr, "Failed to create hierarchical training system\n");
+           fprintf(stderr, "Failed to create threaded training system\n");
            goto cleanup;
        }
-       printf("✓ Hierarchical training system with %d threads\n", num_threads);
-       printf("  Architecture: 1 root + 12 Level-1 controls + %d workers\n", num_threads - 13);
-       printf("  Using model's 12-fold symmetry structure\n\n");    
+       printf("✓ Lock-free threaded training system with %d threads\n", num_threads);
+       printf("  Workers pull batches from shared queue (any worker can process any batch)\n");
+       printf("  Threads rotate through 12 symmetry positions in data structure\n\n");    
     for (int epoch = 0; epoch < config->num_epochs; epoch++) {
         training->current_epoch = epoch;
         
@@ -206,8 +206,8 @@ HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
         // Reset batch iterator for new epoch
         cllm_batch_iterator_reset(batch_iterator);
         
-           // Train one epoch (reusing hierarchical system)
-           float epoch_loss = hierarchical_train_epoch(hierarchical_system);
+           // Train one epoch (lock-free work queue)
+           float epoch_loss = threaded_train_epoch_lockfree(threaded_system);
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
@@ -226,7 +226,7 @@ HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
     }
     
        // Cleanup hierarchical system after all epochs
-       hierarchical_training_free(hierarchical_system);
+       threaded_training_free(threaded_system);
        cllm_batch_iterator_free(batch_iterator);
     
     // Generate samples after training is complete and threads are stopped

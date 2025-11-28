@@ -150,7 +150,7 @@ void* training_thread_func(void* arg) {
         state->cllm_training->config.batch_size,
         state->cllm_training->config.sequence_length,
         0,  // no shuffle for now
-        1   // drop last incomplete batch
+        0   // keep incomplete batches (important for small datasets!)
     );
     
     if (!g_batch_iterator) {
@@ -224,8 +224,8 @@ void* training_thread_func(void* arg) {
         printf("Epoch %d/%d - Training with 12 kissing spheres...\n",
                state->training_current_epoch + 1, state->training_epochs);
         
-        // Train one epoch using 12-way parallelization
-        float loss = threaded_train_epoch(g_threaded_system);
+        // Train one epoch using lock-free work queue (Phase 2B)
+        float loss = threaded_train_epoch_lockfree(g_threaded_system);
         
         // Update state (thread-safe)
         pthread_mutex_lock(&training_mutex);

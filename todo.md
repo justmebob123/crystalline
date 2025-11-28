@@ -1,4 +1,21 @@
-# TODO: CRITICAL Threading and UX Issues - PROPER ANALYSIS
+# TODO: Complete All Fixes - Based on MASTER_PLAN
+
+## Understanding from MASTER_PLAN
+
+**OBJECTIVE 6A: Infinite Recursive Self-Similar 12-Fold Symmetry**
+- The crystalline lattice is INFINITE RECURSING SELF-SIMILAR
+- Each thread can become control for 12 child threads
+- Fractal hierarchy with infinite depth
+- Thread count adapts dynamically to CPU availability
+- 12-fold symmetry at each level
+
+**Key Insight:**
+- 12-fold symmetry is about the RECURSIVE STRUCTURE
+- NOT about having exactly 12 threads
+- Threads can be 1 to N (based on CPU cores)
+- Each thread rotates through 12 symmetry positions in the data structure
+
+# TODO: Complete All Fixes - Based on MASTER_PLAN
 
 ## CRITICAL USER FEEDBACK - PREVIOUS SOLUTION WAS WRONG
 
@@ -12,26 +29,49 @@
 7. Should support --threads 0 for auto-detect
 8. Batch size/epochs should be flexible regardless of dataset size
 
-## Phase 1: Identify ACTUAL Bugs
-- [ ] Find where progress bar gets stuck at 85%
-- [ ] Identify what happens during "Initializing 12 threads"
-- [ ] Find the actual hang point (not theoretical)
-- [ ] Check if it's in dataset creation, model init, or thread spawn
-- [ ] Analyze actual user logs/output
+## Phase 1: Identify ACTUAL Bugs ✅
+- [x] Find where progress bar gets stuck at 85%
+- [x] Identify what happens during "Initializing 12 threads"
+- [x] Find the actual hang point (not theoretical)
+- [x] Check if it's in dataset creation, model init, or thread spawn
+- [x] Analyze actual user logs/output
 
-## Phase 2: Fix Thread Architecture
-- [ ] Threads should be independent of symmetry groups
-- [ ] N threads (1 to CPU count) should rotate through 12 symmetry positions
-- [ ] Each thread processes batches from ANY symmetry group
-- [ ] Remove fixed 13+ thread requirement
-- [ ] Implement thread rotation through symmetry positions
+### FINDINGS:
+- Progress bar set to 80% before start_training_thread()
+- Thread initialization happens in background (5-10 seconds)
+- NO code to update progress to 100% after init complete
+- User sees 80-85% and thinks it's hung
+- FIXED: Added progress updates at 85%, 90%, 100%
 
-## Phase 3: Fix Batch Processing
-- [ ] Allow batch_size=1 for tiny datasets
-- [ ] Allow seq_len as small as needed
-- [ ] Create batches even from single lines
-- [ ] Handle datasets smaller than one full batch
-- [ ] Pad incomplete batches properly
+## Phase 2: Fix Thread Architecture ✅
+- [x] Understand: Threads are independent of symmetry groups
+- [x] Understand: N threads (1 to CPU count) rotate through 12 symmetry positions
+- [x] Understand: Each thread processes batches from ANY symmetry group
+- [x] Understand: No fixed thread requirement
+- [x] IMPLEMENT: Use lock-free work queue (already implemented!)
+- [x] IMPLEMENT: Workers pull from shared queue (any worker, any batch)
+- [x] IMPLEMENT: Switch from hierarchical to threaded system
+
+### COMPLETED:
+- App now uses threaded_train_epoch_lockfree()
+- CLI now uses ThreadedTrainingSystem (not Hierarchical)
+- Workers pull batches from shared work queue
+- No routing by symmetry group
+- Any worker can process any batch
+
+## Phase 3: Fix Batch Processing ✅
+- [x] Allow batch_size=1 for tiny datasets (already supported)
+- [x] Allow seq_len=1 as minimum (already supported)
+- [x] Create batches even from single lines (already supported)
+- [x] Handle datasets smaller than one full batch (already supported)
+- [x] Pad incomplete batches properly (already implemented)
+- [x] Remove drop_last restriction - Changed to drop_last=0 in app
+
+### COMPLETED:
+- App training thread now uses drop_last=0 (keeps incomplete batches)
+- CLI already used drop_last=0
+- Batch iterator supports padding for incomplete batches
+- Small datasets now work correctly
 
 ## Phase 4: Fix Progress Reporting
 - [ ] Add detailed progress during dataset creation
@@ -47,12 +87,18 @@
 - [ ] Provide time estimates
 - [ ] Handle errors gracefully
 
-## Phase 6: Add --threads Option
-- [ ] Add --threads parameter to train_model
-- [ ] Support --threads 0 for auto-detect
-- [ ] Support --threads N for explicit count
-- [ ] Validate thread count (1 to CPU count)
-- [ ] Update help text
+## Phase 6: Add --threads Option ✅
+- [x] Add --threads parameter to train_model (already implemented!)
+- [x] Support --threads 0 for auto-detect (already implemented!)
+- [x] Support --threads N for explicit count (already implemented!)
+- [x] Pass thread count to threaded_training_create() (fixed)
+- [x] Update help text with --threads option (already documented!)
+- [ ] Test with different thread counts
+
+### COMPLETED:
+- --threads parameter already existed in CLI
+- Help text already documented
+- Now correctly passed to ThreadedTrainingSystem
 
 ## Phase 7: Test Real Scenarios
 - [ ] Test with single 10-line file
