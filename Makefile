@@ -280,7 +280,9 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
 	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
-	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
+	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
+                tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/validate_kissing_spheres \
+                tools/analyze_cymatic_resonance tools/visualize_angular_positions
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
@@ -393,7 +395,44 @@ tools/cllm_vocab_build: $(CLLM_LIB)
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_vocab_build tools/cllm_vocab_build.c \
 		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ Vocabulary builder tool built: tools/cllm_vocab_build"
 
-all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
+tools/init_lattice_embeddings: $(CLLM_LIB)
+	@echo "Building lattice embeddings initializer..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/init_lattice_embeddings tools/init_lattice_embeddings.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Lattice embeddings tool built: tools/init_lattice_embeddings"
+
+tools/benchmark_ntt_attention: $(CLLM_LIB)
+	@echo "Building NTT attention benchmark..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/benchmark_ntt_attention tools/benchmark_ntt_attention.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ NTT benchmark tool built: tools/benchmark_ntt_attention"
+
+tools/validate_kissing_spheres: $(CLLM_LIB)
+	@echo "Building kissing spheres validator..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/validate_kissing_spheres tools/validate_kissing_spheres.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Kissing spheres validator built: tools/validate_kissing_spheres"
+
+tools/analyze_cymatic_resonance: $(CLLM_LIB)
+	@echo "Building cymatic resonance analyzer..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/analyze_cymatic_resonance tools/analyze_cymatic_resonance.c \
+		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Cymatic analyzer tool built: tools/analyze_cymatic_resonance"
+
+tools/visualize_angular_positions: $(CLLM_LIB)
+	@echo "Building angular position visualizer..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/visualize_angular_positions tools/visualize_angular_positions.c \
+		-L. -lcllm -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Angular visualizer tool built: tools/visualize_angular_positions"
+
+all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
+        tools/init_lattice_embeddings tools/benchmark_ntt_attention \
+        tools/validate_kissing_spheres tools/analyze_cymatic_resonance \
+        tools/visualize_angular_positions
 
