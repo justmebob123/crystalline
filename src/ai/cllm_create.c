@@ -56,7 +56,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     for (uint32_t i = 0; i < config->vocab_size; i++) {
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
-        model->tokens[i].symmetry_group = 0;
+        // Distribute tokens across 12 symmetry groups based on token ID
+        // This ensures even distribution of work across all spheres
+        model->tokens[i].symmetry_group = i % 12;
     }
     
     // Calculate total weights needed

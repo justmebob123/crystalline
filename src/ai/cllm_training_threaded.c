@@ -28,6 +28,7 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_control_process.h"
+#include "ai/cllm_simple_loss.h"
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
@@ -669,15 +670,23 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // PHASE 8: Use thread-local context (NO LOCKING NEEDED!)
         // Each thread has its own activation buffers, so no race conditions
         
-        // Forward pass using thread-local buffers
-        float seq_loss = cllm_forward_training_threaded(
+        // Forward pass using thread-local buffers (computes logits)
+        cllm_forward_training_threaded(
             training, 
             ctx->thread_local_training,
             &batch->input_ids[offset]
         );
         
-        // Compute loss
-        seq_loss += cllm_compute_loss(training, &batch->input_ids[offset], &batch->target_ids[offset], batch->seq_len);
+        // Compute cross-entropy loss using the computed logits
+        float seq_loss = 0.0f;
+        for (uint32_t t = 0; t < batch->seq_len; t++) {
+            uint32_t target = batch->target_ids[offset + t];
+            if (target < training->model->vocab_size) {
+                float* logits = &ctx->thread_local_training->logits[t * training->model->vocab_size];
+                seq_loss += cllm_compute_cross_entropy_loss(logits, target, training->model->vocab_size);
+            }
+        }
+        seq_loss /= batch->seq_len;  // Average over sequence
         
         // Backward pass - compute gradients to local buffer (thread-local)
         cllm_backward_training_threaded(
@@ -2306,7 +2315,7 @@ int threaded_training_get_next_sphere_id(void* user_data) {
  * 
  * UI Integration: Returns the metrics object for real-time monitoring
  */
-struct CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system) {
+CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system) {
     if (!system) return NULL;
     return system->metrics;
 }

@@ -2,8 +2,9 @@
 #define CLLM_LOSS_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
-#include "cllm_batch.h"
+#include "ai/cllm_batch.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -324,6 +325,31 @@ void loss_computation_get_stats(
     float* avg_loss,
     float* gradient_norm
 );
+
+// ============================================================================
+// Simple Cross-Entropy Loss (for direct use without Tensor API)
+// ============================================================================
+
+/**
+ * Compute cross-entropy loss for a single prediction
+ * 
+ * @param logits Predicted logits [vocab_size]
+ * @param target Target token ID
+ * @param vocab_size Vocabulary size
+ * @return Cross-entropy loss value
+ */
+float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size);
+
+/**
+ * Compute cross-entropy loss gradient
+ * 
+ * @param logits Predicted logits [vocab_size]
+ * @param target Target token ID
+ * @param vocab_size Vocabulary size
+ * @param grad_output Output gradients [vocab_size] (caller must allocate)
+ */
+void cllm_compute_loss_gradient(float* logits, uint32_t target, 
+                                int vocab_size, float* grad_output);
 
 #ifdef __cplusplus
 }

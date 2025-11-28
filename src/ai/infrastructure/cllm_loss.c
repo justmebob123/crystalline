@@ -1,4 +1,5 @@
 #include "ai/cllm_loss.h"
+#include "ai/cllm_batch.h"
 #include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>

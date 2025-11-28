@@ -9,6 +9,7 @@
 
 #include "cllm_training.h"
 #include "cllm_batch.h"
+#include "cllm_metrics.h"
 
 /**
  * Thread-Local Training Context
@@ -200,7 +201,7 @@ int threaded_training_get_next_sphere_id(void* user_data);
  * @param system Threaded training system
  * @return Pointer to metrics object, or NULL if not available
  */
-struct CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system);
+CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system);
 
 #ifdef __cplusplus
 }
