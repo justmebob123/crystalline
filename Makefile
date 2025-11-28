@@ -348,7 +348,7 @@ $(DOCPROC_LIB): $(DOCPROC_OBJECTS)
 # Document Processing CLI Tools
 # ============================================================================
 
-tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr
+tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
@@ -499,3 +499,11 @@ prod-tests: production
 	@echo "║           PRODUCTION TESTS COMPLETED                           ║"
 	@echo "╚════════════════════════════════════════════════════════════════╝"
 
+
+# Unified CLI tool (replaces individual tools)
+tools/cllm: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building unified CLLM CLI tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm tools/cllm_unified.c \
+		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Unified CLI tool built: tools/cllm"

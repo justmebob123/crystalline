@@ -100,25 +100,46 @@
 NOTE: Testing requires running the UI application which cannot be done in this environment.
 User should follow TESTING_GUIDE.md to perform manual testing.
 
-### Step 6: Additional Visualization Features (2-3 hours)
-- [ ] Add thread hierarchy tree view
-- [ ] Show parent-child relationships
-- [ ] Add thread state legend
-- [ ] Add batch processing timeline
-- [ ] Add memory usage visualization
+### Step 6: Consolidate CLI Tools into Single Robust Tool (3-4 hours) - IN PROGRESS 🔄
+- [x] Analyze all existing CLI tools (train_model, cllm_inference, cllm_tokenize, etc.)
+- [x] Design unified CLI tool: `cllm` with subcommands
+- [x] Create framework with command parsing
+- [x] Add comprehensive --help for all subcommands
+- [ ] Implement: `cllm train` - connect to hierarchical training system
+- [ ] Implement: `cllm infer` - connect to inference system
+- [ ] Implement: `cllm create` - connect to model creation
+- [ ] Implement: `cllm tokenize` - connect to tokenizer
+- [ ] Implement: `cllm vocab` - connect to vocab builder
+- [ ] Build and test all functionality
+- [ ] Update Makefile to build unified tool
+
+### Step 7: Complete LLM Tab Implementation (2-3 hours) - NEEDS REVIEW
+- [x] Analyze current LLM tab functionality (DONE - tab_llm.c reviewed)
+- [x] Model creation in UI (DONE - Create button implemented)
+- [x] Model loading in UI (DONE - Load button implemented)
+- [x] Model saving in UI (DONE - Save button implemented)
+- [x] Inference functionality (DONE - Send button + Enter key)
+- [x] Temperature control (DONE - slider implemented)
+- [x] Max tokens control (DONE - slider implemented)
+- [x] Chat interface (DONE - message bubbles, scrolling)
+- [ ] Test chat interface end-to-end (requires UI testing)
+- [ ] Verify feature parity with CLI tool (after CLI tool is complete)
 - [ ] Build and test
 
-### Step 7: Documentation (2-3 hours)
-- [ ] User guide for new UI
-- [ ] Developer guide for metrics system
-- [ ] Architecture documentation
-- [ ] Update MASTER_PLAN status
+### Step 8: Feature Parity Validation (1-2 hours) - PENDING
+- [ ] Create feature comparison matrix (UI vs CLI)
+- [ ] Test training in both UI and CLI
+- [ ] Test inference in both UI and CLI
+- [ ] Test model save/load in both
+- [ ] Verify same results from both interfaces
+- [ ] Document any intentional differences
+- [ ] Fix any gaps found
 
 ## Summary
 
 **Total Files:** 9 (2 new, 7 modified)
 **Estimated Time:** 15-23 hours
 **Risk Level:** Low
-**Status:** Ready to implement
+**Current Status:** Step 6 in progress, Step 7 complete (needs testing)
 
 See `FINAL_COMPREHENSIVE_SUMMARY.md` for complete details.
