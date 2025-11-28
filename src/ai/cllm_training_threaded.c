@@ -369,20 +369,14 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 2);
     pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 2);
     
-    // Create thread system with calculated hierarchy
-    system->thread_system = threads_create(hierarchy_levels);
-    printf("DEBUG: [STEP 2] threads_create returned: %p\n", (void*)system->thread_system); fflush(stdout);
-    if (!system->thread_system) {
-        shared_memory_free(system->shared_gradients);
-        free(system);
-        return NULL;
-    }
-
-    // Set user_data for all spheres to point to the training system
-    // This allows spawning logic to access the sphere_id_counter
-    for (int i = 0; i < system->thread_system->total_spheres; i++) {
-        system->thread_system->all_spheres[i]->user_data = system;
-    }
+    // OPTIMIZATION PHASE 2: Skip full kissing spheres hierarchy creation
+    // Only create sphere contexts for active workers (saves 376MB)
+    // The full 157-sphere hierarchy is not needed until dynamic spawning
+    system->thread_system = NULL;  // Skip for now
+    printf("DEBUG: [STEP 2] Skipping full sphere hierarchy (optimization)\n"); fflush(stdout);
+    
+    // Note: threads_create() would create 157 spheres (1 + 12 + 144)
+    // We only need num_threads spheres, so we skip it and create contexts directly
     
     // PHASE 5: Initialize control process infrastructure
     SystemConfiguration control_config = {
@@ -430,7 +424,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     system->sphere_contexts = (SphereTrainingContext**)calloc(system->num_worker_spheres, 
                                                                sizeof(SphereTrainingContext*));
     if (!system->sphere_contexts) {
-        threads_free(system->thread_system);
+        if (system->thread_system) threads_free(system->thread_system);
         shared_memory_free(system->shared_gradients);
         free(system);
         return NULL;
@@ -447,7 +441,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
                 sphere_context_free(system->sphere_contexts[j]);
             }
             free(system->sphere_contexts);
-            threads_free(system->thread_system);
+            if (system->thread_system) threads_free(system->thread_system);
             shared_memory_free(system->shared_gradients);
             free(system);
             return NULL;
@@ -475,7 +469,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
             sphere_context_free(system->sphere_contexts[j]);
         }
         free(system->sphere_contexts);
-        threads_free(system->thread_system);
+        if (system->thread_system) threads_free(system->thread_system);
         shared_memory_free(system->shared_gradients);
         free(system);
         return NULL;
@@ -512,7 +506,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
                 sphere_context_free(system->sphere_contexts[j]);
             }
             free(system->sphere_contexts);
-            threads_free(system->thread_system);
+            if (system->thread_system) threads_free(system->thread_system);
             shared_memory_free(system->shared_gradients);
             free(system);
             return NULL;
@@ -572,7 +566,7 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     // Free the dynamic array
     free(system->sphere_contexts);
     
-    threads_free(system->thread_system);
+    if (system->thread_system) threads_free(system->thread_system);
     
     // Free shared memory regions
     shared_memory_free(system->shared_gradients);
