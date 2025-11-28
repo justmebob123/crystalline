@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "../include/cllm.h"
+#include "../include/prime_float_math.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_angular_position.h"
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
         if (count > 0) {
             double avg = sum_theta / count;
             double variance = (sum_theta_sq / count) - (avg * avg);
-            double stddev = (variance > 0) ? sqrt(variance) : 0.0;
+            double stddev = (variance > 0) ? prime_sqrt(variance) : 0.0;
             
             printf("%-10d %-10d %-15.6f %-15.6f\n", g, count, avg, stddev);
         }

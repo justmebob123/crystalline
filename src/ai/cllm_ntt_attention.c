@@ -357,7 +357,7 @@ void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim) {
     double max_diff = 0.0;
     double avg_diff = 0.0;
     for (uint32_t i = 0; i < seq_len * head_dim; i++) {
-        double diff = prime_fabs((double)(output_standard[i] - output_ntt[i]));
+        double diff = (double)prime_fabsf((float)(output_standard[i] - output_ntt[i]));
         if (diff > max_diff) max_diff = diff;
         avg_diff += diff;
     }

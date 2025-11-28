@@ -1,5 +1,39 @@
 # TODO - Crystalline CLLM Implementation
 
+## 🔒 MASTER PLAN RULES (PERMANENT - READ FIRST)
+
+### RULE 3A: CRYSTALLINE MATH EVERYWHERE - NO STANDARD MATH LIBRARY
+**CRITICAL**: This is an INDEPENDENT implementation of mathematics.
+
+**NEVER USE**:
+- ❌ `#include <math.h>`
+- ❌ Standard math functions: `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `pow`, `fabs`, etc.
+
+**ALWAYS USE**:
+- ✅ `#include "../include/prime_float_math.h"`
+- ✅ Crystalline equivalents: `prime_sqrtf`, `prime_sinf`, `prime_cosf`, `prime_tanf`, `prime_expf`, `prime_logf`, `prime_powf`, `prime_fabsf`
+- ✅ For double precision: `prime_sqrt`, `prime_sin`, `prime_cos`, `prime_exp`, `prime_log`, `prime_pow`
+
+**Verification**:
+```bash
+# Check for violations
+grep -r "#include <math.h>" src/ tests/ tools/
+```
+
+**FIXED**: Removed all math.h usage from:
+- ✅ tests/test_mathematical_integration.c
+- ✅ tools/visualize_angular_positions.c
+- ✅ src/ai/cllm_ntt_attention.c
+
+### OTHER CRITICAL RULES:
+- RULE 1: No new MD files without approval
+- RULE 2: Always commit with correct authentication
+- RULE 3: MASTER_PLAN.md is read-only
+- RULE 6: Fix HTML entities immediately
+- RULE 7: Fix all build warnings before proceeding
+
+---
+
 ## ✅ COMPLETE: Hierarchical Training System Fully Operational
 
 **Status**: Production ready and verified with multiple configurations

@@ -28,8 +28,11 @@ PERFORMANCE_TESTS = \
 VALIDATION_TESTS = \
 	$(VALIDATION_DIR)/test_numerical_gradients
 
+# Mathematical integration tests
+MATH_TESTS = test_mathematical_integration
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS)
 
 .PHONY: all unit integration performance validation clean run-unit run-integration run-performance run-validation run-all
 
@@ -153,3 +156,16 @@ help:
 	@echo ""
 	@echo "  clean            - Remove test executables"
 	@echo "  help             - Show this help message"
+# Mathematical integration test
+test_mathematical_integration: test_mathematical_integration.c
+	@echo "Building mathematical integration test..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ Mathematical integration test built"
+
+run-math: test_mathematical_integration
+	@echo ""
+	@echo "Running mathematical integration tests..."
+	@echo ""
+	@./test_mathematical_integration
+	@echo ""
+	@echo "✓ Mathematical integration tests completed"
