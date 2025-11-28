@@ -1,0 +1,1 @@
+Check if training->gradients and accumulated_gradients point to the same memory

@@ -285,6 +285,7 @@ void thread_local_training_free(ThreadLocalTrainingContext* ctx) {
     free(ctx->grad_hidden);
     free(ctx->grad_layer);
     
+    printf("DEBUG: About to free ThreadLocalTrainingContext %p\n", (void*)ctx); fflush(stdout);
     free(ctx);
 }
 
@@ -515,6 +516,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // Keep local_gradients for now (compatibility during transition)
     ctx->local_gradients = (float*)calloc(gradient_size, sizeof(float));
     if (!ctx->local_gradients) {
+    printf("DEBUG: About to free ThreadLocalTrainingContext %p\n", (void*)ctx); fflush(stdout);
         free(ctx);
         return NULL;
     }
@@ -552,6 +554,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
  * Free sphere training context
  */
 static void sphere_context_free(SphereTrainingContext* ctx) {
+    printf("DEBUG: Freeing sphere context %p\n", (void*)ctx); fflush(stdout);
     if (!ctx) return;
     
     
@@ -566,13 +569,21 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
     }
     // PHASE 8: Free thread-local training context
     if (ctx->thread_local_training) {
+    
+    // Ensure current_batch is not freed here (should be NULL)
+    if (ctx->current_batch) {
+        fprintf(stderr, "WARNING: sphere_context_free called with non-NULL current_batch!\n");
+        ctx->current_batch = NULL;  // Don't free it, just clear the pointer
+    }
         thread_local_training_free(ctx->thread_local_training);
     }
     
+    printf("DEBUG: About to free local_gradients %p\n", (void*)ctx->local_gradients); fflush(stdout);
     free(ctx->local_gradients);
     pthread_mutex_destroy(&ctx->lock);
     pthread_cond_destroy(&ctx->work_ready);
     pthread_cond_destroy(&ctx->work_done);
+    printf("DEBUG: About to free SphereTrainingContext %p\n", (void*)ctx); fflush(stdout);
     free(ctx);
 }
 
@@ -1026,14 +1037,17 @@ static void* control_thread_func(void* arg) {
     printf("[Node Zero] Control thread started - NEVER processes batches\n");
     printf("[Node Zero] Using barrier synchronization + lock-free gradient accumulation\n");
     
-    while (atomic_load(&system->running)) {
+    while (1) {
         // POINT A: Wait for batch distribution
         pthread_barrier_wait(&system->batch_barrier);
         
         // Check if we should stop
-        if (!atomic_load(&system->running)) {
-            break;
-        }
+       // Check if we should stop (AFTER barrier to avoid deadlock)
+       if (!atomic_load(&system->running)) {
+           // Must still participate in Point B barrier before exiting
+           pthread_barrier_wait(&system->batch_barrier);
+           break;
+       }
         
         // Workers are now processing batches...
         // Control thread waits at next barrier
@@ -1072,14 +1086,17 @@ static void* sphere_worker_thread(void* arg) {
     
     int batches_processed = 0;
     
-    while (atomic_load(&system->running)) {
+    while (1) {
         // POINT A: Wait for batch assignment from main thread
         pthread_barrier_wait(&system->batch_barrier);
         
         // Check if we should stop
-        if (!atomic_load(&system->running)) {
-            break;
-        }
+       // Check if we should stop (AFTER barrier to avoid deadlock)
+       if (!atomic_load(&system->running)) {
+           // Must still participate in Point B barrier before exiting
+           pthread_barrier_wait(&system->batch_barrier);
+           break;
+       }
         
         // PHASE 6: Control threads NEVER process batches
         // Only leaf workers (no children) process batches
@@ -1465,6 +1482,15 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         // Apply gradients using Adam optimizer
         cllm_optimizer_step_adam(system->training);
     }
+    // CRITICAL FIX: Signal threads to stop by setting running=0 and releasing barriers
+    printf("\nEpoch complete - signaling threads to stop...\n");
+    atomic_store(&system->running, 0);
+    
+    // Release threads from barriers by participating one more time
+    // This allows them to check the running flag and exit cleanly
+    pthread_barrier_wait(&system->batch_barrier);  // Release Point A
+    pthread_barrier_wait(&system->batch_barrier);  // Release Point B
+
     
     float avg_loss = (batch_count > 0) ? epoch_loss / (batch_count / (float)system->num_worker_spheres) : 0.0f;
     

@@ -1,0 +1,2 @@
+The issue is that we're creating/destroying the threaded system every epoch.
+We need to create it once before the loop and reuse it.

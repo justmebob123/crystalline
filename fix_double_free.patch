@@ -1,0 +1,15 @@
+--- a/src/ai/cllm_training_threaded.c
++++ b/src/ai/cllm_training_threaded.c
+@@ -560,6 +560,11 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
+     // PHASE 8: Free thread-local training context
+     if (ctx->thread_local_training) {
+         thread_local_training_free(ctx->thread_local_training);
+     }
+     
++    // Ensure current_batch is not freed here (should be NULL)
++    if (ctx->current_batch) {
++        fprintf(stderr, "WARNING: sphere_context_free called with non-NULL current_batch!\n");
++        ctx->current_batch = NULL;  // Don't free it, just clear the pointer
++    }
++    
+     free(ctx->local_gradients);

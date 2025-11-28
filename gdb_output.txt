@@ -1,0 +1,31 @@
+Catchpoint 1 (syscall 'exit_group' [231])
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[Detaching after vfork from child process 39820]
+[New Thread 0x7ffff56a76c0 (LWP 39822)]
+[New Thread 0x7ffff55a66c0 (LWP 39823)]
+[New Thread 0x7ffff54a56c0 (LWP 39824)]
+[Thread 0x7ffff54a56c0 (LWP 39824) exited]
+[Thread 0x7ffff55a66c0 (LWP 39823) exited]
+[Thread 0x7ffff56a76c0 (LWP 39822) exited]
+
+Thread 1 "train_model" received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=<optimized out>, signo=signo@entry=6, no_tid=no_tid@entry=0) at ./nptl/pthread_kill.c:44
+44	./nptl/pthread_kill.c: No such file or directory.
+#0  __pthread_kill_implementation (threadid=<optimized out>, signo=signo@entry=6, no_tid=no_tid@entry=0) at ./nptl/pthread_kill.c:44
+#1  0x00007ffff7d17f4f in __pthread_kill_internal (signo=6, threadid=<optimized out>) at ./nptl/pthread_kill.c:78
+#2  0x00007ffff7cc8fb2 in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#3  0x00007ffff7cb3472 in __GI_abort () at ./stdlib/abort.c:79
+#4  0x00007ffff7d0c42f in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7e27459 "%s\n") at ../sysdeps/posix/libc_fatal.c:156
+#5  0x00007ffff7d2186a in malloc_printerr (str=str@entry=0x7ffff7e2a158 "double free or corruption (!prev)") at ./malloc/malloc.c:5660
+#6  0x00007ffff7d238dc in _int_free (av=0x7ffff7e60c60 <main_arena>, p=0x555555563270, have_lock=<optimized out>, have_lock@entry=0) at ./malloc/malloc.c:4587
+#7  0x00007ffff7d25f4f in __GI___libc_free (mem=<optimized out>) at ./malloc/malloc.c:3385
+#8  0x00007ffff7f8370c in cllm_training_cleanup (training=0x5555555630c0) at src/ai/cllm_training.c:1562
+#9  cllm_training_cleanup (training=0x5555555630c0) at src/ai/cllm_training.c:1555
+#10 0x0000555555557010 in train_model (model=0x555555562220, dataset=0x55555556a8f0, config=0x7fffffffdf90, checkpoint_dir=0x555555558dbb "./checkpoints", num_threads=2) at tools/train_model.c:272
+#11 0x0000555555557a34 in main (argc=12, argv=0x7fffffffe7e8) at tools/train_model.c:456
+A debugging session is active.
+
+	Inferior 1 [process 39817] will be killed.
+
+Quit anyway? (y or n) [answered Y; input not from terminal]

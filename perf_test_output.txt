@@ -1,0 +1,966 @@
+=== CRYSTALLINE CLLM PERFORMANCE TEST ===
+CPU Cores: 64
+Testing with ALL cores and 10 epochs
+
+Creating test dataset...
+Dataset created: 19900 bytes
+
+Running training with 64 threads, 10 epochs...
+Start time: Fri Nov 28 02:30:35 UTC 2025
+
+╔════════════════════════════════════════════════════════════╗
+║         CLLM Training System v1.0                          ║
+║         Crystalline Lattice Language Model                 ║
+╚════════════════════════════════════════════════════════════╝
+
+Step 1: Loading and preprocessing data
+========================================
+
+Loaded: data/perf_test//test.txt (199 bytes)
+Loaded: data/perf_test//test_large.txt (19900 bytes)
+Loaded 2 files
+
+Step 2: Building vocabulary
+============================
+
+Building vocabulary from 2 documents...
+Vocabulary built: 35 unique tokens, 3535 total tokens
+
+=== Data Loader Statistics ===
+Documents: 2
+Total characters: 20099
+Total lines: 0
+Total tokens: 3535
+Avg chars per document: 10049.5
+Vocabulary size: 35
+==============================
+
+Vocabulary saved to: ./checkpoints/vocab.txt
+
+Step 3: Creating training dataset
+==================================
+
+Creating training dataset...
+Dataset created: 3535 tokens
+Dataset saved to: ./checkpoints/dataset.bin (3535 tokens)
+
+Step 4: Creating model
+=======================
+
+Model Configuration:
+  Vocab size:       35
+  Embedding dim:    256
+  Num layers:       6
+  Num heads:        8
+  Head dim:         32
+  FF hidden dim:    1024
+  Total params:     4348160
+
+Step 5: Configuring training
+=============================
+
+Training Configuration:
+  Learning rate:    0.000100
+  Batch size:       8
+  Sequence length:  32
+  Num epochs:       10
+  Max steps:        100000
+  Weight decay:     0.010000
+  Gradient clip:    1.00
+  Warmup steps:     1000
+  Save interval:    1000
+  Eval interval:    100
+  Optimizer:        adam
+
+Step 6: Training model
+=======================
+
+=== Starting Training ===
+
+Using 64 threads for training
+
+✓ Allocated attention cache: 983040 bytes (full backward enabled)
+✓ Pre-allocated backward buffers: 527360 bytes
+✓ Allocated embedding cache: 524288 bytes
+Training dataset:
+  Total tokens:     3535
+  Tokens per batch: 256
+  Total batches:    13
+
+╔═══════════════════════════════════════════════════════════╗
+║ Epoch 1/10                                               ║
+╚═══════════════════════════════════════════════════════════╝
+
+DEBUG: training->tokens = 0x575dceea70a0, training->num_tokens = 3535
+DEBUG: batch_size = 8, sequence_length = 32
+DEBUG: About to create batch_iterator
+DEBUG: batch_iterator = 0x575dceeaccf0
+DEBUG: About to create threaded_system...
+DEBUG: About to create threaded_system with 64 threads
+DEBUG: [ENTER] threaded_training_create, num_threads=64
+Creating 12-fold symmetric threading system (MASTER PLAN):
+  Symmetry positions: 12 (12-fold structure)
+  Active workers: 64 (rotating through positions)
+  Control thread: Node Zero (NEVER processes batches)
+  Hierarchy levels: 3
+  ✓ Created shared gradient buffer: 0.03 MB
+DEBUG: [STEP 2] Skipping full sphere hierarchy (optimization)
+  ✓ Control process infrastructure initialized
+  ✓ Root lattice hierarchy created (12-fold structure)
+DEBUG: [STEP 3] Creating Node Zero (control thread)
+  ✓ Node Zero created (control thread NEVER processes batches)
+DEBUG: [STEP 4] Creating worker threads
+  Creating 64 worker threads...
+DEBUG: [STEP 5] Creating worker 1/64
+DEBUG: [STEP 5] Creating worker 2/64
+[Node Zero] Control thread started - NEVER processes batches
+[Node Zero] Using barrier synchronization + lock-free gradient accumulation
+DEBUG: [STEP 5] Creating worker 3/64
+[Worker 0] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 4/64
+[Worker 2] Thread started (symmetry group 2)
+[Worker 1] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 5/64
+[Worker 3] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 6/64
+DEBUG: [STEP 5] Creating worker 7/64
+[Worker 4] Thread started (symmetry group 4)
+[Worker 5] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 8/64
+[Worker 6] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 9/64
+DEBUG: [STEP 5] Creating worker 10/64
+[Worker 7] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 11/64
+[Worker 8] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 12/64
+[Worker 9] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 13/64
+[Worker 10] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 14/64
+[Worker 12] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 15/64
+[Worker 11] Thread started (symmetry group 11)
+[Worker 13] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 16/64
+[Worker 14] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 17/64
+[Worker 15] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 18/64
+DEBUG: [STEP 5] Creating worker 19/64
+[Worker 16] Thread started (symmetry group 4)
+[Worker 17] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 20/64
+[Worker 18] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 21/64
+[Worker 19] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 22/64
+[Worker 20] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 23/64
+[Worker 21] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 24/64
+[Worker 22] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 25/64
+[Worker 23] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 26/64
+[Worker 24] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 27/64
+[Worker 25] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 28/64
+[Worker 26] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 29/64
+[Worker 27] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 30/64
+[Worker 28] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 31/64
+[Worker 29] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 32/64
+[Worker 30] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 33/64
+[Worker 31] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 34/64
+[Worker 32] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 35/64
+[Worker 33] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 36/64
+[Worker 34] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 37/64
+[Worker 35] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 38/64
+[Worker 36] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 39/64
+[Worker 37] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 40/64
+[Worker 38] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 41/64
+[Worker 39] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 42/64
+[Worker 40] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 43/64
+[Worker 41] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 44/64
+[Worker 42] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 45/64
+DEBUG: [STEP 5] Creating worker 46/64
+[Worker 43] Thread started (symmetry group 7)
+[Worker 44] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 47/64
+[Worker 45] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 48/64
+DEBUG: [STEP 5] Creating worker 49/64
+[Worker 46] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 50/64
+[Worker 47] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 51/64
+[Worker 48] Thread started (symmetry group 0)
+[Worker 49] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 52/64
+[Worker 50] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 53/64
+[Worker 51] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 54/64
+[Worker 52] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 55/64
+[Worker 53] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 56/64
+[Worker 54] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 57/64
+[Worker 55] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 58/64
+[Worker 56] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 59/64
+[Worker 57] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 60/64
+DEBUG: [STEP 5] Creating worker 61/64
+[Worker 58] Thread started (symmetry group 10)
+[Worker 59] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 62/64
+[Worker 60] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 63/64
+[Worker 61] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 64/64
+[Worker 62] Thread started (symmetry group 2)
+  ✓ Threaded training system created successfully
+    - 1 control thread (Node Zero)
+    - 64 worker threads
+    - 12-fold symmetry structure
+
+[Worker 63] Thread started (symmetry group 3)
+DEBUG: threaded_system = 0x575dceeacd20
+✓ Using Kissing Spheres Architecture with 64 worker threads
+
+Starting multi-threaded epoch training...
+Using 64 worker threads for parallel batch processing
+
+DEBUG: About to reset batch iterator
+DEBUG: Batch iterator reset complete
+DEBUG: Allocating batch array for 64 workers
+DEBUG: Loading batches...
+DEBUG: Loading batch 1/64
+DEBUG: Batch 1 loaded: 0x575dceeace50
+DEBUG: Loading batch 2/64
+DEBUG: Batch 2 loaded: 0x575dd32d03e0
+DEBUG: Loading batch 3/64
+DEBUG: Batch 3 loaded: 0x575dd32d1040
+DEBUG: Loading batch 4/64
+DEBUG: Batch 4 loaded: 0x575dd32d1ca0
+DEBUG: Loading batch 5/64
+DEBUG: Batch 5 loaded: 0x575dd32d2900
+DEBUG: Loading batch 6/64
+DEBUG: Batch 6 loaded: 0x575dd32d3560
+DEBUG: Loading batch 7/64
+DEBUG: Batch 7 loaded: 0x575dd32d41c0
+DEBUG: Loading batch 8/64
+DEBUG: Batch 8 loaded: 0x575dd32d4e20
+DEBUG: Loading batch 9/64
+DEBUG: Batch 9 loaded: 0x575dd32d5a80
+DEBUG: Loading batch 10/64
+DEBUG: Batch 10 loaded: 0x575dd32d66e0
+DEBUG: Loading batch 11/64
+DEBUG: Batch 11 loaded: 0x575dd32d7340
+DEBUG: Loading batch 12/64
+DEBUG: Batch 12 loaded: 0x575dd32d7fa0
+DEBUG: Loading batch 13/64
+DEBUG: Batch 13 loaded: 0x575dd32d8c00
+DEBUG: Loading batch 14/64
+DEBUG: Batch 14 loaded: 0x575dd32d9860
+DEBUG: Loading batch 15/64
+DEBUG: Batch 15 loaded: (nil)
+DEBUG: No more batches at index 14
+DEBUG: Loaded 14 batches total
+DEBUG: Checking if first batch group (total_batch_groups=0)
+First batch group: loaded 14 batches
+DEBUG: Incrementing total_batch_groups
+DEBUG: total_batch_groups=1, checking safety
+DEBUG: max_batch_groups=24
+DEBUG: Safety check passed, about to print processing message
+Processing batch group 1 (14 batches across 14 spheres)...
+DEBUG: Processing message printed
+  Clipped gradients: norm 7107.3589 -> 10.0000
+  Clipped gradients: norm 7126.5039 -> 10.0000
+  Clipped gradients: norm 7083.7832 -> 10.0000
+  Clipped gradients: norm 7083.7832 -> 10.0000
+  Clipped gradients: norm 7071.8730 -> 10.0000
+  Clipped gradients: norm 7159.2109 -> 10.0000
+  Clipped gradients: norm 7067.1895 -> 10.0000
+  Clipped gradients: norm 7086.3359 -> 10.0000
+  Clipped gradients: norm 7158.7480 -> 10.0000
+  Clipped gradients: norm 7085.3955 -> 10.0000
+  Clipped gradients: norm 7055.5044 -> 10.0000
+  Clipped gradients: norm 7163.4053 -> 10.0000
+  Clipped gradients: norm 7096.3682 -> 10.0000
+  Clipped gradients: norm 7053.9946 -> 10.0000
+  Clipped gradients: norm 7957.0610 -> 10.0000
+  Batch group loss: 1.7784
+DEBUG: Updating embeddings...
+DEBUG: embed_size=8960, grad[0]=-0.02283473
+DEBUG: After update, embed[0]=0.04949283
+DEBUG: Allocating batch array for 64 workers
+DEBUG: Loading batches...
+DEBUG: Loading batch 1/64
+DEBUG: Batch 1 loaded: (nil)
+DEBUG: No more batches at index 0
+DEBUG: Loaded 0 batches total
+DEBUG: No batches loaded, breaking
+
+Epoch complete - signaling threads to stop...
+[Worker 4] Thread stopping (processed 1 batches)
+[Worker 26] Thread stopping (processed 0 batches)
+
+Epoch complete:
+  Total batches processed: 14
+  Average loss: 8.1297
+  Batches per sphere: 0.2
+[Worker 25] Thread stopping (processed 0 batches)
+[Worker 22] Thread stopping (processed 0 batches)
+[Worker 54] Thread stopping (processed 0 batches)
+[Worker 50] Thread stopping (processed 0 batches)
+[Worker 21] Thread stopping (processed 0 batches)
+[Worker 49] Thread stopping (processed 0 batches)
+[Worker 23] Thread stopping (processed 0 batches)
+[Worker 57] Thread stopping (processed 0 batches)
+[Worker 40] Thread stopping (processed 0 batches)
+[Worker 46] Thread stopping (processed 0 batches)
+[Worker 3] Thread stopping (processed 1 batches)
+[Worker 19] Thread stopping (processed 0 batches)
+[Worker 32] Thread stopping (processed 0 batches)
+[Worker 63] Thread stopping (processed 0 batches)
+[Worker 53] Thread stopping (processed 0 batches)
+[Worker 41] Thread stopping (processed 0 batches)
+[Worker 18] Thread stopping (processed 0 batches)
+[Worker 35] Thread stopping (processed 0 batches)
+[Worker 31] Thread stopping (processed 0 batches)
+[Worker 62] Thread stopping (processed 0 batches)
+[Worker 48] Thread stopping (processed 0 batches)
+[Worker 17] Thread stopping (processed 0 batches)
+[Worker 60] Thread stopping (processed 0 batches)
+[Worker 42] Thread stopping (processed 0 batches)
+[Worker 37] Thread stopping (processed 0 batches)
+[Worker 24] Thread stopping (processed 0 batches)
+[Worker 51] Thread stopping (processed 0 batches)
+[Worker 29] Thread stopping (processed 0 batches)
+[Worker 20] Thread stopping (processed 0 batches)
+[Worker 52] Thread stopping (processed 0 batches)
+[Worker 30] Thread stopping (processed 0 batches)
+[Worker 16] Thread stopping (processed 0 batches)
+[Worker 43] Thread stopping (processed 0 batches)
+[Worker 61] Thread stopping (processed 0 batches)
+[Worker 45] Thread stopping (processed 0 batches)
+[Worker 15] Thread stopping (processed 0 batches)
+[Worker 10] Thread stopping (processed 1 batches)
+[Worker 39] Thread stopping (processed 0 batches)
+[Worker 5] Thread stopping (processed 1 batches)
+[Worker 2] Thread stopping (processed 1 batches)
+[Worker 47] Thread stopping (processed 0 batches)
+[Worker 6] Thread stopping (processed 1 batches)
+[Worker 1] Thread stopping (processed 1 batches)
+[Worker 13] Thread stopping (processed 1 batches)
+[Worker 12] Thread stopping (processed 1 batches)
+[Worker 7] Thread stopping (processed 1 batches)
+[Worker 9] Thread stopping (processed 1 batches)
+[Worker 38] Thread stopping (processed 0 batches)
+[Node Zero] Control thread stopping
+[Worker 34] Thread stopping (processed 0 batches)
+[Worker 56] Thread stopping (processed 0 batches)
+
+========================================
+  Multi-Threaded Training Statistics
+========================================
+
+Thread System:
+
+Sphere Statistics:
+[Worker 8] Thread stopping (processed 1 batches)
+  Sphere  0 (Group  0): 1 batches processed, avg loss: 1.7805
+  Sphere  1 (Group  1): 1 batches processed, avg loss: 1.7873
+  Sphere  2 (Group  2): 1 batches processed, avg loss: 1.7964
+  Sphere  3 (Group  3): 1 batches processed, avg loss: 1.7835
+  Sphere  4 (Group  4): 1 batches processed, avg loss: 1.7854
+[Worker 59] Thread stopping (processed 0 batches)
+[Worker 55] Thread stopping (processed 0 batches)
+[Worker 14] Thread stopping (processed 0 batches)
+[Worker 27] Thread stopping (processed 0 batches)
+[Worker 28] Thread stopping (processed 0 batches)
+[Worker 33] Thread stopping (processed 0 batches)
+[Worker 11] Thread stopping (processed 1 batches)
+[Worker 58] Thread stopping (processed 0 batches)
+[Worker 36] Thread stopping (processed 0 batches)
+[Worker 0] Thread stopping (processed 1 batches)
+[Worker 44] Thread stopping (processed 0 batches)
+  Sphere  5 (Group  5): 1 batches processed, avg loss: 1.7948
+  Sphere  6 (Group  6): 1 batches processed, avg loss: 1.7855
+  Sphere  7 (Group  7): 1 batches processed, avg loss: 1.7866
+  Sphere  8 (Group  8): 1 batches processed, avg loss: 1.7944
+  Sphere  9 (Group  9): 1 batches processed, avg loss: 1.7882
+  Sphere 10 (Group 10): 1 batches processed, avg loss: 1.7845
+  Sphere 11 (Group 11): 1 batches processed, avg loss: 1.7939
+  Sphere 12 (Group  0): 1 batches processed, avg loss: 1.7900
+  Sphere 13 (Group  1): 1 batches processed, avg loss: 1.6460
+  Sphere 14 (Group  2): 0 batches processed, avg loss: 0.0000
+  Sphere 15 (Group  3): 0 batches processed, avg loss: 0.0000
+  Sphere 16 (Group  4): 0 batches processed, avg loss: 0.0000
+  Sphere 17 (Group  5): 0 batches processed, avg loss: 0.0000
+  Sphere 18 (Group  6): 0 batches processed, avg loss: 0.0000
+  Sphere 19 (Group  7): 0 batches processed, avg loss: 0.0000
+  Sphere 20 (Group  8): 0 batches processed, avg loss: 0.0000
+  Sphere 21 (Group  9): 0 batches processed, avg loss: 0.0000
+  Sphere 22 (Group 10): 0 batches processed, avg loss: 0.0000
+  Sphere 23 (Group 11): 0 batches processed, avg loss: 0.0000
+  Sphere 24 (Group  0): 0 batches processed, avg loss: 0.0000
+  Sphere 25 (Group  1): 0 batches processed, avg loss: 0.0000
+  Sphere 26 (Group  2): 0 batches processed, avg loss: 0.0000
+  Sphere 27 (Group  3): 0 batches processed, avg loss: 0.0000
+  Sphere 28 (Group  4): 0 batches processed, avg loss: 0.0000
+  Sphere 29 (Group  5): 0 batches processed, avg loss: 0.0000
+  Sphere 30 (Group  6): 0 batches processed, avg loss: 0.0000
+  Sphere 31 (Group  7): 0 batches processed, avg loss: 0.0000
+  Sphere 32 (Group  8): 0 batches processed, avg loss: 0.0000
+  Sphere 33 (Group  9): 0 batches processed, avg loss: 0.0000
+  Sphere 34 (Group 10): 0 batches processed, avg loss: 0.0000
+  Sphere 35 (Group 11): 0 batches processed, avg loss: 0.0000
+  Sphere 36 (Group  0): 0 batches processed, avg loss: 0.0000
+  Sphere 37 (Group  1): 0 batches processed, avg loss: 0.0000
+  Sphere 38 (Group  2): 0 batches processed, avg loss: 0.0000
+  Sphere 39 (Group  3): 0 batches processed, avg loss: 0.0000
+  Sphere 40 (Group  4): 0 batches processed, avg loss: 0.0000
+  Sphere 41 (Group  5): 0 batches processed, avg loss: 0.0000
+  Sphere 42 (Group  6): 0 batches processed, avg loss: 0.0000
+  Sphere 43 (Group  7): 0 batches processed, avg loss: 0.0000
+  Sphere 44 (Group  8): 0 batches processed, avg loss: 0.0000
+  Sphere 45 (Group  9): 0 batches processed, avg loss: 0.0000
+  Sphere 46 (Group 10): 0 batches processed, avg loss: 0.0000
+  Sphere 47 (Group 11): 0 batches processed, avg loss: 0.0000
+  Sphere 48 (Group  0): 0 batches processed, avg loss: 0.0000
+  Sphere 49 (Group  1): 0 batches processed, avg loss: 0.0000
+  Sphere 50 (Group  2): 0 batches processed, avg loss: 0.0000
+  Sphere 51 (Group  3): 0 batches processed, avg loss: 0.0000
+  Sphere 52 (Group  4): 0 batches processed, avg loss: 0.0000
+  Sphere 53 (Group  5): 0 batches processed, avg loss: 0.0000
+  Sphere 54 (Group  6): 0 batches processed, avg loss: 0.0000
+  Sphere 55 (Group  7): 0 batches processed, avg loss: 0.0000
+  Sphere 56 (Group  8): 0 batches processed, avg loss: 0.0000
+  Sphere 57 (Group  9): 0 batches processed, avg loss: 0.0000
+  Sphere 58 (Group 10): 0 batches processed, avg loss: 0.0000
+  Sphere 59 (Group 11): 0 batches processed, avg loss: 0.0000
+  Sphere 60 (Group  0): 0 batches processed, avg loss: 0.0000
+  Sphere 61 (Group  1): 0 batches processed, avg loss: 0.0000
+  Sphere 62 (Group  2): 0 batches processed, avg loss: 0.0000
+  Sphere 63 (Group  3): 0 batches processed, avg loss: 0.0000
+
+
+Stopping threads...
+  Stopping Node Zero (control thread)...
+  ✓ Node Zero stopped
+  Stopping worker threads...
+All worker threads stopped.
+DEBUG: Freeing sphere context 0x575dcf01dcf0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf026b50
+DEBUG: About to free local_gradients 0x575dcf01df40
+DEBUG: About to free SphereTrainingContext 0x575dcf01dcf0
+DEBUG: Freeing sphere context 0x575dcf1287a0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf131600
+DEBUG: About to free local_gradients 0x575dcf1289f0
+DEBUG: About to free SphereTrainingContext 0x575dcf1287a0
+DEBUG: Freeing sphere context 0x575dcf2332d0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf23c130
+DEBUG: About to free local_gradients 0x575dcf233520
+DEBUG: About to free SphereTrainingContext 0x575dcf2332d0
+DEBUG: Freeing sphere context 0x575dcf33de00
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf346c60
+DEBUG: About to free local_gradients 0x575dcf33e050
+DEBUG: About to free SphereTrainingContext 0x575dcf33de00
+DEBUG: Freeing sphere context 0x575dcf448930
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf451790
+DEBUG: About to free local_gradients 0x575dcf448b80
+DEBUG: About to free SphereTrainingContext 0x575dcf448930
+DEBUG: Freeing sphere context 0x575dcf553460
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf55c2c0
+DEBUG: About to free local_gradients 0x575dcf5536b0
+DEBUG: About to free SphereTrainingContext 0x575dcf553460
+DEBUG: Freeing sphere context 0x575dcf65df90
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf666df0
+DEBUG: About to free local_gradients 0x575dcf65e1e0
+DEBUG: About to free SphereTrainingContext 0x575dcf65df90
+DEBUG: Freeing sphere context 0x575dcf768ac0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf771920
+DEBUG: About to free local_gradients 0x575dcf768d10
+DEBUG: About to free SphereTrainingContext 0x575dcf768ac0
+DEBUG: Freeing sphere context 0x575dcf8735f0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf87c450
+DEBUG: About to free local_gradients 0x575dcf873840
+DEBUG: About to free SphereTrainingContext 0x575dcf8735f0
+DEBUG: Freeing sphere context 0x575dcf97e120
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcf986f80
+DEBUG: About to free local_gradients 0x575dcf97e370
+DEBUG: About to free SphereTrainingContext 0x575dcf97e120
+DEBUG: Freeing sphere context 0x575dcfa88c50
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcfa91ab0
+DEBUG: About to free local_gradients 0x575dcfa88ea0
+DEBUG: About to free SphereTrainingContext 0x575dcfa88c50
+DEBUG: Freeing sphere context 0x575dcfb93780
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcfb9c5e0
+DEBUG: About to free local_gradients 0x575dcfb939d0
+DEBUG: About to free SphereTrainingContext 0x575dcfb93780
+DEBUG: Freeing sphere context 0x575dcfc9e2b0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcfca7110
+DEBUG: About to free local_gradients 0x575dcfc9e500
+DEBUG: About to free SphereTrainingContext 0x575dcfc9e2b0
+DEBUG: Freeing sphere context 0x575dcfda8de0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcfdb1c40
+DEBUG: About to free local_gradients 0x575dcfda9030
+DEBUG: About to free SphereTrainingContext 0x575dcfda8de0
+DEBUG: Freeing sphere context 0x575dcfeb3910
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcfebc770
+DEBUG: About to free local_gradients 0x575dcfeb3b60
+DEBUG: About to free SphereTrainingContext 0x575dcfeb3910
+DEBUG: Freeing sphere context 0x575dcffbe440
+DEBUG: About to free ThreadLocalTrainingContext 0x575dcffc72a0
+DEBUG: About to free local_gradients 0x575dcffbe690
+DEBUG: About to free SphereTrainingContext 0x575dcffbe440
+DEBUG: Freeing sphere context 0x575dd00c8f70
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd00d1dd0
+DEBUG: About to free local_gradients 0x575dd00c91c0
+DEBUG: About to free SphereTrainingContext 0x575dd00c8f70
+DEBUG: Freeing sphere context 0x575dd01d3aa0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd01dc900
+DEBUG: About to free local_gradients 0x575dd01d3cf0
+DEBUG: About to free SphereTrainingContext 0x575dd01d3aa0
+DEBUG: Freeing sphere context 0x575dd02de5d0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd02e7430
+DEBUG: About to free local_gradients 0x575dd02de820
+DEBUG: About to free SphereTrainingContext 0x575dd02de5d0
+DEBUG: Freeing sphere context 0x575dd03e9100
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd03f1f60
+DEBUG: About to free local_gradients 0x575dd03e9350
+DEBUG: About to free SphereTrainingContext 0x575dd03e9100
+DEBUG: Freeing sphere context 0x575dd04f3c30
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd04fca90
+DEBUG: About to free local_gradients 0x575dd04f3e80
+DEBUG: About to free SphereTrainingContext 0x575dd04f3c30
+DEBUG: Freeing sphere context 0x575dd05fe760
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd06075c0
+DEBUG: About to free local_gradients 0x575dd05fe9b0
+DEBUG: About to free SphereTrainingContext 0x575dd05fe760
+DEBUG: Freeing sphere context 0x575dd0709290
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd07120f0
+DEBUG: About to free local_gradients 0x575dd07094e0
+DEBUG: About to free SphereTrainingContext 0x575dd0709290
+DEBUG: Freeing sphere context 0x575dd0813dc0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd081cc20
+DEBUG: About to free local_gradients 0x575dd0814010
+DEBUG: About to free SphereTrainingContext 0x575dd0813dc0
+DEBUG: Freeing sphere context 0x575dd091e8f0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0927750
+DEBUG: About to free local_gradients 0x575dd091eb40
+DEBUG: About to free SphereTrainingContext 0x575dd091e8f0
+DEBUG: Freeing sphere context 0x575dd0a29420
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0a32280
+DEBUG: About to free local_gradients 0x575dd0a29670
+DEBUG: About to free SphereTrainingContext 0x575dd0a29420
+DEBUG: Freeing sphere context 0x575dd0b33f50
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0b3cdb0
+DEBUG: About to free local_gradients 0x575dd0b341a0
+DEBUG: About to free SphereTrainingContext 0x575dd0b33f50
+DEBUG: Freeing sphere context 0x575dd0c3ea80
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0c478e0
+DEBUG: About to free local_gradients 0x575dd0c3ecd0
+DEBUG: About to free SphereTrainingContext 0x575dd0c3ea80
+DEBUG: Freeing sphere context 0x575dd0d495b0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0d52410
+DEBUG: About to free local_gradients 0x575dd0d49800
+DEBUG: About to free SphereTrainingContext 0x575dd0d495b0
+DEBUG: Freeing sphere context 0x575dd0e540e0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0e5cf40
+DEBUG: About to free local_gradients 0x575dd0e54330
+DEBUG: About to free SphereTrainingContext 0x575dd0e540e0
+DEBUG: Freeing sphere context 0x575dd0f5ec10
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd0f67a70
+DEBUG: About to free local_gradients 0x575dd0f5ee60
+DEBUG: About to free SphereTrainingContext 0x575dd0f5ec10
+DEBUG: Freeing sphere context 0x575dd1069740
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd10725a0
+DEBUG: About to free local_gradients 0x575dd1069990
+DEBUG: About to free SphereTrainingContext 0x575dd1069740
+DEBUG: Freeing sphere context 0x575dd1174270
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd117d0d0
+DEBUG: About to free local_gradients 0x575dd11744c0
+DEBUG: About to free SphereTrainingContext 0x575dd1174270
+DEBUG: Freeing sphere context 0x575dd127eda0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1287c00
+DEBUG: About to free local_gradients 0x575dd127eff0
+DEBUG: About to free SphereTrainingContext 0x575dd127eda0
+DEBUG: Freeing sphere context 0x575dd13898d0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1392730
+DEBUG: About to free local_gradients 0x575dd1389b20
+DEBUG: About to free SphereTrainingContext 0x575dd13898d0
+DEBUG: Freeing sphere context 0x575dd1494400
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd149d260
+DEBUG: About to free local_gradients 0x575dd1494650
+DEBUG: About to free SphereTrainingContext 0x575dd1494400
+DEBUG: Freeing sphere context 0x575dd159ef30
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd15a7d90
+DEBUG: About to free local_gradients 0x575dd159f180
+DEBUG: About to free SphereTrainingContext 0x575dd159ef30
+DEBUG: Freeing sphere context 0x575dd16a9a60
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd16b28c0
+DEBUG: About to free local_gradients 0x575dd16a9cb0
+DEBUG: About to free SphereTrainingContext 0x575dd16a9a60
+DEBUG: Freeing sphere context 0x575dd17b4590
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd17bd3f0
+DEBUG: About to free local_gradients 0x575dd17b47e0
+DEBUG: About to free SphereTrainingContext 0x575dd17b4590
+DEBUG: Freeing sphere context 0x575dd18bf0c0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd18c7f20
+DEBUG: About to free local_gradients 0x575dd18bf310
+DEBUG: About to free SphereTrainingContext 0x575dd18bf0c0
+DEBUG: Freeing sphere context 0x575dd19c9bf0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd19d2a50
+DEBUG: About to free local_gradients 0x575dd19c9e40
+DEBUG: About to free SphereTrainingContext 0x575dd19c9bf0
+DEBUG: Freeing sphere context 0x575dd1ad4720
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1add580
+DEBUG: About to free local_gradients 0x575dd1ad4970
+DEBUG: About to free SphereTrainingContext 0x575dd1ad4720
+DEBUG: Freeing sphere context 0x575dd1bdf250
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1be80b0
+DEBUG: About to free local_gradients 0x575dd1bdf4a0
+DEBUG: About to free SphereTrainingContext 0x575dd1bdf250
+DEBUG: Freeing sphere context 0x575dd1ce9d80
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1cf2be0
+DEBUG: About to free local_gradients 0x575dd1ce9fd0
+DEBUG: About to free SphereTrainingContext 0x575dd1ce9d80
+DEBUG: Freeing sphere context 0x575dd1df48b0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1dfd710
+DEBUG: About to free local_gradients 0x575dd1df4b00
+DEBUG: About to free SphereTrainingContext 0x575dd1df48b0
+DEBUG: Freeing sphere context 0x575dd1eff3e0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd1f08240
+DEBUG: About to free local_gradients 0x575dd1eff630
+DEBUG: About to free SphereTrainingContext 0x575dd1eff3e0
+DEBUG: Freeing sphere context 0x575dd2009f10
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2012d70
+DEBUG: About to free local_gradients 0x575dd200a160
+DEBUG: About to free SphereTrainingContext 0x575dd2009f10
+DEBUG: Freeing sphere context 0x575dd2114a40
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd211d8a0
+DEBUG: About to free local_gradients 0x575dd2114c90
+DEBUG: About to free SphereTrainingContext 0x575dd2114a40
+DEBUG: Freeing sphere context 0x575dd221f570
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd22283d0
+DEBUG: About to free local_gradients 0x575dd221f7c0
+DEBUG: About to free SphereTrainingContext 0x575dd221f570
+DEBUG: Freeing sphere context 0x575dd232a0a0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2332f00
+DEBUG: About to free local_gradients 0x575dd232a2f0
+DEBUG: About to free SphereTrainingContext 0x575dd232a0a0
+DEBUG: Freeing sphere context 0x575dd2434bd0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd243da30
+DEBUG: About to free local_gradients 0x575dd2434e20
+DEBUG: About to free SphereTrainingContext 0x575dd2434bd0
+DEBUG: Freeing sphere context 0x575dd253f700
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2548560
+DEBUG: About to free local_gradients 0x575dd253f950
+DEBUG: About to free SphereTrainingContext 0x575dd253f700
+DEBUG: Freeing sphere context 0x575dd264a230
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2653090
+DEBUG: About to free local_gradients 0x575dd264a480
+DEBUG: About to free SphereTrainingContext 0x575dd264a230
+DEBUG: Freeing sphere context 0x575dd2754d60
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd275dbc0
+DEBUG: About to free local_gradients 0x575dd2754fb0
+DEBUG: About to free SphereTrainingContext 0x575dd2754d60
+DEBUG: Freeing sphere context 0x575dd285f890
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd28686f0
+DEBUG: About to free local_gradients 0x575dd285fae0
+DEBUG: About to free SphereTrainingContext 0x575dd285f890
+DEBUG: Freeing sphere context 0x575dd296a3c0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2973220
+DEBUG: About to free local_gradients 0x575dd296a610
+DEBUG: About to free SphereTrainingContext 0x575dd296a3c0
+DEBUG: Freeing sphere context 0x575dd2a74ef0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2a7dd50
+DEBUG: About to free local_gradients 0x575dd2a75140
+DEBUG: About to free SphereTrainingContext 0x575dd2a74ef0
+DEBUG: Freeing sphere context 0x575dd2b7fa20
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2b88880
+DEBUG: About to free local_gradients 0x575dd2b7fc70
+DEBUG: About to free SphereTrainingContext 0x575dd2b7fa20
+DEBUG: Freeing sphere context 0x575dd2c8a550
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2c933b0
+DEBUG: About to free local_gradients 0x575dd2c8a7a0
+DEBUG: About to free SphereTrainingContext 0x575dd2c8a550
+DEBUG: Freeing sphere context 0x575dd2d95080
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2d9dee0
+DEBUG: About to free local_gradients 0x575dd2d952d0
+DEBUG: About to free SphereTrainingContext 0x575dd2d95080
+DEBUG: Freeing sphere context 0x575dd2e9fbb0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2ea8a10
+DEBUG: About to free local_gradients 0x575dd2e9fe00
+DEBUG: About to free SphereTrainingContext 0x575dd2e9fbb0
+DEBUG: Freeing sphere context 0x575dd2faa6e0
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd2fb3540
+DEBUG: About to free local_gradients 0x575dd2faa930
+DEBUG: About to free SphereTrainingContext 0x575dd2faa6e0
+DEBUG: Freeing sphere context 0x575dd30b5210
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd30be070
+DEBUG: About to free local_gradients 0x575dd30b5460
+DEBUG: About to free SphereTrainingContext 0x575dd30b5210
+DEBUG: Freeing sphere context 0x575dd31bfd40
+DEBUG: About to free ThreadLocalTrainingContext 0x575dd31c8ba0
+DEBUG: About to free local_gradients 0x575dd31bff90
+DEBUG: About to free SphereTrainingContext 0x575dd31bfd40
+  ✓ Control process freed
+  ✓ Root hierarchy freed
+
+Epoch 1 complete: Avg Loss = 8.1297, Best Loss = 1000000000.0000
+
+--- Sample Generation ---
+Prompt: the quick brown
+Inference context initialized successfully
+Generated: token_1 token_11 token_22 token_12 token_14 token_3 token_4 token_3 token_27 token_29 token_16 token_34 token_23 token_28 token_27 token_27 token_22 token_16 token_8 token_13 token_12 token_13 token_12 token_10 token_13 token_10 token_31 token_8 token_8 token_19 token_3 token_15 token_19 token_6 token_32 token_2 token_13 token_2 token_4 token_3 token_32 token_22 token_3 token_19 token_14 token_31 token_8 token_3 token_13 token_23 token_14 token_28 token_2
+Tokens: 50
+------------------------
+
+╔═══════════════════════════════════════════════════════════╗
+║ Epoch 2/10                                               ║
+╚═══════════════════════════════════════════════════════════╝
+
+DEBUG: training->tokens = 0x575dceea70a0, training->num_tokens = 3535
+DEBUG: batch_size = 8, sequence_length = 32
+DEBUG: About to create batch_iterator
+DEBUG: batch_iterator = 0x575dcf01b900
+DEBUG: About to create threaded_system...
+DEBUG: About to create threaded_system with 64 threads
+DEBUG: [ENTER] threaded_training_create, num_threads=64
+Creating 12-fold symmetric threading system (MASTER PLAN):
+  Symmetry positions: 12 (12-fold structure)
+  Active workers: 64 (rotating through positions)
+  Control thread: Node Zero (NEVER processes batches)
+  Hierarchy levels: 3
+  ✓ Created shared gradient buffer: 0.03 MB
+DEBUG: [STEP 2] Skipping full sphere hierarchy (optimization)
+  ✓ Control process infrastructure initialized
+  ✓ Root lattice hierarchy created (12-fold structure)
+DEBUG: [STEP 3] Creating Node Zero (control thread)
+[Node Zero] Control thread started - NEVER processes batches
+[Node Zero] Using barrier synchronization + lock-free gradient accumulation
+  ✓ Node Zero created (control thread NEVER processes batches)
+DEBUG: [STEP 4] Creating worker threads
+  Creating 64 worker threads...
+DEBUG: [STEP 5] Creating worker 1/64
+[Worker 0] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 2/64
+[Worker 1] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 3/64
+[Worker 2] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 4/64
+[Worker 3] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 5/64
+[Worker 4] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 6/64
+[Worker 5] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 7/64
+[Worker 6] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 8/64
+[Worker 7] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 9/64
+[Worker 8] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 10/64
+[Worker 9] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 11/64
+[Worker 10] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 12/64
+[Worker 11] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 13/64
+[Worker 12] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 14/64
+[Worker 13] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 15/64
+[Worker 14] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 16/64
+[Worker 15] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 17/64
+[Worker 16] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 18/64
+[Worker 17] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 19/64
+[Worker 18] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 20/64
+[Worker 19] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 21/64
+[Worker 20] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 22/64
+[Worker 21] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 23/64
+[Worker 22] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 24/64
+[Worker 23] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 25/64
+[Worker 24] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 26/64
+[Worker 25] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 27/64
+[Worker 26] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 28/64
+[Worker 27] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 29/64
+[Worker 28] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 30/64
+[Worker 29] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 31/64
+[Worker 30] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 32/64
+[Worker 31] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 33/64
+[Worker 32] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 34/64
+[Worker 33] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 35/64
+[Worker 34] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 36/64
+[Worker 35] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 37/64
+[Worker 36] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 38/64
+[Worker 37] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 39/64
+[Worker 38] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 40/64
+[Worker 39] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 41/64
+[Worker 40] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 42/64
+[Worker 41] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 43/64
+[Worker 42] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 44/64
+[Worker 43] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 45/64
+[Worker 44] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 46/64
+[Worker 45] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 47/64
+[Worker 46] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 48/64
+[Worker 47] Thread started (symmetry group 11)
+DEBUG: [STEP 5] Creating worker 49/64
+[Worker 48] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 50/64
+[Worker 49] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 51/64
+[Worker 50] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 52/64
+[Worker 51] Thread started (symmetry group 3)
+DEBUG: [STEP 5] Creating worker 53/64
+[Worker 52] Thread started (symmetry group 4)
+DEBUG: [STEP 5] Creating worker 54/64
+[Worker 53] Thread started (symmetry group 5)
+DEBUG: [STEP 5] Creating worker 55/64
+[Worker 54] Thread started (symmetry group 6)
+DEBUG: [STEP 5] Creating worker 56/64
+[Worker 55] Thread started (symmetry group 7)
+DEBUG: [STEP 5] Creating worker 57/64
+[Worker 56] Thread started (symmetry group 8)
+DEBUG: [STEP 5] Creating worker 58/64
+[Worker 57] Thread started (symmetry group 9)
+DEBUG: [STEP 5] Creating worker 59/64
+[Worker 58] Thread started (symmetry group 10)
+DEBUG: [STEP 5] Creating worker 60/64
+DEBUG: [STEP 5] Creating worker 61/64
+[Worker 59] Thread started (symmetry group 11)
+[Worker 60] Thread started (symmetry group 0)
+DEBUG: [STEP 5] Creating worker 62/64
+[Worker 61] Thread started (symmetry group 1)
+DEBUG: [STEP 5] Creating worker 63/64
+[Worker 62] Thread started (symmetry group 2)
+DEBUG: [STEP 5] Creating worker 64/64
+[Worker 63] Thread started (symmetry group 3)
+  ✓ Threaded training system created successfully
+    - 1 control thread (Node Zero)
+    - 64 worker threads
+    - 12-fold symmetry structure
+
+DEBUG: threaded_system = 0x575dceeaccf0
+✓ Using Kissing Spheres Architecture with 64 worker threads
+
+Starting multi-threaded epoch training...
+Using 64 worker threads for parallel batch processing
+
+DEBUG: About to reset batch iterator
+DEBUG: Batch iterator reset complete
+DEBUG: Allocating batch array for 64 workers
+DEBUG: Loading batches...
+DEBUG: Loading batch 1/64
+DEBUG: Batch 1 loaded: 0x575dceeace20
+DEBUG: Loading batch 2/64
+DEBUG: Batch 2 loaded: 0x575dcf01b9e0
+DEBUG: Loading batch 3/64
+DEBUG: Batch 3 loaded: 0x575dd32cb2d0
+DEBUG: Loading batch 4/64
+DEBUG: Batch 4 loaded: 0x575dd32cb210
+DEBUG: Loading batch 5/64
+DEBUG: Batch 5 loaded: 0x575dcf1315d0
+DEBUG: Loading batch 6/64
+DEBUG: Batch 6 loaded: 0x575dcf13a270
+DEBUG: Loading batch 7/64
+DEBUG: Batch 7 loaded: 0x575dcf02f7c0
+DEBUG: Loading batch 8/64
+DEBUG: Batch 8 loaded: 0x575dcf23c100
+DEBUG: Loading batch 9/64
+DEBUG: Batch 9 loaded: 0x575dcf565070
+DEBUG: Loading batch 10/64
+DEBUG: Batch 10 loaded: 0x575dcf45a540
+DEBUG: Loading batch 11/64
+DEBUG: Batch 11 loaded: 0x575dcf34fa10
+DEBUG: Loading batch 12/64
+DEBUG: Batch 12 loaded: 0x575dcf244ee0
+DEBUG: Loading batch 13/64
+DEBUG: Batch 13 loaded: 0x575dcf66fba0
+DEBUG: Loading batch 14/64
+DEBUG: Batch 14 loaded: 0x575dcf2332a0
+DEBUG: Loading batch 15/64
+DEBUG: Batch 15 loaded: (nil)
+DEBUG: No more batches at index 14
+DEBUG: Loaded 14 batches total
+DEBUG: Checking if first batch group (total_batch_groups=0)
+First batch group: loaded 14 batches
+DEBUG: Incrementing total_batch_groups
+DEBUG: total_batch_groups=1, checking safety
+DEBUG: max_batch_groups=24
+DEBUG: Safety check passed, about to print processing message
+Processing batch group 1 (14 batches across 14 spheres)...
+DEBUG: Processing message printed
+
+End time: Fri Nov 28 02:33:08 UTC 2025
+Total duration: 153 seconds
+
+./test_performance.sh: line 53: 3535
+3535: syntax error in expression (error token is "3535")
+
+Peak memory usage:
+VmRSS:	    2560 kB
+RssAnon:	       0 kB
+RssFile:	    2560 kB
+RssShmem:	       0 kB
+
+⚠ SLOW: Training took over 1 minute - needs optimization
