@@ -137,6 +137,14 @@ void threaded_training_free(ThreadedTrainingSystem* system);
  * @return Average epoch loss
  */
 float threaded_train_epoch(ThreadedTrainingSystem* system);
+   
+   /**
+    * PHASE 2B: Train one epoch with lock-free work queue
+    * 
+    * @param system Threaded training system
+    * @return Average epoch loss
+    */
+   float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system);
 
 /**
  * Print threading statistics

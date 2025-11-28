@@ -109,6 +109,18 @@ typedef struct {
     _Atomic int prefetch_running;  // 1 while pre-fetch thread is active
 } BatchQueue;
 
+// PHASE 2B: Lock-Free Work Queue for Worker Threads
+#define MAX_WORK_ITEMS 256  // Maximum work items in queue
+
+typedef struct {
+    _Atomic(CLLMBatch*) batches[MAX_WORK_ITEMS];  // Work items (batches)
+    _Atomic size_t head;                          // Consumer position (workers)
+    _Atomic size_t tail;                          // Producer position (main thread)
+    _Atomic int epoch_done;                       // 1 when epoch complete
+    _Atomic size_t total_pushed;                  // Total batches pushed
+    _Atomic size_t total_popped;                  // Total batches popped
+} WorkQueue;
+
 struct ThreadedTrainingSystem {
     CLLMTraining* training;
     ThreadSystem* thread_system;
@@ -131,6 +143,9 @@ struct ThreadedTrainingSystem {
     
     // PHASE 2A: Batch pre-fetching queue
     BatchQueue* batch_queue;       // Lock-free batch queue for pre-fetching
+    
+    // PHASE 2B: Lock-free work queue for workers
+    WorkQueue* work_queue;         // Lock-free work queue (replaces barriers)
     
     // Shared memory regions (kissing spheres architecture)
     SharedMemoryRegion* shared_gradients;      // Single shared gradient buffer
@@ -601,6 +616,7 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
 
 // Forward declarations
 static void* sphere_worker_thread(void* arg);
+static void* sphere_worker_thread_lockfree(void* arg);
 static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
 static void accumulate_gradients(ThreadedTrainingSystem* system);
@@ -686,6 +702,166 @@ static int calculate_hierarchy_levels(int num_threads) {
     if (num_threads <= 13) return 2;  // Root + up to 12 kissing spheres
     if (num_threads <= 157) return 3; // Root + 12 + up to 144
     return 4;                          // Full hierarchy (up to 1741 threads)
+}
+
+/**
+ * PHASE 2B: Lock-Free Work Queue Functions
+ */
+
+/**
+ * Create work queue
+ */
+static WorkQueue* work_queue_create(void) {
+    WorkQueue* queue = (WorkQueue*)calloc(1, sizeof(WorkQueue));
+    if (!queue) return NULL;
+    
+    // Initialize all batch pointers to NULL
+    for (int i = 0; i < MAX_WORK_ITEMS; i++) {
+        atomic_init(&queue->batches[i], NULL);
+    }
+    
+    atomic_init(&queue->head, 0);
+    atomic_init(&queue->tail, 0);
+    atomic_init(&queue->epoch_done, 0);
+    atomic_init(&queue->total_pushed, 0);
+    atomic_init(&queue->total_popped, 0);
+    
+    return queue;
+}
+
+/**
+ * Free work queue
+ */
+static void work_queue_free(WorkQueue* queue) {
+    if (!queue) return;
+    
+    // Free any remaining batches
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    for (size_t i = head; i < tail; i++) {
+        size_t index = i % MAX_WORK_ITEMS;
+        CLLMBatch* batch = atomic_load(&queue->batches[index]);
+        if (batch) {
+            cllm_batch_free(batch);
+        }
+    }
+    
+    free(queue);
+}
+
+/**
+ * Push work item to queue (main thread)
+ * Returns 1 on success, 0 if queue is full
+ */
+static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
+    if (!queue || !batch) return 0;
+    
+    size_t tail = atomic_load(&queue->tail);
+    size_t head = atomic_load(&queue->head);
+    
+    // Check if queue is full
+    if (tail - head >= MAX_WORK_ITEMS) {
+        return 0;  // Queue full
+    }
+    
+    size_t index = tail % MAX_WORK_ITEMS;
+    atomic_store(&queue->batches[index], batch);
+    atomic_store(&queue->tail, tail + 1);
+    atomic_fetch_add(&queue->total_pushed, 1);
+    
+    return 1;
+}
+
+/**
+ * Pop work item from queue (worker threads)
+ * Returns batch pointer on success, NULL if no work available
+ */
+static CLLMBatch* work_queue_pop(WorkQueue* queue) {
+    if (!queue) return NULL;
+    
+    // Try a few times before giving up
+    for (int attempts = 0; attempts < 10; attempts++) {
+        size_t head = atomic_load(&queue->head);
+        size_t tail = atomic_load(&queue->tail);
+        
+        // Check if queue is empty
+        if (head >= tail) {
+            // Queue empty - check if epoch done
+            if (atomic_load(&queue->epoch_done)) {
+                return NULL;  // No more work
+            }
+            
+            // Spin briefly
+            for (int i = 0; i < 100; i++) {
+                __asm__ __volatile__("pause" ::: "memory");  // CPU hint for spin-wait
+            }
+            continue;
+        }
+        
+        // Try to claim this work item using CAS
+        size_t new_head = head + 1;
+        if (atomic_compare_exchange_weak(&queue->head, &head, new_head)) {
+            // Successfully claimed - get the batch
+            size_t index = head % MAX_WORK_ITEMS;
+            CLLMBatch* batch = atomic_exchange(&queue->batches[index], NULL);
+            
+            if (batch) {
+                atomic_fetch_add(&queue->total_popped, 1);
+                return batch;
+            }
+        }
+        
+        // CAS failed or batch was NULL - try again
+    }
+    
+    // Couldn't get work after several attempts
+    return NULL;
+}
+
+/**
+ * Reset work queue for new epoch
+ */
+static void work_queue_reset(WorkQueue* queue) {
+    if (!queue) return;
+    
+    atomic_store(&queue->head, 0);
+    atomic_store(&queue->tail, 0);
+    atomic_store(&queue->epoch_done, 0);
+    atomic_store(&queue->total_pushed, 0);
+    atomic_store(&queue->total_popped, 0);
+    
+    // Clear all batch pointers
+    for (int i = 0; i < MAX_WORK_ITEMS; i++) {
+        atomic_store(&queue->batches[i], NULL);
+    }
+}
+
+/**
+ * Check if all work is complete
+ */
+static int work_queue_is_complete(WorkQueue* queue) {
+    if (!queue) return 1;
+    
+    size_t pushed = atomic_load(&queue->total_pushed);
+    size_t popped = atomic_load(&queue->total_popped);
+    int done = atomic_load(&queue->epoch_done);
+    
+    return (done && pushed == popped);
+}
+
+/**
+ * Get work queue statistics
+ */
+static void work_queue_stats(WorkQueue* queue, size_t* pending, size_t* pushed, size_t* popped) {
+    if (!queue) return;
+    
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    *pending = (tail > head) ? (tail - head) : 0;
+    *pushed = atomic_load(&queue->total_pushed);
+    *popped = atomic_load(&queue->total_popped);
 }
 
 /**
@@ -1104,6 +1280,24 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     }
     printf("  ✓ Batch queue created (capacity: %d batches)\n", BATCH_QUEUE_CAPACITY);
     
+    // PHASE 2B: Create lock-free work queue
+    system->work_queue = work_queue_create();
+    if (!system->work_queue) {
+        fprintf(stderr, "ERROR: Failed to create work queue\n");
+        // Cleanup on failure
+        batch_queue_free(system->batch_queue);
+        for (int j = 0; j < system->num_worker_spheres; j++) {
+            sphere_context_free(system->sphere_contexts[j]);
+        }
+        free(system->sphere_contexts);
+        if (system->thread_system) threads_free(system->thread_system);
+        shared_memory_free(system->shared_gradients);
+        free(system->accumulated_gradients);
+        free(system);
+        return NULL;
+    }
+    printf("  ✓ Work queue created (capacity: %d work items)\n", MAX_WORK_ITEMS);
+    
     // MASTER PLAN: Create control thread (Node Zero) first
     // OPTIMIZATION: Reduce thread stack size from 8MB to 1MB (saves 455MB with 65 threads)
     pthread_attr_t thread_attr;
@@ -1130,14 +1324,15 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     printf("  ✓ Node Zero created (control thread NEVER processes batches)\n");
     
     // Create worker threads
-    printf("  Creating %d worker threads...\n", system->num_worker_spheres);
+    printf("  Creating %d worker threads (PHASE 2B: LOCK-FREE MODE)...\n", system->num_worker_spheres);
     for (int i = 0; i < system->num_worker_spheres; i++) {
         // OPTIMIZATION: Use 1MB stack for workers
         pthread_attr_t worker_attr;
         pthread_attr_init(&worker_attr);
         pthread_attr_setstacksize(&worker_attr, 1024 * 1024);
+        // PHASE 2B: Use lock-free worker thread (no barriers!)
         rc = pthread_create(&system->sphere_contexts[i]->thread, &worker_attr, 
-                           sphere_worker_thread, system->sphere_contexts[i]);
+                           sphere_worker_thread_lockfree, system->sphere_contexts[i]);
         pthread_attr_destroy(&worker_attr);
         if (rc != 0) {
             fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
@@ -1235,6 +1430,12 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         printf("  ✓ Batch queue freed\n");
     }
     
+    // PHASE 2B: Free work queue
+    if (system->work_queue) {
+        work_queue_free(system->work_queue);
+        printf("  ✓ Work queue freed\n");
+    }
+    
     // Destroy gradient lock
     // pthread_mutex_destroy(&system->gradient_lock);  // PHASE 4: Removed
     // pthread_mutex_destroy(&system->model_lock);     // PHASE 8: Removed
@@ -1313,15 +1514,65 @@ static void* control_thread_func(void* arg) {
 }
 
 /**
- * Worker thread function - PHASE 3: Barrier Synchronization
+ * PHASE 2B: Lock-Free Worker Thread Function
  * 
- * Workers process batches assigned by main thread
- * Synchronization via barriers (no condition variables)
+ * Workers pull batches from work queue (no barriers!)
+ * Continuous work processing without synchronization overhead
  * 
- * PHASE 3 IMPLEMENTATION:
- * - Wait at barrier for batch assignment (Point A)
- * - Process assigned batch
- * - Wait at barrier to signal completion (Point B)
+ * PHASE 2B IMPLEMENTATION:
+ * - Pop batch from work queue (non-blocking)
+ * - Process batch immediately
+ * - Repeat until epoch done
+ */
+static void* sphere_worker_thread_lockfree(void* arg) {
+    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
+    ThreadedTrainingSystem* system = ctx->system;
+    
+    printf("[Worker %d] Thread started (symmetry group %d) - LOCK-FREE MODE\n", 
+           ctx->sphere_id, ctx->symmetry_group);
+    
+    int batches_processed = 0;
+    
+    while (atomic_load(&system->running)) {
+        // Pop work from queue (non-blocking)
+        CLLMBatch* batch = work_queue_pop(system->work_queue);
+        
+        if (!batch) {
+            // No work available - check if epoch done
+            if (atomic_load(&system->work_queue->epoch_done)) {
+                break;  // Epoch complete
+            }
+            
+            // Yield CPU to other threads
+            sched_yield();
+            continue;
+        }
+        
+        // Process batch immediately (no waiting!)
+        ctx->current_batch = batch;
+        
+        // PHASE 6: Control threads NEVER process batches
+        if (!ctx->is_control_thread) {
+            sphere_process_batch(ctx, system->training);
+            batches_processed++;
+        }
+        
+        // Free batch
+        cllm_batch_free(batch);
+        ctx->current_batch = NULL;
+    }
+    
+    printf("[Worker %d] Thread stopping (processed %d batches) - LOCK-FREE\n", 
+           ctx->sphere_id, batches_processed);
+    
+    return NULL;
+}
+
+/**
+ * Worker thread function - PHASE 3: Barrier Synchronization (LEGACY)
+ * 
+ * NOTE: This function is kept for comparison but not used in Phase 2B
+ * Phase 2B uses sphere_worker_thread_lockfree() instead
  */
 static void* sphere_worker_thread(void* arg) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
@@ -1597,6 +1848,129 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
 
 /**
  * Train one epoch with multi-threading
+ */
+/**
+ * PHASE 2B: Lock-Free Training Epoch
+ * 
+ * Workers pull batches from work queue (no barriers!)
+ * Main thread pushes batches and waits for completion
+ */
+float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
+    if (!system) return 0.0f;
+    
+    printf("\n=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===\n");
+    printf("Using %d worker threads (lock-free work queue)\n", system->num_worker_spheres);
+    
+    // Reset work queue for new epoch
+    work_queue_reset(system->work_queue);
+    
+    // PHASE 2A: Reset batch iterator and start pre-fetching
+    cllm_batch_iterator_reset(system->batch_iterator);
+    
+    if (!batch_queue_start_prefetch(system)) {
+        fprintf(stderr, "ERROR: Failed to start batch pre-fetching\n");
+        return 0.0f;
+    }
+    
+    printf("Batch pre-fetching enabled + Lock-free work queue active\n\n");
+    
+    int batches_pushed = 0;
+    size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
+    
+    // Push all batches to work queue
+    printf("Pushing batches to work queue...\n");
+    while (1) {
+        // Get batch from pre-fetch queue
+        CLLMBatch* batch = batch_queue_try_pop(system->batch_queue);
+        
+        if (!batch) {
+            // Check if producer is done
+            if (atomic_load(&system->batch_queue->producer_done)) {
+                break;  // No more batches
+            }
+            
+            // Queue temporarily empty - wait for pre-fetch
+            usleep(100);
+            continue;
+        }
+        
+        // Push to work queue (workers will pull from here)
+        while (!work_queue_push(system->work_queue, batch)) {
+            // Work queue full - wait for workers to catch up
+            usleep(10);
+        }
+        
+        batches_pushed++;
+        
+        // Log progress
+        if (batches_pushed % 500 == 0) {
+            size_t pending, pushed, popped;
+            work_queue_stats(system->work_queue, &pending, &pushed, &popped);
+            printf("  Pushed %d batches (pending: %zu, processed: %zu)\n", 
+                   batches_pushed, pending, popped);
+        }
+    }
+    
+    printf("All %d batches pushed to work queue\n", batches_pushed);
+    
+    // Signal epoch done
+    atomic_store(&system->work_queue->epoch_done, 1);
+    
+    // Wait for all work to complete
+    printf("Waiting for workers to complete...\n");
+    int wait_iterations = 0;
+    while (!work_queue_is_complete(system->work_queue)) {
+        usleep(1000);  // 1ms
+        
+        wait_iterations++;
+        if (wait_iterations % 1000 == 0) {
+            size_t pending, pushed, popped;
+            work_queue_stats(system->work_queue, &pending, &pushed, &popped);
+            printf("  Still working... (pushed: %zu, processed: %zu, pending: %zu)\n",
+                   pushed, popped, pending);
+        }
+    }
+    
+    printf("All batches processed!\n");
+    
+    // Stop pre-fetch thread
+    batch_queue_stop_prefetch(system);
+    
+    // Accumulate gradients from all workers
+    printf("Accumulating gradients...\n");
+    accumulate_gradients_lockfree(system);
+    
+    // Copy accumulated gradients to training object
+    memcpy(system->training->gradients, system->accumulated_gradients, 
+           system->gradient_size * sizeof(float));
+    
+    // Apply gradients using Adam optimizer
+    printf("Applying optimizer step...\n");
+    cllm_optimizer_step_adam(system->training);
+    
+    // Calculate average loss
+    float epoch_loss = 0.0f;
+    int valid_workers = 0;
+    for (int i = 0; i < system->num_worker_spheres; i++) {
+        if (system->sphere_contexts[i]->batches_processed > 0) {
+            epoch_loss += system->sphere_contexts[i]->batch_loss;
+            valid_workers++;
+        }
+    }
+    
+    float avg_loss = (valid_workers > 0) ? epoch_loss / valid_workers : 0.0f;
+    
+    printf("\nEpoch complete (LOCK-FREE):\n");
+    printf("  Total batches: %d\n", batches_pushed);
+    printf("  Average loss: %.4f\n", avg_loss);
+    printf("  Workers active: %d\n", valid_workers);
+    
+    return avg_loss;
+}
+
+/**
+ * LEGACY: Barrier-based training epoch (Phase 2A only)
+ * NOTE: This is kept for comparison but Phase 2B uses threaded_train_epoch_lockfree()
  */
 float threaded_train_epoch(ThreadedTrainingSystem* system) {
     if (!system) return 0.0f;
