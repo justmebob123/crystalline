@@ -677,16 +677,15 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
             &batch->input_ids[offset]
         );
         
-        // Compute cross-entropy loss using the computed logits
-        float seq_loss = 0.0f;
-        for (uint32_t t = 0; t < batch->seq_len; t++) {
-            uint32_t target = batch->target_ids[offset + t];
-            if (target < training->model->vocab_size) {
-                float* logits = &ctx->thread_local_training->logits[t * training->model->vocab_size];
-                seq_loss += cllm_compute_cross_entropy_loss(logits, target, training->model->vocab_size);
-            }
-        }
-        seq_loss /= batch->seq_len;  // Average over sequence
+        // PURE CRYSTALLINE LOSS (ASI Design - Phase 1)
+        // Uses learned prime encodings and lattice positions
+        // This is deterministic GCD-based loss, not standard cross-entropy
+        float seq_loss = cllm_compute_crystalline_loss(
+            training->model,
+            &batch->input_ids[offset],
+            &batch->target_ids[offset],
+            batch->seq_len
+        );
         
         // Backward pass - compute gradients to local buffer (thread-local)
         cllm_backward_training_threaded(

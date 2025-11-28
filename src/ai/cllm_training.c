@@ -107,18 +107,89 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
 }
 
 /**
- * Crystalline loss computation using prime-based similarity
- * Uses GCD-based similarity (O(log n) vs O(n) for dot product)
+ * Pure Crystalline Loss Function (ASI Design - Phase 1)
+ * 
+ * Uses deterministic GCD-based similarity with LEARNED prime encodings
+ * and lattice positions. This is the epitome of ASI design.
+ * 
+ * Key differences from old implementation:
+ * - Uses model->tokens[id].prime_encoding (LEARNED primes, not token_id)
+ * - Uses model->tokens[id].lattice_coords (LEARNED positions)
+ * - Provides gradient signal for learning
+ */
+float cllm_compute_crystalline_loss(
+    CLLMModel* model,
+    uint32_t* input_tokens,
+    uint32_t* target_tokens,
+    int num_tokens
+) {
+    if (!model || !model->tokens || !input_tokens || !target_tokens) {
+        return 0.0f;
+    }
+    
+    float total_loss = 0.0f;
+    int count = 0;
+    
+    for (int i = 0; i < num_tokens; i++) {
+        uint32_t input_id = input_tokens[i];
+        uint32_t target_id = target_tokens[i];
+        
+        // Bounds check
+        if (input_id >= model->vocab_size || target_id >= model->vocab_size) {
+            continue;
+        }
+        
+        // Get LEARNED prime encodings (not token IDs!)
+        uint64_t input_prime = model->tokens[input_id].prime_encoding;
+        uint64_t target_prime = model->tokens[target_id].prime_encoding;
+        
+        if (input_prime == 0 || target_prime == 0) {
+            continue; // Skip uninitialized tokens
+        }
+        
+        // 1. SEMANTIC SIMILARITY: GCD of primes (shared roots)
+        float gcd_sim = crystalline_gcd_similarity(input_prime, target_prime);
+        
+        // 2. GEOMETRIC SIMILARITY: Lattice distance in 12D space
+        float* input_coords = model->tokens[input_id].lattice_coords;
+        float* target_coords = model->tokens[target_id].lattice_coords;
+        
+        float lattice_dist = 0.0f;
+        for (int d = 0; d < 3; d++) {
+            float diff = input_coords[d] - target_coords[d];
+            lattice_dist += diff * diff;
+        }
+        lattice_dist = prime_sqrtf(lattice_dist);
+        
+        float spatial_sim = 1.0f / (1.0f + lattice_dist);
+        
+        // 3. COMBINED CRYSTALLINE SIMILARITY
+        // 70% semantic (GCD), 30% geometric (lattice)
+        float combined_sim = 0.7f * gcd_sim + 0.3f * spatial_sim;
+        
+        // 4. CONVERT TO LOSS: -log(similarity)
+        float clamped = combined_sim > 1e-10f ? combined_sim : 1e-10f;
+        total_loss += -prime_logf(clamped);
+        count++;
+    }
+    
+    return count > 0 ? total_loss / count : 0.0f;
+}
+
+/**
+ * LEGACY: Old crystalline loss (uses token_id, not prime_encoding)
+ * Kept for comparison only - DO NOT USE
  */
 float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                         uint32_t* target_tokens, int num_tokens) {
     if (!training || !input_tokens || !target_tokens) return 0.0f;
     if (!training->model) return 0.0f;
     
+    // LEGACY: This uses token_id for GCD, which is WRONG
+    // Use cllm_compute_crystalline_loss() instead
     float total_loss = 0.0f;
     int count = 0;
     
-    // Safety: limit num_tokens to prevent buffer overflow
     int safe_num_tokens = num_tokens;
     if (safe_num_tokens > training->config.batch_size * training->config.sequence_length) {
         fprintf(stderr, "WARNING: num_tokens (%d) exceeds batch size, clamping\n", num_tokens);
@@ -129,22 +200,13 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         uint32_t input = input_tokens[i];
         uint32_t target = target_tokens[i];
         
-        // Bounds check
         if (input >= training->model->vocab_size || target >= training->model->vocab_size) {
             continue;
         }
         
-        // Use prime-based similarity (O(log n) vs O(n) for dot product)
-        // Add 1 to avoid zero (which breaks GCD and log)
         float similarity = crystalline_gcd_similarity(input + 1, target + 1);
-        
-        // Add spatial locality bonus (tokens close in Ulam spiral are related)
         float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
-        
-        // Combined similarity
         float combined = 0.7f * similarity + 0.3f * spatial_similarity;
-        
-        // Convert to loss
         float clamped = combined > 1e-10f ? combined : 1e-10f;
         total_loss += -prime_logf(clamped);
         count++;

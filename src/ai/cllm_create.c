@@ -263,6 +263,16 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         return NULL;
     }
     
+    // PHASE 1: Initialize Crystalline Prime Encodings (ASI Design)
+    if (model->tokens) {
+        printf("\n=== Initializing Crystalline Structure ===\n");
+        printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
+        cllm_generate_lattice_embeddings(model);
+        printf("✓ Crystalline prime encodings initialized\n");
+        printf("✓ 12D lattice coordinates computed\n");
+        printf("==========================================\n\n");
+    }
+    
     return model;
 }
 

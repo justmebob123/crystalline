@@ -126,7 +126,10 @@ void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, float* coords)
  * @return Symmetry group (0 to SYMMETRY_ORDER-1)
  */
 static uint32_t cllm_compute_symmetry_group_internal(uint64_t prime) {
-    return (uint32_t)(prime % SYMMETRY_ORDER);
+    // NOTE: Cannot use prime % 12 because primes > 3 are only congruent to 1, 5, 7, 11 (mod 12)
+    // This would leave 8 out of 12 worker threads idle!
+    // Instead, we use a hash of the prime to distribute evenly across all 12 groups
+    return (uint32_t)((prime * 2654435761ULL) % SYMMETRY_ORDER);
 }
 
 /**
@@ -212,7 +215,9 @@ void cllm_generate_lattice_embeddings(CLLMModel* model) {
             model->tokens[token_id].lattice_coords[2] = coords[2];
             
             // Store symmetry group
-            model->tokens[token_id].symmetry_group = cllm_compute_symmetry_group_internal(prime);
+            // Store symmetry group - use token_id for even distribution
+            // (prime % 12 only gives 1,5,7,11 for primes > 3, leaving 8 threads idle)
+            model->tokens[token_id].symmetry_group = token_id % SYMMETRY_ORDER;
         }
         
         if ((token_id + 1) % 1000 == 0) {
