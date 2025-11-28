@@ -1977,6 +1977,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
         // UI Integration: Update step progress
         if (system->metrics) {
             cllm_metrics_update_training_progress(system->metrics, 0, batches_pushed, total_batches_in_epoch);
+               
+               // CRITICAL FIX: Invoke callbacks every 10 batches for real-time UI updates
+               if (batches_pushed % 10 == 0) {
+                   cllm_metrics_invoke_callbacks(system->metrics);
+               }
         }
         
         // Log progress

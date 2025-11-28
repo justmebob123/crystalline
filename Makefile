@@ -187,13 +187,19 @@ app: $(STATIC_LIB)
 # Installation
 # ============================================================================
 
-install: $(STATIC_LIB) $(SHARED_LIB)
-	@echo "Installing Prime Math Library..."
+install: all
+	@echo "Installing Crystalline CLLM Libraries..."
 	install -d $(DESTDIR)$(LIBDIR)
-	install -m 644 $(STATIC_LIB) $(DESTDIR)$(LIBDIR)
-	install -m 755 $(SHARED_LIB) $(DESTDIR)$(LIBDIR)
-	install -d $(DESTDIR)$(INCLUDEDIR)/primemath
-	install -m 644 $(HEADERS) $(DESTDIR)$(INCLUDEDIR)/primemath
+	install -m 755 libcrystalline.so $(DESTDIR)$(LIBDIR)
+	install -m 755 libalgorithms.so $(DESTDIR)$(LIBDIR)
+	install -m 755 libcllm.so $(DESTDIR)$(LIBDIR)
+	install -m 755 libcrawler.so $(DESTDIR)$(LIBDIR)
+	install -m 644 libcrystalline.a $(DESTDIR)$(LIBDIR)
+	install -m 644 libalgorithms.a $(DESTDIR)$(LIBDIR)
+	install -m 644 libcllm.a $(DESTDIR)$(LIBDIR)
+	install -m 644 libcrawler.a $(DESTDIR)$(LIBDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)/crystalline
+	cp -r include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/
 	ldconfig
 	@echo "✓ Installation complete"
 
