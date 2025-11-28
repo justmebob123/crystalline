@@ -28,10 +28,11 @@
 /**
  * Thread-local training context for each sphere
  */
-// Forward declaration
+// Forward declarations
 typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
+typedef struct SphereTrainingContext SphereTrainingContext;
 
-typedef struct {
+struct SphereTrainingContext {
     int sphere_id;
     int symmetry_group;  // 0-11 for the 12 kissing spheres
     
@@ -62,7 +63,14 @@ typedef struct {
     // Worker thread
     pthread_t thread;
     
-} SphereTrainingContext;
+    // PHASE 6: Recursive Hierarchy
+    int is_control_thread;                     // 1 if this is a control thread (has children)
+    int hierarchy_level;                       // Level in hierarchy (0 = root)
+    SphereTrainingContext** children;          // Array of child contexts (up to 12)
+    int num_children;                          // Number of active children
+    SphereTrainingContext* parent;             // Parent context (NULL for root)
+    CLLMLatticeHierarchy* hierarchy_node;      // Corresponding hierarchy node
+};
 
 /**
  * Multi-threaded training system
@@ -159,6 +167,14 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->batch_loss = 0.0f;
     ctx->batches_processed = 0;
     
+    
+    // PHASE 6: Initialize recursive hierarchy fields
+    ctx->is_control_thread = 0;  // Start as worker
+    ctx->hierarchy_level = 0;    // Will be set by parent
+    ctx->children = NULL;        // No children initially
+    ctx->num_children = 0;
+    ctx->parent = NULL;          // Will be set if spawned
+    ctx->hierarchy_node = NULL;  // Will be linked to hierarchy
     return ctx;
 }
 
@@ -168,6 +184,16 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
 static void sphere_context_free(SphereTrainingContext* ctx) {
     if (!ctx) return;
     
+    
+    // PHASE 6: Free children recursively
+    if (ctx->children) {
+        for (int i = 0; i < ctx->num_children; i++) {
+            if (ctx->children[i]) {
+                sphere_context_free(ctx->children[i]);
+            }
+        }
+        free(ctx->children);
+    }
     free(ctx->local_gradients);
     pthread_mutex_destroy(&ctx->lock);
     pthread_cond_destroy(&ctx->work_ready);
@@ -181,6 +207,7 @@ static void* control_thread_func(void* arg);  // Node Zero - NEVER processes bat
 static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
 static void accumulate_gradients(ThreadedTrainingSystem* system);
 static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system);  // PHASE 4
+static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);  // PHASE 6
 static int validate_gradients(float* gradients, size_t size, const char* source);
 static void clip_gradients(float* gradients, size_t size, float max_norm);
 
@@ -637,10 +664,14 @@ static void* sphere_worker_thread(void* arg) {
             break;
         }
         
-        // Process the batch if assigned
-        if (ctx->current_batch) {
+        // PHASE 6: Control threads NEVER process batches
+        // Only leaf workers (no children) process batches
+        if (ctx->current_batch && !ctx->is_control_thread) {
             sphere_process_batch(ctx, system->training);
             batches_processed++;
+        } else if (ctx->is_control_thread) {
+            // Control thread: coordinate children instead
+            // Children will process batches at their level
         }
         
         // POINT B: Signal completion to main thread
@@ -753,6 +784,79 @@ static void clip_gradients(float* gradients, size_t size, float max_norm) {
         }
         printf("  Clipped gradients: norm %.4f -> %.4f\n", norm, max_norm);
     }
+}
+
+/**
+ * PHASE 6: Spawn child threads for recursive hierarchy
+ * 
+ * When a worker thread spawns children, it transitions to a control thread.
+ * Control threads NEVER process batches - only coordinate children.
+ */
+static int sphere_spawn_children(SphereTrainingContext* parent, int num_children) {
+    if (!parent || num_children <= 0 || num_children > 12) return -1;
+    
+    // Transition parent to control thread
+    parent->is_control_thread = 1;
+    
+    // Allocate children array
+    parent->children = (SphereTrainingContext**)calloc(num_children, sizeof(SphereTrainingContext*));
+    if (!parent->children) {
+        parent->is_control_thread = 0;  // Revert
+        return -1;
+    }
+    
+    parent->num_children = num_children;
+    
+    // Create child contexts
+    for (int i = 0; i < num_children; i++) {
+        int child_symmetry_group = i;  // 0-11
+        int child_id = atomic_fetch_add(&parent->system->sphere_id_counter, 1);
+        
+        parent->children[i] = sphere_context_create(
+            child_id,
+            child_symmetry_group,
+            parent->gradient_size,
+            parent->shared_gradients,
+            parent->system->num_worker_spheres
+        );
+        
+        if (!parent->children[i]) {
+            // Cleanup on failure
+            for (int j = 0; j < i; j++) {
+                sphere_context_free(parent->children[j]);
+            }
+            free(parent->children);
+            parent->children = NULL;
+            parent->num_children = 0;
+            parent->is_control_thread = 0;
+            return -1;
+        }
+        
+        // Set child relationships
+        parent->children[i]->parent = parent;
+        parent->children[i]->hierarchy_level = parent->hierarchy_level + 1;
+        parent->children[i]->system = parent->system;
+        
+        // Create hierarchy node for child
+        int child_symmetry_groups[1] = {child_symmetry_group};
+        parent->children[i]->hierarchy_node = lattice_hierarchy_create(
+            child_id,
+            parent->hierarchy_level + 1,
+            child_symmetry_groups,
+            1,
+            -1,  // physical_thread_id (not assigned yet)
+            parent->hierarchy_node
+        );
+        
+        // Start child thread
+        pthread_create(&parent->children[i]->thread, NULL, 
+                      sphere_worker_thread, parent->children[i]);
+    }
+    
+    printf("[Sphere %d] Spawned %d children, transitioned to control thread\n", 
+           parent->sphere_id, num_children);
+    
+    return 0;
 }
 
 /**
