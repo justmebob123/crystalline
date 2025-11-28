@@ -145,6 +145,13 @@ AppState* init_app(void) {
         printf("✓ Terminal output buffer initialized\n");
     }
     
+    // Initialize training panel states (all expanded by default)
+    state->training_panels.framework_expanded = true;
+    state->training_panels.performance_expanded = true;
+    state->training_panels.legend_expanded = true;
+    state->training_panels.stats_table_expanded = true;
+    state->training_panels.terminal_expanded = true;
+    
     // Initialize CLLM system
     printf("\n=== Initializing CLLM System ===\n");
     state->cllm_model = NULL;

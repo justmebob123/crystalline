@@ -299,6 +299,15 @@ typedef struct {
     
     // Terminal output buffer for training tab
     TerminalBuffer* terminal_buffer;  // Defined in terminal_output.h
+    
+    // Training tab panel states (collapsible panels)
+    struct {
+        bool framework_expanded;
+        bool performance_expanded;
+        bool legend_expanded;
+        bool stats_table_expanded;
+        bool terminal_expanded;
+    } training_panels;
 } AppState;
 
 // Utility functions - use library versions where available

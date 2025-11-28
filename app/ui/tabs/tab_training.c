@@ -81,6 +81,42 @@ static int pages_crawled = 0;
 static int pages_in_queue = 0;
 
 /**
+ * Helper function to draw collapsible panel header
+ * Returns true if clicked
+ */
+static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
+                                   int x, int y, int width, bool expanded,
+                                   int mouse_x, int mouse_y, bool mouse_clicked) {
+    SDL_Rect header_rect = {x, y, width, 25};
+    
+    // Check if mouse is over header
+    bool mouse_over = (mouse_x >= header_rect.x && mouse_x <= header_rect.x + header_rect.w &&
+                       mouse_y >= header_rect.y && mouse_y <= header_rect.y + header_rect.h);
+    
+    // Draw header background (highlight if mouse over)
+    if (mouse_over) {
+        SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    }
+    SDL_RenderFillRect(renderer, &header_rect);
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &header_rect);
+    
+    // Draw expand/collapse icon (using ASCII characters for compatibility)
+    const char* icon = expanded ? "v" : ">";
+    draw_text(renderer, icon, x + 5, y + 5, (SDL_Color){150, 150, 160, 255});
+    
+    // Draw title
+    draw_text(renderer, title, x + 25, y + 5, (SDL_Color){100, 150, 200, 255});
+    
+    // Return true if clicked
+    return mouse_over && mouse_clicked;
+}
+
+/**
  * Load crawl queue from file
  * Creates file with start URL if it doesn't exist
  */
