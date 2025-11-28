@@ -359,10 +359,10 @@ void* training_thread_func(void* arg) {
         
         // Check if complete
         if (state->training_current_epoch >= state->training_epochs) {
-            pthread_mutex_lock(&training_mutex);
-            state->training_in_progress = false;
-            pthread_mutex_unlock(&training_mutex);
-            
+               // MOVED: Set training_in_progress = false AFTER printing stats
+               // pthread_mutex_lock(&training_mutex);
+               // state->training_in_progress = false;
+               // pthread_mutex_unlock(&training_mutex);
             printf("=== TRAINING COMPLETE ===\n");
             printf("Total epochs: %d\n", state->training_current_epoch);
             printf("Final loss: %.4f\n", loss);
@@ -370,6 +370,19 @@ void* training_thread_func(void* arg) {
             // Print detailed sphere statistics
             printf("\n");
             threaded_training_print_stats(g_threaded_system);
+
+               // Add final message to terminal buffer
+               if (state->terminal_buffer) {
+                   terminal_buffer_add_line(state->terminal_buffer, "=== TRAINING COMPLETE ===");
+               }
+
+               // Give UI time to show final state before clearing
+               SDL_Delay(100);
+
+               // NOW mark as complete (this will clear visualization)
+               pthread_mutex_lock(&training_mutex);
+               state->training_in_progress = false;
+               pthread_mutex_unlock(&training_mutex);
             
             // Save final model
             if (state->cllm_model) {

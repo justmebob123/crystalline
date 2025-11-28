@@ -376,8 +376,10 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            if (state->training_metrics && state->training_metrics->training.total_steps > 0) {
                progress = (float)state->training_metrics->training.current_step / 
                          state->training_metrics->training.total_steps;
-           } else if (viz_data.total_epochs > 0) {
-               progress = (float)viz_data.current_epoch / viz_data.total_epochs;
+            } else if (viz_data.total_epochs > 0 && viz_data.current_epoch > 0) {
+                // Fallback: Use completed epochs (current_epoch is incremented AFTER each epoch)
+                // Subtract 1 to show 0% at start of first epoch
+                progress = (float)(viz_data.current_epoch - 1) / viz_data.total_epochs;
            }
            
            if (progress > 0.0f) {
