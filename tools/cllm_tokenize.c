@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
     }
 
     // Load vocabulary
-    if (cllm_load_vocab(tokenizer, vocab_file) != 0) {
+    if (cllm_load_vocab(tokenizer, vocab_file) == 0) {
         fprintf(stderr, "Error: Failed to load vocabulary from %s\n", vocab_file);
         cllm_free_tokenizer(tokenizer);
         return 1;

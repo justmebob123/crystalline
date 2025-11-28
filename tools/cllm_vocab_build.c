@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
         printf("\nSaving vocabulary to %s\n", output_path);
     }
 
-    if (cllm_save_vocab(tokenizer, output_path) != 0) {
+    if (cllm_save_vocab(tokenizer, output_path) == 0) {
         fprintf(stderr, "Error: Failed to save vocabulary\n");
         cllm_free_tokenizer(tokenizer);
         return 1;
