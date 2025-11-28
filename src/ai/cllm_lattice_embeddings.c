@@ -79,6 +79,10 @@ void cllm_embeddings_init_lattice(CLLMModel* model) {
             // Scale factor of 100 chosen empirically for good distribution
             double normalized = prime_tanh(L_value / 100.0);
             
+            // Clip to ensure strict [-1, 1] range (safety measure)
+            if (normalized > 1.0) normalized = 1.0;
+            if (normalized < -1.0) normalized = -1.0;
+            
             // Store in embedding matrix
             embeddings[token_id * embedding_dim + dim] = (float)normalized;
             

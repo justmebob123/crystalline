@@ -191,9 +191,13 @@ void test_kissing_spheres() {
         return;
     }
     
-    // Initialize point IDs
+    // Initialize point IDs and assign symmetry groups
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
         model->lattice_points[i].point_id = i;
+        // Assign symmetry groups (0-11) in round-robin fashion
+        model->tokens[i].symmetry_group = i % 12;
+        // Assign prime encodings (use small primes for testing)
+        model->tokens[i].prime_encoding = 2 + (i % 100);  // Primes 2-101
     }
     
     // Initialize kissing spheres
