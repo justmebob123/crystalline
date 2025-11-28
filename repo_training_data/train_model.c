@@ -215,7 +215,7 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         
         printf("\u2713 Using Kissing Spheres Architecture with %d worker threads\n", 
                threaded_training_get_num_workers(threaded_system));
-        epoch_loss = threaded_train_epoch(threaded_system);
+        epoch_loss = threaded_train_epoch_lockfree(threaded_system);
         threaded_training_print_stats(threaded_system);
         threaded_training_free(threaded_system);
         cllm_batch_iterator_free(batch_iterator);

@@ -208,7 +208,7 @@ int main(void) {
         printf("\n" ANSI_BOLD ANSI_YELLOW "Epoch %d/%d" ANSI_RESET "\n", 
                epoch + 1, num_epochs);
         
-        float epoch_loss = threaded_train_epoch(threaded_system);
+        float epoch_loss = threaded_train_epoch_lockfree(threaded_system);
         
         printf(ANSI_GREEN "✓ Epoch %d complete - Loss: %.4f" ANSI_RESET "\n",
                epoch + 1, epoch_loss);

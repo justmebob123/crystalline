@@ -70,7 +70,7 @@ int main() {
     printf("Training for 2 epochs...\n");
     for (int epoch = 0; epoch < 2; epoch++) {
         printf("\n--- Epoch %d ---\n", epoch + 1);
-        float loss = threaded_train_epoch(threaded);
+        float loss = threaded_train_epoch_lockfree(threaded);
         printf("Epoch %d loss: %.6f\n", epoch + 1, loss);
         
         if (loss == 0.0f) {

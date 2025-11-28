@@ -211,7 +211,7 @@ void* training_thread_func(void* arg) {
     
     // CRITICAL FIX: Update progress bar to 100% after initialization complete
     snprintf(state->training_status_message, sizeof(state->training_status_message),
-            "Training started - %d threads active", g_threaded_system->num_worker_spheres);
+            "Training started - %d threads active", state->training_thread_count);
     state->training_preprocessing_progress = 1.0f;  // 100% - initialization complete!
     SDL_PumpEvents();  // Force UI update
     

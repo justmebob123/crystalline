@@ -130,22 +130,15 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
 void threaded_training_free(ThreadedTrainingSystem* system);
 
 /**
- * Train one epoch with multi-threading
+ * Train one epoch with lock-free work queue
  * 
- * Uses 12 kissing spheres to process batches in parallel
+ * Uses lock-free work queue for optimal parallel batch processing.
+ * Includes real-time UI metrics updates and timing estimates.
  * 
  * @param system Threaded training system
  * @return Average epoch loss
  */
-float threaded_train_epoch(ThreadedTrainingSystem* system);
-   
-   /**
-    * PHASE 2B: Train one epoch with lock-free work queue
-    * 
-    * @param system Threaded training system
-    * @return Average epoch loss
-    */
-   float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system);
+float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system);
 
 /**
  * Print threading statistics

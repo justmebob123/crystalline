@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
         double epoch_start = get_time_ms();
         
         // Train one epoch with threading
-        float epoch_loss = threaded_train_epoch(threaded_system);
+        float epoch_loss = threaded_train_epoch_lockfree(threaded_system);
         
         double epoch_time = get_time_ms() - epoch_start;
         

@@ -216,7 +216,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     
     for (int epoch = 0; epoch < epochs; epoch++) {
         // Use parallel training (crystalline loss, multi-threaded)
-        float loss = threaded_train_epoch(threaded_system);
+        float loss = threaded_train_epoch_lockfree(threaded_system);
         total_loss += loss;
         printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
     }
