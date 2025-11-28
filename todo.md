@@ -155,21 +155,33 @@ typedef struct {
 
 **Files**: `src/crawler/url_patterns.c/h` ✅
 
-### 3.3 Dynamic Link Management (2 hours)
+### 3.3 Dynamic Link Management (2 hours) ✅
 
 **Features**:
-- [ ] Add links dynamically during crawl
-- [ ] Link queue management
-- [ ] Duplicate detection
-- [ ] Priority queue support
-- [ ] Link filtering rules
+- [x] Add links dynamically during crawl
+- [x] Link queue management (in-memory + file persistence)
+- [x] Duplicate detection
+- [x] Priority queue support
+- [x] Batch link addition
+- [x] Save/load from file
+- [x] Mark links as crawled
+- [x] Get queue statistics
 
 **API**:
 ```c
-int crawler_add_link(CrawlerState* state, const char* url, int priority);
-int crawler_add_links_batch(CrawlerState* state, CrawlerLink* links, int count);
-int crawler_get_queue_size(CrawlerState* state);
+LinkQueue* link_queue_create(const char* queue_file);
+int link_queue_add(LinkQueue* queue, const char* url, int priority, const char* source_url);
+int link_queue_add_batch(LinkQueue* queue, CrawlerLink* links, int count);
+int link_queue_get_next(LinkQueue* queue, char* url, size_t url_size);
+int link_queue_mark_crawled(LinkQueue* queue, const char* url);
+bool link_queue_is_duplicate(LinkQueue* queue, const char* url);
+int link_queue_size(LinkQueue* queue);
+int link_queue_save/load(LinkQueue* queue);
+void link_queue_destroy(LinkQueue* queue);
 ```
+
+**Files**: `src/crawler/link_management.c/h` ✅
+**Tests**: All tests passing ✅
 
 ---
 
