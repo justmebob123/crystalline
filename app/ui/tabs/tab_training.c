@@ -9,12 +9,14 @@
  * - Proper hit detection
  */
 
+#include "cllm_metrics.h"
 #include "../../app_common.h"
 #include "../../text_input.h"
 #include "../../training_thread.h"
 #include "../../ui_layout.h"
 #include "../../input_manager.h"
    #include "../sphere_visualization.h"
+#include "../../time_format.h"
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_vocab_builder.h"
@@ -267,30 +269,103 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "TRAINING VISUALIZATION", content_x, content_y, text_color);
     content_y += 30;
     
-    if (state->training_in_progress || viz_data.loss_count > 0) {
-        // Training metrics
-        char metrics[256];
-        snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
-                viz_data.current_epoch, viz_data.total_epochs, 
-                viz_data.current_loss, viz_data.best_loss);
-        draw_text(renderer, metrics, content_x, content_y, text_color);
-        content_y += 25;
-        
-        // Progress bar
-        SDL_Rect progress_bg = {content_x, content_y, content_w, 20};
-        SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
-        SDL_RenderFillRect(renderer, &progress_bg);
-        SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
-        SDL_RenderDrawRect(renderer, &progress_bg);
-        
-        if (viz_data.total_epochs > 0) {
-            float progress = (float)viz_data.current_epoch / viz_data.total_epochs;
-            SDL_Rect progress_fill = {progress_bg.x, progress_bg.y, 
-                                     (int)(progress_bg.w * progress), progress_bg.h};
-            SDL_SetRenderDrawColor(renderer, loss_color.r, loss_color.g, loss_color.b, 255);
-            SDL_RenderFillRect(renderer, &progress_fill);
-        }
-        content_y += 35;
+       if (state->training_in_progress || viz_data.loss_count > 0) {
+           // Training metrics - Epoch and Loss
+           char metrics[256];
+           snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
+                   viz_data.current_epoch, viz_data.total_epochs, 
+                   viz_data.current_loss, viz_data.best_loss);
+           draw_text(renderer, metrics, content_x, content_y, text_color);
+           content_y += 25;
+           
+           // ENHANCED: Batch Progress Display
+           if (state->training_metrics) {
+               int current_batch = state->training_metrics->training.current_step;
+               int total_batches = state->training_metrics->training.total_steps;
+               
+               if (total_batches > 0) {
+                   float batch_percent = (current_batch * 100.0f) / total_batches;
+                   char batch_info[256];
+                   snprintf(batch_info, sizeof(batch_info), "Batch %d/%d (%.1f%%)",
+                           current_batch, total_batches, batch_percent);
+                   draw_text(renderer, batch_info, content_x, content_y, text_color);
+                   content_y += 20;
+                   
+                   // Throughput display
+                   if (state->training_metrics->training.batches_per_second > 0.1f) {
+                       char throughput[128];
+                       snprintf(throughput, sizeof(throughput), "Throughput: %.1f batches/sec",
+                               state->training_metrics->training.batches_per_second);
+                       draw_text(renderer, throughput, content_x, content_y, 
+                                (SDL_Color){150, 200, 150, 255});
+                       content_y += 20;
+                   }
+                   
+                   // Time estimates
+                   if (state->training_metrics->training.elapsed_time_seconds > 0.1) {
+                       char time_str[128];
+                       
+                       // Elapsed time
+                       format_time_elapsed(state->training_metrics->training.elapsed_time_seconds,
+                                         time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){180, 180, 200, 255});
+                       content_y += 18;
+                       
+                       // Remaining time
+                       format_time_remaining(state->training_metrics->training.estimated_time_remaining_seconds,
+                                           time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){180, 180, 200, 255});
+                       content_y += 18;
+                       
+                       // ETA
+                       format_eta(state->training_metrics->training.estimated_time_remaining_seconds,
+                                 time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){200, 200, 100, 255});
+                       content_y += 25;
+                   }
+               }
+           }
+           
+           // ENHANCED: Progress bar with percentage overlay
+           SDL_Rect progress_bg = {content_x, content_y, content_w, 30};
+           SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+           SDL_RenderFillRect(renderer, &progress_bg);
+           
+           // Calculate progress from batch count (more accurate than epoch)
+           float progress = 0.0f;
+           if (state->training_metrics && state->training_metrics->training.total_steps > 0) {
+               progress = (float)state->training_metrics->training.current_step / 
+                         state->training_metrics->training.total_steps;
+           } else if (viz_data.total_epochs > 0) {
+               progress = (float)viz_data.current_epoch / viz_data.total_epochs;
+           }
+           
+           if (progress > 0.0f) {
+               SDL_Rect progress_fill = {progress_bg.x, progress_bg.y, 
+                                        (int)(progress_bg.w * progress), progress_bg.h};
+               // Gradient color based on progress
+               int r = 100 + (int)(100 * progress);
+               int g = 200 - (int)(50 * progress);
+               SDL_SetRenderDrawColor(renderer, r, g, 100, 255);
+               SDL_RenderFillRect(renderer, &progress_fill);
+               
+               // Percentage text overlay (centered)
+               char percent_text[32];
+               snprintf(percent_text, sizeof(percent_text), "%.1f%%", progress * 100.0f);
+               int text_w = strlen(percent_text) * 8;  // Approximate width
+               draw_text(renderer, percent_text, 
+                        progress_bg.x + progress_bg.w/2 - text_w/2,
+                        progress_bg.y + 8,
+                        (SDL_Color){255, 255, 255, 255});
+           }
+           
+           SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+           SDL_RenderDrawRect(renderer, &progress_bg);
+           content_y += 45;
+              
            
            // Sphere Visualization - Show kissing spheres architecture
            int sphere_viz_height = 300;

@@ -40,6 +40,7 @@
 #include <immintrin.h>  // AVX/AVX2 SIMD instructions
 // #include <math.h>  // OBJECTIVE 3A: Removed - using crystalline math only
 #include <unistd.h>
+#include <time.h>  // For timing metrics
 
 /**
  * Thread-local training context for each sphere
@@ -1944,9 +1945,15 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     int batches_pushed = 0;
     size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
     
+    // Timing tracking for progress estimates
+    time_t epoch_start_time = time(NULL);
+    
     // UI Integration: Initialize epoch metrics
     if (system->metrics) {
         cllm_metrics_update_training_progress(system->metrics, 0, 0, total_batches_in_epoch);
+        system->metrics->training.elapsed_time_seconds = 0.0;
+        system->metrics->training.estimated_time_remaining_seconds = 0.0;
+        system->metrics->training.batches_per_second = 0.0f;
     }
     
     // Push all batches to work queue
@@ -1973,12 +1980,23 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
         }
         
         batches_pushed++;
-        
-        // UI Integration: Update step progress
+            
+            // UI Integration: Update step progress
         if (system->metrics) {
             cllm_metrics_update_training_progress(system->metrics, 0, batches_pushed, total_batches_in_epoch);
-               
-               // CRITICAL FIX: Invoke callbacks every 10 batches for real-time UI updates
+                
+                // Calculate timing metrics
+                double elapsed = difftime(time(NULL), epoch_start_time);
+                if (elapsed > 0.1) {  // Avoid division by zero
+                    float batches_per_sec = batches_pushed / elapsed;
+                    double remaining = (total_batches_in_epoch - batches_pushed) / batches_per_sec;
+                    
+                    system->metrics->training.elapsed_time_seconds = elapsed;
+                    system->metrics->training.estimated_time_remaining_seconds = remaining;
+                    system->metrics->training.batches_per_second = batches_per_sec;
+                }
+                
+                // CRITICAL FIX: Invoke callbacks every 10 batches for real-time UI updates
                if (batches_pushed % 10 == 0) {
                    cllm_metrics_invoke_callbacks(system->metrics);
                }

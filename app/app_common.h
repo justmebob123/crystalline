@@ -18,6 +18,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/cllm_metrics.h"
 #include "lattice_cache.h"
 
 // Video-friendly dimensions (16:9 aspect ratio)
@@ -289,7 +290,7 @@ typedef struct {
     } sphere_stats;
     
     // UI Integration: Real-time metrics from training system
-    struct CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h
+    CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h
 } AppState;
 
 // Utility functions - use library versions where available
