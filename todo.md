@@ -85,15 +85,20 @@
 - [x] Build successfully
 - [ ] Test with actual training run
 
-### Step 5: Test with Actual Training Run (1-2 hours)
-- [ ] Prepare small test dataset
-- [ ] Start training with UI open
+### Step 5: Test with Actual Training Run (1-2 hours) - READY
+- [x] Prepare small test dataset (test_corpus.txt created)
+- [x] Create test script (test_training_ui.sh)
+- [x] Create comprehensive testing guide (TESTING_GUIDE.md)
+- [ ] Start training with UI open (requires user to run UI)
 - [ ] Verify real-time metrics updates
 - [ ] Verify sphere colors change with thread states
 - [ ] Verify loss updates in real-time
 - [ ] Verify batch counts increment
 - [ ] Document any issues found
 - [ ] Fix any bugs discovered
+
+NOTE: Testing requires running the UI application which cannot be done in this environment.
+User should follow TESTING_GUIDE.md to perform manual testing.
 
 ### Step 6: Additional Visualization Features (2-3 hours)
 - [ ] Add thread hierarchy tree view
