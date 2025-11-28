@@ -88,13 +88,24 @@ Kissing Spheres Hierarchy:
 - [x] Workers process batches
 - [x] Build successful (zero errors, 3 unused parameter warnings)
 
-### Phase 2: Complete Implementation - IN PROGRESS
-- [ ] Implement actual batch processing (currently just usleep placeholder)
-- [ ] Implement gradient accumulation hierarchy
+### Phase 2: Model-Aware Implementation - CRITICAL INSIGHT
+
+**DISCOVERY**: The model structure ALREADY has 12-fold symmetry and kissing spheres!
+- CLLMLatticePoint has symmetry_group (0-11) and neighbors[12]
+- CLLMToken has symmetry_group and prime_encoding
+- Model is DESIGNED for this hierarchy - we just need to USE it!
+
+Tasks:
+- [ ] Make hierarchy creation model-aware (read model->header.symmetry_order)
+- [ ] Distribute work by token symmetry_group (not random round-robin)
+- [ ] Process lattice points with their 12 neighbors (kissing spheres!)
+- [ ] Partition weights by symmetry group (cache-friendly)
+- [ ] Implement actual batch processing using lattice structure
+- [ ] Implement gradient accumulation by lattice partition
 - [ ] Implement optimizer step
 - [ ] Add proper error handling
-- [ ] Add load balancing (currently simple round-robin)
-- [ ] Integrate with existing training code
+
+See MODEL_STRUCTURE_ANALYSIS.md for detailed analysis
 
 ### Phase 3: Integration
 - [ ] Update tools/train_model.c to use hierarchical system
