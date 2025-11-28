@@ -630,6 +630,7 @@ bool training_loop_checkpoint(TrainingLoop* loop, const char* checkpoint_name) {
     // Update checkpoint info
     strncpy(loop->last_checkpoint_path, checkpoint_path, 
            sizeof(loop->last_checkpoint_path) - 1);
+    loop->last_checkpoint_path[sizeof(loop->last_checkpoint_path) - 1] = '\0';  // Ensure null termination
     loop->checkpoint_version++;
     
     // Trigger checkpoint callbacks

@@ -964,6 +964,7 @@ static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
 /**
  * Check if queue is empty
  */
+__attribute__((unused))
 static int batch_queue_is_empty(BatchQueue* queue) {
     if (!queue) return 1;
     
@@ -1727,6 +1728,7 @@ static void clip_gradients(float* gradients, size_t size, float max_norm) {
  * When a worker thread spawns children, it transitions to a control thread.
  * Control threads NEVER process batches - only coordinate children.
  */
+   __attribute__((unused))
 static int sphere_spawn_children(SphereTrainingContext* parent, int num_children) {
     if (!parent || num_children <= 0 || num_children > 12) return -1;
     
@@ -1875,7 +1877,8 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     printf("Batch pre-fetching enabled + Lock-free work queue active\n\n");
     
     int batches_pushed = 0;
-    size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
+    // Note: total_batches_in_epoch available if needed for progress reporting
+    // size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
     
     // Push all batches to work queue
     printf("Pushing batches to work queue...\n");

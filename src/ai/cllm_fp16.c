@@ -14,7 +14,10 @@
  * Software FP32 to FP16 conversion (fallback)
  */
 static uint16_t fp32_to_fp16_scalar(float value) {
-    uint32_t f32 = *((uint32_t*)&value);
+    // Use union to avoid strict aliasing violation
+    union { float f; uint32_t u; } converter;
+    converter.f = value;
+    uint32_t f32 = converter.u;
     
     uint32_t sign = (f32 >> 16) & 0x8000;
     uint32_t exponent = ((f32 >> 23) & 0xFF) - 127 + 15;
@@ -40,7 +43,7 @@ static float fp16_to_fp32_scalar(uint16_t value) {
     uint32_t exponent = (value >> 10) & 0x1F;
     uint32_t mantissa = value & 0x3FF;
     
-    uint32_t f32;
+    uint32_t f32 = 0;  // Initialize to zero to fix warning
     
     if (exponent == 0) {
         if (mantissa == 0) {
@@ -64,7 +67,10 @@ static float fp16_to_fp32_scalar(uint16_t value) {
         f32 = sign | ((exponent + 127 - 15) << 23) | (mantissa << 13);
     }
     
-    return *((float*)&f32);
+    // Use union to avoid strict aliasing violation
+    union { uint32_t u; float f; } converter;
+    converter.u = f32;
+    return converter.f;
 }
 
 /**
