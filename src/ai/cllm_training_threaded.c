@@ -16,6 +16,7 @@
 #include "cllm_simd_gradient_ops.h"
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_shared_memory.h"
+#include "ai/cllm_control_process.h"
 #include "prime_float_math.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -112,6 +113,10 @@ struct ThreadedTrainingSystem {
     int* sphere_completion_flags;
     pthread_mutex_t completion_lock;
     pthread_cond_t completion_cond;
+    
+    // PHASE 5: Infrastructure Integration
+    ControlProcess* control_process;           // Control process infrastructure
+    CLLMLatticeHierarchy* root_hierarchy;      // Root of lattice hierarchy
 };
 
 /**
@@ -338,6 +343,49 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     for (int i = 0; i < system->thread_system->total_spheres; i++) {
         system->thread_system->all_spheres[i]->user_data = system;
     }
+    
+    // PHASE 5: Initialize control process infrastructure
+    SystemConfiguration control_config = {
+        .max_hierarchy_depth = hierarchy_levels,
+        .max_spheres_per_level = 12,
+        .initial_sphere_count = num_threads,
+        .batch_size = 32,
+        .max_epochs = 100,
+        .learning_rate = 0.001,
+        .max_threads = num_threads,
+        .max_memory_bytes = 1024 * 1024 * 1024,  // 1GB
+        .sync_interval_batches = 1,
+        .checkpoint_interval_epochs = 10,
+        .health_check_interval_ms = 1000,
+        .sphere_timeout_seconds = 60.0,
+        .enable_boundary_awareness = true,
+        .enable_twin_prime_tracking = true
+    };
+    
+    system->control_process = control_process_create(&control_config);
+    if (!system->control_process) {
+        fprintf(stderr, "WARNING: Failed to create control process (continuing without it)\n");
+        system->control_process = NULL;  // Continue without control process
+    } else {
+        printf("  ✓ Control process infrastructure initialized\n");
+    }
+    
+    // PHASE 5: Initialize root lattice hierarchy
+    int root_symmetry_groups[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    system->root_hierarchy = lattice_hierarchy_create(
+        0,                      // sphere_id (root)
+        0,                      // hierarchy_level (root level)
+        root_symmetry_groups,   // symmetry_groups
+        12,                     // num_symmetry_groups
+        -1,                     // physical_thread_id (not assigned yet)
+        NULL                    // parent (root has no parent)
+    );
+    if (!system->root_hierarchy) {
+        fprintf(stderr, "WARNING: Failed to create root hierarchy (continuing without it)\n");
+        system->root_hierarchy = NULL;
+    } else {
+        printf("  ✓ Root lattice hierarchy created (12-fold structure)\n");
+    }
     // Allocate dynamic sphere contexts array
     system->sphere_contexts = (SphereTrainingContext**)calloc(system->num_worker_spheres, 
                                                                sizeof(SphereTrainingContext*));
@@ -491,6 +539,17 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     
     pthread_barrier_destroy(&system->epoch_barrier);
     pthread_barrier_destroy(&system->batch_barrier);
+    
+    // PHASE 5: Cleanup infrastructure
+    if (system->control_process) {
+        control_process_free(system->control_process);
+        printf("  ✓ Control process freed\n");
+    }
+    
+    if (system->root_hierarchy) {
+        lattice_hierarchy_free(system->root_hierarchy);
+        printf("  ✓ Root hierarchy freed\n");
+    }
     free(system);
 }
 
