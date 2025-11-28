@@ -40,6 +40,10 @@ void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm)
  * Apply gradient clipping by value
  * 
  * @param gradients Gradient array [size]
+               if (layer == 0 && i % 1000 == 0) {
+                   printf("  Updating attention layer %d: %zu/%zu\n", layer, i, weight_size);
+                   fflush(stdout);
+               }
  * @param size Number of parameters
  * @param clip_value Maximum absolute value
  */
@@ -66,6 +70,10 @@ void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_valu
  * @param learning_rate Learning rate
  * @param beta1 First moment decay
  * @param beta2 Second moment decay
+               if (layer == 0 && i % 5000 == 0) {
+                   printf("  Updating feedforward layer %d W1: %zu/%zu\n", layer, i, w1_size);
+                   fflush(stdout);
+               }
  * @param epsilon Small constant for numerical stability
  * @param bias_correction1 Bias correction for first moment
  * @param bias_correction2 Bias correction for second moment

@@ -119,29 +119,52 @@ Evidence:
 - Process remains in Sl+ state (sleeping)
 - Multiple defunct processes from previous failed attempts
 
-**ROOT CAUSE IDENTIFIED**
+**ROOT CAUSE IDENTIFIED - ARCHITECTURAL FLAW**
 
-The system is NOT hanging - it's just EXTREMELY SLOW with no progress indication.
+The hierarchical training system has a FUNDAMENTAL DESIGN BUG:
 
-The optimizer performs ~71,680 individual weight updates per step:
-- Embeddings: 3,776 updates
-- Attention layers (2): 6,144 updates  
-- Feedforward layers (2): 65,536 updates
-- Total: 75,456 updates per optimizer step
+**The Problem:**
+- Root control thread is created ONCE in `hierarchical_training_create()`
+- Root thread runs ONCE, processes ONE epoch, then EXITS (returns NULL)
+- When `hierarchical_train_epoch()` is called for epoch 2, there's NO root thread running!
+- Main thread waits forever for `epoch_done` flag that will never be set
+- All sphere threads also exit after epoch 1
 
-With NO debug output during these loops, it appears frozen but is actually working.
+**Evidence:**
+- `ps -T` shows only 1 thread (main thread)
+- All worker threads exited
+- Root control thread exited after epoch 1
+- System stuck in `while (!atomic_load(&system->epoch_done))` loop
 
-**THE REAL PROBLEM**: 
-- No progress indication during optimizer
-- User has no idea system is working
-- Appears to hang but is actually processing
-- Need to add progress output or make optimizer faster
+**The Fix Needed:**
+Root control thread must LOOP and handle multiple epochs:
+```c
+static void* root_control_thread(void* arg) {
+    while (system_not_shutdown) {
+        // Wait for epoch start signal
+        while (!atomic_load(&system->running)) {
+            usleep(10000);
+        }
+        
+        // Do epoch work (distribute batches, collect gradients, optimize)
+        // ...
+        
+        // Signal epoch done
+        atomic_store(&system->epoch_done, 1);
+        atomic_store(&system->running, 0);
+        
+        // Loop back and wait for next epoch
+    }
+}
+```
+
+**Impact:**
+- Current implementation only works for 1 epoch
+- Multi-epoch training is BROKEN
+- System architecture needs refactoring
 
 **NEXT STEP**: 
-1. Add progress output to optimizer loops
-2. OR optimize the update loops (vectorize?)
-3. OR reduce model size for testing
-4. Let current test run to completion to verify it actually works
+Refactor root control thread to loop for multiple epochs
 
 ---
 
