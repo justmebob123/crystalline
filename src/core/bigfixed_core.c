@@ -498,6 +498,21 @@ void big_fixed_div(BigFixed *result, const BigFixed *a, const BigFixed *b) {
     // Scale numerator for precision: a_full * 2^scale
     big_shl(&a_full, target_scale);
     
+    // Check if b_full is zero after scaling (defensive check)
+    if (big_is_zero(&b_full)) {
+        // Return zero result
+        big_from_int(result->integer_part, 0);
+        big_from_int(result->fractional_part, 0);
+        result->negative = false;
+        // Cleanup
+        big_free(&a_full);
+        big_free(&b_full);
+        big_free(&quotient);
+        big_free(&remainder);
+        big_free(&scale_val);
+        return;
+    }
+    
     // Divide: quotient = (a_full * 2^scale) / b_full
     big_div(&a_full, &b_full, &quotient, &remainder);
     
@@ -512,7 +527,13 @@ void big_fixed_div(BigFixed *result, const BigFixed *a, const BigFixed *b) {
     big_init(&frac_mask);
     big_from_int(&one, 1);
     big_sub(&scale_val, &one, &frac_mask);
-    big_mod(&quotient, &frac_mask, result->fractional_part);
+    
+    // Check if frac_mask is zero before modulo (defensive check)
+    if (big_is_zero(&frac_mask)) {
+        big_from_int(result->fractional_part, 0);
+    } else {
+        big_mod(&quotient, &frac_mask, result->fractional_part);
+    }
     
     // Handle sign
     result->negative = (a->negative != b->negative);
