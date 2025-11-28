@@ -37,35 +37,47 @@
 // Forward declarations
 typedef struct HierarchicalTrainingSystem HierarchicalTrainingSystem;
 
+// Forward declaration - use existing ThreadLocalTrainingContext
+typedef struct ThreadLocalTrainingContext ThreadLocalTrainingContext;
+
+// Declare existing functions from cllm_training_threaded.c
+extern ThreadLocalTrainingContext* thread_local_training_create(
+    int batch_size,
+    int seq_len,
+    int num_layers,
+    int embed_dim,
+    int vocab_size,
+    int ff_hidden_dim,
+    int num_heads
+);
+
+extern void thread_local_training_free(ThreadLocalTrainingContext* ctx);
+
+extern float cllm_forward_training_threaded(
+    CLLMTraining* training,
+    ThreadLocalTrainingContext* local_ctx,
+    uint32_t* input_tokens
+);
+
+extern void cllm_backward_training_threaded(
+    CLLMTraining* training,
+    ThreadLocalTrainingContext* local_ctx,
+    uint32_t* target_tokens,
+    float* gradient_buffer
+);
+
 /**
- * Thread-local training context for each sphere
+ * Sphere training context wrapper
  * 
- * Each worker sphere gets its own context to avoid race conditions.
- * This matches the existing thread-local context design.
+ * Wraps the existing ThreadLocalTrainingContext with additional
+ * sphere-specific data.
  */
 typedef struct {
-    int batch_size;
-    int seq_len;
-    int num_layers;
-    int embed_dim;
-    int vocab_size;
-    
-    // Forward pass buffers (thread-local)
-    float* input_embeddings;
-    float* hidden_states;
-    float* attention_output;
-    float* ff_output;
-    float* logits;
-    
-    // Backward pass buffers (thread-local)
-    float* grad_output;
-    float* grad_hidden;
-    float* grad_attention;
-    float* grad_embeddings;
-    
-    // Local gradient accumulator
+    ThreadLocalTrainingContext* thread_local_ctx;
     float* local_gradients;
     size_t gradient_size;
+    int tokens_processed;
+    float total_loss;
 } SphereTrainingContext;
 
 /**
@@ -326,9 +338,11 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
         if (my_tokens == 0) continue;
         
         // Forward pass using thread-local context
-        // TODO: Connect to actual cllm_forward_training_threaded when available
-        // For now, simulate forward pass
-        float seq_loss = 0.1f * my_tokens;
+        float seq_loss = cllm_forward_training_threaded(
+            training,
+            ctx->thread_local_ctx,
+            &batch->input_ids[offset]
+        );
         
         // Process lattice points for tokens in our symmetry group
         for (uint32_t pos = 0; pos < batch->seq_len; pos++) {
@@ -356,8 +370,12 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
         }
         
         // Backward pass using thread-local context
-        // TODO: Connect to actual cllm_backward_training_threaded when available
-        // For now, simulate backward pass by updating gradients
+        cllm_backward_training_threaded(
+            training,
+            ctx->thread_local_ctx,
+            &batch->target_ids[offset],
+            ctx->local_gradients
+        );
         
         total_loss += seq_loss;
         sequences_processed++;
@@ -388,55 +406,58 @@ static int select_least_loaded_child(CLLMLatticeHierarchy* sphere) {
 
 /**
  * Create sphere training context
+ * 
+ * Uses the existing thread_local_training_create() function
+ * and wraps it with sphere-specific data.
  */
-static SphereTrainingContext* sphere_training_context_create(CLLMModel* model, int batch_size, int seq_len) {
+static SphereTrainingContext* sphere_training_context_create(
+    CLLMModel* model, 
+    CLLMTraining* training,
+    int batch_size, 
+    int seq_len
+) {
     SphereTrainingContext* ctx = (SphereTrainingContext*)calloc(1, sizeof(SphereTrainingContext));
     if (!ctx) return NULL;
     
-    ctx->batch_size = batch_size;
-    ctx->seq_len = seq_len;
-    ctx->num_layers = model->num_layers;
-    ctx->embed_dim = model->embedding_dim;
-    ctx->vocab_size = model->vocab_size;
+    // Calculate ff_hidden_dim and num_heads from model
+    int ff_hidden_dim = model->embedding_dim * 4;  // Standard transformer ratio
+    int num_heads = 8;  // Default - will be read from model->header.num_heads if available
     
-    size_t seq_size = batch_size * seq_len * model->embedding_dim;
-    size_t logits_size = batch_size * seq_len * model->vocab_size;
+    // Try to get num_heads from model header
+    if (model->header.num_heads > 0) {
+        num_heads = model->header.num_heads;
+    }
     
-    // Allocate forward pass buffers
-    ctx->input_embeddings = (float*)calloc(seq_size, sizeof(float));
-    ctx->hidden_states = (float*)calloc(seq_size, sizeof(float));
-    ctx->attention_output = (float*)calloc(seq_size, sizeof(float));
-    ctx->ff_output = (float*)calloc(seq_size, sizeof(float));
-    ctx->logits = (float*)calloc(logits_size, sizeof(float));
+    (void)training;  // Mark as used
     
-    // Allocate backward pass buffers
-    ctx->grad_output = (float*)calloc(logits_size, sizeof(float));
-    ctx->grad_hidden = (float*)calloc(seq_size, sizeof(float));
-    ctx->grad_attention = (float*)calloc(seq_size, sizeof(float));
-    ctx->grad_embeddings = (float*)calloc(seq_size, sizeof(float));
+    // Create thread-local training context using existing function
+    ctx->thread_local_ctx = thread_local_training_create(
+        batch_size,
+        seq_len,
+        model->num_layers,
+        model->embedding_dim,
+        model->vocab_size,
+        ff_hidden_dim,
+        num_heads
+    );
+    
+    if (!ctx->thread_local_ctx) {
+        free(ctx);
+        return NULL;
+    }
     
     // Allocate local gradient buffer
     ctx->gradient_size = model->vocab_size * model->embedding_dim;
     ctx->local_gradients = (float*)calloc(ctx->gradient_size, sizeof(float));
     
-    // Check allocations
-    if (!ctx->input_embeddings || !ctx->hidden_states || !ctx->attention_output ||
-        !ctx->ff_output || !ctx->logits || !ctx->grad_output || !ctx->grad_hidden ||
-        !ctx->grad_attention || !ctx->grad_embeddings || !ctx->local_gradients) {
-        // Cleanup on failure
-        free(ctx->input_embeddings);
-        free(ctx->hidden_states);
-        free(ctx->attention_output);
-        free(ctx->ff_output);
-        free(ctx->logits);
-        free(ctx->grad_output);
-        free(ctx->grad_hidden);
-        free(ctx->grad_attention);
-        free(ctx->grad_embeddings);
-        free(ctx->local_gradients);
+    if (!ctx->local_gradients) {
+        thread_local_training_free(ctx->thread_local_ctx);
         free(ctx);
         return NULL;
     }
+    
+    ctx->tokens_processed = 0;
+    ctx->total_loss = 0.0f;
     
     return ctx;
 }
@@ -447,15 +468,9 @@ static SphereTrainingContext* sphere_training_context_create(CLLMModel* model, i
 static void sphere_training_context_free(SphereTrainingContext* ctx) {
     if (!ctx) return;
     
-    free(ctx->input_embeddings);
-    free(ctx->hidden_states);
-    free(ctx->attention_output);
-    free(ctx->ff_output);
-    free(ctx->logits);
-    free(ctx->grad_output);
-    free(ctx->grad_hidden);
-    free(ctx->grad_attention);
-    free(ctx->grad_embeddings);
+    if (ctx->thread_local_ctx) {
+        thread_local_training_free(ctx->thread_local_ctx);
+    }
     free(ctx->local_gradients);
     free(ctx);
 }
@@ -596,8 +611,9 @@ static void* sphere_thread_func(void* arg) {
     if (sphere->num_children == 0) {
         training_ctx = sphere_training_context_create(
             system->training->model,
-            32,  // batch_size - TODO: get from config
-            128  // seq_len - TODO: get from config
+            system->training,
+            system->training->config.batch_size,
+            system->training->config.sequence_length
         );
         if (!training_ctx) {
             fprintf(stderr, "[Sphere %d] ERROR: Failed to create training context\n",
@@ -888,12 +904,7 @@ static void* root_control_thread(void* arg) {
     
     // Apply optimizer step (Adam)
     printf("[Node Zero] Applying optimizer step...\n");
-    // TODO: Connect to actual optimizer when available
-    // cllm_optimizer_step_adam(system->training);
-    
-    // For now, simulate optimizer step
-    usleep(1000);  // 1ms
-    
+    cllm_optimizer_step_adam(system->training);
     printf("[Node Zero] Optimizer step complete\n");
     
     // Cleanup
