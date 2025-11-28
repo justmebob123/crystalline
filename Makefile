@@ -436,3 +436,66 @@ all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build
         tools/validate_kissing_spheres tools/analyze_cymatic_resonance \
         tools/visualize_angular_positions
 
+
+# ============================================================================
+# Production Build Targets
+# ============================================================================
+
+PROD_CFLAGS = -Wall -Wextra -O3 -std=c11 -DPRODUCTION_BUILD=1 -march=native -flto -I./include
+PROD_TEST_DIR = tests
+
+# Production test executables
+benchmark_large_scale: $(PROD_TEST_DIR)/benchmark_large_scale.c $(CLLM_LIB)
+	@echo "Building large-scale benchmark..."
+	@mkdir -p tools
+	$(CC) $(PROD_CFLAGS) -o tools/benchmark_large_scale $(PROD_TEST_DIR)/benchmark_large_scale.c \
+		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Large-scale benchmark built: tools/benchmark_large_scale"
+
+validate_training_quality: $(PROD_TEST_DIR)/validate_training_quality.c $(CLLM_LIB)
+	@echo "Building training quality validator..."
+	@mkdir -p tools
+	$(CC) $(PROD_CFLAGS) -o tools/validate_training_quality $(PROD_TEST_DIR)/validate_training_quality.c \
+		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Training validator built: tools/validate_training_quality"
+
+smoke_test_production: $(PROD_TEST_DIR)/smoke_test_production.c $(CLLM_LIB)
+	@echo "Building production smoke tests..."
+	@mkdir -p tools
+	$(CC) $(PROD_CFLAGS) -o tools/smoke_test_production $(PROD_TEST_DIR)/smoke_test_production.c \
+		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Smoke tests built: tools/smoke_test_production"
+
+# Production build target
+production: benchmark_large_scale validate_training_quality smoke_test_production
+	@echo ""
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║         PRODUCTION BUILD COMPLETED SUCCESSFULLY                ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Production tools built:"
+	@echo "  ✓ tools/benchmark_large_scale"
+	@echo "  ✓ tools/validate_training_quality"
+	@echo "  ✓ tools/smoke_test_production"
+	@echo ""
+
+# Run production tests
+prod-tests: production
+	@echo ""
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║              RUNNING PRODUCTION TEST SUITE                     ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Running smoke tests..."
+	@./tools/smoke_test_production || exit 1
+	@echo ""
+	@echo "Running training quality validation..."
+	@./tools/validate_training_quality || exit 1
+	@echo ""
+	@echo "Running large-scale benchmarks..."
+	@timeout 300 ./tools/benchmark_large_scale || echo "Benchmark timed out or failed"
+	@echo ""
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║           PRODUCTION TESTS COMPLETED                           ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+
