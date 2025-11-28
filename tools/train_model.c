@@ -201,10 +201,6 @@ HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
         
-        // Generate sample
-        if ((epoch + 1) % 5 == 0 || epoch == 0) {
-            generate_sample(model, "the quick brown");
-        }
         
         // Save checkpoint
         if ((epoch + 1) % 10 == 0 || epoch == config->num_epochs - 1) {
@@ -222,6 +218,12 @@ HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
        hierarchical_training_free(hierarchical_system);
        cllm_batch_iterator_free(batch_iterator);
     
+    // Generate samples after training is complete and threads are stopped
+    printf("\n=== Generating Samples ===\n");
+    generate_sample(model, "the quick brown");
+    generate_sample(model, "artificial intelligence");
+    generate_sample(model, "machine learning");
+
     
     time_t end_time = time(NULL);
     double elapsed = difftime(end_time, start_time);

@@ -851,7 +851,6 @@ static void* root_control_thread(void* arg) {
     system->total_batches = batches_distributed;
     
     // Signal epoch done
-    atomic_store(&system->epoch_done, 1);
     
     printf("[Node Zero] Waiting for all workers to complete...\n");
     
@@ -910,6 +909,8 @@ static void* root_control_thread(void* arg) {
     // Cleanup
     gradient_accumulator_free(root_acc);
     
+    // Signal epoch done AFTER optimizer completes
+    atomic_store(&system->epoch_done, 1);
     printf("[Node Zero] Epoch complete\n");
     
     return NULL;
