@@ -82,11 +82,12 @@
 
 ---
 
-## Phase 2: Complete Collapsible Panels (45 min)
+## Phase 2: Complete Collapsible Panels (45 min) 🎯 IN PROGRESS
 - [ ] Integrate headers into training tab
-- [ ] Add click detection
+- [ ] Add click detection for headers
 - [ ] Implement conditional rendering
-- [ ] Test all states
+- [ ] Adjust Y positions dynamically
+- [ ] Test all panel states
 
 ---
 

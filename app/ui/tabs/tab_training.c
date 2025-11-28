@@ -72,6 +72,12 @@ static UIButton btn_load;
 static SDL_Rect file_list_rect;
 static SDL_Rect viz_area_rect;
 
+// Collapsible panel header bounds (for click detection)
+static SDL_Rect framework_header_rect;
+static SDL_Rect performance_header_rect;
+static SDL_Rect legend_header_rect;
+static SDL_Rect terminal_header_rect;
+
 // Input initialization flag
 static bool inputs_initialized = false;
 
