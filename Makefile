@@ -348,7 +348,11 @@ $(DOCPROC_LIB): $(DOCPROC_OBJECTS)
 # Document Processing CLI Tools
 # ============================================================================
 
-tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm
+tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
+       tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
+       tools/init_lattice_embeddings tools/benchmark_ntt_attention \
+       tools/validate_kissing_spheres tools/analyze_cymatic_resonance \
+       tools/visualize_angular_positions
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
