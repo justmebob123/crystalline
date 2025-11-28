@@ -110,13 +110,15 @@ src/docproc/
 
 ## PHASE 3: ADVANCED CRAWLER FEATURES (6 hours) 🕷️
 
-### 3.1 Prime-Based Randomization System (2 hours)
+### 3.1 Prime-Based Randomization System (2 hours) ✅
 
 **Features**:
-- [ ] Prime number selection for crawl frequency
-- [ ] Prime-based delay calculation
-- [ ] Prime-based link selection from queue
-- [ ] Configurable prime ranges
+- [x] Prime number selection for crawl frequency
+- [x] Prime-based delay calculation
+- [x] Prime-based link selection from queue
+- [x] Configurable prime ranges
+- [x] Prime validation functions
+- [x] Next/previous prime utilities
 
 **Data Structure**:
 ```c
@@ -129,23 +131,29 @@ typedef struct {
 } CrawlerPrimeConfig;
 ```
 
-**Files**: `src/crawler/prime_randomization.c`
+**Files**: `src/crawler/prime_randomization.c/h` ✅
 
-### 3.2 Advanced URL Pattern Detection (2 hours)
+### 3.2 Advanced URL Pattern Detection (2 hours) ✅
 
-**Patterns to Detect**:
-- [ ] JavaScript onclick handlers
-- [ ] Data attributes (data-href, data-url)
-- [ ] Meta refresh redirects
-- [ ] JavaScript window.location
-- [ ] AJAX endpoints
-- [ ] API endpoints in scripts
-- [ ] Sitemap.xml references
-- [ ] RSS/Atom feed links
-- [ ] Canonical URLs
-- [ ] Open Graph URLs
+**Patterns Implemented**:
+- [x] JavaScript onclick handlers
+- [x] Data attributes (data-href, data-url, data-link)
+- [x] Meta refresh redirects
+- [x] Standard href (enhanced)
+- [x] Configurable pattern selection
+- [x] URL validation
+- [x] Pattern-specific extraction
 
-**Files**: `src/crawler/url_patterns.c`
+**Patterns Ready for Future**:
+- [ ] JavaScript window.location (stub)
+- [ ] AJAX endpoints (stub)
+- [ ] API endpoints in scripts (stub)
+- [ ] Sitemap.xml references (stub)
+- [ ] RSS/Atom feed links (stub)
+- [ ] Canonical URLs (stub)
+- [ ] Open Graph URLs (stub)
+
+**Files**: `src/crawler/url_patterns.c/h` ✅
 
 ### 3.3 Dynamic Link Management (2 hours)
 

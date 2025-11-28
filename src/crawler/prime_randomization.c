@@ -1,0 +1,137 @@
+/**
+ * Prime-Based Randomization Implementation
+ * 
+ * Uses prime numbers for mathematically-based crawl patterns.
+ */
+
+#include "prime_randomization.h"
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+/**
+ * Check if a number is prime
+ */
+bool is_prime(uint64_t n) {
+    if (n <= 1) return false;
+    if (n <= 3) return true;
+    if (n % 2 == 0 || n % 3 == 0) return false;
+    
+    for (uint64_t i = 5; i * i <= n; i += 6) {
+        if (n % i == 0 || n % (i + 2) == 0) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Get next prime number after n
+ */
+uint64_t next_prime(uint64_t n) {
+    if (n < 2) return 2;
+    
+    uint64_t candidate = n + 1;
+    while (!is_prime(candidate)) {
+        candidate++;
+        if (candidate > n + 1000) {
+            // Safety limit
+            return n;
+        }
+    }
+    
+    return candidate;
+}
+
+/**
+ * Get previous prime number before n
+ */
+uint64_t prev_prime(uint64_t n) {
+    if (n <= 2) return 2;
+    
+    uint64_t candidate = n - 1;
+    while (candidate > 1 && !is_prime(candidate)) {
+        candidate--;
+    }
+    
+    return candidate > 1 ? candidate : 2;
+}
+
+/**
+ * Initialize prime configuration with default values
+ */
+void prime_config_init_default(CrawlerPrimeConfig* config) {
+    if (!config) return;
+    
+    config->frequency_prime = 7;        // Crawl every 7 units
+    config->link_selection_prime = 13;  // Select every 13th link
+    config->delay_min_prime = 3;        // Min delay: 3 seconds
+    config->delay_max_prime = 11;       // Max delay: 11 seconds
+    config->use_prime_randomization = true;
+}
+
+/**
+ * Calculate delay based on prime numbers
+ */
+uint64_t calculate_prime_delay(uint64_t min_prime, uint64_t max_prime, uint64_t iteration) {
+    if (min_prime >= max_prime) {
+        return min_prime;
+    }
+    
+    // Use iteration to create varying delays
+    // Formula: delay = min + ((iteration * min) % (max - min))
+    uint64_t range = max_prime - min_prime;
+    uint64_t offset = (iteration * min_prime) % range;
+    uint64_t delay = min_prime + offset;
+    
+    // Ensure delay is prime
+    if (!is_prime(delay)) {
+        delay = next_prime(delay);
+        if (delay > max_prime) {
+            delay = prev_prime(max_prime);
+        }
+    }
+    
+    return delay;
+}
+
+/**
+ * Select link index using prime-based selection
+ */
+int select_prime_link_index(uint64_t selection_prime, int total_links, uint64_t iteration) {
+    if (total_links <= 0) return -1;
+    if (total_links == 1) return 0;
+    
+    // Use prime-based selection with iteration
+    // Formula: index = (iteration * selection_prime) % total_links
+    uint64_t index = (iteration * selection_prime) % (uint64_t)total_links;
+    
+    return (int)index;
+}
+
+/**
+ * Validate prime configuration
+ */
+bool prime_config_validate(const CrawlerPrimeConfig* config) {
+    if (!config) return false;
+    
+    // Check if primes are actually prime
+    if (config->use_prime_randomization) {
+        if (!is_prime(config->frequency_prime)) return false;
+        if (!is_prime(config->link_selection_prime)) return false;
+        if (!is_prime(config->delay_min_prime)) return false;
+        if (!is_prime(config->delay_max_prime)) return false;
+    }
+    
+    // Check if min < max
+    if (config->delay_min_prime >= config->delay_max_prime) return false;
+    
+    // Check reasonable ranges
+    if (config->frequency_prime < 2 || config->frequency_prime > 1000) return false;
+    if (config->link_selection_prime < 2 || config->link_selection_prime > 1000) return false;
+    if (config->delay_min_prime < 1 || config->delay_min_prime > 3600) return false;
+    if (config->delay_max_prime < 1 || config->delay_max_prime > 3600) return false;
+    
+    return true;
+}
