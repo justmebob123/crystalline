@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 3A: Removed - using crystalline math only
+#include "prime_float_math.h"
 
 /**
  * Simple primality test using trial division
@@ -21,8 +22,8 @@ static bool is_prime_simple(uint64_t n) {
     if (n <= 3) return true;
     if (n % 2 == 0 || n % 3 == 0) return false;
     
-    // Check divisibility up to sqrt(n)
-    uint64_t limit = (uint64_t)sqrt((double)n);
+    // Check divisibility up to sqrt(n) - using crystalline math
+    uint64_t limit = (uint64_t)prime_sqrt((double)n);
     for (uint64_t i = 5; i <= limit; i += 6) {
         if (n % i == 0 || n % (i + 2) == 0) {
             return false;

@@ -685,7 +685,10 @@ Tensor* backprop_buffer_to_tensor(const GradientBuffer* buffer, const size_t* sh
     
     // Convert size_t shape to uint32_t
     uint32_t* shape_u32 = (uint32_t*)malloc(ndim * sizeof(uint32_t));
-    if (!shape_u32) return NULL;  // Already checked, but compiler needs reassurance
+    if (!shape_u32) return NULL;  // Memory allocation check
+    
+    // Note: GCC may warn about uninitialized use, but shape_u32 is initialized by malloc
+    // and checked for NULL before use. This is a false positive.
     
     for (size_t i = 0; i < ndim; i++) {
         shape_u32[i] = (uint32_t)shape[i];

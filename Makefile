@@ -8,7 +8,12 @@
 # Compiler and flags
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -mavx2 -mfma
+
+# Detect CPU capabilities for SIMD optimization
+# Check if AVX2 is available (optional, gracefully degrades)
+SIMD_FLAGS := $(shell grep -q avx2 /proc/cpuinfo 2>/dev/null && echo "-mavx2 -mfma" || echo "")
+
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include $(SIMD_FLAGS)
 LDFLAGS = 
 ARFLAGS = rcs
 
