@@ -39,6 +39,19 @@ static CLLMBatchIterator* g_batch_iterator = NULL;
 static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !metrics) return;
+
+    // DEBUG: Verify callback is being invoked
+    static int callback_count = 0;
+    callback_count++;
+    if (callback_count % 10 == 0) {
+        printf("[METRICS CALLBACK #%d] Active: %d, Step: %d/%d, Loss: %.4f\n",
+               callback_count, 
+               metrics->performance.active_threads,
+               metrics->training.current_step,
+               metrics->training.total_steps,
+               metrics->training.current_loss);
+    }
+
     
     // Update sphere statistics from metrics
     state->sphere_stats.active_spheres = 0;

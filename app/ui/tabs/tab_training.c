@@ -979,6 +979,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 strcpy(config.optimizer, "adam");
                 
                 // Build vocabulary
+                   // Set status for vocabulary building
+                   snprintf(state->training_status_message, sizeof(state->training_status_message),
+                           "Building vocabulary from training files...");
+                   state->training_preprocessing_progress = 0.1f;
+                   SDL_PumpEvents();  // Allow UI to update
+                   
                 printf("Building vocabulary...\n");
                 for (int i = 0; i < file_count; i++) {
                     if (training_files[i].selected) {
@@ -991,6 +997,11 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 
                 // Load training data
                 if (state->cllm_training) {
+                       snprintf(state->training_status_message, sizeof(state->training_status_message),
+                               "Loading training data...");
+                       state->training_preprocessing_progress = 0.3f;
+                       SDL_PumpEvents();
+                       
                     printf("Loading training data...\n");
                     for (int i = 0; i < file_count; i++) {
                         if (training_files[i].selected) {
@@ -1001,6 +1012,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             }
             
             // Start training thread
+               // Set status for thread initialization
+               snprintf(state->training_status_message, sizeof(state->training_status_message),
+                       "Initializing 12 training threads...");
+               state->training_preprocessing_progress = 0.8f;
+               SDL_PumpEvents();
+               
             printf("Starting training...\n");
             start_training_thread(state);
         }
