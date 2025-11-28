@@ -98,6 +98,25 @@ ThreadLocalTrainingContext* thread_local_training_create(
 void thread_local_training_free(ThreadLocalTrainingContext* ctx);
 
 /**
+ * Threaded Forward/Backward Functions
+ * 
+ * These functions use thread-local activation buffers instead of shared CLLMTraining buffers.
+ * This allows multiple threads to execute forward/backward passes in parallel without locking.
+ */
+float cllm_forward_training_threaded(
+    CLLMTraining* training,
+    ThreadLocalTrainingContext* local_ctx,
+    uint32_t* input_tokens
+);
+
+void cllm_backward_training_threaded(
+    CLLMTraining* training,
+    ThreadLocalTrainingContext* local_ctx,
+    uint32_t* target_tokens,
+    float* gradient_buffer
+);
+
+/**
  * Threaded Training System Functions
  */
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
