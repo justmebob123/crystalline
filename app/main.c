@@ -160,8 +160,9 @@ AppState* init_app(void) {
     state->llm_input_text[0] = '\0';
     state->llm_output_text[0] = '\0';
     state->llm_generating = false;
-    state->llm_temperature = 0.7f;
-    state->llm_max_tokens = 100;
+    // LLM parameters - optimized for coherent output
+    state->llm_temperature = 0.8f;     // Balanced (was 0.7, user had 1.29)
+    state->llm_max_tokens = 512;       // Longer responses (was 100)
     state->training_data_path[0] = '\0';
     state->training_epochs = 10;
     state->training_thread_count = 0;  // 0 = auto-detect optimal

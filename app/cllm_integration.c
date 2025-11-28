@@ -42,45 +42,101 @@ extern int cllm_check_model_health(CLLMModel* model);
 /**
  * Create a new CLLM model with default configuration
  */
-CLLMModel* app_create_cllm_model_default(void) {
-    printf("Creating default CLLM model...\n");
+// Small model (117M parameters) - Good for testing
+CLLMModel* app_create_cllm_model_small(void) {
+    printf("Creating SMALL CLLM model (117M parameters)...\n");
     
-    // Create configuration
     CLLMConfig config = {
-        .vocab_size = 10000,
-        .embedding_dim = 512,
-        .num_layers = 6,
-        .num_heads = 8,
-        .ff_dim = 2048,
-        .max_seq_len = 512,
+        .vocab_size = 30000,
+        .embedding_dim = 768,
+        .num_layers = 12,
+        .num_heads = 12,
+        .ff_dim = 3072,
+        .max_seq_len = 1024,
         .dropout = 0.1f
     };
     
-    // Use the proper model creation function with random initialization
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
         fprintf(stderr, "Failed to create model\n");
         return NULL;
     }
     
-    printf("✓ Model created with random weight initialization\n");
+    printf("✓ SMALL model created (30K vocab, 12 layers, 768 dim)\n");
+    printf("  Parameters: ~117M (GPT-2 small equivalent)\n");
+    return model;
+}
+
+// Medium model (345M parameters) - Recommended for production
+CLLMModel* app_create_cllm_model_medium(void) {
+    printf("Creating MEDIUM CLLM model (345M parameters)...\n");
     
-    // Verify weights are non-zero
-    if (model->embeddings.embeddings) {
-        float sum = 0.0f;
-        for (int i = 0; i < 100; i++) {
-            sum += fabsf(model->embeddings.embeddings[i]);
-        }
-        printf("  Sample weight magnitude: %.6f (should be ~0.01-0.1)\n", sum / 100);
-        
-        if (sum < 0.0001f) {
-            fprintf(stderr, "WARNING: Weights appear to be zero!\n");
-        }
-    } else {
-        fprintf(stderr, "ERROR: Model embeddings are NULL!\n");
+    CLLMConfig config = {
+        .vocab_size = 50000,
+        .embedding_dim = 1024,
+        .num_layers = 24,
+        .num_heads = 16,
+        .ff_dim = 4096,
+        .max_seq_len = 2048,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
     }
     
+    printf("✓ MEDIUM model created (50K vocab, 24 layers, 1024 dim)\n");
+    printf("  Parameters: ~345M (GPT-2 medium equivalent)\n");
     return model;
+}
+
+// Large model (762M parameters) - Best quality
+CLLMModel* app_create_cllm_model_large(void) {
+    printf("Creating LARGE CLLM model (762M parameters)...\n");
+    
+    CLLMConfig config = {
+        .vocab_size = 50000,
+        .embedding_dim = 1280,
+        .num_layers = 36,
+        .num_heads = 20,
+        .ff_dim = 5120,
+        .max_seq_len = 2048,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
+    }
+    
+    printf("✓ LARGE model created (50K vocab, 36 layers, 1280 dim)\n");
+    printf("  Parameters: ~762M (GPT-2 large equivalent)\n");
+    return model;
+}
+
+// Auto-size based on dataset
+CLLMModel* app_create_cllm_model_auto(size_t dataset_size_mb) {
+    if (dataset_size_mb < 50) {
+        printf("Dataset < 50MB: Creating SMALL model\n");
+        return app_create_cllm_model_small();
+    } else if (dataset_size_mb < 500) {
+        printf("Dataset 50-500MB: Creating MEDIUM model\n");
+        return app_create_cllm_model_medium();
+    } else {
+        printf("Dataset > 500MB: Creating LARGE model\n");
+        return app_create_cllm_model_large();
+    }
+}
+
+// Default model (now uses SMALL instead of tiny)
+CLLMModel* app_create_cllm_model_default(void) {
+    printf("Creating default CLLM model...\n");
+    printf("NOTE: Using SMALL model (117M params) as default\n");
+    printf("      For better quality, use MEDIUM (345M) or LARGE (762M)\n");
+    return app_create_cllm_model_small();
 }
 
 // OLD BROKEN VERSION - DO NOT USE

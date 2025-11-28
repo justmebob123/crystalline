@@ -77,6 +77,14 @@ static bool model_browser_visible = false;
 static ThreadManager thread_manager = {0};
 static bool thread_list_visible = false;
 
+// Model size selection
+static bool model_size_dialog_visible = false;
+typedef enum {
+    MODEL_SIZE_SMALL,   // 117M params
+    MODEL_SIZE_MEDIUM,  // 345M params
+    MODEL_SIZE_LARGE    // 762M params
+} ModelSize;
+
 // Enhanced parameters
 static int top_k = 50;
 static float top_p = 0.9f;
@@ -368,6 +376,85 @@ static void draw_model_browser_panel(SDL_Renderer* renderer, int x, int y, int w
     draw_text(renderer, "Close", close_btn.x + btn_width/2 - 20, close_btn.y + 8, text_color);
 }
 
+// Draw model size selection dialog
+static void draw_model_size_dialog(SDL_Renderer* renderer, int x, int y, int width, int height) {
+    SDL_Color text_color = {220, 220, 220, 255};
+    SDL_Color bg_color = {30, 30, 40, 255};
+    SDL_Color button_color = {60, 80, 100, 255};
+    
+    // Draw panel background
+    SDL_Rect panel = {x, y, width, height};
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 100, 120, 140, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+    
+    // Title
+    draw_text(renderer, "SELECT MODEL SIZE", x + width/2 - 80, y + 15, 
+             (SDL_Color){100, 150, 200, 255});
+    
+    int btn_y = y + 50;
+    int btn_width = width - 40;
+    int btn_height = 80;
+    int spacing = 20;
+    
+    // Small model button
+    SDL_Rect small_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 60, 100, 60, 255);
+    SDL_RenderFillRect(renderer, &small_btn);
+    SDL_SetRenderDrawColor(renderer, 100, 150, 100, 255);
+    SDL_RenderDrawRect(renderer, &small_btn);
+    draw_text(renderer, "SMALL MODEL", small_btn.x + 10, small_btn.y + 10, 
+             (SDL_Color){150, 255, 150, 255});
+    draw_text(renderer, "117M parameters (GPT-2 small)", small_btn.x + 10, small_btn.y + 30, text_color);
+    draw_text(renderer, "30K vocab, 12 layers, 768 dim", small_btn.x + 10, small_btn.y + 48, 
+             (SDL_Color){180, 180, 180, 255});
+    draw_text(renderer, "Good for testing", small_btn.x + 10, small_btn.y + 64, 
+             (SDL_Color){150, 150, 150, 255});
+    
+    btn_y += btn_height + spacing;
+    
+    // Medium model button
+    SDL_Rect medium_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 80, 100, 120, 255);
+    SDL_RenderFillRect(renderer, &medium_btn);
+    SDL_SetRenderDrawColor(renderer, 120, 150, 180, 255);
+    SDL_RenderDrawRect(renderer, &medium_btn);
+    draw_text(renderer, "MEDIUM MODEL (RECOMMENDED)", medium_btn.x + 10, medium_btn.y + 10, 
+             (SDL_Color){150, 200, 255, 255});
+    draw_text(renderer, "345M parameters (GPT-2 medium)", medium_btn.x + 10, medium_btn.y + 30, text_color);
+    draw_text(renderer, "50K vocab, 24 layers, 1024 dim", medium_btn.x + 10, medium_btn.y + 48, 
+             (SDL_Color){180, 180, 180, 255});
+    draw_text(renderer, "Best balance of quality and speed", medium_btn.x + 10, medium_btn.y + 64, 
+             (SDL_Color){150, 150, 150, 255});
+    
+    btn_y += btn_height + spacing;
+    
+    // Large model button
+    SDL_Rect large_btn = {x + 20, btn_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 100, 80, 60, 255);
+    SDL_RenderFillRect(renderer, &large_btn);
+    SDL_SetRenderDrawColor(renderer, 150, 120, 80, 255);
+    SDL_RenderDrawRect(renderer, &large_btn);
+    draw_text(renderer, "LARGE MODEL", large_btn.x + 10, large_btn.y + 10, 
+             (SDL_Color){255, 200, 150, 255});
+    draw_text(renderer, "762M parameters (GPT-2 large)", large_btn.x + 10, large_btn.y + 30, text_color);
+    draw_text(renderer, "50K vocab, 36 layers, 1280 dim", large_btn.x + 10, large_btn.y + 48, 
+             (SDL_Color){180, 180, 180, 255});
+    draw_text(renderer, "Highest quality (requires more RAM)", large_btn.x + 10, large_btn.y + 64, 
+             (SDL_Color){150, 150, 150, 255});
+    
+    btn_y += btn_height + spacing;
+    
+    // Cancel button
+    SDL_Rect cancel_btn = {x + width/2 - 50, btn_y, 100, 30};
+    SDL_SetRenderDrawColor(renderer, 80, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &cancel_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &cancel_btn);
+    draw_text(renderer, "Cancel", cancel_btn.x + 30, cancel_btn.y + 8, text_color);
+}
+
 // Draw thread list panel
 static void draw_thread_list_panel(SDL_Renderer* renderer, int x, int y, int width, int height) {
     SDL_Color text_color = {220, 220, 220, 255};
@@ -587,7 +674,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     g_tokens_slider = layout_add_element(&layout, 0, 8);
     SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
     SDL_RenderFillRect(renderer, &g_tokens_slider);
-    int tokens_handle_x = g_tokens_slider.x + (int)((float)state->llm_max_tokens / 500.0f * g_tokens_slider.w);
+    int tokens_handle_x = g_tokens_slider.x + (int)((float)state->llm_max_tokens / 2048.0f * g_tokens_slider.w);
     SDL_Rect tokens_handle = {tokens_handle_x - 4, g_tokens_slider.y - 4, 8, 16};
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &tokens_handle);
@@ -726,6 +813,22 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, send_text, g_send_btn.x + 32, g_send_btn.y + 32, text_color);
     
     // Draw overlay panels if visible
+    if (model_size_dialog_visible) {
+        // Semi-transparent overlay
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+        SDL_Rect overlay = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+        SDL_RenderFillRect(renderer, &overlay);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        
+        // Model size dialog (centered)
+        int panel_w = 500;
+        int panel_h = 450;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        draw_model_size_dialog(renderer, panel_x, panel_y, panel_w, panel_h);
+    }
+    
     if (model_browser_visible) {
         // Semi-transparent overlay
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -884,18 +987,87 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Create button
+    // Handle model size dialog clicks
+    if (model_size_dialog_visible) {
+        int panel_w = 500;
+        int panel_h = 450;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        
+        // Check which button was clicked
+        int btn_y = panel_y + 50;
+        int btn_width = panel_w - 40;
+        int btn_height = 80;
+        int spacing = 20;
+        
+        // Small button
+        SDL_Rect small_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        if (x >= small_btn.x && x <= small_btn.x + small_btn.w &&
+            y >= small_btn.y && y <= small_btn.y + small_btn.h) {
+            printf("Creating SMALL model...\n");
+            state->cllm_model = app_create_cllm_model_small();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            return;
+        }
+        
+        btn_y += btn_height + spacing;
+        
+        // Medium button
+        SDL_Rect medium_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        if (x >= medium_btn.x && x <= medium_btn.x + medium_btn.w &&
+            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h) {
+            printf("Creating MEDIUM model...\n");
+            state->cllm_model = app_create_cllm_model_medium();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            return;
+        }
+        
+        btn_y += btn_height + spacing;
+        
+        // Large button
+        SDL_Rect large_btn = {panel_x + 20, btn_y, btn_width, btn_height};
+        if (x >= large_btn.x && x <= large_btn.x + large_btn.w &&
+            y >= large_btn.y && y <= large_btn.y + large_btn.h) {
+            printf("Creating LARGE model...\n");
+            state->cllm_model = app_create_cllm_model_large();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            return;
+        }
+        
+        btn_y += btn_height + spacing;
+        
+        // Cancel button
+        SDL_Rect cancel_btn = {panel_x + panel_w/2 - 50, btn_y, 100, 30};
+        if (x >= cancel_btn.x && x <= cancel_btn.x + cancel_btn.w &&
+            y >= cancel_btn.y && y <= cancel_btn.y + cancel_btn.h) {
+            model_size_dialog_visible = false;
+            return;
+        }
+        
+        // Click outside dialog - close it
+        if (x < panel_x || x > panel_x + panel_w ||
+            y < panel_y || y > panel_y + panel_h) {
+            model_size_dialog_visible = false;
+        }
+        return;
+    }
+    
+    // Create button - show size selection dialog
     if (x >= g_create_btn.x && x <= g_create_btn.x + g_create_btn.w &&
         y >= g_create_btn.y && y <= g_create_btn.y + g_create_btn.h) {
-        printf("Creating new CLLM model...\n");
-        state->cllm_model = app_create_cllm_model_default();
-        if (state->cllm_model) {
-            printf("✓ Model created\n");
-            if (state->cllm_inference) {
-                cllm_inference_cleanup(state->cllm_inference);
-            }
-            state->cllm_inference = cllm_inference_init(state->cllm_model);
-        }
+        model_size_dialog_visible = true;
         return;
     }
     
@@ -954,9 +1126,9 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     if (x >= g_tokens_slider.x && x <= g_tokens_slider.x + g_tokens_slider.w &&
         y >= g_tokens_slider.y - 5 && y <= g_tokens_slider.y + g_tokens_slider.h + 5) {
         float ratio = (float)(x - g_tokens_slider.x) / g_tokens_slider.w;
-        state->llm_max_tokens = (int)(ratio * 500);
+        state->llm_max_tokens = (int)(ratio * 2048);  // Increased from 500 to 2048
         if (state->llm_max_tokens < 1) state->llm_max_tokens = 1;
-        if (state->llm_max_tokens > 500) state->llm_max_tokens = 500;
+        if (state->llm_max_tokens > 2048) state->llm_max_tokens = 2048;
         if (state->cllm_inference) {
             cllm_set_max_tokens(state->cllm_inference, state->llm_max_tokens);
         }
