@@ -5,15 +5,60 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #define MAX_CHAT_MESSAGES 100
 #define MAX_MESSAGE_LENGTH 2048
+#define MAX_MODEL_FILES 50
+#define MAX_CONVERSATION_THREADS 20
 
 typedef struct {
     char text[MAX_MESSAGE_LENGTH];
     bool is_user;  // true = user message, false = AI message
     time_t timestamp;
 } ChatMessage;
+
+// Model file information
+typedef struct {
+    char filename[256];
+    char full_path[512];
+    size_t file_size;
+    time_t modified_time;
+    bool is_selected;
+    // Model metadata (extracted from file if possible)
+    int vocab_size;
+    int num_layers;
+    int embed_dim;
+    int num_heads;
+} ModelFileInfo;
+
+// Model browser state
+typedef struct {
+    char directory_path[512];
+    ModelFileInfo models[MAX_MODEL_FILES];
+    int model_count;
+    int selected_index;
+    int scroll_offset;
+    bool needs_refresh;
+} ModelBrowser;
+
+// Conversation thread
+typedef struct {
+    char name[128];
+    ChatMessage messages[MAX_CHAT_MESSAGES];
+    int message_count;
+    time_t created_time;
+    time_t last_modified;
+    bool is_active;
+} ConversationThread;
+
+// Thread manager
+typedef struct {
+    ConversationThread threads[MAX_CONVERSATION_THREADS];
+    int thread_count;
+    int active_thread_index;
+} ThreadManager;
 
 // Chat state
 static ChatMessage chat_history[MAX_CHAT_MESSAGES];
@@ -23,6 +68,28 @@ static int chat_scroll_offset = 0;
 // UI state
 static bool input_active = false;
 static int input_cursor = 0;
+
+// Model browser state
+static ModelBrowser model_browser = {0};
+static bool model_browser_visible = false;
+
+// Thread manager state
+static ThreadManager thread_manager = {0};
+static bool thread_list_visible = false;
+
+// Enhanced parameters
+static int top_k = 50;
+static float top_p = 0.9f;
+static float repetition_penalty = 1.0f;
+static float frequency_penalty = 0.0f;
+static float presence_penalty = 0.0f;
+static char stop_sequences[256] = "";
+static int random_seed = -1;  // -1 = random
+
+// Loading state
+static bool is_generating = false;
+static int tokens_generated = 0;
+static int tokens_total = 0;
 
 // Store button positions
 static SDL_Rect g_send_btn;
@@ -34,6 +101,147 @@ static SDL_Rect g_load_btn;
 static SDL_Rect g_save_btn;
 static SDL_Rect g_temp_slider;
 static SDL_Rect g_tokens_slider;
+
+// Initialize model browser
+static void init_model_browser(AppState* state) {
+    if (!state) return;
+    
+    // Get models directory
+    extern void workspace_get_models_dir(AppState* state, char* output, size_t output_size);
+    workspace_get_models_dir(state, model_browser.directory_path, sizeof(model_browser.directory_path));
+    
+    model_browser.model_count = 0;
+    model_browser.selected_index = -1;
+    model_browser.scroll_offset = 0;
+    model_browser.needs_refresh = true;
+}
+
+// Scan models directory
+static void scan_models_directory(void) {
+    DIR* dir = opendir(model_browser.directory_path);
+    if (!dir) {
+        printf("Failed to open models directory: %s\n", model_browser.directory_path);
+        return;
+    }
+    
+    model_browser.model_count = 0;
+    
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL && model_browser.model_count < MAX_MODEL_FILES) {
+        // Check if file ends with .cllm
+        size_t len = strlen(entry->d_name);
+        if (len < 5 || strcmp(entry->d_name + len - 5, ".cllm") != 0) {
+            continue;
+        }
+        
+        ModelFileInfo* info = &model_browser.models[model_browser.model_count];
+        
+        // Store filename
+        strncpy(info->filename, entry->d_name, sizeof(info->filename) - 1);
+        info->filename[sizeof(info->filename) - 1] = '\0';
+        
+        // Build full path
+        snprintf(info->full_path, sizeof(info->full_path), "%s/%s", 
+                model_browser.directory_path, entry->d_name);
+        
+        // Get file stats
+        struct stat st;
+        if (stat(info->full_path, &st) == 0) {
+            info->file_size = st.st_size;
+            info->modified_time = st.st_mtime;
+        } else {
+            info->file_size = 0;
+            info->modified_time = 0;
+        }
+        
+        info->is_selected = false;
+        
+        // TODO: Extract model metadata from file
+        info->vocab_size = 0;
+        info->num_layers = 0;
+        info->embed_dim = 0;
+        info->num_heads = 0;
+        
+        model_browser.model_count++;
+    }
+    
+    closedir(dir);
+    model_browser.needs_refresh = false;
+    
+    printf("Found %d model files in %s\n", model_browser.model_count, model_browser.directory_path);
+}
+
+// Format file size for display
+static void format_file_size(size_t bytes, char* output, size_t output_size) {
+    if (bytes < 1024) {
+        snprintf(output, output_size, "%zu B", bytes);
+    } else if (bytes < 1024 * 1024) {
+        snprintf(output, output_size, "%.1f KB", bytes / 1024.0);
+    } else if (bytes < 1024 * 1024 * 1024) {
+        snprintf(output, output_size, "%.1f MB", bytes / (1024.0 * 1024.0));
+    } else {
+        snprintf(output, output_size, "%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+    }
+}
+
+// Initialize thread manager
+static void init_thread_manager(void) {
+    thread_manager.thread_count = 1;  // Start with one default thread
+    thread_manager.active_thread_index = 0;
+    
+    ConversationThread* thread = &thread_manager.threads[0];
+    strcpy(thread->name, "Conversation 1");
+    thread->message_count = 0;
+    thread->created_time = time(NULL);
+    thread->last_modified = time(NULL);
+    thread->is_active = true;
+}
+
+// Create new conversation thread
+static void create_new_thread(void) {
+    if (thread_manager.thread_count >= MAX_CONVERSATION_THREADS) {
+        printf("Maximum number of threads reached\n");
+        return;
+    }
+    
+    ConversationThread* thread = &thread_manager.threads[thread_manager.thread_count];
+    snprintf(thread->name, sizeof(thread->name), "Conversation %d", thread_manager.thread_count + 1);
+    thread->message_count = 0;
+    thread->created_time = time(NULL);
+    thread->last_modified = time(NULL);
+    thread->is_active = false;
+    
+    thread_manager.thread_count++;
+}
+
+// Switch to a different thread
+static void switch_to_thread(int thread_index) {
+    if (thread_index < 0 || thread_index >= thread_manager.thread_count) {
+        return;
+    }
+    
+    // Save current thread's messages
+    if (thread_manager.active_thread_index >= 0) {
+        ConversationThread* current = &thread_manager.threads[thread_manager.active_thread_index];
+        current->message_count = chat_message_count;
+        for (int i = 0; i < chat_message_count && i < MAX_CHAT_MESSAGES; i++) {
+            current->messages[i] = chat_history[i];
+        }
+        current->is_active = false;
+    }
+    
+    // Load new thread's messages
+    thread_manager.active_thread_index = thread_index;
+    ConversationThread* new_thread = &thread_manager.threads[thread_index];
+    new_thread->is_active = true;
+    new_thread->last_modified = time(NULL);
+    
+    chat_message_count = new_thread->message_count;
+    for (int i = 0; i < new_thread->message_count && i < MAX_CHAT_MESSAGES; i++) {
+        chat_history[i] = new_thread->messages[i];
+    }
+    chat_scroll_offset = 0;
+}
 
 // Add message to chat history
 void add_chat_message(const char* text, bool is_user) {

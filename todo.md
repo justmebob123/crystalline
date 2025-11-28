@@ -26,22 +26,67 @@
 
 ---
 
-## 🎯 DECISION POINT: What to Implement Next?
+## 🎯 IMPLEMENTATION PLAN: All Three Enhancements
 
-### Option A: LLM Tab Comprehensive Enhancement (RECOMMENDED) ⭐
-**Value**: High - Adds major functionality
-**Time**: 6 hours total
-**Impact**: Complete model management, threading, advanced parameters
+**User Decision**: Implement ALL enhancements
+**Total Time**: ~10 hours
+**Order**: LLM Tab → Collapsible Panels → Advanced Training Features
 
-### Option B: Complete Collapsible Panels
-**Value**: Medium - UI polish
-**Time**: 30-45 minutes
-**Impact**: Cleaner training tab interface
+---
 
-### Option C: Training Tab Advanced Features
-**Value**: Medium - Enhanced visualization
-**Time**: 3-4 hours
-**Impact**: 3D view, zoom, recursive spheres
+## Phase 1: LLM Tab Comprehensive Enhancement (6 hours) 🔄 IN PROGRESS
+
+### 1.1 Model Management (2 hours) 🎯 CURRENT
+- [ ] Create ModelBrowser structure
+- [ ] Implement directory scanning
+- [ ] Add model file list UI
+- [ ] Add model selection logic
+- [ ] Implement model export dialog
+- [ ] Add detailed model statistics
+- [ ] Add overwrite confirmation
+
+### 1.2 Thread Management (1.5 hours)
+- [ ] Create ConversationThread structure
+- [ ] Implement thread list UI
+- [ ] Add thread switching
+- [ ] Add thread persistence
+- [ ] Add thread export
+
+### 1.3 Enhanced Parameters (1 hour)
+- [ ] Extend token range slider (1-4096)
+- [ ] Add Top-K slider
+- [ ] Add Top-P slider
+- [ ] Add penalty sliders
+- [ ] Add stop sequences input
+- [ ] Add random seed input
+
+### 1.4 Loading Indicator (30 min)
+- [ ] Add "Thinking" animation
+- [ ] Add progress display
+- [ ] Add cancel button
+
+### 1.5 UI Polish (1 hour)
+- [ ] Add collapsible sections
+- [ ] Add keyboard shortcuts
+- [ ] Add context menus
+- [ ] Add drag and drop
+
+---
+
+## Phase 2: Complete Collapsible Panels (45 min)
+- [ ] Integrate headers into training tab
+- [ ] Add click detection
+- [ ] Implement conditional rendering
+- [ ] Test all states
+
+---
+
+## Phase 3: Training Tab Advanced Features (3-4 hours)
+- [ ] Recursive sub-spheres visualization
+- [ ] Zoom and pan controls
+- [ ] Mouse-over tooltips
+- [ ] 3D visualization mode
+- [ ] 2D/3D toggle
 
 ---
 
