@@ -1,44 +1,113 @@
-# TODO: URGENT - Multiple Critical Issues
+# TODO: Thread Hanging Deep Analysis
 
-## CRITICAL ISSUE 1: UI Shows Nothing During Preprocessing ✅ FIXED
-- [x] Add preprocessing phase detection
-- [x] Add data loading status display
-- [x] Add "Building vocabulary..." message
-- [x] Add "Loading training data..." message
-- [x] Add "Initializing 12 training threads..." message
-- [x] Add progress bar (0% → 10% → 30% → 80% → 100%)
-- [x] Add SDL_PumpEvents() to allow UI updates
-- [ ] TEST: Verify status messages appear during training
+## Phase 1: Understanding the Architecture ✅
+- [x] Read MASTER_PLAN completely
+- [x] Understand 12-fold kissing spheres architecture
+- [x] Understand batch distribution mechanism
+- [x] Understand thread synchronization points
+- [x] Understand dataset size requirements
 
-## CRITICAL ISSUE 2: Thread Status Not Updating ⚠️ DEBUG ADDED
-- [x] Add debug logging to metrics callback
-- [x] Callback prints every 10 invocations
-- [ ] TEST: Check console for "[METRICS CALLBACK #10]" messages
-- [ ] TEST: Verify sphere visualization updates
-- [ ] If callback not printing: investigate why callback not invoked
-- [ ] If callback printing but UI not updating: investigate UI redraw
+## Phase 2: Root Cause Analysis - CRITICAL FINDINGS
+- [x] Analyzed hierarchical training system
+- [x] Identified thread waiting mechanism
+- [x] Found the hanging cause: INSUFFICIENT BATCHES FOR THREAD COUNT
 
-## CRITICAL ISSUE 3: Complete Other Tabs ✅ COMPLETE
-- [x] Video Tab - Complete implementation ✅
-  - [x] Create tab_video.c with full UI
-  - [x] Add recording status display
-  - [x] Add frame counter
-  - [x] Add start/stop button
-  - [x] Add requirements check (ffmpeg)
-  - [x] Integrate with main.c
-  - [x] Build and test compilation
-- [x] LLM Tab - Fixed memory leak ✅
-  - [x] Model creation already implemented
-  - [x] Model saving already implemented
-  - [x] Fixed memory leak (cllm_free_model)
-- [x] Benchmark Tab - Already functional ✅
-- [x] Research Tab - Already functional ✅
+### CRITICAL DISCOVERY: The Root Cause
 
-## IMMEDIATE NEXT STEPS
-1. **USER TESTING** - Start training and verify:
-   - Status messages appear during preprocessing
-   - Progress bar updates
-   - Console shows callback messages
-   - Thread status updates during training
-2. **If issues persist** - Check console output for debug messages
-3. **Complete other tabs** - After UI feedback is confirmed working
+**The Problem:**
+The hierarchical training system creates:
+- 1 root control thread (Node Zero)
+- 12 Level-1 control threads (one per symmetry group)
+- N Level-2 worker threads
+
+**Total threads = 1 + 12 + N = 13 + N threads**
+
+For small datasets, there are NOT ENOUGH BATCHES to keep all threads busy!
+
+**Example with small dataset:**
+- Dataset: 100 lines
+- Batch size: 32
+- Sequence length: 128
+- Tokens per batch: 32 * 128 = 4,096
+- Total batches: ~2-3 batches
+
+**With 13+ threads waiting for work, but only 2-3 batches total:**
+- Threads enter infinite wait loop: `while (!atomic_load(&system->epoch_start))`
+- Root distributes 2-3 batches to 2-3 threads
+- Other 10+ threads NEVER receive work
+- They wait forever in: `usleep(1000)` loop
+- System appears hung because most threads are idle
+
+## Phase 3: Minimum Requirements Calculation
+- [x] Calculate minimum dataset size for thread architecture
+- [x] Determine batch count requirements
+
+### Minimum Requirements Formula:
+
+```
+num_threads = 13 + num_workers
+min_batches = num_threads * 2  (at least 2 batches per thread)
+tokens_per_batch = batch_size * sequence_length
+min_tokens = min_batches * tokens_per_batch
+min_lines = min_tokens / avg_tokens_per_line
+```
+
+**Example with default parameters:**
+- Threads: 13 + 11 = 24 threads
+- Min batches: 24 * 2 = 48 batches
+- Tokens per batch: 32 * 128 = 4,096
+- Min tokens: 48 * 4,096 = 196,608 tokens
+- Min lines (assuming 10 tokens/line): ~20,000 lines
+
+**For 12 threads (minimal):**
+- Threads: 13 + 0 = 13 threads (1 root + 12 Level-1)
+- Min batches: 13 * 2 = 26 batches
+- Min tokens: 26 * 4,096 = 106,496 tokens
+- Min lines: ~10,000 lines
+
+## Phase 4: Solution Design
+- [ ] Design automatic thread count adjustment based on dataset size
+- [ ] Design early validation with clear error messages
+- [ ] Design graceful degradation (reduce threads for small datasets)
+- [ ] Design minimum dataset size warnings
+- [ ] Design parameter recommendation system
+
+### Solution Strategy:
+
+**Option 1: Automatic Thread Reduction (RECOMMENDED)**
+Calculate optimal thread count based on dataset size
+
+**Option 2: Parameter Adjustment**
+Reduce batch size or sequence length for small datasets
+
+**Option 3: Early Validation with Clear Errors**
+Validate before starting training and provide actionable error messages
+
+## Phase 5: Implementation Plan ✅
+- [x] Add validation function to train_model.c
+- [x] Add automatic thread adjustment
+- [x] Add parameter adjustment warnings
+- [x] Add comprehensive error messages
+- [x] Add dataset size recommendations
+- [x] Update help text with minimum requirements
+
+### Implementation Complete:
+- Created `src/ai/cllm_training_validation.c` (400+ lines)
+- Created `include/ai/cllm_training_validation.h`
+- Integrated into `tools/train_model.c`
+- Build successful (0 errors, 1 pre-existing warning)
+
+## Phase 6: Testing Plan
+- [ ] Test with 10 line dataset (should fail with clear error)
+- [ ] Test with 100 line dataset (should auto-adjust)
+- [ ] Test with 1000 line dataset (should work with reduced threads)
+- [ ] Test with 10000+ line dataset (should work normally)
+- [ ] Verify error messages are clear and actionable
+- [ ] Verify automatic adjustments work correctly
+
+## Phase 7: Documentation
+- [ ] Document minimum dataset requirements
+- [ ] Document thread count calculation
+- [ ] Document automatic adjustments
+- [ ] Add troubleshooting guide
+- [ ] Update MASTER_PLAN with findings

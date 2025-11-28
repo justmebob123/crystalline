@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
+#include "../include/ai/cllm_training_validation.h"
 // Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
 // Removed: #include "../include/cllm_training_threaded.h" - replaced with hierarchical
 #include "../include/ai/cllm_hierarchical_training.h"
@@ -138,7 +139,31 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         }
         if (num_threads < 1) num_threads = 1;
     }
-    printf("Using %d threads for training\n\n", num_threads);
+    
+    // CRITICAL: Validate and auto-adjust parameters for dataset size
+    int batch_size = config->batch_size;
+    int seq_len = config->sequence_length;
+    
+    if (!auto_adjust_training_parameters(dataset->num_tokens, 
+                                         &batch_size, 
+                                         &seq_len, 
+                                         &num_threads)) {
+        fprintf(stderr, "\n❌ Training aborted due to insufficient dataset size\n");
+        fprintf(stderr, "Please add more training data or adjust parameters manually.\n\n");
+        return 0;
+    }
+    
+    // Update config with adjusted parameters
+    config->batch_size = batch_size;
+    config->sequence_length = seq_len;
+    
+    printf("\nFinal training parameters:\n");
+    printf("  Batch size:       %d\n", batch_size);
+    printf("  Sequence length:  %d\n", seq_len);
+    printf("  Thread count:     %d (Level-2 workers)\n", num_threads);
+    printf("  Total threads:    %d (1 root + 12 Level-1 + %d Level-2)\n", 
+           13 + num_threads, num_threads);
+    printf("\n");
     
     // Create training state
     CLLMTraining* training = cllm_training_init(model, config);
