@@ -1,32 +1,28 @@
-# TODO: Build System Analysis and Fixes
+# TODO: URGENT - Multiple Critical Issues
 
-## Phase 1: Deep Build System Analysis ✅ COMPLETE
-- [x] Analyze all Makefiles and build system
-- [x] Check for OBJECTIVE 3A violations (math.h usage)
-- [x] Identify all warnings
-- [x] Test linking and dependencies
-- [x] Check platform compatibility
-- [x] Create comprehensive analysis document
+## CRITICAL ISSUE 1: UI Shows Nothing During Preprocessing
+- [ ] Add preprocessing phase detection
+- [ ] Add data loading status display
+- [ ] Add tokenization progress display
+- [ ] Add batch creation progress display
+- [ ] Show "Loading data..." / "Tokenizing..." / "Creating batches..." messages
+- [ ] Update UI BEFORE training starts
 
-## Phase 2: Fix Build Issues ✅ COMPLETE
-- [x] Fix OBJECTIVE 3A violation in algorithms/src/hierarchical_primes.c
-- [x] Replace sqrt() with prime_sqrt()
-- [x] Remove math.h include
-- [x] Fix uninitialized variable warning (false positive)
-- [x] Make SIMD flags optional for platform compatibility
-- [x] Rebuild and verify zero warnings
-- [x] Test all tools still work
+## CRITICAL ISSUE 2: Thread Status Not Updating
+- [ ] Debug why sphere visualization not updating
+- [ ] Verify metrics callback is being invoked
+- [ ] Check if training_metrics pointer is valid
+- [ ] Add debug logging to callback
+- [ ] Fix real-time thread status display
 
-## Phase 3: Documentation ✅ COMPLETE
-- [x] Create BUILD_SYSTEM_ANALYSIS.md
-- [x] Document all findings
-- [x] Document fixes applied
-- [x] Document platform compatibility
+## CRITICAL ISSUE 3: Complete Other Tabs
+- [ ] Video Tab - Complete implementation (currently stub)
+- [ ] LLM Tab - Add model creation/saving
+- [ ] Benchmark Tab - Verify functionality
+- [ ] Research Tab - Verify functionality
 
-## Summary
-✅ Build system now 100% compliant with OBJECTIVE 3A
-✅ Zero warnings (was 1)
-✅ Zero errors
-✅ All tools working
-✅ Platform compatibility improved (SIMD auto-detection)
-✅ Ready for CentOS and other platforms
+## Priority Order
+1. Fix thread status updates (HIGHEST - user can't see anything)
+2. Add preprocessing status (HIGH - user doesn't know what's happening)
+3. Complete Video tab (HIGH - currently just "Coming Soon")
+4. Complete LLM tab (MEDIUM - needs model management)

@@ -263,6 +263,10 @@ typedef struct {
     int training_current_epoch;
     int training_thread_count;  // Number of threads for parallel training
     
+    // Training status for UI feedback
+    char training_status_message[256];  // Current status message
+    float training_preprocessing_progress;  // 0.0 to 1.0 for preprocessing phases
+    
     // Workspace management
     char workspace_path[512];  // Current workspace directory
     bool workspace_active;     // Whether using custom workspace

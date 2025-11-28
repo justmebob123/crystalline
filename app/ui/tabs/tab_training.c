@@ -269,6 +269,31 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "TRAINING VISUALIZATION", content_x, content_y, text_color);
     content_y += 30;
     
+    // CRITICAL: Show status message if training is active
+    if (state->training_in_progress && state->training_status_message[0] != '\0') {
+        SDL_Color status_color = {100, 200, 255, 255};  // Bright blue
+        draw_text(renderer, state->training_status_message, content_x, content_y, status_color);
+        content_y += 25;
+        
+        // Show preprocessing progress bar if applicable
+        if (state->training_preprocessing_progress > 0.0f && state->training_preprocessing_progress < 1.0f) {
+            SDL_Rect prep_bg = {content_x, content_y, content_w, 20};
+            SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+            SDL_RenderFillRect(renderer, &prep_bg);
+            
+            SDL_Rect prep_fill = {prep_bg.x, prep_bg.y, 
+                                  (int)(prep_bg.w * state->training_preprocessing_progress), 
+                                  prep_bg.h};
+            SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+            SDL_RenderFillRect(renderer, &prep_fill);
+            
+            SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+            SDL_RenderDrawRect(renderer, &prep_bg);
+            
+            content_y += 30;
+        }
+    }
+    
        if (state->training_in_progress || viz_data.loss_count > 0) {
            // Training metrics - Epoch and Loss
            char metrics[256];

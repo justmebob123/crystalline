@@ -1,0 +1,156 @@
+# URGENT UI FIXES - Apply These Changes Immediately
+
+## File 1: app/ui/tabs/tab_training.c
+
+### Change 1: Add status display (ALREADY DONE)
+Lines 268-295: Status message display added ✓
+
+### Change 2: Add preprocessing status messages
+Find line ~982 "Building vocabulary" and add BEFORE it:
+
+```c
+// Set status for vocabulary building
+snprintf(state->training_status_message, sizeof(state->training_status_message),
+        "Building vocabulary from training files...");
+state->training_preprocessing_progress = 0.1f;
+SDL_PumpEvents();  // Allow UI to update
+```
+
+Find line ~994 "Loading training data" and REPLACE the loop with:
+
+```c
+// Load training data with progress feedback
+if (state->cllm_training) {
+    snprintf(state->training_status_message, sizeof(state->training_status_message),
+            "Loading training data...");
+    state->training_preprocessing_progress = 0.3f;
+    SDL_PumpEvents();
+    printf("Loading training data...\n");
+    
+    // Count selected files
+    int selected_count = 0;
+    for (int i = 0; i < file_count; i++) {
+        if (training_files[i].selected) selected_count++;
+    }
+    
+    // Load each file with status update
+    int file_idx = 0;
+    for (int i = 0; i < file_count; i++) {
+        if (training_files[i].selected) {
+            file_idx++;
+            snprintf(state->training_status_message, sizeof(state->training_status_message),
+                    "Loading file %d/%d: %s", file_idx, selected_count, 
+                    training_files[i].filename);
+            state->training_preprocessing_progress = 0.3f + (0.4f * file_idx / selected_count);
+            SDL_PumpEvents();  // Allow UI to update
+            
+            cllm_load_training_data(state->cllm_training, training_files[i].filepath);
+        }
+    }
+}
+```
+
+Find line ~1003 "Starting training" and add BEFORE it:
+
+```c
+// Set status for thread initialization
+snprintf(state->training_status_message, sizeof(state->training_status_message),
+        "Initializing 12 training threads...");
+state->training_preprocessing_progress = 0.8f;
+SDL_PumpEvents();
+```
+
+## File 2: app/training_thread.c
+
+### Change: Add debug output to metrics callback
+Find line 39 (metrics_callback function) and add at the START:
+
+```c
+static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !metrics) return;
+    
+    // DEBUG: Verify callback is being invoked
+    static int callback_count = 0;
+    callback_count++;
+    if (callback_count % 10 == 0) {
+        printf("[METRICS CALLBACK #%d] Active threads: %d, Current step: %d/%d, Loss: %.4f\n",
+               callback_count, 
+               metrics->performance.active_threads,
+               metrics->training.current_step,
+               metrics->training.total_steps,
+               metrics->training.current_loss);
+    }
+    
+    // ... rest of existing callback code
+}
+```
+
+### Change: Clear status message when training starts
+Find line ~190 (after metrics callback registration) and add:
+
+```c
+// Clear preprocessing status, training has started
+snprintf(state->training_status_message, sizeof(state->training_status_message),
+        "Training in progress...");
+state->training_preprocessing_progress = 1.0f;
+```
+
+## File 3: app/main.c
+
+### Change: Initialize status fields
+Find the AppState initialization (around line 100-200) and add:
+
+```c
+state.training_status_message[0] = '\0';
+state.training_preprocessing_progress = 0.0f;
+```
+
+## Quick Manual Fix Instructions
+
+If you want to apply these manually:
+
+1. Open `app/ui/tabs/tab_training.c`
+2. Search for "Building vocabulary"
+3. Add the status message code BEFORE that line
+4. Search for "Loading training data"
+5. Replace the simple loop with the enhanced version
+6. Search for "Starting training"
+7. Add the thread initialization status
+
+8. Open `app/training_thread.c`
+9. Search for "static void metrics_callback"
+10. Add the debug printf at the start
+
+11. Open `app/main.c`
+12. Search for where AppState is initialized
+13. Add the two initialization lines
+
+Then rebuild:
+```bash
+cd /workspace/app && make clean && make -j8
+```
+
+## Expected Results After Fix
+
+1. **During vocabulary building**: Status shows "Building vocabulary..."
+2. **During data loading**: Status shows "Loading file 1/4: filename.txt"
+3. **Progress bar**: Shows 0% → 10% → 30% → 70% → 80% → 100%
+4. **During training**: Status shows "Training in progress..."
+5. **Console output**: "[METRICS CALLBACK #10] Active threads: 11, ..."
+6. **Sphere visualization**: Updates every 10 batches
+7. **Thread status**: Shows 11/12 active (Node Zero is control)
+
+## If Still Not Working
+
+Check these:
+1. Is the callback being printed? (Check console)
+2. Is SDL_PumpEvents() being called? (Add printf to verify)
+3. Is the UI redrawing? (Add frame counter)
+4. Is training_metrics pointer valid? (Add NULL check with printf)
+
+---
+
+**APPLY THESE FIXES IMMEDIATELY**
+**REBUILD AND TEST**
+**REPORT RESULTS**
