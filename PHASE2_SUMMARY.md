@@ -88,16 +88,23 @@ while (running) {
 **Decision**: Focus on testing Phase 2A+2B first
 
 ### ⏭️ Phase 2E: Intra-Batch Parallelization
-**Status**: DEFERRED (Optional)
-**Expected**: 1.5-2x additional speedup
+**Status**: SKIPPED (Diminishing Returns)
+**Commit**: 3271ef9 (analysis only)
 
-**Scope**:
-- Parallelize forward/backward passes within batches
-- Split attention computation across threads
-- Parallelize matrix multiplications
-- Complex implementation, high risk
+**Analysis**:
+- Evaluated sequence-level, operation-level, and SIMD parallelization
+- Already have 63 workers processing batches in parallel
+- Batch size is small (32 sequences) - insufficient parallelism
+- Nested parallelism (63 × 32 = 2016 threads) would be inefficient
+- SIMD already used in critical paths
+- Within-batch operations are NOT the bottleneck
 
-**Decision**: Defer until Phase 2A+2B are tested and validated
+**Decision**: Skip Phase 2E implementation
+- Current parallelism is sufficient
+- Complexity not justified by expected gains (~1.2-1.5x at most)
+- Focus on testing Phase 2A+2B first
+
+**Alternative**: Increase batch size (32 → 64/128) for better utilization
 
 ## Combined Performance Impact
 
@@ -156,7 +163,10 @@ Utilization:     ~90%
 1. **9ae4904**: Phase 2A - Batch pre-fetching
 2. **c4c08b3**: Phase 2A status update
 3. **d404eec**: Phase 2B - Lock-free work queue
-4. **7a5e00b**: Phase 2D analysis
+4. **7a5e00b**: Phase 2D analysis (skipped)
+5. **4855a47**: Phase 2 summary document
+6. **88fe68b**: Phase 2 completion status
+7. **3271ef9**: Phase 2E analysis (skipped)
 
 ## Testing Plan
 
