@@ -11,6 +11,50 @@
 #include "cllm_batch.h"
 
 /**
+ * Thread-Local Training Context
+ * 
+ * Each worker thread gets its own activation buffers to avoid race conditions.
+ * Model weights are shared (read-only), but activations are thread-local.
+ * 
+ * Memory per thread: ~6.1 MB
+ * For 63 threads: ~386 MB (acceptable overhead)
+ */
+typedef struct {
+    // Forward pass activation storage (thread-local)
+    float* input_embeddings;         // [batch * seq * embed]
+    float** layer_inputs;            // [num_layers][batch * seq * embed]
+    float** attention_outputs;       // [num_layers][batch * seq * embed]
+    float** ff_outputs;              // [num_layers][batch * seq * embed]
+    float** layer_outputs;           // [num_layers][batch * seq * embed]
+    float** ff_hidden;               // [num_layers][batch * seq * ff_hidden]
+    float* final_hidden;             // [batch * seq * embed]
+    float* logits;                   // [batch * seq * vocab]
+    
+    // Attention cache (thread-local)
+    struct {
+        float* attention_weights;    // [num_heads * seq * seq]
+        float* queries;              // [seq * embed]
+        float* keys;                 // [seq * embed]
+        float* values;               // [seq * embed]
+        float* scores;               // [num_heads * seq * seq]
+    }* attention_cache;              // [num_layers]
+    
+    // Backward pass temporary buffers (thread-local)
+    float* grad_logits;              // [batch * seq * vocab]
+    float* grad_hidden;              // [batch * seq * embed]
+    float* grad_layer;               // [batch * seq * embed]
+    
+    // Configuration (copied from main training)
+    int batch_size;
+    int seq_len;
+    int num_layers;
+    int embed_dim;
+    int vocab_size;
+    int ff_hidden_dim;
+    int num_heads;
+} ThreadLocalTrainingContext;
+
+/**
  * Get next sphere ID for dynamic spawning
  *
  * Helper function for cllm_threads.c to get the next available sphere ID
@@ -37,6 +81,24 @@ typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
  * @param batch_iterator Batch iterator for data
  * @param num_threads Number of worker threads (0 = auto-detect from CPU cores)
  * @return Threaded training system or NULL on failure
+ */
+/**
+ * Thread-Local Training Context Functions
+ */
+ThreadLocalTrainingContext* thread_local_training_create(
+    int batch_size,
+    int seq_len,
+    int num_layers,
+    int embed_dim,
+    int vocab_size,
+    int ff_hidden_dim,
+    int num_heads
+);
+
+void thread_local_training_free(ThreadLocalTrainingContext* ctx);
+
+/**
+ * Threaded Training System Functions
  */
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
                                                   CLLMBatchIterator* batch_iterator,

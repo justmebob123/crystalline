@@ -11,6 +11,7 @@
  */
 
 #include "cllm_training.h"
+#include "cllm_training_threaded.h"
 #include "cllm_threads.h"
 #include "cllm_batch.h"
 #include "cllm_simd_gradient_ops.h"
@@ -45,6 +46,9 @@ struct SphereTrainingContext {
     SharedMemoryRegion* shared_gradients;  // Reference to shared gradient buffer
     size_t gradient_segment_start;         // This sphere's lock-free segment start
     size_t gradient_segment_end;           // This sphere's lock-free segment end
+    
+    // Thread-local training context (PHASE 8: Remove model_lock)
+    ThreadLocalTrainingContext* thread_local_training;
     
     // Legacy fields (for compatibility during transition)
     float* local_gradients;  // TODO: Remove after shared memory integration
@@ -136,6 +140,148 @@ struct ThreadedTrainingSystem {
 /**
  * Initialize sphere training context
  */
+/**
+ * Thread-Local Training Context Functions
+ * 
+ * Each worker thread gets its own activation buffers to avoid race conditions.
+ */
+
+ThreadLocalTrainingContext* thread_local_training_create(
+    int batch_size,
+    int seq_len,
+    int num_layers,
+    int embed_dim,
+    int vocab_size,
+    int ff_hidden_dim,
+    int num_heads
+) {
+    ThreadLocalTrainingContext* ctx = (ThreadLocalTrainingContext*)calloc(1, sizeof(ThreadLocalTrainingContext));
+    if (!ctx) return NULL;
+    
+    // Store configuration
+    ctx->batch_size = batch_size;
+    ctx->seq_len = seq_len;
+    ctx->num_layers = num_layers;
+    ctx->embed_dim = embed_dim;
+    ctx->vocab_size = vocab_size;
+    ctx->ff_hidden_dim = ff_hidden_dim;
+    ctx->num_heads = num_heads;
+    
+    size_t seq_size = batch_size * seq_len * embed_dim;
+    size_t logits_size = batch_size * seq_len * vocab_size;
+    size_t ff_size = batch_size * seq_len * ff_hidden_dim;
+    
+    // Allocate forward pass buffers
+    ctx->input_embeddings = (float*)calloc(seq_size, sizeof(float));
+    ctx->final_hidden = (float*)calloc(seq_size, sizeof(float));
+    ctx->logits = (float*)calloc(logits_size, sizeof(float));
+    
+    // Allocate per-layer buffers
+    ctx->layer_inputs = (float**)calloc(num_layers, sizeof(float*));
+    ctx->attention_outputs = (float**)calloc(num_layers, sizeof(float*));
+    ctx->ff_outputs = (float**)calloc(num_layers, sizeof(float*));
+    ctx->layer_outputs = (float**)calloc(num_layers, sizeof(float*));
+    ctx->ff_hidden = (float**)calloc(num_layers, sizeof(float*));
+    
+    if (ctx->layer_inputs && ctx->attention_outputs && ctx->ff_outputs &&
+        ctx->layer_outputs && ctx->ff_hidden) {
+        for (int i = 0; i < num_layers; i++) {
+            ctx->layer_inputs[i] = (float*)calloc(seq_size, sizeof(float));
+            ctx->attention_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            ctx->ff_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            ctx->layer_outputs[i] = (float*)calloc(seq_size, sizeof(float));
+            ctx->ff_hidden[i] = (float*)calloc(ff_size, sizeof(float));
+        }
+    }
+    
+    // Allocate attention cache
+    ctx->attention_cache = (typeof(ctx->attention_cache))calloc(num_layers, sizeof(*ctx->attention_cache));
+    if (ctx->attention_cache) {
+        for (int i = 0; i < num_layers; i++) {
+            ctx->attention_cache[i].queries = (float*)calloc(seq_len * embed_dim, sizeof(float));
+            ctx->attention_cache[i].keys = (float*)calloc(seq_len * embed_dim, sizeof(float));
+            ctx->attention_cache[i].values = (float*)calloc(seq_len * embed_dim, sizeof(float));
+            ctx->attention_cache[i].attention_weights = (float*)calloc(num_heads * seq_len * seq_len, sizeof(float));
+            ctx->attention_cache[i].scores = (float*)calloc(num_heads * seq_len * seq_len, sizeof(float));
+        }
+    }
+    
+    // Allocate backward pass temporary buffers
+    ctx->grad_logits = (float*)calloc(logits_size, sizeof(float));
+    ctx->grad_hidden = (float*)calloc(seq_size, sizeof(float));
+    ctx->grad_layer = (float*)calloc(seq_size, sizeof(float));
+    
+    return ctx;
+}
+
+void thread_local_training_free(ThreadLocalTrainingContext* ctx) {
+    if (!ctx) return;
+    
+    // Free forward pass buffers
+    free(ctx->input_embeddings);
+    free(ctx->final_hidden);
+    free(ctx->logits);
+    
+    // Free per-layer buffers
+    if (ctx->layer_inputs) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->layer_inputs[i]);
+        }
+        free(ctx->layer_inputs);
+    }
+    
+    if (ctx->attention_outputs) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->attention_outputs[i]);
+        }
+        free(ctx->attention_outputs);
+    }
+    
+    if (ctx->ff_outputs) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->ff_outputs[i]);
+        }
+        free(ctx->ff_outputs);
+    }
+    
+    if (ctx->layer_outputs) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->layer_outputs[i]);
+        }
+        free(ctx->layer_outputs);
+    }
+    
+    if (ctx->ff_hidden) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->ff_hidden[i]);
+        }
+        free(ctx->ff_hidden);
+    }
+    
+    // Free attention cache
+    if (ctx->attention_cache) {
+        for (int i = 0; i < ctx->num_layers; i++) {
+            free(ctx->attention_cache[i].queries);
+            free(ctx->attention_cache[i].keys);
+            free(ctx->attention_cache[i].values);
+            free(ctx->attention_cache[i].attention_weights);
+            free(ctx->attention_cache[i].scores);
+        }
+        free(ctx->attention_cache);
+    }
+    
+    // Free backward pass buffers
+    free(ctx->grad_logits);
+    free(ctx->grad_hidden);
+    free(ctx->grad_layer);
+    
+    free(ctx);
+}
+
+/**
+ * Sphere Context Functions
+ */
+
 static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_group, 
                                                      size_t gradient_size,
                                                      SharedMemoryRegion* shared_gradients,
@@ -185,6 +331,10 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // PHASE 7: Initialize sphere statistics
     cllm_sphere_stats_init(&ctx->sphere_stats, symmetry_group, 0);
     ctx->sphere_geometry = NULL;  // Future: sphere geometry data
+    
+    // PHASE 8: Thread-local training context (will be allocated later with model info)
+    ctx->thread_local_training = NULL;
+    
     return ctx;
 }
 
@@ -204,6 +354,11 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
         }
         free(ctx->children);
     }
+    // PHASE 8: Free thread-local training context
+    if (ctx->thread_local_training) {
+        thread_local_training_free(ctx->thread_local_training);
+    }
+    
     free(ctx->local_gradients);
     pthread_mutex_destroy(&ctx->lock);
     pthread_cond_destroy(&ctx->work_ready);
@@ -448,6 +603,34 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         }
         // Set system reference
         system->sphere_contexts[i]->system = system;
+        
+        // PHASE 8: Allocate thread-local training context for each worker
+        CLLMModel* model = training->model;
+        int ff_hidden_dim = model->ff_layers ? model->ff_layers[0].hidden_dim : 1024;
+        int num_heads = 8;  // TODO: Get from model config
+        
+        system->sphere_contexts[i]->thread_local_training = thread_local_training_create(
+            training->config.batch_size,
+            training->config.sequence_length,
+            model->num_layers,
+            model->embedding_dim,
+            model->vocab_size,
+            ff_hidden_dim,
+            num_heads
+        );
+        
+        if (!system->sphere_contexts[i]->thread_local_training) {
+            fprintf(stderr, "ERROR: Failed to allocate thread-local training context for worker %d\n", i);
+            // Cleanup on failure
+            for (int j = 0; j <= i; j++) {
+                sphere_context_free(system->sphere_contexts[j]);
+            }
+            free(system->sphere_contexts);
+            if (system->thread_system) threads_free(system->thread_system);
+            shared_memory_free(system->shared_gradients);
+            free(system);
+            return NULL;
+        }
     }
     
     // MASTER PLAN: Create control thread (Node Zero) first

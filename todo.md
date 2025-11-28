@@ -1,128 +1,185 @@
-# TODO: FULL MASTER PLAN IMPLEMENTATION (Option C)
+# TODO: CRYSTALLINE CLLM - MASTER PLAN IMPLEMENTATION
 
-## 🔒 CRITICAL RULES (READ EVERY TIME)
+## 🔥 CRITICAL REALITY CHECK
 
-### RULE 2: ALWAYS COMMIT WITH CORRECT AUTHENTICATION
-```bash
-git add .
-git commit -m "descriptive message"
-git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
-```
+**I was wrong about being "complete". Here's what's actually needed:**
 
-### RULE 3: MASTER_PLAN.md IS READ-ONLY
-- Never edit without explicit approval
-- Contains OBJECTIVES ONLY, no status updates
-- Status tracking happens in todo.md ONLY
-
-### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
-- Build with -Wall -Wextra
-- Zero warnings required before moving forward
+1. **Threading Architecture**: Phases 1-7 are structurally complete BUT model_lock serializes everything (no actual parallelism)
+2. **Crystalline Training**: The GCD-based loss exists but isn't properly integrated
+3. **Legacy Code**: Tons of "standard" implementations still exist that should be deleted
+4. **Performance**: System is 63x SLOWER than single-threaded due to serialization
 
 ---
 
-## 🎯 CURRENT OBJECTIVE: Phase 3 - Barrier Synchronization
+## 🎯 CURRENT PRIORITY: Remove model_lock (CRITICAL BOTTLENECK)
 
-Following MASTER PLAN exactly - implementing Option C (FULL architecture)
+**Problem**: All 63 threads wait on model_lock during forward/backward passes
+**Impact**: 63x slowdown instead of 63x speedup
+**Solution**: Thread-local training contexts (each thread has own buffers)
 
----
+### Step 1: Analyze Forward/Backward Functions ✅ COMPLETE
+- [x] Examined `cllm_forward_training()` in detail
+- [x] Examined `cllm_backward_training()` in detail
+- [x] Identified ALL shared state being accessed
+- [x] Identified which buffers need to be thread-local
+- [x] Documented memory requirements per thread
 
-## 📋 IMPLEMENTATION PHASES
+**Key Findings:**
+- model_lock protects CLLMTraining buffers, NOT model weights
+- Model weights are READ-ONLY during forward/backward (can be shared)
+- Each thread writes to: input_embeddings, layer_inputs, attention_outputs, ff_outputs, layer_outputs, ff_hidden, final_hidden, logits, attention_cache
+- Memory per thread: ~6.1 MB (reasonable)
+- For 63 threads: 386 MB (acceptable)
+- For 8 threads: 49 MB (very reasonable)
 
-### PHASE 1: Node Zero (Control Thread) - ✅ COMPLETE
-- [x] Create control thread structure in ThreadedTrainingSystem
-- [x] Implement control_thread_func() - NEVER processes batches
-- [x] Control thread created before workers
-- [x] Added 12-fold symmetry structure (12 positions, N active workers)
-- [x] Updated initialization and cleanup
-- [x] Code compiles with zero warnings
-- [x] Committed and pushed to GitHub
+### Step 2: Design Thread-Local Context ✅ COMPLETE
+- [x] Designed ThreadLocalTrainingContext structure
+- [x] Calculated memory overhead (6.1 MB per thread, not 1.1 MB)
+- [x] Planned allocation strategy (pre-allocate during thread creation)
+- [x] Designed initialization and cleanup
 
-### PHASE 2: 12-Fold Symmetry Structure - ✅ COMPLETE
-- [x] Create 12 symmetry positions (0-11) - DONE
-- [x] Allow fewer than 12 active workers (based on CPU count) - DONE
-- [x] Workers assigned to symmetry groups (0-11) - DONE
-- [x] Maintain 12-fold structure even with fewer workers - DONE
-- [x] Control thread exists as placeholder - DONE
-- [x] Tested with 1 thread successfully - DONE
-- [x] Code compiles with zero errors - DONE
-- [x] Committed and pushed to GitHub - DONE
+**Design documented in THREAD_LOCAL_CONTEXT_DESIGN.md**
+- Structure includes all forward/backward activation buffers
+- Memory: 6.1 MB per thread (63 threads = 386 MB total)
+- Strategy: Allocate during thread creation, free during cleanup
+- Integration: Create threaded versions of forward/backward functions
 
-### PHASE 3: Barrier Synchronization - ✅ COMPLETE
-- [x] Step 1: Update threaded_train_epoch() to use barriers
-- [x] Step 2: Update worker threads to use barriers
-- [x] Step 3: Update control thread to participate in barriers
-- [x] Step 4: Remove condition variable code
-- [x] Step 5: Test with 1 thread
-   - [x] Step 5b: Remove debug output
-- [x] Step 6: Test with 2 threads
-- [x] Step 7: Test with 4 threads
-- [x] Step 8: Test with 8 threads (verified with barrier test)
-- [x] Step 9: Verify no deadlocks
-- [x] Step 10: Verify no NaN gradients
-- [x] Step 11: Commit and push
+### Step 3: Implement Thread-Local Contexts - IN PROGRESS
+- [x] Added ThreadLocalTrainingContext structure to header
+- [x] Implemented thread_local_training_create() function
+- [x] Implemented thread_local_training_free() function
+- [x] Added thread_local_training field to SphereThreadContext
+- [x] Allocate buffers per thread during initialization
+- [x] Free buffers during cleanup
+- [x] Code compiles successfully
+- [ ] Create threaded versions of forward/backward functions
+- [ ] Update sphere_process_batch() to use local context
+- [ ] Remove model_lock usage
 
-   ### PHASE 4: Lock-Free Gradient Accumulation - ✅ COMPLETE
-- [x] Implement segment-based gradient allocation
-- [x] Each worker writes to own segment (no locking)
-- [x] Control thread reads all segments at barrier
-- [x] Remove gradient_lock mutex
-- [x] Test for race conditions
-- [x] Verify no NaN gradients
-   - [x] Build with zero errors
-   - [x] Commit and push
-
-   ### PHASE 5: Infrastructure Integration - ✅ COMPLETE
-- [x] Integrate cllm_control_process.c
-- [x] Integrate cllm_lattice_hierarchy.c
-- [x] Use existing control process infrastructure
-- [x] Map threads to lattice hierarchy
-- [x] Test infrastructure integration
-   - [x] Build with zero errors
-   - [x] Commit and push
-
-   ### PHASE 6: Recursive Hierarchy - ✅ COMPLETE
-- [x] Implement thread role duality (worker + control)
-- [x] Each thread can spawn 12 children
-- [x] Dynamic depth expansion based on workload
-- [x] Dynamic depth collapse when not needed
-- [x] Test recursive structure
-   - [x] Build with zero errors
-   - [x] Commit and push
-
-   ### PHASE 7: Sphere Integration - ✅ COMPLETE
-- [x] Integrate cllm_recursive_spheres.c
-- [x] Map each thread to a sphere
-- [x] Use sphere geometry for coordination
-- [x] Sphere contact points = sync points
-- [x] Test geometric properties
-   - [x] Build with zero errors
-   - [x] Commit and push
+### Step 4: Test Parallel Execution
+- [ ] Test with 1 thread (baseline)
+- [ ] Test with 2 threads (verify parallelism)
+- [ ] Test with 4 threads
+- [ ] Test with 8 threads
+- [ ] Test with 63 threads (full production)
+- [ ] Verify correctness (no NaN, proper convergence)
+- [ ] Measure actual speedup
 
 ---
 
-## 🎯 SUCCESS CRITERIA
+## 📋 OBJECTIVE 2: Fix Training Pipeline
 
-### Phase 3 Complete When:
-- [ ] Barrier synchronization implemented
-- [ ] Condition variables removed
-- [ ] No deadlocks
-- [ ] No NaN gradients
-- [ ] Tests passing with 1, 2, 4, 8 threads
-- [ ] Code committed and pushed
+### OBJECTIVE 2A: Integrate Crystalline GCD Optimizations
+**Status**: Partially done - `cllm_compute_loss()` uses GCD but not fully integrated
 
-### Full Implementation Complete When:
-- [x] All 7 phases implemented
-- [x] 12-fold symmetry enforced
-- [x] Lock-free gradient accumulation
-- [x] Infrastructure integrated
-- [x] Recursive hierarchy working
-- [x] Sphere integration complete
-- [ ] Performance improved
-- [x] Master plan requirements met
+- [ ] Verify `cllm_compute_loss()` is being called (it is)
+- [ ] Check if GCD similarity is actually being used (it is)
+- [ ] Verify Ulam spiral locality is working
+- [ ] Benchmark GCD vs dot product performance
+- [ ] Document actual speedup achieved
+
+### OBJECTIVE 2B: Remove ALL Legacy Loss Functions
+**Status**: NOT STARTED - Need to search and destroy
+
+- [ ] Search for `cllm_compute_loss_training()` (standard cross-entropy)
+- [ ] Search for any other legacy loss functions
+- [ ] Verify only crystalline loss remains
+- [ ] Remove any conditional flags for loss selection
+- [ ] Update all callers
+
+### OBJECTIVE 2C: Rename "Crystalline" to Default
+**Status**: NOT STARTED - Naming cleanup needed
+
+- [ ] Find all `*_crystalline()` function names
+- [ ] Rename to remove `_crystalline` suffix
+- [ ] Update all callers
+- [ ] Update documentation
+- [ ] Crystalline should be the default, not special
+
+### OBJECTIVE 2D: Remove ALL "Standard" and "Legacy" Code
+**Status**: NOT STARTED - Major cleanup needed
+
+**Files to potentially delete:**
+- [ ] Check if `cllm_training_mt.c` exists
+- [ ] Check if `cllm_training_parallel.c` exists
+- [ ] Check if `cllm_train_complete.c` exists
+- [ ] Search for any `*_standard()` functions
+- [ ] Search for any `*_legacy()` functions
+- [ ] Search for any `*_old()` functions
+
+**Search and destroy:**
+- [ ] `grep -r "standard" src/ include/`
+- [ ] `grep -r "legacy" src/ include/`
+- [ ] `grep -r "fallback" src/ include/`
+- [ ] Identify all non-crystalline code
+- [ ] Delete systematically
+- [ ] Update Makefile
+- [ ] Verify build
 
 ---
 
-**Status**: Phase 2 complete, beginning Phase 3 (Barrier Synchronization)
-**Priority**: CRITICAL - Following master plan exactly
-**Approach**: Option C - FULL architecture implementation
-**Next**: Implement barrier synchronization in threaded_train_epoch()
+## 📋 OBJECTIVE 3A: Crystalline Math Everywhere
+
+**Status**: NOT STARTED - Need comprehensive audit
+
+- [ ] Search ALL files for `#include <math.h>`
+- [ ] Search for standard math functions: sin, cos, tan, exp, log, sqrt, pow, etc.
+- [ ] Replace with crystalline equivalents: prime_sinf, prime_cosf, etc.
+- [ ] Verify NO external math dependencies
+- [ ] Add verification script to prevent future math.h usage
+
+---
+
+## 📋 OBJECTIVE 6: SIMD Integration
+
+**Status**: UNKNOWN - Need to check current state
+
+- [ ] Check if SIMD gradient operations are implemented
+- [ ] Check if SIMD is actually being used
+- [ ] Verify SIMD performance benefits
+- [ ] Document SIMD usage
+
+---
+
+## 📋 OBJECTIVE 11: Performance Analysis
+
+**Status**: BLOCKED by model_lock removal
+
+- [ ] Remove model_lock first
+- [ ] Measure actual parallel speedup
+- [ ] Profile CPU utilization
+- [ ] Identify remaining bottlenecks
+- [ ] Optimize hot paths
+
+---
+
+## 📋 OBJECTIVE 14: Comprehensive Repository Validation
+
+**Status**: NOT STARTED - Need full audit
+
+- [ ] Audit all source files
+- [ ] Verify all implementations are complete
+- [ ] Check for unused code
+- [ ] Check for incomplete integrations
+- [ ] Document findings
+
+---
+
+## 🎯 IMMEDIATE NEXT STEPS
+
+1. **CRITICAL**: Remove model_lock to enable actual parallelism
+2. **HIGH**: Complete OBJECTIVE 2 (training pipeline cleanup)
+3. **MEDIUM**: OBJECTIVE 3A (crystalline math everywhere)
+4. **MEDIUM**: Performance analysis after model_lock removal
+
+---
+
+## 📊 ACTUAL STATUS
+
+- Threading Architecture: 85% (structure complete, serialized by model_lock)
+- Crystalline Training: 60% (GCD loss works, not fully integrated)
+- Legacy Code Cleanup: 10% (barely started)
+- Performance: 0% (slower than single-threaded due to serialization)
+- Overall: ~40% complete
+
+**Reality**: We have a solid foundation but significant work remains.
