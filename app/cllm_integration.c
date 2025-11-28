@@ -15,7 +15,7 @@
 #include "../include/cllm_format.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
-#include "../include/cllm_crystalline_training.h"
+// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -398,8 +398,9 @@ float app_train_epoch(AppState* state) {
     
     // PRIORITY 1: Try crystalline training (20-400x speedup potential)
     // This uses prime-based similarity and Ulam spiral locality
-    extern float cllm_train_epoch_crystalline(CLLMTraining* training);
-    loss = cllm_train_epoch_crystalline(state->cllm_training);
+    // CONSOLIDATED: Use cllm_train_epoch directly (crystalline is the default)
+    extern float cllm_train_epoch(CLLMTraining* training);
+    loss = cllm_train_epoch(state->cllm_training);
     
     // Update UI state
     state->training_loss = loss;

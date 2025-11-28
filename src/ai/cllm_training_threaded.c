@@ -1135,22 +1135,26 @@ static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system) {
         // Clip gradients to prevent overflow
         clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
         
+        // OBJECTIVE 6: Use SIMD-optimized gradient accumulation
         // Accumulate from this worker's segment
-        // Each worker has already written to its segment in accumulated_gradients
-        // So we just need to sum from their local_gradients
-        for (size_t j = 0; j < system->gradient_size; j++) {
-            system->accumulated_gradients[j] += ctx->local_gradients[j];
-        }
+        cllm_simd_accumulate_gradients(
+            system->accumulated_gradients,
+            ctx->local_gradients,
+            system->gradient_size
+        );
         
         valid_workers++;
     }
     
+    // OBJECTIVE 6: Use SIMD-optimized gradient scaling
     // Average the gradients
     if (valid_workers > 0) {
         float scale = 1.0f / valid_workers;
-        for (size_t i = 0; i < system->gradient_size; i++) {
-            system->accumulated_gradients[i] *= scale;
-        }
+        cllm_simd_scale_gradients(
+            system->accumulated_gradients,
+            scale,
+            system->gradient_size
+        );
     }
 }
 
