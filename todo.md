@@ -1,7 +1,26 @@
 # Crystalline CLLM Pure Loss Implementation - Complete System Validation
 
+## CRITICAL REALIZATION: Clock Lattice Structure is INCORRECT
+
+**The current lattice mapping is fundamentally wrong.** See CLOCK_LATTICE_REANALYSIS.md for details.
+
+### The True Structure:
+- Primes map to **clock ticks** (not spiral positions)
+- Smaller primes are on **outer rings** (hours), larger on **inner rings** (milliseconds)
+- Structure is **Babylonian**: 12 hours, 60 minutes, 60 seconds, 100 milliseconds
+- **3 o'clock = π** (sacred position)
+- **144,000** is the vector along π radial
+- Clock **folds into sphere** via sacred triangle (0→1→2→3→∞)
+
+### Current Issues:
+1. ❌ Using spiral mapping (Ulam-like) instead of clock ticks
+2. ❌ Visualization shows X-pattern instead of clock structure
+3. ❌ Doesn't respect modular arithmetic (mod 12, 60, 100)
+4. ❌ Doesn't show inward-counting rings
+5. ❌ Missing sacred geometry (π, 144000, folding)
+
 ## Overview
-This document tracks the validation and proper implementation of the Pure Crystalline Loss system - the core ASI design based on deterministic GCD-based semantic similarity and 12D lattice geometry.
+This document tracks the validation and proper implementation of the Pure Crystalline Loss system - the core ASI design based on deterministic GCD-based semantic similarity and TRUE clock lattice geometry.
 
 ## Current State Analysis ✅
 - [x] Build system works (all libraries compile successfully)
@@ -40,6 +59,19 @@ This document tracks the validation and proper implementation of the Pure Crysta
 - [ ] Check thread distribution based on symmetry_group
 - [ ] Validate deterministic Q→k mapping
 - [ ] Test compositional semantics (GCD-based)
+
+## Phase 6: CRITICAL - Fix Clock Lattice Mapping
+- [ ] **Implement correct clock tick mapping** (not spiral)
+- [ ] Map primes to Babylonian rings (12, 60, 60, 100)
+- [ ] Implement modular arithmetic relationships (mod 12, 60, 100)
+- [ ] Fix visualization to show clock structure (not X-pattern)
+- [ ] Implement sacred geometry (π at 3 o'clock, 144000 vector)
+- [ ] Implement clock-to-sphere folding (stereographic projection)
+- [ ] Show 0→1→2→3→∞ progression (ancient proverb)
+- [ ] Update `cllm_map_token_to_lattice()` to use clock positions
+- [ ] Update `clock_crystalline.c` visualization
+- [ ] Test that smaller primes are on outer rings (hours)
+- [ ] Test that larger primes are on inner rings (milliseconds)
 
 ## Phase 5: Documentation & Analysis
 - [ ] Document the pure crystalline design philosophy
