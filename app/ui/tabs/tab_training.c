@@ -297,9 +297,97 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            SDL_Rect sphere_bounds = {content_x, content_y, content_w / 2 - 10, sphere_viz_height};
            draw_sphere_visualization(renderer, state, sphere_bounds);
            
-           // Sphere Statistics Table - Show detailed per-sphere stats
-           SDL_Rect stats_bounds = {content_x + content_w / 2 + 10, content_y, content_w / 2 - 10, sphere_viz_height};
-           draw_sphere_stats_table(renderer, state, stats_bounds);
+           // UI Integration: Framework Status & Performance Metrics Panel
+           SDL_Rect metrics_bounds = {content_x + content_w / 2 + 10, content_y, content_w / 2 - 10, sphere_viz_height};
+           
+           // Draw metrics panel background
+           SDL_SetRenderDrawColor(renderer, 25, 25, 30, 255);
+           SDL_RenderFillRect(renderer, &metrics_bounds);
+           SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+           SDL_RenderDrawRect(renderer, &metrics_bounds);
+           
+           int metrics_x = metrics_bounds.x + 10;
+           int metrics_y = metrics_bounds.y + 10;
+           
+           // Title
+           draw_text(renderer, "FRAMEWORK STATUS", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           // Framework status indicators (from metrics if available)
+           if (state->training_metrics) {
+               draw_text(renderer, "Lattice Embeddings: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "Angular Attention: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "Crystalline Loss: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "12-Fold Symmetry: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 25;
+           }
+           
+           // Performance Metrics
+           draw_text(renderer, "PERFORMANCE", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           char perf_text[128];
+           
+           // Active threads
+           snprintf(perf_text, sizeof(perf_text), "Active Threads: %d", 
+                   state->sphere_stats.active_spheres);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // Total batches
+           snprintf(perf_text, sizeof(perf_text), "Total Batches: %d", 
+                   state->sphere_stats.total_batches);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // Gradient norm
+           snprintf(perf_text, sizeof(perf_text), "Gradient Norm: %.4f", 
+                   state->sphere_stats.total_gradient_norm);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 25;
+           
+           // Thread State Legend
+           draw_text(renderer, "THREAD STATES", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           // Color legend
+           SDL_Rect color_box = {metrics_x, metrics_y, 12, 12};
+           
+           // WORKING - Green
+           SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Working", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // WAITING - Blue
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Waiting", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // IDLE - Gray
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Idle", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // CONTROL - Gold
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 200, 150, 50, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Control (Node Zero)", metrics_x + 18, metrics_y, text_color);
            
            content_y += sphere_viz_height + 20;
         

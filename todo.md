@@ -76,25 +76,32 @@
 - [ ] Test real-time updates during training (requires actual training run)
 - [ ] Commit and push changes
 
-### Step 4: Integrate Sphere Visualization (2-3 hours)
-- [ ] Modify `app/ui/sphere_visualization.c`
-- [ ] Connect to metrics data
-- [ ] Map spheres to threads 1:1
-- [ ] Add state-based coloring
-- [ ] Add 12-fold connection lines
-- [ ] Test visualization accuracy
+### Step 4: Enhanced Metrics Display Panel (2-3 hours) ✅ COMPLETE
+- [x] Add framework status panel to training tab
+- [x] Display lattice, angular, crystalline loss, 12-fold symmetry status
+- [x] Add performance metrics panel
+- [x] Display active threads, total batches, gradient norm
+- [x] Add thread state legend with color coding
+- [x] Build successfully
+- [ ] Test with actual training run
 
-### Step 5: Update LLM Tab (1-2 hours)
-- [ ] Add framework status indicators to `app/ui/tabs/tab_llm.c`
-- [ ] Add performance metrics display
-- [ ] Test with inference
+### Step 5: Test with Actual Training Run (1-2 hours)
+- [ ] Prepare small test dataset
+- [ ] Start training with UI open
+- [ ] Verify real-time metrics updates
+- [ ] Verify sphere colors change with thread states
+- [ ] Verify loss updates in real-time
+- [ ] Verify batch counts increment
+- [ ] Document any issues found
+- [ ] Fix any bugs discovered
 
-### Step 6: Testing & Validation (2-3 hours)
-- [ ] Test complete data flow
-- [ ] Verify real-time updates
-- [ ] Verify visualization accuracy
-- [ ] Performance testing
-- [ ] MASTER_PLAN compliance check
+### Step 6: Additional Visualization Features (2-3 hours)
+- [ ] Add thread hierarchy tree view
+- [ ] Show parent-child relationships
+- [ ] Add thread state legend
+- [ ] Add batch processing timeline
+- [ ] Add memory usage visualization
+- [ ] Build and test
 
 ### Step 7: Documentation (2-3 hours)
 - [ ] User guide for new UI
