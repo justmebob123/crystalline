@@ -20,15 +20,23 @@
   - [x] Verify epoch start signal reaches all threads
   - [x] Monitor thread count with ps -T
 
-### Phase 1B: Fix Batch Processing (IN PROGRESS)
-- [ ] Debug why batches aren't being processed
+### Phase 1B: Fix Batch Processing (PARTIALLY COMPLETE)
+- [x] Debug message flow through hierarchy
   - [x] Verify epoch_start signal reaches all threads
-  - [ ] Verify batch messages reach Level-1 controls
-  - [ ] Verify Level-1 controls forward to workers
-  - [ ] Verify workers process batches
+  - [x] Verify batch messages reach Level-1 controls
+  - [x] Verify Level-1 controls forward to workers
+  - [x] Verify workers receive batches
+  - [x] Add debug output for message flow
+- [ ] Fix forward pass hanging issue
+  - [x] Identified hang in cllm_forward_training_threaded()
+  - [ ] Debug training function internals
+  - [ ] Verify thread-local context initialization
+  - [ ] Test with minimal model configuration
+- [ ] Complete batch processing verification
+  - [ ] Verify forward pass completes
+  - [ ] Verify backward pass completes
   - [ ] Verify gradients flow back to root
-- [ ] Add debug output for message flow
-- [ ] Test with small dataset to verify correctness
+  - [ ] Test with small dataset to verify correctness
 
 ### Phase 2: Verify Training Correctness
 - [ ] Test with small dataset (79 tokens)

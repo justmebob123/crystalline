@@ -340,12 +340,16 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
         if (my_tokens == 0) continue;
         
         // Forward pass using thread-local context
+           printf("    [Sphere %d] Starting forward pass for sequence %d\n", sphere->sphere_id, seq);
+           fflush(stdout);
         float seq_loss = cllm_forward_training_threaded(
             training,
             ctx->thread_local_ctx,
             &batch->input_ids[offset]
         );
         
+           printf("    [Sphere %d] Forward pass complete, loss=%.4f\n", sphere->sphere_id, seq_loss);
+           fflush(stdout);
         // Process lattice points for tokens in our symmetry group
         for (uint32_t pos = 0; pos < batch->seq_len; pos++) {
             uint32_t token_id = batch->input_ids[offset + pos];
@@ -372,6 +376,8 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
         }
         
         // Backward pass using thread-local context
+           printf("    [Sphere %d] Starting backward pass for sequence %d\n", sphere->sphere_id, seq);
+           fflush(stdout);
         cllm_backward_training_threaded(
             training,
             ctx->thread_local_ctx,
@@ -379,6 +385,8 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
             ctx->local_gradients
         );
         
+           printf("    [Sphere %d] Backward pass complete\n", sphere->sphere_id);
+           fflush(stdout);
         total_loss += seq_loss;
         sequences_processed++;
     }
@@ -665,8 +673,17 @@ static void* sphere_thread_func(void* arg) {
                 // This is a CONTROL sphere
                 
                 if (msg->type == MSG_BATCH_START) {
+                    printf("[Sphere %d Level %d] Received batch, forwarding to children\n",
+                           sphere->sphere_id, sphere->hierarchy_level);
+                    fflush(stdout);
+                    
                     // Forward batch to children
                     int target_child = select_least_loaded_child(sphere);
+                    
+                    printf("[Sphere %d Level %d] Forwarding to child %d (sphere %d)\n",
+                           sphere->sphere_id, sphere->hierarchy_level, target_child,
+                           sphere->children[target_child]->sphere_id);
+                    fflush(stdout);
                     
                     if (!message_queue_enqueue(sphere->children[target_child]->inbox, msg)) {
                         fprintf(stderr, "[Sphere %d] ERROR: Failed to forward message to child %d\n",
@@ -697,12 +714,18 @@ static void* sphere_thread_func(void* arg) {
             } else {
                 // This is a LEAF WORKER - process batch
                 if (msg->type == MSG_BATCH_START) {
+                       printf("[Sphere %d Level %d] WORKER received batch, processing...\n",
+                              sphere->sphere_id, sphere->hierarchy_level);
+                       fflush(stdout);
                     // Extract batch pointer from generic_data
                     CLLMBatch* batch = (CLLMBatch*)(uintptr_t)msg->payload.generic_data[0];
                     
                     // Process batch and compute gradients using thread-local context
                     process_batch_on_sphere(sphere, batch, system, training_ctx);
                     batches_processed++;
+                       printf("[Sphere %d Level %d] WORKER finished processing batch, sending gradients\n",
+                              sphere->sphere_id, sphere->hierarchy_level);
+                       fflush(stdout);
                     
                     // Send computed gradients back to parent
                     if (sphere->parent && training_ctx) {
