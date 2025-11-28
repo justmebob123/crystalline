@@ -93,6 +93,8 @@ struct HierarchicalTrainingSystem {
     
     atomic_int running;
     atomic_int epoch_done;
+    atomic_int shutdown;  // NEW: Signal threads to exit
+    atomic_int epoch_start;  // NEW: Signal epoch start
     
     CLLMBatchIterator* batch_iterator;
     
@@ -592,6 +594,7 @@ static void* sphere_thread_func(void* arg) {
     
     printf("[Sphere %d Level %d] Thread started (symmetry group %d)\n", 
            sphere->sphere_id, sphere->hierarchy_level, sphere->primary_symmetry_group);
+    fflush(stdout);
     
     // Create gradient accumulator if this is a control sphere
     GradientAccumulator* grad_acc = NULL;
@@ -622,79 +625,103 @@ static void* sphere_thread_func(void* arg) {
         }
     }
     
-    int batches_processed = 0;
-    int gradients_accumulated = 0;
+    printf("[Sphere %d Level %d] Entering epoch loop (will run until shutdown)\n",
+           sphere->sphere_id, sphere->hierarchy_level);
+    fflush(stdout);
     
-    while (atomic_load(&system->running)) {
-        // Receive message from parent
-        SphereMessage* msg = message_queue_dequeue(sphere->inbox);
-        
-        if (!msg) {
-            // No message - check if epoch done
-            if (atomic_load(&system->epoch_done)) {
-                break;
-            }
-            usleep(100);
-            continue;
+    // EPOCH LOOP - Keep thread alive across epochs
+    while (!atomic_load(&system->shutdown)) {
+        // Wait for epoch start signal
+        while (!atomic_load(&system->epoch_start) && !atomic_load(&system->shutdown)) {
+            usleep(1000);  // 1ms
         }
         
-        if (sphere->num_children > 0) {
-            // This is a CONTROL sphere
+        if (atomic_load(&system->shutdown)) {
+            break;
+        }
+        
+        printf("[Sphere %d Level %d] Epoch start signal received, processing messages\n",
+               sphere->sphere_id, sphere->hierarchy_level);
+        fflush(stdout);
+        
+        int batches_processed = 0;
+        int gradients_accumulated = 0;
+        
+        // Process messages for this epoch
+        while (atomic_load(&system->running)) {
+            // Receive message from parent
+            SphereMessage* msg = message_queue_dequeue(sphere->inbox);
             
-            if (msg->type == MSG_BATCH_START) {
-                // Forward batch to children
-                int target_child = select_least_loaded_child(sphere);
+            if (!msg) {
+                // No message - check if epoch done
+                if (atomic_load(&system->epoch_done)) {
+                    break;
+                }
+                usleep(100);
+                continue;
+            }
+            
+            if (sphere->num_children > 0) {
+                // This is a CONTROL sphere
                 
-                if (!message_queue_enqueue(sphere->children[target_child]->inbox, msg)) {
-                    fprintf(stderr, "[Sphere %d] ERROR: Failed to forward message to child %d\n",
-                            sphere->sphere_id, target_child);
+                if (msg->type == MSG_BATCH_START) {
+                    // Forward batch to children
+                    int target_child = select_least_loaded_child(sphere);
+                    
+                    if (!message_queue_enqueue(sphere->children[target_child]->inbox, msg)) {
+                        fprintf(stderr, "[Sphere %d] ERROR: Failed to forward message to child %d\n",
+                                sphere->sphere_id, target_child);
+                        free(msg);
+                    }
+                } else if (msg->type == MSG_GRADIENT_READY) {
+                    // Accumulate gradients from child
+                    float* child_gradients = (float*)(uintptr_t)msg->payload.generic_data[0];
+                    size_t gradient_size = (size_t)msg->payload.generic_data[1];
+                    
+                    accumulate_gradients_from_child(grad_acc, child_gradients, gradient_size);
+                    gradients_accumulated++;
+                    
+                    free(msg);
+                    
+                    // If all children have reported, send to parent
+                    if (gradients_accumulated >= sphere->num_children) {
+                        send_gradients_to_parent(sphere, grad_acc->gradients, grad_acc->gradient_size);
+                        
+                        // Reset for next epoch
+                        memset(grad_acc->gradients, 0, grad_acc->gradient_size * sizeof(float));
+                        gradients_accumulated = 0;
+                    }
+                } else {
                     free(msg);
                 }
-            } else if (msg->type == MSG_GRADIENT_READY) {
-                // Accumulate gradients from child
-                float* child_gradients = (float*)(uintptr_t)msg->payload.generic_data[0];
-                size_t gradient_size = (size_t)msg->payload.generic_data[1];
-                
-                accumulate_gradients_from_child(grad_acc, child_gradients, gradient_size);
-                gradients_accumulated++;
-                
-                free(msg);
-                
-                // If all children have reported, send to parent
-                if (gradients_accumulated >= sphere->num_children) {
-                    send_gradients_to_parent(sphere, grad_acc->gradients, grad_acc->gradient_size);
-                    
-                    // Reset for next batch
-                    memset(grad_acc->gradients, 0, grad_acc->gradient_size * sizeof(float));
-                    gradients_accumulated = 0;
-                }
             } else {
+                // This is a LEAF WORKER - process batch
+                if (msg->type == MSG_BATCH_START) {
+                    // Extract batch pointer from generic_data
+                    CLLMBatch* batch = (CLLMBatch*)(uintptr_t)msg->payload.generic_data[0];
+                    
+                    // Process batch and compute gradients using thread-local context
+                    process_batch_on_sphere(sphere, batch, system, training_ctx);
+                    batches_processed++;
+                    
+                    // Send computed gradients back to parent
+                    if (sphere->parent && training_ctx) {
+                        send_gradients_to_parent(sphere, training_ctx->local_gradients, 
+                                                training_ctx->gradient_size);
+                    }
+                }
+                
+                // Free message after processing
                 free(msg);
             }
-        } else {
-            // This is a LEAF WORKER - process batch
-            if (msg->type == MSG_BATCH_START) {
-                // Extract batch pointer from generic_data
-                CLLMBatch* batch = (CLLMBatch*)(uintptr_t)msg->payload.generic_data[0];
-                
-                // Process batch and compute gradients using thread-local context
-                process_batch_on_sphere(sphere, batch, system, training_ctx);
-                batches_processed++;
-                
-                // Send computed gradients back to parent
-                if (sphere->parent && training_ctx) {
-                    send_gradients_to_parent(sphere, training_ctx->local_gradients, 
-                                            training_ctx->gradient_size);
-                }
-            }
-            
-            // Free message after processing
-            free(msg);
         }
+        
+        printf("[Sphere %d Level %d] Epoch complete (processed %d batches, accumulated %d gradients)\n", 
+               sphere->sphere_id, sphere->hierarchy_level, batches_processed, gradients_accumulated);
     }
     
-    printf("[Sphere %d Level %d] Thread stopping (processed %d batches, accumulated %d gradients)\n", 
-           sphere->sphere_id, sphere->hierarchy_level, batches_processed, gradients_accumulated);
+    printf("[Sphere %d Level %d] Thread exiting (shutdown signaled)\n",
+           sphere->sphere_id, sphere->hierarchy_level);
     
     // Cleanup
     if (grad_acc) {
@@ -764,155 +791,173 @@ static int get_dominant_symmetry_group(CLLMBatch* batch, CLLMModel* model) {
 static void* root_control_thread(void* arg) {
     HierarchicalTrainingSystem* system = (HierarchicalTrainingSystem*)arg;
     CLLMLatticeHierarchy* root = system->root;
+    CLLMModel* model = system->training->model;
     
     printf("[Node Zero] Root control thread started\n");
     printf("[Node Zero] Managing %d Level-1 children\n", root->num_children);
+    printf("[Node Zero] Entering epoch loop (will run until shutdown)\n");
+    fflush(stdout);
     
-    // Reset batch iterator
-    cllm_batch_iterator_reset(system->batch_iterator);
-    
-    int batches_distributed = 0;
-    int group_distribution[12] = {0};  // Track distribution per group
-    CLLMModel* model = system->training->model;
-    printf("[Node Zero] Using symmetry-based distribution (not round-robin)\n");
-    
-    while (atomic_load(&system->running)) {
-        // Get next batch
-        CLLMBatch* batch = cllm_batch_iterator_next(system->batch_iterator);
+    // EPOCH LOOP - Keep thread alive across epochs
+    while (!atomic_load(&system->shutdown)) {
+        // Wait for epoch start signal
+        while (!atomic_load(&system->epoch_start) && !atomic_load(&system->shutdown)) {
+            usleep(1000);  // 1ms
+        }
         
-        if (!batch) {
-            // No more batches
+        if (atomic_load(&system->shutdown)) {
             break;
         }
         
-        // Determine which symmetry group this batch belongs to
-        int symmetry_group = get_dominant_symmetry_group(batch, model);
+        printf("[Node Zero] Epoch started\n");
         
-        // Find Level-1 control for this symmetry group
-        CLLMLatticeHierarchy* target = NULL;
-        for (int i = 0; i < root->num_children; i++) {
-            if (root->children[i]->primary_symmetry_group == symmetry_group) {
-                target = root->children[i];
+        // Reset batch iterator for this epoch
+        cllm_batch_iterator_reset(system->batch_iterator);
+        
+        int batches_distributed = 0;
+        int group_distribution[12] = {0};  // Track distribution per group
+        printf("[Node Zero] Using symmetry-based distribution (not round-robin)\n");
+        
+        // Distribute batches
+        while (atomic_load(&system->running)) {
+            // Get next batch
+            CLLMBatch* batch = cllm_batch_iterator_next(system->batch_iterator);
+            
+            if (!batch) {
+                // No more batches
                 break;
+            }
+            
+            // Determine which symmetry group this batch belongs to
+            int symmetry_group = get_dominant_symmetry_group(batch, model);
+            
+            // Find Level-1 control for this symmetry group
+            CLLMLatticeHierarchy* target = NULL;
+            for (int i = 0; i < root->num_children; i++) {
+                if (root->children[i]->primary_symmetry_group == symmetry_group) {
+                    target = root->children[i];
+                    break;
+                }
+            }
+            
+            if (!target) {
+                // Fallback: use modulo
+                target = root->children[symmetry_group % root->num_children];
+            }
+            
+            // Create message
+            SphereMessage* msg = (SphereMessage*)malloc(sizeof(SphereMessage));
+            if (!msg) {
+                fprintf(stderr, "[Node Zero] ERROR: Failed to allocate message\n");
+                continue;
+            }
+            
+            memset(msg, 0, sizeof(SphereMessage));
+            msg->type = MSG_BATCH_START;
+            msg->priority = MSG_PRIORITY_NORMAL;
+            msg->sender_id = 0;
+            msg->receiver_id = target->sphere_id;
+            msg->sender_symmetry_group = -1;  // Root has all groups
+            msg->receiver_symmetry_group = symmetry_group;
+            
+            // Store batch pointer in generic_data
+            msg->payload.generic_data[0] = (uint64_t)(uintptr_t)batch;
+            
+            atomic_init(&msg->processed, 0);
+            atomic_init(&msg->acknowledged, 0);
+            
+            // Send to child
+            if (!message_queue_enqueue(target->inbox, msg)) {
+                fprintf(stderr, "[Node Zero] ERROR: Failed to send message to child (group %d)\n", symmetry_group);
+                free(msg);
+                continue;
+            }
+            
+            batches_distributed++;
+            group_distribution[symmetry_group]++;
+            
+            if (batches_distributed % 100 == 0) {
+                printf("[Node Zero] Distributed %d batches (by symmetry group)\n", batches_distributed);
             }
         }
         
-        if (!target) {
-            // Fallback: use modulo
-            target = root->children[symmetry_group % root->num_children];
+        printf("[Node Zero] All %d batches distributed\n", batches_distributed);
+        
+        // Show distribution by symmetry group
+        printf("[Node Zero] Distribution by symmetry group:\n");
+        for (int g = 0; g < 12; g++) {
+            if (group_distribution[g] > 0) {
+                printf("  Group %2d: %d batches (%.1f%%)\n", g, group_distribution[g],
+                       100.0 * group_distribution[g] / batches_distributed);
+            }
+        }
+        system->total_batches = batches_distributed;
+        
+        printf("[Node Zero] Waiting for all workers to complete...\n");
+        
+        // Wait for all Level-1 controls to send their accumulated gradients
+        int gradients_received = 0;
+        int expected_gradients = root->num_children;
+        
+        // Create gradient accumulator for root
+        size_t gradient_size = model->vocab_size * model->embedding_dim;
+        GradientAccumulator* root_acc = gradient_accumulator_create(gradient_size);
+        if (!root_acc) {
+            fprintf(stderr, "[Node Zero] ERROR: Failed to create gradient accumulator\n");
+            break;
         }
         
-        // Create message
-        SphereMessage* msg = (SphereMessage*)malloc(sizeof(SphereMessage));
-        if (!msg) {
-            fprintf(stderr, "[Node Zero] ERROR: Failed to allocate message\n");
-            continue;
-        }
-        
-        memset(msg, 0, sizeof(SphereMessage));
-        msg->type = MSG_BATCH_START;
-        msg->priority = MSG_PRIORITY_NORMAL;
-        msg->sender_id = 0;
-        msg->receiver_id = target->sphere_id;
-        msg->sender_symmetry_group = -1;  // Root has all groups
-        msg->receiver_symmetry_group = symmetry_group;
-        
-        // Store batch pointer in generic_data
-        msg->payload.generic_data[0] = (uint64_t)(uintptr_t)batch;
-        
-        atomic_init(&msg->processed, 0);
-        atomic_init(&msg->acknowledged, 0);
-        
-        // Send to child
-        if (!message_queue_enqueue(target->inbox, msg)) {
-            fprintf(stderr, "[Node Zero] ERROR: Failed to send message to child (group %d)\n", symmetry_group);
-            free(msg);
-            continue;
-        }
-        
-        batches_distributed++;
-        group_distribution[symmetry_group]++;
-        
-        if (batches_distributed % 100 == 0) {
-            printf("[Node Zero] Distributed %d batches (by symmetry group)\n", batches_distributed);
-        }
-    }
-    
-    printf("[Node Zero] All %d batches distributed\n", batches_distributed);
-    
-    // Show distribution by symmetry group
-    printf("[Node Zero] Distribution by symmetry group:\n");
-    for (int g = 0; g < 12; g++) {
-        if (group_distribution[g] > 0) {
-            printf("  Group %2d: %d batches (%.1f%%)\n", g, group_distribution[g],
-                   100.0 * group_distribution[g] / batches_distributed);
-        }
-    }
-    system->total_batches = batches_distributed;
-    
-    // Signal epoch done
-    
-    printf("[Node Zero] Waiting for all workers to complete...\n");
-    
-    // Wait for all Level-1 controls to send their accumulated gradients
-    // Each Level-1 control will accumulate from its workers and send to root
-    int gradients_received = 0;
-    int expected_gradients = root->num_children;
-    
-    // Create gradient accumulator for root
-    size_t gradient_size = model->vocab_size * model->embedding_dim;
-    GradientAccumulator* root_acc = gradient_accumulator_create(gradient_size);
-    if (!root_acc) {
-        fprintf(stderr, "[Node Zero] ERROR: Failed to create gradient accumulator\n");
-        return NULL;
-    }
-    
-    // Collect gradients from all Level-1 controls
-    while (gradients_received < expected_gradients) {
-        SphereMessage* msg = message_queue_dequeue(root->inbox);
-        
-        if (!msg) {
-            usleep(1000);  // 1ms
-            continue;
-        }
-        
-        if (msg->type == MSG_GRADIENT_READY) {
-            float* child_gradients = (float*)(uintptr_t)msg->payload.generic_data[0];
-            size_t child_gradient_size = (size_t)msg->payload.generic_data[1];
+        // Collect gradients from all Level-1 controls
+        while (gradients_received < expected_gradients) {
+            SphereMessage* msg = message_queue_dequeue(root->inbox);
             
-            // Accumulate gradients from this Level-1 control
-            accumulate_gradients_from_child(root_acc, child_gradients, child_gradient_size);
-            gradients_received++;
+            if (!msg) {
+                usleep(1000);  // 1ms
+                continue;
+            }
             
-            printf("[Node Zero] Received gradients from child %d/%d\n", 
-                   gradients_received, expected_gradients);
-            
-            free(msg);
-        } else {
-            free(msg);
+            if (msg->type == MSG_GRADIENT_READY) {
+                float* child_gradients = (float*)(uintptr_t)msg->payload.generic_data[0];
+                size_t child_gradient_size = (size_t)msg->payload.generic_data[1];
+                
+                // Accumulate gradients from this Level-1 control
+                accumulate_gradients_from_child(root_acc, child_gradients, child_gradient_size);
+                gradients_received++;
+                
+                printf("[Node Zero] Received gradients from child %d/%d\n", 
+                       gradients_received, expected_gradients);
+                
+                free(msg);
+            } else {
+                free(msg);
+            }
         }
+        
+        printf("[Node Zero] All gradients accumulated\n");
+        
+        // Copy accumulated gradients to training object
+        if (system->training->gradients) {
+            memcpy(system->training->gradients, root_acc->gradients, 
+                   gradient_size * sizeof(float));
+        }
+        
+        // Apply optimizer step (Adam)
+        printf("[Node Zero] Applying optimizer step...\n");
+        cllm_optimizer_step_adam(system->training);
+        printf("[Node Zero] Optimizer step complete\n");
+        
+        // Cleanup
+        gradient_accumulator_free(root_acc);
+        
+        // Signal epoch done AFTER optimizer completes
+        atomic_store(&system->epoch_done, 1);
+        printf("[Node Zero] Epoch complete\n");
+        
+        // Reset epoch_start for next epoch
+        atomic_store(&system->epoch_start, 0);
     }
     
-    printf("[Node Zero] All gradients accumulated\n");
-    
-    // Copy accumulated gradients to training object
-    if (system->training->gradients) {
-        memcpy(system->training->gradients, root_acc->gradients, 
-               gradient_size * sizeof(float));
-    }
-    
-    // Apply optimizer step (Adam)
-    printf("[Node Zero] Applying optimizer step...\n");
-    cllm_optimizer_step_adam(system->training);
-    printf("[Node Zero] Optimizer step complete\n");
-    
-    // Cleanup
-    gradient_accumulator_free(root_acc);
-    
-    // Signal epoch done AFTER optimizer completes
-    atomic_store(&system->epoch_done, 1);
-    printf("[Node Zero] Epoch complete\n");
-    
+    printf("[Node Zero] Root control thread exiting (shutdown signaled)\n");
     return NULL;
 }
 
@@ -951,6 +996,7 @@ static int start_sphere_threads(HierarchicalTrainingSystem* system) {
     }
     
     printf("✓ All sphere threads started\n");
+    fflush(stdout);
     return 0;
 }
 
@@ -971,6 +1017,8 @@ HierarchicalTrainingSystem* hierarchical_training_create(CLLMTraining* training,
     
     atomic_init(&system->running, 1);
     atomic_init(&system->epoch_done, 0);
+    atomic_init(&system->shutdown, 0);
+    atomic_init(&system->epoch_start, 0);
     
     printf("\n=== Creating Hierarchical Training System ===\n");
     printf("Total threads: %d\n", num_threads);
@@ -1023,6 +1071,7 @@ HierarchicalTrainingSystem* hierarchical_training_create(CLLMTraining* training,
     
     printf("✓ Root control thread started\n");
     printf("=== Hierarchical Training System Ready ===\n\n");
+    fflush(stdout);
     
     return system;
 }
@@ -1039,16 +1088,23 @@ float hierarchical_train_epoch(HierarchicalTrainingSystem* system) {
     printf("  Level 1: %d controls\n", system->num_level1);
     printf("  Level 2: %d workers\n", system->num_level2);
     printf("\n");
+    fflush(stdout);
     
-    // Reset epoch state
+    // Signal epoch start to all threads FIRST
     atomic_store(&system->epoch_done, 0);
     atomic_store(&system->running, 1);
+    atomic_store(&system->epoch_start, 1);
     
-    // Root control thread handles everything
+    // Give threads time to wake up and enter message processing loop
+    usleep(10000);  // 10ms
+    
     // Wait for epoch completion
     while (!atomic_load(&system->epoch_done)) {
         usleep(10000);  // 10ms
     }
+    
+    // Reset running flag for next epoch
+    atomic_store(&system->running, 0);
     
     printf("\nEpoch complete (HIERARCHICAL):\n");
     printf("  Total batches: %d\n", system->total_batches);
@@ -1065,7 +1121,9 @@ void hierarchical_training_free(HierarchicalTrainingSystem* system) {
     
     printf("\nStopping hierarchical training system...\n");
     
-    // Signal all threads to stop
+    // Signal shutdown to all threads
+    atomic_store(&system->shutdown, 1);
+    atomic_store(&system->epoch_start, 1);  // Wake up threads waiting for epoch start
     atomic_store(&system->running, 0);
     atomic_store(&system->epoch_done, 1);
     
