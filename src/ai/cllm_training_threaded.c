@@ -332,6 +332,8 @@ float cllm_forward_training_threaded(
     uint32_t* input_tokens
 ) {
     if (!training || !local_ctx || !input_tokens) return 0.0f;
+    printf("    [DEBUG] Entered cllm_forward_training_threaded\n");
+    fflush(stdout);
     
     CLLMModel* model = training->model;
     int batch_size = local_ctx->batch_size;
@@ -353,8 +355,12 @@ float cllm_forward_training_threaded(
     }
     
     // Process through layers (all writes go to thread-local buffers)
+    printf("    [DEBUG] Embeddings copied, starting layer processing (num_layers=%d)\n", model->num_layers);
+    fflush(stdout);
     float* layer_input = local_ctx->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        printf("    [DEBUG] Processing layer %d\n", layer);
+        fflush(stdout);
         memcpy(local_ctx->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(float));
         
         // Apply multi-head attention (simplified for thread-local context)
@@ -412,6 +418,8 @@ float cllm_forward_training_threaded(
         layer_input = local_ctx->layer_outputs[layer];
     }
     
+    printf("    [DEBUG] All layers processed, computing logits\n");
+    fflush(stdout);
     // Copy final hidden (to thread-local buffer)
     memcpy(local_ctx->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(float));
     
