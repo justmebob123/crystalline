@@ -2,23 +2,33 @@
 
 ## CRITICAL PRIORITY: Fix Hierarchical Training System
 
-### Phase 1: Fix Thread Lifecycle (IMMEDIATE)
-- [ ] Fix root_control_thread() to loop across epochs
-  - [ ] Add epoch loop wrapper
-  - [ ] Add shutdown signal handling
-  - [ ] Keep thread alive between epochs
-- [ ] Fix sphere_thread_func() to loop across epochs
-  - [ ] Add epoch loop wrapper
-  - [ ] Add shutdown signal handling
-  - [ ] Keep thread alive between epochs
-- [ ] Add proper shutdown signaling
-  - [ ] Add shutdown flag to HierarchicalTrainingSystem
-  - [ ] Signal shutdown from hierarchical_training_free()
-  - [ ] Wait for all threads to exit cleanly
-- [ ] Test multi-epoch training works correctly
-  - [ ] Verify threads stay alive
-  - [ ] Verify all epochs complete
-  - [ ] Monitor thread count with ps -T
+### Phase 1: Fix Thread Lifecycle (COMPLETE ✅)
+- [x] Fix root_control_thread() to loop across epochs
+  - [x] Add epoch loop wrapper
+  - [x] Add shutdown signal handling
+  - [x] Keep thread alive between epochs
+- [x] Fix sphere_thread_func() to loop across epochs
+  - [x] Add epoch loop wrapper
+  - [x] Add shutdown signal handling
+  - [x] Keep thread alive between epochs
+- [x] Add proper shutdown signaling
+  - [x] Add shutdown flag to HierarchicalTrainingSystem
+  - [x] Signal shutdown from hierarchical_training_free()
+  - [x] Wait for all threads to exit cleanly
+- [x] Test multi-epoch training works correctly
+  - [x] Verify threads stay alive (64 threads confirmed with ps -T)
+  - [x] Verify epoch start signal reaches all threads
+  - [x] Monitor thread count with ps -T
+
+### Phase 1B: Fix Batch Processing (IN PROGRESS)
+- [ ] Debug why batches aren't being processed
+  - [x] Verify epoch_start signal reaches all threads
+  - [ ] Verify batch messages reach Level-1 controls
+  - [ ] Verify Level-1 controls forward to workers
+  - [ ] Verify workers process batches
+  - [ ] Verify gradients flow back to root
+- [ ] Add debug output for message flow
+- [ ] Test with small dataset to verify correctness
 
 ### Phase 2: Verify Training Correctness
 - [ ] Test with small dataset (79 tokens)
