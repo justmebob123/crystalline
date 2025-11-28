@@ -1,0 +1,20 @@
+    e9b0:	c4 e2 61 b9 04 8a    	vfmadd231ss (%rdx,%rcx,4),%xmm3,%xmm0
+    ea50:	c4 e2 59 b9 04 8a    	vfmadd231ss (%rdx,%rcx,4),%xmm4,%xmm0
+    eaf0:	c4 e2 51 b9 04 b2    	vfmadd231ss (%rdx,%rsi,4),%xmm5,%xmm0
+    edf8:	c5 f8 28 d6          	vmovaps %xmm6,%xmm2
+    eea6:	c4 e2 6d a8 04 81    	vfmadd213ps (%rcx,%rax,4),%ymm2,%ymm0
+    eed5:	c4 e2 71 a9 04 81    	vfmadd213ss (%rcx,%rax,4),%xmm1,%xmm0
+    fa28:	c4 e2 61 b9 07       	vfmadd231ss (%rdi),%xmm3,%xmm0
+    fc23:	c4 e2 71 a9 06       	vfmadd213ss (%rsi),%xmm1,%xmm0
+    fc40:	c4 e2 71 a9 06       	vfmadd213ss (%rsi),%xmm1,%xmm0
+    fc64:	c4 e2 49 a9 06       	vfmadd213ss (%rsi),%xmm6,%xmm0
+    fd3c:	c4 e2 79 b9 c8       	vfmadd231ss %xmm0,%xmm0,%xmm1
+    fd78:	c5 f8 28 cd          	vmovaps %xmm5,%xmm1
+    fdb9:	c4 c2 41 99 04 86    	vfmadd132ss (%r14,%rax,4),%xmm7,%xmm0
+    fe0a:	c4 e2 59 b9 c8       	vfmadd231ss %xmm0,%xmm4,%xmm1
+    fe45:	c4 e2 71 99 c4       	vfmadd132ss %xmm4,%xmm1,%xmm0
+   1000b:	c4 c2 51 99 04 80    	vfmadd132ss (%r8,%rax,4),%xmm5,%xmm0
+   10020:	c4 e2 79 a9 0c 83    	vfmadd213ss (%rbx,%rax,4),%xmm0,%xmm1
+   10123:	c4 a2 71 a9 44 1d 00 	vfmadd213ss 0x0(%rbp,%r11,1),%xmm1,%xmm0
+   10137:	c4 c2 71 a9 44 85 00 	vfmadd213ss 0x0(%r13,%rax,4),%xmm1,%xmm0
+   109a8:	c4 e2 f9 99 ca       	vfmadd132sd %xmm2,%xmm0,%xmm1
