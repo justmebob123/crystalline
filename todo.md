@@ -88,7 +88,7 @@ Kissing Spheres Hierarchy:
 - [x] Workers process batches
 - [x] Build successful (zero errors, 3 unused parameter warnings)
 
-### Phase 2: Model-Aware Implementation - CRITICAL INSIGHT
+### Phase 2: Model-Aware Implementation - IN PROGRESS
 
 **DISCOVERY**: The model structure ALREADY has 12-fold symmetry and kissing spheres!
 - CLLMLatticePoint has symmetry_group (0-11) and neighbors[12]
@@ -96,8 +96,11 @@ Kissing Spheres Hierarchy:
 - Model is DESIGNED for this hierarchy - we just need to USE it!
 
 Tasks:
-- [ ] Make hierarchy creation model-aware (read model->header.symmetry_order)
-- [ ] Distribute work by token symmetry_group (not random round-robin)
+- [x] Make hierarchy creation model-aware (read model->header.symmetry_order)
+- [x] Distribute work by token symmetry_group (not random round-robin)
+- [x] Added get_dominant_symmetry_group() to analyze batches
+- [x] Route batches to correct Level-1 control by symmetry
+- [x] Track and report distribution per symmetry group
 - [ ] Process lattice points with their 12 neighbors (kissing spheres!)
 - [ ] Partition weights by symmetry group (cache-friendly)
 - [ ] Implement actual batch processing using lattice structure
@@ -106,6 +109,8 @@ Tasks:
 - [ ] Add proper error handling
 
 See MODEL_STRUCTURE_ANALYSIS.md for detailed analysis
+
+**Progress**: Hierarchy now matches model structure, work distributed by symmetry!
 
 ### Phase 3: Integration
 - [ ] Update tools/train_model.c to use hierarchical system
