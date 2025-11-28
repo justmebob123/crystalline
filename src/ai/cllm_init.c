@@ -20,7 +20,9 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/ai/cllm_lattice_embeddings.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include "../include/prime_float_math.h"
 #include <time.h>
 
@@ -275,6 +277,12 @@ void cllm_init_normal(double* weights, int size, double mean, double stddev) {
 void cllm_init_embedding_layer(Embeddings* embed) {
     if (!embed || !embed->embeddings) return;
     
+    // NOTE: This function is now deprecated in favor of lattice-based initialization
+    // See cllm_embeddings_init_lattice() in cllm_lattice_embeddings.c
+    // 
+    // Keeping this for backward compatibility, but it should not be used
+    // for new models. Use cllm_init_embeddings_with_lattice() instead.
+    
     // Use small standard deviation for embeddings
     double stddev = 0.02;
     
@@ -449,14 +457,51 @@ void cllm_init_cllm_layernorm(CLLMLayerNorm* ln) {
 }
 
 /**
- * Initialize Complete CLLM Model
+ * Initialize Complete CLLM Model with Lattice Formula
  * 
- * Initializes all layers in the model with appropriate strategies
+ * Uses crystalline lattice formula L(n,d,k,λ) for embeddings.
+ * This is the CORRECT initialization method for crystalline models.
+ */
+void cllm_init_model_lattice(CLLMModel* model) {
+    if (!model) return;
+    
+    printf("\n=== Initializing CLLM Model with Lattice Formula ===\n");
+    
+    // Initialize embedding layer with lattice formula
+    cllm_init_embeddings_with_lattice(model);
+    
+    // Initialize transformer layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        // Initialize attention
+        if (model->attention_layers) {
+            cllm_init_attention_layer(&model->attention_layers[i]);
+        }
+        
+        // Initialize feed-forward
+        if (model->ff_layers) {
+            cllm_init_feedforward_layer(&model->ff_layers[i]);
+        }
+        
+        // Initialize layer norms
+        if (model->layer_norms) {
+            cllm_init_layernorm((LayerNorm*)&model->layer_norms[i]);
+        }
+    }
+    
+    printf("✓ Model initialization complete\n\n");
+}
+
+/**
+ * Initialize Complete CLLM Model (Legacy)
+ * 
+ * Initializes all layers in the model with appropriate strategies.
+ * NOTE: This uses random initialization. For crystalline models,
+ * use cllm_init_model_lattice() instead.
  */
 void cllm_init_model(CLLMModel* model) {
     if (!model) return;
     
-    // Initialize embedding layer
+    // Initialize embedding layer (random - deprecated)
     cllm_init_embedding_layer(&model->embeddings);
     
     // Initialize transformer layers

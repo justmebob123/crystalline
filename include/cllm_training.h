@@ -202,4 +202,8 @@ void cllm_training_cleanup(CLLMTraining* training);
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer);
 
+/* Model initialization functions */
+void cllm_init_model(CLLMModel* model);  // Legacy random initialization
+void cllm_init_model_lattice(CLLMModel* model);  // Lattice formula initialization (RECOMMENDED)
+
 #endif /* CLLM_TRAINING_H */
