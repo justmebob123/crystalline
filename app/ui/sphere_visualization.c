@@ -197,9 +197,9 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
         }
     }
     
-    // Draw statistics panel at bottom
-    int stats_y = bounds.y + bounds.h - 80;
-    SDL_Rect stats_panel = {bounds.x + 10, stats_y, bounds.w - 20, 70};
+    // Draw statistics panel at bottom (increased height for vertical legend)
+    int stats_y = bounds.y + bounds.h - 110;
+    SDL_Rect stats_panel = {bounds.x + 10, stats_y, bounds.w - 20, 100};
     SDL_SetRenderDrawColor(renderer, 35, 35, 40, 255);
     SDL_RenderFillRect(renderer, &stats_panel);
     SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
@@ -227,10 +227,10 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     int legend_x = stats_panel.x + stats_panel.w - 200;
     int legend_y = stats_panel.y + 8;
     
-    draw_text(renderer, "Activity:", legend_x, legend_y, text_color);
+    draw_text(renderer, "Activity Level:", legend_x, legend_y, text_color);
     legend_y += 18;
     
-    // Color legend
+    // Color legend with labels
     struct {
         const char* label;
         SDL_Color color;
@@ -239,12 +239,15 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
         {"Low", {60, 100, 180, 255}},
         {"Medium", {80, 180, 200, 255}},
         {"High", {220, 200, 80, 255}},
-        {"Very High", {255, 140, 60, 255}}
+        {"Very High", {255, 140, 60, 255}}  // ORANGE - >90% activity
     };
     
+    // Draw color circles with labels
     for (int i = 0; i < 5; i++) {
-        int item_x = legend_x + (i * 35);
-        draw_filled_circle(renderer, item_x + 5, legend_y + 5, 4, legend_items[i].color);
+        int item_y = legend_y + (i * 16);
+        draw_filled_circle(renderer, legend_x + 5, item_y + 5, 4, legend_items[i].color);
+        draw_text(renderer, legend_items[i].label, legend_x + 15, item_y, 
+                 (SDL_Color){180, 180, 180, 255});
     }
 }
 

@@ -277,20 +277,32 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         
         // Show preprocessing progress bar if applicable
         if (state->training_preprocessing_progress > 0.0f && state->training_preprocessing_progress < 1.0f) {
-            SDL_Rect prep_bg = {content_x, content_y, content_w, 20};
+            // Draw progress bar background
+            SDL_Rect prep_bg = {content_x, content_y, content_w, 25};
             SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
             SDL_RenderFillRect(renderer, &prep_bg);
             
+            // Draw progress fill
             SDL_Rect prep_fill = {prep_bg.x, prep_bg.y, 
                                   (int)(prep_bg.w * state->training_preprocessing_progress), 
                                   prep_bg.h};
             SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
             SDL_RenderFillRect(renderer, &prep_fill);
             
+            // Draw border
             SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
             SDL_RenderDrawRect(renderer, &prep_bg);
             
-            content_y += 30;
+            // Draw percentage text on progress bar
+            char prep_percent[32];
+            snprintf(prep_percent, sizeof(prep_percent), "%.0f%%", 
+                    state->training_preprocessing_progress * 100.0f);
+            draw_text(renderer, prep_percent, 
+                     prep_bg.x + prep_bg.w / 2 - 15, 
+                     prep_bg.y + 5, 
+                     (SDL_Color){255, 255, 255, 255});
+            
+            content_y += 35;
         }
     }
     
@@ -393,12 +405,16 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
               
            
            // Sphere Visualization - Show kissing spheres architecture
-           int sphere_viz_height = 300;
-           SDL_Rect sphere_bounds = {content_x, content_y, content_w / 2 - 10, sphere_viz_height};
+           // EXPANDED: Use 70% of width and 60% of height for better visibility
+              int sphere_viz_width = (content_w * 7) / 10;
+              int sphere_viz_height = (content_h * 6) / 10;
+              if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
+           SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
            draw_sphere_visualization(renderer, state, sphere_bounds);
            
            // UI Integration: Framework Status & Performance Metrics Panel
-           SDL_Rect metrics_bounds = {content_x + content_w / 2 + 10, content_y, content_w / 2 - 10, sphere_viz_height};
+           SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
+                                        content_w - sphere_viz_width - 20, sphere_viz_height};
            
            // Draw metrics panel background
            SDL_SetRenderDrawColor(renderer, 25, 25, 30, 255);
