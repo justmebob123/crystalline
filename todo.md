@@ -18,7 +18,7 @@
 - [ ] If callback not printing: investigate why callback not invoked
 - [ ] If callback printing but UI not updating: investigate UI redraw
 
-## CRITICAL ISSUE 3: Complete Other Tabs
+## CRITICAL ISSUE 3: Complete Other Tabs ✅ COMPLETE
 - [x] Video Tab - Complete implementation ✅
   - [x] Create tab_video.c with full UI
   - [x] Add recording status display
@@ -27,9 +27,12 @@
   - [x] Add requirements check (ffmpeg)
   - [x] Integrate with main.c
   - [x] Build and test compilation
-- [ ] LLM Tab - Add model creation/saving (NEXT)
-- [ ] Benchmark Tab - Verify functionality
-- [ ] Research Tab - Verify functionality
+- [x] LLM Tab - Fixed memory leak ✅
+  - [x] Model creation already implemented
+  - [x] Model saving already implemented
+  - [x] Fixed memory leak (cllm_free_model)
+- [x] Benchmark Tab - Already functional ✅
+- [x] Research Tab - Already functional ✅
 
 ## IMMEDIATE NEXT STEPS
 1. **USER TESTING** - Start training and verify:
