@@ -17,7 +17,6 @@
 #include <unistd.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_training_validation.h"
 // Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
 // Removed: #include "../include/cllm_training_threaded.h" - replaced with hierarchical
 #include "../include/ai/cllm_hierarchical_training.h"
@@ -129,40 +128,27 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                 const char* checkpoint_dir, int num_threads) {
     printf("\n=== Starting Training ===\n\n");
     
-    // Auto-detect CPU count if not specified
+    // Thread count handling:
+    // - If num_threads == 0: auto-detect CPU count
+    // - If num_threads > 0: use specified count
+    // - Threads rotate through 12 symmetry positions (not fixed assignment)
     if (num_threads == 0) {
         num_threads = sysconf(_SC_NPROCESSORS_ONLN);
         if (num_threads > 1) {
-            num_threads--;  // Reserve 1 core for main thread (CPU-1)
-            printf("Auto-detected %d CPU cores, using %d worker threads (CPU-1)\n", 
-                   num_threads + 1, num_threads);
+            num_threads--;  // Reserve 1 core for main thread
         }
         if (num_threads < 1) num_threads = 1;
+        printf("Auto-detected %d CPU cores, using %d worker threads\n", 
+               num_threads + 1, num_threads);
+    } else {
+        printf("Using %d worker threads (user-specified)\n", num_threads);
     }
     
-    // CRITICAL: Validate and auto-adjust parameters for dataset size
-    int batch_size = config->batch_size;
-    int seq_len = config->sequence_length;
-    
-    if (!auto_adjust_training_parameters(dataset->num_tokens, 
-                                         &batch_size, 
-                                         &seq_len, 
-                                         &num_threads)) {
-        fprintf(stderr, "\n❌ Training aborted due to insufficient dataset size\n");
-        fprintf(stderr, "Please add more training data or adjust parameters manually.\n\n");
-        return 0;
-    }
-    
-    // Update config with adjusted parameters
-    config->batch_size = batch_size;
-    config->sequence_length = seq_len;
-    
-    printf("\nFinal training parameters:\n");
-    printf("  Batch size:       %d\n", batch_size);
-    printf("  Sequence length:  %d\n", seq_len);
-    printf("  Thread count:     %d (Level-2 workers)\n", num_threads);
-    printf("  Total threads:    %d (1 root + 12 Level-1 + %d Level-2)\n", 
-           13 + num_threads, num_threads);
+    printf("\nTraining configuration:\n");
+    printf("  Batch size:       %d\n", config->batch_size);
+    printf("  Sequence length:  %d\n", config->sequence_length);
+    printf("  Worker threads:   %d\n", num_threads);
+    printf("  12-fold symmetry: Threads rotate through all positions\n");
     printf("\n");
     
     // Create training state

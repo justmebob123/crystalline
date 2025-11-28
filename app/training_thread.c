@@ -139,6 +139,11 @@ void* training_thread_func(void* arg) {
     
     // Create batch iterator from training data
     printf("\nCreating batch iterator...\n");
+    snprintf(state->training_status_message, sizeof(state->training_status_message),
+            "Creating batch iterator...");
+    state->training_preprocessing_progress = 0.85f;
+    SDL_PumpEvents();
+    
     g_batch_iterator = cllm_batch_iterator_create(
         state->cllm_training->tokens,
         state->cllm_training->num_tokens,
@@ -150,6 +155,10 @@ void* training_thread_func(void* arg) {
     
     if (!g_batch_iterator) {
         printf("ERROR: Failed to create batch iterator\n");
+        snprintf(state->training_status_message, sizeof(state->training_status_message),
+                "ERROR: Failed to create batch iterator");
+        state->training_preprocessing_progress = 0.0f;
+        SDL_PumpEvents();
         
         pthread_mutex_lock(&training_mutex);
         state->training_in_progress = false;
@@ -163,7 +172,12 @@ void* training_thread_func(void* arg) {
     printf("✓ Batch iterator created: %zu batches\n", num_batches);
     
     // Create threaded training system with 12 kissing spheres
-    printf("\nInitializing 12 kissing spheres...\n");
+    printf("\nInitializing worker threads...\n");
+    snprintf(state->training_status_message, sizeof(state->training_status_message),
+            "Initializing worker threads...");
+    state->training_preprocessing_progress = 0.90f;
+    SDL_PumpEvents();
+    
     g_threaded_system = threaded_training_create(
         state->cllm_training,
         g_batch_iterator,
@@ -194,6 +208,13 @@ void* training_thread_func(void* arg) {
         cllm_metrics_set_callback(metrics_callback, state);
         printf("✓ Real-time metrics enabled for UI\n");
     }
+    
+    // CRITICAL FIX: Update progress bar to 100% after initialization complete
+    snprintf(state->training_status_message, sizeof(state->training_status_message),
+            "Training started - %d threads active", g_threaded_system->num_worker_spheres);
+    state->training_preprocessing_progress = 1.0f;  // 100% - initialization complete!
+    SDL_PumpEvents();  // Force UI update
+    
     printf("\n");
     
     // Training loop with kissing spheres
