@@ -96,6 +96,19 @@ struct SphereTrainingContext {
 /**
  * Multi-threaded training system
  */
+// PHASE 2A: Batch Queue for Pre-fetching
+#define BATCH_QUEUE_CAPACITY 128  // Pre-fetch up to 128 batches
+
+typedef struct {
+    CLLMBatch** batches;           // Array of batch pointers
+    size_t capacity;               // Maximum queue size
+    _Atomic size_t head;           // Read position (consumer)
+    _Atomic size_t tail;           // Write position (producer)
+    _Atomic int producer_done;     // 1 when no more batches to produce
+    pthread_t prefetch_thread;     // Pre-fetch thread
+    _Atomic int prefetch_running;  // 1 while pre-fetch thread is active
+} BatchQueue;
+
 struct ThreadedTrainingSystem {
     CLLMTraining* training;
     ThreadSystem* thread_system;
@@ -115,6 +128,9 @@ struct ThreadedTrainingSystem {
     
     // Batch iterator
     CLLMBatchIterator* batch_iterator;
+    
+    // PHASE 2A: Batch pre-fetching queue
+    BatchQueue* batch_queue;       // Lock-free batch queue for pre-fetching
     
     // Shared memory regions (kissing spheres architecture)
     SharedMemoryRegion* shared_gradients;      // Single shared gradient buffer
@@ -673,6 +689,222 @@ static int calculate_hierarchy_levels(int num_threads) {
 }
 
 /**
+ * PHASE 2A: Batch Queue Functions
+ */
+
+/**
+ * Create batch queue for pre-fetching
+ */
+static BatchQueue* batch_queue_create(size_t capacity) {
+    BatchQueue* queue = (BatchQueue*)calloc(1, sizeof(BatchQueue));
+    if (!queue) return NULL;
+    
+    queue->batches = (CLLMBatch**)calloc(capacity, sizeof(CLLMBatch*));
+    if (!queue->batches) {
+        free(queue);
+        return NULL;
+    }
+    
+    queue->capacity = capacity;
+    atomic_store(&queue->head, 0);
+    atomic_store(&queue->tail, 0);
+    atomic_store(&queue->producer_done, 0);
+    atomic_store(&queue->prefetch_running, 0);
+    
+    return queue;
+}
+
+/**
+ * Free batch queue
+ */
+static void batch_queue_free(BatchQueue* queue) {
+    if (!queue) return;
+    
+    // Free any remaining batches
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    for (size_t i = head; i < tail; i++) {
+        size_t index = i % queue->capacity;
+        if (queue->batches[index]) {
+            cllm_batch_free(queue->batches[index]);
+            queue->batches[index] = NULL;
+        }
+    }
+    
+    free(queue->batches);
+    free(queue);
+}
+
+/**
+ * Try to push a batch to the queue (non-blocking)
+ * Returns 1 on success, 0 if queue is full
+ */
+static int batch_queue_try_push(BatchQueue* queue, CLLMBatch* batch) {
+    if (!queue || !batch) return 0;
+    
+    size_t tail = atomic_load(&queue->tail);
+    size_t head = atomic_load(&queue->head);
+    
+    // Check if queue is full
+    if (tail - head >= queue->capacity) {
+        return 0;  // Queue full
+    }
+    
+    size_t index = tail % queue->capacity;
+    queue->batches[index] = batch;
+    
+    // Advance tail
+    atomic_store(&queue->tail, tail + 1);
+    
+    return 1;
+}
+
+/**
+ * Try to pop a batch from the queue (non-blocking)
+ * Returns batch pointer on success, NULL if queue is empty
+ */
+static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
+    if (!queue) return NULL;
+    
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    // Check if queue is empty
+    if (head >= tail) {
+        return NULL;  // Queue empty
+    }
+    
+    size_t index = head % queue->capacity;
+    CLLMBatch* batch = queue->batches[index];
+    queue->batches[index] = NULL;
+    
+    // Advance head
+    atomic_store(&queue->head, head + 1);
+    
+    return batch;
+}
+
+/**
+ * Check if queue is empty
+ */
+static int batch_queue_is_empty(BatchQueue* queue) {
+    if (!queue) return 1;
+    
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    return head >= tail;
+}
+
+/**
+ * Get number of batches in queue
+ */
+static size_t batch_queue_size(BatchQueue* queue) {
+    if (!queue) return 0;
+    
+    size_t head = atomic_load(&queue->head);
+    size_t tail = atomic_load(&queue->tail);
+    
+    return tail - head;
+}
+
+/**
+ * Batch pre-fetch thread function
+ * Runs in background, loading batches ahead of time
+ */
+static void* batch_prefetch_thread_func(void* arg) {
+    ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
+    if (!system || !system->batch_queue || !system->batch_iterator) {
+        return NULL;
+    }
+    
+    BatchQueue* queue = system->batch_queue;
+    CLLMBatchIterator* iterator = system->batch_iterator;
+    
+    printf("[Pre-fetch] Thread started\n");
+    
+    int batches_loaded = 0;
+    
+    while (atomic_load(&system->running)) {
+        // Try to load next batch
+        CLLMBatch* batch = cllm_batch_iterator_next(iterator);
+        
+        if (!batch) {
+            // No more batches - mark producer as done
+            atomic_store(&queue->producer_done, 1);
+            printf("[Pre-fetch] Loaded %d batches total, iterator exhausted\n", batches_loaded);
+            break;
+        }
+        
+        // Try to push to queue (non-blocking)
+        while (!batch_queue_try_push(queue, batch)) {
+            // Queue is full - wait a bit for consumers to catch up
+            if (!atomic_load(&system->running)) {
+                // System shutting down - free batch and exit
+                cllm_batch_free(batch);
+                goto cleanup;
+            }
+            usleep(1000);  // Sleep 1ms
+        }
+        
+        batches_loaded++;
+        
+        // Log progress every 100 batches
+        if (batches_loaded % 100 == 0) {
+            printf("[Pre-fetch] Loaded %d batches (queue size: %zu)\n", 
+                   batches_loaded, batch_queue_size(queue));
+        }
+    }
+    
+cleanup:
+    atomic_store(&queue->prefetch_running, 0);
+    printf("[Pre-fetch] Thread exiting\n");
+    return NULL;
+}
+
+/**
+ * Start batch pre-fetching
+ */
+static int batch_queue_start_prefetch(ThreadedTrainingSystem* system) {
+    if (!system || !system->batch_queue) return 0;
+    
+    BatchQueue* queue = system->batch_queue;
+    
+    // Reset queue state
+    atomic_store(&queue->head, 0);
+    atomic_store(&queue->tail, 0);
+    atomic_store(&queue->producer_done, 0);
+    atomic_store(&queue->prefetch_running, 1);
+    
+    // Create pre-fetch thread
+    if (pthread_create(&queue->prefetch_thread, NULL, 
+                      batch_prefetch_thread_func, system) != 0) {
+        fprintf(stderr, "Failed to create pre-fetch thread\n");
+        atomic_store(&queue->prefetch_running, 0);
+        return 0;
+    }
+    
+    printf("[Pre-fetch] Started background batch loading\n");
+    return 1;
+}
+
+/**
+ * Stop batch pre-fetching and wait for thread to finish
+ */
+static void batch_queue_stop_prefetch(ThreadedTrainingSystem* system) {
+    if (!system || !system->batch_queue) return;
+    
+    BatchQueue* queue = system->batch_queue;
+    
+    if (atomic_load(&queue->prefetch_running)) {
+        // Wait for pre-fetch thread to finish
+        pthread_join(queue->prefetch_thread, NULL);
+        atomic_store(&queue->prefetch_running, 0);
+    }
+}
+
+/**
  * Create threaded training system
  */
 ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training, 
@@ -855,6 +1087,23 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         }
     }
     
+    // PHASE 2A: Create batch queue for pre-fetching
+    system->batch_queue = batch_queue_create(BATCH_QUEUE_CAPACITY);
+    if (!system->batch_queue) {
+        fprintf(stderr, "ERROR: Failed to create batch queue\n");
+        // Cleanup on failure
+        for (int j = 0; j < system->num_worker_spheres; j++) {
+            sphere_context_free(system->sphere_contexts[j]);
+        }
+        free(system->sphere_contexts);
+        if (system->thread_system) threads_free(system->thread_system);
+        shared_memory_free(system->shared_gradients);
+        free(system->accumulated_gradients);
+        free(system);
+        return NULL;
+    }
+    printf("  ✓ Batch queue created (capacity: %d batches)\n", BATCH_QUEUE_CAPACITY);
+    
     // MASTER PLAN: Create control thread (Node Zero) first
     // OPTIMIZATION: Reduce thread stack size from 8MB to 1MB (saves 455MB with 65 threads)
     pthread_attr_t thread_attr;
@@ -978,6 +1227,13 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     
     // Free accumulated gradients buffer
     free(system->accumulated_gradients);
+    
+    // PHASE 2A: Stop pre-fetch thread and free batch queue
+    if (system->batch_queue) {
+        batch_queue_stop_prefetch(system);
+        batch_queue_free(system->batch_queue);
+        printf("  ✓ Batch queue freed\n");
+    }
     
     // Destroy gradient lock
     // pthread_mutex_destroy(&system->gradient_lock);  // PHASE 4: Removed
@@ -1346,9 +1602,17 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
     if (!system) return 0.0f;
     
     printf("\nStarting multi-threaded epoch training...\n");
-    printf("Using %d worker threads for parallel batch processing\n\n", system->num_worker_spheres);
+    printf("Using %d worker threads for parallel batch processing\n", system->num_worker_spheres);
     
+    // PHASE 2A: Reset batch iterator and start pre-fetching
     cllm_batch_iterator_reset(system->batch_iterator);
+    
+    if (!batch_queue_start_prefetch(system)) {
+        fprintf(stderr, "ERROR: Failed to start batch pre-fetching\n");
+        return 0.0f;
+    }
+    
+    printf("PHASE 2A: Batch pre-fetching enabled (overlapping I/O with computation)\n\n");
     
     float epoch_loss = 0.0f;
     int batch_count = 0;
@@ -1365,14 +1629,33 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         
         int batches_loaded = 0;
         
-        // Load up to N batches (one per worker sphere)
+        // PHASE 2A: Load batches from pre-fetch queue (non-blocking)
         for (int i = 0; i < system->num_worker_spheres; i++) {
-            batches[i] = cllm_batch_iterator_next(system->batch_iterator);
+            // Try to get batch from queue
+            batches[i] = batch_queue_try_pop(system->batch_queue);
+            
             if (batches[i]) {
                 batches_loaded++;
             } else {
-                // Iterator returned NULL - no more batches
-                break;
+                // Queue empty - check if producer is done
+                if (atomic_load(&system->batch_queue->producer_done)) {
+                    // No more batches will be produced
+                    break;
+                }
+                
+                // Queue temporarily empty - wait a bit for pre-fetch to catch up
+                usleep(100);  // 100 microseconds
+                
+                // Try again
+                batches[i] = batch_queue_try_pop(system->batch_queue);
+                if (batches[i]) {
+                    batches_loaded++;
+                } else {
+                    // Still empty and producer done - no more batches
+                    if (atomic_load(&system->batch_queue->producer_done)) {
+                        break;
+                    }
+                }
             }
         }
         
@@ -1384,9 +1667,8 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         
         // Debug: Show actual batch count
         if (total_batch_groups == 0) {
-            printf("First batch group: loaded %d batches\n", batches_loaded);
+            printf("First batch group: loaded %d batches from pre-fetch queue\n", batches_loaded);
         }
-        
         
         total_batch_groups++;
         
@@ -1456,8 +1738,12 @@ float threaded_train_epoch(ThreadedTrainingSystem* system) {
         // Apply gradients using Adam optimizer
         cllm_optimizer_step_adam(system->training);
     }
+    // PHASE 2A: Stop pre-fetch thread
+    batch_queue_stop_prefetch(system);
+    printf("\nPre-fetch thread stopped\n");
+    
     // CRITICAL FIX: Signal threads to stop by setting running=0 and releasing barriers
-    printf("\nEpoch complete - signaling threads to stop...\n");
+    printf("Epoch complete - signaling threads to stop...\n");
     atomic_store(&system->running, 0);
     
     // Release threads from barriers by participating one more time
