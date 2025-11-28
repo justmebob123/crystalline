@@ -114,19 +114,26 @@ SDL_Rect viz_bounds = {0, 60, viz_width, viz_height};
 Elapsed: 5m 23s | Remaining: 12m 45s | Speed: 45.3 batches/sec | ETA: 3:45 PM
 ```
 
-### 2.3 Add Terminal Output Window ❌
+### 2.3 Add Terminal Output Window ✅ COMPLETE
 **Problem**: Debug output only in console
 
-**Files to Modify**:
-- [ ] `app/ui/tabs/tab_training.c` - Add scrolling text box
-- [ ] Create circular buffer for last 500 lines
-- [ ] Capture printf output or duplicate to buffer
+**Files Created**:
+- [x] `app/terminal_output.h` - Terminal buffer API
+- [x] `app/terminal_output.c` - Terminal buffer implementation
 
-**Features**:
-- Scrollable text area
-- Auto-scroll toggle
-- Search/filter capability
-- Copy to clipboard
+**Files Modified**:
+- [x] `app/ui/tabs/tab_training.c` - Added scrolling text box (200px height)
+- [x] `app/app_common.h` - Added terminal_buffer to AppState
+- [x] `app/main.c` - Initialize and cleanup
+- [x] `app/training_thread.c` - Capture output to buffer
+
+**Features Implemented**:
+- [x] Scrollable text area (500 line circular buffer)
+- [x] Auto-scroll toggle (ON/OFF indicator)
+- [x] Search capability (API ready)
+- [ ] Copy to clipboard (future enhancement)
+
+**Status**: ✅ Working - displays training output in UI
 
 ### 2.4 Add Collapsible Panels ❌
 **Problem**: UI cluttered, can't focus on specific data
@@ -267,8 +274,14 @@ enum VisualizationMode {
 - Fail-fast protection
 
 **Total Estimated Time**: 6-7 hours for complete implementation
-**Time Spent So Far**: ~2 hours
-**Remaining**: ~4-5 hours
+**Time Spent So Far**: ~3 hours
+**Remaining**: ~3-4 hours
+
+**Latest Addition**: ✅ Terminal Output Window COMPLETE
+- 500 line circular buffer
+- Real-time display in UI
+- Auto-scroll with indicator
+- Captures key training messages
 
 ---
 
