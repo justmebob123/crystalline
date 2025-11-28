@@ -8,6 +8,7 @@
 #include <string.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
+#include "../include/clock_lattice.h"
 #include "../include/prime_float_math.h"
 #include "../include/prime_math.h"
 
@@ -99,24 +100,9 @@ void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius) {
 void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, float* coords) {
     if (!coords) return;
     
-    // Compute spiral position
-    float angle, radius;
-    cllm_compute_spiral_position(prime, &angle, &radius);
-    
-    // Convert to 3D coordinates using cylindrical mapping
-    // x, y from polar coordinates
-    coords[0] = radius * prime_cos(angle);
-    coords[1] = radius * prime_sin(angle);
-    
-    // z coordinate based on prime factorization depth
-    // Use logarithmic scale for z-axis
-    coords[2] = prime_log((float)prime + 1.0f);
-    
-    // Add token-specific perturbation for uniqueness
-    float token_phase = 2.0f * PI * (float)token_id / 1000.0f;
-    coords[0] += 0.1f * prime_cos(token_phase);
-    coords[1] += 0.1f * prime_sin(token_phase);
-    coords[2] += 0.1f * prime_sin(token_phase * PHI);
+    // Use clock-based mapping instead of spiral
+    // prime_index = token_id + 1 (1-based indexing for Babylonian structure)
+    map_token_to_clock_lattice(token_id, prime, token_id + 1, coords);
 }
 
 /**
