@@ -25,6 +25,7 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_message_queue.h"
 #include "ai/cllm_sphere_message.h"
+#include "ai/cllm_kissing_spheres.h"
 #include "cllm_batch.h"
 #include "prime_float_math.h"
 #include <stdlib.h>
@@ -253,26 +254,9 @@ static void process_lattice_point_with_neighbors(
     // The embedding for this point influences nearby tokens
     
     // Process relationships with 12 neighbors (kissing spheres!)
-    for (uint32_t n = 0; n < point->neighbor_count && n < 12; n++) {
-        uint32_t neighbor_id = point->neighbors[n];
-        
-        if (neighbor_id >= model->num_lattice_points) continue;
-        
-        CLLMLatticePoint* neighbor = &model->lattice_points[neighbor_id];
-        
-        // Calculate interaction between point and neighbor
-        // This is where the kissing spheres geometry matters!
-        // Points that touch (kiss) have stronger interactions
-        
-        // In a full implementation, this would:
-        // 1. Compute attention between point and neighbor embeddings
-        // 2. Update gradients based on their spatial relationship
-        // 3. Use the distance and angle between points
-        
-        (void)neighbor;  // Placeholder - will implement fully
-        (void)local_gradients;
-        (void)gradient_size;
-    }
+    // Now using the full implementation from cllm_kissing_spheres.c
+    // This processes all 12 kissing sphere neighbors using L(n,d,k,λ) formula
+    cllm_process_kissing_spheres(point, model, local_gradients, gradient_size);
 }
 
 /**
