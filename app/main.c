@@ -4,6 +4,7 @@
 #include "cllm_integration.h"
 #include "../include/cllm_format.h"
 #include "input_manager.h"
+#include "ui/tabs/tab_video.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
@@ -381,6 +382,11 @@ void handle_mouse_click(AppState* state, int x, int y) {
         return;
     }
     
+    if (state->current_tab == TAB_VIDEO_GENERATOR) {
+        handle_video_tab_click(state, x, y);
+        return;
+    }
+    
     if (state->current_tab == TAB_CALCULATOR) {
               // Check mini-map clicks first (top area, 50-350 pixels from top)
               int minimap_x = 50;
@@ -695,11 +701,7 @@ void render(AppState* state) {
             draw_visualization(state->renderer, state);
             break;
         case TAB_VIDEO_GENERATOR:
-            // Video controls - placeholder for now
-            {
-                SDL_Color white = {255, 255, 255, 255};
-                draw_text(state->renderer, "Video Generator - Coming Soon", 400, 300, white);
-            }
+            draw_video_tab(state->renderer, state);
             break;
         case TAB_LLM:
             draw_llm_tab(state->renderer, state);
