@@ -101,6 +101,12 @@ static SDL_Rect g_load_btn;
 static SDL_Rect g_save_btn;
 static SDL_Rect g_temp_slider;
 static SDL_Rect g_tokens_slider;
+static SDL_Rect g_browse_models_btn;
+static SDL_Rect g_export_model_btn;
+static SDL_Rect g_new_thread_btn;
+static SDL_Rect g_thread_list_btn;
+static SDL_Rect g_top_k_slider;
+static SDL_Rect g_top_p_slider;
 
 // Initialize model browser
 static void init_model_browser(AppState* state) {
@@ -269,6 +275,168 @@ void clear_chat_history(void) {
     chat_scroll_offset = 0;
 }
 
+// Draw model browser panel
+static void draw_model_browser_panel(SDL_Renderer* renderer, int x, int y, int width, int height) {
+    SDL_Color text_color = {220, 220, 220, 255};
+    SDL_Color bg_color = {30, 30, 40, 255};
+    SDL_Color selected_color = {60, 100, 140, 255};
+    SDL_Color hover_color = {50, 50, 60, 255};
+    
+    // Draw panel background
+    SDL_Rect panel = {x, y, width, height};
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+    
+    // Title
+    draw_text(renderer, "MODEL BROWSER", x + 10, y + 10, (SDL_Color){100, 150, 200, 255});
+    
+    // Directory path
+    char dir_text[128];
+    snprintf(dir_text, sizeof(dir_text), "Path: %s", model_browser.directory_path);
+    draw_text(renderer, dir_text, x + 10, y + 35, text_color);
+    
+    // Refresh button
+    SDL_Rect refresh_btn = {x + width - 90, y + 30, 80, 25};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 80, 255);
+    SDL_RenderFillRect(renderer, &refresh_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &refresh_btn);
+    draw_text(renderer, "Refresh", refresh_btn.x + 15, refresh_btn.y + 6, text_color);
+    
+    // Model list
+    int list_y = y + 65;
+    int list_height = height - 130;
+    SDL_Rect list_area = {x + 10, list_y, width - 20, list_height};
+    SDL_SetRenderDrawColor(renderer, 20, 20, 25, 255);
+    SDL_RenderFillRect(renderer, &list_area);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &list_area);
+    
+    // Draw model files
+    int item_y = list_area.y + 5;
+    int visible_items = (list_height - 10) / 20;
+    for (int i = model_browser.scroll_offset; 
+         i < model_browser.model_count && i < model_browser.scroll_offset + visible_items; 
+         i++) {
+        ModelFileInfo* model = &model_browser.models[i];
+        
+        SDL_Rect item_rect = {list_area.x + 5, item_y, list_area.w - 10, 18};
+        
+        // Highlight selected
+        if (i == model_browser.selected_index) {
+            SDL_SetRenderDrawColor(renderer, selected_color.r, selected_color.g, selected_color.b, 255);
+            SDL_RenderFillRect(renderer, &item_rect);
+        }
+        
+        // Draw filename
+        draw_text(renderer, model->filename, item_rect.x + 5, item_rect.y + 2, text_color);
+        
+        // Draw file size
+        char size_str[32];
+        format_file_size(model->file_size, size_str, sizeof(size_str));
+        draw_text(renderer, size_str, item_rect.x + item_rect.w - 80, item_rect.y + 2, 
+                 (SDL_Color){150, 150, 150, 255});
+        
+        item_y += 20;
+    }
+    
+    // Action buttons at bottom
+    int btn_y = y + height - 40;
+    int btn_width = (width - 40) / 3;
+    
+    SDL_Rect load_btn = {x + 10, btn_y, btn_width, 30};
+    SDL_SetRenderDrawColor(renderer, 60, 100, 60, 255);
+    SDL_RenderFillRect(renderer, &load_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &load_btn);
+    draw_text(renderer, "Load", load_btn.x + btn_width/2 - 15, load_btn.y + 8, text_color);
+    
+    SDL_Rect export_btn = {x + 20 + btn_width, btn_y, btn_width, 30};
+    SDL_SetRenderDrawColor(renderer, 60, 60, 80, 255);
+    SDL_RenderFillRect(renderer, &export_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &export_btn);
+    draw_text(renderer, "Export", export_btn.x + btn_width/2 - 20, export_btn.y + 8, text_color);
+    
+    SDL_Rect close_btn = {x + 30 + btn_width * 2, btn_y, btn_width, 30};
+    SDL_SetRenderDrawColor(renderer, 80, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &close_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &close_btn);
+    draw_text(renderer, "Close", close_btn.x + btn_width/2 - 20, close_btn.y + 8, text_color);
+}
+
+// Draw thread list panel
+static void draw_thread_list_panel(SDL_Renderer* renderer, int x, int y, int width, int height) {
+    SDL_Color text_color = {220, 220, 220, 255};
+    SDL_Color bg_color = {30, 30, 40, 255};
+    SDL_Color active_color = {60, 100, 140, 255};
+    
+    // Draw panel background
+    SDL_Rect panel = {x, y, width, height};
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+    
+    // Title
+    draw_text(renderer, "CONVERSATIONS", x + 10, y + 10, (SDL_Color){100, 150, 200, 255});
+    
+    // Thread list
+    int list_y = y + 40;
+    int list_height = height - 100;
+    SDL_Rect list_area = {x + 10, list_y, width - 20, list_height};
+    SDL_SetRenderDrawColor(renderer, 20, 20, 25, 255);
+    SDL_RenderFillRect(renderer, &list_area);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &list_area);
+    
+    // Draw threads
+    int item_y = list_area.y + 5;
+    for (int i = 0; i < thread_manager.thread_count; i++) {
+        ConversationThread* thread = &thread_manager.threads[i];
+        
+        SDL_Rect item_rect = {list_area.x + 5, item_y, list_area.w - 10, 25};
+        
+        // Highlight active thread
+        if (i == thread_manager.active_thread_index) {
+            SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+            SDL_RenderFillRect(renderer, &item_rect);
+        }
+        
+        // Draw thread name
+        draw_text(renderer, thread->name, item_rect.x + 5, item_rect.y + 5, text_color);
+        
+        // Draw message count
+        char count_str[32];
+        snprintf(count_str, sizeof(count_str), "%d msgs", thread->message_count);
+        draw_text(renderer, count_str, item_rect.x + item_rect.w - 60, item_rect.y + 5,
+                 (SDL_Color){150, 150, 150, 255});
+        
+        item_y += 30;
+    }
+    
+    // Action buttons
+    int btn_y = y + height - 45;
+    int btn_width = (width - 30) / 2;
+    
+    SDL_Rect new_btn = {x + 10, btn_y, btn_width, 30};
+    SDL_SetRenderDrawColor(renderer, 60, 100, 60, 255);
+    SDL_RenderFillRect(renderer, &new_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &new_btn);
+    draw_text(renderer, "New", new_btn.x + btn_width/2 - 12, new_btn.y + 8, text_color);
+    
+    SDL_Rect close_btn = {x + 20 + btn_width, btn_y, btn_width, 30};
+    SDL_SetRenderDrawColor(renderer, 80, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &close_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &close_btn);
+    draw_text(renderer, "Close", close_btn.x + btn_width/2 - 20, close_btn.y + 8, text_color);
+}
+
 // Draw a chat message bubble
 void draw_chat_message(SDL_Renderer* renderer, ChatMessage* msg, int x, int y, int width) {
     SDL_Color user_bg = {70, 100, 180, 255};
@@ -424,7 +592,55 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &tokens_handle);
     
+    layout_add_spacing(&layout, 5);
+    
+    // Top-K slider
+    char top_k_label[64];
+    snprintf(top_k_label, sizeof(top_k_label), "Top-K: %d", top_k);
+    SDL_Rect top_k_label_rect = layout_add_label(&layout, top_k_label, 16);
+    draw_text(renderer, top_k_label, top_k_label_rect.x, top_k_label_rect.y, text_color);
+    
+    g_top_k_slider = layout_add_element(&layout, 0, 8);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &g_top_k_slider);
+    int top_k_handle_x = g_top_k_slider.x + (int)((float)top_k / 100.0f * g_top_k_slider.w);
+    SDL_Rect top_k_handle = {top_k_handle_x - 4, g_top_k_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &top_k_handle);
+    
+    layout_add_spacing(&layout, 5);
+    
+    // Top-P slider
+    char top_p_label[64];
+    snprintf(top_p_label, sizeof(top_p_label), "Top-P: %.2f", top_p);
+    SDL_Rect top_p_label_rect = layout_add_label(&layout, top_p_label, 16);
+    draw_text(renderer, top_p_label, top_p_label_rect.x, top_p_label_rect.y, text_color);
+    
+    g_top_p_slider = layout_add_element(&layout, 0, 8);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+    SDL_RenderFillRect(renderer, &g_top_p_slider);
+    int top_p_handle_x = g_top_p_slider.x + (int)(top_p * g_top_p_slider.w);
+    SDL_Rect top_p_handle = {top_p_handle_x - 4, g_top_p_slider.y - 4, 8, 16};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &top_p_handle);
+    
     layout_add_spacing(&layout, 10);
+    
+    // Model browser button
+    g_browse_models_btn = layout_add_button(&layout, NULL, 0, 25);
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &g_browse_models_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &g_browse_models_btn);
+    draw_text(renderer, "Browse Models", g_browse_models_btn.x + 55, g_browse_models_btn.y + 6, text_color);
+    
+    // Thread list button
+    g_thread_list_btn = layout_add_button(&layout, NULL, 0, 25);
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &g_thread_list_btn);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &g_thread_list_btn);
+    draw_text(renderer, "Conversations", g_thread_list_btn.x + 55, g_thread_list_btn.y + 6, text_color);
     
     // Clear chat button
     g_clear_chat_btn = layout_add_button(&layout, NULL, 0, 25);
@@ -508,10 +724,117 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_RenderDrawRect(renderer, &g_send_btn);
     const char* send_text = state->llm_generating ? "..." : "Send";
     draw_text(renderer, send_text, g_send_btn.x + 32, g_send_btn.y + 32, text_color);
+    
+    // Draw overlay panels if visible
+    if (model_browser_visible) {
+        // Semi-transparent overlay
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+        SDL_Rect overlay = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+        SDL_RenderFillRect(renderer, &overlay);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        
+        // Model browser panel (centered)
+        int panel_w = 600;
+        int panel_h = 500;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        draw_model_browser_panel(renderer, panel_x, panel_y, panel_w, panel_h);
+    }
+    
+    if (thread_list_visible) {
+        // Semi-transparent overlay
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+        SDL_Rect overlay = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+        SDL_RenderFillRect(renderer, &overlay);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        
+        // Thread list panel (centered)
+        int panel_w = 400;
+        int panel_h = 450;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        draw_thread_list_panel(renderer, panel_x, panel_y, panel_w, panel_h);
+    }
+    
+    // Draw loading indicator if generating
+    if (state->llm_generating) {
+        int indicator_x = RENDER_WIDTH / 2 - 100;
+        int indicator_y = WINDOW_HEIGHT - 150;
+        SDL_Rect indicator_bg = {indicator_x, indicator_y, 200, 40};
+        SDL_SetRenderDrawColor(renderer, 40, 40, 50, 230);
+        SDL_RenderFillRect(renderer, &indicator_bg);
+        SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
+        SDL_RenderDrawRect(renderer, &indicator_bg);
+        
+        draw_text(renderer, "Thinking...", indicator_x + 60, indicator_y + 12, 
+                 (SDL_Color){150, 200, 255, 255});
+    }
 }
 
 void handle_llm_tab_click(AppState* state, int x, int y) {
     if (!state) return;
+    
+    // Handle model browser panel clicks
+    if (model_browser_visible) {
+        int panel_w = 600;
+        int panel_h = 500;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        
+        // Check if click is inside panel
+        if (x >= panel_x && x <= panel_x + panel_w &&
+            y >= panel_y && y <= panel_y + panel_h) {
+            // Handle panel clicks (TODO: implement specific button handling)
+            // For now, just close on any click inside
+            model_browser_visible = false;
+        } else {
+            // Click outside panel - close it
+            model_browser_visible = false;
+        }
+        return;
+    }
+    
+    // Handle thread list panel clicks
+    if (thread_list_visible) {
+        int panel_w = 400;
+        int panel_h = 450;
+        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
+        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
+        
+        // Check if click is inside panel
+        if (x >= panel_x && x <= panel_x + panel_w &&
+            y >= panel_y && y <= panel_y + panel_h) {
+            // Handle panel clicks (TODO: implement specific button handling)
+            thread_list_visible = false;
+        } else {
+            // Click outside panel - close it
+            thread_list_visible = false;
+        }
+        return;
+    }
+    
+    // Browse Models button
+    if (x >= g_browse_models_btn.x && x <= g_browse_models_btn.x + g_browse_models_btn.w &&
+        y >= g_browse_models_btn.y && y <= g_browse_models_btn.y + g_browse_models_btn.h) {
+        if (!model_browser_visible) {
+            init_model_browser(state);
+            scan_models_directory();
+        }
+        model_browser_visible = !model_browser_visible;
+        return;
+    }
+    
+    // Thread List button
+    if (x >= g_thread_list_btn.x && x <= g_thread_list_btn.x + g_thread_list_btn.w &&
+        y >= g_thread_list_btn.y && y <= g_thread_list_btn.y + g_thread_list_btn.h) {
+        if (thread_manager.thread_count == 0) {
+            init_thread_manager();
+        }
+        thread_list_visible = !thread_list_visible;
+        return;
+    }
     
     // Input box
     if (x >= g_input_rect.x && x <= g_input_rect.x + g_input_rect.w &&
