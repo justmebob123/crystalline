@@ -163,8 +163,32 @@ static void* root_control_thread(void* arg) {
 - Multi-epoch training is BROKEN
 - System architecture needs refactoring
 
-**NEXT STEP**: 
-Refactor root control thread to loop for multiple epochs
+**REFACTORING REQUIRED:**
+
+Both thread functions need to be wrapped in epoch loops:
+
+1. **Root Control Thread** (line 765):
+   - Add outer loop: `while (!system->shutdown)`
+   - Wait for `running=1` signal
+   - Do epoch work
+   - Set `epoch_done=1` and `running=0`
+   - Loop back
+
+2. **Sphere Threads** (line 589):
+   - Add outer loop: `while (!system->shutdown)`
+   - Wait for `running=1` signal  
+   - Process messages for one epoch
+   - When `epoch_done=1`, reset and loop back
+   - Only exit on `shutdown=1`
+
+3. **Add Shutdown Signal**:
+   - Add `atomic_int shutdown` to HierarchicalTrainingSystem
+   - Set in `hierarchical_training_free()`
+   - Check in all thread loops
+
+**Estimated Effort**: ~200 lines of changes, 2-3 hours work
+
+**AWAITING USER DECISION ON HOW TO PROCEED**
 
 ---
 
