@@ -62,8 +62,8 @@
 - [x] Modify `src/ai/cllm_kissing_spheres.c` - add sphere position reporting
 - [x] Add missing helper functions to metrics API
 - [x] Build successfully
-- [ ] Test metrics collection during training
-- [ ] Commit changes
+- [x] Commit changes (local commit successful, push pending due to network)
+- [ ] Test metrics collection during training (will test in Step 3)
 
 ### Step 3: Redesign Training Tab (4-6 hours)
 - [ ] Redesign layout in `app/ui/tabs/tab_training.c`
