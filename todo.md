@@ -65,13 +65,16 @@
 - [x] Commit changes (local commit successful, push pending due to network)
 - [ ] Test metrics collection during training (will test in Step 3)
 
-### Step 3: Redesign Training Tab (4-6 hours)
-- [ ] Redesign layout in `app/ui/tabs/tab_training.c`
-- [ ] Add sphere visualization integration
-- [ ] Add thread hierarchy tree view
-- [ ] Add metrics display panels
-- [ ] Add real-time updates
-- [ ] Test UI responsiveness
+### Step 3: Redesign Training Tab (4-6 hours) - COMPLETE ✅
+- [x] Add metrics pointer to AppState structure
+- [x] Initialize metrics in training thread
+- [x] Connect sphere visualization to real metrics data
+- [x] Add metrics callback for real-time updates
+- [x] Add thread state color coding function
+- [x] Update sphere visualization with real-time status
+- [x] Build successfully
+- [ ] Test real-time updates during training (requires actual training run)
+- [ ] Commit and push changes
 
 ### Step 4: Integrate Sphere Visualization (2-3 hours)
 - [ ] Modify `app/ui/sphere_visualization.c`

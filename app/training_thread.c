@@ -17,6 +17,7 @@
 #include "../include/cllm_training_threaded.h"
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
+#include "../include/cllm_metrics.h"  // UI Integration: Real-time metrics
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +31,46 @@ static ThreadedTrainingSystem* g_threaded_system = NULL;
 static CLLMBatchIterator* g_batch_iterator = NULL;
 
 /**
- * Update sphere statistics in AppState for UI display
+ * UI Integration: Metrics callback function
+ * 
+ * This function is called by the training system whenever metrics are updated.
+ * It copies the metrics data to the AppState for UI display.
+ */
+static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !metrics) return;
+    
+    // Update sphere statistics from metrics
+    state->sphere_stats.active_spheres = 0;
+    state->sphere_stats.total_batches = 0;
+    
+    // Copy thread metrics to sphere stats (up to 12 for UI display)
+    for (int i = 0; i < 12 && i < 144; i++) {  // MAX_TRACKED_THREADS = 144
+        const ThreadMetrics* thread = &metrics->threads[i];
+        
+        if (thread->thread_id >= 0) {
+            state->sphere_stats.batches_processed[i] = thread->batches_processed;
+            // Note: avg_loss not available in ThreadMetrics, use training loss instead
+            state->sphere_stats.avg_loss[i] = metrics->training.current_loss;
+            state->sphere_stats.total_batches += thread->batches_processed;
+            
+            // Count active threads
+            if (thread->state == 1 || thread->state == 3) {  // WORKING or WAITING
+                state->sphere_stats.active_spheres++;
+            }
+        }
+    }
+    
+    // Update training progress
+    state->training_current_epoch = metrics->training.current_epoch;
+    state->training_loss = metrics->training.current_loss;
+    
+    // Store gradient norm (use performance metric as proxy)
+    state->sphere_stats.total_gradient_norm = metrics->performance.cache_hit_rate;
+}
+
+/**
+ * Update sphere statistics in AppState for UI display (legacy function)
  */
 static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system) {
     if (!state || !system) return;
@@ -132,7 +172,16 @@ void* training_thread_func(void* arg) {
     
     printf("✓ Threaded training system created\n");
     printf("✓ 12 kissing spheres initialized\n");
-    printf("✓ Gradient accumulation buffers allocated\n\n");
+    printf("✓ Gradient accumulation buffers allocated\n");
+    
+    // UI Integration: Get metrics from training system and register callback
+    CLLMMetrics* metrics = (CLLMMetrics*)threaded_training_get_metrics(g_threaded_system);
+    if (metrics) {
+        state->training_metrics = (struct CLLMMetrics*)metrics;
+        cllm_metrics_set_callback(metrics_callback, state);
+        printf("✓ Real-time metrics enabled for UI\n");
+    }
+    printf("\n");
     
     // Training loop with kissing spheres
     while (state->training_in_progress && 

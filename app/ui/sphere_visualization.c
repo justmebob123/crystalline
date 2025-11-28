@@ -85,6 +85,26 @@ static SDL_Color get_activity_color(float activity) {
 }
 
 /**
+ * Get color based on thread state (UI Integration)
+ */
+static SDL_Color get_thread_state_color(int state) {
+    switch (state) {
+        case 0: // THREAD_STATE_IDLE
+            return (SDL_Color){40, 40, 50, 255};  // Dark gray
+        case 1: // THREAD_STATE_WORKING
+            return (SDL_Color){100, 200, 100, 255};  // Green
+        case 2: // THREAD_STATE_CONTROL
+            return (SDL_Color){200, 150, 50, 255};  // Gold
+        case 3: // THREAD_STATE_WAITING
+            return (SDL_Color){100, 150, 200, 255};  // Blue
+        case 4: // THREAD_STATE_TERMINATED
+            return (SDL_Color){200, 50, 50, 255};  // Red
+        default:
+            return (SDL_Color){60, 60, 70, 255};  // Default gray
+    }
+}
+
+/**
  * Draw the 12 kissing spheres in a circular arrangement
  */
 void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds) {
@@ -112,9 +132,19 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     // Draw title
     draw_text(renderer, "KISSING SPHERES ARCHITECTURE", bounds.x + 10, bounds.y + 10, text_color);
     
-    // Draw center sphere (coordinator)
+    // UI Integration: Draw subtitle with real-time status
+    if (state->training_metrics) {
+        char status_text[128];
+        snprintf(status_text, sizeof(status_text), "Real-time Metrics | Epoch %d | Loss: %.4f",
+                state->training_current_epoch, state->training_loss);
+        draw_text(renderer, status_text, bounds.x + 10, bounds.y + 30, 
+                 (SDL_Color){150, 150, 150, 255});
+    }
+    
+    // Draw center sphere (Node Zero - Control Thread)
     draw_filled_circle(renderer, center_x, center_y, sphere_radius / 2, center_color);
     draw_circle_outline(renderer, center_x, center_y, sphere_radius / 2, text_color);
+    draw_text(renderer, "0", center_x - 4, center_y - 6, text_color);
     
     // Find max batch count for normalization
     int max_batches = 1;

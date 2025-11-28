@@ -287,6 +287,9 @@ typedef struct {
         float total_gradient_norm;    // Total gradient magnitude
         int total_batches;            // Total batches across all spheres
     } sphere_stats;
+    
+    // UI Integration: Real-time metrics from training system
+    struct CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h
 } AppState;
 
 // Utility functions - use library versions where available

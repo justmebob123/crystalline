@@ -2300,3 +2300,13 @@ int threaded_training_get_next_sphere_id(void* user_data) {
     
     return (int)next_id;
 }
+
+/**
+ * Get metrics from training system
+ * 
+ * UI Integration: Returns the metrics object for real-time monitoring
+ */
+struct CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system) {
+    if (!system) return NULL;
+    return system->metrics;
+}

@@ -192,6 +192,16 @@ int threaded_training_get_num_workers(ThreadedTrainingSystem* system);
  */
 int threaded_training_get_next_sphere_id(void* user_data);
 
+/**
+ * Get metrics from training system
+ * 
+ * UI Integration: Returns the metrics object for real-time monitoring
+ * 
+ * @param system Threaded training system
+ * @return Pointer to metrics object, or NULL if not available
+ */
+struct CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system);
+
 #ifdef __cplusplus
 }
 #endif
