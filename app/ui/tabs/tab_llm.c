@@ -382,7 +382,7 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
             CLLMModel* loaded = cllm_read_model(model_paths[i]);
             if (loaded) {
                 if (state->cllm_model) {
-                    // TODO: Free old model
+                    cllm_free_model(state->cllm_model);  // Free old model to prevent memory leak
                 }
                 state->cllm_model = loaded;
                 if (state->cllm_inference) {
