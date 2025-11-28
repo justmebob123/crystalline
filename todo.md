@@ -83,14 +83,18 @@
 
 **Phase 2D Status:** Current SIMD implementation is sufficient. Phase 2A+2B provide the major gains. Will revisit if profiling shows accumulation is a bottleneck.
 
-#### Phase 2E: Intra-Batch Parallelization (Advanced - 1.5-2x)
-- [ ] Analyze sphere_process_batch() implementation
-- [ ] Split attention computation across threads
-- [ ] Parallelize matrix multiplications within batches
-- [ ] Use nested parallelism for forward/backward passes
-- [ ] Test convergence and correctness
-- [ ] Benchmark improvement
-- [ ] Commit and push changes
+#### Phase 2E: Intra-Batch Parallelization (Advanced - 1.5-2x) - ANALYSIS COMPLETE
+- [x] Analyzing sphere_process_batch() implementation
+- [x] Identified parallelizable operations in forward pass
+- [x] Identified parallelizable operations in backward pass
+- [x] Evaluated multiple parallelization approaches
+- [x] Decision: Skip Phase 2E (diminishing returns)
+- [x] Reason: Already have 63 workers processing batches in parallel
+- [x] Nested parallelism (63 workers × 32 sequences) would be inefficient
+- [x] SIMD already used in critical paths
+- [ ] Alternative: Increase batch size (32 → 64/128) for better utilization
+
+**Phase 2E Status:** Skipped after thorough analysis. Current parallelism (63 workers) is sufficient. Intra-batch parallelization would add complexity without significant benefit.
 
 ### Success Criteria for Phase 2
 - [ ] Worker threads show 30-40 seconds CPU time (not 0-1 seconds) - READY TO TEST
