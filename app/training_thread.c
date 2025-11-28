@@ -137,8 +137,32 @@ void* training_thread_func(void* arg) {
     printf("Batch size: %d\n", state->cllm_training->config.batch_size);
     printf("Sequence length: %d\n", state->cllm_training->config.sequence_length);
     
+    // CRITICAL: Validate dataset size vs batch requirements
+    size_t tokens_per_batch = state->cllm_training->config.batch_size * 
+                              state->cllm_training->config.sequence_length;
+    size_t num_tokens = state->cllm_training->num_tokens;
+    
+    printf("\nValidating dataset size...\n");
+    printf("  Dataset: %zu tokens\n", num_tokens);
+    printf("  Batch requirements: %zu tokens per batch\n", tokens_per_batch);
+    
+    // Auto-adjust batch size if dataset too small
+    if (num_tokens < tokens_per_batch) {
+        int max_batch_size = num_tokens / state->cllm_training->config.sequence_length;
+        if (max_batch_size < 1) max_batch_size = 1;
+        
+        printf("\n⚠️  WARNING: Dataset too small!\n");
+        printf("  Required: %zu tokens per batch\n", tokens_per_batch);
+        printf("  Available: %zu tokens\n", num_tokens);
+        printf("  Auto-adjusting batch_size: %d -> %d\n\n", 
+               state->cllm_training->config.batch_size, max_batch_size);
+        
+        state->cllm_training->config.batch_size = max_batch_size;
+        tokens_per_batch = max_batch_size * state->cllm_training->config.sequence_length;
+    }
+    
     // Create batch iterator from training data
-    printf("\nCreating batch iterator...\n");
+    printf("Creating batch iterator...\n");
     snprintf(state->training_status_message, sizeof(state->training_status_message),
             "Creating batch iterator...");
     state->training_preprocessing_progress = 0.85f;
@@ -168,8 +192,44 @@ void* training_thread_func(void* arg) {
         return NULL;
     }
     
+    // CRITICAL: Check if we have any batches to train on
     size_t num_batches = cllm_batch_iterator_num_batches(g_batch_iterator);
-    printf("✓ Batch iterator created: %zu batches\n", num_batches);
+    
+    printf("\n✓ Batch iterator created\n");
+    printf("  Total batches: %zu\n", num_batches);
+    printf("  Batch size: %d sequences\n", state->cllm_training->config.batch_size);
+    printf("  Sequence length: %d tokens\n", state->cllm_training->config.sequence_length);
+    printf("  Tokens per batch: %zu\n", tokens_per_batch);
+    
+    if (num_batches == 0) {
+        printf("\n❌ ERROR: No batches available for training!\n");
+        printf("  Dataset size: %zu tokens\n", num_tokens);
+        printf("  Minimum required: %zu tokens\n", tokens_per_batch);
+        printf("\n");
+        printf("SOLUTION: Either:\n");
+        printf("  1. Use a larger dataset (minimum %zu tokens)\n", tokens_per_batch);
+        printf("  2. Reduce sequence length (current: %d)\n", 
+               state->cllm_training->config.sequence_length);
+        printf("\n");
+        
+        snprintf(state->training_status_message, sizeof(state->training_status_message),
+                "ERROR: Dataset too small - need %zu tokens, have %zu", 
+                tokens_per_batch, num_tokens);
+        state->training_preprocessing_progress = 0.0f;
+        SDL_PumpEvents();
+        
+        cllm_batch_iterator_free(g_batch_iterator);
+        g_batch_iterator = NULL;
+        
+        pthread_mutex_lock(&training_mutex);
+        state->training_in_progress = false;
+        training_thread_active = false;
+        pthread_mutex_unlock(&training_mutex);
+        
+        return NULL;
+    }
+    
+    printf("✓ Training ready: %zu batches available\n\n", num_batches);
     
     // Create threaded training system with 12 kissing spheres
     printf("\nInitializing worker threads...\n");
