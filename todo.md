@@ -44,17 +44,26 @@
 
 ## Phase 4: Implementation Plan - READY TO EXECUTE
 
-### Step 1: Create Metrics System (2-3 hours)
-- [ ] Create `include/cllm_metrics.h`
-- [ ] Create `src/ai/cllm_metrics.c`
-- [ ] Implement metrics collection
-- [ ] Implement callback system
-- [ ] Test metrics flow
+### Step 1: Create Metrics System (2-3 hours) ✅ COMPLETE
+- [x] Create `include/cllm_metrics.h`
+- [x] Create `src/ai/cllm_metrics.c`
+- [x] Implement metrics collection
+- [x] Implement callback system
+- [x] Build successfully
+- [x] Committed and pushed to branch ui-integration-metrics-system
 
-### Step 2: Integrate with Training (2-3 hours)
-- [ ] Modify `src/ai/cllm_training_threaded.c` - add metrics reporting
-- [ ] Modify `src/ai/cllm_kissing_spheres.c` - add sphere position reporting
+### Step 2: Integrate with Training (2-3 hours) ✅ COMPLETE
+- [x] Add cllm_metrics.h include to cllm_training_threaded.c
+- [x] Add CLLMMetrics* to ThreadedTrainingSystem struct
+- [x] Initialize metrics in threaded_training_create()
+- [x] Update thread metrics in worker threads
+- [x] Update training metrics in train_epoch functions
+- [x] Invoke callbacks after metric updates
+- [x] Modify `src/ai/cllm_kissing_spheres.c` - add sphere position reporting
+- [x] Add missing helper functions to metrics API
+- [x] Build successfully
 - [ ] Test metrics collection during training
+- [ ] Commit changes
 
 ### Step 3: Redesign Training Tab (4-6 hours)
 - [ ] Redesign layout in `app/ui/tabs/tab_training.c`

@@ -30,6 +30,7 @@
 #include "ai/cllm_control_process.h"
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
+#include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -177,6 +178,9 @@ struct ThreadedTrainingSystem {
     // PHASE 5: Infrastructure Integration
     ControlProcess* control_process;           // Control process infrastructure
     CLLMLatticeHierarchy* root_hierarchy;      // Root of lattice hierarchy
+    
+    // UI Integration: Real-time metrics collection
+    CLLMMetrics* metrics;                      // Metrics system for UI updates
 };
 
 /**
@@ -1376,6 +1380,14 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     printf("    - %d worker threads\n", system->num_worker_spheres);
     printf("    - 12-fold symmetry structure\n\n");
     
+    // UI Integration: Initialize metrics system
+    system->metrics = cllm_metrics_create(system->num_worker_spheres);
+    if (!system->metrics) {
+        fprintf(stderr, "WARNING: Failed to create metrics system (UI updates disabled)\n");
+    } else {
+        printf("  ✓ Metrics system initialized for UI integration\n");
+    }
+    
     // Give threads time to initialize before returning
     usleep(10000);  // 10ms - allow worker threads to start and enter wait state
     
@@ -1462,6 +1474,13 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         lattice_hierarchy_free(system->root_hierarchy);
         printf("  ✓ Root hierarchy freed\n");
     }
+    
+    // UI Integration: Cleanup metrics system
+    if (system->metrics) {
+        cllm_metrics_free(system->metrics);
+        printf("  ✓ Metrics system freed\n");
+    }
+    
     free(system);
 }
 
@@ -1540,6 +1559,11 @@ static void* sphere_worker_thread_lockfree(void* arg) {
     printf("[Worker %d] Thread started (symmetry group %d) - LOCK-FREE MODE\n", 
            ctx->sphere_id, ctx->symmetry_group);
     
+    // UI Integration: Update thread state to WORKING
+    if (system->metrics) {
+        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
+    }
+    
     int batches_processed = 0;
     
     while (atomic_load(&system->running)) {
@@ -1552,9 +1576,19 @@ static void* sphere_worker_thread_lockfree(void* arg) {
                 break;  // Epoch complete
             }
             
+            // UI Integration: Update thread state to IDLE
+            if (system->metrics) {
+                cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_IDLE);
+            }
+            
             // Yield CPU to other threads
             sched_yield();
             continue;
+        }
+        
+        // UI Integration: Update thread state to WORKING
+        if (system->metrics) {
+            cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
         }
         
         // Process batch immediately (no waiting!)
@@ -1564,11 +1598,21 @@ static void* sphere_worker_thread_lockfree(void* arg) {
         if (!ctx->is_control_thread) {
             sphere_process_batch(ctx, system->training);
             batches_processed++;
+            
+            // UI Integration: Update thread workload
+            if (system->metrics) {
+                cllm_metrics_update_thread_workload(system->metrics, ctx->sphere_id, batches_processed);
+            }
         }
         
         // Free batch
         cllm_batch_free(batch);
         ctx->current_batch = NULL;
+    }
+    
+    // UI Integration: Update thread state to TERMINATED
+    if (system->metrics) {
+        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_TERMINATED);
     }
     
     printf("[Worker %d] Thread stopping (processed %d batches) - LOCK-FREE\n", 
@@ -1871,6 +1915,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     printf("\n=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===\n");
     printf("Using %d worker threads (lock-free work queue)\n", system->num_worker_spheres);
     
+    // UI Integration: Update framework status
+    if (system->metrics) {
+        cllm_metrics_update_framework_status(system->metrics, 1, 1, 1, 1);  // All active
+    }
+    
     // Reset work queue for new epoch
     work_queue_reset(system->work_queue);
     
@@ -1885,8 +1934,12 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     printf("Batch pre-fetching enabled + Lock-free work queue active\n\n");
     
     int batches_pushed = 0;
-    // Note: total_batches_in_epoch available if needed for progress reporting
-    // size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
+    size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
+    
+    // UI Integration: Initialize epoch metrics
+    if (system->metrics) {
+        cllm_metrics_update_training_progress(system->metrics, 0, 0, total_batches_in_epoch);
+    }
     
     // Push all batches to work queue
     printf("Pushing batches to work queue...\n");
@@ -1912,6 +1965,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
         }
         
         batches_pushed++;
+        
+        // UI Integration: Update step progress
+        if (system->metrics) {
+            cllm_metrics_update_training_progress(system->metrics, 0, batches_pushed, total_batches_in_epoch);
+        }
         
         // Log progress
         if (batches_pushed % 500 == 0) {
@@ -1970,6 +2028,12 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system) {
     }
     
     float avg_loss = (valid_workers > 0) ? epoch_loss / valid_workers : 0.0f;
+    
+    // UI Integration: Update final loss and invoke callbacks
+    if (system->metrics) {
+        cllm_metrics_update_loss(system->metrics, avg_loss);
+        cllm_metrics_invoke_callbacks(system->metrics);
+    }
     
     printf("\nEpoch complete (LOCK-FREE):\n");
     printf("  Total batches: %d\n", batches_pushed);

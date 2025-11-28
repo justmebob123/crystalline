@@ -17,6 +17,7 @@
 #include "../include/cllm_mathematical_constants.h"
 #include "../include/prime_lattice_core.h"
 #include "../include/prime_float_math.h"
+#include "../include/cllm_metrics.h"  // UI Integration: Sphere position reporting
 
 /**
  * Compute lattice distance between two tokens using angular positions
@@ -153,6 +154,41 @@ void cllm_initialize_kissing_spheres(CLLMModel* model) {
     }
     
     printf("\n");
+}
+
+/**
+ * UI Integration: Report sphere positions to metrics system
+ * 
+ * Extracts angular positions from tokens and reports them to the metrics
+ * system for visualization in the UI.
+ * 
+ * @param model CLLM model with tokens
+ * @param metrics Metrics system to report to
+ * @param thread_id Thread ID for this sphere
+ */
+void cllm_report_sphere_position(CLLMModel* model, CLLMMetrics* metrics, int thread_id) {
+    if (!model || !metrics || thread_id < 0) return;
+    
+    // For now, we'll use the thread_id to select a token to represent this sphere
+    // In a full implementation, each thread would track its current token
+    uint32_t token_id = thread_id % model->vocab_size;
+    if (token_id >= model->vocab_size) return;
+    
+    CLLMToken* token = &model->tokens[token_id];
+    
+    // Calculate angular position for this token
+    AngularPosition pos;
+    double wavelength = get_phonetic_wavelength(token->token_str[0]);
+    angular_position_calculate(token->prime_encoding, token_id, 0, wavelength, &pos);
+    
+    // Convert to 3D position for metrics
+    float position[3];
+    position[0] = (float)pos.theta;
+    position[1] = (float)pos.distance_to_144000;
+    position[2] = (float)token->symmetry_group;
+    
+    // Report position to metrics system (state unchanged, workload 0)
+    cllm_metrics_update_thread(metrics, thread_id, THREAD_STATE_IDLE, 0.0f, position);
 }
 
 /**

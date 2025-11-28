@@ -233,6 +233,47 @@ int cllm_metrics_get_worker_threads(
  */
 void cllm_metrics_print(const CLLMMetrics* metrics);
 
+/*
+ * Create metrics system
+ */
+CLLMMetrics* cllm_metrics_create(int max_threads);
+
+/*
+ * Free metrics system
+ */
+void cllm_metrics_free(CLLMMetrics* metrics);
+
+/*
+ * Update thread state only
+ */
+void cllm_metrics_update_thread_state(CLLMMetrics* metrics, int thread_id, ThreadState state);
+
+/*
+ * Update thread workload only
+ */
+void cllm_metrics_update_thread_workload(CLLMMetrics* metrics, int thread_id, int batches_processed);
+
+/*
+ * Update training progress (epoch, step, total_steps)
+ */
+void cllm_metrics_update_training_progress(CLLMMetrics* metrics, int epoch, int step, int total_steps);
+
+/*
+ * Update loss value
+ */
+void cllm_metrics_update_loss(CLLMMetrics* metrics, float loss);
+
+/*
+ * Update framework status
+ */
+void cllm_metrics_update_framework_status(CLLMMetrics* metrics, int lattice_active, 
+                                         int angular_active, int ntt_active, int cymatic_active);
+
+/*
+ * Invoke all registered callbacks
+ */
+void cllm_metrics_invoke_callbacks(CLLMMetrics* metrics);
+
 #ifdef __cplusplus
 }
 #endif

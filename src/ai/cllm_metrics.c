@@ -296,3 +296,98 @@ void cllm_metrics_print(const CLLMMetrics* metrics) {
     
     printf("===========================\n\n");
 }
+
+/*
+ * Create metrics system
+ */
+CLLMMetrics* cllm_metrics_create(int max_threads) {
+    CLLMMetrics* metrics = (CLLMMetrics*)calloc(1, sizeof(CLLMMetrics));
+    if (!metrics) return NULL;
+    
+    cllm_metrics_init(metrics);
+    metrics->num_threads = max_threads;
+    
+    return metrics;
+}
+
+/*
+ * Free metrics system
+ */
+void cllm_metrics_free(CLLMMetrics* metrics) {
+    if (metrics) {
+        free(metrics);
+    }
+}
+
+/*
+ * Update thread state only
+ */
+void cllm_metrics_update_thread_state(CLLMMetrics* metrics, int thread_id, ThreadState state) {
+    if (!metrics || thread_id < 0 || thread_id >= MAX_TRACKED_THREADS) return;
+    
+    ThreadMetrics* thread = &metrics->threads[thread_id];
+    thread->state = state;
+    thread->thread_id = thread_id;
+}
+
+/*
+ * Update thread workload only
+ */
+void cllm_metrics_update_thread_workload(CLLMMetrics* metrics, int thread_id, int batches_processed) {
+    if (!metrics || thread_id < 0 || thread_id >= MAX_TRACKED_THREADS) return;
+    
+    ThreadMetrics* thread = &metrics->threads[thread_id];
+    thread->batches_processed = batches_processed;
+    thread->thread_id = thread_id;
+}
+
+/*
+ * Update training progress (epoch, step, total_steps)
+ */
+void cllm_metrics_update_training_progress(CLLMMetrics* metrics, int epoch, int step, int total_steps) {
+    if (!metrics) return;
+    
+    metrics->training.current_epoch = epoch;
+    metrics->training.current_step = step;
+    // Store total_steps in a way that makes sense - we can use it to calculate progress
+    (void)total_steps;  // For now, unused but available for future use
+}
+
+/*
+ * Update loss value
+ */
+void cllm_metrics_update_loss(CLLMMetrics* metrics, float loss) {
+    if (!metrics) return;
+    
+    metrics->training.current_loss = loss;
+    
+    // Update best loss if this is better
+    if (loss < metrics->training.best_loss || metrics->training.best_loss == 0.0f) {
+        metrics->training.best_loss = loss;
+    }
+}
+
+/*
+ * Update framework status
+ */
+void cllm_metrics_update_framework_status(CLLMMetrics* metrics, int lattice_active, 
+                                         int angular_active, int ntt_active, int cymatic_active) {
+    if (!metrics) return;
+    
+    metrics->framework.using_lattice_embeddings = lattice_active;
+    metrics->framework.using_angular_attention = angular_active;
+    metrics->framework.using_ntt_attention = ntt_active;
+    metrics->framework.using_cymatic_training = cymatic_active;
+}
+
+/*
+ * Invoke all registered callbacks
+ */
+void cllm_metrics_invoke_callbacks(CLLMMetrics* metrics) {
+    if (!metrics) return;
+    
+    // Invoke the global callback if registered
+    if (g_metrics_callback) {
+        g_metrics_callback(metrics, g_metrics_user_data);
+    }
+}

@@ -46,6 +46,19 @@ int cllm_verify_kissing_spheres(CLLMModel* model);
  */
 void cllm_kissing_spheres_stats(CLLMModel* model);
 
+/**
+ * UI Integration: Report sphere positions to metrics system
+ * 
+ * Extracts angular positions from tokens and reports them to the metrics
+ * system for visualization in the UI.
+ * 
+ * @param model CLLM model with tokens
+ * @param metrics Metrics system to report to
+ * @param thread_id Thread ID for this sphere
+ */
+struct CLLMMetrics;  // Forward declaration
+void cllm_report_sphere_position(CLLMModel* model, struct CLLMMetrics* metrics, int thread_id);
+
 #ifdef __cplusplus
 }
 #endif
