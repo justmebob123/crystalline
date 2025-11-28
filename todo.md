@@ -29,41 +29,54 @@
 1. **Serial Batch Loading** (15% of time) - Main thread loads batches one-by-one
 2. **Excessive Barrier Synchronization** - Workers wait idle at barriers
 3. **Forward/Backward Not Fully Parallel** (70% of time) - Sequential through layers
-4. **Serial Gradient Accumulation** (10% of time) - Control thread accumulates serially
+
+### Phase 2 Implementation Plan Created
+- [x] Created PHASE2_IMPLEMENTATION_PLAN.md with detailed strategy
+- [x] Analyzed all bottlenecks with exact code locations
+- [x] Verified SIMD gradient accumulation already implemented
+- [x] Prioritized optimizations by impact and complexity
+- [x] Committed and pushed plan (commit 38ef2b3)
 
 ### Phase 2 Tasks (5-10x Speedup Expected)
 
-#### Task 1: Parallelize Batch Loading
-- [ ] Analyze current batch loading in cllm_training_threaded.c (lines 1350-1380)
-- [ ] Implement parallel batch pre-fetching
-- [ ] Use thread pool for concurrent batch loading
+#### Phase 2A: Batch Pre-fetching (Quick Win - 1.2-1.5x)
+- [ ] Add batch queue structure to ThreadedTrainingSystem
+- [ ] Create batch pre-fetch thread (producer-consumer pattern)
+- [ ] Modify main loop to consume from queue
+- [ ] Overlap batch loading with computation
 - [ ] Benchmark improvement
+- [ ] Commit and push changes
 
-#### Task 2: Reduce Barrier Synchronization
-- [ ] Analyze barrier usage in cllm_training_threaded.c (lines 1427, 1430)
-- [ ] Implement lock-free work queues
-- [ ] Add work stealing for dynamic load balancing
-- [ ] Remove unnecessary synchronization points
+#### Phase 2B: Lock-Free Work Queue (High Impact - 2-3x)
+- [ ] Design lock-free work queue with atomic operations
+- [ ] Replace pthread_barrier with work queue
+- [ ] Implement work stealing for dynamic load balancing
+- [ ] Remove synchronization points at lines 1418, 1421
+- [ ] Test for race conditions
 - [ ] Benchmark improvement
+- [ ] Commit and push changes
 
-#### Task 3: Parallelize Forward Pass Within Batches
+#### Phase 2C: SIMD Gradient Accumulation (ALREADY DONE)
+- [x] Verified cllm_simd_accumulate_gradients uses AVX2
+- [x] Verified cllm_simd_scale_gradients uses AVX2
+- [x] Confirmed 314 SIMD instructions in compiled code
+
+#### Phase 2D: Parallel Reduction for Gradients (Medium Impact - 1.2-1.3x)
+- [ ] Implement tree-based parallel reduction
+- [ ] Replace serial loop with parallel accumulation
+- [ ] Use worker threads for gradient accumulation
+- [ ] Overlap accumulation with next batch loading
+- [ ] Benchmark improvement
+- [ ] Commit and push changes
+
+#### Phase 2E: Intra-Batch Parallelization (Advanced - 1.5-2x)
 - [ ] Analyze sphere_process_batch() implementation
 - [ ] Split attention computation across threads
-- [ ] Parallelize matrix multiplications
-- [ ] Use SIMD for element-wise operations
+- [ ] Parallelize matrix multiplications within batches
+- [ ] Use nested parallelism for forward/backward passes
+- [ ] Test convergence and correctness
 - [ ] Benchmark improvement
-
-#### Task 4: Parallelize Backward Pass Within Batches
-- [ ] Analyze backward pass in sphere_process_batch()
-- [ ] Parallelize gradient computation
-- [ ] Split backpropagation across threads
-- [ ] Benchmark improvement
-
-#### Task 5: Optimize Gradient Accumulation
-- [ ] Analyze accumulate_gradients_lockfree() function
-- [ ] Implement SIMD-accelerated gradient accumulation
-- [ ] Use parallel reduction instead of serial accumulation
-- [ ] Benchmark improvement
+- [ ] Commit and push changes
 
 ### Success Criteria for Phase 2
 - [ ] Worker threads show 30-40 seconds CPU time (not 0-1 seconds)
