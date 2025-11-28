@@ -458,11 +458,16 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // MASTER PLAN: Create control thread (Node Zero) first
     printf("DEBUG: [STEP 3] Creating Node Zero (control thread)\n"); fflush(stdout);
+    // OPTIMIZATION: Reduce thread stack size from 8MB to 1MB (saves 455MB with 65 threads)
+    pthread_attr_t thread_attr;
+    pthread_attr_init(&thread_attr);
+    pthread_attr_setstacksize(&thread_attr, 1024 * 1024);  // 1MB stack
     system->has_control_thread = 1;
     system->control_running = 1;
     
-    int rc = pthread_create(&system->control_thread, NULL, 
+    int rc = pthread_create(&system->control_thread, &thread_attr, 
                            control_thread_func, system);
+    pthread_attr_destroy(&thread_attr);
     if (rc != 0) {
         fprintf(stderr, "ERROR: Failed to create control thread (error %d)\n", rc);
         // Cleanup
@@ -482,8 +487,13 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     printf("  Creating %d worker threads...\n", system->num_worker_spheres);
     for (int i = 0; i < system->num_worker_spheres; i++) {
         printf("DEBUG: [STEP 5] Creating worker %d/%d\n", i+1, system->num_worker_spheres); fflush(stdout);
-        rc = pthread_create(&system->sphere_contexts[i]->thread, NULL, 
+        // OPTIMIZATION: Use 1MB stack for workers
+        pthread_attr_t worker_attr;
+        pthread_attr_init(&worker_attr);
+        pthread_attr_setstacksize(&worker_attr, 1024 * 1024);
+        rc = pthread_create(&system->sphere_contexts[i]->thread, &worker_attr, 
                            sphere_worker_thread, system->sphere_contexts[i]);
+        pthread_attr_destroy(&worker_attr);
         if (rc != 0) {
             fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
             // Stop control thread
@@ -862,8 +872,13 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         );
         
         // Start child thread
-        pthread_create(&parent->children[i]->thread, NULL, 
+        // OPTIMIZATION: Use 1MB stack for child threads
+        pthread_attr_t child_attr;
+        pthread_attr_init(&child_attr);
+        pthread_attr_setstacksize(&child_attr, 1024 * 1024);
+        pthread_create(&parent->children[i]->thread, &child_attr, 
                       sphere_worker_thread, parent->children[i]);
+        pthread_attr_destroy(&child_attr);
     }
     
     printf("[Sphere %d] Spawned %d children, transitioned to control thread\n", 
