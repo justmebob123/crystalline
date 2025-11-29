@@ -7,7 +7,7 @@
 #include "prime_randomization.h"
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
+// #include <math.h>  // REMOVED: Not using any math.h functions
 
 /**
  * Check if a number is prime

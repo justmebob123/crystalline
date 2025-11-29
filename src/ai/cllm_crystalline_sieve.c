@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>
+#include "prime_float_math.h"  // Using crystalline math instead of math.h
 
 #define SEGMENT_SIZE 32768  // 32KB segments for L1 cache efficiency
 
@@ -282,7 +282,7 @@ uint64_t crystalline_get_nth_prime_fast(uint32_t n) {
     // Using: p_n ≈ n * ln(n) for n > 5
     uint64_t limit = n * 15;
     if (n > 100) {
-        limit = (uint64_t)(n * (log((double)n) + log(log((double)n)))) + 100;
+        limit = (uint64_t)(n * (prime_logf((double)n) + prime_logf(prime_logf((double)n)))) + 100;
     }
     
     uint64_t* primes = NULL;
