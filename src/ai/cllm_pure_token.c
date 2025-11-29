@@ -11,15 +11,14 @@
 #include "../../include/prime_math_custom.h"
 #include "../../include/prime_bigint_transcendental.h"
 #include "../../include/bigfixed_constants.h"
-#include "../../include/cllm_crystalline_sieve.h"
+#include "../../include/prime_rainbow.h"  // Rainbow table - single source of primes
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#define PRIME_CACHE_SIZE 100000  // Increased from 10000 for large vocab models
+#define PRIME_CACHE_SIZE 100000  // Target number of primes to generate
 
-static uint64_t prime_cache[PRIME_CACHE_SIZE];
-static bool prime_cache_initialized = false;
+static bool rainbow_table_initialized = false;
 
 /*
  * Pure integer square root using Newton's method
@@ -42,22 +41,36 @@ static uint64_t isqrt(uint64_t n) {
     return x;
 }
 
-// OPTIMIZED: Use crystalline sieve with 12-fold symmetry
-// Generates 100,000 primes in ~10ms (10x faster than basic sieve)
-// Uses segmented sieving with 32KB cache-friendly segments
-static void init_prime_cache(void) {
-    if (prime_cache_initialized) return;
+// OPTIMIZED: Use rainbow table with crystalline sieve
+// Rainbow table is the SINGLE SOURCE OF TRUTH for all primes
+// Generates 100,000 primes in ~100ms using fast sieve with 12-fold symmetry
+static void init_rainbow_table(void) {
+    if (rainbow_table_initialized) return;
     
-    printf("Initializing prime cache (100,000 primes using crystalline sieve)...\n");
+    printf("Initializing rainbow table (100,000 primes using crystalline sieve)...\n");
     
-    // Use the optimized crystalline sieve with 12-fold symmetry
-    // This is 10-100x faster than basic sieve and uses less memory
-    crystalline_init_prime_cache_fast(prime_cache, PRIME_CACHE_SIZE);
+    // Initialize rainbow table
+    rainbow_table_init();
     
-    prime_cache_initialized = true;
+    // Load important primes first (sacred, Mersenne, etc.)
+    int important_count = rainbow_table_load_important_primes();
+    printf("✓ Loaded %d important primes\n", important_count);
     
-    printf("✓ Prime cache initialized: %u primes (2 to %lu)\n", 
-           PRIME_CACHE_SIZE, prime_cache[PRIME_CACHE_SIZE - 1]);
+    // Generate remaining primes using fast sieve
+    int generated = rainbow_table_generate_primes(PRIME_CACHE_SIZE);
+    if (generated < 0) {
+        fprintf(stderr, "ERROR: Failed to generate primes\n");
+        return;
+    }
+    
+    rainbow_table_initialized = true;
+    
+    int total = rainbow_table_get_count();
+    BigInt* last_prime = rainbow_table_get_prime(total - 1);
+    uint64_t last_prime_val = last_prime ? bigint_to_uint64(last_prime) : 0;
+    
+    printf("✓ Rainbow table initialized: %d primes (2 to %lu)\n", 
+           total, last_prime_val);
 }
 
 
@@ -74,21 +87,39 @@ bool crystalline_is_prime(uint64_t n) {
 }
 
 uint64_t crystalline_get_nth_prime(uint32_t n) {
-    init_prime_cache();
+    init_rainbow_table();
     
-    if (n < PRIME_CACHE_SIZE) {
-        return prime_cache[n];
+    // Get prime from rainbow table
+    BigInt* prime = rainbow_table_get_prime(n);
+    if (prime) {
+        return bigint_to_uint64(prime);
     }
     
-    uint64_t count = PRIME_CACHE_SIZE;
-    uint64_t candidate = prime_cache[PRIME_CACHE_SIZE - 1] + 2;
+    // If not in table, generate more primes
+    int current_count = rainbow_table_get_count();
+    if (n >= (uint32_t)current_count) {
+        // Generate more primes
+        int needed = (n - current_count) + 1000;  // Generate extra for future use
+        rainbow_table_generate_primes(needed);
+        
+        // Try again
+        prime = rainbow_table_get_prime(n);
+        if (prime) {
+            return bigint_to_uint64(prime);
+        }
+    }
+    
+    // Fallback: use trial division (should rarely happen)
+    fprintf(stderr, "WARNING: Rainbow table failed, using fallback for prime %u\n", n);
+    uint64_t count = 0;
+    uint64_t candidate = 2;
     
     while (count <= n) {
         if (crystalline_is_prime(candidate)) {
             if (count == n) return candidate;
             count++;
         }
-        candidate += 2;
+        candidate++;
     }
     
     return candidate;
@@ -96,6 +127,8 @@ uint64_t crystalline_get_nth_prime(uint32_t n) {
 
 void crystalline_factorize(uint64_t number, uint64_t* factors, uint8_t* num_factors) {
     if (!factors || !num_factors) return;
+    
+    init_rainbow_table();
     
     *num_factors = 0;
     
@@ -127,7 +160,7 @@ void crystalline_factorize(uint64_t number, uint64_t* factors, uint8_t* num_fact
 void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int precision) {
     if (!coords) return;
     
-    init_prime_cache();
+    init_rainbow_table();
     
     // Initialize BigFixed structures if needed
     for (int i = 0; i < 3; i++) {
@@ -143,18 +176,24 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
         coords[i].negative = 0;
     }
     
-    // Find prime index
+    // Find prime index in rainbow table
     uint32_t prime_index = 0;
-    for (uint32_t i = 0; i < PRIME_CACHE_SIZE; i++) {
-        if (prime_cache[i] == prime) {
-            prime_index = i;
-            break;
+    int table_count = rainbow_table_get_count();
+    
+    for (int i = 0; i < table_count; i++) {
+        BigInt* table_prime = rainbow_table_get_prime(i);
+        if (table_prime) {
+            uint64_t table_prime_val = bigint_to_uint64(table_prime);
+            if (table_prime_val == prime) {
+                prime_index = i;
+                break;
+            }
+            if (table_prime_val > prime) break;
         }
-        if (prime_cache[i] > prime) break;
     }
     
-    // If prime not in cache, estimate index
-    if (prime_index == 0 && prime > prime_cache[PRIME_CACHE_SIZE - 1]) {
+    // If prime not in table, estimate index
+    if (prime_index == 0) {
         // Approximate: prime_index ≈ prime / ln(prime)
         // For simplicity, use prime_index = prime / 10 as rough estimate
         prime_index = (uint32_t)(prime / 10);
