@@ -681,13 +681,13 @@ GradientBuffer* backprop_tensor_to_buffer(const Tensor* tensor, int sphere_id, i
 }
 
 Tensor* backprop_buffer_to_tensor(const GradientBuffer* buffer, const size_t* shape, size_t ndim) {
-    if (!buffer || !shape) return NULL;
+    if (!buffer || !shape || ndim == 0) return NULL;
     
     // Convert size_t shape to uint32_t
     uint32_t* shape_u32 = (uint32_t*)malloc(ndim * sizeof(uint32_t));
     if (!shape_u32) return NULL;  // Memory allocation check
     
-    // Initialize shape_u32 array to suppress false positive warning
+    // Initialize shape_u32 array (guaranteed to execute at least once since ndim > 0)
     for (size_t i = 0; i < ndim; i++) {
         shape_u32[i] = (uint32_t)shape[i];
     }
