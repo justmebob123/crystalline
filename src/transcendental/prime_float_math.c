@@ -317,11 +317,79 @@ double prime_tanh(double x) {
     return (exp_x - exp_neg_x) / (exp_x + exp_neg_x);
 }
 
+// Cache for powers of 3 (common in L_lattice formula)
+static double pow3_cache[100] = {0};
+static int pow3_cache_initialized = 0;
+
+static void init_pow3_cache(void) {
+    if (pow3_cache_initialized) return;
+    
+    // Pre-compute 3^x for x in [0.0, 10.0] with 0.1 precision
+    for (int i = 0; i < 100; i++) {
+        double exp = (double)i / 10.0;
+        pow3_cache[i] = prime_exp(exp * prime_log(3.0));
+    }
+    
+    pow3_cache_initialized = 1;
+}
+
 double prime_pow(double x, double y) {
-    if (x < 0.0 && (int)y != y) return 0.0;
-    if (x == 0.0 && y <= 0.0) return 0.0;
+    // Fast path: y == 0
     if (y == 0.0) return 1.0;
     
+    // Fast path: y == 1
+    if (y == 1.0) return x;
+    
+    // Fast path: x == 0
+    if (x == 0.0) {
+        if (y <= 0.0) return 0.0;
+        return 0.0;
+    }
+    
+    // Fast path: x < 0 and y is not integer
+    if (x < 0.0 && (int)y != y) return 0.0;
+    
+    // Fast path: Small positive integer exponents (common case)
+    if (y == (int)y && y > 0.0 && y < 10.0) {
+        int int_exp = (int)y;
+        double result = 1.0;
+        for (int i = 0; i < int_exp; i++) {
+            result *= x;
+        }
+        return result;
+    }
+    
+    // Fast path: Powers of 3 (very common in L_lattice)
+    if (x == 3.0) {
+        // Initialize cache on first use
+        if (!pow3_cache_initialized) {
+            init_pow3_cache();
+        }
+        
+        // Check if exponent is in cache range [0.0, 10.0]
+        if (y >= 0.0 && y <= 10.0) {
+            int cache_idx = (int)(y * 10.0);
+            if (cache_idx >= 0 && cache_idx < 100) {
+                // Interpolate between cached values for better precision
+                double frac = (y * 10.0) - cache_idx;
+                if (frac < 0.01 || cache_idx == 99) {
+                    return pow3_cache[cache_idx];
+                } else {
+                    // Linear interpolation
+                    double v1 = pow3_cache[cache_idx];
+                    double v2 = pow3_cache[cache_idx + 1];
+                    return v1 + frac * (v2 - v1);
+                }
+            }
+        }
+    }
+    
+    // Fast path: Powers of 2 (common)
+    if (x == 2.0 && y == (int)y && y > 0.0 && y < 64.0) {
+        return (double)(1ULL << (int)y);
+    }
+    
+    // Standard path: Use exp(y * log(x))
     return prime_exp(y * prime_log(x));
 }
 
