@@ -298,10 +298,21 @@ When moving functionality between layers:
 **Proceeding with Option A: Mathematical Integration (OBJECTIVES 15-18)**
 
 **Task 4.1: Integrate Angular Attention into Main Attention**
-- [ ] Locate main attention mechanism in `src/ai/cllm_attention.c`
-- [ ] Replace dot product with angular attention call
-- [ ] Use `angular_attention_score()` from algorithms layer
+
+**Analysis Complete:** Angular attention is fully implemented but requires token IDs, while main attention works with embeddings.
+
+**Implementation Approach:**
+- [ ] Create `cllm_attention_forward_with_tokens()` in `cllm_attention.c`
+- [ ] This function accepts both embeddings AND token IDs
+- [ ] When token IDs available: use angular attention
+- [ ] When token IDs unavailable: fall back to dot product
+- [ ] Modify `cllm_forward_training()` to pass token IDs to attention
 - [ ] Test and verify correctness
+
+**Files to Modify:**
+- `src/ai/cllm_attention.c` - Add new function
+- `include/cllm.h` or `include/ai/cllm_attention.h` - Add declaration
+- `src/ai/cllm_training.c` - Call new function with token IDs
 
 **Task 4.2: Initialize 12 Kissing Sphere Neighbors**
 - [ ] Verify `cllm_initialize_kissing_spheres()` exists

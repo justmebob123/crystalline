@@ -1,6 +1,10 @@
 /*
  * CLLM Attention Mechanism
  * Implements multi-head self-attention with lattice structure
+ * 
+ * HYBRID ATTENTION SYSTEM:
+ * - When token IDs available: Use angular attention (OBJECTIVE 15)
+ * - When token IDs unavailable: Use standard dot product attention
  */
 
 #include <stdio.h>
@@ -12,6 +16,7 @@
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
 #include "../include/cllm_cache.h"
+#include "../include/ai/cllm_angular_attention.h"
 
 // Forward declarations for missing math functions
 double prime_exp(double x);
@@ -301,5 +306,101 @@ void cllm_attention_free(AttentionLayer* layer) {
     if (layer->value_lattice) {
         free(layer->value_lattice);
         layer->value_lattice = NULL;
+    }
+}
+
+/**
+ * Hybrid Attention Forward Pass with Optional Angular Attention
+ * 
+ * This function implements OBJECTIVE 15: Integrate Angular Attention
+ * 
+ * When token IDs are provided, uses angular attention based on θ(n,k,λ,ω,ψ).
+ * When token IDs are NULL, falls back to standard dot product attention.
+ * 
+ * @param model CLLM model (needed for angular attention)
+ * @param layer Attention layer
+ * @param input Input embeddings [seq_len x embedding_dim]
+ * @param output Output embeddings [seq_len x embedding_dim]
+ * @param token_ids Token IDs [seq_len] (NULL for standard attention)
+ * @param key_cache Optional key cache
+ * @param value_cache Optional value cache
+ * @param seq_len Sequence length
+ */
+void cllm_attention_forward_hybrid(
+    CLLMModel* model,
+    AttentionLayer* layer,
+    float* input,
+    float* output,
+    uint32_t* token_ids,
+    float* key_cache,
+    float* value_cache,
+    int seq_len
+) {
+    if (!layer || !input || !output || seq_len <= 0) return;
+    
+    // If token IDs available and model provided, use angular attention
+    if (token_ids && model) {
+        uint32_t num_heads = layer->num_heads;
+        uint32_t head_dim = layer->head_dim;
+        uint32_t embedding_dim = num_heads * head_dim;
+        
+        // Allocate buffers for values (still need embeddings for weighted sum)
+        float* values = (float*)malloc(seq_len * embedding_dim * sizeof(float));
+        if (!values) {
+            // Fall back to standard attention if allocation fails
+            cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
+            return;
+        }
+        
+        // Project input to values
+        for (int pos = 0; pos < seq_len; pos++) {
+            float* input_vec = &input[pos * embedding_dim];
+            
+            for (uint32_t h = 0; h < num_heads; h++) {
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    float sum = 0.0f;
+                    for (uint32_t i = 0; i < head_dim; i++) {
+                        size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
+                        sum += layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    }
+                    values[pos * embedding_dim + h * head_dim + d] = sum;
+                }
+            }
+        }
+        
+        // Use cached values if available
+        if (value_cache) {
+            memcpy(values, value_cache, seq_len * embedding_dim * sizeof(float));
+        }
+        
+        // Apply angular attention for each head
+        memset(output, 0, seq_len * embedding_dim * sizeof(float));
+        
+        for (uint32_t h = 0; h < num_heads; h++) {
+            float* head_values = &values[h * head_dim];
+            float* head_output = &output[h * head_dim];
+            
+            // Use angular attention from CLLM wrapper
+            cllm_attention_forward_angular(
+                model,
+                token_ids,      // Query tokens
+                token_ids,      // Key tokens (self-attention)
+                head_values,    // Value embeddings
+                seq_len,
+                head_dim,
+                h,              // Head index
+                head_output
+            );
+        }
+        
+        // Update value cache if provided
+        if (value_cache) {
+            memcpy(value_cache, values, seq_len * embedding_dim * sizeof(float));
+        }
+        
+        free(values);
+    } else {
+        // Fall back to standard dot product attention
+        cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
     }
 }

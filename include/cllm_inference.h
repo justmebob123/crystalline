@@ -58,6 +58,8 @@ void cllm_normalize_embedding(float* embedding, int dim);
 /* Attention functions */
 void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                            float* key_cache, float* value_cache, int seq_len);
+void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, float* input, float* output,
+                                   uint32_t* token_ids, float* key_cache, float* value_cache, int seq_len);
 void cllm_multi_head_attention(CLLMInference* inf, int layer_idx, float* input, float* output, int seq_len);
 void cllm_attention_init(AttentionLayer* layer, uint32_t num_heads, uint32_t head_dim);
 void cllm_attention_free(AttentionLayer* layer);
