@@ -132,16 +132,22 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     int sphere_radius = arrangement_radius / 5;
     
     // Draw title
-    draw_text(renderer, "KISSING SPHERES ARCHITECTURE", bounds.x + 10, bounds.y + 10, text_color);
+    draw_text(renderer, "KISSING SPHERES ARCHITECTURE - 12-FOLD SYMMETRY", bounds.x + 10, bounds.y + 10, text_color);
     
     // UI Integration: Draw subtitle with real-time status
     if (state->training_metrics) {
         char status_text[128];
-        snprintf(status_text, sizeof(status_text), "Real-time Metrics | Epoch %d | Loss: %.4f",
-                state->training_current_epoch, state->training_loss);
+        snprintf(status_text, sizeof(status_text), "Real-time Metrics | Epoch %d | Loss: %.4f | Active: %d/12 Spheres",
+                state->training_current_epoch, state->training_loss, state->sphere_stats.active_spheres);
         draw_text(renderer, status_text, bounds.x + 10, bounds.y + 30, 
                  (SDL_Color){150, 150, 150, 255});
     }
+       
+       // Draw Node Zero status
+       char node_zero_status[128];
+       snprintf(node_zero_status, sizeof(node_zero_status), "NODE ZERO: Control Thread (Never Processes Batches)");
+       draw_text(renderer, node_zero_status, bounds.x + 10, bounds.y + 50,
+                (SDL_Color){200, 150, 50, 255});  // Gold color for control thread
     
     // Draw center sphere (Node Zero - Control Thread)
     draw_filled_circle(renderer, center_x, center_y, sphere_radius / 2, center_color);
@@ -222,6 +228,32 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     text_y += 18;
     
     snprintf(stats_text, sizeof(stats_text), "Gradient Norm: %.4f", 
+       text_y += 18;
+       
+       // Calculate load balancing metrics
+       int max_batches = 0;
+       int min_batches = 999999;
+       for (int i = 0; i < 12; i++) {
+           if (state->sphere_stats.batches_processed[i] > max_batches) {
+               max_batches = state->sphere_stats.batches_processed[i];
+           }
+           if (state->sphere_stats.batches_processed[i] < min_batches && state->sphere_stats.batches_processed[i] > 0) {
+               min_batches = state->sphere_stats.batches_processed[i];
+           }
+       }
+       
+       // Calculate load balance ratio (1.0 = perfect balance)
+       float load_balance = 0.0f;
+       if (max_batches > 0) {
+           load_balance = (float)min_batches / (float)max_batches;
+       }
+       
+       snprintf(stats_text, sizeof(stats_text), "Load Balance: %.2f%% (1.0 = perfect)", 
+                load_balance * 100.0f);
+       SDL_Color balance_color = load_balance > 0.8f ? (SDL_Color){100, 200, 100, 255} : 
+                                 load_balance > 0.6f ? (SDL_Color){220, 200, 80, 255} :
+                                 (SDL_Color){255, 140, 60, 255};
+       draw_text(renderer, stats_text, stats_panel.x + 10, text_y, balance_color);
              state->sphere_stats.total_gradient_norm);
     draw_text(renderer, stats_text, stats_panel.x + 10, text_y, text_color);
     
