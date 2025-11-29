@@ -1,19 +1,16 @@
 /**
- * CLLM Cymatic Frequency Training
+ * CLLM Cymatic Frequency Training (CLLM-Specific Wrapper)
  * 
  * Implements OBJECTIVE 18: Apply Cymatic Frequency Resonance to Training
  * 
- * This file applies cymatic frequencies (432 Hz, 528 Hz, etc.) to modulate
- * gradients during training. This creates smoother convergence and better
- * final loss by aligning training dynamics with natural frequency patterns.
+ * This file is a THIN WRAPPER around the general cymatic modulation algorithm
+ * in the algorithms layer. It extracts CLLM-specific data and calls the
+ * general algorithm.
  * 
- * Cymatic frequencies:
- * - 432 Hz: Universal base frequency
- * - 528 Hz: DNA repair frequency
- * - 639 Hz: Connection frequency
- * - 741 Hz: Awakening frequency
- * - 852 Hz: Intuition frequency
- * - 963 Hz: Divine frequency
+ * ARCHITECTURE:
+ * - Layer 1 (Crystalline): Cymatic frequency constants - pure math
+ * - Layer 2 (Algorithms): apply_cymatic_modulation() - general algorithm
+ * - Layer 3 (CLLM): cllm_apply_cymatic_resonance() - CLLM wrapper (THIS FILE)
  */
 
 #include <stdio.h>
@@ -22,12 +19,13 @@
 #include "../include/cllm.h"
 #include "../include/cllm_mathematical_constants.h"
 #include "../include/prime_float_math.h"
+#include "../../algorithms/include/cymatic_modulation.h"
 
 /**
- * Apply cymatic resonance to gradients
+ * Apply cymatic resonance to gradients (CLLM Wrapper)
  * 
- * Modulates gradients using cymatic frequencies and dimensional frequencies.
- * This creates a frequency-domain modulation that smooths convergence.
+ * This is a THIN WRAPPER that extracts CLLM-specific data and calls
+ * the general apply_cymatic_modulation() from the algorithms layer.
  * 
  * @param model CLLM model
  * @param gradients Gradient buffer [vocab_size x embedding_dim]
@@ -38,7 +36,7 @@ void cllm_apply_cymatic_resonance(CLLMModel* model,
                                   uint32_t training_step) {
     if (!model || !gradients) return;
     
-    // Cymatic frequencies (Hz)
+    // Cymatic frequencies (Hz) - from Layer 1 (crystalline)
     double frequencies[] = {
         CYMATIC_432_HZ,  // Universal base
         CYMATIC_528_HZ,  // DNA repair
@@ -47,48 +45,44 @@ void cllm_apply_cymatic_resonance(CLLMModel* model,
         CYMATIC_852_HZ,  // Intuition
         CYMATIC_963_HZ   // Divine
     };
-    int num_freqs = 6;
+    uint32_t num_freqs = 6;
     
-    // Compute global phase based on training step
-    // This creates a slowly varying modulation over training
-    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
-    
+    // Extract symmetry groups from CLLM tokens
     uint32_t vocab_size = model->vocab_size;
-    uint32_t embedding_dim = model->embeddings.embedding_dim;
+    uint32_t* symmetry_groups = (uint32_t*)malloc(vocab_size * sizeof(uint32_t));
+    if (!symmetry_groups) return;
     
-    // Apply to each token
-    for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-        CLLMToken* token = &model->tokens[token_id];
-        
-        // Compute resonance for this token
-        double resonance = 0.0;
-        for (int f = 0; f < num_freqs; f++) {
-            // Phase for this frequency (normalized to 432 Hz base)
-            double freq_phase = global_phase * frequencies[f] / CYMATIC_432_HZ;
-            
-            // Add harmonic contribution
-            resonance += prime_cos(freq_phase) / (double)num_freqs;
-        }
-        
-        // Get dimensional frequency for token's symmetry group
-        uint64_t phi_i = cllm_get_dimensional_frequency(token->symmetry_group);
-        
-        // Modulate resonance with φᵢ
-        double modulation = prime_cos(2.0 * PRIME_PI * (double)phi_i * resonance / 100.0);
-        
-        // Apply to gradients (10% modulation strength)
-        double scale = 1.0 + 0.1 * modulation;
-        
-        for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-            gradients[token_id * embedding_dim + dim] *= (float)scale;
-        }
+    for (uint32_t i = 0; i < vocab_size; i++) {
+        symmetry_groups[i] = model->tokens[i].symmetry_group;
     }
+    
+    // Get dimensional frequencies - from Layer 1 (crystalline)
+    uint64_t dimensional_freqs[12];
+    for (uint32_t i = 0; i < 12; i++) {
+        dimensional_freqs[i] = cllm_get_dimensional_frequency(i);
+    }
+    
+    // Call Layer 2 (algorithms) general cymatic modulation
+    apply_cymatic_modulation(
+        gradients,
+        symmetry_groups,
+        vocab_size,
+        model->embeddings.embedding_dim,
+        training_step,
+        frequencies,
+        num_freqs,
+        dimensional_freqs,
+        0.1  // 10% modulation strength
+    );
+    
+    free(symmetry_groups);
 }
 
 /**
- * Compute harmonic series for a base frequency
+ * Compute harmonic series for a base frequency (CLLM Wrapper)
  * 
- * Generates harmonics with golden ratio damping: f, 2f, 3f, ... × φ^(-i)
+ * This is a THIN WRAPPER that calls the general compute_cymatic_harmonics()
+ * from the algorithms layer.
  * 
  * @param base_freq Base frequency (Hz)
  * @param num_harmonics Number of harmonics to generate
@@ -97,17 +91,8 @@ void cllm_apply_cymatic_resonance(CLLMModel* model,
 void cllm_compute_harmonics(double base_freq,
                             uint32_t num_harmonics,
                             double* harmonics) {
-    if (!harmonics || num_harmonics == 0) return;
-    
-    for (uint32_t i = 0; i < num_harmonics; i++) {
-        // Harmonic series: f, 2f, 3f, 4f, ...
-        harmonics[i] = base_freq * (double)(i + 1);
-        
-        // Apply golden ratio damping: φ^(-i)
-        // This makes higher harmonics progressively weaker
-        double damping = prime_pow(LATTICE_PHI, -(double)i);
-        harmonics[i] *= damping;
-    }
+    // Call Layer 2 (algorithms) general harmonic computation
+    compute_cymatic_harmonics(base_freq, num_harmonics, harmonics, LATTICE_PHI);
 }
 
 /**
@@ -125,22 +110,8 @@ void cllm_analyze_gradient_spectrum(float* gradients,
                                     uint32_t size,
                                     double* spectrum,
                                     uint32_t spectrum_size) {
-    if (!gradients || !spectrum || size == 0 || spectrum_size == 0) return;
-    
-    // Simple DFT for analysis (not for training - too slow)
-    for (uint32_t k = 0; k < spectrum_size; k++) {
-        double real = 0.0;
-        double imag = 0.0;
-        
-        for (uint32_t n = 0; n < size; n++) {
-            double angle = -2.0 * PRIME_PI * (double)k * (double)n / (double)size;
-            real += (double)gradients[n] * prime_cos(angle);
-            imag += (double)gradients[n] * prime_sin(angle);
-        }
-        
-        // Power spectrum: |X[k]|²
-        spectrum[k] = real * real + imag * imag;
-    }
+    // Call Layer 2 (algorithms) general spectrum analysis
+    analyze_gradient_spectrum(gradients, size, spectrum, spectrum_size);
 }
 
 /**

@@ -22,7 +22,8 @@ SOURCES = src/numerical.c \
           src/batch_processing.c \
           src/hierarchical_prime_partitions.c \
           src/lattice_sphere_positions.c \
-          src/angular_attention.c
+          src/angular_attention.c \
+          src/cymatic_modulation.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
