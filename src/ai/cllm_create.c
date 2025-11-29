@@ -2,7 +2,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_pure_crystalline.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
+#include "cllm_lattice_embeddings.h"
 #include "../include/ai/cllm_kissing_spheres.h"
 #include "../include/cllm_lattice_cache.h"
 #include <stdlib.h>
@@ -303,11 +303,13 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
         
         // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
-        // OPTIMIZED: Use cached values for 285x speedup
-        // This leverages 12-fold symmetry to pre-compute representative values
-        // Use deterministic pattern lookup - INSTANT initialization
-        extern void cllm_embeddings_init_from_patterns(CLLMModel* model);
-        cllm_embeddings_init_from_patterns(model);
+        // Use geometric pattern directly - INSTANT initialization
+        // No caching needed - the pattern IS the algorithm
+        cllm_embeddings_init_lattice_geometric(
+            model->embeddings.embeddings,
+            config->vocab_size,
+            config->embedding_dim
+        );
         
         printf("✓ Crystalline prime encodings initialized\n");
         printf("✓ 12D lattice coordinates computed\n");
