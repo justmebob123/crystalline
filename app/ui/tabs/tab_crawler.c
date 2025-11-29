@@ -87,6 +87,12 @@ static bool rect_contains_point(SDL_Rect rect, int x, int y) {
             y >= rect.y && y < rect.y + rect.h);
 }
 
+// Helper function to check if crawler is running
+static bool check_crawler_running(void) {
+    extern int is_crawler_running(void);
+    return is_crawler_running() != 0;
+}
+
 // Helper function to add activity log entry
 static void add_activity_log(const char* message) {
     if (!message) return;
@@ -429,12 +435,18 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     
     y += 30;
     
-    // Start button - STORE BOUNDS FOR CLICK DETECTION
+    // Start/Stop button - STORE BOUNDS FOR CLICK DETECTION
     btn_start_crawler.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 35};
     btn_start_crawler.enabled = true;
     btn_start_crawler.visible = true;
-    strncpy(btn_start_crawler.label, "START CRAWLER", sizeof(btn_start_crawler.label) - 1);
-    draw_button_rect(renderer, btn_start_crawler.bounds, "START CRAWLER", success_color,
+    
+    // Change label and color based on crawler state
+    bool crawler_running = check_crawler_running();
+    const char* button_label = crawler_running ? "STOP CRAWLER" : "START CRAWLER";
+    SDL_Color button_color = crawler_running ? (SDL_Color){255, 100, 100, 255} : success_color;
+    
+    strncpy(btn_start_crawler.label, button_label, sizeof(btn_start_crawler.label) - 1);
+    draw_button_rect(renderer, btn_start_crawler.bounds, button_label, button_color,
                     text_color, mouse_x, mouse_y);
     y += 45;
     
@@ -570,10 +582,45 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         return;
     }
     
-    // Check Start Crawler button
+    // Check Start/Stop Crawler button
     if (btn_start_crawler.visible && btn_start_crawler.enabled &&
         rect_contains_point(btn_start_crawler.bounds, mouse_x, mouse_y)) {
-        add_activity_log("Start Crawler clicked (not yet implemented)");
+        
+        // Check if crawler is currently running
+        if (check_crawler_running()) {
+            // Stop the crawler
+            extern void stop_crawler_thread(void);
+            stop_crawler_thread();
+            add_activity_log("Crawler stopped");
+        } else {
+            // Start the crawler
+            
+            // Check if we have URLs in the queue
+            if (!g_crawler_state.link_queue || link_queue_size(g_crawler_state.link_queue) == 0) {
+                add_activity_log("Error: No URLs in queue. Add a URL first.");
+                return;
+            }
+            
+            // Get the first URL from the queue to use as start URL
+            char start_url[1024];
+            if (link_queue_get_next(g_crawler_state.link_queue, start_url, sizeof(start_url)) != 0) {
+                add_activity_log("Error: Failed to get URL from queue");
+                return;
+            }
+            
+            // Start the crawler thread
+            extern int start_crawler_thread(AppState* state, const char* start_url);
+            if (start_crawler_thread(state, start_url) == 0) {
+                char log_msg[512];
+                int written = snprintf(log_msg, sizeof(log_msg), "Crawler started with URL: %s", start_url);
+                if (written >= (int)sizeof(log_msg)) {
+                    strcpy(log_msg + sizeof(log_msg) - 4, "...");
+                }
+                add_activity_log(log_msg);
+            } else {
+                add_activity_log("Error: Failed to start crawler");
+            }
+        }
         return;
     }
     
