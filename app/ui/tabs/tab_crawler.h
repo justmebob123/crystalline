@@ -23,7 +23,7 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y);
 /**
  * Handle keyboard input in the crawler tab
  */
-void handle_crawler_tab_keyboard(AppState* state, SDL_Event* event);
+void handle_crawler_tab_keyboard(AppState* state, int key);
 
 /**
  * Cleanup crawler tab resources

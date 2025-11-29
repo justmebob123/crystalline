@@ -1,4 +1,15 @@
-// app/ui/tabs/tab_crawler.c - Redesigned Crawler Tab with InputManager
+#!/usr/bin/env python3
+"""
+Complete clean rewrite of crawler tab using InputManager
+Based on training tab pattern
+"""
+
+# Start with the backup
+with open('app/ui/tabs/tab_crawler.c.backup', 'r') as f:
+    original = f.read()
+
+# Create the new file content from scratch
+new_content = '''// app/ui/tabs/tab_crawler.c - Redesigned Crawler Tab with InputManager
 #include "../../app_common.h"
 #include "../../input_manager.h"
 #include "../../crawler_thread.h"
@@ -105,7 +116,7 @@ static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout
                          (SDL_Rect){x2, y_url, col2->width - (col2->padding * 2), 22});
     input_manager_set_text(g_input_manager, "crawler.add_url", "");
     
-    printf("Crawler tab: Registered 5 inputs with InputManager\n");
+    printf("Crawler tab: Registered 5 inputs with InputManager\\n");
     g_crawler_state.inputs_registered = true;
 }
 
@@ -118,12 +129,12 @@ static bool validate_prime_input(const char* input_id, uint64_t* value) {
     if (!g_input_manager) return false;
     
     const char* text = input_manager_get_text(g_input_manager, input_id);
-    if (!text || text[0] == '\0') return false;
+    if (!text || text[0] == '\\0') return false;
     
     char* endptr;
     unsigned long val = strtoul(text, &endptr, 10);
     
-    if (*endptr != '\0' || val == 0) {
+    if (*endptr != '\\0' || val == 0) {
         return false;
     }
     
@@ -366,23 +377,40 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     draw_section_header(renderer, "CRAWLER STATUS", x, y, (SDL_Color){180, 180, 200, 255});
     y += 30;
     
-    // Status display (simplified - no crawler thread access for now)
+    // Status display
+    extern CrawlerThread* g_crawler_thread;
+    bool is_running = (g_crawler_thread != NULL && g_crawler_thread->running);
+    
+    const char* status_text = is_running ? "RUNNING" : "STOPPED";
+    SDL_Color status_color = is_running ? success_color : error_color;
     draw_text(renderer, "Status:", x, y, text_color);
-    draw_text(renderer, "READY", x + 70, y, text_color);
+    draw_text(renderer, status_text, x + 70, y, status_color);
     y += 25;
     
-    draw_text(renderer, "Pages: 0", x, y, text_color);
-    y += 20;
-    
-    draw_text(renderer, "Tokens: 0", x, y, text_color);
-    y += 20;
+    if (is_running && g_crawler_thread) {
+        char pages_text[64];
+        snprintf(pages_text, sizeof(pages_text), "Pages: %d", g_crawler_thread->pages_crawled);
+        draw_text(renderer, pages_text, x, y, text_color);
+        y += 20;
+        
+        char tokens_text[64];
+        snprintf(tokens_text, sizeof(tokens_text), "Tokens: %d", g_crawler_thread->tokens_extracted);
+        draw_text(renderer, tokens_text, x, y, text_color);
+        y += 20;
+    }
     
     y += 30;
     
-    // Start button
-    SDL_Rect start_btn = {x, y, col->width - (col->padding * 2), 35};
-    draw_button_rect(renderer, start_btn, "START CRAWLER", success_color,
-                    text_color, mouse_x, mouse_y);
+    // Start/Stop button
+    if (!is_running) {
+        SDL_Rect start_btn = {x, y, col->width - (col->padding * 2), 35};
+        draw_button_rect(renderer, start_btn, "START CRAWLER", success_color,
+                        text_color, mouse_x, mouse_y);
+    } else {
+        SDL_Rect stop_btn = {x, y, col->width - (col->padding * 2), 35};
+        draw_button_rect(renderer, stop_btn, "STOP CRAWLER", error_color,
+                        text_color, mouse_x, mouse_y);
+    }
     y += 45;
     
     // Save Config button
@@ -487,3 +515,15 @@ void cleanup_crawler_tab(void) {
         g_crawler_state.link_queue = NULL;
     }
 }
+'''
+
+# Write the new file
+with open('app/ui/tabs/tab_crawler.c', 'w') as f:
+    f.write(new_content)
+
+print("\n✓ Complete rewrite successful!")
+print("  - Clean implementation using InputManager")
+print("  - Follows training tab pattern exactly")
+print("  - 5 inputs registered (4 prime config + 1 URL)")
+print("  - Proper event handling through InputManager")
+print("  - ASCII characters only (no Unicode)")
