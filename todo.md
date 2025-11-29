@@ -293,18 +293,33 @@ When moving functionality between layers:
 - [x] Build verified: Zero errors, zero warnings
 - [x] Ready to commit and push
 
-### Phase 4: Integration Verification (AFTER PHASE 3)
+### Phase 4: Integration Verification (CURRENT PRIORITY)
 
-**Option A: Mathematical Integration (OBJECTIVES 15-18)**
-1. [ ] Integrate angular attention into main attention mechanism
-2. [ ] Initialize 12 kissing sphere neighbors
-3. [ ] Integrate NTT attention for long sequences
-4. [ ] Wire cymatic resonance into training loop
+**Proceeding with Option A: Mathematical Integration (OBJECTIVES 15-18)**
 
-**Option B: Infrastructure Verification (OBJECTIVES 6-8)**
-1. [ ] Verify SIMD integration in forward/backward pass
-2. [ ] Verify 12-fold symmetry enforcement
-3. [ ] Verify control thread implementation
+**Task 4.1: Integrate Angular Attention into Main Attention**
+- [ ] Locate main attention mechanism in `src/ai/cllm_attention.c`
+- [ ] Replace dot product with angular attention call
+- [ ] Use `angular_attention_score()` from algorithms layer
+- [ ] Test and verify correctness
+
+**Task 4.2: Initialize 12 Kissing Sphere Neighbors**
+- [ ] Verify `cllm_initialize_kissing_spheres()` exists
+- [ ] Check if called from `cllm_model_create()`
+- [ ] Verify neighbors are initialized (num_neighbors = 12)
+- [ ] Test neighbor relationships
+
+**Task 4.3: Integrate NTT Attention for Long Sequences**
+- [ ] Add sequence length check in attention forward
+- [ ] Call NTT attention for seq_len >= 256
+- [ ] Use standard attention for shorter sequences
+- [ ] Benchmark performance improvement
+
+**Task 4.4: Wire Cymatic Resonance into Training Loop**
+- [ ] Locate training step in `src/ai/cllm_training.c`
+- [ ] Call `cllm_apply_cymatic_resonance()` after gradients
+- [ ] Apply before optimizer step
+- [ ] Test convergence smoothness
 
 ---
 
