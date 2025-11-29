@@ -185,9 +185,51 @@ void link_queue_destroy(LinkQueue* queue);
 
 ---
 
-## PHASE 4: COMPLETE UI ENHANCEMENTS (8 hours) 🎨
+## PHASE 4: COMPREHENSIVE UI ARCHITECTURE REDESIGN (17 hours) 🎨
 
-### 4.1 Crawler Tab Enhancement (3 hours) ✅
+**CRITICAL PRIORITY**: UI architecture overhaul required before continuing
+
+### 4.0 UI Architecture Overhaul (9 hours) ⚠️ IN PROGRESS
+
+**Problem**: Current UI assumes split layout (visualization + control panel) for all tabs, causing:
+- Crawler tab squeezed into narrow 320px control panel
+- Inconsistent layouts across tabs
+- Poor use of screen space
+- Difficult to maintain
+
+**Solution**: Flexible layout system with tab-specific layouts
+
+#### 4.0.1 Create Layout Manager (1 hour)
+- [ ] Create `app/ui/layout_manager.h` and `app/ui/layout_manager.c`
+- [ ] Define layout types (SPLIT, FULL_WIDTH, CUSTOM)
+- [ ] Implement `get_tab_layout()` function
+- [ ] Support multi-column layouts
+
+#### 4.0.2 Update Main Render Loop (1 hour)
+- [ ] Modify `app/main.c` render function
+- [ ] Get layout for current tab
+- [ ] Pass layout to tab draw functions
+- [ ] Remove hardcoded control panel logic
+
+#### 4.0.3 Redesign Crawler Tab - 3 Column Layout (2 hours)
+- [ ] Column 1: Prime Config + URL Patterns
+- [ ] Column 2: Link Management + Activity Log
+- [ ] Column 3: Status + Controls
+- [ ] Use full window width
+
+#### 4.0.4 Update LLM Tab - 2 Column Layout (2 hours)
+- [ ] Column 1: Conversation area (70%)
+- [ ] Column 2: Controls (30%)
+
+#### 4.0.5 Update Training Tab - 2 Column Layout (2 hours)
+- [ ] Column 1: Sphere visualization (60%)
+- [ ] Column 2: Metrics (40%)
+
+#### 4.0.6 Update Research Tab - 2 Column Layout (1 hour)
+- [ ] Column 1: File list (40%)
+- [ ] Column 2: Content viewer (60%)
+
+### 4.1 Crawler Tab Feature Completion (1 hour) ⏸️ BLOCKED BY 4.0
 
 **New UI Elements**:
 - [x] Prime Configuration Panel
@@ -216,7 +258,7 @@ void link_queue_destroy(LinkQueue* queue);
 
 **Files**: `app/ui/tabs/tab_crawler.c` ✅ (created and integrated)
 
-### 4.2 Training Tab Advanced Features (2 hours)
+### 4.2 Training Tab Advanced Features (2 hours) ⏸️ BLOCKED BY 4.0
 
 - [ ] Recursive sub-spheres visualization
 - [ ] Zoom and pan controls
@@ -235,7 +277,7 @@ typedef struct {
 } SphereVisualizationConfig;
 ```
 
-### 4.3 Collapsible Panels (1 hour)
+### 4.3 Collapsible Panels (1 hour) ⏸️ BLOCKED BY 4.0
 
 - [ ] Integrate collapsible headers into all tabs
 - [ ] Add click detection
@@ -243,7 +285,7 @@ typedef struct {
 - [ ] Save panel states
 - [ ] Keyboard shortcuts (Ctrl+number)
 
-### 4.4 LLM Tab Remaining Features (2 hours)
+### 4.4 LLM Tab Remaining Features (1 hour) ⏸️ BLOCKED BY 4.0
 
 - [ ] Repetition penalty slider
 - [ ] Frequency penalty slider
