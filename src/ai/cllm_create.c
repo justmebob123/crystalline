@@ -2,6 +2,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_pure_crystalline.h"
+#include "../include/ai/cllm_lattice_embeddings.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -298,7 +299,11 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     if (model->tokens) {
         printf("\n=== Initializing Crystalline Structure ===\n");
         printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
-        cllm_generate_lattice_embeddings(model);
+        
+        // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
+        // This replaces the old Fourier-based initialization
+        cllm_embeddings_init_lattice(model);
+        
         printf("✓ Crystalline prime encodings initialized\n");
         printf("✓ 12D lattice coordinates computed\n");
         printf("==========================================\n\n");
