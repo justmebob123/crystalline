@@ -1,149 +1,422 @@
-# Crystalline CLLM - Crawler Pipeline Implementation
+# Crystalline CLLM - Comprehensive Implementation Plan
 
-## 🔴 PHASE 1: CRITICAL FIXES (In Progress)
+## 🎯 MASTER PLAN & SECONDARY OBJECTIVES - COMPLETE ANALYSIS
 
-### 1.1 Preprocessor Fixes ✅ COMPLETED
+Based on comprehensive review of MASTER_PLAN.md and SECONDARY_OBJECTIVES.md, here is the complete implementation roadmap.
+
+---
+
+## 🔴 PHASE 1: CRITICAL FIXES (HIGHEST PRIORITY)
+
+### 1.1 Fix Rainbow Table to Use Clock Lattice Mapping ✅ COMPLETE
+**Priority: HIGHEST - Must fix before any visualization work**
+**Time: 2-3 hours**
+
+**Problem**: `prime_rainbow.c` uses SPIRAL formulas instead of CLOCK LATTICE mapping
+- Current: X-pattern visualization (WRONG)
+- Should be: Concentric rings (CORRECT)
+
+**Tasks**:
+- [x] Update `src/geometry/prime_rainbow.c` to use `clock_lattice.h`
+- [x] Rewrite `fast_prime_angle()` to use `map_prime_index_to_clock()`
+- [x] Rewrite `fast_prime_radius()` to use clock lattice radius
+- [x] Rewrite `fast_prime_layer()` to use clock lattice ring
+- [x] Rewrite `fast_prime_fold_coords()` to use stereographic projection
+- [x] Update function signatures: `int prime` → `int prime_index`
+- [x] Add helper functions: `fast_prime_modular()`, `fast_prime_is_sacred()`, `fast_prime_position()`
+- [x] Update `fast_prime_frequency()` to use clock position
+- [x] Update BigInt versions
+- [x] Build successful (zero errors)
+- [ ] Test visualization shows concentric rings (not X pattern) - REQUIRES USER TESTING
+- [ ] Verify 12-fold symmetry maintained - REQUIRES USER TESTING
+- [ ] Verify smaller primes on outer rings (25% radius) - REQUIRES USER TESTING
+- [ ] Verify larger primes on inner rings (100% radius) - REQUIRES USER TESTING
+- [ ] Commit and push changes
+
+**Files Modified**:
+- `src/geometry/prime_rainbow.c` ✅
+- `include/prime_rainbow.h` ✅
+
+**Documentation**:
+- `RAINBOW_TABLE_FIX_COMPLETE.md` ✅
+
+---
+
+## 🟠 PHASE 2: TRAINING PIPELINE CLEANUP (HIGH PRIORITY)
+
+### 2.1 Remove ALL Legacy Loss Functions
+**Time: 2 hours**
+
+**Critical Understanding**: Crystalline GCD-based approach IS the design, not an "optimization"
+
+**Tasks**:
+- [ ] Remove `cllm_compute_loss_training()` (standard cross-entropy)
+- [ ] Remove conditional flag check in `cllm_train_epoch()`
+- [ ] Rename `cllm_compute_loss_crystalline()` to `cllm_compute_loss()`
+- [ ] Remove `use_crystalline_optimizations` flag from config
+- [ ] Update all callers to use crystalline loss directly
+- [ ] Remove references to "standard" loss in comments/docs
+
+**Files**:
+- `src/ai/cllm_training.c`
+- `src/ai/cllm_crystalline_training.c`
+- `include/cllm_training.h`
+
+### 2.2 Rename "Crystalline" to Default
+**Time: 1 hour**
+
+**Tasks**:
+- [ ] Rename `cllm_train_epoch_crystalline()` to `cllm_train_epoch()`
+- [ ] Remove old `cllm_train_epoch()` (legacy)
+- [ ] Update all callers throughout codebase
+- [ ] Remove "_crystalline" suffix from all function names
+
+**Files**:
+- `src/ai/cllm_training.c`
+- `src/ai/cllm_crystalline_training.c`
+- `src/crawler/continuous_training.c`
+- `tools/train_model.c`
+
+### 2.3 Delete ALL Legacy Training Files
+**Time: 1 hour**
+
+**Files to Delete**:
+- [ ] `src/ai/cllm_training_mt.c`
+- [ ] `src/ai/cllm_training_parallel.c`
+- [ ] `src/ai/cllm_train_complete.c`
+- [ ] `include/cllm_training_mt.h`
+- [ ] `include/cllm_training_parallel.h`
+- [ ] `include/cllm_train_complete.h`
+- [ ] Update Makefile to remove deleted files
+- [ ] Verify build after deletions
+
+### 2.4 Remove ALL Standard Math Library Usage
+**Time: 2 hours**
+
+**Tasks**:
+- [ ] Search ALL files for `#include <math.h>`
+- [ ] Search for: sin, cos, tan, exp, log, sqrt, pow, ceil, floor, etc.
+- [ ] Replace with crystalline equivalents (prime_sinf, prime_cosf, etc.)
+- [ ] Verify NO external math dependencies
+- [ ] Add verification script to prevent future math.h usage
+
+### 2.5 Remove ALL Conditional Compilation
+**Time: 1 hour**
+
+**Tasks**:
+- [ ] Remove all feature flags from config structs
+- [ ] Remove all #ifdef blocks for features
+- [ ] One implementation per function (no alternatives)
+- [ ] No "enable_X" configuration options
+- [ ] Single code path for each operation
+
+---
+
+## 🟡 PHASE 3: THREADING ARCHITECTURE (MEDIUM PRIORITY)
+
+### 3.1 Implement Infinite Recursive Self-Similar 12-Fold Symmetry
+**Time: 4 hours**
+
+**Critical Understanding**: Infinite recursing self-similar structure
+- Each thread can become control thread for 12 children
+- Fractal hierarchy with infinite depth possible
+- Thread role duality (worker + control)
+
+**Tasks**:
+- [ ] Implement recursive control thread hierarchy
+- [ ] Each thread can spawn 12 child threads
+- [ ] Dynamic depth based on workload and CPU availability
+- [ ] Thread state transitions (worker ↔ control)
+- [ ] Control threads NEVER process batches
+- [ ] Only leaf workers process batches
+- [ ] Work assignment cascades down hierarchy
+- [ ] CPU availability monitoring at each level
+- [ ] Thread pausing mechanism to prevent overload
+- [ ] Load balancing across hierarchy
+
+**Files**:
+- `src/ai/cllm_training_threaded.c`
+- `src/ai/cllm_recursive_spheres.c`
+- `src/ai/cllm_threads.c`
+- `src/ai/infrastructure/cllm_thread_allocation.c`
+
+### 3.2 Integrate Recursive Spheres with Threading Hierarchy
+**Time: 2 hours**
+
+**Tasks**:
+- [ ] Map each thread to a sphere in hierarchy
+- [ ] Use sphere geometry for thread coordination
+- [ ] Implement sphere-based work distribution
+- [ ] Visualize thread hierarchy as sphere hierarchy
+- [ ] Use sphere contact points for synchronization
+
+**Files**:
+- `src/ai/cllm_recursive_spheres.c`
+- `src/ai/cllm_training_threaded.c`
+- `app/ui/sphere_visualization.c`
+
+---
+
+## 🟢 PHASE 4: LIBRARY ARCHITECTURE (MEDIUM PRIORITY)
+
+### 4.1 Build Both Shared and Static Libraries
+**Time: 2 hours**
+
+**Tasks**:
+- [ ] Update Makefile to build .so and .a for all components
+- [ ] libcrystalline (.so and .a)
+- [ ] libalgorithms (.so and .a)
+- [ ] libcllm (.so and .a)
+- [ ] libcrawler (.so and .a)
+- [ ] Make static libraries primary (shared optional)
+- [ ] Test all tools with static libraries
+
+**Files**:
+- `Makefile`
+- `algorithms/Makefile`
+
+---
+
+## 🔵 PHASE 5: CRAWLER ENHANCEMENTS (COMPLETED + REMAINING)
+
+### 5.1 Completed in Previous Session ✅
 - [x] Fix infinite loop bug (marker files)
 - [x] Fix clean_text() trimming bug
-- [x] Add comprehensive debug output
-- [x] Build and test
+- [x] Implement prime-based URL randomization
+- [x] Increase crawl delays to 5-15 seconds
+- [x] Implement file type detection with magic bytes
+- [x] Create PDF processor
+- [x] Create image OCR processor
+- [x] Create Office document processor (DOCX, DOC)
 
-### 1.2 Integrate Prime-Based URL Randomization (HIGH PRIORITY - 2 hours) ✅ COMPLETED
-- [x] Modify crawler_get_next_url() to use prime selection
-- [x] Load URLs into memory array
-- [x] Use prime 13 for pseudo-random selection
-- [x] Remove selected URL from array
-- [x] Deterministic but non-sequential pattern
-- [ ] Test randomization works correctly - REQUIRES USER TESTING
+### 5.2 Remaining File Processors
+**Time: 6 hours**
 
-### 1.3 Add File Type Detection (HIGH PRIORITY - 1 hour) ✅ COMPLETED
-- [x] Implement magic byte detection
-- [x] Detect HTML, PDF, images, office docs
-- [x] Route to appropriate processor
-- [x] PDF processor using pdftotext (poppler-utils)
-- [x] Image OCR processor using tesseract
-- [x] Binary files marked for future Office doc processing
-- [ ] Test with various file types - REQUIRES USER TESTING
-
-### 1.4 Improve HTML Tag Removal (MEDIUM PRIORITY - 1 hour)
-- [ ] Better script/style tag handling
-- [ ] Extract text from common elements (p, div, span, etc.)
-- [ ] Handle nested tags correctly
-- [ ] Preserve meaningful whitespace
-- [ ] Test with real web pages
-
-### 1.5 Add Robots.txt Support (MEDIUM PRIORITY - 1 hour)
-- [ ] Download and parse robots.txt
-- [ ] Check URL against rules before crawling
-- [ ] Respect crawl-delay directive
-- [ ] Cache robots.txt per domain
-- [ ] Test with various robots.txt files
-
-## 🔵 PHASE 2: FILE PROCESSORS (Aligned with SECONDARY_OBJECTIVES.md PHASE 2)
-
-### 2.1 COMPLETED FILE PROCESSORS ✅
-- [x] PDF text extraction - Using pdftotext (poppler-utils)
-- [x] Image OCR support - Using tesseract
-- [x] Office document processing - DOCX (unzip + XML), DOC (antiword)
-- [x] File type detection - Magic byte detection
-- [x] Routing infrastructure - Switch-based processor selection
-
-### 2.2 REMAINING FILE PROCESSORS (TODO)
+**Tasks**:
 - [ ] XLSX processor (spreadsheet data extraction)
 - [ ] PPTX processor (presentation text extraction)
 - [ ] ODT/ODS/ODP processor (OpenDocument format)
 - [ ] EPUB processor (ebook text extraction)
 - [ ] Archive processor (ZIP, TAR extraction)
 - [ ] Email processor (EML, MSG)
+- [ ] YAML parser (custom C implementation)
+- [ ] TOML parser (custom C implementation)
 
-### 2.3 HIGH PRIORITY ENHANCEMENTS (Next Session)
+### 5.3 Advanced Crawler Features
+**Time: 4 hours**
+
+**Tasks**:
 - [ ] Robots.txt support (2 hours)
 - [ ] Per-domain rate limiting (1 hour)
 - [ ] Content quality filtering (2 hours)
 - [ ] Advanced URL pattern detection (2 hours)
-
-### 2.4 MEDIUM PRIORITY (1-2 weeks)
 - [ ] Duplicate content detection (2 hours)
 - [ ] Crawl depth control (1 hour)
 - [ ] Domain whitelist/blacklist (1 hour)
 
-### 2.3 LOW PRIORITY (1 month+)
-- [ ] Sitemap.xml support (2 hours)
-- [ ] RSS/Atom feed support (2 hours)
-- [ ] JavaScript rendering (4 hours)
-- [ ] Distributed crawling (8 hours)
-- [ ] Crawl statistics & monitoring (2 hours)
+---
 
-### 2.4 CRYSTALLINE-SPECIFIC (Research)
-- [ ] Prime-based crawl scheduling (3 hours)
-- [ ] Semantic URL prioritization (4 hours)
-- [ ] Crystalline content hashing (2 hours)
+## 🟣 PHASE 6: UI ARCHITECTURE REDESIGN (HIGH PRIORITY)
 
-## 📊 CURRENT STATUS
+### 6.1 Create Flexible Layout System
+**Time: 9 hours**
 
-### Completed ✅
-- Infinite loop fix (marker files)
-- clean_text() trimming fix
-- Debug output added (comprehensive)
-- Crawl speed improved (5-15s delays)
-- Prime-based URL randomization (prime 13)
-- File type detection (magic bytes)
-- PDF processor (pdftotext)
-- Image OCR processor (tesseract)
-- Office document processor (DOCX, DOC)
-- Processor routing infrastructure
-- Build successful (zero errors)
+**Problem**: Current UI assumes all tabs use split layout (doesn't work for Crawler, LLM, Training, Research)
 
-### Ready for Testing ⏳
-- All file processors
-- URL randomization
-- Crawl speed
-- Model persistence
-- Complete pipeline
+**Tasks**:
+- [ ] Create `app/ui/layout_manager.h` and `app/ui/layout_manager.c` (1h)
+- [ ] Define layout types: LAYOUT_SPLIT, LAYOUT_FULL_WIDTH, LAYOUT_CUSTOM
+- [ ] Support multi-column layouts (1, 2, 3+ columns)
+- [ ] Update main render loop in `app/main.c` (1h)
+- [ ] Redesign Crawler Tab with 3-column layout (2h)
+  - Column 1: Prime Configuration + URL Patterns
+  - Column 2: Link Management + Activity Log
+  - Column 3: Status Display + Controls
+- [ ] Update LLM Tab with 2-column layout (2h)
+  - Column 1: Conversation area (70% width)
+  - Column 2: Model controls (30% width)
+- [ ] Update Training Tab with 2-column layout (2h)
+  - Column 1: Sphere visualization (60% width)
+  - Column 2: Metrics and controls (40% width)
+- [ ] Update Research Tab with 2-column layout (1h)
+  - Column 1: File list (40% width)
+  - Column 2: File content viewer (60% width)
 
-### Next Phase (High Priority)
-- Robots.txt support
-- Per-domain rate limiting
-- Content quality filtering
-- Advanced URL patterns
+### 6.2 Crawler Tab Feature Completion
+**Time: 1 hour**
 
-## 🎯 IMMEDIATE NEXT STEPS
+**Tasks**:
+- [ ] Prime Configuration Panel
+  - Frequency prime input
+  - Link selection prime input
+  - Delay min/max prime inputs
+  - Enable/disable toggle
+- [ ] Link Management Panel
+  - Add link input field
+  - Link list display (scrollable)
+  - Remove/clear buttons
+  - Queue size indicator
+- [ ] URL Pattern Selection
+  - Checkboxes for each pattern type
+  - Pattern statistics
+- [ ] Status Display
+  - Current crawl frequency
+  - Next crawl time
+  - Links in queue/crawled
+  - Current URL
 
-1. **Integrate Prime Randomization** (2 hours)
-   - Modify crawler_get_next_url()
-   - Test with real URLs
+### 6.3 Training Tab Advanced Features
+**Time: 2 hours**
 
-2. **Add File Type Detection** (1 hour)
-   - Magic byte detection
-   - Route to processors
+**Tasks**:
+- [ ] Recursive sub-spheres visualization
+- [ ] Zoom and pan controls
+- [ ] Mouse-over tooltips
+- [ ] 3D visualization mode
+- [ ] 2D/3D toggle
 
-3. **Test Complete Pipeline** (1 hour)
-   - Run crawler with all fixes
-   - Verify no infinite loops
-   - Verify randomization
-   - Verify file type handling
+### 6.4 Collapsible Panels
+**Time: 1 hour**
 
-4. **User Testing & Feedback**
-   - Get user to test
-   - Collect feedback
-   - Iterate on issues
+**Tasks**:
+- [ ] Integrate collapsible headers into all tabs
+- [ ] Add click detection
+- [ ] Implement smooth animations
+- [ ] Save panel states
+- [ ] Keyboard shortcuts (Ctrl+number)
+
+---
+
+## 🟤 PHASE 7: DOCUMENTATION & TESTING
+
+### 7.1 Documentation
+**Time: 2 hours**
+
+**Tasks**:
+- [ ] Document kissing spheres architecture
+- [ ] Document crystalline math integration
+- [ ] Document recursive threading hierarchy
+- [ ] Document clock lattice mapping
+- [ ] Document file processor architecture
+- [ ] Create DEPENDENCIES.md
+- [ ] Update README.md
+
+### 7.2 Testing
+**Time: 4 hours**
+
+**Tasks**:
+- [ ] Unit tests for each file processor
+- [ ] Test prime randomization
+- [ ] Test URL pattern detection
+- [ ] Test recursive threading
+- [ ] Test sphere visualization
+- [ ] Integration tests
+- [ ] Performance benchmarking
+- [ ] Memory leak detection
+
+---
+
+## 📊 IMPLEMENTATION TIMELINE
+
+### Total Estimated Time: ~50 hours
+
+**Week 1** (20 hours)
+- Phase 1: Rainbow Table Fix (3h) ⚠️ CRITICAL
+- Phase 2: Training Pipeline Cleanup (7h)
+- Phase 3: Threading Architecture (6h)
+- Phase 4: Library Architecture (2h)
+- Phase 5: Remaining File Processors (2h)
+
+**Week 2** (20 hours)
+- Phase 5: Advanced Crawler Features (4h)
+- Phase 6: UI Architecture Redesign (13h)
+- Phase 7: Documentation (2h)
+- Phase 7: Testing (1h)
+
+**Week 3** (10 hours)
+- Phase 7: Testing (3h)
+- Buffer for issues and refinements (7h)
+
+---
+
+## 🎯 PRIORITY ORDER
+
+### CRITICAL PATH (Must Complete First)
+1. **Fix Rainbow Table** (Phase 1.1) - BLOCKING ALL VISUALIZATION
+2. **Remove Legacy Training Code** (Phase 2.1-2.3) - BLOCKING CLEAN ARCHITECTURE
+3. **Remove Standard Math** (Phase 2.4) - BLOCKING CRYSTALLINE PURITY
+
+### HIGH PRIORITY (Complete Next)
+4. **Recursive Threading** (Phase 3.1-3.2) - CORE ARCHITECTURE
+5. **UI Architecture Redesign** (Phase 6.1) - BLOCKING UI ENHANCEMENTS
+6. **Library Architecture** (Phase 4.1) - DEPLOYMENT READY
+
+### MEDIUM PRIORITY (After Core Complete)
+7. **Remaining File Processors** (Phase 5.2)
+8. **Advanced Crawler Features** (Phase 5.3)
+9. **UI Feature Completion** (Phase 6.2-6.4)
+
+### FINAL POLISH
+10. **Documentation** (Phase 7.1)
+11. **Testing** (Phase 7.2)
+
+---
+
+## 🚀 IMMEDIATE NEXT STEPS
+
+Starting with CRITICAL PRIORITY:
+
+1. **Fix Rainbow Table to Use Clock Lattice Mapping** (2-3 hours)
+   - This is BLOCKING all visualization work
+   - Must be fixed before any other visualization enhancements
+   - Clear implementation steps in SECONDARY_OBJECTIVES.md
+
+2. **Remove Legacy Training Code** (4 hours)
+   - Clean up training pipeline
+   - Remove all standard implementations
+   - Crystalline as ONLY implementation
+
+3. **Remove Standard Math** (2 hours)
+   - Search and replace all math.h usage
+   - Use crystalline math everywhere
+
+---
 
 ## 📝 NOTES
 
-### Model Persistence
-- ✅ ALREADY WORKING - saves to {data_dir}/model.cllm
-- ✅ Auto-loads on startup
-- ✅ Saves every 5 batches
+### Design Principles
+- **One Design**: Crystalline is the ONLY design, not an option
+- **No Toggles**: No feature flags, no conditional compilation
+- **Pure C**: No Python dependencies in production
+- **Recursive**: Infinite self-similar structure at all levels
+- **12-Fold**: Symmetry maintained everywhere
 
-### Crawl Speed
-- ✅ ALREADY WORKING - 5-15s random delays
-- ✅ Configurable via crawler_set_rate_limit()
+### Key Insights
+- Rainbow table X-pattern is caused by spiral formulas (WRONG)
+- Clock lattice mapping creates concentric rings (CORRECT)
+- Crystalline loss is the design, not an optimization
+- Threading hierarchy mirrors sphere hierarchy
+- Each thread can be both worker and control
 
-### Prime Randomization
-- ✅ Code exists in prime_randomization.c
-- ❌ NOT integrated with crawler_core.c
-- 🔄 IMPLEMENTING NOW
+---
 
-### File Type Detection
-- ❌ NOT implemented
-- 🔄 IMPLEMENTING NOW
+## ✅ COMPLETION CRITERIA
+
+- [ ] Rainbow table shows concentric rings (not X pattern)
+- [ ] Zero legacy training code remains
+- [ ] Zero standard math library usage
+- [ ] Recursive threading fully implemented
+- [ ] Both .so and .a libraries built
+- [ ] All file processors implemented in pure C
+- [ ] UI uses flexible layout system
+- [ ] All tabs properly designed
+- [ ] Comprehensive documentation
+- [ ] All tests passing
+- [ ] Zero memory leaks
+- [ ] Zero build warnings
+
+---
+
+**READY TO BEGIN IMPLEMENTATION**
+
+Starting with Phase 1.1: Fix Rainbow Table to Use Clock Lattice Mapping

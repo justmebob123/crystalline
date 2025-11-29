@@ -5,6 +5,7 @@
 #include "prime_rainbow.h"
 #include "crystal_abacus.h"
 #include <stdlib.h>
+#include "clock_lattice.h"
 #include "../include/prime_math_custom.h"
 
 // Global rainbow table
@@ -81,52 +82,87 @@ PrimeRainbowTable* rainbow_table_get(void) {
 // FAST PRIME COORDINATE FUNCTIONS (Integer)
 // ═══════════════════════════════════════════════════════════════════════════
 
-double fast_prime_angle(int prime) {
-    // Crystalline lattice angle mapping
-    return (2.0 * PRIME_PI * prime) / (prime + 1);
+// CORRECTED: Use clock lattice mapping instead of spiral formulas
+   double fast_prime_angle(int prime_index) {
+       // Get clock position from lattice mapping
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       return pos.angle;
 }
 
-double fast_prime_radius(int prime) {
-    // Logarithmic spiral radius
-    return prime_sqrt((double)prime);
+double fast_prime_radius(int prime_index) {
+       // Get radius from clock lattice (0.25 to 1.0, counting INWARD)
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       return pos.radius;
 }
 
-double fast_prime_frequency(int prime) {
-    // Golden ratio frequency modulation
-    return prime * PHI;
+double fast_prime_frequency(int prime_index) {
+       // Frequency based on clock position, not prime value
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       
+       // Base frequency on ring (deeper rings = higher frequency)
+       double base_freq = 432.0;  // A4 tuning
+       double ring_multiplier = 1.0 + (pos.ring * 0.5);  // Ring 0=1.0, Ring 3=2.5
+       
+       // Modulate by position within ring
+       double position_factor = (double)pos.position / 12.0;  // Normalized
+       
+       return base_freq * ring_multiplier * (1.0 + position_factor * PHI);
 }
 
-int fast_prime_layer(int prime) {
-    // Map to 7 crystalline layers
-    return (prime % RAINBOW_LAYERS) + 1;
+int fast_prime_layer(int prime_index) {
+       // Get ring from clock lattice (0-3 for first 232 primes)
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       return pos.ring;
 }
 
-void fast_prime_fold_coords(int prime, double* x, double* y) {
-    // Folded coordinate mapping for crystalline structure
-    double angle = fast_prime_angle(prime);
-    double radius = fast_prime_radius(prime);
-    
-    *x = radius * prime_cos(angle);
-    *y = radius * prime_sin(angle);
+void fast_prime_fold_coords(int prime_index, double* x, double* y, double* z) {
+       if (!x || !y || !z) return;
+       
+       // Get clock position
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       
+       // Fold to 3D sphere
+       SphereCoord sphere = fold_clock_to_sphere(pos);
+       
+       *x = sphere.x;
+       *y = sphere.y;
+       *z = sphere.z;
 }
 
+
+   // Get modular relationships for a prime
+   PrimeModular fast_prime_modular(uint64_t prime) {
+       return get_prime_modular(prime);
+   }
+
+   // Check if position is sacred (π, 12 o'clock, etc.)
+   bool fast_prime_is_sacred(int prime_index) {
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       return is_sacred_position(pos);
+   }
+
+   // Get position on clock ring
+   int fast_prime_position(int prime_index) {
+       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       return pos.position;
+   }
 // ═══════════════════════════════════════════════════════════════════════════
 // FAST PRIME COORDINATE FUNCTIONS (BigInt)
 // ═══════════════════════════════════════════════════════════════════════════
 
 double big_fast_prime_angle(BigInt *prime) {
-    if (!prime || prime->len == 0) return 0.0;
-    
-    // Convert to int for angle calculation
-    uint64_t val = prime->d[0];
-    return fast_prime_angle((int)val);
+       if (!prime || prime->len == 0) return 0.0;
+       
+       // Convert to prime index (approximation for large primes)
+       uint64_t prime_index = prime->d[0];
+       return fast_prime_angle((int)prime_index);
 }
 
 double big_fast_prime_radius(BigInt *prime) {
-    if (!prime || prime->len == 0) return 0.0;
-    
-    uint64_t val = prime->d[0];
-    return fast_prime_radius((int)val);
+       if (!prime || prime->len == 0) return 0.0;
+       
+       uint64_t prime_index = prime->d[0];
+       return fast_prime_radius((int)prime_index);
 }
 
 int big_fast_prime_layer(BigInt *prime) {
