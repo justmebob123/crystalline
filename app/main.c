@@ -845,7 +845,7 @@ int main(int argc, char* argv[]) {
     extern int app_initialize_global_abacus(void);
     if (app_initialize_global_abacus() != 0) {
         fprintf(stderr, "CRITICAL ERROR: Failed to initialize global abacus\n");
-        cleanup_app(state);
+        cleanup(state);
         return 1;
     }
     
