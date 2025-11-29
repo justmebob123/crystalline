@@ -4,8 +4,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <pthread.h>
 #include "clock_lattice.h"
+
+/**
+ * IMPORTANT: This is PURE MATHEMATICS - NO THREADING
+ * 
+ * The crystalline library provides pure mathematical functions.
+ * Threading and synchronization belong in the algorithms/CLLM layers.
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,16 +46,13 @@ typedef struct CrystallineAbacus {
     BabylonianClockPosition* clock_positions;  // One per prime
     SphereCoord* sphere_coords;                // One per prime
     
-    // Hierarchical structure (for threading)
-    struct CrystallineAbacus* parent;          // Parent abacus (NULL for global)
+    // Hierarchical structure (NO THREADING - just parent/child relationships)
+    struct CrystallineAbacus* parent;          // Parent abacus (NULL for root)
     struct CrystallineAbacus* children[12];    // Child abacuses (one per symmetry group)
     uint32_t symmetry_group;                   // 0-11 (partition for this abacus)
     bool is_hierarchical;                      // true if this is a child abacus
     
-    // Thread safety
-    pthread_mutex_t mutex;                     // Mutex for thread-safe operations
-    
-    // Statistics
+    // Statistics (NO ATOMICS - pure math only)
     uint64_t total_generated;                  // Total primes generated
     uint64_t cache_hits;                       // Number of cache hits
     uint64_t cache_misses;                     // Number of cache misses

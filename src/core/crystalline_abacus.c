@@ -1,5 +1,17 @@
 // crystalline_abacus.c - Crystalline Lattice Abacus Implementation
-// The CORE mathematical foundation - Single source of truth for all primes
+// PURE MATHEMATICS - NO THREADING
+//
+// This is part of the crystalline math library and provides ONLY pure
+// mathematical functions for prime generation and clock lattice mapping.
+//
+// IMPORTANT: NO pthread, NO threading, NO synchronization primitives.
+// Threading belongs in the algorithms/CLLM layers, not here.
+//
+// The abacus provides:
+// - Prime generation with crystalline sieve
+// - Clock lattice position computation
+// - Sphere coordinate computation
+// - Hierarchical structure (parent/child relationships, NO threading)
 
 #include "crystalline_abacus.h"
 #include "cllm_crystalline_sieve.h"
@@ -136,9 +148,6 @@ CrystallineAbacus* crystalline_abacus_create(uint32_t initial_capacity) {
     abacus->symmetry_group = 0;
     abacus->is_hierarchical = false;
     
-    // Initialize mutex
-    pthread_mutex_init(&abacus->mutex, NULL);
-    
     // Initialize children to NULL
     for (int i = 0; i < 12; i++) {
         abacus->children[i] = NULL;
@@ -167,21 +176,15 @@ void crystalline_abacus_free(CrystallineAbacus* abacus) {
     if (abacus->clock_positions) free(abacus->clock_positions);
     if (abacus->sphere_coords) free(abacus->sphere_coords);
     
-    // Destroy mutex
-    pthread_mutex_destroy(&abacus->mutex);
-    
     free(abacus);
 }
 
 int crystalline_abacus_load_important_primes(CrystallineAbacus* abacus) {
     if (!abacus) return -1;
     
-    pthread_mutex_lock(&abacus->mutex);
-    
     // Copy important primes to temporary array
     uint64_t* temp_primes = (uint64_t*)malloc(NUM_IMPORTANT_PRIMES * sizeof(uint64_t));
     if (!temp_primes) {
-        pthread_mutex_unlock(&abacus->mutex);
         return -1;
     }
     
@@ -193,7 +196,6 @@ int crystalline_abacus_load_important_primes(CrystallineAbacus* abacus) {
     // Ensure capacity
     if (expand_capacity(abacus, unique_count) != 0) {
         free(temp_primes);
-        pthread_mutex_unlock(&abacus->mutex);
         return -1;
     }
     
@@ -215,8 +217,6 @@ int crystalline_abacus_load_important_primes(CrystallineAbacus* abacus) {
     
     abacus->total_generated += unique_count;
     
-    pthread_mutex_unlock(&abacus->mutex);
-    
     return unique_count;
 }
 
@@ -224,18 +224,14 @@ int crystalline_abacus_generate_primes_fast(CrystallineAbacus* abacus, uint32_t 
     if (!abacus) return -1;
     if (target_count <= abacus->count) return 0; // Already have enough
     
-    pthread_mutex_lock(&abacus->mutex);
-    
     // Ensure capacity
     if (expand_capacity(abacus, target_count) != 0) {
-        pthread_mutex_unlock(&abacus->mutex);
         return -1;
     }
     
     // Use crystalline sieve to generate primes
     uint64_t* temp_cache = (uint64_t*)malloc(target_count * sizeof(uint64_t));
     if (!temp_cache) {
-        pthread_mutex_unlock(&abacus->mutex);
         return -1;
     }
     
@@ -262,20 +258,15 @@ int crystalline_abacus_generate_primes_fast(CrystallineAbacus* abacus, uint32_t 
     
     abacus->total_generated += added;
     
-    pthread_mutex_unlock(&abacus->mutex);
-    
     return added;
 }
 
 int crystalline_abacus_add_prime(CrystallineAbacus* abacus, uint64_t prime) {
     if (!abacus) return -1;
     
-    pthread_mutex_lock(&abacus->mutex);
-    
     // Ensure capacity
     if (abacus->count >= abacus->capacity) {
         if (expand_capacity(abacus, abacus->capacity * 2) != 0) {
-            pthread_mutex_unlock(&abacus->mutex);
             return -1;
         }
     }
@@ -293,15 +284,11 @@ int crystalline_abacus_add_prime(CrystallineAbacus* abacus, uint64_t prime) {
     abacus->count++;
     abacus->total_generated++;
     
-    pthread_mutex_unlock(&abacus->mutex);
-    
     return 0;
 }
 
 uint64_t crystalline_abacus_get_prime(const CrystallineAbacus* abacus, uint32_t index) {
     if (!abacus || index >= abacus->count) return 0;
-    
-    // No mutex needed for read-only access to immutable data
     return abacus->primes[index];
 }
 
@@ -357,16 +344,12 @@ CrystallineAbacus* crystalline_abacus_create_hierarchical(
     child->symmetry_group = symmetry_group;
     child->is_hierarchical = true;
     
-    // Filter parent's primes by symmetry group
-    pthread_mutex_lock(&parent->mutex);
-    
+    // Filter parent's primes by symmetry group (NO LOCKING - pure math)
     for (uint32_t i = 0; i < parent->count; i++) {
         if (crystalline_abacus_matches_symmetry_group(parent->primes[i], symmetry_group)) {
             crystalline_abacus_add_prime(child, parent->primes[i]);
         }
     }
-    
-    pthread_mutex_unlock(&parent->mutex);
     
     // Register child with parent
     parent->children[symmetry_group] = child;
@@ -377,14 +360,10 @@ CrystallineAbacus* crystalline_abacus_create_hierarchical(
 int crystalline_abacus_compute_clock_positions(CrystallineAbacus* abacus) {
     if (!abacus) return -1;
     
-    pthread_mutex_lock(&abacus->mutex);
-    
     for (uint32_t i = 0; i < abacus->count; i++) {
         abacus->clock_positions[i] = map_prime_index_to_clock(i);
         abacus->sphere_coords[i] = fold_clock_to_sphere(abacus->clock_positions[i]);
     }
-    
-    pthread_mutex_unlock(&abacus->mutex);
     
     return 0;
 }
