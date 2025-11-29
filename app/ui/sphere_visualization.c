@@ -87,6 +87,8 @@ static SDL_Color get_activity_color(float activity) {
 /**
  * Get color based on thread state (UI Integration)
  */
+// TODO: Use this when implementing thread state visualization in Phase 4.2
+static SDL_Color get_thread_state_color(int state) __attribute__((unused));
 static SDL_Color get_thread_state_color(int state) {
     switch (state) {
         case 0: // THREAD_STATE_IDLE

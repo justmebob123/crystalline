@@ -66,6 +66,58 @@ static void init_crawler_tab_state(void) {
     g_crawler_state.inputs_initialized = true;
 }
 
+// Helper function to add activity log entry
+static void add_activity_log(const char* message) {
+    if (!message) return;
+    
+    // Shift existing messages down
+    if (g_crawler_state.activity_count >= 10) {
+        for (int i = 0; i < 9; i++) {
+            strncpy(g_crawler_state.activity_log[i], g_crawler_state.activity_log[i + 1], 255);
+            g_crawler_state.activity_log[i][255] = '\0';
+        }
+        g_crawler_state.activity_count = 9;
+    }
+    
+    // Add new message at the end
+    strncpy(g_crawler_state.activity_log[g_crawler_state.activity_count], message, 255);
+    g_crawler_state.activity_log[g_crawler_state.activity_count][255] = '\0';
+    g_crawler_state.activity_count++;
+}
+
+// Helper function to calculate column layouts
+static void calculate_crawler_columns(ColumnLayout* col1, ColumnLayout* col2, ColumnLayout* col3) {
+    if (!col1 || !col2 || !col3) return;
+    
+    int total_width = 1560;
+    int col_width = total_width / 3;
+    int padding = 15;
+    int start_x = (RENDER_WIDTH - total_width) / 2;
+    int start_y = 60;
+    int height = WINDOW_HEIGHT - 80;
+    
+    // Column 1: Prime Configuration
+    col1->x = start_x;
+    col1->y = start_y;
+    col1->width = col_width;
+    col1->height = height;
+    col1->padding = padding;
+    
+    // Column 2: Link Management
+    col2->x = start_x + col_width;
+    col2->y = start_y;
+    col2->width = col_width;
+    col2->height = height;
+    col2->padding = padding;
+    
+    // Column 3: Status Display
+    col3->x = start_x + (col_width * 2);
+    col3->y = start_y;
+    col3->width = col_width;
+    col3->height = height;
+    col3->padding = padding;
+}
+
 // Register inputs with InputManager (called once during first draw)
 static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) {
     if (g_crawler_state.inputs_registered) return;
@@ -358,7 +410,8 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
 
 static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
                                 SDL_Color text_color, SDL_Color success_color,
-                                SDL_Color error_color, int mouse_x, int mouse_y) {
+                                SDL_Color __attribute__((unused)) error_color, 
+                                int mouse_x, int mouse_y) {
     int x = col->x + col->padding;
     int y = col->y + col->padding;
     
@@ -465,10 +518,71 @@ void draw_crawler_tab(AppState* state) {
 
 void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
     // InputManager handles all input clicks automatically
-    // This function can handle button clicks if needed
+    // This function handles button clicks
+    
+    // Get column layout
+    ColumnLayout col1, col2, col3;
+    calculate_crawler_columns(&col1, &col2, &col3);
+    
+    // Column 2: Link Management buttons
+    int x = col2.x + col2.padding;
+    int y = col2.y + col2.padding;
+    
+    // Skip past "Link Management" header
+    y += 35;
+    
+    // Skip past "Add URL:" label and input
+    y += 25 + 35;
+    
+    // Add button (80x25)
+    SDL_Rect add_btn = {x, y, 80, 25};
+    if (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w &&
+        mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h) {
+        
+        // Get URL from input
+        extern InputManager* g_input_manager;
+        if (g_input_manager) {
+            const char* url = input_manager_get_text(g_input_manager, "crawler.add_url");
+            if (url && strlen(url) > 0) {
+                // Validate URL (basic check)
+                if (strstr(url, "http://") == url || strstr(url, "https://") == url) {
+                    // Add to link queue
+                    if (g_crawler_state.link_queue) {
+                        link_queue_add(g_crawler_state.link_queue, url, 5, "manual");
+                        
+                        // Add to activity log
+                        char log_msg[512];
+                        snprintf(log_msg, sizeof(log_msg), "Added URL: %s", url);
+                        add_activity_log(log_msg);
+                        
+                        // Clear input
+                        input_manager_set_text(g_input_manager, "crawler.add_url", "");
+                    }
+                } else {
+                    add_activity_log("Error: URL must start with http:// or https://");
+                }
+            } else {
+                add_activity_log("Error: Please enter a URL");
+            }
+        }
+        return;
+    }
+    
+    // Clear button (80x25, 90 pixels to the right)
+    SDL_Rect clear_btn = {x + 90, y, 80, 25};
+    if (mouse_x >= clear_btn.x && mouse_x < clear_btn.x + clear_btn.w &&
+        mouse_y >= clear_btn.y && mouse_y < clear_btn.y + clear_btn.h) {
+        
+        // Clear the add URL input
+        extern InputManager* g_input_manager;
+        if (g_input_manager) {
+            input_manager_set_text(g_input_manager, "crawler.add_url", "");
+            add_activity_log("Cleared URL input");
+        }
+        return;
+    }
+    
     (void)state;
-    (void)mouse_x;
-    (void)mouse_y;
 }
 
 void handle_crawler_tab_keyboard(AppState* state, int key) {

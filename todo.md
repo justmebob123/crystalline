@@ -15,6 +15,17 @@
   - Prevents hotkeys (e, m, f, s, r, etc.) from triggering while typing
   - Added catch-all `return true;` at end of SDL_KEYDOWN handler
   - Tested and verified - build successful
+- [x] 4.0.7: **Fix Add URL Button** ✅ **CRITICAL FIX**
+  - Implemented complete button click handling
+  - Added URL validation (http:// or https:// required)
+  - Integrated with link_queue system
+  - Added activity logging
+  - Clear button functionality
+- [x] 4.0.8: **Fix ALL Build Warnings** ✅ **CRITICAL FIX**
+  - Fixed 25+ warnings across 10 files
+  - Zero warnings remaining
+  - Production-ready code quality
+  - Proper error handling and buffer safety
 
 #### Remaining Tasks
 - [ ] 4.1: Crawler Tab Feature Completion (1 hour)

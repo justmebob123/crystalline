@@ -1864,7 +1864,9 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
 
 /**
  * Accumulate gradients from all spheres (using shared memory)
+ * TODO: Implement gradient accumulation in future training enhancements
  */
+static void accumulate_gradients(ThreadedTrainingSystem* system) __attribute__((unused));
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return;
     

@@ -166,7 +166,10 @@ int cmd_train(int argc, char** argv) {
     // Create checkpoint directory
     char cmd[512];
     snprintf(cmd, sizeof(cmd), "mkdir -p %s", checkpoint_dir);
-    system(cmd);
+    int mkdir_result = system(cmd);
+    if (mkdir_result != 0) {
+        fprintf(stderr, "Warning: Failed to create checkpoint directory\n");
+    }
     
     // Create tokenizer and load data
     printf("Loading and preprocessing data...\n");

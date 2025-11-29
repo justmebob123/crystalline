@@ -399,8 +399,12 @@ void* training_thread_func(void* arg) {
                 int mkdir_ret = system(mkdir_cmd);
                 (void)mkdir_ret;
                 
-                // Save to workspace location
-                snprintf(model_path, sizeof(model_path), "%.1006s/trained_model_kissing_spheres.cllm", model_dir);
+                // Save to workspace location (safely truncate if needed)
+                int path_len = snprintf(model_path, sizeof(model_path), "%s/trained_model_kissing_spheres.cllm", model_dir);
+                if (path_len >= (int)sizeof(model_path)) {
+                    printf("✗ Model directory path too long, using default location\n");
+                    snprintf(model_path, sizeof(model_path), "trained_model_kissing_spheres.cllm");
+                }
                 extern int app_save_model(CLLMModel* model, const char* filepath);
                 
                 if (app_save_model(state->cllm_model, model_path) == 0) {

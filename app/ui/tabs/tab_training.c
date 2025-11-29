@@ -73,10 +73,11 @@ static SDL_Rect file_list_rect;
 static SDL_Rect viz_area_rect;
 
 // Collapsible panel header bounds (for click detection)
-static SDL_Rect framework_header_rect;
-static SDL_Rect performance_header_rect;
-static SDL_Rect legend_header_rect;
-static SDL_Rect terminal_header_rect;
+// TODO: Implement collapsible panels in Phase 4.3
+// static SDL_Rect framework_header_rect;
+// static SDL_Rect performance_header_rect;
+// static SDL_Rect legend_header_rect;
+// static SDL_Rect terminal_header_rect;
 
 // Input initialization flag
 static bool inputs_initialized = false;
@@ -89,7 +90,11 @@ static int pages_in_queue = 0;
 /**
  * Helper function to draw collapsible panel header
  * Returns true if clicked
+ * TODO: Implement in Phase 4.3
  */
+static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
+                                   int x, int y, int width, bool expanded,
+                                   int mouse_x, int mouse_y, bool mouse_clicked) __attribute__((unused));
 static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
                                    int x, int y, int width, bool expanded,
                                    int mouse_x, int mouse_y, bool mouse_clicked) {

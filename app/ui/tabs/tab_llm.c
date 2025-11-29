@@ -89,16 +89,17 @@ typedef enum {
 // Enhanced parameters
 static int top_k = 50;
 static float top_p = 0.9f;
-static float repetition_penalty = 1.0f;
-static float frequency_penalty = 0.0f;
-static float presence_penalty = 0.0f;
-static char stop_sequences[256] = "";
-static int random_seed = -1;  // -1 = random
+// TODO: Implement these features in Phase 4.4
+// static float repetition_penalty = 1.0f;
+// static float frequency_penalty = 0.0f;
+// static float presence_penalty = 0.0f;
+// static char stop_sequences[256] = "";
+// static int random_seed = -1;  // -1 = random
 
-// Loading state
-static bool is_generating = false;
-static int tokens_generated = 0;
-static int tokens_total = 0;
+// TODO: Implement generation state tracking
+// static bool is_generating = false;
+// static int tokens_generated = 0;
+// static int tokens_total = 0;
 
 // Store button positions
 static SDL_Rect g_send_btn;
@@ -111,8 +112,9 @@ static SDL_Rect g_save_btn;
 static SDL_Rect g_temp_slider;
 static SDL_Rect g_tokens_slider;
 static SDL_Rect g_browse_models_btn;
-static SDL_Rect g_export_model_btn;
-static SDL_Rect g_new_thread_btn;
+// TODO: Implement model export feature
+// static SDL_Rect g_export_model_btn;
+// static SDL_Rect g_new_thread_btn;
 static SDL_Rect g_thread_list_btn;
 static SDL_Rect g_top_k_slider;
 static SDL_Rect g_top_p_slider;
@@ -155,9 +157,13 @@ static void scan_models_directory(void) {
         strncpy(info->filename, entry->d_name, sizeof(info->filename) - 1);
         info->filename[sizeof(info->filename) - 1] = '\0';
         
-        // Build full path
-        snprintf(info->full_path, sizeof(info->full_path), "%s/%s", 
+        // Build full path (safely truncate if needed)
+        int written = snprintf(info->full_path, sizeof(info->full_path), "%s/%s", 
                 model_browser.directory_path, entry->d_name);
+        if (written >= (int)sizeof(info->full_path)) {
+            // Path was truncated, skip this file
+            continue;
+        }
         
         // Get file stats
         struct stat st;
@@ -212,7 +218,9 @@ static void init_thread_manager(void) {
     thread->is_active = true;
 }
 
+// TODO: Implement thread management in Phase 4.4
 // Create new conversation thread
+static void create_new_thread(void) __attribute__((unused));
 static void create_new_thread(void) {
     if (thread_manager.thread_count >= MAX_CONVERSATION_THREADS) {
         printf("Maximum number of threads reached\n");
@@ -230,6 +238,7 @@ static void create_new_thread(void) {
 }
 
 // Switch to a different thread
+static void switch_to_thread(int thread_index) __attribute__((unused));
 static void switch_to_thread(int thread_index) {
     if (thread_index < 0 || thread_index >= thread_manager.thread_count) {
         return;
@@ -289,7 +298,9 @@ static void draw_model_browser_panel(SDL_Renderer* renderer, int x, int y, int w
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color bg_color = {30, 30, 40, 255};
     SDL_Color selected_color = {60, 100, 140, 255};
-    SDL_Color hover_color = {50, 50, 60, 255};
+    // TODO: Implement hover effects in Phase 4.4
+    // SDL_Color hover_color = {50, 50, 60, 255};
+    (void)selected_color; // Will be used when selection is implemented
     
     // Draw panel background
     SDL_Rect panel = {x, y, width, height};
@@ -301,9 +312,13 @@ static void draw_model_browser_panel(SDL_Renderer* renderer, int x, int y, int w
     // Title
     draw_text(renderer, "MODEL BROWSER", x + 10, y + 10, (SDL_Color){100, 150, 200, 255});
     
-    // Directory path
+    // Directory path (safely truncate if needed)
     char dir_text[128];
-    snprintf(dir_text, sizeof(dir_text), "Path: %s", model_browser.directory_path);
+    int dir_written = snprintf(dir_text, sizeof(dir_text), "Path: %s", model_browser.directory_path);
+    if (dir_written >= (int)sizeof(dir_text)) {
+        // Path was truncated, add ellipsis
+        strcpy(dir_text + sizeof(dir_text) - 4, "...");
+    }
     draw_text(renderer, dir_text, x + 10, y + 35, text_color);
     
     // Refresh button

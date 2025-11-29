@@ -678,12 +678,22 @@ bool training_loop_restore(TrainingLoop* loop, const char* checkpoint_path) {
     }
     
     // Read checkpoint data
-    uint32_t version, epoch, batch;
-    double learning_rate;
-    fscanf(fp, "version=%u\n", &version);
-    fscanf(fp, "epoch=%u\n", &epoch);
-    fscanf(fp, "batch=%u\n", &batch);
-    fscanf(fp, "learning_rate=%lf\n", &learning_rate);
+    uint32_t version = 0, epoch = 0, batch = 0;
+    double learning_rate = 0.0;
+    
+    // Read and check return values
+    if (fscanf(fp, "version=%u\n", &version) != 1) {
+        fprintf(stderr, "Warning: Failed to read version from checkpoint\n");
+    }
+    if (fscanf(fp, "epoch=%u\n", &epoch) != 1) {
+        fprintf(stderr, "Warning: Failed to read epoch from checkpoint\n");
+    }
+    if (fscanf(fp, "batch=%u\n", &batch) != 1) {
+        fprintf(stderr, "Warning: Failed to read batch from checkpoint\n");
+    }
+    if (fscanf(fp, "learning_rate=%lf\n", &learning_rate) != 1) {
+        fprintf(stderr, "Warning: Failed to read learning_rate from checkpoint\n");
+    }
     
     // TODO: Read actual model state
     

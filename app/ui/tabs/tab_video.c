@@ -40,7 +40,7 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
     // Colors
-    SDL_Color bg_color = {20, 20, 30, 255};
+    // SDL_Color bg_color = {20, 20, 30, 255}; // TODO: Use for background
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color panel_color = {30, 30, 40, 255};
     SDL_Color accent_color = {100, 150, 255, 255};
@@ -52,7 +52,7 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     int x = 20;
     int y = 60;
     int w = RENDER_WIDTH - 40;
-    int h = WINDOW_HEIGHT - 80;
+    // int h = WINDOW_HEIGHT - 80; // TODO: Use for panel height
     
     // Title
     draw_text(renderer, "VIDEO RECORDING", x, y, text_color);
@@ -97,9 +97,13 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, duration_info, panel_x, panel_y, text_color);
         panel_y += 20;
         
-        // File path
+        // File path (safely truncate if needed)
         char path_info[512];
-        snprintf(path_info, sizeof(path_info), "Output: %s", state->video_path);
+        int path_written = snprintf(path_info, sizeof(path_info), "Output: %s", state->video_path);
+        if (path_written >= (int)sizeof(path_info)) {
+            // Path was truncated, add ellipsis
+            strcpy(path_info + sizeof(path_info) - 4, "...");
+        }
         draw_text(renderer, path_info, panel_x, panel_y, accent_color);
         panel_y += 30;
         
