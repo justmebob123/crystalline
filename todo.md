@@ -37,32 +37,33 @@
 - [ ] Cache robots.txt per domain
 - [ ] Test with various robots.txt files
 
-## 🔵 PHASE 2: ENHANCEMENTS
+## 🔵 PHASE 2: ENHANCEMENTS (See RECOMMENDED_ENHANCEMENTS.md for details)
 
-### 2.1 Per-Domain Rate Limiting
-- [ ] Track requests per domain
-- [ ] Enforce domain-specific delays
-- [ ] Prevent hammering single domain
-- [ ] Add domain blacklist/whitelist
+### 2.1 HIGH PRIORITY (Next Session)
+- [ ] Robots.txt support (2 hours)
+- [ ] Per-domain rate limiting (1 hour)
+- [ ] Content quality filtering (2 hours)
+- [ ] Advanced URL pattern detection (2 hours)
 
-### 2.2 Advanced URL Pattern Detection
-- [ ] JavaScript onclick handlers
-- [ ] Data attributes (data-href, data-url)
-- [ ] Meta refresh redirects
-- [ ] Sitemap.xml references
-- [ ] Canonical URLs
+### 2.2 MEDIUM PRIORITY (1-2 weeks)
+- [ ] PDF text extraction (3 hours)
+- [ ] Image OCR support (3 hours)
+- [ ] Office document processing (4 hours)
+- [ ] Duplicate content detection (2 hours)
+- [ ] Crawl depth control (1 hour)
+- [ ] Domain whitelist/blacklist (1 hour)
 
-### 2.3 Content Quality Filtering
-- [ ] Detect and skip error pages (404, 500, etc.)
-- [ ] Detect and skip login/paywall pages
-- [ ] Detect and skip duplicate content
-- [ ] Detect and skip low-quality content
+### 2.3 LOW PRIORITY (1 month+)
+- [ ] Sitemap.xml support (2 hours)
+- [ ] RSS/Atom feed support (2 hours)
+- [ ] JavaScript rendering (4 hours)
+- [ ] Distributed crawling (8 hours)
+- [ ] Crawl statistics & monitoring (2 hours)
 
-### 2.4 Improved Tokenization
-- [ ] Better handling of special characters
-- [ ] Preserve code blocks and technical content
-- [ ] Handle multiple languages
-- [ ] Preserve mathematical notation
+### 2.4 CRYSTALLINE-SPECIFIC (Research)
+- [ ] Prime-based crawl scheduling (3 hours)
+- [ ] Semantic URL prioritization (4 hours)
+- [ ] Crystalline content hashing (2 hours)
 
 ## 📊 CURRENT STATUS
 
