@@ -1061,10 +1061,15 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         int btn_height = 70;
         int spacing = 12;
         
+        // Define scrollable area bounds
+        int scroll_top = panel_y + 50;
+        int scroll_bottom = panel_y + panel_h - 50;
+        
         // Tiny button
         SDL_Rect tiny_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= tiny_btn.x && x <= tiny_btn.x + tiny_btn.w &&
-            y >= tiny_btn.y && y <= tiny_btn.y + tiny_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= tiny_btn.y && y <= tiny_btn.y + tiny_btn.h &&
+            tiny_btn.y >= scroll_top && tiny_btn.y + tiny_btn.h <= scroll_bottom) {
             printf("Creating TINY model (25M params)...\n");
             extern CLLMModel* app_create_cllm_model_tiny(void);
             state->cllm_model = app_create_cllm_model_tiny();
@@ -1081,7 +1086,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Small button
         SDL_Rect small_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= small_btn.x && x <= small_btn.x + small_btn.w &&
-            y >= small_btn.y && y <= small_btn.y + small_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= small_btn.y && y <= small_btn.y + small_btn.h &&
+            small_btn.y >= scroll_top && small_btn.y + small_btn.h <= scroll_bottom) {
             printf("Creating SMALL model (117M params)...\n");
             state->cllm_model = app_create_cllm_model_small();
             if (state->cllm_model) {
@@ -1097,7 +1103,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Medium button
         SDL_Rect medium_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= medium_btn.x && x <= medium_btn.x + medium_btn.w &&
-            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h &&
+            medium_btn.y >= scroll_top && medium_btn.y + medium_btn.h <= scroll_bottom) {
             printf("Creating MEDIUM model (345M params)...\n");
             state->cllm_model = app_create_cllm_model_medium();
             if (state->cllm_model) {
@@ -1113,7 +1120,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Large button
         SDL_Rect large_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= large_btn.x && x <= large_btn.x + large_btn.w &&
-            y >= large_btn.y && y <= large_btn.y + large_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= large_btn.y && y <= large_btn.y + large_btn.h &&
+            large_btn.y >= scroll_top && large_btn.y + large_btn.h <= scroll_bottom) {
             printf("Creating LARGE model (762M params)...\n");
             state->cllm_model = app_create_cllm_model_large();
             if (state->cllm_model) {
@@ -1129,7 +1137,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Huge button
         SDL_Rect huge_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= huge_btn.x && x <= huge_btn.x + huge_btn.w &&
-            y >= huge_btn.y && y <= huge_btn.y + huge_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= huge_btn.y && y <= huge_btn.y + huge_btn.h &&
+            huge_btn.y >= scroll_top && huge_btn.y + huge_btn.h <= scroll_bottom) {
             printf("Creating HUGE model (1.5B params)...\n");
             state->cllm_model = app_create_cllm_model_huge();
             if (state->cllm_model) {
@@ -1145,7 +1154,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Massive button
         SDL_Rect massive_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= massive_btn.x && x <= massive_btn.x + massive_btn.w &&
-            y >= massive_btn.y && y <= massive_btn.y + massive_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= massive_btn.y && y <= massive_btn.y + massive_btn.h &&
+            massive_btn.y >= scroll_top && massive_btn.y + massive_btn.h <= scroll_bottom) {
             printf("Creating MASSIVE model (3B params)...\n");
             state->cllm_model = app_create_cllm_model_massive();
             if (state->cllm_model) {
@@ -1161,7 +1171,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         // Astronomical button
         SDL_Rect astro_btn = {panel_x + 20, content_y, btn_width, btn_height};
         if (x >= astro_btn.x && x <= astro_btn.x + astro_btn.w &&
-            y >= astro_btn.y && y <= astro_btn.y + astro_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            y >= astro_btn.y && y <= astro_btn.y + astro_btn.h &&
+            astro_btn.y >= scroll_top && astro_btn.y + astro_btn.h <= scroll_bottom) {
             printf("Creating ASTRONOMICAL model (7B params)...\n");
             printf("WARNING: This will use ~28GB RAM!\n");
             state->cllm_model = app_create_cllm_model_astronomical();
