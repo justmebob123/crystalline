@@ -310,11 +310,12 @@ When moving functionality between layers:
 - [x] Angular attention ACTIVE in training loop
 - [x] Build verified: Zero errors, zero warnings
 
-**Task 4.2: Initialize 12 Kissing Sphere Neighbors**
-- [ ] Verify `cllm_initialize_kissing_spheres()` exists
-- [ ] Check if called from `cllm_model_create()`
-- [ ] Verify neighbors are initialized (num_neighbors = 12)
-- [ ] Test neighbor relationships
+**Task 4.2: Initialize 12 Kissing Sphere Neighbors** ✅ COMPLETE
+- [x] Verified `cllm_initialize_kissing_spheres()` exists
+- [x] Added call from `cllm_create_model()`
+- [x] Allocated lattice_points (one per token)
+- [x] Neighbors initialized (12 per point, one per symmetry group)
+- [x] Build verified: Zero errors, zero warnings
 
 **Task 4.3: Integrate NTT Attention for Long Sequences**
 - [ ] Add sequence length check in attention forward
