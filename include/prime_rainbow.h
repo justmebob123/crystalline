@@ -34,6 +34,15 @@ void fast_prime_fold_coords(int prime_index, double* x, double* y, double* z);
 double big_fast_prime_angle(BigInt *prime);
 double big_fast_prime_radius(BigInt *prime);
 int big_fast_prime_layer(BigInt *prime);
+
+// Prime storage functions - Rainbow Table as Complete Abacus
+int rainbow_table_add_prime(BigInt* prime);
+BigInt* rainbow_table_get_prime(int index);
+int rainbow_table_get_count(void);
+int rainbow_table_generate_primes(int target_count);
+int rainbow_table_load_important_primes(void);
+
+// Analysis functions
 double rainbow_table_check_stability(PrimeRainbowTable* table);
 double rainbow_table_self_similarity(PrimeRainbowTable* table);
 

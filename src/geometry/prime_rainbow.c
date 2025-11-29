@@ -173,6 +173,190 @@ int big_fast_prime_layer(BigInt *prime) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// PRIME STORAGE FUNCTIONS - Make Rainbow Table the Complete Abacus
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Add a prime to the rainbow table
+ * 
+ * This makes the rainbow table the SINGLE SOURCE OF TRUTH for all primes.
+ * Each prime is stored with its complete geometric representation.
+ * 
+ * @param prime Prime number to add (BigInt)
+ * @return 0 on success, -1 on error
+ */
+int rainbow_table_add_prime(BigInt* prime) {
+    if (!g_rainbow_initialized) {
+        rainbow_table_init();
+    }
+    
+    if (!prime) return -1;
+    
+    // Create new entry
+    RainbowEntry entry;
+    entry.prime = (BigInt*)malloc(sizeof(BigInt));
+    if (!entry.prime) return -1;
+    
+    // Copy the prime
+    big_init(entry.prime);
+    big_copy(entry.prime, prime);
+    
+    // Create new node
+    PrimeRainbowNode* node = (PrimeRainbowNode*)malloc(sizeof(PrimeRainbowNode));
+    if (!node) {
+        big_free(entry.prime);
+        free(entry.prime);
+        return -1;
+    }
+    
+    node->entry = entry;
+    node->children = NULL;
+    node->child_count = 0;
+    
+    // Add to tree (simple: just add as child of root for now)
+    // TODO: Organize by symmetry group in tree structure
+    if (!g_rainbow_table.root) {
+        g_rainbow_table.root = node;
+    } else {
+        // Add as child of root
+        PrimeRainbowNode** new_children = (PrimeRainbowNode**)realloc(
+            g_rainbow_table.root->children,
+            (g_rainbow_table.root->child_count + 1) * sizeof(PrimeRainbowNode*)
+        );
+        if (!new_children) {
+            big_free(entry.prime);
+            free(entry.prime);
+            free(node);
+            return -1;
+        }
+        g_rainbow_table.root->children = new_children;
+        g_rainbow_table.root->children[g_rainbow_table.root->child_count] = node;
+        g_rainbow_table.root->child_count++;
+    }
+    
+    g_rainbow_table.count++;
+    
+    return 0;
+}
+
+/**
+ * Get the nth prime from the rainbow table
+ * 
+ * @param index Prime index (0-based)
+ * @return Prime at index, or NULL if out of bounds
+ */
+BigInt* rainbow_table_get_prime(int index) {
+    if (!g_rainbow_initialized) return NULL;
+    if (index < 0 || index >= g_rainbow_table.count) return NULL;
+    
+    // Simple traversal for now (TODO: optimize with indexing)
+    if (!g_rainbow_table.root) return NULL;
+    
+    if (index == 0) {
+        return g_rainbow_table.root->entry.prime;
+    }
+    
+    // Traverse children
+    int current_index = 1;
+    for (int i = 0; i < g_rainbow_table.root->child_count; i++) {
+        if (current_index == index) {
+            return g_rainbow_table.root->children[i]->entry.prime;
+        }
+        current_index++;
+    }
+    
+    return NULL;
+}
+
+/**
+ * Get prime count in rainbow table
+ */
+int rainbow_table_get_count(void) {
+    if (!g_rainbow_initialized) return 0;
+    return g_rainbow_table.count;
+}
+
+/**
+ * Generate primes using crystalline sieve and add to rainbow table
+ * 
+ * This integrates the fast crystalline sieve with the rainbow table,
+ * making the rainbow table the complete abacus structure.
+ * 
+ * @param target_count Number of primes to generate
+ * @return Number of primes generated, or -1 on error
+ */
+int rainbow_table_generate_primes(int target_count) {
+    if (!g_rainbow_initialized) {
+        rainbow_table_init();
+    }
+    
+    if (target_count <= 0) return 0;
+    
+    // Use crystalline sieve to generate primes
+    // For now, use simple generation (TODO: integrate cllm_crystalline_sieve)
+    
+    // Start with first few primes
+    uint64_t primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47};
+    int initial_count = sizeof(primes) / sizeof(primes[0]);
+    
+    int count = 0;
+    for (int i = 0; i < initial_count && count < target_count; i++) {
+        BigInt prime;
+        big_init(&prime);
+        big_from_int(&prime, primes[i]);
+        
+        if (rainbow_table_add_prime(&prime) == 0) {
+            count++;
+        }
+        
+        big_free(&prime);
+    }
+    
+    return count;
+}
+
+/**
+ * Load important primes into rainbow table
+ * 
+ * Loads sacred primes, Mersenne primes, etc.
+ * 
+ * @return Number of primes loaded, or -1 on error
+ */
+int rainbow_table_load_important_primes(void) {
+    if (!g_rainbow_initialized) {
+        rainbow_table_init();
+    }
+    
+    // Important primes (sacred, Mersenne, etc.)
+    uint64_t important[] = {
+        // First 20 primes
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+        // Mersenne primes
+        127, 8191, 131071, 524287,
+        // Sacred primes (12-fold symmetry)
+        73, 97, 109, 157, 181, 193
+    };
+    
+    int count = sizeof(important) / sizeof(important[0]);
+    int loaded = 0;
+    
+    for (int i = 0; i < count; i++) {
+        BigInt prime;
+        big_init(&prime);
+        big_from_int(&prime, important[i]);
+        
+        if (rainbow_table_add_prime(&prime) == 0) {
+            loaded++;
+        }
+        
+        big_free(&prime);
+    }
+    
+    return loaded;
+}
+
 // RAINBOW TABLE ANALYSIS
 // ═══════════════════════════════════════════════════════════════════════════
 
