@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/prime_float_math.h"
-#include <math.h>
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
@@ -73,7 +72,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
     float* embedding = &model->embeddings.embeddings[token_id * embed_dim];
     
     // Lazy initialization: compute embedding on first access
-    if (isnan(embedding[0])) {
+    if (prime_isnanf(embedding[0])) {
         extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
         cllm_compute_embedding_lazy(model, token_id);
     }

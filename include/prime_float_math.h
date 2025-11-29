@@ -118,6 +118,7 @@ double prime_fmin(double x, double y);
 
 // Check if NaN
 int prime_isnanf(float x);
+int prime_isnan(double x);
 
 // Check if infinite
 int prime_isinff(float x);

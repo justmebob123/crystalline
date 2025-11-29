@@ -15,10 +15,10 @@
 #include "../../include/prime_lattice_core.h"
 #include "../../include/cllm_mathematical_constants.h"
 #include "../../include/prime_math_custom.h"
+#include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <pthread.h>
 
 // Cache structure for L_lattice values
@@ -196,8 +196,10 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
     uint32_t embedding_dim = model->embeddings.embedding_dim;
     float* embeddings = model->embeddings.embeddings;
     
+    // Mark all embeddings as uninitialized using NaN (0.0/0.0)
+    float nan_value = 0.0f / 0.0f;
     for (uint32_t i = 0; i < vocab_size * embedding_dim; i++) {
-        embeddings[i] = NAN;  // Special marker for uninitialized
+        embeddings[i] = nan_value;  // Special marker for uninitialized
     }
     
     printf("✓ Lazy initialization complete (instant)\n");
@@ -217,7 +219,7 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
     uint32_t offset = token_id * embedding_dim;
     
     // Check if already computed
-    if (!isnan(embeddings[offset])) return;
+    if (!prime_isnanf(embeddings[offset])) return;
     
     // Compute all dimensions for this token
     for (uint32_t dim = 0; dim < embedding_dim; dim++) {
