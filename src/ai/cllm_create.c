@@ -59,6 +59,11 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     // Use hierarchical abacus design with 12-fold symmetry
     printf("Initializing %u tokens with crystalline lattice structure...\n", config->vocab_size);
     
+    // Pre-initialize rainbow table with exact vocabulary size needed
+    // This is MUCH faster than generating 100k primes upfront
+    extern void init_rainbow_table_for_vocab(uint32_t vocab_size);
+    init_rainbow_table_for_vocab(config->vocab_size);
+    
     for (uint32_t i = 0; i < config->vocab_size; i++) {
         model->tokens[i].token_id = i;
         model->tokens[i].frequency = 0;

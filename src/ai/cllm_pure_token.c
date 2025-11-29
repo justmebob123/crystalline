@@ -16,9 +16,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#define PRIME_CACHE_SIZE 100000  // Target number of primes to generate
-
 static bool rainbow_table_initialized = false;
+static uint32_t rainbow_table_size = 0;
 
 /*
  * Pure integer square root using Newton's method
@@ -44,32 +43,48 @@ static uint64_t isqrt(uint64_t n) {
 // OPTIMIZED: Use rainbow table with crystalline sieve
 // Rainbow table is the SINGLE SOURCE OF TRUTH for all primes
 // Generates 100,000 primes in ~100ms using fast sieve with 12-fold symmetry
-static void init_rainbow_table(void) {
-    if (rainbow_table_initialized) return;
+// OPTIMIZED: Dynamic initialization based on vocabulary size
+// Only generates the primes actually needed, not a fixed 100k
+void init_rainbow_table_for_vocab(uint32_t vocab_size) {
+    if (rainbow_table_initialized && rainbow_table_size >= vocab_size) return;
     
-    printf("Initializing rainbow table (100,000 primes using crystalline sieve)...\n");
+    // Calculate needed primes: vocab_size + 10% buffer for safety
+    uint32_t needed = vocab_size + (vocab_size / 10);
     
-    // Initialize rainbow table
-    rainbow_table_init();
+    printf("Initializing rainbow table (%u primes for vocab_size=%u)...\n", needed, vocab_size);
     
-    // Load important primes first (sacred, Mersenne, etc.)
-    int important_count = rainbow_table_load_important_primes();
-    printf("✓ Loaded %d important primes\n", important_count);
-    
-    // Generate remaining primes using fast sieve
-    int generated = rainbow_table_generate_primes(PRIME_CACHE_SIZE);
-    if (generated < 0) {
-        fprintf(stderr, "ERROR: Failed to generate primes\n");
-        return;
+    if (!rainbow_table_initialized) {
+        // First-time initialization
+        rainbow_table_init();
+        
+        // Load important primes first (sacred, Mersenne, etc.)
+        int important_count = rainbow_table_load_important_primes();
+        printf("✓ Loaded %d important primes\n", important_count);
+        
+        rainbow_table_initialized = true;
     }
     
-    rainbow_table_initialized = true;
+    // Generate additional primes if needed
+    int current_count = rainbow_table_get_count();
+    if (current_count < (int)needed) {
+        int to_generate = needed - current_count;
+        printf("Generating %d additional primes...\n", to_generate);
+        
+        int generated = rainbow_table_generate_primes(to_generate);
+        if (generated < 0) {
+            fprintf(stderr, "ERROR: Failed to generate primes\n");
+            return;
+        }
+        printf("✓ Generated %d primes\n", generated);
+    }
+    
+    rainbow_table_size = needed;
     
     int total = rainbow_table_get_count();
     BigInt* last_prime = rainbow_table_get_prime(total - 1);
     uint64_t last_prime_val = last_prime ? bigint_to_uint64(last_prime) : 0;
     
-    printf("✓ Rainbow table initialized: %d primes (2 to %lu)\n", 
+    printf("✓ Rainbow table ready: %d primes (2 to %lu)\n", 
            total, last_prime_val);
 }
 
@@ -87,7 +102,10 @@ bool crystalline_is_prime(uint64_t n) {
 }
 
 uint64_t crystalline_get_nth_prime(uint32_t n) {
-    init_rainbow_table();
+    // Lazy initialization - ensure we have enough primes
+    if (!rainbow_table_initialized || (int)n >= rainbow_table_get_count()) {
+        init_rainbow_table_for_vocab(n + 1000);  // Generate with buffer
+    }
     
     // Get prime from rainbow table
     BigInt* prime = rainbow_table_get_prime(n);
@@ -128,7 +146,10 @@ uint64_t crystalline_get_nth_prime(uint32_t n) {
 void crystalline_factorize(uint64_t number, uint64_t* factors, uint8_t* num_factors) {
     if (!factors || !num_factors) return;
     
-    init_rainbow_table();
+    // Minimal initialization for factorization
+    if (!rainbow_table_initialized) {
+        init_rainbow_table_for_vocab(1000);  // Small initial set
+    }
     
     *num_factors = 0;
     
@@ -160,7 +181,10 @@ void crystalline_factorize(uint64_t number, uint64_t* factors, uint8_t* num_fact
 void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int precision) {
     if (!coords) return;
     
-    init_rainbow_table();
+    // Minimal initialization for Ulam spiral
+    if (!rainbow_table_initialized) {
+        init_rainbow_table_for_vocab(1000);  // Small initial set
+    }
     
     // Initialize BigFixed structures if needed
     for (int i = 0; i < 3; i++) {
