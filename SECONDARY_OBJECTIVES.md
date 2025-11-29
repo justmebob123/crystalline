@@ -421,51 +421,148 @@ src/docproc/formats/toml_parser.c
 
 ---
 
-## PHASE 3: ADVANCED CRAWLER FEATURES (6 hours)
+## PHASE 3: ADVANCED CRAWLER FEATURES (20 hours)
 
-### 3.1 Prime-Based Randomization System (2 hours)
+### 3.1 Prime-Based Randomization System ✅ COMPLETE
+**Time: 2 hours**
 
 #### Features
-- [ ] Prime number selection for crawl frequency
-- [ ] Prime-based delay calculation
-- [ ] Prime-based link selection from queue
-- [ ] Configurable prime ranges
+- [x] Prime number selection for crawl frequency
+- [x] Prime-based delay calculation
+- [x] Prime-based link selection from queue
+- [x] Configurable prime ranges
+
+#### Status
+- Implementation complete in `src/crawler/prime_randomization.c`
+- Integrated with crawler core
+- Using prime 13 for URL selection
+
+---
+
+### 3.2 Robots.txt Support 🔴 HIGH PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Respect website crawling policies and avoid getting blocked.
+
+#### Features
+- [ ] Download robots.txt for each domain
+- [ ] Parse User-agent and Disallow directives
+- [ ] Check URLs against rules before crawling
+- [ ] Respect Crawl-delay directive
+- [ ] Cache robots.txt per domain (24 hour TTL)
 
 #### Implementation
 ```c
 typedef struct {
-    uint64_t frequency_prime;     // Prime for crawl frequency
-    uint64_t link_selection_prime; // Prime for link randomization
-    uint64_t delay_min_prime;      // Min delay prime
-    uint64_t delay_max_prime;      // Max delay prime
-    bool use_prime_randomization;
-} CrawlerPrimeConfig;
+    char domain[256];
+    char** disallowed_paths;
+    int num_disallowed;
+    int crawl_delay;
+    time_t cache_time;
+} RobotsTxt;
 
-// Functions
-void crawler_set_prime_config(CrawlerState* state, CrawlerPrimeConfig* config);
-uint64_t calculate_prime_delay(uint64_t min_prime, uint64_t max_prime);
-int select_prime_link(CrawlerState* state, char* url, size_t url_size);
+bool robots_txt_allows(const char* url);
+int robots_txt_get_delay(const char* domain);
 ```
 
 #### Files to Create
 ```c
-src/crawler/prime_randomization.c
-src/crawler/prime_randomization.h
+src/crawler/robots_txt.c
+src/crawler/robots_txt.h
 ```
 
-### 3.2 Advanced URL Pattern Detection (2 hours)
+#### Benefits
+- Ethical crawling
+- Avoid getting blocked
+- Respect server resources
+- Legal compliance
+
+---
+
+### 3.3 Per-Domain Rate Limiting 🔴 HIGH PRIORITY
+**Time: 1 hour**
+
+#### Purpose
+Prevent hammering single domain and avoid rate limiting.
+
+#### Features
+- [ ] Track last request time per domain
+- [ ] Enforce minimum delay per domain (default: 10s)
+- [ ] Queue requests to same domain
+- [ ] Distribute requests across domains
+
+#### Implementation
+```c
+typedef struct {
+    char domain[256];
+    time_t last_request;
+    int request_count;
+    int delay_seconds;
+} DomainRateLimit;
+
+bool domain_rate_limit_check(const char* domain);
+void domain_rate_limit_update(const char* domain);
+```
+
+#### Benefits
+- Avoid rate limiting
+- Better server citizenship
+- More reliable crawling
+- Reduced blocking risk
+
+---
+
+### 3.4 Content Quality Filtering 🔴 HIGH PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Skip low-quality or problematic pages to improve training data quality.
+
+#### Detection Patterns
+- [ ] **Error Pages:** 404, 500, 503 status codes
+- [ ] **Login Pages:** "login", "signin", "password" in URL or content
+- [ ] **Paywall Pages:** "subscribe", "premium", "paywall" markers
+- [ ] **Duplicate Content:** Hash-based deduplication
+- [ ] **Low Quality:** Very short content, excessive ads, spam patterns
+
+#### Implementation
+```c
+typedef enum {
+    QUALITY_HIGH,
+    QUALITY_MEDIUM,
+    QUALITY_LOW,
+    QUALITY_SKIP
+} ContentQuality;
+
+ContentQuality assess_content_quality(const char* html, const char* url);
+bool should_skip_content(ContentQuality quality);
+```
+
+#### Benefits
+- Better training data quality
+- Reduced storage waste
+- Faster processing
+- Improved model performance
+
+---
+
+### 3.5 Advanced URL Pattern Detection 🟡 MEDIUM PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Extract more URLs from complex pages.
 
 #### Patterns to Detect
-- [ ] JavaScript onclick handlers
-- [ ] Data attributes (data-href, data-url)
-- [ ] Meta refresh redirects
-- [ ] JavaScript window.location
-- [ ] AJAX endpoints
-- [ ] API endpoints in scripts
+- [ ] JavaScript onclick handlers: `onclick="location.href='...'"`
+- [ ] Data attributes: `data-href="..."`, `data-url="..."`
+- [ ] Meta refresh: `<meta http-equiv="refresh" content="0;url=...">`
+- [ ] JavaScript redirects: `window.location = "..."`
+- [ ] AJAX endpoints: API calls in JavaScript
 - [ ] Sitemap.xml references
-- [ ] RSS/Atom feed links
-- [ ] Canonical URLs
-- [ ] Open Graph URLs
+- [ ] RSS/Atom feeds
+- [ ] Canonical URLs: `<link rel="canonical" href="...">`
+- [ ] Open Graph URLs: `<meta property="og:url" content="...">`
 
 #### Implementation
 ```c
@@ -494,29 +591,233 @@ src/crawler/url_patterns.c
 src/crawler/url_patterns.h
 ```
 
-### 3.3 Dynamic Link Management (2 hours)
+#### Benefits
+- More comprehensive crawling
+- Discover hidden content
+- Better site coverage
+- Find structured data
+
+---
+
+### 3.6 Duplicate Content Detection 🟡 MEDIUM PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Avoid processing same content multiple times.
 
 #### Features
-- [ ] Add links dynamically during crawl
-- [ ] Link queue management
-- [ ] Duplicate detection
-- [ ] Priority queue support
-- [ ] Link filtering rules
+- [ ] Hash-based deduplication (SHA-256)
+- [ ] Store hashes in database or file
+- [ ] Check before processing
+- [ ] Handle near-duplicates (fuzzy matching)
+
+#### Implementation
+```c
+typedef struct {
+    uint8_t hash[32];  // SHA-256
+    char url[2048];
+    time_t timestamp;
+} ContentHash;
+
+bool is_duplicate_content(const char* content);
+void store_content_hash(const char* content, const char* url);
+```
+
+#### Benefits
+- Reduced storage
+- Faster processing
+- Better training data diversity
+- Avoid redundant work
+
+---
+
+### 3.7 Crawl Depth Control 🟡 MEDIUM PRIORITY
+**Time: 1 hour**
+
+#### Purpose
+Limit how deep crawler goes into site.
+
+#### Features
+- [ ] Track depth from start URL
+- [ ] Configurable max depth (default: 3)
+- [ ] Breadth-first vs depth-first option
+- [ ] Priority queue for important pages
 
 #### Implementation
 ```c
 typedef struct {
     char url[2048];
+    int depth;
     int priority;
-    time_t added_time;
-    char source_url[2048];
-} CrawlerLink;
+} CrawlURL;
 
-int crawler_add_link(CrawlerState* state, const char* url, int priority);
-int crawler_add_links_batch(CrawlerState* state, CrawlerLink* links, int count);
-int crawler_get_queue_size(CrawlerState* state);
-int crawler_clear_queue(CrawlerState* state);
+void set_max_crawl_depth(int depth);
+bool should_crawl_url(const char* url, int current_depth);
 ```
+
+#### Benefits
+- Controlled crawling scope
+- Better resource management
+- Focus on important content
+- Avoid infinite crawling
+
+---
+
+### 3.8 Domain Whitelist/Blacklist 🟡 MEDIUM PRIORITY
+**Time: 1 hour**
+
+#### Purpose
+Control which domains to crawl.
+
+#### Features
+- [ ] Whitelist: Only crawl these domains
+- [ ] Blacklist: Never crawl these domains
+- [ ] Pattern matching: `*.example.com`
+- [ ] Configuration file support
+
+#### Implementation
+```c
+typedef struct {
+    char** whitelist;
+    int whitelist_count;
+    char** blacklist;
+    int blacklist_count;
+} DomainFilter;
+
+bool is_domain_allowed(const char* domain);
+void load_domain_filters(const char* config_file);
+```
+
+#### Benefits
+- Focused crawling
+- Avoid problematic sites
+- Legal compliance
+- Resource efficiency
+
+---
+
+### 3.9 Sitemap.xml Support 🟢 LOW PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Discover URLs efficiently.
+
+#### Features
+- [ ] Download sitemap.xml
+- [ ] Parse XML structure
+- [ ] Extract all URLs
+- [ ] Respect priority and changefreq
+- [ ] Handle sitemap index files
+
+#### Benefits
+- Comprehensive URL discovery
+- Efficient crawling
+- Respect site structure
+- Find all pages quickly
+
+---
+
+### 3.10 RSS/Atom Feed Support 🟢 LOW PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Track new content automatically.
+
+#### Features
+- [ ] Detect feed URLs
+- [ ] Parse RSS/Atom XML
+- [ ] Extract article URLs
+- [ ] Track last update time
+- [ ] Periodic feed checking
+
+#### Benefits
+- Automatic content discovery
+- Stay up-to-date
+- Efficient monitoring
+- Structured content
+
+---
+
+### 3.11 Crawl Statistics & Monitoring 🟢 LOW PRIORITY
+**Time: 2 hours**
+
+#### Purpose
+Track crawler performance.
+
+#### Metrics
+- [ ] Pages crawled per hour
+- [ ] Success/failure rates
+- [ ] Average page size
+- [ ] Processing time per page
+- [ ] Queue size over time
+- [ ] Domain distribution
+- [ ] Error types and frequencies
+
+#### Visualization
+- [ ] Real-time dashboard
+- [ ] Historical graphs
+- [ ] Performance trends
+- [ ] Bottleneck identification
+
+---
+
+### 3.12 Crystalline-Specific: Prime-Based Crawl Scheduling 🔵 RESEARCH
+**Time: 3 hours**
+
+#### Purpose
+Use crystalline mathematics for crawl timing.
+
+#### Features
+- [ ] Use prime numbers for delay calculation
+- [ ] Map domains to prime numbers
+- [ ] Use clock lattice for scheduling
+- [ ] 12-fold symmetry in domain distribution
+
+#### Benefits
+- Mathematically elegant
+- Unpredictable patterns
+- Better distribution
+- Aligns with crystalline design
+
+---
+
+### 3.13 Crystalline-Specific: Semantic URL Prioritization 🔵 RESEARCH
+**Time: 4 hours**
+
+#### Purpose
+Prioritize URLs based on semantic value.
+
+#### Features
+- [ ] Analyze URL structure
+- [ ] Detect content type from URL
+- [ ] Use prime encoding for priority
+- [ ] Integrate with clock lattice mapping
+
+#### Priority Factors
+- URL depth
+- Content type indicators
+- Domain authority
+- Semantic keywords
+
+---
+
+### 3.14 Crystalline-Specific: Crystalline Content Hashing 🔵 RESEARCH
+**Time: 2 hours**
+
+#### Purpose
+Use prime-based hashing for deduplication.
+
+#### Features
+- [ ] Hash content using prime numbers
+- [ ] Map to clock lattice positions
+- [ ] Use GCD for similarity detection
+- [ ] 12-fold symmetry in hash space
+
+#### Benefits
+- Faster similarity detection
+- Better distribution
+- Aligns with crystalline math
+- Unique to this system
 
 ---
 
