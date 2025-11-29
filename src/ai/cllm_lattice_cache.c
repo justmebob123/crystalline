@@ -182,79 +182,61 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
         return;
     }
     
-    printf("\n=== Initializing Embeddings with Cached L(n,d,k,λ) ===\n");
+    printf("\n=== Initializing Embeddings with Cached L(n,d,k,λ) (LAZY) ===\n");
     printf("Vocabulary size: %lu\n", (unsigned long)model->vocab_size);
     printf("Embedding dimension: %u\n", model->embeddings.embedding_dim);
-    printf("Using cached values with perturbations...\n\n");
+    printf("Using LAZY initialization - embeddings computed on first use\n");
+    printf("Pre-computing cache for 12 symmetry groups...\n\n");
     
-    // Initialize cache if needed
+    // Initialize cache (fast - only 12 groups × dims)
     cllm_lattice_cache_init(model->embeddings.embedding_dim);
     
+    // Mark all embeddings as uninitialized (NaN)
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
     float* embeddings = model->embeddings.embeddings;
     
-    // Statistics
-    double sum = 0.0;
-    double sum_sq = 0.0;
-    uint32_t count = 0;
-    
-    // Initialize each token's embedding using cached values
-    for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-        CLLMToken* token = &model->tokens[token_id];
-        
-        for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-            // Get cached L_lattice value with perturbation
-            double L_value = cllm_lattice_cache_get(
-                token->prime_encoding,
-                dim,
-                token->symmetry_group,
-                token_id
-            );
-            
-            // Normalize to [-1, 1] using tanh
-            double normalized = prime_tanh(L_value / 100.0);
-            
-            // Clip to ensure strict [-1, 1] range
-            if (normalized > 1.0) normalized = 1.0;
-            if (normalized < -1.0) normalized = -1.0;
-            
-            // Store in embedding matrix
-            embeddings[token_id * embedding_dim + dim] = (float)normalized;
-            
-            // Update statistics
-            sum += normalized;
-            sum_sq += normalized * normalized;
-            count++;
-        }
-        
-        // Progress indicator
-        if ((token_id + 1) % 1000 == 0 || token_id == vocab_size - 1) {
-            printf("  Initialized %u/%u tokens (%.1f%%)\r", 
-                   token_id + 1, vocab_size, 
-                   100.0 * (token_id + 1) / vocab_size);
-            fflush(stdout);
-        }
+    for (uint32_t i = 0; i < vocab_size * embedding_dim; i++) {
+        embeddings[i] = NAN;  // Special marker for uninitialized
     }
     
-    printf("\n");
-    
-    // Print statistics
-    double mean = sum / count;
-    double variance = (sum_sq / count) - (mean * mean);
-    double std_dev = sqrt(variance);
-    
-    printf("\n✓ Embedding initialization complete\n");
-    printf("  Mean: %.6f\n", mean);
-    printf("  Std Dev: %.6f\n", std_dev);
-    printf("  Range: [-1.0, 1.0]\n");
-    printf("==========================================\n\n");
+    printf("✓ Lazy initialization complete (instant)\n");
+    printf("  Embeddings will be computed on first access during training\n\n");
+    return;
 }
-
 /**
- * Cleanup cache (call on shutdown)
+ * Compute embedding for a specific token on-demand
+ * This is called automatically when an uninitialized embedding is accessed
  */
-void cllm_lattice_cache_cleanup(void) {
-    memset(&g_lattice_cache, 0, sizeof(g_lattice_cache));
-    g_cache_initialized = false;
+void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
+    if (!model || token_id >= model->vocab_size) return;
+    
+    CLLMToken* token = &model->tokens[token_id];
+    uint32_t embedding_dim = model->embeddings.embedding_dim;
+    float* embeddings = model->embeddings.embeddings;
+    uint32_t offset = token_id * embedding_dim;
+    
+    // Check if already computed
+    if (!isnan(embeddings[offset])) return;
+    
+    // Compute all dimensions for this token
+    for (uint32_t dim = 0; dim < embedding_dim; dim++) {
+        // Get cached L_lattice value
+        double L_value = cllm_lattice_cache_get(
+            token->prime_encoding,
+            dim,
+            token->symmetry_group,
+            token_id
+        );
+        
+        // Normalize to [-1, 1] using tanh
+        double normalized = prime_tanh(L_value / 100.0);
+        
+        // Clip to ensure strict [-1, 1] range
+        if (normalized > 1.0) normalized = 1.0;
+        if (normalized < -1.0) normalized = -1.0;
+        
+        // Store in embedding matrix
+        embeddings[offset + dim] = (float)normalized;
+    }
 }

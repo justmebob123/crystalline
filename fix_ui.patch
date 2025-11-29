@@ -1,0 +1,25 @@
+--- a/app/ui/sphere_visualization.c
++++ b/app/ui/sphere_visualization.c
+@@ -132,13 +132,22 @@
+        int sphere_radius = arrangement_radius / 5;
+        
+        // Draw title
+-       draw_text(renderer, "KISSING SPHERES ARCHITECTURE", bounds.x + 10, bounds.y + 10, text_color);
++       draw_text(renderer, "KISSING SPHERES - 12-FOLD SYMMETRY", bounds.x + 10, bounds.y + 10, text_color);
+        
+        // UI Integration: Draw subtitle with real-time status
+        if (state->training_metrics) {
+            char status_text[128];
+-           snprintf(status_text, sizeof(status_text), "Real-time Metrics | Epoch %d | Loss: %.4f",
+-                   state->training_current_epoch, state->training_loss);
++           snprintf(status_text, sizeof(status_text), "Epoch %d | Loss: %.4f | Active: %d/12",
++                   state->training_current_epoch, state->training_loss, state->sphere_stats.active_spheres);
+            draw_text(renderer, status_text, bounds.x + 10, bounds.y + 30, 
+                     (SDL_Color){150, 150, 150, 255});
+        }
++       
++       // Draw Node Zero status
++       char node_zero_text[64];
++       snprintf(node_zero_text, sizeof(node_zero_text), "NODE ZERO: Control (Never Processes)");
++       draw_text(renderer, node_zero_text, bounds.x + 10, bounds.y + 50,
++                (SDL_Color){200, 150, 50, 255});

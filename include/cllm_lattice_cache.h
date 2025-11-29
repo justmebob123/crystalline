@@ -46,3 +46,9 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model);
 void cllm_lattice_cache_cleanup(void);
 
 #endif /* CLLM_LATTICE_CACHE_H */
+/**
+ * Compute embedding for a specific token on-demand (lazy initialization)
+ * This is called automatically when an uninitialized embedding is accessed
+ */
+void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
+
