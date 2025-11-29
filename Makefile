@@ -117,7 +117,7 @@ $(ALGORITHMS_STATIC): $(CRYSTALLINE_STATIC)
 
 $(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Creating CLLM shared library: $@"
-	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms
+	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms -lm
 	@echo "✓ CLLM shared library created"
 
 $(CLLM_STATIC): $(AI_OBJECTS) $(CRYSTALLINE_STATIC) $(ALGORITHMS_STATIC)
