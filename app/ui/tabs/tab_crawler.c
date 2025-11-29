@@ -75,15 +75,19 @@ static void init_crawler_tab_state(void) {
     char temp[32];
     snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.frequency_prime);
     text_input_set_text(&g_crawler_state.frequency_input, temp);
+    printf("DEBUG: Set frequency_input to '%s'\n", temp);
     
     snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.link_selection_prime);
     text_input_set_text(&g_crawler_state.selection_input, temp);
+    printf("DEBUG: Set selection_input to '%s'\n", temp);
     
     snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.delay_min_prime);
     text_input_set_text(&g_crawler_state.delay_min_input, temp);
+    printf("DEBUG: Set delay_min_input to '%s'\n", temp);
     
     snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.delay_max_prime);
     text_input_set_text(&g_crawler_state.delay_max_input, temp);
+    printf("DEBUG: Set delay_max_input to '%s'\n", temp);
     
     // Initialize link queue
     g_crawler_state.link_queue = link_queue_create("data/crawler/link_queue.txt");
@@ -228,8 +232,18 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.frequency_input.bounds.y = y;
         g_crawler_state.frequency_input.bounds.w = 150;
         g_crawler_state.frequency_input.bounds.h = 22;
+        
+        // Debug: Print input state
+        static int debug_count = 0;
+        if (debug_count < 5) {
+            printf("DEBUG: Rendering frequency_input at (%d,%d) size (%d,%d), text='%s', active=%d\n",
+                   x, y, 150, 22, g_crawler_state.frequency_input.text, 
+                   g_crawler_state.frequency_input.active);
+            debug_count++;
+        }
+        
         text_input_render(&g_crawler_state.frequency_input, renderer, get_global_font());
-        draw_text(renderer, freq_valid ? "✓" : "✗", x + 160, y + 5, freq_color);
+        draw_text(renderer, freq_valid ? "OK" : "X", x + 160, y + 5, freq_color);
         y += 30;
         
         // Selection Prime
@@ -245,7 +259,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.selection_input.bounds.w = 150;
         g_crawler_state.selection_input.bounds.h = 22;
         text_input_render(&g_crawler_state.selection_input, renderer, get_global_font());
-        draw_text(renderer, sel_valid ? "✓" : "✗", x + 160, y + 5, sel_color);
+        draw_text(renderer, sel_valid ? "OK" : "X", x + 160, y + 5, sel_color);
         y += 30;
         
         // Delay Min
@@ -261,7 +275,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.delay_min_input.bounds.w = 150;
         g_crawler_state.delay_min_input.bounds.h = 22;
         text_input_render(&g_crawler_state.delay_min_input, renderer, get_global_font());
-        draw_text(renderer, min_valid ? "✓" : "✗", x + 160, y + 5, min_color);
+        draw_text(renderer, min_valid ? "OK" : "X", x + 160, y + 5, min_color);
         y += 30;
         
         // Delay Max
@@ -277,7 +291,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.delay_max_input.bounds.w = 150;
         g_crawler_state.delay_max_input.bounds.h = 22;
         text_input_render(&g_crawler_state.delay_max_input, renderer, get_global_font());
-        draw_text(renderer, max_valid ? "✓" : "✗", x + 160, y + 5, max_color);
+        draw_text(renderer, max_valid ? "OK" : "X", x + 160, y + 5, max_color);
         y += 30;
         
         // Apply button
@@ -296,7 +310,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
     draw_section_header(renderer, "URL PATTERNS", x, y, (SDL_Color){180, 180, 200, 255});
     y += 30;
     
-    const char* checkbox_on = "[✓]";
+    const char* checkbox_on = "[X]";
     const char* checkbox_off = "[ ]";
     
     // Pattern checkboxes
@@ -361,7 +375,7 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     
     // Confirmation message
     if (g_crawler_state.show_add_confirmation) {
-        draw_text(renderer, "✓ Link added to queue", x, y, success_color);
+        draw_text(renderer, "OK Link added to queue", x, y, success_color);
         g_crawler_state.confirmation_timer--;
         if (g_crawler_state.confirmation_timer <= 0) {
             g_crawler_state.show_add_confirmation = false;
