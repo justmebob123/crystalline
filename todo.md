@@ -123,22 +123,33 @@ typedef struct {
 - [ ] Ensure all prime access goes through rainbow table
 - [ ] Test model creation with rainbow table integration
 
-### Phase 3: Decision on CrystallineAbacus
+### Phase 3: Architectural Understanding ✅ CLARIFIED
 
-**Question:** Should we keep `crystalline_abacus.c` as a wrapper/loader?
+**CRITICAL DISCOVERY:** After deep audit, the architecture is actually CORRECT!
 
-**Option A:** Delete it completely
-- Rainbow table does everything
-- No wrapper needed
-- Simpler architecture
+**Three Abacus Systems Serve Different Purposes:**
 
-**Option B:** Keep as initialization helper
-- `crystalline_abacus.c` becomes a loader
-- Wraps rainbow table functions
-- Provides convenience API
-- Handles initialization sequence
+1. **PrimeRainbowTable** (prime_rainbow.c) ⭐ FUNDAMENTAL
+   - Tree structure with geometric representation
+   - Single source of truth for ALL primes
+   - Stores primes with clock lattice integration
+   - ✅ This IS the abacus
 
-**Decision needed from user**
+2. **CrystalAbacus** (crystal_abacus.c) ✅ KEEP FOR THREADING
+   - Simple, fast, integer-only prime generation
+   - Used by HierarchicalAbacus for threading
+   - Used by CrystalAbacusBig for BigInt operations
+   - ✅ CANNOT DELETE - needed for threading architecture
+
+3. **CrystallineAbacus** (crystalline_abacus.c) ❓ OPTIONAL WRAPPER
+   - Fast generation with clock lattice integration
+   - Currently used only by app/cllm_integration.c
+   - Can be simplified to thin wrapper or removed
+
+**Next Steps:**
+- [ ] Integrate crystalline sieve with rainbow table (100-1000x speedup)
+- [ ] Update CLLM to use rainbow table
+- [ ] Decide on CrystallineAbacus (keep as wrapper or remove)
 
 ---
 
