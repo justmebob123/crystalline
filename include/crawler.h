@@ -2,6 +2,7 @@
 #define CRAWLER_H
 
 #include <pthread.h>
+#include <stdbool.h>
 
 // Forward declarations for internal component states
 typedef struct CrawlerStateInternal CrawlerStateInternal;
