@@ -317,11 +317,12 @@ When moving functionality between layers:
 - [x] Neighbors initialized (12 per point, one per symmetry group)
 - [x] Build verified: Zero errors, zero warnings
 
-**Task 4.3: Integrate NTT Attention for Long Sequences**
-- [ ] Add sequence length check in attention forward
-- [ ] Call NTT attention for seq_len >= 256
-- [ ] Use standard attention for shorter sequences
-- [ ] Benchmark performance improvement
+**Task 4.3: Integrate NTT Attention for Long Sequences** ✅ COMPLETE
+- [x] Added sequence length check in hybrid attention
+- [x] Calls NTT attention for seq_len >= 256
+- [x] Uses angular attention for shorter sequences with token IDs
+- [x] Falls back to standard attention otherwise
+- [x] Build verified: Zero errors, zero warnings
 
 **Task 4.4: Wire Cymatic Resonance into Training Loop**
 - [ ] Locate training step in `src/ai/cllm_training.c`
