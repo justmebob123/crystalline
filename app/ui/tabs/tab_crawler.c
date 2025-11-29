@@ -517,12 +517,17 @@ void draw_crawler_tab(AppState* state) {
 // ============================================================================
 
 void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
+    printf("DEBUG: handle_crawler_tab_click called - mouse at (%d, %d)\n", mouse_x, mouse_y);
+    
     // InputManager handles all input clicks automatically
     // This function handles button clicks
     
     // Get column layout
     ColumnLayout col1, col2, col3;
     calculate_crawler_columns(&col1, &col2, &col3);
+    
+    printf("DEBUG: Column 2 position: x=%d, y=%d, width=%d, height=%d\n", 
+           col2.x, col2.y, col2.width, col2.height);
     
     // Column 2: Link Management buttons
     int x = col2.x + col2.padding;
@@ -536,8 +541,12 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
     
     // Add button (80x25)
     SDL_Rect add_btn = {x, y, 80, 25};
+    printf("DEBUG: Add button rect: x=%d, y=%d, w=%d, h=%d\n", 
+           add_btn.x, add_btn.y, add_btn.w, add_btn.h);
+    
     if (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w &&
         mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h) {
+        printf("DEBUG: Add button clicked!\n");
         
         // Get URL from input
         extern InputManager* g_input_manager;
