@@ -175,10 +175,10 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
             }
         }
         
-        // Click outside all inputs - unfocus
+        // Click outside all inputs - unfocus but let click pass through to buttons
         if (!clicked_input && manager->focused_input) {
             input_manager_unfocus(manager);
-            return true;
+            // Don't return true - let the click reach button handlers
         }
     }
     
