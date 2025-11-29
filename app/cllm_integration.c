@@ -16,16 +16,15 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
-#include "../include/crystalline_abacus.h"  // PHASE 1: Global abacus integration
+#include "../include/prime_rainbow.h"  // Rainbow table IS the abacus
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 // ============================================================================
-// GLOBAL CRYSTALLINE ABACUS - Single Source of Truth for All Primes
+// GLOBAL RAINBOW TABLE - Single Source of Truth for All Primes
 // ============================================================================
-
-static CrystallineAbacus* g_global_abacus = NULL;
+// Note: Rainbow table IS the abacus - no separate structure needed
 static bool g_abacus_initialized = false;
 
 // External declarations for initialization functions
@@ -69,38 +68,32 @@ int app_initialize_global_abacus(void) {
         return 0;
     }
     
-    printf("=== Initializing Global Crystalline Abacus ===\n");
+    printf("=== Initializing Global Rainbow Table (Abacus) ===\n");
     
-    // Create global abacus with capacity for 10,000 primes
-    g_global_abacus = crystalline_abacus_create(10000);
-    if (!g_global_abacus) {
-        fprintf(stderr, "ERROR: Failed to create global abacus\n");
-        return -1;
-    }
-    printf("✓ Global abacus created (capacity: 10,000)\n");
+    // Initialize rainbow table (the abacus)
+    rainbow_table_init();
+    printf("✓ Rainbow table initialized\n");
     
     // Stage 1: Load important primes (INSTANT)
-    int important_count = crystalline_abacus_load_important_primes(g_global_abacus);
+    int important_count = rainbow_table_load_important_primes();
     if (important_count < 0) {
         fprintf(stderr, "ERROR: Failed to load important primes\n");
-        crystalline_abacus_free(g_global_abacus);
-        g_global_abacus = NULL;
+        rainbow_table_cleanup();
         return -1;
     }
     printf("✓ Stage 1: Loaded %d important primes (instant)\n", important_count);
     
     // Stage 2: Generate first 10,000 primes (NON-BLOCKING, ~10ms)
-    int generated = crystalline_abacus_generate_primes_fast(g_global_abacus, 10000);
+    int generated = rainbow_table_generate_primes(10000);
     if (generated < 0) {
         fprintf(stderr, "ERROR: Failed to generate primes\n");
-        crystalline_abacus_free(g_global_abacus);
-        g_global_abacus = NULL;
+        rainbow_table_cleanup();
         return -1;
     }
     printf("✓ Stage 2: Generated %d primes using crystalline sieve (~10ms)\n", generated);
     
     // Verify clock positions were computed
-    uint32_t total_primes = crystalline_abacus_get_count(g_global_abacus);
+    uint32_t total_primes = rainbow_table_get_count();
     printf("✓ Total primes in abacus: %u\n", total_primes);
     printf("✓ Clock positions computed for all primes\n");
     printf("✓ Sphere coordinates computed for all primes\n");
@@ -108,7 +101,7 @@ int app_initialize_global_abacus(void) {
     // Print first few primes for verification
     printf("  First 10 primes: ");
     for (uint32_t i = 0; i < 10 && i < total_primes; i++) {
-        printf("%lu ", crystalline_abacus_get_prime(g_global_abacus, i));
+        printf("%lu ", rainbow_table_get_prime( i));
     }
     printf("\n");
     
@@ -142,7 +135,7 @@ CrystallineAbacus* app_get_global_abacus(void) {
 void app_cleanup_global_abacus(void) {
     if (g_global_abacus) {
         printf("Cleaning up global abacus...\n");
-        crystalline_abacus_free(g_global_abacus);
+        rainbow_table_cleanup();
         g_global_abacus = NULL;
         g_abacus_initialized = false;
         printf("✓ Global abacus cleaned up\n");
