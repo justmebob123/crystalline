@@ -108,6 +108,7 @@ void cllm_lattice_cache_init(uint32_t max_embedding_dim) {
  */
 double cllm_lattice_cache_get(uint64_t prime, uint32_t dim, uint32_t symmetry_group, 
                                uint32_t token_id) {
+       (void)token_id;  // Unused parameter - reserved for future perturbation
     if (!g_cache_initialized) {
         fprintf(stderr, "ERROR: L_lattice cache not initialized\n");
         return 0.0;

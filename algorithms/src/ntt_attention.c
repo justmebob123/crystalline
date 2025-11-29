@@ -67,6 +67,7 @@ static void apply_softmax(float* scores, uint32_t len) {
 /**
  * Convert float array to BigInt array for NTT
  */
+__attribute__((unused))
 static int float_to_bigint_array(BigInt* output, const float* input, uint32_t len) {
     if (!output || !input) return 0;
     
@@ -82,6 +83,7 @@ static int float_to_bigint_array(BigInt* output, const float* input, uint32_t le
 /**
  * Convert BigInt array back to float array
  */
+__attribute__((unused))
 static int bigint_to_float_array(float* output, const BigInt* input, uint32_t len) {
     if (!output || !input) return 0;
     
