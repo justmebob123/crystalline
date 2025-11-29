@@ -151,6 +151,28 @@ When moving functionality between layers:
 - [ ] Benchmark performance improvement
 - [ ] Document performance characteristics
 
+## 🏗️ ARCHITECTURAL LAYER VIOLATIONS IDENTIFIED
+
+### Critical Finding: Algorithms in Wrong Layer
+
+**Analysis Complete:** Bidirectional layer analysis reveals that mathematical ALGORITHMS are incorrectly placed in Layer 3 (CLLM) when they should be in Layer 2 (Algorithms).
+
+**Violations:**
+1. ⚠️ `src/ai/cllm_angular_attention.c` → Should be `algorithms/src/angular_attention.c`
+2. ⚠️ `src/ai/cllm_cymatic_training.c` → Should be `algorithms/src/cymatic_modulation.c`
+3. ⚠️ `src/ai/cllm_kissing_spheres.c` → Should be `algorithms/src/kissing_spheres.c`
+4. ❌ NTT attention missing from algorithms layer entirely
+
+**Correct Architecture:**
+- **Layer 1 (Crystalline):** ✅ Pure math formulas (angular_position, L_lattice, constants)
+- **Layer 2 (Algorithms):** ⚠️ General algorithms (MISSING: angular attention, cymatic, NTT, spheres)
+- **Layer 3 (CLLM):** ⚠️ CLLM-specific wrappers (CURRENTLY: has algorithms that belong in Layer 2)
+- **Layer 4 (Application):** ✅ UI and tools
+
+**See:** `BIDIRECTIONAL_LAYER_ANALYSIS.md` for complete analysis
+
+---
+
 ## 🎯 MATHEMATICAL INTEGRATION STATUS (OBJECTIVES 14-20)
 
 ### OBJECTIVE 14: Integrate L(n,d,k,λ) Lattice Formula ✅ COMPLETE
