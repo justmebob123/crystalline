@@ -3,6 +3,7 @@
 #include "../include/cllm_training.h"
 #include "../include/cllm_pure_crystalline.h"
 #include "../include/ai/cllm_lattice_embeddings.h"
+#include "../include/ai/cllm_kissing_spheres.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -307,6 +308,27 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         printf("✓ Crystalline prime encodings initialized\n");
         printf("✓ 12D lattice coordinates computed\n");
         printf("==========================================\n\n");
+    }
+    
+    // OBJECTIVE 16: Initialize lattice points for kissing spheres
+    // Allocate lattice points (one per token)
+    model->num_lattice_points = config->vocab_size;
+    model->lattice_points = (CLLMLatticePoint*)calloc(model->num_lattice_points, sizeof(CLLMLatticePoint));
+    if (!model->lattice_points) {
+        fprintf(stderr, "Failed to allocate lattice points\n");
+        // Continue without lattice points - not critical for basic operation
+        model->num_lattice_points = 0;
+    } else {
+        // Initialize lattice points with token symmetry groups
+        for (uint32_t i = 0; i < model->num_lattice_points; i++) {
+            model->lattice_points[i].symmetry_group = model->tokens[i].symmetry_group;
+            model->lattice_points[i].num_neighbors = 0;
+            model->lattice_points[i].neighbor_count = 0;
+        }
+        
+        // OBJECTIVE 16: Initialize 12 kissing sphere neighbors
+        printf("\n");
+        cllm_initialize_kissing_spheres(model);
     }
     
     return model;
