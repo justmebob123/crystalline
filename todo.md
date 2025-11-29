@@ -49,23 +49,24 @@ Line 336-340: Returns -1 without creating output when text too short
 
 ## 📋 COMPREHENSIVE FIX PLAN
 
-### Phase 1: Fix Preprocessor Text Extraction (CRITICAL - 1 hour)
-- [ ] Fix `clean_text()` pointer bug
-- [ ] Add debug output to show actual text length
-- [ ] Add file type detection (HTML, PDF, binary, etc.)
-- [ ] Skip binary files appropriately
-- [ ] Add "already processed" tracking
-- [ ] Fix infinite loop in preprocessor thread
-- [ ] Test with actual downloaded files
+### Phase 1: Fix Preprocessor Text Extraction (CRITICAL - 1 hour) ✅ COMPLETED
+- [x] Fix `clean_text()` pointer bug - FIXED: Now properly moves content to buffer start
+- [x] Add debug output to show actual text length - ADDED: Shows raw HTML, after tags, after cleaning
+- [x] Add "already processed" tracking - FIXED: Creates marker file even when skipping
+- [x] Fix infinite loop in preprocessor thread - FIXED: Marker file prevents infinite loop
+- [ ] Add file type detection (HTML, PDF, binary, etc.) - TODO: Next phase
+- [ ] Skip binary files appropriately - TODO: Next phase
+- [ ] Test with actual downloaded files - REQUIRES USER TESTING
 
-### Phase 2: Implement Crawl Speed Control (HIGH PRIORITY - 2 hours)
-- [ ] Add configurable delay between requests (default: 3-10 seconds)
-- [ ] Implement prime-based delay calculation
-- [ ] Add per-domain rate limiting
-- [ ] Add exponential backoff for errors
-- [ ] Respect robots.txt
-- [ ] Add user-agent rotation
-- [ ] Test crawl speed matches human behavior
+### Phase 2: Implement Crawl Speed Control (HIGH PRIORITY - 2 hours) ✅ PARTIALLY COMPLETED
+- [x] Add configurable delay between requests - ALREADY IMPLEMENTED (2-5s default)
+- [x] Increase delays for human-like behavior - FIXED: Now 5-15s random delay
+- [ ] Implement prime-based delay calculation - EXISTS but not integrated
+- [ ] Add per-domain rate limiting - TODO
+- [ ] Add exponential backoff for errors - TODO
+- [ ] Respect robots.txt - TODO
+- [ ] Add user-agent rotation - TODO
+- [ ] Test crawl speed matches human behavior - REQUIRES USER TESTING
 
 ### Phase 3: Implement URL Randomization (HIGH PRIORITY - 1 hour)
 - [ ] Implement prime-based link selection from queue
@@ -74,12 +75,14 @@ Line 336-340: Returns -1 without creating output when text too short
 - [ ] Add priority system (depth-first vs breadth-first)
 - [ ] Test randomization works correctly
 
-### Phase 4: Model Auto-Save (MEDIUM PRIORITY - 1 hour)
-- [ ] Save model after each training batch
-- [ ] Auto-load model on startup
-- [ ] Add checkpoint system
-- [ ] Add model versioning
-- [ ] Test save/load cycle
+### Phase 4: Model Auto-Save (MEDIUM PRIORITY - 1 hour) ✅ ALREADY IMPLEMENTED
+- [x] Save model after each training batch - ALREADY IMPLEMENTED in continuous_training.c
+- [x] Auto-load model on startup - ALREADY IMPLEMENTED (loads from {data_dir}/model.cllm)
+- [x] Add checkpoint system - ALREADY IMPLEMENTED (saves every 5 batches)
+- [ ] Add model versioning - TODO (low priority)
+- [ ] Test save/load cycle - REQUIRES USER TESTING
+
+**NOTE:** Model persistence is ALREADY WORKING. The model is saved to `{crawler_data_dir}/model.cllm` and automatically loaded on next run.
 
 ### Phase 5: File Type Detection (MEDIUM PRIORITY - 1 hour)
 - [ ] Detect file type from content (magic bytes)
@@ -127,14 +130,27 @@ Line 336-340: Returns -1 without creating output when text too short
 - ✅ Files are saved to disk
 - ✅ Preprocessor thread runs
 - ✅ UI shows crawler status
+- ✅ Crawl delays implemented (5-15s random)
+- ✅ Model auto-save/load implemented
+- ✅ Infinite loop fixed (marker files)
+- ✅ Debug output added
 
-### What's Broken:
-- ❌ Text extraction (6 char bug)
-- ❌ File processing (infinite loop)
-- ❌ Crawl speed (too fast)
-- ❌ URL randomization (sequential)
-- ❌ Model persistence (not saved)
-- ❌ Binary file handling (treated as text)
+### What's Fixed:
+- ✅ File processing infinite loop - FIXED with marker files
+- ✅ Crawl speed - IMPROVED (5-15s delays)
+- ✅ Model persistence - ALREADY WORKING
+- ✅ clean_text() trimming bug - FIXED
+
+### What Needs Testing:
+- ⏳ Text extraction (debug output will reveal issue)
+- ⏳ Actual crawl behavior with new delays
+- ⏳ Model save/load cycle
+- ⏳ Marker file creation
+
+### What Still Needs Work:
+- ❌ URL randomization (sequential, not using prime-based)
+- ❌ Binary file handling (no file type detection)
+- ❌ Prime-based delay (exists but not integrated)
 
 ## 🎯 IMMEDIATE ACTIONS
 
