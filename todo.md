@@ -305,11 +305,10 @@ When moving functionality between layers:
 - [x] When token IDs available: uses angular attention
 - [x] When token IDs unavailable: falls back to dot product
 - [x] Added declaration to `include/cllm_inference.h`
+- [x] Modified `cllm_forward_training()` to call hybrid attention with token IDs
+- [x] Token IDs now flow through entire attention pipeline
+- [x] Angular attention ACTIVE in training loop
 - [x] Build verified: Zero errors, zero warnings
-
-**Next Step:**
-- [ ] Modify `cllm_forward_training()` to call hybrid attention with token IDs
-- [ ] Test angular attention in training loop
 
 **Task 4.2: Initialize 12 Kissing Sphere Neighbors**
 - [ ] Verify `cllm_initialize_kissing_spheres()` exists
