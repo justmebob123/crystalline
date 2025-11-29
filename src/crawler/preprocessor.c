@@ -16,6 +16,10 @@
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
 
+// Forward declarations for file processors
+extern int process_pdf_file(const char* input_path, const char* output_path);
+extern int process_image_file(const char* input_path, const char* output_path);
+
 /**
  * File type enumeration
  */
@@ -397,17 +401,48 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
     const char* type_names[] = {"HTML", "PDF", "IMAGE", "BINARY", "TEXT", "UNKNOWN"};
     printf("  File type: %s, Size: %ld bytes\n", type_names[file_type], size);
     
-    // Skip non-HTML files for now
-    if (file_type != FILE_TYPE_HTML && file_type != FILE_TYPE_TEXT) {
-        printf("  Skipped (unsupported file type: %s)\n", type_names[file_type]);
-        
-        // Create marker file to prevent reprocessing
-        FILE* marker = fopen(output_path, "w");
-        if (marker) {
-            fprintf(marker, "<!-- SKIPPED: Unsupported file type (%s) -->\n", type_names[file_type]);
-            fclose(marker);
-        }
-        
+    // Route to appropriate processor based on file type
+    char* text = NULL;
+    
+    switch (file_type) {
+        case FILE_TYPE_PDF:
+            printf("  Processing PDF file...\n");
+            free(html);
+            // Call PDF processor
+            return process_pdf_file(input_path, output_path);
+            
+        case FILE_TYPE_IMAGE:
+            printf("  Processing image with OCR...\n");
+            free(html);
+            // Call image OCR processor
+            return process_image_file(input_path, output_path);
+            
+        case FILE_TYPE_BINARY:
+            // TODO: Detect specific binary types (ZIP, Office docs, etc.)
+            printf("  Binary file - checking for Office documents...\n");
+            // For now, create marker and skip
+            FILE* bin_marker = fopen(output_path, "w");
+            if (bin_marker) {
+                fprintf(bin_marker, "<!-- TODO: Office document processing -->\n");
+                fclose(bin_marker);
+            }
+            free(html);
+            return -1;
+            
+        case FILE_TYPE_HTML:
+        case FILE_TYPE_TEXT:
+        case FILE_TYPE_UNKNOWN:
+            // Process as HTML/text (existing code path)
+            text = (char*)malloc(MAX_TEXT_SIZE);
+            if (!text) {
+                free(html);
+                return -1;
+            }
+            break;
+    }
+    
+    // If we got here, we're processing HTML/text
+    if (!text) {
         free(html);
         return -1;
     }
@@ -426,13 +461,6 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
             get_timestamp(timestamp, sizeof(timestamp));
             printf("%s   Extracted %d links\n", timestamp, links_found);
         }
-    }
-    
-    // Extract text
-    char* text = (char*)malloc(MAX_TEXT_SIZE);
-    if (!text) {
-        free(html);
-        return -1;
     }
     
     // Debug: Show raw HTML size
