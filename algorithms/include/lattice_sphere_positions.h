@@ -1,5 +1,5 @@
-#ifndef CLLM_SPHERE_POSITION_H
-#define CLLM_SPHERE_POSITION_H
+#ifndef LATTICE_SPHERE_POSITIONS_H
+#define LATTICE_SPHERE_POSITIONS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,19 +10,13 @@ extern "C" {
 #endif
 
 /**
- * Sphere Position System
+ * Lattice Sphere Position System
  * 
- * Defines the position of a sphere in the crystalline lattice hierarchy.
- * Each sphere occupies a specific region of the lattice defined by:
- * - Symmetry group (0-11): Which residue class mod 12
- * - Range [start, end]: Boundaries in prime space
- * - Clock position: Position on 12-hour clock face
+ * Manages sphere positions in the crystalline lattice with special
+ * handling for the 144000 boundary region.
  * 
- * CRITICAL: The number 144000 is sacred in this system:
- * - 144000 = 3 × 12³ × (250/9) = Vector Culmination
- * - 143999 = Twin prime (lower boundary)
- * - 144001 = Twin prime (upper boundary)
- * - Range [0, 143999] = 144000 possibilities
+ * This module handles thread-safe sphere positioning and partitioning
+ * in the crystalline lattice hierarchy.
  */
 
 // Mathematical constants - use definitions from prime_types.h
@@ -250,4 +244,4 @@ uint64_t get_next_sphere_id(void);
 }
 #endif
 
-#endif /* CLLM_SPHERE_POSITION_H */
+#endif /* LATTICE_SPHERE_POSITIONS_H */

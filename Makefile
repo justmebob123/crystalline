@@ -13,7 +13,7 @@ AR = ar
 # Check if AVX2 is available (optional, gracefully degrades)
 SIMD_FLAGS := $(shell grep -q avx2 /proc/cpuinfo 2>/dev/null && echo "-mavx2 -mfma" || echo "")
 
-CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include $(SIMD_FLAGS)
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include $(SIMD_FLAGS)
 LDFLAGS = 
 ARFLAGS = rcs
 
@@ -398,55 +398,55 @@ tools/cllm_inference: $(CLLM_LIB)
 	@echo "Building inference tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_inference tools/cllm_inference.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference tool built: tools/cllm_inference"
 
 tools/cllm_tokenize: $(CLLM_LIB)
 	@echo "Building tokenizer tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_tokenize tools/cllm_tokenize.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Tokenizer tool built: tools/cllm_tokenize"
 
 tools/cllm_vocab_build: $(CLLM_LIB)
 	@echo "Building vocabulary builder tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_vocab_build tools/cllm_vocab_build.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 
 tools/init_lattice_embeddings: $(CLLM_LIB)
 	@echo "Building lattice embeddings initializer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/init_lattice_embeddings tools/init_lattice_embeddings.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Lattice embeddings tool built: tools/init_lattice_embeddings"
 
 tools/benchmark_ntt_attention: $(CLLM_LIB)
 	@echo "Building NTT attention benchmark..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/benchmark_ntt_attention tools/benchmark_ntt_attention.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ NTT benchmark tool built: tools/benchmark_ntt_attention"
 
 tools/validate_kissing_spheres: $(CLLM_LIB)
 	@echo "Building kissing spheres validator..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/validate_kissing_spheres tools/validate_kissing_spheres.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Kissing spheres validator built: tools/validate_kissing_spheres"
 
 tools/analyze_cymatic_resonance: $(CLLM_LIB)
 	@echo "Building cymatic resonance analyzer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/analyze_cymatic_resonance tools/analyze_cymatic_resonance.c \
-		-L. -lcllm -lcrystalline -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Cymatic analyzer tool built: tools/analyze_cymatic_resonance"
 
 tools/visualize_angular_positions: $(CLLM_LIB)
 	@echo "Building angular position visualizer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/visualize_angular_positions tools/visualize_angular_positions.c \
-		-L. -lcllm -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Angular visualizer tool built: tools/visualize_angular_positions"
 
 all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \

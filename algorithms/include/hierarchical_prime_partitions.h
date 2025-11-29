@@ -1,12 +1,12 @@
-#ifndef CLLM_HIERARCHICAL_ABACUS_H
-#define CLLM_HIERARCHICAL_ABACUS_H
+#ifndef HIERARCHICAL_PRIME_PARTITIONS_H
+#define HIERARCHICAL_PRIME_PARTITIONS_H
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdatomic.h>
 #include "prime_types.h"
-#include "cllm_sphere_position.h"
+#include "lattice_sphere_positions.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -208,4 +208,4 @@ int hierarchical_abacus_prefill_cache(HierarchicalAbacus* abacus, int max_primes
 }
 #endif
 
-#endif /* CLLM_HIERARCHICAL_ABACUS_H */
+#endif /* HIERARCHICAL_PRIME_PARTITIONS_H */

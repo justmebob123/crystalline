@@ -4,7 +4,7 @@
  * Prime generation with parent reference and partition filtering.
  */
 
-#include "cllm_hierarchical_abacus.h"
+#include "../include/hierarchical_prime_partitions.h"
 #include "bigint_core.h"
 #include <stdlib.h>
 #include <stdio.h>

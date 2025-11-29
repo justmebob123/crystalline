@@ -4,7 +4,7 @@
 
 #include "ai/cllm_thread_allocation.h"
 #include "ai/cllm_shared_memory.h"
-#include "cllm_sphere_position.h"
+#include "lattice_sphere_positions.h"
 #include "bigint_core.h"
 #include <stdio.h>
 #include <stdlib.h>

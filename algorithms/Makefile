@@ -19,7 +19,9 @@ SOURCES = src/numerical.c \
           src/sphere_packing.c \
           src/hierarchical_primes.c \
           src/hierarchical_structures.c \
-          src/batch_processing.c
+          src/batch_processing.c \
+          src/hierarchical_prime_partitions.c \
+          src/lattice_sphere_positions.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -35,7 +37,7 @@ all: $(SHARED_LIB)
 
 $(SHARED_LIB): $(OBJECTS) $(CRYSTALLINE_LIB)
 	@echo "Creating shared algorithms library: $@"
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline -lm
 	@echo "✓ Shared algorithms library created"
 
 static: $(STATIC_LIB)

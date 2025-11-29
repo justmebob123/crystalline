@@ -5,7 +5,7 @@
  * handling for the 144000 boundary region.
  */
 
-#include "cllm_sphere_position.h"
+#include "lattice_sphere_positions.h"
 #include "bigint_core.h"
 #include <stdlib.h>
 #include <stdio.h>

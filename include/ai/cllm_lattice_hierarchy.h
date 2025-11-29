@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stdatomic.h>
-#include "cllm_sphere_position.h"
+#include "lattice_sphere_positions.h"
 #include "ai/cllm_sphere_stats.h"
 #include "ai/cllm_message_queue.h"
-#include "cllm_hierarchical_abacus.h"
+#include "../../algorithms/include/hierarchical_prime_partitions.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_thread_allocation.h"
 
