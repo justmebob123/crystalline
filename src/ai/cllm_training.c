@@ -682,13 +682,15 @@ static void cllm_attention_forward_training(
     AttentionLayer* attn_layer,
     float* input,
     float* output,
+    uint32_t* token_ids,
     int seq_len
 ) {
     if (!training || !attn_layer || !input || !output || layer < 0 || seq_len <= 0) return;
     if (layer >= (int)training->model->num_layers) return;
     
-    // Call the attention forward
-    cllm_attention_forward(attn_layer, input, output, NULL, NULL, seq_len);
+    // Use hybrid attention (angular when token IDs available, dot product otherwise)
+    cllm_attention_forward_hybrid(training->model, attn_layer, input, output, 
+                                  token_ids, NULL, NULL, seq_len);
     
     // If attention cache is enabled, store Q, K, V, and attention weights
     if (training->store_attention_weights && training->attention_cache) {
@@ -1155,10 +1157,11 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             int start_idx = b * seq_len;
             float* batch_input = &layer_input[start_idx * embed_dim];
             float* batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
+            uint32_t* batch_tokens = &input_tokens[start_idx];
             
-            // Use training-specific attention that caches Q, K, V, and attention weights
+            // Use hybrid attention (angular when token IDs available, dot product otherwise)
             cllm_attention_forward_training(training, layer, attn_layer, 
-                                           batch_input, batch_output, seq_len);
+                                           batch_input, batch_output, batch_tokens, seq_len);
         }
         
         // Process feedforward for each position
