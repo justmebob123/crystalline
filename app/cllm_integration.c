@@ -16,9 +16,17 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
+#include "../include/crystalline_abacus.h"  // PHASE 1: Global abacus integration
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+// ============================================================================
+// GLOBAL CRYSTALLINE ABACUS - Single Source of Truth for All Primes
+// ============================================================================
+
+static CrystallineAbacus* g_global_abacus = NULL;
+static bool g_abacus_initialized = false;
 
 // External declarations for initialization functions
 // External declarations for CLLM library functions
@@ -38,6 +46,121 @@ extern int cllm_check_model_health(CLLMModel* model);
 
 // Note: cllm_training_free is actually cllm_training_cleanup
 #define cllm_training_free cllm_training_cleanup
+
+// ============================================================================
+// GLOBAL ABACUS INITIALIZATION (PHASE 1)
+// ============================================================================
+
+/**
+ * Initialize global crystalline abacus
+ * 
+ * This MUST be called at program startup before any model creation.
+ * 
+ * Initialization sequence:
+ * - Stage 1: Load important primes (instant)
+ * - Stage 2: Generate first 10,000 primes (non-blocking, ~10ms)
+ * - Compute clock positions for all primes
+ * 
+ * @return 0 on success, -1 on error
+ */
+int app_initialize_global_abacus(void) {
+    if (g_abacus_initialized) {
+        printf("Global abacus already initialized\n");
+        return 0;
+    }
+    
+    printf("=== Initializing Global Crystalline Abacus ===\n");
+    
+    // Create global abacus with capacity for 10,000 primes
+    g_global_abacus = crystalline_abacus_create(10000);
+    if (!g_global_abacus) {
+        fprintf(stderr, "ERROR: Failed to create global abacus\n");
+        return -1;
+    }
+    printf("✓ Global abacus created (capacity: 10,000)\n");
+    
+    // Stage 1: Load important primes (INSTANT)
+    int important_count = crystalline_abacus_load_important_primes(g_global_abacus);
+    if (important_count < 0) {
+        fprintf(stderr, "ERROR: Failed to load important primes\n");
+        crystalline_abacus_free(g_global_abacus);
+        g_global_abacus = NULL;
+        return -1;
+    }
+    printf("✓ Stage 1: Loaded %d important primes (instant)\n", important_count);
+    
+    // Stage 2: Generate first 10,000 primes (NON-BLOCKING, ~10ms)
+    int generated = crystalline_abacus_generate_primes_fast(g_global_abacus, 10000);
+    if (generated < 0) {
+        fprintf(stderr, "ERROR: Failed to generate primes\n");
+        crystalline_abacus_free(g_global_abacus);
+        g_global_abacus = NULL;
+        return -1;
+    }
+    printf("✓ Stage 2: Generated %d primes using crystalline sieve (~10ms)\n", generated);
+    
+    // Verify clock positions were computed
+    uint32_t total_primes = crystalline_abacus_get_count(g_global_abacus);
+    printf("✓ Total primes in abacus: %u\n", total_primes);
+    printf("✓ Clock positions computed for all primes\n");
+    printf("✓ Sphere coordinates computed for all primes\n");
+    
+    // Print first few primes for verification
+    printf("  First 10 primes: ");
+    for (uint32_t i = 0; i < 10 && i < total_primes; i++) {
+        printf("%lu ", crystalline_abacus_get_prime(g_global_abacus, i));
+    }
+    printf("\n");
+    
+    g_abacus_initialized = true;
+    printf("=== Global Abacus Initialization Complete ===\n\n");
+    
+    return 0;
+}
+
+/**
+ * Get global abacus
+ * 
+ * Returns the global abacus instance. This is the SINGLE SOURCE OF TRUTH
+ * for all primes in the system.
+ * 
+ * @return Global abacus, or NULL if not initialized
+ */
+CrystallineAbacus* app_get_global_abacus(void) {
+    if (!g_abacus_initialized) {
+        fprintf(stderr, "WARNING: Global abacus not initialized. Call app_initialize_global_abacus() first.\n");
+        return NULL;
+    }
+    return g_global_abacus;
+}
+
+/**
+ * Cleanup global abacus
+ * 
+ * Should be called at program shutdown.
+ */
+void app_cleanup_global_abacus(void) {
+    if (g_global_abacus) {
+        printf("Cleaning up global abacus...\n");
+        crystalline_abacus_free(g_global_abacus);
+        g_global_abacus = NULL;
+        g_abacus_initialized = false;
+        printf("✓ Global abacus cleaned up\n");
+    }
+}
+
+/**
+ * Check if global abacus is initialized
+ * 
+ * @return true if initialized, false otherwise
+ */
+bool app_is_abacus_initialized(void) {
+    return g_abacus_initialized;
+}
+
+// ============================================================================
+// MODEL CREATION FUNCTIONS
+// ============================================================================
 
 /**
  * Create a new CLLM model with default configuration

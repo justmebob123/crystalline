@@ -258,6 +258,10 @@ void cleanup(AppState* state) {
         free(state->terminal_buffer);
     }
     
+    // PHASE 1: Cleanup global abacus
+    extern void app_cleanup_global_abacus(void);
+    app_cleanup_global_abacus();
+    
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);
     cleanup_font_system();
@@ -835,6 +839,15 @@ int main(int argc, char* argv[]) {
     
     // Set global pointer for lattice cache access
     app_state_global = state;
+    
+    // PHASE 1: Initialize global crystalline abacus (CRITICAL)
+    // This MUST happen before any model creation or prime operations
+    extern int app_initialize_global_abacus(void);
+    if (app_initialize_global_abacus() != 0) {
+        fprintf(stderr, "CRITICAL ERROR: Failed to initialize global abacus\n");
+        cleanup_app(state);
+        return 1;
+    }
     
     // Initialize workspace system
     extern void workspace_init(AppState* state, const char* workspace_path);
