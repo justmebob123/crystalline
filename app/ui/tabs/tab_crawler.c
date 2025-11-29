@@ -530,14 +530,21 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
            col2.x, col2.y, col2.width, col2.height);
     
     // Column 2: Link Management buttons
+    // MUST match the drawing code exactly!
     int x = col2.x + col2.padding;
     int y = col2.y + col2.padding;
     
-    // Skip past "Link Management" header
-    y += 35;
+    // Skip past "Link Management" header (30px in drawing)
+    y += 30;
     
-    // Skip past "Add URL:" label and input
-    y += 25 + 35;
+    // Skip past "Queue Size:" text (25px in drawing)
+    y += 25;
+    
+    // Skip past "Add URL:" label (18px in drawing)
+    y += 18;
+    
+    // Skip past input field (30px in drawing)
+    y += 30;
     
     // Add button (80x25)
     SDL_Rect add_btn = {x, y, 80, 25};
