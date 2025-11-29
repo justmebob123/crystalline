@@ -1,6 +1,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/cllm_pure_crystalline.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -54,11 +55,26 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     
     // Initialize tokens with default values
     for (uint32_t i = 0; i < config->vocab_size; i++) {
+        model->tokens[i].token_id = i;
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
+        
+        // Initialize prime encoding - each token gets the (i+1)th prime
+        // This is CRITICAL - uninitialized prime_encoding causes crashes!
+        model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
+        
         // Distribute tokens across 12 symmetry groups based on token ID
         // This ensures even distribution of work across all spheres
         model->tokens[i].symmetry_group = i % 12;
+        
+        // Initialize lattice coordinates (will be computed during training)
+        model->tokens[i].lattice_coords[0] = 0.0f;
+        model->tokens[i].lattice_coords[1] = 0.0f;
+        model->tokens[i].lattice_coords[2] = 0.0f;
+        model->tokens[i].angle = 0.0f;
+        model->tokens[i].radius = 0.0f;
+        model->tokens[i].spiral_angle = 0.0f;
+        model->tokens[i].radial_distance = 0.0f;
     }
     
     // Calculate total weights needed

@@ -228,7 +228,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.frequency_input.bounds.y = y;
         g_crawler_state.frequency_input.bounds.w = 150;
         g_crawler_state.frequency_input.bounds.h = 22;
-        text_input_render(&g_crawler_state.frequency_input, renderer, NULL);
+        text_input_render(&g_crawler_state.frequency_input, renderer, get_global_font());
         draw_text(renderer, freq_valid ? "✓" : "✗", x + 160, y + 5, freq_color);
         y += 30;
         
@@ -244,7 +244,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.selection_input.bounds.y = y;
         g_crawler_state.selection_input.bounds.w = 150;
         g_crawler_state.selection_input.bounds.h = 22;
-        text_input_render(&g_crawler_state.selection_input, renderer, NULL);
+        text_input_render(&g_crawler_state.selection_input, renderer, get_global_font());
         draw_text(renderer, sel_valid ? "✓" : "✗", x + 160, y + 5, sel_color);
         y += 30;
         
@@ -260,7 +260,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.delay_min_input.bounds.y = y;
         g_crawler_state.delay_min_input.bounds.w = 150;
         g_crawler_state.delay_min_input.bounds.h = 22;
-        text_input_render(&g_crawler_state.delay_min_input, renderer, NULL);
+        text_input_render(&g_crawler_state.delay_min_input, renderer, get_global_font());
         draw_text(renderer, min_valid ? "✓" : "✗", x + 160, y + 5, min_color);
         y += 30;
         
@@ -276,7 +276,7 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         g_crawler_state.delay_max_input.bounds.y = y;
         g_crawler_state.delay_max_input.bounds.w = 150;
         g_crawler_state.delay_max_input.bounds.h = 22;
-        text_input_render(&g_crawler_state.delay_max_input, renderer, NULL);
+        text_input_render(&g_crawler_state.delay_max_input, renderer, get_global_font());
         draw_text(renderer, max_valid ? "✓" : "✗", x + 160, y + 5, max_color);
         y += 30;
         
@@ -346,7 +346,7 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     g_crawler_state.add_link_input.bounds.y = y;
     g_crawler_state.add_link_input.bounds.w = col->width - (col->padding * 2);
     g_crawler_state.add_link_input.bounds.h = 22;
-    text_input_render(&g_crawler_state.add_link_input, renderer, NULL);
+    text_input_render(&g_crawler_state.add_link_input, renderer, get_global_font());
     y += 30;
     
     // Add and Clear buttons
