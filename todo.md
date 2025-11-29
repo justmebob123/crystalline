@@ -297,22 +297,19 @@ When moving functionality between layers:
 
 **Proceeding with Option A: Mathematical Integration (OBJECTIVES 15-18)**
 
-**Task 4.1: Integrate Angular Attention into Main Attention**
+**Task 4.1: Integrate Angular Attention into Main Attention** ✅ COMPLETE
 
-**Analysis Complete:** Angular attention is fully implemented but requires token IDs, while main attention works with embeddings.
+**Implementation Complete:**
+- [x] Created `cllm_attention_forward_hybrid()` in `cllm_attention.c`
+- [x] Function accepts both embeddings AND token IDs
+- [x] When token IDs available: uses angular attention
+- [x] When token IDs unavailable: falls back to dot product
+- [x] Added declaration to `include/cllm_inference.h`
+- [x] Build verified: Zero errors, zero warnings
 
-**Implementation Approach:**
-- [ ] Create `cllm_attention_forward_with_tokens()` in `cllm_attention.c`
-- [ ] This function accepts both embeddings AND token IDs
-- [ ] When token IDs available: use angular attention
-- [ ] When token IDs unavailable: fall back to dot product
-- [ ] Modify `cllm_forward_training()` to pass token IDs to attention
-- [ ] Test and verify correctness
-
-**Files to Modify:**
-- `src/ai/cllm_attention.c` - Add new function
-- `include/cllm.h` or `include/ai/cllm_attention.h` - Add declaration
-- `src/ai/cllm_training.c` - Call new function with token IDs
+**Next Step:**
+- [ ] Modify `cllm_forward_training()` to call hybrid attention with token IDs
+- [ ] Test angular attention in training loop
 
 **Task 4.2: Initialize 12 Kissing Sphere Neighbors**
 - [ ] Verify `cllm_initialize_kissing_spheres()` exists
