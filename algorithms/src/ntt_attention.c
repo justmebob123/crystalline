@@ -86,9 +86,9 @@ static int bigint_to_float_array(float* output, const BigInt* input, uint32_t le
     if (!output || !input) return 0;
     
     for (uint32_t i = 0; i < len; i++) {
-        // Convert BigInt to double and scale back to float
-        double value = big_to_double(&input[i]);
-        output[i] = (float)(value / NTT_SCALE_FACTOR);
+        // Convert BigInt to int64 and scale back to float
+        int64_t value = big_to_int64(&input[i]);
+        output[i] = (float)value / NTT_SCALE_FACTOR;
     }
     
     return 1;

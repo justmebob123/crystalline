@@ -704,6 +704,37 @@ double big_to_double(const BigInt *n) {
     return n->negative ? -result : result;
 }
 
+/**
+ * Convert BigInt to int64_t
+ * 
+ * Converts a BigInt to a signed 64-bit integer.
+ * If the BigInt is too large, returns INT64_MAX or INT64_MIN.
+ * 
+ * @param n BigInt to convert
+ * @return int64_t value
+ */
+int64_t big_to_int64(const BigInt *n) {
+    if (!n || !n->d) return 0;
+    if (big_is_zero(n)) return 0;
+    
+    // Check if too large for int64_t
+    if (n->len > 2) {
+        return n->negative ? INT64_MIN : INT64_MAX;
+    }
+    
+    int64_t result = 0;
+    
+    if (n->len >= 1) {
+        result = (int64_t)n->d[0];
+    }
+    
+    if (n->len >= 2) {
+        result |= ((int64_t)n->d[1]) << 32;
+    }
+    
+    return n->negative ? -result : result;
+}
+
 /* Stub implementations for compatibility */
 int big_is_prime(const BigInt *n, int iterations) {
     (void)iterations;

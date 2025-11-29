@@ -42,6 +42,7 @@ void big_prime_factorization(BigInt *n, BigInt*** factors, int** powers, int* co
 void big_euler_totient(const BigInt *n, BigInt *result);
 void big_gcd(const BigInt *a, const BigInt *b, BigInt *result);
 void big_lcm(const BigInt *a, const BigInt *b, BigInt *result);
+int64_t big_to_int64(const BigInt *n);
 void crystal_abacus_big_init(CrystalAbacusBig *ab);
 void crystal_abacus_big_free(CrystalAbacusBig *ab);
 void crystal_abacus_big_next_prime(CrystalAbacusBig *ab, BigInt *p);
