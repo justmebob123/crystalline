@@ -36,6 +36,7 @@ double big_fast_prime_radius(BigInt *prime);
 int big_fast_prime_layer(BigInt *prime);
 
 // Prime storage functions - Rainbow Table as Complete Abacus
+PrimeRainbowTable* rainbow_table_get(void);  // Get the global rainbow table instance
 int rainbow_table_add_prime(BigInt* prime);
 BigInt* rainbow_table_get_prime(int index);
 int rainbow_table_get_count(void);

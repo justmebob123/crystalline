@@ -120,10 +120,22 @@ int app_initialize_global_abacus(void) {
 }
 
 /**
- * Check if global abacus is initialized
+ * Get global abacus (rainbow table) instance
  * 
- * The rainbow table IS the abacus - this checks if it's been initialized.
- * Use rainbow_table_* functions directly to access primes.
+ * The rainbow table IS the abacus - this returns the memory-resident instance.
+ * 
+ * @return Pointer to global rainbow table, or NULL if not initialized
+ */
+PrimeRainbowTable* app_get_global_abacus(void) {
+    if (!g_abacus_initialized) {
+        fprintf(stderr, "WARNING: Global abacus not initialized. Call app_initialize_global_abacus() first.\n");
+        return NULL;
+    }
+    return rainbow_table_get();
+}
+
+/**
+ * Check if global abacus is initialized
  * 
  * @return true if initialized, false otherwise
  */

@@ -13,6 +13,13 @@
 #include "../include/cllm_training.h"
 #include "../include/cllm_format.h"
 #include "../include/prime_math.h"
+#include "../include/prime_rainbow.h"
+
+// Global abacus (rainbow table) management
+int app_initialize_global_abacus(void);
+PrimeRainbowTable* app_get_global_abacus(void);
+bool app_is_abacus_initialized(void);
+void app_cleanup_global_abacus(void);
 
 // Model creation and initialization
 // Model creation functions
