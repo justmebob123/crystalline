@@ -88,12 +88,6 @@ bool crystalline_is_prime(uint64_t n);
 uint64_t crystalline_get_nth_prime(uint32_t n);
 void crystalline_factorize(uint64_t number, uint64_t* factors, uint8_t* num_factors);
 
-   /*
-    * Rainbow Table Initialization
-    * Call this before creating models to pre-generate primes for vocabulary
-    */
-   void init_rainbow_table_for_vocab(uint32_t vocab_size);
-
 /*
  * Token Operations
  */
