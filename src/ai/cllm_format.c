@@ -229,11 +229,27 @@ void cllm_free(CLLMModel* model) {
  */
 static bool cllm_validate_header(const CLLMHeader* header) {
     if (!header) return false;
-    if (strncmp(header->magic, "CLLM", 4) != 0) return false;
-    if (header->version == 0 || header->version > 100) return false;
-    if (header->vocab_size == 0 || header->vocab_size > 1000000) return false;
-    if (header->embedding_dim == 0 || header->embedding_dim > 10000) return false;
-    if (header->num_layers == 0 || header->num_layers > 100) return false;
+    // Check full 8-byte magic number
+    if (memcmp(header->magic, "CLLM\x01\x00\x00\x00", 8) != 0) {
+        fprintf(stderr, "Invalid magic number in header\n");
+        return false;
+    }
+    if (header->version == 0 || header->version > 100) {
+        fprintf(stderr, "Invalid version: %u\n", header->version);
+        return false;
+    }
+    if (header->vocab_size == 0 || header->vocab_size > 1000000) {
+        fprintf(stderr, "Invalid vocab_size: %lu\n", header->vocab_size);
+        return false;
+    }
+    if (header->embedding_dim == 0 || header->embedding_dim > 10000) {
+        fprintf(stderr, "Invalid embedding_dim: %lu\n", header->embedding_dim);
+        return false;
+    }
+    if (header->num_layers == 0 || header->num_layers > 100) {
+        fprintf(stderr, "Invalid num_layers: %lu\n", header->num_layers);
+        return false;
+    }
     return true;
 }
 
@@ -377,13 +393,15 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     // Create header
     CLLMHeader header;
     memset(&header, 0, sizeof(CLLMHeader));
-    memcpy(header.magic, "CLLM", 4);  // Use memcpy instead of strncpy for non-null-terminated data
+    memcpy(header.magic, "CLLM\x01\x00\x00\x00", 8);  // Correct 8-byte magic number
     header.version = 1;
     header.vocab_size = model->vocab_size;
     header.embedding_dim = model->embedding_dim;
     header.num_layers = model->num_layers;
-    header.num_heads = 8;  // Default value
-    header.context_length = 512;  // Default value
+    // Get num_heads from first attention layer if available
+    header.num_heads = (model->attention_layers && model->num_layers > 0) ? 
+                       model->attention_layers[0].num_heads : 8;
+    header.context_length = 512;  // Default value (model doesn't store this)
     
     // Use the model's actual weight count instead of recalculating
     header.total_params = model->num_weights;
