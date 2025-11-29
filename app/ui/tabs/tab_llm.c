@@ -2,6 +2,7 @@
 #include "../../app_common.h"
 #include "../../cllm_integration.h"
 #include "../../ui_layout.h"
+#include "../../../include/cllm_utils.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>

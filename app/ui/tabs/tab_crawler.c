@@ -104,6 +104,8 @@ static bool validate_prime_input(const char* input, uint64_t* value) {
 // ACTIVITY LOG
 // ============================================================================
 
+// TODO: Re-enable when activity log is fully implemented
+/*
 static void add_activity(const char* message) {
     if (g_crawler_state.activity_count >= 10) {
         // Shift log up
@@ -125,6 +127,7 @@ static void add_activity(const char* message) {
              "%s - %s", time_str, message);
     g_crawler_state.activity_count++;
 }
+*/
 
 // ============================================================================
 // DRAWING HELPERS

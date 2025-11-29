@@ -302,7 +302,7 @@ void* training_thread_func(void* arg) {
     // UI Integration: Get metrics from training system and register callback
     CLLMMetrics* metrics = (CLLMMetrics*)threaded_training_get_metrics(g_threaded_system);
     if (metrics) {
-        state->training_metrics = (struct CLLMMetrics*)metrics;
+        state->training_metrics = metrics;
         cllm_metrics_set_callback(metrics_callback, state);
         printf("✓ Real-time metrics enabled for UI\n");
     }
