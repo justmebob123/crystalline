@@ -13,12 +13,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <curl/curl.h>
 #include <pthread.h>
-   #include <stdbool.h>
-   #include "../../include/crawler.h"
+#include <stdbool.h>
+#include "../../include/crawler.h"
 
 #define MAX_URL_LENGTH 2048
 #define MAX_PAGE_SIZE (10 * 1024 * 1024)  // 10MB max page size
@@ -227,37 +228,75 @@ int crawler_save_page(CrawlerStateInternal* state, const char* url, const char* 
 int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size) {
     pthread_mutex_lock(&state->lock);
     
-    // Rewind and read first line
+    // Read all URLs into memory for prime-based selection
     fseek(state->links_to_crawl, 0, SEEK_SET);
     
-    if (fgets(url, url_size, state->links_to_crawl) == NULL) {
+    // Count URLs
+    int url_count = 0;
+    char line[MAX_URL_LENGTH];
+    while (fgets(line, sizeof(line), state->links_to_crawl)) {
+        url_count++;
+    }
+    
+    if (url_count == 0) {
         pthread_mutex_unlock(&state->lock);
         return -1;  // No more URLs
     }
     
-    // Remove newline
-    url[strcspn(url, "\n")] = 0;
+    // Allocate array for URLs
+    char** urls = (char**)malloc(url_count * sizeof(char*));
+    if (!urls) {
+        pthread_mutex_unlock(&state->lock);
+        return -1;
+    }
     
-    // Read remaining lines into temp file
+    // Read URLs into array
+    fseek(state->links_to_crawl, 0, SEEK_SET);
+    int i = 0;
+    while (fgets(line, sizeof(line), state->links_to_crawl) && i < url_count) {
+        line[strcspn(line, "\n")] = 0;  // Remove newline
+        urls[i] = strdup(line);
+        i++;
+    }
+    
+    // Use prime-based selection (prime 13 for link selection)
+    // This creates a pseudo-random but deterministic pattern
+    static uint64_t iteration = 0;
+    int selected_index = (int)((iteration * 13) % url_count);
+    iteration++;
+    
+    // Copy selected URL
+    strncpy(url, urls[selected_index], url_size - 1);
+    url[url_size - 1] = '\0';
+    
+    // Write remaining URLs back to file
     char temp_path[2048];
     snprintf(temp_path, sizeof(temp_path), "%s/links_to_crawl.tmp", state->data_dir);
     FILE* temp = fopen(temp_path, "w");
     
-    char line[MAX_URL_LENGTH];
-    while (fgets(line, sizeof(line), state->links_to_crawl)) {
-        fputs(line, temp);
+    if (temp) {
+        for (int j = 0; j < url_count; j++) {
+            if (j != selected_index) {
+                fprintf(temp, "%s\n", urls[j]);
+            }
+        }
+        fclose(temp);
+        
+        // Replace original with temp
+        fclose(state->links_to_crawl);
+        char orig_path[2048];
+        snprintf(orig_path, sizeof(orig_path), "%s/links_to_crawl.txt", state->data_dir);
+        rename(temp_path, orig_path);
+        
+        // Reopen
+        state->links_to_crawl = fopen(orig_path, "a+");
     }
     
-    fclose(temp);
-    fclose(state->links_to_crawl);
-    
-    // Replace original with temp
-    char orig_path[2048];
-    snprintf(orig_path, sizeof(orig_path), "%s/links_to_crawl.txt", state->data_dir);
-    rename(temp_path, orig_path);
-    
-    // Reopen
-    state->links_to_crawl = fopen(orig_path, "a+");
+    // Free memory
+    for (int j = 0; j < url_count; j++) {
+        free(urls[j]);
+    }
+    free(urls);
     
     pthread_mutex_unlock(&state->lock);
     return 0;

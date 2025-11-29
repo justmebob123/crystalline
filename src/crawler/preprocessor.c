@@ -16,6 +16,82 @@
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
 
+/**
+ * File type enumeration
+ */
+typedef enum {
+    FILE_TYPE_HTML,
+    FILE_TYPE_PDF,
+    FILE_TYPE_IMAGE,
+    FILE_TYPE_BINARY,
+    FILE_TYPE_TEXT,
+    FILE_TYPE_UNKNOWN
+} FileType;
+
+/**
+ * Detect file type from magic bytes
+ */
+static FileType detect_file_type(const char* data, size_t size) {
+    if (size < 4) return FILE_TYPE_UNKNOWN;
+    
+    // Check for common magic bytes
+    unsigned char* bytes = (unsigned char*)data;
+    
+    // PDF: %PDF
+    if (size >= 4 && bytes[0] == '%' && bytes[1] == 'P' && 
+        bytes[2] == 'D' && bytes[3] == 'F') {
+        return FILE_TYPE_PDF;
+    }
+    
+    // PNG: \x89PNG
+    if (size >= 4 && bytes[0] == 0x89 && bytes[1] == 'P' && 
+        bytes[2] == 'N' && bytes[3] == 'G') {
+        return FILE_TYPE_IMAGE;
+    }
+    
+    // JPEG: \xFF\xD8\xFF
+    if (size >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+        return FILE_TYPE_IMAGE;
+    }
+    
+    // GIF: GIF87a or GIF89a
+    if (size >= 6 && bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F') {
+        return FILE_TYPE_IMAGE;
+    }
+    
+    // ZIP/Office: PK\x03\x04
+    if (size >= 4 && bytes[0] == 'P' && bytes[1] == 'K' && 
+        bytes[2] == 0x03 && bytes[3] == 0x04) {
+        return FILE_TYPE_BINARY;
+    }
+    
+    // Check for HTML markers
+    if (size >= 15) {
+        // Look for <!DOCTYPE, <html, or <HTML
+        if (strncasecmp(data, "<!DOCTYPE", 9) == 0 ||
+            strncasecmp(data, "<html", 5) == 0 ||
+            strstr(data, "<head") != NULL ||
+            strstr(data, "<body") != NULL) {
+            return FILE_TYPE_HTML;
+        }
+    }
+    
+    // Check if mostly printable ASCII (text file)
+    int printable = 0;
+    int total = size > 1000 ? 1000 : size;
+    for (int i = 0; i < total; i++) {
+        if (isprint(bytes[i]) || isspace(bytes[i])) {
+            printable++;
+        }
+    }
+    
+    if (printable > total * 0.95) {
+        return FILE_TYPE_TEXT;
+    }
+    
+    return FILE_TYPE_BINARY;
+}
+
 static void get_timestamp(char* buffer, size_t size) {
     time_t now = time(NULL);
     struct tm* tm_info = localtime(&now);
@@ -293,8 +369,8 @@ static int extract_base_url(const char* html, char* base_url, size_t size) {
  * Process one HTML file
  */
 static int preprocess_file(const char* input_path, const char* output_path, const char* queue_file) {
-    // Read input file
-    FILE* f = fopen(input_path, "r");
+    // Read input file in binary mode for magic byte detection
+    FILE* f = fopen(input_path, "rb");
     if (!f) {
         fprintf(stderr, "Failed to open: %s\n", input_path);
         return -1;
@@ -313,6 +389,28 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
     fread(html, 1, size, f);
     html[size] = '\0';
     fclose(f);
+    
+    // Detect file type
+    FileType file_type = detect_file_type(html, size);
+    
+    // Debug: Show file type and size
+    const char* type_names[] = {"HTML", "PDF", "IMAGE", "BINARY", "TEXT", "UNKNOWN"};
+    printf("  File type: %s, Size: %ld bytes\n", type_names[file_type], size);
+    
+    // Skip non-HTML files for now
+    if (file_type != FILE_TYPE_HTML && file_type != FILE_TYPE_TEXT) {
+        printf("  Skipped (unsupported file type: %s)\n", type_names[file_type]);
+        
+        // Create marker file to prevent reprocessing
+        FILE* marker = fopen(output_path, "w");
+        if (marker) {
+            fprintf(marker, "<!-- SKIPPED: Unsupported file type (%s) -->\n", type_names[file_type]);
+            fclose(marker);
+        }
+        
+        free(html);
+        return -1;
+    }
     
 
     // Extract base URL from metadata
