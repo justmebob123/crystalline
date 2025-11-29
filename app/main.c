@@ -6,6 +6,7 @@
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"
+#include "ui/layout_manager.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
@@ -706,20 +707,35 @@ void render(AppState* state) {
     
     draw_tabs(state->renderer, state);
     
+    // Get layout for current tab
+    TabLayout layout = get_tab_layout(state->current_tab, WINDOW_WIDTH, WINDOW_HEIGHT);
+    
     switch (state->current_tab) {
         case TAB_PRIME_SPIRAL:
             draw_visualization(state->renderer, state);
+            if (state->show_control_panel) {
+                draw_control_panel(state->renderer, state);
+            }
             break;
         case TAB_CALCULATOR:
             // Calculator with mini-map visualization
             draw_calculator_with_minimap(state->renderer, state);
+            if (state->show_control_panel) {
+                draw_control_panel(state->renderer, state);
+            }
             break;
         case TAB_SPHERES:
             draw_spheres(state->renderer, state);
+            if (state->show_control_panel) {
+                draw_control_panel(state->renderer, state);
+            }
             break;
         case TAB_PRIME_FOLDING:
             // Folding visualization - use main visualization for now
             draw_visualization(state->renderer, state);
+            if (state->show_control_panel) {
+                draw_control_panel(state->renderer, state);
+            }
             break;
         case TAB_VIDEO_GENERATOR:
             draw_video_tab(state->renderer, state);
@@ -734,21 +750,12 @@ void render(AppState* state) {
             draw_research_tab(state->renderer, state);
             break;
         case TAB_CRAWLER:
-            draw_crawler_tab(state);
+            // Pass layout to crawler tab for proper rendering
+            draw_crawler_tab_with_layout(state, &layout);
             break;
         case TAB_COUNT:
             break;
     }
-    
-       
-       // Only draw the old control panel for visualization tabs
-       // LLM, Training, and Research tabs draw their own panels
-       if (state->show_control_panel && 
-           state->current_tab != TAB_LLM && 
-           state->current_tab != TAB_TRAINING && 
-           state->current_tab != TAB_RESEARCH) {
-           draw_control_panel(state->renderer, state);
-       }
        
        if (state->animate) {
         state->animation_phase += 0.016;

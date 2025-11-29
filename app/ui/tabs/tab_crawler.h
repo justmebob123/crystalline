@@ -3,11 +3,17 @@
 #define TAB_CRAWLER_H
 
 #include "../../app_common.h"
+#include "../layout_manager.h"
 
 /**
- * Draw the crawler control tab
+ * Draw the crawler control tab (legacy)
  */
 void draw_crawler_tab(AppState* state);
+
+/**
+ * Draw the crawler control tab with layout system (new)
+ */
+void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout);
 
 /**
  * Handle mouse clicks in the crawler tab
