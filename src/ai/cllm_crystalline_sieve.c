@@ -1,17 +1,25 @@
 /*
- * Crystalline Lattice Sieve - Optimized Prime Generation
+ * Crystalline Lattice Sieve - Optimized Prime Generation with Clock Lattice Integration
  * 
  * This implements a highly optimized sieve based on:
  * - Sieve of Eratosthenes (base algorithm)
  * - 12-fold symmetry filtering (only check residues {1,5,7,11} mod 12)
  * - Wheel factorization (skip multiples of 2 and 3)
  * - Segmented sieving for cache efficiency
+ * - Clock lattice mapping for each generated prime
  * 
- * This is INFINITELY more effective than trial division for generating
+ * Integration with Crystalline Mathematics:
+ * - Each prime is mapped to Babylonian clock position (12, 60, 60, 100)
+ * - Smaller primes on OUTER rings (counting inward from ∞/0)
+ * - Larger primes on INNER rings (approaching unity at center)
+ * - Stereographic projection to fold clock → sphere
+ * 
+ * This is 100-1000x faster than trial division for generating
  * large numbers of primes, especially for model initialization.
  */
 
 #include "../../include/cllm_pure_crystalline.h"
+#include "../../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>

@@ -42,6 +42,31 @@ extern int cllm_check_model_health(CLLMModel* model);
 /**
  * Create a new CLLM model with default configuration
  */
+// Tiny model (25M parameters) - Very fast for testing
+CLLMModel* app_create_cllm_model_tiny(void) {
+    printf("Creating TINY CLLM model (25M parameters)...\n");
+    
+    CLLMConfig config = {
+        .vocab_size = 10000,
+        .embedding_dim = 512,
+        .num_layers = 6,
+        .num_heads = 8,
+        .ff_dim = 2048,
+        .max_seq_len = 512,
+        .dropout = 0.1f
+    };
+    
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return NULL;
+    }
+    
+    printf("✓ TINY model created (10K vocab, 6 layers, 512 dim)\n");
+    printf("  Parameters: ~25M (very fast generation)\n");
+    return model;
+}
+
 // Small model (117M parameters) - Good for testing
 CLLMModel* app_create_cllm_model_small(void) {
     printf("Creating SMALL CLLM model (117M parameters)...\n");
@@ -219,12 +244,12 @@ CLLMModel* app_create_cllm_model_auto(size_t dataset_size_mb) {
     }
 }
 
-// Default model (now uses SMALL instead of tiny)
+// Default model (now uses TINY for fast testing)
 CLLMModel* app_create_cllm_model_default(void) {
     printf("Creating default CLLM model...\n");
-    printf("NOTE: Using SMALL model (117M params) as default\n");
-    printf("      For better quality, use MEDIUM (345M) or LARGE (762M)\n");
-    return app_create_cllm_model_small();
+    printf("NOTE: Using TINY model (25M params) as default\n");
+    printf("      For better quality, use SMALL (117M), MEDIUM (345M) or LARGE (762M)\n");
+    return app_create_cllm_model_tiny();
 }
 
 // OLD BROKEN VERSION - DO NOT USE

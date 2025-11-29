@@ -416,6 +416,19 @@ static void draw_model_size_dialog(SDL_Renderer* renderer, int x, int y, int wid
     int btn_height = 70;
     int spacing = 12;
     
+    // Tiny model button
+    SDL_Rect tiny_btn = {x + 20, content_y, btn_width, btn_height};
+    SDL_SetRenderDrawColor(renderer, 40, 80, 40, 255);
+    SDL_RenderFillRect(renderer, &tiny_btn);
+    SDL_SetRenderDrawColor(renderer, 80, 120, 80, 255);
+    SDL_RenderDrawRect(renderer, &tiny_btn);
+    draw_text(renderer, "TINY - 25M params (FASTEST)", tiny_btn.x + 10, tiny_btn.y + 8, 
+             (SDL_Color){120, 255, 120, 255});
+    draw_text(renderer, "10K vocab, 6 layers | Very fast", tiny_btn.x + 10, tiny_btn.y + 26, text_color);
+    draw_text(renderer, "RAM: ~100MB | Quick testing", tiny_btn.x + 10, tiny_btn.y + 44, 
+             (SDL_Color){180, 180, 180, 255});
+    content_y += btn_height + spacing;
+    
     // Small model button
     SDL_Rect small_btn = {x + 20, content_y, btn_width, btn_height};
     SDL_SetRenderDrawColor(renderer, 60, 100, 60, 255);
@@ -1047,6 +1060,23 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         int btn_width = panel_w - 40;
         int btn_height = 70;
         int spacing = 12;
+        
+        // Tiny button
+        SDL_Rect tiny_btn = {panel_x + 20, content_y, btn_width, btn_height};
+        if (x >= tiny_btn.x && x <= tiny_btn.x + tiny_btn.w &&
+            y >= tiny_btn.y && y <= tiny_btn.y + tiny_btn.h && y >= panel_y + 50 && y <= panel_y + panel_h - 50) {
+            printf("Creating TINY model (25M params)...\n");
+            extern CLLMModel* app_create_cllm_model_tiny(void);
+            state->cllm_model = app_create_cllm_model_tiny();
+            if (state->cllm_model) {
+                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = cllm_inference_init(state->cllm_model);
+            }
+            model_size_dialog_visible = false;
+            model_dialog_scroll = 0;
+            return;
+        }
+        content_y += btn_height + spacing;
         
         // Small button
         SDL_Rect small_btn = {panel_x + 20, content_y, btn_width, btn_height};
