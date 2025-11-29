@@ -145,9 +145,20 @@ static void clean_text(char* text) {
     
     *dst = '\0';
     
-    // Trim leading/trailing whitespace
-    while (*text && isspace(*text)) text++;
+    // Trim leading whitespace (move content to start of buffer)
+    char* start = text;
+    while (*start && isspace(*start)) start++;
     
+    if (start != text) {
+        // Move trimmed content to beginning
+        char* write = text;
+        while (*start) {
+            *write++ = *start++;
+        }
+        *write = '\0';
+    }
+    
+    // Trim trailing whitespace
     size_t len = strlen(text);
     while (len > 0 && isspace(text[len-1])) {
         text[len-1] = '\0';
@@ -326,15 +337,34 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
         return -1;
     }
     
+    // Debug: Show raw HTML size
+    printf("  Raw HTML: %ld bytes\n", size);
+    
     remove_html_tags(html, text, MAX_TEXT_SIZE);
     free(html);
+    
+    // Debug: Show text after tag removal
+    size_t text_after_tags = strlen(text);
+    printf("  After tag removal: %zu chars\n", text_after_tags);
     
     // Clean text
     clean_text(text);
     
+    // Debug: Show text after cleaning
+    size_t text_after_clean = strlen(text);
+    printf("  After cleaning: %zu chars\n", text_after_clean);
+    
     // Check minimum length
-    if (strlen(text) < MIN_TEXT_LENGTH) {
-        printf("  Skipped (too short): %zu chars\n", strlen(text));
+    if (text_after_clean < MIN_TEXT_LENGTH) {
+        printf("  Skipped (too short): %zu chars (min: %d)\n", text_after_clean, MIN_TEXT_LENGTH);
+        
+        // CRITICAL FIX: Create empty marker file to prevent infinite loop
+        FILE* marker = fopen(output_path, "w");
+        if (marker) {
+            fprintf(marker, "<!-- SKIPPED: Too short (%zu chars) -->\n", text_after_clean);
+            fclose(marker);
+        }
+        
         free(text);
         return -1;
     }

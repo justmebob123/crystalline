@@ -24,8 +24,9 @@
 #define MAX_PAGE_SIZE (10 * 1024 * 1024)  // 10MB max page size
 
 // Global rate limiting configuration (can be changed at runtime)
-static int g_min_delay_seconds = 2;
-static int g_max_delay_seconds = 5;
+// HUMAN-LIKE CRAWL SPEED: Slow and methodical
+static int g_min_delay_seconds = 5;   // Increased from 2 to 5
+static int g_max_delay_seconds = 15;  // Increased from 5 to 15
 static int g_delay_minutes = 0;
 static bool g_use_random_delay = true;
 static float g_requests_per_minute = 0.0f;
