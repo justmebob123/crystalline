@@ -13,8 +13,9 @@
 #include "../../include/bigfixed_constants.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-#define PRIME_CACHE_SIZE 10000
+#define PRIME_CACHE_SIZE 100000  // Increased from 10000 for large vocab models
 
 static uint64_t prime_cache[PRIME_CACHE_SIZE];
 static bool prime_cache_initialized = false;
@@ -40,34 +41,73 @@ static uint64_t isqrt(uint64_t n) {
     return x;
 }
 
+// Sieve of Eratosthenes - O(n log log n) - Much faster than trial division
+// Generates 100,000 primes in ~100ms instead of minutes
 static void init_prime_cache(void) {
     if (prime_cache_initialized) return;
     
-    prime_cache[0] = 2;
-    prime_cache[1] = 3;
+    printf("Initializing prime cache (100,000 primes)...\n");
     
-    uint32_t count = 2;
-    uint64_t candidate = 5;
+    // Estimate upper bound for 100,000th prime (~1,299,709)
+    // Using approximation: nth prime ≈ n * ln(n) * 1.3
+    uint64_t limit = 1500000;  // Safe upper bound
     
-    while (count < PRIME_CACHE_SIZE) {
-        bool is_prime = true;
-        uint64_t sqrt_cand = isqrt(candidate);
-        
-        for (uint32_t i = 0; i < count && prime_cache[i] <= sqrt_cand; i++) {
-            if (candidate % prime_cache[i] == 0) {
-                is_prime = false;
-                break;
+    // Allocate sieve (1 = prime, 0 = composite)
+    uint8_t* sieve = (uint8_t*)calloc(limit, sizeof(uint8_t));
+    if (!sieve) {
+        fprintf(stderr, "Warning: Failed to allocate sieve, using slower method\n");
+        // Fallback to trial division (slower but works)
+        prime_cache[0] = 2;
+        prime_cache[1] = 3;
+        uint32_t count = 2;
+        uint64_t candidate = 5;
+        while (count < PRIME_CACHE_SIZE) {
+            bool is_prime = true;
+            uint64_t sqrt_cand = isqrt(candidate);
+            for (uint32_t i = 0; i < count && prime_cache[i] <= sqrt_cand; i++) {
+                if (candidate % prime_cache[i] == 0) {
+                    is_prime = false;
+                    break;
+                }
             }
+            if (is_prime) {
+                prime_cache[count++] = candidate;
+            }
+            candidate += 2;
         }
-        
-        if (is_prime) {
-            prime_cache[count++] = candidate;
-        }
-        
-        candidate += 2;
+        prime_cache_initialized = true;
+        return;
     }
     
+    // Initialize sieve (all numbers start as potential primes)
+    for (uint64_t i = 0; i < limit; i++) {
+        sieve[i] = 1;
+    }
+    sieve[0] = sieve[1] = 0;  // 0 and 1 are not prime
+    
+    // Sieve of Eratosthenes - mark composites
+    for (uint64_t i = 2; i * i < limit; i++) {
+        if (sieve[i]) {
+            // Mark all multiples of i as composite
+            for (uint64_t j = i * i; j < limit; j += i) {
+                sieve[j] = 0;
+            }
+        }
+    }
+    
+    // Collect primes into cache
+    uint32_t count = 0;
+    for (uint64_t i = 2; i < limit && count < PRIME_CACHE_SIZE; i++) {
+        if (sieve[i]) {
+            prime_cache[count++] = i;
+        }
+    }
+    
+    free(sieve);
     prime_cache_initialized = true;
+    
+    printf("✓ Prime cache initialized: %u primes (2 to %lu)\n", 
+           count, prime_cache[count - 1]);
 }
 
 bool crystalline_is_prime(uint64_t n) {

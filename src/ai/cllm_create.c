@@ -53,18 +53,31 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         return NULL;
     }
     
-    // Initialize tokens with default values
+    // Initialize tokens with crystalline lattice structure
+    // Use hierarchical abacus design with 12-fold symmetry
+    printf("Initializing %u tokens with crystalline lattice structure...\n", config->vocab_size);
+    
     for (uint32_t i = 0; i < config->vocab_size; i++) {
         model->tokens[i].token_id = i;
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
         
-        // Initialize prime encoding - each token gets the (i+1)th prime
-        // This is CRITICAL - uninitialized prime_encoding causes crashes!
-        model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
+        // EFFICIENT PRIME ENCODING using cached primes
+        // For tokens within cache range, use direct lookup
+        // For tokens beyond cache, use modular mapping to lattice
+        if (i < 100000) {
+            // Direct lookup from pre-computed cache (fast)
+            model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
+        } else {
+            // Use lattice mapping for large vocab (clock sudoku structure)
+            // Map to one of the first 100,000 primes using 12-fold symmetry
+            uint32_t lattice_layer = i / 12;
+            uint32_t symmetry_group = i % 12;
+            uint32_t mapped_index = (lattice_layer % 8333) * 12 + symmetry_group;  // 8333*12 ≈ 100k
+            model->tokens[i].prime_encoding = crystalline_get_nth_prime(mapped_index + 1);
+        }
         
-        // Distribute tokens across 12 symmetry groups based on token ID
-        // This ensures even distribution of work across all spheres
+        // Distribute tokens across 12 symmetry groups (kissing spheres)
         model->tokens[i].symmetry_group = i % 12;
         
         // Initialize lattice coordinates (will be computed during training)
@@ -76,6 +89,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->tokens[i].spiral_angle = 0.0f;
         model->tokens[i].radial_distance = 0.0f;
     }
+    
+    printf("✓ Token initialization complete\n");
     
     // Calculate total weights needed
     // Embedding weights: vocab_size * embedding_dim

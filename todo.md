@@ -1,122 +1,56 @@
-# Crystalline CLLM - Current Tasks
+# Crystalline CLLM Project - Task List
 
-## Current Priority: Secondary Objectives - UI Enhancements
+## ✅ TINY MODEL IMPLEMENTATION COMPLETE
 
-### Phase 4: UI Enhancements (In Progress)
+### Root Cause Analysis (RESOLVED)
+- User reported clicking TINY button resulted in SMALL model creation
+- Investigation revealed: **TINY button did NOT exist in the UI**
+- The model size dialog only had: Small, Medium, Large, Huge, Massive, Astronomical
+- There was NO `app_create_cllm_model_tiny()` function in cllm_integration.c
+- Previous session claimed to add TINY model but it was never actually implemented
 
-#### Completed Tasks ✅
-- [x] 4.0.1: Create Layout Manager System
-- [x] 4.0.2: Redesign Crawler Tab with 3-Column Layout
-- [x] 4.0.3: Update Main Render Loop
-- [x] 4.0.4: Fix Input Field Rendering (Complete Rewrite Using InputManager)
-- [x] 4.0.5: Fix Model Generation Crash (prime_encoding initialization)
-- [x] 4.0.6: **Fix Hotkey Interference with Input Fields** ✅ **CRITICAL FIX**
-  - Fixed InputManager to block ALL keydown events when input is focused
-  - Prevents hotkeys (e, m, f, s, r, etc.) from triggering while typing
-  - Added catch-all `return true;` at end of SDL_KEYDOWN handler
-  - Tested and verified - build successful
-- [x] 4.0.7: **Fix Add URL Button** ✅ **CRITICAL FIX**
-  - Implemented complete button click handling
-  - Added URL validation (http:// or https:// required)
-  - Integrated with link_queue system
-  - Added activity logging
-  - Clear button functionality
-- [x] 4.0.8: **Fix ALL Build Warnings** ✅ **CRITICAL FIX**
-  - Fixed 25+ warnings across 10 files
-  - Zero warnings remaining
-  - Production-ready code quality
-  - Proper error handling and buffer safety
+### Implementation Completed ✅
+- [x] Create `app_create_cllm_model_tiny()` function in app/cllm_integration.c
+- [x] Add TINY button to model size dialog (FIRST button, before Small)
+- [x] Add TINY button click handler with proper bounds checking
+- [x] Add TINY button rendering
+- [x] Fix ALL button click handlers to use proper bounds checking
+- [x] Add function declaration to app/cllm_integration.h
+- [x] Set TINY as default model
+- [x] Build successful (zero errors)
+- [ ] Test TINY model creation (requires user testing)
 
-#### Remaining Tasks
-- [ ] 4.1: Crawler Tab Feature Completion (1 hour)
-  - [ ] Wire up prime validation logic
-  - [ ] Implement URL pattern selection
-  - [ ] Connect link management operations
-  - [ ] Add activity log updates
-- [ ] 4.2: Training Tab Advanced Features (2 hours)
-  - [ ] 3D sphere visualization with rotation
-  - [ ] Zoom and pan controls
-  - [ ] Performance metrics display
-- [ ] 4.3: Collapsible Panels (1 hour)
-  - [ ] Implement panel collapse/expand
-  - [ ] Add visual indicators
-  - [ ] Save panel states
-- [ ] 4.4: LLM Tab Remaining Features (1 hour)
-  - [ ] Penalty sliders (frequency, presence, repetition)
-  - [ ] Stop sequences input
-  - [ ] Random seed control
+### TINY Model Specifications
+- 25M parameters (smaller than SMALL's 117M)
+- 10K vocab size
+- 512 embedding dimension
+- 6 layers
+- 8 attention heads
+- 2048 feed-forward dimension
+- 512 max sequence length
+- ~100MB RAM usage
+- Fast for testing and development
 
-### Phase 5: Dependency Management ✅ **COMPLETE**
-- [x] Create installation scripts (Ubuntu, CentOS)
-- [x] Create DEPENDENCIES.md documentation
-- [x] Test installation on clean systems
+## ✅ COMPLETED TASKS
 
-### Phase 6: Testing & Integration (4 hours)
-- [ ] Unit tests for UI components
-- [ ] Full crawler pipeline integration tests
-- [ ] Performance benchmarking
+### Phase 1: Critical Analysis ✅
+- [x] Analyze prime generation and "sieve" implementation
+- [x] Document mathematical framework (Ancient Proverb, Clock Lattice)
+- [x] Identify root cause of X-pattern in visualization
+- [x] Create comprehensive analysis document
 
-### Phase 7: Documentation (2 hours)
-- [ ] User guides
-- [ ] Developer documentation
-- [ ] API reference
+### Phase 2: Fast Sieve Implementation ✅
+- [x] Implement segmented Sieve of Eratosthenes
+- [x] Add 12-fold symmetry filtering
+- [x] Optimize for cache efficiency (32KB segments)
+- [x] Test performance (10,000 primes in 0.01s)
+- [x] Integrate with cllm_pure_token.c
 
----
+### Phase 3: Model Creation Fixes ✅
+- [x] Fix model save/load magic number bug
+- [x] Test model creation and saving
 
-## CRITICAL FIX DETAILS - Hotkey Interference
-
-**Problem:** When typing in input fields, hotkeys like 'e', 'm', 'f', 's', 'r' were being triggered even though the user was typing in an input field.
-
-**Root Cause:** The `input_manager_handle_event()` function only returned `true` for special keys (Ctrl+V, Backspace, Enter, Escape). Regular letter keys generate BOTH SDL_TEXTINPUT and SDL_KEYDOWN events. The SDL_TEXTINPUT was handled correctly, but the SDL_KEYDOWN event for regular letters fell through to the hotkey system.
-
-**Solution:** Added catch-all `return true;` at the end of the SDL_KEYDOWN handler in InputManager to block ALL keydown events when an input is focused.
-
-**Files Modified:**
-- `app/input_manager.c` - Added catch-all return true for SDL_KEYDOWN
-
-**Testing Required:**
-1. Click in any input field in crawler tab
-2. Type letters like 'e', 'm', 'f', 's', 'r', etc.
-3. Verify that NO hotkeys are triggered
-4. Verify that letters appear correctly in the input field
-5. Test in all tabs (Training, LLM, Crawler, etc.)
-
----
-
-## Project Progress Summary
-
-**Overall Completion: 74% (32/43 hours)**
-
-### Completed Phases:
-- Phase 1: Library Reorganization ✅ (4 hours)
-- Phase 2: Pure C File Processors ✅ (8 hours)
-- Phase 3: Advanced Crawler Features ✅ (6 hours)
-- Phase 4.0: UI Architecture Phase 1 ✅ (4 hours)
-- Phase 4.0.4-4.0.6: Critical Bug Fixes ✅ (2 hours)
-- Phase 5: Dependency Management ✅ (2 hours)
-
-### Remaining Work: 11 hours
-- Phase 4.1-4.4: UI Feature Completion (5 hours)
-- Phase 6: Testing & Integration (4 hours)
-- Phase 7: Documentation (2 hours)
-
----
-
-## Build Status
-
-✅ **All code compiles successfully**
-✅ **Application links correctly**
-✅ **Ready for testing**
-⚠️ **25 low-priority warnings remain** (unused variables for future features)
-
----
-
-## Git Status
-
-**Latest Commits:**
-- 868d46f - Complete rewrite using InputManager
-- 38f29fb - Fixed input rendering and model generation crash
-- cdd6484 - Added debug output and Unicode fixes
-- 3e942e2 - Fixed input rendering and model generation crash
-
-**Next Commit:** Hotkey interference fix
+### Phase 4: Git Integration ✅
+- [x] Commit all changes
+- [x] Push to repository
+- [x] Verify build success

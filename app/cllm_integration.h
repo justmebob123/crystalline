@@ -17,6 +17,7 @@
 // Model creation and initialization
 // Model creation functions
 CLLMModel* app_create_cllm_model_default(void);        // Now uses SMALL (117M params)
+CLLMModel* app_create_cllm_model_tiny(void);           // 25M parameters (ultra-fast testing)
 CLLMModel* app_create_cllm_model_small(void);          // 117M parameters (GPT-2 small)
 CLLMModel* app_create_cllm_model_medium(void);         // 345M parameters (GPT-2 medium)
 CLLMModel* app_create_cllm_model_large(void);          // 762M parameters (GPT-2 large)
