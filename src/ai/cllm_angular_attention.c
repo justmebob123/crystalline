@@ -1,17 +1,16 @@
 /**
- * CLLM Angular Position-Based Attention
+ * CLLM Angular Position-Based Attention (CLLM-Specific Wrapper)
  * 
  * Implements OBJECTIVE 15: Integrate θ(n,k,λ,ω,ψ) Angular Position into Attention
  * 
- * This file replaces standard dot product attention with angular position-based
- * attention using the formula:
+ * This file is a THIN WRAPPER around the general angular attention algorithm
+ * in the algorithms layer. It extracts CLLM-specific data and calls the
+ * general algorithm.
  * 
- * attention(Q,K) = cos((θ_Q - θ_K) · φᵢ) · cymatic_resonance(θ_diff)
- * 
- * Where:
- * - θ = k·π(1+√5) + (n-1)·2π/(12·ln3) + log₃(ν(λ)) + ω + ψ
- * - φᵢ = dimensional frequencies [3, 7, 31, 12, 19, 5, 11, 13, 17, 23, 29, ...]
- * - cymatic_resonance uses 432 Hz base frequency
+ * ARCHITECTURE:
+ * - Layer 1 (Crystalline): angular_position_calculate() - pure math
+ * - Layer 2 (Algorithms): angular_attention_score() - general algorithm
+ * - Layer 3 (CLLM): cllm_attention_score_angular() - CLLM wrapper (THIS FILE)
  */
 
 #include <stdio.h>
@@ -21,12 +20,13 @@
 #include "../include/cllm_angular_position.h"
 #include "../include/cllm_mathematical_constants.h"
 #include "../include/prime_float_math.h"
+#include "../../algorithms/include/angular_attention.h"
 
 /**
- * Compute attention score using angular positions
+ * Compute attention score using angular positions (CLLM Wrapper)
  * 
- * This is the CORRECT way to compute attention for a crystalline lattice model.
- * Uses θ(n,k,λ,ω,ψ) angular positions and φᵢ dimensional frequencies.
+ * This is a THIN WRAPPER that extracts CLLM-specific data and calls
+ * the general angular_attention_score() from the algorithms layer.
  * 
  * @param model CLLM model
  * @param query_token Query token ID
@@ -45,7 +45,7 @@ float cllm_attention_score_angular(CLLMModel* model,
     CLLMToken* q_token = &model->tokens[query_token];
     CLLMToken* k_token = &model->tokens[key_token];
     
-    // Compute angular positions θ(n,k,λ,ω,ψ)
+    // Compute angular positions θ(n,k,λ,ω,ψ) using Layer 1 (crystalline)
     AngularPosition q_pos, k_pos;
     
     // Query angular position
@@ -71,20 +71,8 @@ float cllm_attention_score_angular(CLLMModel* model,
     // Get dimensional frequency φᵢ for this head
     uint64_t phi_i = cllm_get_dimensional_frequency(head_idx % 12);
     
-    // Compute attention score: cos((θ_q - θ_k) · φᵢ)
-    double theta_diff = q_pos.theta - k_pos.theta;
-    double score = prime_cos(theta_diff * (double)phi_i);
-    
-    // Apply cymatic resonance (432 Hz base frequency)
-    // This adds a frequency-domain modulation to the attention
-    double cymatic_phase = 2.0 * PRIME_PI * CYMATIC_432_HZ * theta_diff / 1000.0;
-    double resonance = prime_cos(cymatic_phase);
-    
-    // Combine: attention × (0.8 + 0.2 × resonance)
-    // This gives 20% modulation from cymatic resonance
-    score *= (0.8 + 0.2 * resonance);
-    
-    return (float)score;
+    // Call Layer 2 (algorithms) general angular attention
+    return angular_attention_score(&q_pos, &k_pos, phi_i, CYMATIC_432_HZ);
 }
 
 /**
@@ -109,7 +97,7 @@ void cllm_attention_scores_angular_batch(CLLMModel* model,
                                          float* scores) {
     if (!model || !query_tokens || !key_tokens || !scores) return;
     
-    // Precompute angular positions for all queries
+    // Precompute angular positions for all queries (CLLM-specific extraction)
     AngularPosition* q_positions = (AngularPosition*)malloc(num_queries * sizeof(AngularPosition));
     if (!q_positions) return;
     
@@ -128,7 +116,7 @@ void cllm_attention_scores_angular_batch(CLLMModel* model,
         );
     }
     
-    // Precompute angular positions for all keys
+    // Precompute angular positions for all keys (CLLM-specific extraction)
     AngularPosition* k_positions = (AngularPosition*)malloc(num_keys * sizeof(AngularPosition));
     if (!k_positions) {
         free(q_positions);
@@ -153,23 +141,16 @@ void cllm_attention_scores_angular_batch(CLLMModel* model,
     // Get dimensional frequency φᵢ for this head
     uint64_t phi_i = cllm_get_dimensional_frequency(head_idx % 12);
     
-    // Compute all attention scores
-    for (uint32_t i = 0; i < num_queries; i++) {
-        for (uint32_t j = 0; j < num_keys; j++) {
-            // Compute attention score: cos((θ_q - θ_k) · φᵢ)
-            double theta_diff = q_positions[i].theta - k_positions[j].theta;
-            double score = prime_cos(theta_diff * (double)phi_i);
-            
-            // Apply cymatic resonance
-            double cymatic_phase = 2.0 * PRIME_PI * CYMATIC_432_HZ * theta_diff / 1000.0;
-            double resonance = prime_cos(cymatic_phase);
-            
-            // Combine
-            score *= (0.8 + 0.2 * resonance);
-            
-            scores[i * num_keys + j] = (float)score;
-        }
-    }
+    // Call Layer 2 (algorithms) general batch function
+    angular_attention_scores_batch(
+        q_positions,
+        k_positions,
+        num_queries,
+        num_keys,
+        phi_i,
+        CYMATIC_432_HZ,
+        scores
+    );
     
     free(q_positions);
     free(k_positions);
