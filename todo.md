@@ -151,25 +151,29 @@ When moving functionality between layers:
 - [ ] Benchmark performance improvement
 - [ ] Document performance characteristics
 
-## 🏗️ ARCHITECTURAL LAYER VIOLATIONS IDENTIFIED
+## 🏗️ ARCHITECTURAL LAYER REFACTORING (2/4 PHASES COMPLETE)
 
-### Critical Finding: Algorithms in Wrong Layer
+### Progress: 50% Complete
 
-**Analysis Complete:** Bidirectional layer analysis reveals that mathematical ALGORITHMS are incorrectly placed in Layer 3 (CLLM) when they should be in Layer 2 (Algorithms).
+**Completed Phases:**
+1. ✅ **Phase 1: Angular Attention** - Moved to algorithms layer
+2. ✅ **Phase 2: Cymatic Modulation** - Moved to algorithms layer
 
-**Violations:**
-1. ⚠️ `src/ai/cllm_angular_attention.c` → Should be `algorithms/src/angular_attention.c`
-2. ⚠️ `src/ai/cllm_cymatic_training.c` → Should be `algorithms/src/cymatic_modulation.c`
-3. ⚠️ `src/ai/cllm_kissing_spheres.c` → Should be `algorithms/src/kissing_spheres.c`
-4. ❌ NTT attention missing from algorithms layer entirely
+**Remaining Phases:**
+3. ⏳ **Phase 3: NTT Attention** - Create in algorithms layer (NOT YET IMPLEMENTED)
+4. ⏳ **Phase 4: Integration Verification** - Wire all components into training
+
+**Note on Kissing Spheres:**
+- ✅ `algorithms/src/sphere_packing.c` - General sphere geometry (CORRECT)
+- ✅ `algorithms/src/lattice_sphere_positions.c` - Lattice positions (CORRECT)
+- ✅ `src/ai/cllm_kissing_spheres.c` - CLLM-specific neighbor finding (CORRECT)
+- **Status:** Already properly separated, no refactoring needed
 
 **Correct Architecture:**
 - **Layer 1 (Crystalline):** ✅ Pure math formulas (angular_position, L_lattice, constants)
-- **Layer 2 (Algorithms):** ⚠️ General algorithms (MISSING: angular attention, cymatic, NTT, spheres)
-- **Layer 3 (CLLM):** ⚠️ CLLM-specific wrappers (CURRENTLY: has algorithms that belong in Layer 2)
+- **Layer 2 (Algorithms):** ✅ General algorithms (angular attention, cymatic, sphere packing)
+- **Layer 3 (CLLM):** ✅ CLLM-specific wrappers (thin wrappers calling Layer 2)
 - **Layer 4 (Application):** ✅ UI and tools
-
-**See:** `BIDIRECTIONAL_LAYER_ANALYSIS.md` for complete analysis
 
 ---
 
@@ -276,24 +280,31 @@ When moving functionality between layers:
 
 ## 📋 NEXT STEPS
 
-### Immediate Priority: Verify Crystalline Optimizations
+### Phase 3: Create NTT Attention in Algorithms Layer (CURRENT PRIORITY)
 
-1. [ ] Check if GCD-based similarity is actually used in loss computation
-2. [ ] Check if Ulam spiral locality is integrated with batch processing
-3. [ ] Verify crystalline optimizations are not bypassed
-4. [ ] Benchmark performance if needed
+**Status:** NTT library exists but not integrated into attention
 
-### Secondary Priority: Verify SIMD Integration
+**Tasks:**
+1. [ ] Create `algorithms/src/ntt_attention.c` - General O(n log n) attention
+2. [ ] Create `algorithms/include/ntt_attention.h` - General API
+3. [ ] Implement `ntt_attention_forward()` using bigint_ntt.h
+4. [ ] Create `src/ai/cllm_ntt_attention.c` - CLLM wrapper
+5. [ ] Update Makefile to include new files
+6. [ ] Build and verify
+7. [ ] Commit and push
 
-1. [ ] Analyze SIMD gradient operations
-2. [ ] Check SIMD usage in forward/backward pass
-3. [ ] Verify performance improvements
+### Phase 4: Integration Verification (AFTER PHASE 3)
 
-### Tertiary Priority: Verify Control Thread
+**Option A: Mathematical Integration (OBJECTIVES 15-18)**
+1. [ ] Integrate angular attention into main attention mechanism
+2. [ ] Initialize 12 kissing sphere neighbors
+3. [ ] Integrate NTT attention for long sequences
+4. [ ] Wire cymatic resonance into training loop
 
-1. [ ] Check control thread implementation
-2. [ ] Verify it never processes batches
-3. [ ] Check coordination with worker threads
+**Option B: Infrastructure Verification (OBJECTIVES 6-8)**
+1. [ ] Verify SIMD integration in forward/backward pass
+2. [ ] Verify 12-fold symmetry enforcement
+3. [ ] Verify control thread implementation
 
 ---
 
