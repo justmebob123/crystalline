@@ -23,6 +23,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
+#include "../include/ai/cllm_cymatic_training.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
 
 #define MAX_BATCH_SIZE 128
@@ -1092,6 +1093,11 @@ float cllm_train_epoch(CLLMTraining* training) {
                    nonzero_attn, max_attn_grad);
         }
         
+        
+        // OBJECTIVE 18: Apply cymatic resonance to gradients
+        // Modulates gradients with cymatic frequencies (432 Hz, 528 Hz, etc.)
+        // for smoother convergence and better final loss
+        cllm_apply_cymatic_resonance(training->model, training->gradients, training->current_step);
         
         // Update learning rate based on schedule (warmup + decay)
         cllm_update_learning_rate(training);
