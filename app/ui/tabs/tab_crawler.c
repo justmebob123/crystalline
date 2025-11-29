@@ -14,6 +14,14 @@
 // STATE MANAGEMENT
 // ============================================================================
 
+// UI Button structure (same as training tab)
+typedef struct {
+    SDL_Rect bounds;
+    char label[64];
+    bool enabled;
+    bool visible;
+} UIButton;
+
 typedef struct {
     // Prime Configuration
     CrawlerPrimeConfig prime_config;
@@ -42,6 +50,13 @@ typedef struct {
 
 static CrawlerTabState g_crawler_state = {0};
 
+// UI Buttons (stored globally for click detection)
+static UIButton btn_add_url;
+static UIButton btn_clear_url;
+static UIButton btn_start_crawler;
+static UIButton btn_save_config;
+static UIButton btn_load_config;
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
@@ -66,6 +81,12 @@ static void init_crawler_tab_state(void) {
     g_crawler_state.inputs_initialized = true;
 }
 
+// Helper function to check if point is in rect (same as training tab)
+static bool rect_contains_point(SDL_Rect rect, int x, int y) {
+    return (x >= rect.x && x < rect.x + rect.w &&
+            y >= rect.y && y < rect.y + rect.h);
+}
+
 // Helper function to add activity log entry
 static void add_activity_log(const char* message) {
     if (!message) return;
@@ -85,38 +106,8 @@ static void add_activity_log(const char* message) {
     g_crawler_state.activity_count++;
 }
 
-// Helper function to calculate column layouts
-static void calculate_crawler_columns(ColumnLayout* col1, ColumnLayout* col2, ColumnLayout* col3) {
-    if (!col1 || !col2 || !col3) return;
-    
-    int total_width = 1560;
-    int col_width = total_width / 3;
-    int padding = 15;
-    int start_x = (RENDER_WIDTH - total_width) / 2;
-    int start_y = 60;
-    int height = WINDOW_HEIGHT - 80;
-    
-    // Column 1: Prime Configuration
-    col1->x = start_x;
-    col1->y = start_y;
-    col1->width = col_width;
-    col1->height = height;
-    col1->padding = padding;
-    
-    // Column 2: Link Management
-    col2->x = start_x + col_width;
-    col2->y = start_y;
-    col2->width = col_width;
-    col2->height = height;
-    col2->padding = padding;
-    
-    // Column 3: Status Display
-    col3->x = start_x + (col_width * 2);
-    col3->y = start_y;
-    col3->width = col_width;
-    col3->height = height;
-    col3->padding = padding;
-}
+// Note: Column layout calculation is now handled by draw_crawler_tab_with_layout()
+// which receives the layout from the layout manager
 
 // Register inputs with InputManager (called once during first draw)
 static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) {
@@ -368,13 +359,19 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     // Input rendered by InputManager
     y += 30;
     
-    // Add and Clear buttons
-    SDL_Rect add_btn = {x, y, 80, 25};
-    draw_button_rect(renderer, add_btn, "Add", (SDL_Color){60, 60, 80, 255},
+    // Add and Clear buttons - STORE BOUNDS FOR CLICK DETECTION
+    btn_add_url.bounds = (SDL_Rect){x, y, 80, 25};
+    btn_add_url.enabled = true;
+    btn_add_url.visible = true;
+    strncpy(btn_add_url.label, "Add", sizeof(btn_add_url.label) - 1);
+    draw_button_rect(renderer, btn_add_url.bounds, "Add", (SDL_Color){60, 60, 80, 255},
                     text_color, mouse_x, mouse_y);
     
-    SDL_Rect clear_btn = {x + 90, y, 80, 25};
-    draw_button_rect(renderer, clear_btn, "Clear", (SDL_Color){60, 60, 80, 255},
+    btn_clear_url.bounds = (SDL_Rect){x + 90, y, 80, 25};
+    btn_clear_url.enabled = true;
+    btn_clear_url.visible = true;
+    strncpy(btn_clear_url.label, "Clear", sizeof(btn_clear_url.label) - 1);
+    draw_button_rect(renderer, btn_clear_url.bounds, "Clear", (SDL_Color){60, 60, 80, 255},
                     text_color, mouse_x, mouse_y);
     y += 35;
     
@@ -432,21 +429,30 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     
     y += 30;
     
-    // Start button
-    SDL_Rect start_btn = {x, y, col->width - (col->padding * 2), 35};
-    draw_button_rect(renderer, start_btn, "START CRAWLER", success_color,
+    // Start button - STORE BOUNDS FOR CLICK DETECTION
+    btn_start_crawler.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 35};
+    btn_start_crawler.enabled = true;
+    btn_start_crawler.visible = true;
+    strncpy(btn_start_crawler.label, "START CRAWLER", sizeof(btn_start_crawler.label) - 1);
+    draw_button_rect(renderer, btn_start_crawler.bounds, "START CRAWLER", success_color,
                     text_color, mouse_x, mouse_y);
     y += 45;
     
-    // Save Config button
-    SDL_Rect save_btn = {x, y, col->width - (col->padding * 2), 30};
-    draw_button_rect(renderer, save_btn, "Save Config", (SDL_Color){60, 60, 80, 255},
+    // Save Config button - STORE BOUNDS FOR CLICK DETECTION
+    btn_save_config.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 30};
+    btn_save_config.enabled = true;
+    btn_save_config.visible = true;
+    strncpy(btn_save_config.label, "Save Config", sizeof(btn_save_config.label) - 1);
+    draw_button_rect(renderer, btn_save_config.bounds, "Save Config", (SDL_Color){60, 60, 80, 255},
                     text_color, mouse_x, mouse_y);
     y += 40;
     
-    // Load Config button
-    SDL_Rect load_btn = {x, y, col->width - (col->padding * 2), 30};
-    draw_button_rect(renderer, load_btn, "Load Config", (SDL_Color){60, 60, 80, 255},
+    // Load Config button - STORE BOUNDS FOR CLICK DETECTION
+    btn_load_config.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 30};
+    btn_load_config.enabled = true;
+    btn_load_config.visible = true;
+    strncpy(btn_load_config.label, "Load Config", sizeof(btn_load_config.label) - 1);
+    draw_button_rect(renderer, btn_load_config.bounds, "Load Config", (SDL_Color){60, 60, 80, 255},
                     text_color, mouse_x, mouse_y);
 }
 
@@ -517,50 +523,11 @@ void draw_crawler_tab(AppState* state) {
 // ============================================================================
 
 void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
-    printf("DEBUG: handle_crawler_tab_click called - mouse at (%d, %d)\n", mouse_x, mouse_y);
+    if (!state) return;
     
-    // InputManager handles all input clicks automatically
-    // This function handles button clicks
-    
-    // Get column layout
-    ColumnLayout col1, col2, col3;
-    calculate_crawler_columns(&col1, &col2, &col3);
-    
-    printf("DEBUG: Column 2 position: x=%d, y=%d, width=%d, height=%d\n", 
-           col2.x, col2.y, col2.width, col2.height);
-    
-    // Column 2: Link Management buttons
-    // MUST match the drawing code exactly!
-    int x = col2.x + col2.padding;
-    int y = col2.y + col2.padding;
-    
-    // Skip past "Link Management" header (30px in drawing)
-    y += 30;
-    
-    // Skip past "Queue Size:" text (25px in drawing)
-    y += 25;
-    
-    // Skip past "Add URL:" label (18px in drawing)
-    y += 18;
-    
-    // Skip past input field (30px in drawing)
-    y += 30;
-    
-    // Add button (80x25)
-    SDL_Rect add_btn = {x, y, 80, 25};
-    printf("DEBUG: Add button rect: x=%d, y=%d, w=%d, h=%d\n", 
-           add_btn.x, add_btn.y, add_btn.w, add_btn.h);
-    printf("DEBUG: Mouse click at: x=%d, y=%d\n", mouse_x, mouse_y);
-    printf("DEBUG: X check: %d >= %d && %d < %d = %d\n", 
-           mouse_x, add_btn.x, mouse_x, add_btn.x + add_btn.w,
-           (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w));
-    printf("DEBUG: Y check: %d >= %d && %d < %d = %d\n",
-           mouse_y, add_btn.y, mouse_y, add_btn.y + add_btn.h,
-           (mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h));
-    
-    if (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w &&
-        mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h) {
-        printf("DEBUG: *** ADD BUTTON CLICKED! ***\n");
+    // Check Add URL button
+    if (btn_add_url.visible && btn_add_url.enabled && 
+        rect_contains_point(btn_add_url.bounds, mouse_x, mouse_y)) {
         
         // Get URL from input
         extern InputManager* g_input_manager;
@@ -591,12 +558,10 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         return;
     }
     
-    // Clear button (80x25, 90 pixels to the right)
-    SDL_Rect clear_btn = {x + 90, y, 80, 25};
-    if (mouse_x >= clear_btn.x && mouse_x < clear_btn.x + clear_btn.w &&
-        mouse_y >= clear_btn.y && mouse_y < clear_btn.y + clear_btn.h) {
+    // Check Clear URL button
+    if (btn_clear_url.visible && btn_clear_url.enabled &&
+        rect_contains_point(btn_clear_url.bounds, mouse_x, mouse_y)) {
         
-        // Clear the add URL input
         extern InputManager* g_input_manager;
         if (g_input_manager) {
             input_manager_set_text(g_input_manager, "crawler.add_url", "");
@@ -605,7 +570,26 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         return;
     }
     
-    (void)state;
+    // Check Start Crawler button
+    if (btn_start_crawler.visible && btn_start_crawler.enabled &&
+        rect_contains_point(btn_start_crawler.bounds, mouse_x, mouse_y)) {
+        add_activity_log("Start Crawler clicked (not yet implemented)");
+        return;
+    }
+    
+    // Check Save Config button
+    if (btn_save_config.visible && btn_save_config.enabled &&
+        rect_contains_point(btn_save_config.bounds, mouse_x, mouse_y)) {
+        add_activity_log("Save Config clicked (not yet implemented)");
+        return;
+    }
+    
+    // Check Load Config button
+    if (btn_load_config.visible && btn_load_config.enabled &&
+        rect_contains_point(btn_load_config.bounds, mouse_x, mouse_y)) {
+        add_activity_log("Load Config clicked (not yet implemented)");
+        return;
+    }
 }
 
 void handle_crawler_tab_keyboard(AppState* state, int key) {
