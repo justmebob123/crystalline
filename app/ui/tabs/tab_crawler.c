@@ -18,14 +18,14 @@ typedef struct {
     // Prime Configuration
     CrawlerPrimeConfig prime_config;
     bool prime_enabled;
-    char frequency_input[32];
-    char selection_input[32];
-    char delay_min_input[32];
-    char delay_max_input[32];
+    TextInput frequency_input;
+    TextInput selection_input;
+    TextInput delay_min_input;
+    TextInput delay_max_input;
     
     // Link Management
     LinkQueue* link_queue;
-    char add_link_input[512];
+    TextInput add_link_input;
     int link_list_scroll;
     bool show_add_confirmation;
     int confirmation_timer;
@@ -42,7 +42,7 @@ typedef struct {
     
     // UI State
     bool inputs_initialized;
-    int active_input; // 0=none, 1-4=prime inputs, 5=add_link
+    TextInput* focused_input; // Currently focused input
 } CrawlerTabState;
 
 static CrawlerTabState g_crawler_state = {0};
@@ -58,15 +58,32 @@ static void init_crawler_tab_state(void) {
     prime_config_init_default(&g_crawler_state.prime_config);
     g_crawler_state.prime_enabled = true;
     
-    // Convert defaults to strings
-    snprintf(g_crawler_state.frequency_input, sizeof(g_crawler_state.frequency_input), 
-             "%lu", (unsigned long)g_crawler_state.prime_config.frequency_prime);
-    snprintf(g_crawler_state.selection_input, sizeof(g_crawler_state.selection_input),
-             "%lu", (unsigned long)g_crawler_state.prime_config.link_selection_prime);
-    snprintf(g_crawler_state.delay_min_input, sizeof(g_crawler_state.delay_min_input),
-             "%lu", (unsigned long)g_crawler_state.prime_config.delay_min_prime);
-    snprintf(g_crawler_state.delay_max_input, sizeof(g_crawler_state.delay_max_input),
-             "%lu", (unsigned long)g_crawler_state.prime_config.delay_max_prime);
+    // Initialize TextInput fields
+    text_input_init(&g_crawler_state.frequency_input, "Frequency", 0, 0, 150, 22);
+    text_input_init(&g_crawler_state.selection_input, "Selection", 0, 0, 150, 22);
+    text_input_init(&g_crawler_state.delay_min_input, "Delay Min", 0, 0, 150, 22);
+    text_input_init(&g_crawler_state.delay_max_input, "Delay Max", 0, 0, 150, 22);
+    text_input_init(&g_crawler_state.add_link_input, "Add URL", 0, 0, 400, 25);
+    
+    // Set numeric constraints
+    text_input_set_numeric(&g_crawler_state.frequency_input, 2, 1000000);
+    text_input_set_numeric(&g_crawler_state.selection_input, 2, 1000000);
+    text_input_set_numeric(&g_crawler_state.delay_min_input, 2, 1000000);
+    text_input_set_numeric(&g_crawler_state.delay_max_input, 2, 1000000);
+    
+    // Set initial values
+    char temp[32];
+    snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.frequency_prime);
+    text_input_set_text(&g_crawler_state.frequency_input, temp);
+    
+    snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.link_selection_prime);
+    text_input_set_text(&g_crawler_state.selection_input, temp);
+    
+    snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.delay_min_prime);
+    text_input_set_text(&g_crawler_state.delay_min_input, temp);
+    
+    snprintf(temp, sizeof(temp), "%lu", (unsigned long)g_crawler_state.prime_config.delay_max_prime);
+    text_input_set_text(&g_crawler_state.delay_max_input, temp);
     
     // Initialize link queue
     g_crawler_state.link_queue = link_queue_create("data/crawler/link_queue.txt");
@@ -77,6 +94,7 @@ static void init_crawler_tab_state(void) {
     g_crawler_state.pattern_data_attr = true;
     g_crawler_state.pattern_meta_refresh = true;
     
+    g_crawler_state.focused_input = NULL;
     g_crawler_state.inputs_initialized = true;
 }
 
@@ -84,9 +102,10 @@ static void init_crawler_tab_state(void) {
 // PRIME VALIDATION
 // ============================================================================
 
-static bool validate_prime_input(const char* input, uint64_t* value) {
+static bool validate_prime_input(TextInput* input, uint64_t* value) {
+    const char* text = text_input_get_text(input);
     char* endptr;
-    unsigned long val = strtoul(input, &endptr, 10);
+    unsigned long val = strtoul(text, &endptr, 10);
     
     if (*endptr != '\0' || val == 0) {
         return false;
@@ -202,15 +221,14 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         y += 18;
         
         uint64_t freq_val;
-        bool freq_valid = validate_prime_input(g_crawler_state.frequency_input, &freq_val);
+        bool freq_valid = validate_prime_input(&g_crawler_state.frequency_input, &freq_val);
         SDL_Color freq_color = freq_valid ? success_color : error_color;
         
-        SDL_Rect freq_rect = {x, y, 150, 22};
-        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-        SDL_RenderFillRect(renderer, &freq_rect);
-        SDL_SetRenderDrawColor(renderer, freq_color.r, freq_color.g, freq_color.b, 255);
-        SDL_RenderDrawRect(renderer, &freq_rect);
-        draw_text(renderer, g_crawler_state.frequency_input, x + 5, y + 5, text_color);
+        g_crawler_state.frequency_input.bounds.x = x;
+        g_crawler_state.frequency_input.bounds.y = y;
+        g_crawler_state.frequency_input.bounds.w = 150;
+        g_crawler_state.frequency_input.bounds.h = 22;
+        text_input_render(&g_crawler_state.frequency_input, renderer, NULL);
         draw_text(renderer, freq_valid ? "✓" : "✗", x + 160, y + 5, freq_color);
         y += 30;
         
@@ -219,15 +237,14 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         y += 18;
         
         uint64_t sel_val;
-        bool sel_valid = validate_prime_input(g_crawler_state.selection_input, &sel_val);
+        bool sel_valid = validate_prime_input(&g_crawler_state.selection_input, &sel_val);
         SDL_Color sel_color = sel_valid ? success_color : error_color;
         
-        SDL_Rect sel_rect = {x, y, 150, 22};
-        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-        SDL_RenderFillRect(renderer, &sel_rect);
-        SDL_SetRenderDrawColor(renderer, sel_color.r, sel_color.g, sel_color.b, 255);
-        SDL_RenderDrawRect(renderer, &sel_rect);
-        draw_text(renderer, g_crawler_state.selection_input, x + 5, y + 5, text_color);
+        g_crawler_state.selection_input.bounds.x = x;
+        g_crawler_state.selection_input.bounds.y = y;
+        g_crawler_state.selection_input.bounds.w = 150;
+        g_crawler_state.selection_input.bounds.h = 22;
+        text_input_render(&g_crawler_state.selection_input, renderer, NULL);
         draw_text(renderer, sel_valid ? "✓" : "✗", x + 160, y + 5, sel_color);
         y += 30;
         
@@ -236,15 +253,14 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         y += 18;
         
         uint64_t min_val;
-        bool min_valid = validate_prime_input(g_crawler_state.delay_min_input, &min_val);
+        bool min_valid = validate_prime_input(&g_crawler_state.delay_min_input, &min_val);
         SDL_Color min_color = min_valid ? success_color : error_color;
         
-        SDL_Rect min_rect = {x, y, 150, 22};
-        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-        SDL_RenderFillRect(renderer, &min_rect);
-        SDL_SetRenderDrawColor(renderer, min_color.r, min_color.g, min_color.b, 255);
-        SDL_RenderDrawRect(renderer, &min_rect);
-        draw_text(renderer, g_crawler_state.delay_min_input, x + 5, y + 5, text_color);
+        g_crawler_state.delay_min_input.bounds.x = x;
+        g_crawler_state.delay_min_input.bounds.y = y;
+        g_crawler_state.delay_min_input.bounds.w = 150;
+        g_crawler_state.delay_min_input.bounds.h = 22;
+        text_input_render(&g_crawler_state.delay_min_input, renderer, NULL);
         draw_text(renderer, min_valid ? "✓" : "✗", x + 160, y + 5, min_color);
         y += 30;
         
@@ -253,15 +269,14 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
         y += 18;
         
         uint64_t max_val;
-        bool max_valid = validate_prime_input(g_crawler_state.delay_max_input, &max_val);
+        bool max_valid = validate_prime_input(&g_crawler_state.delay_max_input, &max_val);
         SDL_Color max_color = max_valid ? success_color : error_color;
         
-        SDL_Rect max_rect = {x, y, 150, 22};
-        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-        SDL_RenderFillRect(renderer, &max_rect);
-        SDL_SetRenderDrawColor(renderer, max_color.r, max_color.g, max_color.b, 255);
-        SDL_RenderDrawRect(renderer, &max_rect);
-        draw_text(renderer, g_crawler_state.delay_max_input, x + 5, y + 5, text_color);
+        g_crawler_state.delay_max_input.bounds.x = x;
+        g_crawler_state.delay_max_input.bounds.y = y;
+        g_crawler_state.delay_max_input.bounds.w = 150;
+        g_crawler_state.delay_max_input.bounds.h = 22;
+        text_input_render(&g_crawler_state.delay_max_input, renderer, NULL);
         draw_text(renderer, max_valid ? "✓" : "✗", x + 160, y + 5, max_color);
         y += 30;
         
@@ -327,24 +342,11 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     draw_text(renderer, "Add URL:", x, y, text_color);
     y += 18;
     
-    SDL_Rect input_rect = {x, y, col->width - (col->padding * 2), 22};
-    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-    SDL_RenderFillRect(renderer, &input_rect);
-    SDL_SetRenderDrawColor(renderer, 100, 100, 120, 255);
-    SDL_RenderDrawRect(renderer, &input_rect);
-    
-    // Truncate if too long
-    char display_url[50];
-    if (strlen(g_crawler_state.add_link_input) > 45) {
-        strncpy(display_url, g_crawler_state.add_link_input, 42);
-        display_url[42] = '.';
-        display_url[43] = '.';
-        display_url[44] = '.';
-        display_url[45] = '\0';
-    } else {
-        strcpy(display_url, g_crawler_state.add_link_input);
-    }
-    draw_text(renderer, display_url, x + 5, y + 5, text_color);
+    g_crawler_state.add_link_input.bounds.x = x;
+    g_crawler_state.add_link_input.bounds.y = y;
+    g_crawler_state.add_link_input.bounds.w = col->width - (col->padding * 2);
+    g_crawler_state.add_link_input.bounds.h = 22;
+    text_input_render(&g_crawler_state.add_link_input, renderer, NULL);
     y += 30;
     
     // Add and Clear buttons
@@ -524,31 +526,59 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
 // ============================================================================
 
 void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
-    // TODO: Implement click handling for buttons and inputs
     (void)state;
-    (void)mouse_x;
-    (void)mouse_y;
+    
+    // Create a fake SDL event for click handling
+    SDL_Event click_event;
+    click_event.type = SDL_MOUSEBUTTONDOWN;
+    click_event.button.x = mouse_x;
+    click_event.button.y = mouse_y;
+    
+    // Try each input field
+    TextInput* inputs[] = {
+        &g_crawler_state.frequency_input,
+        &g_crawler_state.selection_input,
+        &g_crawler_state.delay_min_input,
+        &g_crawler_state.delay_max_input,
+        &g_crawler_state.add_link_input
+    };
+    
+    bool clicked_any = false;
+    for (int i = 0; i < 5; i++) {
+        if (text_input_handle_event(inputs[i], &click_event)) {
+            // This input was clicked
+            g_crawler_state.focused_input = inputs[i];
+            clicked_any = true;
+            
+            // Deactivate all others
+            for (int j = 0; j < 5; j++) {
+                if (i != j) {
+                    text_input_deactivate(inputs[j]);
+                }
+            }
+            break;
+        }
+    }
+    
+    // If clicked outside all inputs, deactivate all
+    if (!clicked_any && g_crawler_state.focused_input) {
+        for (int i = 0; i < 5; i++) {
+            text_input_deactivate(inputs[i]);
+        }
+        g_crawler_state.focused_input = NULL;
+    }
 }
 
 // ============================================================================
 // KEYBOARD HANDLER
 // ============================================================================
 
-void handle_crawler_tab_keyboard(AppState* state, int key) {
+void handle_crawler_tab_keyboard(AppState* state, SDL_Event* event) {
     (void)state;
     
-    // Handle text input for add link field
-    if (key >= 32 && key <= 126) {
-        size_t len = strlen(g_crawler_state.add_link_input);
-        if (len < sizeof(g_crawler_state.add_link_input) - 1) {
-            g_crawler_state.add_link_input[len] = (char)key;
-            g_crawler_state.add_link_input[len + 1] = '\0';
-        }
-    } else if (key == SDLK_BACKSPACE) {
-        size_t len = strlen(g_crawler_state.add_link_input);
-        if (len > 0) {
-            g_crawler_state.add_link_input[len - 1] = '\0';
-        }
+    // Route keyboard events to the focused input
+    if (g_crawler_state.focused_input) {
+        text_input_handle_event(g_crawler_state.focused_input, event);
     }
 }
 

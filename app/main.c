@@ -515,6 +515,12 @@ void handle_input(AppState* state, SDL_Event* event) {
                 break;
             }
             
+            // Handle Crawler tab keyboard input
+            if (state->current_tab == TAB_CRAWLER) {
+                handle_crawler_tab_keyboard(state, event);
+                break;
+            }
+            
             // If input is active, only handle input-related keys
             if (state->input_active) {
                 switch (event->key.keysym.sym) {
@@ -649,6 +655,8 @@ void handle_input(AppState* state, SDL_Event* event) {
                 handle_training_tab_text_input(state, event->text.text);
             } else if (state->current_tab == TAB_RESEARCH) {
                 handle_research_tab_text_input(state, event->text.text);
+            } else if (state->current_tab == TAB_CRAWLER) {
+                handle_crawler_tab_keyboard(state, event);
             } else if (state->input_active) {
                 // Filter out command keys (F, A, M, etc.) from text input
                 char c = event->text.text[0];
