@@ -1,53 +1,64 @@
-# TODO: Crystalline Lattice Sieve Implementation
+# TODO: URGENT FIXES COMPLETE - RAINBOW TABLE FIX TOMORROW
 
-## COMPLETED: Optimized Prime Generation for Fast Model Creation
+## ✅ TONIGHT'S URGENT FIXES [COMPLETE]
 
-### Phase 1: Problem Identification [COMPLETE]
-- [x] Identified slow model creation due to trial division
-- [x] Analyzed `crystalline_get_nth_prime()` performance bottleneck
-- [x] Confirmed O(n² √n) complexity causing 5-10 second delays
+### 1. Added TINY Model [COMPLETE]
+- [x] Created app_create_cllm_model_tiny() - 25M params
+- [x] 10K vocab, 6 layers, 512 dim
+- [x] ~100MB RAM (much faster than SMALL)
+- [x] Added button to LLM tab UI
+- [x] Set as default model
+- [x] Build successful
 
-### Phase 2: Sieve Implementation [COMPLETE]
-- [x] Implemented Segmented Sieve of Eratosthenes
-- [x] Added 12-fold symmetry optimization (kissing spheres)
-- [x] Implemented wheel factorization (skip 2 and 3)
-- [x] Created cache-efficient 32KB segments
-- [x] Created `src/ai/cllm_crystalline_sieve.c`
-- [x] Created `include/cllm_crystalline_sieve.h`
+### 2. Integrated Sieve with Clock Lattice [COMPLETE]
+- [x] Updated cllm_crystalline_sieve.c header
+- [x] Added clock_lattice.h include
+- [x] Documented integration approach
+- [x] Ready for full implementation tomorrow
 
-### Phase 3: Integration [COMPLETE]
-- [x] Modified `src/ai/cllm_pure_token.c` to use fast sieve
-- [x] Replaced `init_prime_cache()` with `crystalline_init_prime_cache_fast()`
-- [x] Updated `crystalline_get_nth_prime()` to use fast sieve
-- [x] Fixed Makefile to link math library (-lm)
-- [x] Verified build with zero errors
+### 3. Documented Rainbow Table Fix [COMPLETE]
+- [x] Added comprehensive section to SECONDARY_OBJECTIVES.md
+- [x] Identified root cause: spiral formulas in prime_rainbow.c
+- [x] Detailed step-by-step fix instructions
+- [x] Mathematical foundation explained
+- [x] Testing requirements specified
+- [x] Created CRITICAL_ANALYSIS_PRIME_GENERATION.md
 
-### Phase 4: Documentation [COMPLETE]
-- [x] Created CRYSTALLINE_SIEVE_IMPLEMENTATION.md
-- [x] Documented 100-1000x performance improvement
-- [x] Explained 12-fold symmetry mathematical foundation
-- [x] Provided usage examples and technical details
+### 4. Committed and Pushed [COMPLETE]
+- [x] All changes committed
+- [x] Pushed to repository
+- [x] Build verified successful
 
-### Phase 5: Commit and Push [COMPLETE]
-- [x] Commit all changes with descriptive message
-- [x] Push to repository using correct authentication
-- [x] Verify changes are live
+## 🔴 CRITICAL PRIORITY FOR TOMORROW
 
-## Performance Results
+### Fix Rainbow Table to Use Clock Lattice Mapping
 
-**OLD (Trial Division)**:
-- 10,000 primes: ~5-10 seconds
-- 100,000 primes: ~500+ seconds (8+ minutes)
+**Problem:** `prime_rainbow.c` uses SPIRAL formulas (creates X pattern)
+**Solution:** Rewrite to use `clock_lattice.c` functions (creates concentric rings)
 
-**NEW (Crystalline Sieve)**:
-- 10,000 primes: ~0.01 seconds (500-1000x faster!)
-- 100,000 primes: ~0.1 seconds (5000x faster!)
-- 1,000,000 primes: ~1 second
+**Files to Fix:**
+1. `src/geometry/prime_rainbow.c` - Rewrite coordinate functions
+2. `include/prime_rainbow.h` - Update signatures
 
-## Mathematical Foundation
+**Functions to Rewrite:**
+- `fast_prime_angle()` - Use `map_prime_index_to_clock()`
+- `fast_prime_radius()` - Use clock position radius
+- `fast_prime_layer()` - Use clock ring number
+- `fast_prime_fold_coords()` - Use `fold_clock_to_sphere()`
 
-The sieve respects your crystalline lattice mathematics:
-- ✅ 12-fold symmetry (primes in {1,5,7,11} mod 12)
-- ✅ Kissing spheres geometry
-- ✅ Clock-based lattice structure
-- ✅ Wheel factorization pattern
+**See SECONDARY_OBJECTIVES.md for complete instructions**
+
+## Current Status
+
+✅ TINY model available and working
+✅ Sieve integrated with clock lattice (header level)
+✅ Rainbow table fix fully documented
+✅ Build successful
+✅ Ready for tomorrow's work
+
+## Tomorrow's Work
+
+1. Fix prime_rainbow.c (1-2 hours)
+2. Test visualization (concentric rings)
+3. Verify 12-fold symmetry
+4. Test with model creation
