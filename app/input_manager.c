@@ -252,6 +252,11 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
                 input_manager_unfocus(manager);
                 return true;
             }
+            
+            // CRITICAL FIX: Block ALL other keydown events when input is focused
+            // This prevents hotkeys from triggering while typing in input fields
+            // Without this, keys like 'e', 'm', 'f', 's', 'r' would trigger hotkeys
+            return true;
         }
     }
     
