@@ -550,10 +550,17 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
     SDL_Rect add_btn = {x, y, 80, 25};
     printf("DEBUG: Add button rect: x=%d, y=%d, w=%d, h=%d\n", 
            add_btn.x, add_btn.y, add_btn.w, add_btn.h);
+    printf("DEBUG: Mouse click at: x=%d, y=%d\n", mouse_x, mouse_y);
+    printf("DEBUG: X check: %d >= %d && %d < %d = %d\n", 
+           mouse_x, add_btn.x, mouse_x, add_btn.x + add_btn.w,
+           (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w));
+    printf("DEBUG: Y check: %d >= %d && %d < %d = %d\n",
+           mouse_y, add_btn.y, mouse_y, add_btn.y + add_btn.h,
+           (mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h));
     
     if (mouse_x >= add_btn.x && mouse_x < add_btn.x + add_btn.w &&
         mouse_y >= add_btn.y && mouse_y < add_btn.y + add_btn.h) {
-        printf("DEBUG: Add button clicked!\n");
+        printf("DEBUG: *** ADD BUTTON CLICKED! ***\n");
         
         // Get URL from input
         extern InputManager* g_input_manager;
