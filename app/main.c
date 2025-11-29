@@ -404,6 +404,11 @@ void handle_mouse_click(AppState* state, int x, int y) {
         return;
     }
     
+    if (state->current_tab == TAB_CRAWLER) {
+        handle_crawler_tab_click(state, x, y);
+        return;
+    }
+    
     if (state->current_tab == TAB_VIDEO_GENERATOR) {
         handle_video_tab_click(state, x, y);
         return;
