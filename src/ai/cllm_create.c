@@ -305,7 +305,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
         // OPTIMIZED: Use cached values for 285x speedup
         // This leverages 12-fold symmetry to pre-compute representative values
-        cllm_embeddings_init_lattice_cached(model);
+        // Use deterministic pattern lookup - INSTANT initialization
+        extern void cllm_embeddings_init_from_patterns(CLLMModel* model);
+        cllm_embeddings_init_from_patterns(model);
         
         printf("✓ Crystalline prime encodings initialized\n");
         printf("✓ 12D lattice coordinates computed\n");
