@@ -19,6 +19,7 @@
 // Forward declarations for file processors
 extern int process_pdf_file(const char* input_path, const char* output_path);
 extern int process_image_file(const char* input_path, const char* output_path);
+extern int process_office_file(const char* input_path, const char* output_path);
 
 /**
  * File type enumeration
@@ -63,10 +64,24 @@ static FileType detect_file_type(const char* data, size_t size) {
         return FILE_TYPE_IMAGE;
     }
     
-    // ZIP/Office: PK\x03\x04
+    // ZIP/Office: PK\x03\x04 (DOCX, XLSX, PPTX, EPUB, etc.)
     if (size >= 4 && bytes[0] == 'P' && bytes[1] == 'K' && 
         bytes[2] == 0x03 && bytes[3] == 0x04) {
+        // Could be Office document or other ZIP
+        // Check for Office-specific markers
+        if (size > 100) {
+            // Look for Office XML namespace markers
+            if (strstr(data, "word/") || strstr(data, "xl/") || strstr(data, "ppt/")) {
+                return FILE_TYPE_BINARY;  // Office document
+            }
+        }
         return FILE_TYPE_BINARY;
+    }
+    
+    // Legacy Office: OLE signature (DOC, XLS, PPT)
+    if (size >= 8 && bytes[0] == 0xD0 && bytes[1] == 0xCF && 
+        bytes[2] == 0x11 && bytes[3] == 0xE0) {
+        return FILE_TYPE_BINARY;  // Legacy Office document
     }
     
     // Check for HTML markers
@@ -418,15 +433,19 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
             return process_image_file(input_path, output_path);
             
         case FILE_TYPE_BINARY:
-            // TODO: Detect specific binary types (ZIP, Office docs, etc.)
-            printf("  Binary file - checking for Office documents...\n");
-            // For now, create marker and skip
+            printf("  Processing binary file (Office document)...\n");
+            free(html);
+            // Try Office document processor
+            int office_result = process_office_file(input_path, output_path);
+            if (office_result == 0) {
+                return 0;  // Successfully processed
+            }
+            // If Office processing failed, create marker
             FILE* bin_marker = fopen(output_path, "w");
             if (bin_marker) {
-                fprintf(bin_marker, "<!-- TODO: Office document processing -->\n");
+                fprintf(bin_marker, "<!-- Binary file - Office processing failed or unsupported -->\n");
                 fclose(bin_marker);
             }
-            free(html);
             return -1;
             
         case FILE_TYPE_HTML:

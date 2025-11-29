@@ -8,13 +8,13 @@
 - [x] Add comprehensive debug output
 - [x] Build and test
 
-### 1.2 Integrate Prime-Based URL Randomization (HIGH PRIORITY - 2 hours)
-- [ ] Modify crawler_get_next_url() to use prime selection
-- [ ] Load URLs into memory array
-- [ ] Use select_prime_link_index() for selection
-- [ ] Remove selected URL from array
-- [ ] Add configuration for prime parameters
-- [ ] Test randomization works correctly
+### 1.2 Integrate Prime-Based URL Randomization (HIGH PRIORITY - 2 hours) ✅ COMPLETED
+- [x] Modify crawler_get_next_url() to use prime selection
+- [x] Load URLs into memory array
+- [x] Use prime 13 for pseudo-random selection
+- [x] Remove selected URL from array
+- [x] Deterministic but non-sequential pattern
+- [ ] Test randomization works correctly - REQUIRES USER TESTING
 
 ### 1.3 Add File Type Detection (HIGH PRIORITY - 1 hour) ✅ COMPLETED
 - [x] Implement magic byte detection
@@ -39,18 +39,30 @@
 - [ ] Cache robots.txt per domain
 - [ ] Test with various robots.txt files
 
-## 🔵 PHASE 2: ENHANCEMENTS (See RECOMMENDED_ENHANCEMENTS.md for details)
+## 🔵 PHASE 2: FILE PROCESSORS (Aligned with SECONDARY_OBJECTIVES.md PHASE 2)
 
-### 2.1 HIGH PRIORITY (Next Session)
+### 2.1 COMPLETED FILE PROCESSORS ✅
+- [x] PDF text extraction - Using pdftotext (poppler-utils)
+- [x] Image OCR support - Using tesseract
+- [x] Office document processing - DOCX (unzip + XML), DOC (antiword)
+- [x] File type detection - Magic byte detection
+- [x] Routing infrastructure - Switch-based processor selection
+
+### 2.2 REMAINING FILE PROCESSORS (TODO)
+- [ ] XLSX processor (spreadsheet data extraction)
+- [ ] PPTX processor (presentation text extraction)
+- [ ] ODT/ODS/ODP processor (OpenDocument format)
+- [ ] EPUB processor (ebook text extraction)
+- [ ] Archive processor (ZIP, TAR extraction)
+- [ ] Email processor (EML, MSG)
+
+### 2.3 HIGH PRIORITY ENHANCEMENTS (Next Session)
 - [ ] Robots.txt support (2 hours)
 - [ ] Per-domain rate limiting (1 hour)
 - [ ] Content quality filtering (2 hours)
 - [ ] Advanced URL pattern detection (2 hours)
 
-### 2.2 MEDIUM PRIORITY (1-2 weeks)
-- [ ] PDF text extraction (3 hours)
-- [ ] Image OCR support (3 hours)
-- [ ] Office document processing (4 hours)
+### 2.4 MEDIUM PRIORITY (1-2 weeks)
 - [ ] Duplicate content detection (2 hours)
 - [ ] Crawl depth control (1 hour)
 - [ ] Domain whitelist/blacklist (1 hour)
