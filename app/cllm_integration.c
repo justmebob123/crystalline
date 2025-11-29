@@ -17,6 +17,7 @@
 #include "../include/cllm_training.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
 #include "../include/prime_rainbow.h"  // Rainbow table IS the abacus
+#include "../include/bigint_core.h"    // For big_to_string()
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -101,7 +102,14 @@ int app_initialize_global_abacus(void) {
     // Print first few primes for verification
     printf("  First 10 primes: ");
     for (uint32_t i = 0; i < 10 && i < total_primes; i++) {
-        printf("%lu ", rainbow_table_get_prime( i));
+        BigInt* prime = rainbow_table_get_prime(i);
+        if (prime) {
+            char* prime_str = big_to_string(prime);
+            if (prime_str) {
+                printf("%s ", prime_str);
+                free(prime_str);
+            }
+        }
     }
     printf("\n");
     
@@ -112,19 +120,15 @@ int app_initialize_global_abacus(void) {
 }
 
 /**
- * Get global abacus
+ * Check if global abacus is initialized
  * 
- * Returns the global abacus instance. This is the SINGLE SOURCE OF TRUTH
- * for all primes in the system.
+ * The rainbow table IS the abacus - this checks if it's been initialized.
+ * Use rainbow_table_* functions directly to access primes.
  * 
- * @return Global abacus, or NULL if not initialized
+ * @return true if initialized, false otherwise
  */
-CrystallineAbacus* app_get_global_abacus(void) {
-    if (!g_abacus_initialized) {
-        fprintf(stderr, "WARNING: Global abacus not initialized. Call app_initialize_global_abacus() first.\n");
-        return NULL;
-    }
-    return g_global_abacus;
+bool app_is_abacus_initialized(void) {
+    return g_abacus_initialized;
 }
 
 /**
@@ -133,22 +137,12 @@ CrystallineAbacus* app_get_global_abacus(void) {
  * Should be called at program shutdown.
  */
 void app_cleanup_global_abacus(void) {
-    if (g_global_abacus) {
+    if (g_abacus_initialized) {
         printf("Cleaning up global abacus...\n");
         rainbow_table_cleanup();
-        g_global_abacus = NULL;
         g_abacus_initialized = false;
         printf("✓ Global abacus cleaned up\n");
     }
-}
-
-/**
- * Check if global abacus is initialized
- * 
- * @return true if initialized, false otherwise
- */
-bool app_is_abacus_initialized(void) {
-    return g_abacus_initialized;
 }
 
 // ============================================================================
