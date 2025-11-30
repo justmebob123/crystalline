@@ -27,14 +27,15 @@
    - Can import and train on data from ANY other model
    - Example: Select model_A, train on model_B's data
 
-### Phase 1: Model Metadata Enhancement (CURRENT) ⏳
-- [ ] Add epochs_trained to CLLMModel structure
-- [ ] Add target_epochs to CLLMModel structure
-- [ ] Add queue_directory to CLLMModel structure
-- [ ] Add config to CLLMModel structure
-- [ ] Add model_name field (user-defined name)
-- [ ] Update cllm_model_save() to serialize new fields
-- [ ] Update cllm_model_load() to deserialize new fields
+### Phase 1: Model Metadata Enhancement ✅ COMPLETE
+- [x] Add epochs_trained to CLLMModel structure
+- [x] Add target_epochs to CLLMModel structure
+- [x] Add queue_directory to CLLMModel structure
+- [x] Add config to CLLMModel structure (training_config struct)
+- [x] Add model_name field (user-defined name)
+- [x] Add loss_history, history_size, history_capacity fields
+- [ ] Update cllm_model_save() to serialize new fields (NEXT)
+- [ ] Update cllm_model_load() to deserialize new fields (NEXT)
 - [ ] Add cllm_model_get_epochs_trained()
 - [ ] Add cllm_model_set_target_epochs()
 - [ ] Add cllm_model_rename() function
