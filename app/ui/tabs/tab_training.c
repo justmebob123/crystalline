@@ -20,6 +20,8 @@
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_vocab_builder.h"
+#include "cllm_model_manager.h"
+#include "cllm_utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -1019,17 +1021,48 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 return;
             }
             
-            // Create model if needed
+            // Acquire model for training (write access)
             if (!state->cllm_model) {
-                printf("Creating new model...\n");
-                system("mkdir -p models");
-                extern CLLMModel* app_create_cllm_model_default(void);
-                state->cllm_model = app_create_cllm_model_default();
+                // TODO: Get model name from model selector widget
+                const char* model_name = "default_model";
+                
+                printf("Acquiring model for training: %s\n", model_name);
+                state->cllm_model = model_manager_acquire_write(model_name);
+                
                 if (!state->cllm_model) {
-                    printf("ERROR: Failed to create model\n");
-                    return;
+                    // Model doesn't exist, create it
+                    printf("Model not found, creating new model...\n");
+                    system("mkdir -p models");
+                    
+                    CLLMConfig* config = cllm_create_config(
+                        10000,  // vocab_size
+                        512,    // embedding_dim
+                        6,      // num_layers
+                        8,      // num_heads
+                        2048    // ff_dim
+                    );
+                    
+                    if (!config) {
+                        printf("ERROR: Failed to create config\n");
+                        return;
+                    }
+                    
+                    ManagedModel* managed = model_manager_create(model_name, config);
+                    cllm_free_config(config);
+                    if (!managed) {
+                        printf("ERROR: Failed to create model\n");
+                        return;
+                    }
+                    
+                    state->cllm_model = model_manager_acquire_write(model_name);
+                    if (!state->cllm_model) {
+                        printf("ERROR: Failed to acquire newly created model\n");
+                        return;
+                    }
+                    printf("✓ Model created and acquired\n");
+                } else {
+                    printf("✓ Model acquired for training\n");
                 }
-                printf("✓ Model created\n");
             }
             
             // Initialize training

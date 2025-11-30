@@ -13,6 +13,22 @@ extern "C" {
  * Model Creation Utilities
  */
 
+// Create a configuration
+CLLMConfig* cllm_create_config(uint32_t vocab_size,
+                               uint32_t embedding_dim,
+                               uint32_t num_layers,
+                               uint32_t num_heads,
+                               uint32_t ff_dim);
+
+// Free configuration
+void cllm_free_config(CLLMConfig* config);
+
+// Validate configuration
+bool cllm_validate_config(const CLLMConfig* config);
+
+// Print configuration
+void cllm_print_config(const CLLMConfig* config);
+
 // Create a model from configuration
 CLLMModel* cllm_create_model(const CLLMConfig* config);
 

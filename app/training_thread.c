@@ -18,6 +18,7 @@
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_metrics.h"  // UI Integration: Real-time metrics
+#include "../include/cllm_model_manager.h"  // Model management
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -491,6 +492,14 @@ void stop_training_thread(AppState* state) {
     pthread_mutex_lock(&training_mutex);
     state->training_in_progress = false;
     pthread_mutex_unlock(&training_mutex);
+    
+    // Release model write lock
+    if (state->cllm_model) {
+        const char* model_name = "default_model"; // TODO: Get from model selector
+        model_manager_release_write(model_name);
+        state->cllm_model = NULL;
+        printf("✓ Model released\n");
+    }
     
     printf("Training stop requested\n");
 }
