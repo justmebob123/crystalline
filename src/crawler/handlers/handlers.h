@@ -1,0 +1,18 @@
+#ifndef HANDLERS_H
+#define HANDLERS_H
+
+#include "../site_handlers.h"
+
+/**
+ * Get handler instances
+ */
+const SiteHandler* get_twitter_handler(void);
+const SiteHandler* get_britannica_handler(void);
+const SiteHandler* get_etymonline_handler(void);
+
+/**
+ * Register all built-in handlers
+ */
+void register_all_handlers(void);
+
+#endif // HANDLERS_H

@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <time.h>
 #include "content_filter.h"
+#include "site_handlers.h"
 
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
@@ -123,7 +124,8 @@ typedef struct {
     char data_dir[1024];
     int running;
     int files_processed;
-    ExtractionMode extraction_mode;  // NEW: Content filtering mode
+    ExtractionMode extraction_mode;
+    bool handlers_initialized;  // Track if handlers are registered  // NEW: Content filtering mode
     pthread_mutex_t lock;
 } PreprocessorState;
 
@@ -637,6 +639,14 @@ PreprocessorState* preprocessor_init(const char* data_dir) {
     state->running = 1;
     state->files_processed = 0;
     state->extraction_mode = EXTRACT_ALL;  // Default to extract everything
+    
+    // Initialize site handlers (only once)
+    if (!state->handlers_initialized) {
+        extern void register_all_handlers(void);
+        register_all_handlers();
+        state->handlers_initialized = true;
+    }
+    
     pthread_mutex_init(&state->lock, NULL);
     
     return state;
