@@ -655,7 +655,7 @@ Application → CLLM (with model manager) → Algorithms (with geometric algorit
 ### Phase 4: Update All Components ✅ COMPLETE
 - [x] Update training tab (uses model_manager_acquire_write)
 - [x] Update LLM tab (uses model_manager_acquire_read)
-- [x] Crawler tab (no model usage - N/A)
+- [x] Update crawler continuous training (uses model_manager_acquire_write)
 - [ ] Update CLI tools (optional - deferred)
 
 ### Phase 5: Testing and Validation (LOW PRIORITY)
