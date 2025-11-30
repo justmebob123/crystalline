@@ -122,6 +122,16 @@ static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout
     extern InputManager* g_input_manager;
     if (!g_input_manager) return;
     
+    // CRITICAL: Validate layout before registering inputs
+    if (!col1 || !col2) {
+        printf("ERROR: Cannot register crawler inputs - layout not initialized\\n");
+        return;
+    }
+    if (col1->width <= 0 || col2->width <= 0) {
+        printf("ERROR: Invalid column widths: col1=%d, col2=%d\\n", col1->width, col2->width);
+        return;
+    }
+    
     // Column 1 inputs (prime configuration)
     int x1 = col1->x + col1->padding;
     int y_freq = col1->y + col1->padding + 65;

@@ -26,8 +26,12 @@
 // Video-friendly dimensions (16:9 aspect ratio)
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900  
+#define SIDEBAR_WIDTH 200
+#define SUBMENU_HEIGHT 40
 #define CONTROL_PANEL_WIDTH 320
-#define RENDER_WIDTH (WINDOW_WIDTH - CONTROL_PANEL_WIDTH)
+#define RENDER_WIDTH (WINDOW_WIDTH - CONTROL_PANEL_WIDTH - SIDEBAR_WIDTH)
+#define RENDER_OFFSET_X SIDEBAR_WIDTH
+#define RENDER_OFFSET_Y SUBMENU_HEIGHT
 #define VIDEO_WIDTH 1280   // Standard 720p width for video recording
 #define VIDEO_HEIGHT 720   // Standard 720p height for video recording
 #define INITIAL_PRIMES 1000

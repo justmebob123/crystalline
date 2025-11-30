@@ -243,10 +243,11 @@ void init_training_tab(AppState* state) {
     scan_training_directory(training_dir);
     
     // Initialize visualization area (left side of screen)
-    viz_area_rect.x = 10;
-    viz_area_rect.y = 70;
+    // Visualization area (accounting for sidebar and submenu)
+    viz_area_rect.x = RENDER_OFFSET_X + 10;
+    viz_area_rect.y = RENDER_OFFSET_Y + 10;
     viz_area_rect.w = RENDER_WIDTH - 20;
-    viz_area_rect.h = WINDOW_HEIGHT - 80;
+    viz_area_rect.h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
     
     // Register inputs with global input manager
     if (!inputs_initialized) {
@@ -690,9 +691,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Draw visualization area first
     draw_training_visualization(renderer, state);
     
-    // Setup control panel layout
-    int panel_x = RENDER_WIDTH;
-    int panel_y = 60;
+    // Setup control panel layout (accounting for sidebar and submenu)
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    int panel_y = RENDER_OFFSET_Y;
     int panel_width = CONTROL_PANEL_WIDTH;
     int panel_height = WINDOW_HEIGHT - panel_y;
     

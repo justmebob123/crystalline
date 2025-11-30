@@ -6,8 +6,9 @@
 #include "all_modes.h"
 
 void draw_visualization(SDL_Renderer* renderer, AppState* state) {
-    int cx = RENDER_WIDTH / 2;
-    int cy = WINDOW_HEIGHT / 2;
+    // Center of visualization area (accounting for sidebar offset)
+    int cx = RENDER_OFFSET_X + (RENDER_WIDTH / 2);
+    int cy = RENDER_OFFSET_Y + (WINDOW_HEIGHT - RENDER_OFFSET_Y) / 2;
     
     switch (state->mode) {
         case MODE_ULAM_SPIRAL:

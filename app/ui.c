@@ -118,8 +118,9 @@ void draw_tabs(SDL_Renderer* renderer, AppState* state) {
 
 // Draw enhanced control panel with better organization
 void draw_control_panel(SDL_Renderer* renderer, AppState* state) {
-    // Background
-    SDL_Rect panel_rect = {RENDER_WIDTH, 0, CONTROL_PANEL_WIDTH, WINDOW_HEIGHT};
+    // Background (control panel is on the right side, after visualization area)
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    SDL_Rect panel_rect = {panel_x, RENDER_OFFSET_Y, CONTROL_PANEL_WIDTH, WINDOW_HEIGHT - RENDER_OFFSET_Y};
     SDL_SetRenderDrawColor(renderer, 20, 30, 40, 255);
     SDL_RenderFillRect(renderer, &panel_rect);
     
@@ -133,8 +134,8 @@ void draw_control_panel(SDL_Renderer* renderer, AppState* state) {
     SDL_Color cyan = {100, 255, 255, 255};
     SDL_Color red = {255, 100, 100, 255};
     
-    int x_base = RENDER_WIDTH + 10;
-    int y_pos = 10;
+    int x_base = panel_x + 10;
+    int y_pos = RENDER_OFFSET_Y + 10;
     
     // ===== SECTION 1: MODE INFO =====
     draw_text(renderer, "MODE", x_base, y_pos, green);

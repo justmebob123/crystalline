@@ -43,23 +43,23 @@ void render_left_sidebar(SDL_Renderer* renderer, AppState* state) {
     int y = 10;
     
     // Visualization Tab (keep existing visualization tabs)
-    render_main_tab(renderer, state, MAIN_TAB_VISUALIZATION, "🎨 Visualization", y);
+    render_main_tab(renderer, state, MAIN_TAB_VISUALIZATION, "[VIZ] Visualization", y);
     y += TAB_HEIGHT;
     
     // AI Tab
-    render_main_tab(renderer, state, MAIN_TAB_AI, "🤖 AI", y);
+    render_main_tab(renderer, state, MAIN_TAB_AI, "[AI] AI", y);
     y += TAB_HEIGHT;
     
     // Models Tab
-    render_main_tab(renderer, state, MAIN_TAB_MODELS, "📊 Models", y);
+    render_main_tab(renderer, state, MAIN_TAB_MODELS, "[MOD] Models", y);
     y += TAB_HEIGHT;
     
     // System Tab
-    render_main_tab(renderer, state, MAIN_TAB_SYSTEM, "⚙️ System", y);
+    render_main_tab(renderer, state, MAIN_TAB_SYSTEM, "[SYS] System", y);
     y += TAB_HEIGHT;
     
     // Data Tab
-    render_main_tab(renderer, state, MAIN_TAB_DATA, "📁 Data", y);
+    render_main_tab(renderer, state, MAIN_TAB_DATA, "[DATA] Data", y);
     y += TAB_HEIGHT;
 }
 

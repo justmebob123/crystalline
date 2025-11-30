@@ -41,6 +41,18 @@ ManagedInput* input_manager_register(
         return NULL;
     }
     
+       // CRITICAL: Validate bounds to prevent segfault
+       if (bounds.w <= 0 || bounds.h <= 0) {
+           printf("InputManager: ERROR - Invalid input bounds for '%s': w=%d, h=%d\n", 
+                  id, bounds.w, bounds.h);
+           return NULL;
+       }
+       if (bounds.x < 0 || bounds.y < 0) {
+           printf("InputManager: ERROR - Negative input position for '%s': x=%d, y=%d\n", 
+                  id, bounds.x, bounds.y);
+           return NULL;
+       }
+
     // Check for duplicate ID
     for (int i = 0; i < manager->input_count; i++) {
         if (strcmp(manager->inputs[i].id, id) == 0) {
