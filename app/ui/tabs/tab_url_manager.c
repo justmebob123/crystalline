@@ -484,7 +484,7 @@ void handle_url_manager_click(AppState* state, int x, int y) {
     if (x >= remove_btn.x && x < remove_btn.x + remove_btn.w &&
         y >= remove_btn.y && y < remove_btn.y + remove_btn.h) {
         
-        if (url_state.selected_url_id >= 0) {
+        if (url_state.selected_url_id != 0) {
             URLDatabase* db = crawler_url_manager_get_database(url_state.url_manager);
             if (db) {
                 int result = url_db_remove(db, url_state.selected_url_id);
@@ -510,12 +510,12 @@ void handle_url_manager_click(AppState* state, int x, int y) {
     if (x >= block_btn.x && x < block_btn.x + block_btn.w &&
         y >= block_btn.y && y < block_btn.y + block_btn.h) {
         
-        if (url_state.selected_url_id >= 0) {
+        if (url_state.selected_url_id != 0) {
             URLDatabase* db = crawler_url_manager_get_database(url_state.url_manager);
             if (db) {
                 int result = url_db_block(db, url_state.selected_url_id);
                 if (result == 0) {
-                    printf("Blocked URL ID: %d\n", url_state.selected_url_id);
+                    printf("Blocked URL ID: %lu\n", (unsigned long)url_state.selected_url_id);
                     url_state.url_list_dirty = true;
                     update_statistics();
                 } else {

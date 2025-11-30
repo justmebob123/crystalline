@@ -74,7 +74,7 @@ static int chat_scroll_offset = 0;
 
 // UI state
 static bool input_active = false;
-static int input_cursor = 0;
+// Removed unused variable - input_cursor (now managed by InputManager)
 
 // Model browser state
 static ModelBrowser model_browser = {0};
