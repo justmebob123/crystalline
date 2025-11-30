@@ -186,8 +186,9 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
             int mx = event->button.x;
             int my = event->button.y;
             
-            printf("InputManager: Click at (%d, %d), current_tab=%d, input_count=%d\n",
-                   mx, my, manager->current_tab, manager->input_count);
+            // DEBUG: Uncomment for input debugging
+            // printf("InputManager: Click at (%d, %d), current_tab=%d, input_count=%d\n",
+            //        mx, my, manager->current_tab, manager->input_count);
             
             // Check if click is on any visible input in current tab
             bool clicked_input = false;
@@ -201,14 +202,16 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
                 }
                 
                 if (!input->visible || input->tab_id != manager->current_tab) {
-                    if (input->tab_id != manager->current_tab) {
-                        printf("  Input '%s': tab_id=%d (skipped - wrong tab)\n", input->id, input->tab_id);
-                    }
+                    // DEBUG: Uncomment for input debugging
+                    // if (input->tab_id != manager->current_tab) {
+                    //     printf("  Input '%s': tab_id=%d (skipped - wrong tab)\n", input->id, input->tab_id);
+                    // }
                     continue;
                 }
                 
-                printf("  Checking input '%s': bounds=(%d,%d,%d,%d)\n",
-                       input->id, input->bounds.x, input->bounds.y, input->bounds.w, input->bounds.h);
+                // DEBUG: Uncomment for input debugging
+                // printf("  Checking input '%s': bounds=(%d,%d,%d,%d)\n",
+                //        input->id, input->bounds.x, input->bounds.y, input->bounds.w, input->bounds.h);
                 
                 // CRITICAL: Validate bounds before checking
                 if (input->bounds.w <= 0 || input->bounds.h <= 0) {
@@ -220,7 +223,8 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
                 // Check if click is inside bounds
                 if (mx >= input->bounds.x && mx < input->bounds.x + input->bounds.w &&
                     my >= input->bounds.y && my < input->bounds.y + input->bounds.h) {
-                    printf("InputManager: Click on input '%s' at (%d, %d)\n", input->id, mx, my);
+                    // DEBUG: Uncomment for input debugging
+                    // printf("InputManager: Click on input '%s' at (%d, %d)\n", input->id, mx, my);
                     input_manager_focus(manager, input->id);
                     clicked_input = true;
                     return true;

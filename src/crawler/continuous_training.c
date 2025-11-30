@@ -405,11 +405,12 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     }
     
     // Initialize training state
-    // NOTE: Increased sequence_length for better long-range dependency learning
+    // NOTE: Reduced batch size for small tokenized files from crawler
+    // Most crawled pages have 100-1000 tokens, so we need smaller batches
     CLLMTrainingConfig config = {
         .num_epochs = 100,  // Dynamic - will train until convergence or max_steps
-        .batch_size = 4,
-        .sequence_length = 256,   // Increased from 32 (8x longer context)
+        .batch_size = 1,          // Reduced from 4 (single sequence per batch)
+        .sequence_length = 64,    // Reduced from 256 (64 tokens per sequence)
         .learning_rate = 0.001f,
         .weight_decay = 0.01f,
         .gradient_clip = 1.0f,
