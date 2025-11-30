@@ -243,14 +243,24 @@ The SECONDARY_OBJECTIVES.md contains:
   - Dynamic pattern array (grows as needed)
   - Pattern metadata (ID, description, added time, enabled)
 
-### 3.5: Update Crawler Integration
-- [ ] Update `src/crawler/crawler.c`
-  - Use url_database for URL storage
-  - Use url_filter for filtering
-  - Use url_priority for selection
-  - Use url_blocker for blocking
-  - Preserve GET parameters in URLs
-  - Implement domain diversity in crawling
+### 3.5: Update Crawler Integration ✅ COMPLETE
+- [x] Create `src/crawler/crawler_url_manager.h`
+  - Define unified manager API
+  - Integrate all 4 systems
+- [x] Create `src/crawler/crawler_url_manager.c`
+  - Implement unified URL manager
+  - Integrate url_database for URL storage
+  - Integrate url_filter for filtering
+  - Integrate url_priority for selection
+  - Integrate url_blocker for blocking
+  - Preserve GET parameters in URLs (via database)
+  - Implement domain diversity tracking
+  - Implement should_crawl() with all checks
+  - Implement get_next() with priority calculation
+  - Implement mark_crawled() with domain stats update
+  - Implement statistics aggregation
+  - Implement export/import functionality
+  - Auto-save filter and blocker configs
 
 ---
 
