@@ -90,17 +90,17 @@
 - [x] Change callbacks
 - [x] Integration with model manager
 
-### Phase 7: Dynamic Configuration UI - All Tabs (CURRENT) ⏳
-- [ ] Add model selector to Training tab
-- [ ] Add model selector to Crawler tab
-- [ ] Add model selector to LLM tab
-- [ ] Add model selector to Research tab
-- [ ] Add batch_size slider to Training tab
+### Phase 7: Dynamic Configuration UI - All Tabs ⏳ 75% COMPLETE
+- [x] Add model selector to Training tab
+- [x] Add model selector to Crawler tab
+- [x] Add model selector to LLM tab
+- [x] Add model selector to Research tab
+- [ ] Add batch_size slider to Training tab (NEXT)
 - [ ] Add sequence_length slider to Training tab
 - [ ] Add epochs slider to Training tab
 - [ ] Add learning_rate input to Training tab
 - [ ] Add model info display (epochs_trained, queue_size, etc.)
-- [ ] Wire all selectors to model manager
+- [ ] Wire model selectors to actually load/use selected models
 
 ### Phase 7: Training Tab Enhancements
 - [ ] Add batch_size slider
