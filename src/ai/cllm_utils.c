@@ -56,43 +56,43 @@ void cllm_free_config(CLLMConfig* config) {
  * Checks if configuration parameters are valid
  * Returns 1 if valid, 0 otherwise
  */
-int cllm_validate_config(CLLMConfig* config) {
-    if (!config) return 0;
+bool cllm_validate_config(const CLLMConfig* config) {
+    if (!config) return false;
     
     // Check basic constraints
     if (config->vocab_size == 0) {
         fprintf(stderr, "Error: vocab_size must be > 0\n");
-        return 0;
+        return false;
     }
     
     if (config->embedding_dim == 0) {
         fprintf(stderr, "Error: embedding_dim must be > 0\n");
-        return 0;
+        return false;
     }
     
     if (config->num_layers == 0) {
         fprintf(stderr, "Error: num_layers must be > 0\n");
-        return 0;
+        return false;
     }
     
     if (config->num_heads == 0) {
         fprintf(stderr, "Error: num_heads must be > 0\n");
-        return 0;
+        return false;
     }
     
     // Check that embedding_dim is divisible by num_heads
     if (config->embedding_dim % config->num_heads != 0) {
         fprintf(stderr, "Error: embedding_dim must be divisible by num_heads\n");
-        return 0;
+        return false;
     }
     
     // Check reasonable ranges
     if (config->dropout < 0.0f || config->dropout > 1.0f) {
         fprintf(stderr, "Error: dropout must be in [0, 1]\n");
-        return 0;
+        return false;
     }
     
-    return 1;
+    return true;
 }
 
 /**

@@ -36,7 +36,7 @@ extern void cllm_lattice_aware_init(CLLMModel* model, float scale);
 extern CLLMConfig* cllm_create_config(uint32_t vocab_size, uint32_t embedding_dim, 
                                       uint32_t num_layers, uint32_t num_heads, uint32_t ff_dim);
 extern void cllm_free_config(CLLMConfig* config);
-extern int cllm_validate_config(CLLMConfig* config);
+// cllm_validate_config is now in cllm_utils.h
 extern void cllm_print_config(CLLMConfig* config);
 extern uint64_t cllm_get_parameter_count(CLLMModel* model);
 extern uint64_t cllm_get_memory_usage(CLLMModel* model);
