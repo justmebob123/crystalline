@@ -1,7 +1,7 @@
 # TODO - Crystalline CLLM Project
 
-## RULES (PASTE TO TOP WITH EVERY RESPONSE)
-- Rule 0: Always paste rules to the top of todo.md with every response
+## RULES (ALWAYS AT TOP)
+- Rule 0: Always paste rules to top of todo.md with every response
 - Rule 1: Always reread MASTER_PLAN.md before any action
 - Rule 2: Reference AUDIT.md for architectural state
 - Rule 3: Reference SECONDARY_OBJECTIVES.md for detailed tasks
@@ -9,176 +9,75 @@
 - Rule 5: Always commit all changes using correct authentication
 - Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
-## CRITICAL TRAINING PIPELINE ISSUES ✅ FIXED
+## Current Task: Comprehensive Training System Analysis ✅ COMPLETE
 
-### Root Cause Identified and Fixed
-**PROBLEM**: Batch size too large for tokenized files
-- batch_size = 4, sequence_length = 256
-- tokens_per_batch = 4 × 256 = 1,024 tokens
-- Most files have 100-900 tokens (too small!)
-- Result: 0 batches created → 0 training → loss = 0.0000
+### Phase 1: Read Master Plan ✅
+- [x] Read MASTER_PLAN.md completely (2,977 lines)
+- [x] Identified training system objectives (OBJECTIVE 2, 14-20)
+- [x] Identified model management objectives
+- [x] Identified queue system requirements
 
-**SOLUTION APPLIED**:
-- Reduced batch_size from 4 to 1
-- Reduced sequence_length from 256 to 64
-- tokens_per_batch = 1 × 64 = 64 tokens
-- Now files with 65+ tokens can train!
+### Phase 2: Bidirectional Analysis - Training Architecture ✅
+- [x] Analyzed current training pipeline implementation
+- [x] Analyzed current model management system
+- [x] Analyzed current queue system (single global queue)
+- [x] Identified gaps between current state and requirements
 
-### Issues Fixed ✅
+### Phase 3: Bidirectional Analysis - Data Flow ✅
+- [x] Analyzed preprocessing pipeline
+- [x] Analyzed tokenization process
+- [x] Analyzed training data flow
+- [x] Mapped data flow from input to trained model
 
-1. **Training not happening** ✅ FIXED
-   - Reduced batch size to match file sizes
-   - Training will now create batches and process them
+### Phase 4: Bidirectional Analysis - Feature Parity ✅
+- [x] Compared crawler training vs manual training
+- [x] Compared CLI tools vs UI capabilities
+- [x] Identified missing dynamic configuration options
+- [x] Identified missing per-model queue systems
 
-2. **Loss always 0.0000** ✅ FIXED
-   - Was caused by 0 batches processed
-   - Will now show real loss values
+### Phase 5: Design Unified Training System ✅
+- [x] Designed per-model queue architecture
+- [x] Designed dynamic training configuration
+- [x] Designed unified data ingestion system
+- [x] Designed model-specific training isolation
 
-3. **Workers process 0 batches** ✅ FIXED
-   - Was caused by no batches in queue
-   - Workers will now process actual batches
+### Phase 6: Update Documentation ✅
+- [x] Created TRAINING_SYSTEM_ANALYSIS.md (comprehensive 800+ line analysis)
+- [x] Documented all user requirements
+- [x] Documented current architecture gaps
+- [x] Documented proposed architecture
+- [x] Documented implementation plan (10 phases, 25-35 hours)
 
-4. **Excessive input debugging** ✅ FIXED
-   - Commented out debug printf statements
-   - Console now clean on mouse clicks
+## Analysis Summary
 
-### Issues Explained (Not Bugs)
+**Document Created:** `TRAINING_SYSTEM_ANALYSIS.md` (800+ lines)
 
-5. **Multiple initializations** ⚠️ ARCHITECTURAL
-   - Model manager loads models (includes structures)
-   - CLLM system loads for inference (separate)
-   - Global abacus for visualization (separate)
-   - TODO: Share structures to reduce redundancy
+**Key Findings:**
+1. **Current State:** Hardcoded batch_size=1, sequence_length=64, epochs=5
+2. **Current Queue:** Single global queue (crawler_data/tokenized/)
+3. **Current Model Management:** No per-model configuration or queues
+4. **Current Limitations:** No batch accumulation, no epoch tracking, no dynamic config
 
-6. **Tokenizing but not training** ✅ EXPLAINED
-   - Files were tokenized correctly
-   - But too small to create batches
-   - Now fixed with smaller batch size
+**User Requirements Identified:**
+1. Dynamic batch size and epochs configuration
+2. Accumulation of small inputs until batch size reached
+3. Dynamic layer configuration (with constraints for existing models)
+4. Epoch tracking per model (epochs_trained, target_epochs)
+5. Per-model training queues (not global queues)
+6. Unified data ingestion (crawler + manual file drops)
+7. Model selection in training tab
+8. Model-specific training data tracking
 
-7. **Training not wired to database** ⚠️ PARTIAL
-   - Training uses file system (training_queue/)
-   - Database tracks URLs and crawl status
-   - TODO: Add trained files tracking to database
+**Proposed Solution:**
+- 10-phase implementation plan
+- Per-model queue system (models/model_name_queue/)
+- Batch accumulation system
+- Dynamic configuration UI
+- Epoch tracking with continuation support
+- Layer validation with constraints
+- Unified data ingestion
+- Model selection in Training tab
 
-### Files Modified
-- src/crawler/continuous_training.c (batch size fix)
-- app/input_manager.c (debug output removed)
-- todo.md (analysis and fixes)
+**Estimated Effort:** 25-35 hours total
 
-### Documentation Created
-- TRAINING_PIPELINE_ANALYSIS.md (comprehensive analysis)
-- CRITICAL_BUGS_ANALYSIS.md (models tab crash)
-
-### Testing Required
-- [ ] Start crawler and verify training happens
-- [ ] Check workers process > 0 batches
-- [ ] Verify loss is non-zero
-- [ ] Confirm training progress increases
-- [ ] Validate console output is clean
-
-## CRITICAL BUGS - FIXED ✅
-
-### Bug 1: Models Tab Crash (heap-use-after-free) ✅ FIXED
-**Error**: AddressSanitizer: heap-use-after-free in draw_model_list
-**Location**: ui/tabs/tab_models.c:162, 188, 298, 300
-**Root Cause**: Tab was freeing internal model manager array
-
-**Problem**:
-- `model_manager_list()` returns pointer to internal `g_model_manager.models` array
-- Tab code called `free(models)` on this pointer
-- This freed the model manager's internal array
-- Next access to models caused heap-use-after-free crash
-
-**Solution Applied**:
-- Commented out both `free(models)` calls in tab_models.c (lines 188, 300)
-- Added detailed comments explaining the issue
-- Models tab now works without crashing
-
-**TODO (Future)**:
-- Modify `model_manager_list()` to return a copy of the array
-- Then tab can safely free the copy
-
-**Files Modified**:
-- app/ui/tabs/tab_models.c (2 locations)
-
-### Bug 2: "Still working..." Console Spam ✅ FIXED
-**Issue**: Console spam every 1 second during training
-**Location**: src/ai/cllm_training_threaded.c:2031
-**Root Cause**: Progress message printed every 1 second
-
-**What It Meant**:
-- "pushed": Number of training batches added to queue
-- "processed": Number of batches completed
-- "pending": Number of batches waiting
-
-**Solution Applied**:
-- Changed interval from 1 second (1000 iterations) to 10 seconds (10000 iterations)
-- Improved message format: "Training progress: X/Y batches (Z% complete)"
-- Added percentage calculation for better clarity
-- Only prints if there are batches to process
-
-**Files Modified**:
-- src/ai/cllm_training_threaded.c (line 2029)
-
-**Result**:
-- Console output reduced by 90%
-- More informative progress messages
-- Less spam, better UX
-
-## CRITICAL UI/UX REDESIGN - COMPLETE INTERFACE OVERHAUL
-
-### Deep Analysis Complete ✅
-**Analysis Document**: UI_REDESIGN_MASTER_PLAN.md (600+ lines)
-
-### Critical Findings
-- **299 hardcoded dimensions** across 9 tabs
-- **Only 3 of 9 tabs** use dynamic layout
-- **Training tab**: 64 hardcoded, 0 dynamic ❌
-- **LLM tab**: 87 hardcoded, 0 dynamic ❌ (WORST)
-- **No window resize support**
-- **Inconsistent element wiring**
-
-### Redesign Phases (20-30 hours)
-
-**Phase 1: Layout Enhancement (2-3h) ⏳ READY**
-- [ ] Add window resize handling
-- [ ] Add sizing constants
-- [ ] Add helper functions
-
-**Phase 2-9: Tab Redesign (18-27h) ⏳ PENDING**
-- [ ] Training tab: Remove 64 hardcoded
-- [ ] LLM tab: Remove 87 hardcoded
-- [ ] Research tab: Remove 19 hardcoded
-- [ ] Other tabs: Remove remaining hardcoded
-- [ ] Unify input/button systems
-- [ ] Testing and validation
-
-### Files to Modify
-- Core: 3 files
-- Tabs: 9 files
-- Systems: 6 files
-- Total: 18 files
-
-## CRITICAL MEMORY LEAK - 395MB ✅ FIXED
-
-### Fix Complete
-- Added stop_crawler_thread() to cleanup()
-- Added model_manager_cleanup() to cleanup()
-- Eliminates 395MB leak (100%)
-- Git commit: 7904a78
-
-## Previous Fixes (COMPLETE)
-
-### Crawler Start Without URL ✅
-- Auto-resets crawled URLs to pending
-- No manual URL entry needed
-
-### URL Reset Button ✅
-- "Reset All URLs" button added
-- Manual reset available
-
-## Next Actions
-1. ⏳ Get user approval for UI redesign
-2. ⏳ Start Phase 1: Layout enhancement
-3. ⏳ Progressive tab redesign
-4. ⏳ Testing and validation
+**Next Step:** Awaiting user approval to proceed with implementation
