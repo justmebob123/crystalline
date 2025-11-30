@@ -70,10 +70,10 @@ static void register_llm_inputs_internal(InputManager* manager) {
     // Input area: X = 210 (RENDER_OFFSET_X + 10), Y = 820 (bottom of screen)
     int input_x = 210;
     int input_y = 820;
-    int input_width = 1060;  // RENDER_WIDTH - 110
+    int input_width = 1040;  // RENDER_WIDTH - 110
     
     input_manager_register(manager, "llm.chat_input", TAB_LLM, INPUT_TYPE_TEXT,
-                         (SDL_Rect){input_x, input_y, input_width, 60});
+                         (SDL_Rect){input_x, input_y, input_width, 80});
     input_manager_set_text(manager, "llm.chat_input", "");
 }
 

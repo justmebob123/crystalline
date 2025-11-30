@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 // Manager structure
 struct CrawlerURLManager {
@@ -28,6 +30,17 @@ CrawlerURLManager* crawler_url_manager_create(const char* data_dir) {
     if (!manager) return NULL;
     
     strncpy(manager->data_dir, data_dir, sizeof(manager->data_dir) - 1);
+    
+    // Ensure data directory exists
+    struct stat st = {0};
+    if (stat(data_dir, &st) == -1) {
+        // Directory doesn't exist, create it
+        if (mkdir(data_dir, 0755) != 0) {
+            fprintf(stderr, "Failed to create data directory: %s\n", data_dir);
+            free(manager);
+            return NULL;
+        }
+    }
     
     // Create database path
     char db_path[2048];

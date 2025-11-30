@@ -14,26 +14,34 @@
   ```
 - **Rule 6:** `MASTER_PLAN.md` is read-only - do not edit without explicit approval
 
-## CRITICAL BUG FIXES (USER REPORTED) ✅ COMPLETE
+## CRITICAL BUG FIXES (USER REPORTED) ✅ FIXED
 
 ### Issue 1: LLM Send Button Not Working ✅ FIXED
 **Problem:** User can type in text box but Send button doesn't work
-**Root Cause:** Input box width was 1060px instead of 1040px, causing overlap with send button
+**Root Cause:** Input box width was 1060px, overlapping with send button at x=1260
+
 **Fix Applied:**
-- [x] Fixed input box width in app/input_registration.c from 1060 to 1040
-- [x] Updated height from 60 to 80 to match actual rendering
-- [x] Send button now at x=1260, input box ends at x=1250 (no overlap)
+- [x] Fixed input box width from 1060 to 1040 in app/input_registration.c
+- [x] Fixed input box height from 60 to 80 to match rendering
+- [x] Input box now: (210, 820, 1040, 80) - ends at x=1250
+- [x] Send button at: (1260, 820, 90, 80) - starts at x=1260
+- [x] 10px gap between input and button - no overlap
 - [x] Application rebuilt successfully
 
+**Result:** Send button clicks will no longer be captured by InputManager
+
 ### Issue 2: URL Manager Database Path Error ✅ FIXED
-**Problem:** `Failed to open URL database: data/crawler/crawler.db/urls.db`
-**Root Cause:** All three tabs passing wrong path to crawler_url_manager_create()
+**Problem:** `Failed to open URL database: data/crawler/urls.db`
+**Root Cause:** Directory `data/crawler/` didn't exist
+
 **Fix Applied:**
-- [x] Fixed tab_url_manager.c: "data/crawler/crawler.db" → "data/crawler"
-- [x] Fixed tab_downloaded_files.c: "data/crawler/crawler.db" → "data/crawler"
-- [x] Fixed tab_crawler.c: "data/crawler/crawler.db" → "data/crawler"
-- [x] Database will now be created at correct path: data/crawler/urls.db
+- [x] Fixed database path in all three tabs (tab_url_manager, tab_downloaded_files, tab_crawler)
+- [x] Added directory creation in crawler_url_manager_create()
+- [x] Added sys/stat.h and sys/types.h includes
+- [x] Directory now created with mkdir() if it doesn't exist
 - [x] Application rebuilt successfully
+
+**Result:** URL manager will create directory and database automatically
 
 ## OBJECTIVE 15 Phase 5: CLI Tool Integration (RESUME AFTER FIXES)
 
