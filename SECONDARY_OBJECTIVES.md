@@ -3476,3 +3476,266 @@ If fixing ButtonManager takes too long or causes more issues.
 30 minutes
 
 ---
+
+---
+
+## 🔴 REMAINING TODO ITEMS (Post Deep Analysis)
+
+### Date Added: 2024-12-XX
+### Source: Comprehensive codebase analysis
+### Total Items: 65
+
+---
+
+### CRITICAL PRIORITY: Mathematical/Precision (4 items)
+
+#### TODO 1: Implement full BigFixed version for angular position
+**File:** `src/core/cllm_angular_position.c`
+**Purpose:** Use BigFixed for θ(n,k,λ,ω,ψ) calculation when extreme precision needed
+**Priority:** HIGH
+**Estimated Effort:** 4 hours
+
+**Implementation:**
+```c
+void angular_position_calculate_bigfixed(
+    BigFixed* result,
+    uint64_t prime,
+    uint32_t token_id,
+    uint32_t head_idx,
+    uint64_t wavelength,
+    int precision_bits
+);
+```
+
+#### TODO 2: Implement proper Moore-Penrose pseudo-inverse
+**File:** `src/ai/cllm_lll_embeddings.c`
+**Purpose:** LLL lattice reduction algorithm for optimal basis
+**Priority:** MEDIUM
+**Estimated Effort:** 8 hours
+
+#### TODO 3: Implement CORDIC for atan
+**File:** `src/transcendental/prime_bigint_transcendental.c`
+**Purpose:** Arbitrary precision arctangent using CORDIC algorithm
+**Priority:** MEDIUM
+**Estimated Effort:** 6 hours
+
+#### TODO 4: ✅ Implement proper atomic float operations
+**File:** `src/ai/cllm_simd_gradient_ops.c`
+**Status:** COMPLETE
+**Implementation:** Compare-and-swap atomic operations
+
+---
+
+### HIGH PRIORITY: Infrastructure (12 items)
+
+#### TODO 5: Implement intelligent rebalancing
+**File:** `src/ai/infrastructure/cllm_control_process.c`
+**Purpose:** Dynamic load balancing based on sphere metrics
+**Priority:** HIGH
+**Estimated Effort:** 12 hours
+
+#### TODO 6: Implement sphere recovery logic
+**File:** `src/ai/infrastructure/cllm_control_process.c`
+**Purpose:** Handle sphere failures and restart
+**Priority:** HIGH
+**Estimated Effort:** 8 hours
+
+#### TODO 7: Implement gradient collection from all spheres
+**File:** `src/ai/infrastructure/cllm_control_process.c`
+**Purpose:** Aggregate gradients from worker threads
+**Priority:** HIGH
+**Estimated Effort:** 6 hours
+
+#### TODO 8-9: Implement checkpoint saving/restoration
+**File:** `src/ai/infrastructure/cllm_control_process.c`
+**Purpose:** Save and restore training state
+**Priority:** HIGH
+**Estimated Effort:** 10 hours
+
+#### TODO 10-11: Implement work stealing/acceptance
+**File:** `src/ai/infrastructure/cllm_lattice_hierarchy.c`
+**Purpose:** Balance work across threads dynamically
+**Priority:** MEDIUM
+**Estimated Effort:** 8 hours
+
+#### TODO 12: Implement weight synchronization
+**File:** `src/ai/infrastructure/cllm_lattice_hierarchy.c`
+**Purpose:** Sync weights across hierarchy levels
+**Priority:** HIGH
+**Estimated Effort:** 6 hours
+
+#### TODO 13: Implement dynamic rebalancing
+**File:** `src/ai/infrastructure/cllm_thread_allocation.c`
+**Purpose:** Adjust thread allocation based on workload
+**Priority:** MEDIUM
+**Estimated Effort:** 6 hours
+
+#### TODO 14: Implement pool resizing
+**File:** `src/ai/infrastructure/cllm_batch.c`
+**Purpose:** Resize batch pool dynamically
+**Priority:** LOW
+**Estimated Effort:** 2 hours
+
+#### TODO 15: Implement checkpoint cleanup
+**File:** `src/ai/infrastructure/cllm_training_loop.c`
+**Purpose:** Clean up old checkpoints
+**Priority:** LOW
+**Estimated Effort:** 2 hours
+
+#### TODO 16: Traverse hierarchy and count sphere states
+**File:** `src/ai/infrastructure/cllm_control_process.c`
+**Purpose:** Monitor sphere health across hierarchy
+**Priority:** MEDIUM
+**Estimated Effort:** 4 hours
+
+---
+
+### MEDIUM PRIORITY: Training Enhancements (8 items)
+
+#### TODO 17: Implement full attention with thread-local caching
+**File:** `src/ai/cllm_training_threaded.c`
+**Purpose:** Optimize attention computation with caching
+**Priority:** MEDIUM
+**Estimated Effort:** 8 hours
+
+#### TODO 18: Implement gradient accumulation
+**File:** `src/ai/cllm_training_threaded.c`
+**Purpose:** Multi-batch gradient accumulation
+**Priority:** MEDIUM
+**Estimated Effort:** 4 hours
+
+#### TODO 19: Use SIMD gradient accumulation
+**File:** `src/ai/cllm_hierarchical_training.c`
+**Purpose:** SIMD-accelerated gradient operations
+**Priority:** MEDIUM
+**Estimated Effort:** 4 hours
+
+#### TODO 20: Allocate separate Adam state per layer
+**File:** `src/ai/cllm_optimizer.c`
+**Purpose:** Separate optimizer state for different layer types
+**Priority:** LOW
+**Estimated Effort:** 2 hours
+
+#### TODO 21-22: Implement actual batch processing and forward/backward pass
+**File:** `src/ai/infrastructure/cllm_training_loop.c`
+**Purpose:** Complete training loop implementation
+**Priority:** HIGH
+**Estimated Effort:** 12 hours
+
+#### TODO 23: Implement checkpoint I/O
+**File:** `src/ai/infrastructure/cllm_training_loop.c`
+**Purpose:** Write/read model state to disk
+**Priority:** MEDIUM
+**Estimated Effort:** 4 hours
+
+#### TODO 24: Implement actual load tracking
+**File:** `src/ai/cllm_hierarchical_training.c`
+**Purpose:** Track computational load per sphere
+**Priority:** LOW
+**Estimated Effort:** 2 hours
+
+---
+
+### LOW PRIORITY: Cleanup and Enhancements (41 items)
+
+#### TODO 25-30: Cleanup tasks (6 items)
+**Files:** Various in `src/ai/cllm_hierarchical_training.c`
+**Purpose:** Memory cleanup and resource management
+**Priority:** LOW
+**Estimated Effort:** 4 hours total
+
+#### TODO 31: Collect thread states
+**File:** `src/ai/cllm_metrics.c`
+**Purpose:** Enhanced metrics collection
+**Priority:** LOW
+**Estimated Effort:** 2 hours
+
+#### TODO 32-33: Rainbow table optimizations (2 items)
+**File:** `src/geometry/prime_rainbow.c`
+**Purpose:** Organize by symmetry group, optimize indexing
+**Priority:** LOW
+**Estimated Effort:** 4 hours
+
+#### TODO 34: Get extraction mode from state
+**File:** `src/crawler/preprocessor.c`
+**Purpose:** Dynamic extraction mode selection
+**Priority:** LOW
+**Estimated Effort:** 1 hour
+
+#### TODO 35-50: UI/UX enhancements (15+ items)
+**Files:** Various in `app/ui/tabs/`
+**Purpose:** Model selector integration, button handlers, rendering
+**Priority:** LOW
+**Estimated Effort:** 20 hours total
+
+#### TODO 51-65: Remove debug printf statements (15 items)
+**Files:** `cllm_training_threaded.c`, `cllm_optimizer.c`, others
+**Purpose:** Clean up debug output
+**Priority:** LOW (cosmetic)
+**Estimated Effort:** 2 hours
+
+---
+
+## IMPLEMENTATION ROADMAP
+
+### Phase 1: Critical Fixes ✅ COMPLETE
+- [x] Fix NaN gradient issue (clock lattice wrapping)
+- [x] Implement atomic gradient operations
+- [x] Comprehensive testing framework
+
+### Phase 2: High Priority Infrastructure (Recommended Next)
+**Estimated Time:** 2-3 weeks
+
+1. Implement checkpoint system (saving/restoration)
+2. Implement gradient collection from spheres
+3. Implement weight synchronization
+4. Implement sphere recovery logic
+5. Implement intelligent rebalancing
+
+### Phase 3: Training Enhancements
+**Estimated Time:** 1-2 weeks
+
+1. Complete training loop implementation
+2. Implement gradient accumulation
+3. Implement attention caching
+4. Optimize with SIMD operations
+
+### Phase 4: Cleanup and Polish
+**Estimated Time:** 1 week
+
+1. Remove debug statements
+2. Complete UI/UX enhancements
+3. Optimize rainbow table
+4. Documentation updates
+
+---
+
+## PRIORITY MATRIX
+
+**Must Have (Blocking):**
+- ✅ NaN gradient fix
+- ✅ Atomic operations
+- ⏳ Checkpoint system
+- ⏳ Gradient collection
+
+**Should Have (Important):**
+- Weight synchronization
+- Sphere recovery
+- Training loop completion
+- Load balancing
+
+**Nice to Have (Enhancement):**
+- BigFixed angular position
+- Moore-Penrose inverse
+- CORDIC atan
+- UI/UX improvements
+
+**Can Wait (Polish):**
+- Debug cleanup
+- Rainbow table optimization
+- Metrics enhancement
+- Documentation
+
+---
+
+**END OF TODO ANALYSIS**

@@ -4,6 +4,8 @@
  */
 
 #ifndef CLLM_H
+#include "cllm_pure_crystalline.h"
+#include "bigfixed_core.h"
 #define CLLM_H
 
 #include <stdint.h>
@@ -84,14 +86,15 @@ typedef struct {
 } CLLMLatticePoint;
 
 /*
- * Embeddings - Token embeddings with lattice transformations
+ * Embeddings - DEPRECATED - Use CrystallineEmbeddings instead
+ * This structure is kept only for backward compatibility during migration
  */
 typedef struct {
     uint32_t vocab_size;         // Vocabulary size
     uint32_t embedding_dim;      // Embedding dimension
-    float* embeddings;           // Embedding matrix [vocab_size x embedding_dim]
-    float* lattice_transform;    // Lattice transformation matrix
-    float* inverse_transform;    // Inverse transformation matrix
+    float* embeddings;           // DEPRECATED: Use CrystallineEmbeddings
+    float* lattice_transform;    // DEPRECATED: Use CrystallineEmbeddings
+    float* inverse_transform;    // DEPRECATED: Use CrystallineEmbeddings
 } Embeddings;
 
 /*
@@ -197,7 +200,7 @@ typedef struct {
 } TrainingMetadata;
 
 /*
- * CLLM Model - Complete model structure
+ * CLLM Model - Complete model structure with BigFixed arbitrary precision
  */
 typedef struct {
     CLLMHeader header;           // Model header
@@ -206,11 +209,18 @@ typedef struct {
     uint64_t vocab_size;         // Vocabulary size
     uint64_t num_lattice_points; // Number of lattice points
     uint64_t embedding_dim;      // Embedding dimension
-    float* weights;              // Model weights
+    
+    // BIGFIXED WEIGHTS - Arbitrary precision
+    BigFixed** weights;          // Model weights (arbitrary precision)
     uint64_t num_weights;        // Number of weights
     
     // Embeddings
-    Embeddings embeddings;       // Token embeddings with transformations
+    
+    // CRYSTALLINE EMBEDDINGS - Arbitrary precision BigFixed-based
+    CrystallineEmbeddings* crystalline_embeddings;  // Pure lattice-based embeddings
+    
+    // DEPRECATED: Legacy float embeddings (for backward compatibility only)
+    Embeddings embeddings;       // DEPRECATED: Use crystalline_embeddings instead
     
     // Transformer layers
     uint32_t num_layers;         // Number of transformer layers
@@ -242,6 +252,10 @@ typedef struct {
        
        // NOTE: Training history (loss, metrics) is stored in separate files
        // in models/<name>_history/ directory to keep model files compact
+       
+       // NEW: Arbitrary precision configuration
+       int precision_bits;          // Precision for BigFixed operations (default: 256)
+       bool use_bigfixed;           // Always true - for migration tracking only
    } CLLMModel;
 
 /*
