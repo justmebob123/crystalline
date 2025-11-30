@@ -54,9 +54,9 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     int w = RENDER_WIDTH - 40;
     // int h = WINDOW_HEIGHT - 80; // TODO: Use for panel height
     
-    // Title
-    draw_text(renderer, "VIDEO RECORDING", x, y, text_color);
-    y += 40;
+    // Title (positioned to avoid submenu overlap)
+    draw_text(renderer, "VIDEO RECORDING", x, y + 20, text_color);
+    y += 60;
     
     // Recording status panel
     SDL_Rect status_panel = {x, y, w, 200};
@@ -101,8 +101,11 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
         char path_info[512];
         int path_written = snprintf(path_info, sizeof(path_info), "Output: %s", state->video_path);
         if (path_written >= (int)sizeof(path_info)) {
-            // Path was truncated, add ellipsis
-            strcpy(path_info + sizeof(path_info) - 4, "...");
+               // Path was truncated, add ellipsis at end
+               path_info[sizeof(path_info) - 4] = '.';
+               path_info[sizeof(path_info) - 3] = '.';
+               path_info[sizeof(path_info) - 2] = '.';
+               path_info[sizeof(path_info) - 1] = '\0';
         }
         draw_text(renderer, path_info, panel_x, panel_y, accent_color);
         panel_y += 30;
@@ -193,9 +196,9 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     }
     
     if (ffmpeg_available) {
-        draw_text(renderer, "✓ FFmpeg: Installed", req_x, req_y, success_color);
+        draw_text(renderer, "[OK] FFmpeg: Installed", req_x, req_y, success_color);
     } else {
-        draw_text(renderer, "✗ FFmpeg: Not Found", req_x, req_y, error_color);
+        draw_text(renderer, "[X] FFmpeg: Not Found", req_x, req_y, error_color);
         req_y += 18;
         draw_text(renderer, "  Install: sudo apt-get install ffmpeg", req_x, req_y, text_color);
     }
@@ -203,11 +206,11 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     
     draw_text(renderer, "NOTES:", req_x, req_y, accent_color);
     req_y += 25;
-    draw_text(renderer, "• Recording captures the main visualization area", req_x, req_y, text_color);
+    draw_text(renderer, "- Recording captures the main visualization area", req_x, req_y, text_color);
     req_y += 18;
-    draw_text(renderer, "• Switch between tabs while recording to capture different views", req_x, req_y, text_color);
+    draw_text(renderer, "- Switch between tabs while recording to capture different views", req_x, req_y, text_color);
     req_y += 18;
-    draw_text(renderer, "• Recording may impact performance slightly", req_x, req_y, text_color);
+    draw_text(renderer, "- Recording may impact performance slightly", req_x, req_y, text_color);
 }
 
 /**

@@ -48,20 +48,24 @@
 
 **Build Status:** ✅ Compiles successfully with zero errors
 
-#### Fix 5: Video Tab Unicode and Layout (AFTER FIX 4)
-**File:** `app/ui/tabs/tab_video.c`
+#### Fix 5: Video Tab Unicode and Layout ✅ COMPLETE
+**File:** `app/ui/tabs/tab_video.c` (234 lines)
 
-**Issues Identified:**
-1. Unicode characters instead of ASCII
-2. Layout positioning issues
-3. Path truncation bug
-4. Title position overlap
+**Issues Fixed:**
+1. ✅ Replaced Unicode checkmark (✓) with ASCII [OK]
+2. ✅ Replaced Unicode X mark (✗) with ASCII [X]
+3. ✅ Replaced Unicode bullets (•) with ASCII dashes (-)
+4. ✅ Fixed path truncation bug - proper character-by-character assignment
+5. ✅ Adjusted title position (y + 20 instead of y) to avoid submenu overlap
 
-**Tasks:**
-- [ ] Replace Unicode characters with ASCII
-- [ ] Use layout system for positioning
-- [ ] Fix path truncation bug
-- [ ] Adjust title position
+**Changes Made:**
+- Line 196: `"✓ FFmpeg: Installed"` → `"[OK] FFmpeg: Installed"`
+- Line 198: `"✗ FFmpeg: Not Found"` → `"[X] FFmpeg: Not Found"`
+- Lines 206, 208, 210: `"• ..."` → `"- ..."`
+- Lines 104-108: Fixed path truncation to use character assignment instead of strcpy
+- Line 58: Adjusted title Y position from `y` to `y + 20`
+
+**Build Status:** ✅ Compiles successfully with zero errors
 
 #### Fix 6: Models Tab Implementation (AFTER FIX 5)
 **File:** `app/ui/tabs/tab_models.c`
