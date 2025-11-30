@@ -140,9 +140,13 @@ static void register_url_manager_inputs_internal(InputManager* manager) {
  * 
  * CRITICAL: This function MUST be called during app initialization, before the main loop.
  */
-void init_all_inputs(InputManager* manager) {
+void init_all_inputs(InputManager* manager, void* state) {
     if (!manager) {
         printf("ERROR: Cannot initialize inputs - InputManager is NULL\n");
+        return;
+    }
+    if (!state) {
+        printf("ERROR: Cannot initialize inputs - AppState is NULL\n");
         return;
     }
     
@@ -159,6 +163,16 @@ void init_all_inputs(InputManager* manager) {
     // LLM tab (TAB_LLM = 5)
     printf("Registering LLM tab inputs...\n");
     register_llm_inputs_internal(manager);
+    
+    // Set callbacks for LLM input (defined in tab_llm.c)
+    ManagedInput* llm_input = input_manager_get(manager, "llm.chat_input");
+    if (llm_input) {
+        extern void llm_input_on_change(const char* text, void* user_data);
+        extern void llm_input_on_submit(const char* text, void* user_data);
+        llm_input->on_change = llm_input_on_change;
+        llm_input->on_submit = llm_input_on_submit;
+        llm_input->user_data = state;
+    }
     
     // Research tab (TAB_RESEARCH = 7)
     printf("Registering Research tab inputs...\n");

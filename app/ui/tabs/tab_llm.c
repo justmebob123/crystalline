@@ -2,6 +2,7 @@
 #include "../../app_common.h"
 #include "../../cllm_integration.h"
 #include "../../ui_layout.h"
+#include "../../input_manager.h"
 #include "../../../include/cllm_utils.h"
 #include "../../../include/cllm_model_manager.h"
 #include <string.h>
@@ -9,6 +10,10 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
+
+// Forward declarations for callbacks (non-static so they can be used in input_registration.c)
+void llm_input_on_change(const char* text, void* user_data);
+void llm_input_on_submit(const char* text, void* user_data);
 
 #define MAX_CHAT_MESSAGES 100
 #define MAX_MESSAGE_LENGTH 2048
@@ -1001,14 +1006,7 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Input box - CHECK FIRST (highest priority for user interaction)
-    if (x >= g_input_rect.x && x <= g_input_rect.x + g_input_rect.w &&
-        y >= g_input_rect.y && y <= g_input_rect.y + g_input_rect.h) {
-        input_active = true;
-        SDL_StartTextInput();
-        printf("LLM Tab: Input box clicked, input_active = true\n");
-        return;
-    }
+    // NOTE: Input box clicks are handled by InputManager - no need for duplicate handler here
     
     // Handle thread list panel clicks
     if (thread_list_visible) {
@@ -1050,42 +1048,16 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Click elsewhere - deactivate input
-    if (input_active) {
-        input_active = false;
-        SDL_StopTextInput();
-        printf("LLM Tab: Input deactivated by clicking elsewhere\n");
-    }
-    
-    // Send button
+    // Send button - trigger submit callback manually
     if (x >= g_send_btn.x && x <= g_send_btn.x + g_send_btn.w &&
         y >= g_send_btn.y && y <= g_send_btn.y + g_send_btn.h) {
         
-        if (!state->llm_generating && strlen(state->llm_input_text) > 0 && state->cllm_inference) {
-            add_chat_message(state->llm_input_text, true);
-            
-            state->llm_generating = true;
-            char response[MAX_MESSAGE_LENGTH];
-            
-            printf("=== GENERATING RESPONSE ===\n");
-            printf("Prompt: %s\n", state->llm_input_text);
-            
-            int result = cllm_generate(state->cllm_inference, state->llm_input_text,
-                                      response, sizeof(response));
-            
-            printf("Generated %d tokens\n", result);
-            printf("Response: %s\n", response);
-            printf("===========================\n");
-            
-            if (result > 0) {
-                add_chat_message(response, false);
-            } else {
-                add_chat_message("Sorry, I couldn't generate a response.", false);
-            }
-            
-            state->llm_generating = false;
-            state->llm_input_text[0] = '\0';
-            input_cursor = 0;
+        // Get current input text from global InputManager
+        extern InputManager* g_input_manager;
+        const char* input_text = input_manager_get_text(g_input_manager, "llm.chat_input");
+        if (input_text && strlen(input_text) > 0) {
+            // Trigger submit callback
+            llm_input_on_submit(input_text, state);
         }
         return;
     }
@@ -1321,54 +1293,62 @@ bool handle_llm_tab_event(AppState* state, SDL_Event* event) {
     return false;
 }
 
-void handle_llm_tab_text_input(AppState* state, const char* text) {
-    if (!state || !text || !input_active) return;
+// Callback for when text changes in the input box
+void llm_input_on_change(const char* text, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !text) return;
     
-    size_t current_len = strlen(state->llm_input_text);
-    size_t text_len = strlen(text);
+    // Update the state's input text
+    strncpy(state->llm_input_text, text, sizeof(state->llm_input_text) - 1);
+    state->llm_input_text[sizeof(state->llm_input_text) - 1] = '\0';
+}
+
+// Callback for when Enter is pressed (submit)
+void llm_input_on_submit(const char* text, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !text || strlen(text) == 0) return;
+    if (!state->cllm_inference || state->llm_generating) return;
     
-    if (current_len + text_len < sizeof(state->llm_input_text) - 1) {
-        strcat(state->llm_input_text, text);
-        input_cursor += (int)text_len;
+    // Add user message to chat
+    add_chat_message(text, true);
+    
+    // Generate response
+    state->llm_generating = true;
+    char response[MAX_MESSAGE_LENGTH];
+    
+    printf("=== GENERATING RESPONSE ===\n");
+    printf("Prompt: %s\n", text);
+    
+    int result = cllm_generate(state->cllm_inference, text,
+                              response, sizeof(response));
+    
+    printf("Generated %d tokens\n", result);
+    printf("Response: %s\n", response);
+    printf("===========================\n");
+    
+    if (result > 0) {
+        add_chat_message(response, false);
+    } else {
+        add_chat_message("Sorry, I couldn't generate a response.", false);
     }
+    
+    state->llm_generating = false;
+    
+    // Clear input through global InputManager
+    extern InputManager* g_input_manager;
+    input_manager_set_text(g_input_manager, "llm.chat_input", "");
+    state->llm_input_text[0] = '\0';
+}
+
+// Legacy functions - now just stubs that do nothing (InputManager handles everything)
+void handle_llm_tab_text_input(AppState* state, const char* text) {
+    (void)state;
+    (void)text;
+    // InputManager handles this now
 }
 
 void handle_llm_tab_key(AppState* state, SDL_Keycode key) {
-    if (!state || !input_active) return;
-    
-    if (key == SDLK_BACKSPACE && strlen(state->llm_input_text) > 0) {
-        state->llm_input_text[strlen(state->llm_input_text) - 1] = '\0';
-        input_cursor--;
-        if (input_cursor < 0) input_cursor = 0;
-    } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
-        if (strlen(state->llm_input_text) > 0 && state->cllm_inference && !state->llm_generating) {
-            add_chat_message(state->llm_input_text, true);
-            
-            state->llm_generating = true;
-            char response[MAX_MESSAGE_LENGTH];
-            
-            printf("=== GENERATING RESPONSE ===\n");
-            printf("Prompt: %s\n", state->llm_input_text);
-            
-            int result = cllm_generate(state->cllm_inference, state->llm_input_text,
-                                      response, sizeof(response));
-            
-            printf("Generated %d tokens\n", result);
-            printf("Response: %s\n", response);
-            printf("===========================\n");
-            
-            if (result > 0) {
-                add_chat_message(response, false);
-            } else {
-                add_chat_message("Sorry, I couldn't generate a response.", false);
-            }
-            
-            state->llm_generating = false;
-            state->llm_input_text[0] = '\0';
-            input_cursor = 0;
-        }
-    } else if (key == SDLK_ESCAPE) {
-        input_active = false;
-        SDL_StopTextInput();
-    }
+    (void)state;
+    (void)key;
+    // InputManager handles this now
 }

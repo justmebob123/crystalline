@@ -59,8 +59,8 @@ AppState* init_app(void) {
     
     // CRITICAL: Register ALL tab inputs at startup
     // This ensures inputs are available immediately, regardless of which tab is visited first
-    extern void init_all_inputs(InputManager* manager);
-    init_all_inputs(g_input_manager);
+    extern void init_all_inputs(InputManager* manager, void* state);
+    init_all_inputs(g_input_manager, state);
     
     // Initialize global model manager
     printf("\n=== Initializing Model Manager ===\n");

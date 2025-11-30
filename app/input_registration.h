@@ -11,7 +11,8 @@
  * CRITICAL: This function MUST be called during app initialization, before the main loop.
  * 
  * @param manager The global InputManager instance
+ * @param state The global AppState instance (for callbacks)
  */
-void init_all_inputs(InputManager* manager);
+void init_all_inputs(InputManager* manager, void* state);
 
 #endif // INPUT_REGISTRATION_H
