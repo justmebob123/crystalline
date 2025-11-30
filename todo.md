@@ -43,25 +43,25 @@
 - [ ] Add cllm_model_set_name() function
 
 ### Phase 2: Enhanced Model Manager (NEW) ⏳
-- [ ] Add model renaming capability
+- [x] Add validation for unique model names (in cllm_model_metadata.c)
+- [x] Add default naming scheme (model_1, model_2, etc.)
+- [ ] Add model renaming capability (NEXT)
 - [ ] Rename model file when model renamed
 - [ ] Rename queue directory when model renamed
 - [ ] Update all references when model renamed
 - [ ] Add model_manager_rename_model()
-- [ ] Add validation for unique model names
-- [ ] Add default naming scheme (model_1, model_2, etc.)
 
-### Phase 3: Per-Model Queue System
-- [ ] Create src/ai/model_queue_manager.h
-- [ ] Create src/ai/model_queue_manager.c
-- [ ] Implement create_model_queue()
-- [ ] Implement add_to_model_queue()
-- [ ] Implement get_next_from_queue()
-- [ ] Implement get_queue_size()
-- [ ] Implement clear_model_queue()
-- [ ] Implement import_queue_from_model() (NEW - cross-model training)
-- [ ] Update crawler to use model-specific queue
-- [ ] Update continuous_training to use model-specific queue
+### Phase 3: Per-Model Queue System ✅ COMPLETE
+- [x] Create src/ai/model_queue_manager.h
+- [x] Create src/ai/model_queue_manager.c
+- [x] Implement create_model_queue()
+- [x] Implement add_to_model_queue()
+- [x] Implement get_next_from_queue()
+- [x] Implement get_queue_size()
+- [x] Implement clear_model_queue()
+- [x] Implement import_queue_from_model() (cross-model training)
+- [ ] Update crawler to use model-specific queue (LATER)
+- [ ] Update continuous_training to use model-specific queue (LATER)
 
 ### Phase 4: Batch Accumulation System
 - [ ] Create src/ai/batch_accumulator.h
