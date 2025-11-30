@@ -8,7 +8,6 @@
 /**
  * Draw the crawler control tab (legacy)
  */
-void draw_crawler_tab(AppState* state);
 
 /**
  * Draw the crawler control tab with layout system (new)

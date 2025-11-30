@@ -548,12 +548,6 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
     }
 }
 
-// Legacy function for compatibility
-void draw_crawler_tab(AppState* state) {
-    (void)state;
-    // This function is deprecated - use draw_crawler_tab_with_layout instead
-}
-
 // ============================================================================
 // EVENT HANDLERS
 // ============================================================================
