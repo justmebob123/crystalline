@@ -327,7 +327,7 @@ CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
                   src/crawler/handlers/twitter_handler.c src/crawler/handlers/britannica_handler.c \
                   src/crawler/handlers/etymonline_handler.c src/crawler/handlers/wikipedia_handler.c \
                   src/crawler/handlers/reddit_handler.c src/crawler/handlers/stackoverflow_handler.c \
-                  src/crawler/handlers/news_handler.c
+                  src/crawler/handlers/news_handler.c src/crawler/handlers/archive_handler.c
 CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 

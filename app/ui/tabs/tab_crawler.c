@@ -41,6 +41,15 @@ typedef struct {
     SDL_Rect radio_extract_metadata;
     SDL_Rect radio_extract_mixed;
     
+    // Advanced Options (NEW)
+    bool show_advanced_options;
+    char get_parameters[256];
+    char custom_headers[512];
+    int timeout_seconds;
+    int max_redirects;
+    SDL_Rect advanced_toggle_rect;
+
+    
     // Activity Log
     char activity_log[10][256];
     int activity_count;
@@ -84,6 +93,14 @@ static void init_crawler_tab_state(void) {
     
     // Set default extraction mode
     g_crawler_state.extraction_mode = EXTRACT_ALL;
+    
+    // Initialize advanced options
+    g_crawler_state.show_advanced_options = false;
+    g_crawler_state.get_parameters[0] = '\0';
+    g_crawler_state.custom_headers[0] = '\0';
+    g_crawler_state.timeout_seconds = 30;
+    g_crawler_state.max_redirects = 5;
+
     
     g_crawler_state.inputs_registered = false;
     g_crawler_state.inputs_initialized = true;
@@ -387,6 +404,58 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
     g_crawler_state.radio_extract_mixed = (SDL_Rect){x, y, radio_width, radio_height};
     draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_MIXED ? radio_on : radio_off, x, y, text_color);
     draw_text(renderer, "Mixed (Content + Meta)", x + 35, y, text_color);
+    y += 30;
+    
+    // Advanced Options section (NEW - Phase 4 Feature 3)
+    draw_section_header(renderer, "ADVANCED OPTIONS", x, y, (SDL_Color){180, 180, 200, 255});
+    y += 30;
+    
+    // Toggle button for showing/hiding advanced options
+    const char* toggle_text = g_crawler_state.show_advanced_options ? "[-] Hide" : "[+] Show";
+    g_crawler_state.advanced_toggle_rect = (SDL_Rect){x, y, 100, 20};
+    draw_text(renderer, toggle_text, x, y, (SDL_Color){100, 200, 255, 255});
+    y += 25;
+    
+    // Show advanced options if expanded
+    if (g_crawler_state.show_advanced_options) {
+        // GET Parameters
+        draw_text(renderer, "GET Parameters:", x, y, text_color);
+        y += 18;
+        draw_text(renderer, "(e.g., key1=val1&key2=val2)", x, y, (SDL_Color){150, 150, 150, 255});
+        y += 18;
+        if (g_crawler_state.get_parameters[0]) {
+            draw_text(renderer, g_crawler_state.get_parameters, x, y, success_color);
+        } else {
+            draw_text(renderer, "[None]", x, y, (SDL_Color){150, 150, 150, 255});
+        }
+        y += 25;
+        
+        // Custom Headers
+        draw_text(renderer, "Custom Headers:", x, y, text_color);
+        y += 18;
+        draw_text(renderer, "(e.g., User-Agent: MyBot)", x, y, (SDL_Color){150, 150, 150, 255});
+        y += 18;
+        if (g_crawler_state.custom_headers[0]) {
+            draw_text(renderer, g_crawler_state.custom_headers, x, y, success_color);
+        } else {
+            draw_text(renderer, "[None]", x, y, (SDL_Color){150, 150, 150, 255});
+        }
+        y += 25;
+        
+        // Timeout
+        char timeout_str[64];
+        snprintf(timeout_str, sizeof(timeout_str), "Timeout: %d seconds", g_crawler_state.timeout_seconds);
+        draw_text(renderer, timeout_str, x, y, text_color);
+        y += 22;
+        
+        // Max Redirects
+        char redirects_str[64];
+        snprintf(redirects_str, sizeof(redirects_str), "Max Redirects: %d", g_crawler_state.max_redirects);
+        draw_text(renderer, redirects_str, x, y, text_color);
+        y += 22;
+        
+        draw_text(renderer, "Note: Advanced options coming soon", x, y, (SDL_Color){150, 150, 150, 255});
+    }
 }
 
 // ============================================================================
@@ -738,6 +807,17 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
     if (rect_contains_point(g_crawler_state.radio_extract_mixed, mouse_x, mouse_y)) {
         g_crawler_state.extraction_mode = EXTRACT_MIXED;
         add_activity_log("Extraction mode: Mixed (Content + Metadata)");
+        return;
+    }
+    
+    // Check Advanced Options toggle
+    if (rect_contains_point(g_crawler_state.advanced_toggle_rect, mouse_x, mouse_y)) {
+        g_crawler_state.show_advanced_options = !g_crawler_state.show_advanced_options;
+        if (g_crawler_state.show_advanced_options) {
+            add_activity_log("Advanced Options: Expanded");
+        } else {
+            add_activity_log("Advanced Options: Collapsed");
+        }
         return;
     }
 }

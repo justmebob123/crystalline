@@ -52,5 +52,11 @@ void register_all_handlers(void) {
         site_handlers_register(news);
     }
     
-    printf("Site handlers registration complete (7 handlers registered)\n");
+    // Register Archive.org handler
+    const SiteHandler* archive = get_archive_handler();
+    if (archive) {
+        site_handlers_register(archive);
+    }
+    
+    printf("Site handlers registration complete (8 handlers registered)\n");
 }
