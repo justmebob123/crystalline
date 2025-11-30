@@ -349,7 +349,7 @@ crawler: $(CRAWLER_LIB)
 	@echo "Building crawler CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c \
-		-L. -lcrawler -lcllm -lcrystalline -lpthread -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcrawler -lcllm -lalgorithms -lcrystalline -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Crawler CLI built: tools/cllm_crawler"
 
 
