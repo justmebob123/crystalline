@@ -9,6 +9,93 @@
 - Rule 5: Always commit all changes using correct authentication
 - Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
+## COMPREHENSIVE UI/UX REDESIGN - CRITICAL PRIORITY 🔴
+
+### Deep Analysis Complete ✅
+**Analysis Document**: UI_REDESIGN_MASTER_PLAN.md (comprehensive 160-hour redesign plan)
+
+### Critical Findings
+**Problem**: Severe UI inconsistencies across all 9 tabs
+- **299 hardcoded dimensions** total
+- **Only 3 of 9 tabs** use layout manager
+- **No window resizing** support
+- **Inconsistent sizing**: LLM tab (87 hardcoded), Training tab (64 hardcoded)
+- **Poor centering**: Most elements not properly aligned
+- **Mixed approaches**: Each tab implements its own sizing logic
+
+### Tab Status Analysis
+| Tab | Hardcoded | Dynamic | Status |
+|-----|-----------|---------|--------|
+| Training | 64 | 0 | ❌ CRITICAL |
+| LLM | 87 | 0 | ❌ CRITICAL |
+| Crawler | 28 | 17 | ⚠️ PARTIAL |
+| Downloaded Files | 30 | 8 | ⚠️ PARTIAL |
+| URL Manager | 33 | 11 | ⚠️ PARTIAL |
+| Research | 19 | 0 | ❌ CRITICAL |
+| Models | 20 | 10 | ⚠️ PARTIAL |
+| Benchmark | 7 | 0 | ❌ NEEDS WORK |
+| Video | 11 | 0 | ❌ NEEDS WORK |
+
+### Redesign Strategy
+**Goal**: 100% dynamic, responsive UI with unified design system
+
+**Phase 1: Foundation (40 hours)**
+- [ ] Create design_system.h (spacing, colors, sizes)
+- [ ] Create component_helpers.h/c (positioning functions)
+- [ ] Create components.h/c (reusable UI components)
+- [ ] Add window resize handling to main.c
+- [ ] Create ButtonManager system (like InputManager)
+
+**Phase 2: Critical Tab Rebuilds (32 hours)**
+- [ ] Rebuild LLM tab (87 hardcoded → 0)
+- [ ] Rebuild Training tab (64 hardcoded → 0)
+
+**Phase 3: High Priority Rebuilds (32 hours)**
+- [ ] Rebuild Research tab (19 hardcoded → 0)
+- [ ] Refine Models tab (20 hardcoded → 0)
+
+**Phase 4: Medium Priority Rebuilds (16 hours)**
+- [ ] Rebuild Benchmark tab (7 hardcoded → 0)
+- [ ] Rebuild Video tab (11 hardcoded → 0)
+
+**Phase 5: Refinements (24 hours)**
+- [ ] Refine Crawler tab (remove remaining hardcoded)
+- [ ] Refine Downloaded Files tab (add centering)
+- [ ] Refine URL Manager tab (add centering)
+
+**Phase 6: Testing & Documentation (16 hours)**
+- [ ] Test all tabs with window resizing
+- [ ] Verify consistent spacing/colors
+- [ ] Create UI documentation
+
+**Total Estimated Time**: 160 hours (4 weeks)
+
+### Files to Create (9 new files)
+1. app/ui/design_system.h
+2. app/ui/component_helpers.h
+3. app/ui/component_helpers.c
+4. app/ui/components.h
+5. app/ui/components.c
+6. app/button_manager.h
+7. app/button_manager.c
+8. app/button_registration.h
+9. app/button_registration.c
+
+### Files to Modify (13 existing files)
+1. app/main.c - Window resize handling
+2. app/app_common.h - Dynamic window dimensions
+3. app/ui/layout_manager.h/c - Enhancements
+4. All 9 tab files - Complete or partial rebuilds
+
+### Success Criteria
+- ✅ Zero hardcoded dimensions (except design constants)
+- ✅ 100% dynamic layout calculations
+- ✅ Window resizing works on all tabs
+- ✅ Consistent spacing and colors
+- ✅ Proper centering and alignment
+- ✅ Professional appearance
+- ✅ Unified design system
+
 ## CRITICAL MEMORY LEAK - 395MB ✅ FIXED
 
 ### Deep Bidirectional Analysis Complete ✅
