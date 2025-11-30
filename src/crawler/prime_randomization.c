@@ -7,7 +7,7 @@
 #include "prime_randomization.h"
 #include <stdlib.h>
 #include <time.h>
-// #include <math.h>  // REMOVED: Not using any math.h functions
+// #include "../../include/prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only  // REMOVED: Not using any math.h functions
 
 /**
  * Check if a number is prime
