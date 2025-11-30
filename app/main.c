@@ -268,6 +268,11 @@ AppState* init_app(void) {
 void cleanup(AppState* state) {
     if (!state) return;
     if (state->is_recording) stop_recording(state);
+    
+    // CRITICAL: Stop crawler thread before cleanup
+    extern void stop_crawler_thread(void);
+    stop_crawler_thread();
+    
     if (state->primes) free(state->primes);
     if (state->clock_map) free(state->clock_map);
     if (state->spheres) free(state->spheres);
@@ -285,6 +290,10 @@ void cleanup(AppState* state) {
     // PHASE 1: Cleanup global abacus
     extern void app_cleanup_global_abacus(void);
     app_cleanup_global_abacus();
+    
+    // CRITICAL: Cleanup model manager (fixes 395MB leak)
+    extern void model_manager_cleanup(void);
+    model_manager_cleanup();
     
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);
