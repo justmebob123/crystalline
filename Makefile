@@ -364,6 +364,7 @@ $(DOCPROC_LIB): $(DOCPROC_OBJECTS)
 
 tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
+       tools/cllm_model_manager \
        tools/init_lattice_embeddings tools/benchmark_ntt_attention \
        tools/validate_kissing_spheres tools/analyze_cymatic_resonance \
        tools/visualize_angular_positions
@@ -525,3 +526,10 @@ tools/cllm: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) $(CFLAGS) -o tools/cllm tools/cllm_unified.c \
 		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Unified CLI tool built: tools/cllm"
+
+tools/cllm_model_manager: $(CLLM_LIB)
+	@echo "Building model manager tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm_model_manager tools/cllm_model_manager.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Model manager tool built: tools/cllm_model_manager"

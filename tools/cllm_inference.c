@@ -7,6 +7,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_format.h"
+#include "../include/cllm_model_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,8 +22,8 @@ void cllm_softmax(float* logits, int size);
 uint32_t cllm_sample_top_k(float* logits, int vocab_size, int k);
 
 static void print_usage(const char* program_name) {
-    printf("Usage: %s [OPTIONS] <model_file> <vocab_file>\n\n", program_name);
-    printf("Generate text using a trained CLLM model.\n\n");
+    printf("Usage: %s [OPTIONS] <model_name>\n\n", program_name);
+    printf("Generate text using a trained CLLM model from model manager.\n\n");
     printf("Options:\n");
     printf("  -p, --prompt TEXT     Input prompt for generation\n");
     printf("  -n, --tokens NUM      Number of tokens to generate (default: 50)\n");
@@ -32,8 +33,8 @@ static void print_usage(const char* program_name) {
     printf("  -v, --verbose         Show generation details\n");
     printf("  -h, --help            Show this help message\n\n");
     printf("Examples:\n");
-    printf("  %s model.cllm vocab.txt -p &quot;int main&quot;\n", program_name);
-    printf("  %s model.cllm vocab.txt -p &quot;struct&quot; -n 100 -t 0.5\n", program_name);
+    printf("  %s my_model -p &quot;int main&quot;\n", program_name);
+    printf("  %s training_model -p &quot;struct&quot; -n 100 -t 0.5\n", program_name);
 }
 
 static void generate_text_proper(CLLMInference* inference, const char* prompt,
@@ -151,8 +152,6 @@ static void generate_text_proper(CLLMInference* inference, const char* prompt,
 
 int main(int argc, char** argv) {
     // Default parameters
-    const char* model_path = NULL;
-    const char* vocab_path = NULL;
     const char* prompt = "int main";
     int max_tokens = 50;
     float temperature = 0.8f;
@@ -205,14 +204,13 @@ int main(int argc, char** argv) {
     }
     
     // Get positional arguments
-    if (optind + 2 > argc) {
-        fprintf(stderr, "Error: Missing required arguments\n\n");
+    if (optind + 1 > argc) {
+        fprintf(stderr, "Error: Missing required model name\n\n");
         print_usage(argv[0]);
         return 1;
     }
     
-    model_path = argv[optind];
-    vocab_path = argv[optind + 1];
+    const char* model_name = argv[optind];
     
     // Set random seed
     if (seed >= 0) {
@@ -226,28 +224,26 @@ int main(int argc, char** argv) {
     printf("║         Crystalline Lattice Language Model              ║\n");
     printf("╚══════════════════════════════════════════════════════════╝\n\n");
     
-    // Load model
+    // Acquire model from model manager (read-only for inference)
     if (verbose) {
-        printf("Loading model from: %s\n", model_path);
+        printf("Acquiring model '%s' from model manager...\n", model_name);
     }
     
-    CLLMModel* model = cllm_read_model(model_path);
+    CLLMModel* model = model_manager_acquire_read(model_name);
     if (!model) {
-        fprintf(stderr, "Error: Failed to load model from %s\n", model_path);
+        fprintf(stderr, "Error: Model '%s' not found in model manager\n", model_name);
+        fprintf(stderr, "Please create the model first using the training tool or model manager\n");
         return 1;
     }
     
     if (verbose) {
-        printf("✓ Model loaded successfully\n");
+        printf("✓ Model acquired successfully\n");
         printf("  Vocabulary size: %lu\n", (unsigned long)model->vocab_size);
         printf("  Embedding dim:   %lu\n", (unsigned long)model->embedding_dim);
         printf("  Num layers:      %u\n", model->num_layers);
         printf("  Num heads:       %u\n", model->header.num_heads);
         printf("\n");
     }
-    
-    // Note: vocab_path provided but not currently used
-    (void)vocab_path;
     
     // Initialize inference engine
     CLLMInference* inference = cllm_inference_init(model);
@@ -269,8 +265,15 @@ int main(int argc, char** argv) {
     // Generate text using proper forward pass
     generate_text_proper(inference, prompt, max_tokens, temperature, top_k, verbose);
     
-    // Cleanup - skip to avoid double-free issues
-    // In production, proper cleanup would be needed
+    // Cleanup
+    cllm_inference_cleanup(inference);
+    
+    // Release model back to model manager
+    model_manager_release_read(model_name);
+    
+    if (verbose) {
+        printf("\n✓ Model released back to model manager\n");
+    }
     
     printf("\n");
     return 0;

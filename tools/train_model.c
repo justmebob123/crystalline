@@ -27,6 +27,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_utils.h"
 #include "../include/cllm_format.h"
+#include "../include/cllm_model_manager.h"
 
 void print_banner() {
     printf("\n");
@@ -268,6 +269,7 @@ int main(int argc, char** argv) {
     if (argc < 2) {
         printf("Usage: %s <data_dir> [options]\n", argv[0]);
         printf("\nOptions:\n");
+        printf("  --model-name <name>   Model name in model manager (default: training_model)\n");
         printf("  --vocab-size <n>      Vocabulary size (default: 10000)\n");
         printf("  --embed-dim <n>       Embedding dimension (default: 256)\n");
         printf("  --num-layers <n>      Number of layers (default: 6)\n");
@@ -279,7 +281,7 @@ int main(int argc, char** argv) {
         printf("  --threads <n>         Number of threads (default: auto-detect)\n");
         printf("  --checkpoint-dir <d>  Checkpoint directory (default: ./checkpoints)\n");
         printf("\nExample:\n");
-        printf("  %s ./data/raw --vocab-size 5000 --epochs 50 --threads 4\n", argv[0]);
+        printf("  %s ./data/raw --model-name my_model --vocab-size 5000 --epochs 50 --threads 4\n", argv[0]);
         return 1;
     }
     
@@ -297,6 +299,7 @@ int main(int argc, char** argv) {
     int num_threads = 0;  // 0 = auto-detect CPU count
     int recursive_depth = 0;  // 0 = flat hierarchy, >0 = recursive spheres
     const char* checkpoint_dir = "./checkpoints";
+    const char* model_name = "training_model";  // Default model name
     
     for (int i = 2; i < argc - 1; i++) {
         if (strcmp(argv[i], "--vocab-size") == 0) {
@@ -321,6 +324,8 @@ int main(int argc, char** argv) {
             recursive_depth = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--checkpoint-dir") == 0) {
             checkpoint_dir = argv[++i];
+        } else if (strcmp(argv[i], "--model-name") == 0) {
+            model_name = argv[++i];
         }
     }
     
@@ -404,13 +409,34 @@ int main(int argc, char** argv) {
         .dropout = 0.1f
     };
     
-    CLLMModel* model = cllm_create_model(&model_config);
+    // Try to acquire existing model from model manager
+    CLLMModel* model = model_manager_acquire_write(model_name);
+    
     if (!model) {
-        printf("Failed to create model\n");
-        cllm_token_dataset_free(dataset);
-        cllm_data_loader_free(loader);
-        cllm_free_tokenizer(tokenizer);
-        return 1;
+        // Model doesn't exist, create it
+        printf("Creating new model '%s' via model manager...\n", model_name);
+        
+        if (model_manager_create(model_name, &model_config) != 0) {
+            printf("Failed to create model via model manager\n");
+            cllm_token_dataset_free(dataset);
+            cllm_data_loader_free(loader);
+            cllm_free_tokenizer(tokenizer);
+            return 1;
+        }
+        
+        // Now acquire it for training
+        model = model_manager_acquire_write(model_name);
+        if (!model) {
+            printf("Failed to acquire newly created model\n");
+            cllm_token_dataset_free(dataset);
+            cllm_data_loader_free(loader);
+            cllm_free_tokenizer(tokenizer);
+            return 1;
+        }
+        
+        printf("Model '%s' created and acquired for training\n", model_name);
+    } else {
+        printf("Using existing model '%s' from model manager\n", model_name);
     }
     
     print_model_config(model);
@@ -456,7 +482,10 @@ int main(int argc, char** argv) {
     }
     
     // Cleanup
-    cllm_free_model(model);
+    // Release model back to model manager (don't free it)
+    model_manager_release_write(model_name);
+    printf("Model '%s' released back to model manager\n", model_name);
+    
     cllm_token_dataset_free(dataset);
     cllm_data_loader_free(loader);
     cllm_free_tokenizer(tokenizer);
