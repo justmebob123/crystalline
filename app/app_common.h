@@ -108,6 +108,8 @@ typedef enum {
     TAB_RESEARCH,
     TAB_CRAWLER,
     TAB_MODELS,
+    TAB_URL_MANAGER,
+    TAB_DOWNLOADED_FILES,
     TAB_COUNT
 } TabMode;
 

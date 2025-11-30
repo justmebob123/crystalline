@@ -142,6 +142,20 @@ static void render_system_submenu(SDL_Renderer* renderer, AppState* state) {
                          state->sub_tab.system_sub == SYSTEM_SUB_BENCHMARK);
 }
 
+// Render submenu for Data tab
+static void render_data_submenu(SDL_Renderer* renderer, AppState* state) {
+    int x = SIDEBAR_WIDTH + 10;
+    int button_width = 150;
+    int spacing = 5;
+    
+    render_submenu_button(renderer, "URL Manager", x, 0, button_width,
+                         state->sub_tab.data_sub == DATA_SUB_URL_MANAGER);
+    x += button_width + spacing;
+    
+    render_submenu_button(renderer, "Downloaded Files", x, 0, button_width,
+                         state->sub_tab.data_sub == DATA_SUB_DOWNLOADED_FILES);
+}
+
 // Render horizontal submenu bar
 void render_submenu(SDL_Renderer* renderer, AppState* state) {
     // Background
@@ -164,7 +178,7 @@ void render_submenu(SDL_Renderer* renderer, AppState* state) {
             render_system_submenu(renderer, state);
             break;
         case MAIN_TAB_DATA:
-            // Data tab submenu will be added later (URL Manager, Downloaded Files)
+            render_data_submenu(renderer, state);
             break;
         case MAIN_TAB_COUNT:
             break;

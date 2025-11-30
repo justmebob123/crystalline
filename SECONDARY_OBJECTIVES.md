@@ -821,59 +821,63 @@ Use prime-based hashing for deduplication.
 
 ---
 
-## PHASE 4: COMPREHENSIVE UI ARCHITECTURE REDESIGN (17 hours)
+## PHASE 4: COMPREHENSIVE UI REORGANIZATION WITH LEFT SIDEBAR (10 hours)
 
-**CRITICAL**: The current UI architecture has fundamental design flaws that must be fixed before continuing with individual tab enhancements.
+**STATUS: 40% COMPLETE - Phases 4.1, 4.2, 4.3 DONE**
 
-### 4.0 UI Architecture Overhaul (9 hours) ⚠️ PRIORITY
+### 4.1 Left Sidebar Implementation ✅ COMPLETE (2 hours)
+- [x] Created `app/ui/left_sidebar.c` and `app/ui/left_sidebar.h`
+- [x] Implemented vertical tab navigation (200px width)
+- [x] 5 main tab categories with emoji icons:
+  * 🎨 Visualization (Prime Spiral, Calculator, Spheres, Folding, Video)
+  * 🤖 AI (LLM, Training, Research, Crawler)
+  * 📊 Models (Model Management)
+  * ⚙️ System (Benchmark)
+  * 📁 Data (URL Manager, Downloaded Files)
+- [x] Implemented horizontal submenu system (40px height)
+- [x] Context-sensitive submenus based on main tab
+- [x] Click detection and event handling
+- [x] Active tab highlighting with proper colors
+- [x] Build verified: Zero errors, zero warnings
 
-#### Problem Statement
-The current UI assumes all tabs use a split layout (visualization + control panel), which doesn't work for tabs like Crawler, LLM, Training, and Research. This causes:
-- Narrow control panels (320px) inadequate for complex interfaces
-- Inconsistent layouts across tabs
-- Poor use of screen space
-- Difficult to maintain and extend
+### 4.2 Main Render Loop Integration ✅ COMPLETE (1 hour)
+- [x] Added `#include "ui/left_sidebar.h"` to `app/main.c`
+- [x] Created `sync_hierarchical_to_legacy_tab()` helper function
+- [x] Updated `render()` function to call sidebar and submenu rendering
+- [x] Updated `handle_mouse_click()` event handling
+- [x] Initialized hierarchical tab system in `init_app()`
+- [x] Build verified: Zero errors, zero warnings
 
-#### Solution: Flexible Layout System
+### 4.3 Content Area Positioning ✅ COMPLETE (1 hour)
+- [x] Updated `app/ui/layout_manager.c` for sidebar offset
+- [x] Changed tab_bar_height from 60 to 40 (submenu height)
+- [x] All content now starts at (200, 40) - after sidebar and submenu
+- [x] All layout calculations adjusted for new dimensions
+- [x] Build verified: Zero errors, zero warnings
 
-**4.0.1 Create Layout Manager (1 hour)**
-- [ ] Create `app/ui/layout_manager.h` and `app/ui/layout_manager.c`
-- [ ] Define layout types: LAYOUT_SPLIT, LAYOUT_FULL_WIDTH, LAYOUT_CUSTOM
-- [ ] Implement `get_tab_layout()` function
-- [ ] Support multi-column layouts (1, 2, 3+ columns)
-- [ ] Calculate column widths dynamically
+### 4.4 Data Tab Implementation ⏳ IN PROGRESS (6 hours)
 
-**4.0.2 Update Main Render Loop (1 hour)**
-- [ ] Modify `app/main.c` render function
-- [ ] Get layout for current tab before drawing
-- [ ] Pass layout to tab draw functions
-- [ ] Remove hardcoded control panel logic
+**Purpose:** Implement the Data main tab with URL Manager and Downloaded Files viewer
 
-**4.0.3 Redesign Crawler Tab with 3-Column Layout (2 hours)**
-- [ ] Column 1: Prime Configuration + URL Patterns
-- [ ] Column 2: Link Management + Activity Log
-- [ ] Column 3: Status Display + Controls
-- [ ] Use full window width (WINDOW_WIDTH - 40)
-- [ ] Proper spacing and visual hierarchy
+#### 4.4.1 URL Manager Tab UI (3 hours)
+- [ ] Create `app/ui/tabs/tab_url_manager.c` and `.h`
+- [ ] Implement URL list view with sortable columns
+- [ ] Implement filtering controls
+- [ ] Implement action buttons
+- [ ] Implement file type filter panel
+- [ ] Implement block patterns panel
+- [ ] Integrate with backend systems
 
-**4.0.4 Update LLM Tab with 2-Column Layout (2 hours)**
-- [ ] Column 1: Conversation area (70% width)
-- [ ] Column 2: Model controls and parameters (30% width)
-- [ ] Better use of screen space
-- [ ] Improved readability
+#### 4.4.2 Downloaded Files Viewer Tab (3 hours)
+- [ ] Create `app/ui/tabs/tab_downloaded_files.c` and `.h`
+- [ ] Implement file browser with tree view
+- [ ] Implement file list view with columns
+- [ ] Implement file preview panel
+- [ ] Implement search functionality
+- [ ] Implement file actions
+- [ ] Integrate with file database
 
-**4.0.5 Update Training Tab with 2-Column Layout (2 hours)**
-- [ ] Column 1: Sphere visualization (60% width)
-- [ ] Column 2: Metrics and controls (40% width)
-- [ ] Larger visualization area
-- [ ] Better metrics display
-
-**4.0.6 Update Research Tab with 2-Column Layout (1 hour)**
-- [ ] Column 1: File list (40% width)
-- [ ] Column 2: File content viewer (60% width)
-- [ ] Better content viewing experience
-
-### 4.1 Crawler Tab Feature Completion (After 4.0) (1 hour)
+### 4.5 Tab Layout Improvements (Optional - After 4.4)
 
 **Note**: Basic 3-column layout completed in 4.0.3, this adds remaining features
 

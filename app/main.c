@@ -7,6 +7,8 @@
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"
 #include "ui/tabs/tab_models.h"
+#include "ui/tabs/tab_url_manager.h"
+#include "ui/tabs/tab_downloaded_files.h"
 #include "ui/layout_manager.h"
 #include "ui/left_sidebar.h"
 
@@ -768,8 +770,17 @@ static void sync_hierarchical_to_legacy_tab(AppState* state) {
             state->current_tab = TAB_PRIME_SPIRAL; // Default fallback
             break;
         case MAIN_TAB_DATA:
-            // Data tabs don't exist in legacy system yet
-            state->current_tab = TAB_PRIME_SPIRAL; // Default fallback
+            switch (state->sub_tab.data_sub) {
+                case DATA_SUB_URL_MANAGER:
+                    state->current_tab = TAB_URL_MANAGER;
+                    break;
+                case DATA_SUB_DOWNLOADED_FILES:
+                    state->current_tab = TAB_DOWNLOADED_FILES;
+                    break;
+                default:
+                    state->current_tab = TAB_URL_MANAGER;
+                    break;
+            }
             break;
         default:
             break;
@@ -836,6 +847,14 @@ void render(AppState* state) {
         case TAB_MODELS:
             // Draw models management tab
             draw_models_tab(state);
+            break;
+        case TAB_URL_MANAGER:
+            // Draw URL manager tab
+            draw_url_manager_tab(state->renderer, state);
+            break;
+        case TAB_DOWNLOADED_FILES:
+            // Draw downloaded files viewer tab
+            draw_downloaded_files_tab(state->renderer, state);
             break;
         case TAB_COUNT:
             break;
