@@ -234,6 +234,9 @@ URLEntry* crawler_url_manager_get_next(CrawlerURLManager* manager) {
     URLEntry* result = (URLEntry*)malloc(sizeof(URLEntry));
     if (result) {
         memcpy(result, entries[best_idx], sizeof(URLEntry));
+        
+        // CRITICAL FIX: Mark URL as 'crawling' immediately to prevent re-selection
+        url_db_mark_crawling(manager->database, result->id);
     }
     
     // Free the query results

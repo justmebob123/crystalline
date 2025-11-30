@@ -329,6 +329,26 @@ int url_db_mark_failed(URLDatabase* db, uint64_t id) {
 }
 
 /**
+ * Mark URL as currently being crawled
+ */
+int url_db_mark_crawling(URLDatabase* db, uint64_t id) {
+    if (!db) return -1;
+    
+    const char* sql = "UPDATE urls SET status = 'crawling' WHERE id = ?;";
+    
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db->db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) return -1;
+    
+    sqlite3_bind_int64(stmt, 1, id);
+    
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    
+    return (rc == SQLITE_DONE) ? 0 : -1;
+}
+
+/**
  * Get next URL to crawl
  */
 URLEntry* url_db_get_next(URLDatabase* db) {

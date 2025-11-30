@@ -108,6 +108,15 @@ int url_db_mark_crawled(URLDatabase* db, uint64_t id);
 int url_db_mark_failed(URLDatabase* db, uint64_t id);
 
 /**
+ * Mark URL as currently being crawled
+ * 
+ * @param db Database handle
+ * @param id URL ID
+ * @return 0 on success, -1 on error
+ */
+int url_db_mark_crawling(URLDatabase* db, uint64_t id);
+
+/**
  * Get next URL to crawl (highest priority, uncrawled)
  * 
  * @param db Database handle
