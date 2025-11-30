@@ -6,6 +6,7 @@
 #include "../../../src/crawler/prime_randomization.h"
 #include "../../../src/crawler/link_management.h"
 #include "../../../src/crawler/url_patterns.h"
+#include "../../../src/crawler/crawler_url_manager.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
