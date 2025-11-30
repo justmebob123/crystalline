@@ -207,14 +207,20 @@ The SECONDARY_OBJECTIVES.md contains:
   - Implement save/load configuration to file
   - Implement get_config() for UI access
 
-### 3.3: Implement URL Prioritization
-- [ ] Create `src/crawler/url_priority.h`
-  - Define priority algorithm
-- [ ] Create `src/crawler/url_priority.c`
-  - Implement uncrawled page priority
-  - Implement prime-based randomization
-  - Implement domain diversity scoring
-  - Implement calculate_priority()
+### 3.3: Implement URL Prioritization ✅ COMPLETE
+- [x] Create `src/crawler/url_priority.h`
+  - Define priority algorithm with configurable factors
+  - Define domain statistics tracking
+- [x] Create `src/crawler/url_priority.c`
+  - Implement uncrawled page priority boost (+100 points)
+  - Implement prime-based randomization using large primes (2654435761, 2246822519, 3266489917)
+  - Implement domain diversity scoring (underrepresented domains get bonus)
+  - Implement time-based decay (older = higher priority)
+  - Implement depth penalty (deeper URLs = lower priority)
+  - Implement calculate_priority() with all factors combined
+  - Implement domain statistics tracking and updates
+  - Implement configurable priority factors
+  - Uses crystalline math (prime_expf) for decay calculation
 
 ### 3.4: Implement Block Patterns
 - [ ] Create `src/crawler/url_blocker.h`
