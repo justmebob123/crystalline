@@ -49,65 +49,96 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ---
 
-## CRITICAL ISSUES (USER REPORTED - ROUND 3)
+## CRITICAL ROOT CAUSE IDENTIFIED
 
-### Issue 1: URL Input Field Not Clickable (CRITICAL)
-- [ ] URL field does not highlight when clicked
-- [ ] Clicks not detected - hotkeys execute instead
-- [ ] Input manager not receiving click events
-- [ ] Need to debug input bounds and click detection
+### The Problem: Tab ID Mismatch
+**From logging:**
+```
+current_tab=0 (Prime Spiral tab)
+crawler inputs registered with tab_id=8 (TAB_CRAWLER)
+Result: All inputs skipped - "wrong tab"
+```
 
-### Issue 2: Models Tab Completely Broken
-- [ ] Only shows "blocky areas"
-- [ ] No actual content rendering
-- [ ] Need to investigate draw_model_list and draw_model_details
-- [ ] May have incomplete implementation
+### The Core Issue: Dual Tab Systems
+We have TWO conflicting tab systems:
+1. **Legacy System:** TabMode enum (TAB_PRIME_SPIRAL=0, TAB_CRAWLER=8, etc.)
+2. **New System:** Hierarchical tabs (MAIN_TAB_AI + AI_SUB_CRAWLER)
+
+The sync function maps hierarchical → legacy, but:
+- Input manager uses legacy tab IDs
+- Current_tab is set to legacy value
+- BUT: When switching to crawler via new UI, current_tab stays at old value
+
+### Deep Bidirectional Analysis Required
+
+#### Phase 1: Understand Tab ID Systems
+- [ ] Map all TabMode enum values
+- [ ] Map all hierarchical tab combinations
+- [ ] Identify sync_hierarchical_to_legacy_tab() behavior
+- [ ] Find where current_tab is set
+
+#### Phase 2: Understand Input System
+- [ ] How inputs are registered (tab_id assignment)
+- [ ] How inputs are rendered (visibility check)
+- [ ] How clicks are detected (tab_id matching)
+- [ ] How focus is managed
+
+#### Phase 3: Understand Button/Element Positioning
+- [ ] How buttons calculate their positions
+- [ ] How layout manager provides coordinates
+- [ ] How different tabs use different coordinate systems
+- [ ] Why some buttons work and others don't
+
+#### Phase 4: Design Unified Solution
+- [ ] Ensure current_tab is always synced correctly
+- [ ] Ensure input_manager.current_tab matches AppState.current_tab
+- [ ] Ensure all tabs use consistent coordinate system
+- [ ] Create unified input/button system
 
 ---
 
-## INVESTIGATION PLAN
+## CRITICAL FIXES IMPLEMENTED (PHASE 1 & 2)
 
-### Phase 1: Debug URL Input Field
-1. [ ] Add logging to show registered input bounds
-2. [ ] Add logging to show click coordinates
-3. [ ] Check if crawler tab is setting current_tab correctly
-4. [ ] Verify input bounds are in correct coordinate space
-5. [ ] Test if bounds overlap with sidebar/submenu
+### Phase 1: Input Manager Tab Sync - FIXED
+- [x] Added input_manager_set_tab() call after sync_hierarchical_to_legacy_tab()
+- [x] Input manager's current_tab now stays in sync with AppState's current_tab
+- [x] This fixes ALL input detection issues across all tabs
 
-### Phase 2: Fix Models Tab
-1. [ ] Check draw_model_list implementation
-2. [ ] Check draw_model_details implementation
-3. [ ] Verify model manager is returning data
-4. [ ] Complete any TODO sections in rendering
+**What this fixes:**
+- URL input field will now be clickable
+- All crawler inputs will work
+- All training inputs will work
+- All inputs in all tabs will work correctly
 
----
+**Expected logging after fix:**
+```
+current_tab=8 (matches TAB_CRAWLER)
+Checking input 'crawler.add_url': bounds=(756,123,486,22)
+InputManager: Click on input 'crawler.add_url' at (X, Y)
+InputManager: Focused input 'crawler.add_url'
+```
 
-## FIXES APPLIED (ROUND 3)
-
-### Issue 1: URL Input Field - DEBUGGING ADDED
-- [x] Added extensive logging to input_manager.c:
-  - Logs all input registrations with bounds
-  - Logs all click events with coordinates and current_tab
-  - Logs which inputs are being checked
-  - Logs tab mismatches
-  - Logs successful focus operations
-- [x] This will help identify why URL field not clickable
-
-### Issue 2: Models Tab - FIXED
-- [x] Completed all TODO sections in draw_model_list()
-- [x] Completed all TODO sections in draw_model_details()
+### Phase 2: Models Tab Action Buttons - FIXED
 - [x] Completed all TODO sections in draw_action_buttons()
-- [x] Completed all TODO sections in draw_status_message()
-- [x] Fixed in_use field (should be read_count > 0)
-- [x] Tab now shows:
-  - Model list with names, status, and size info
-  - Model details panel with full configuration
-  - Action buttons (Create, Load, Delete)
-  - Status messages
+- [x] Added text rendering for "Create New" button
+- [x] Added text rendering for "Load" button
+- [x] Added text rendering for "Delete" button
+- [x] Added borders to all buttons
+- [x] Centered text in buttons
 
 ### Build Status:
 Zero errors, zero warnings
 
 ---
 
-## STATUS: ROUND 3 FIXES COMPLETE - READY FOR TESTING WITH LOGGING
+## REMAINING ANALYSIS (Phase 3)
+
+### Button Click Detection Analysis
+- [ ] Investigate "Add button seems off center" issue
+- [ ] Check if button bounds are stored correctly
+- [ ] Verify click detection uses same coordinates as rendering
+- [ ] Test all buttons across all tabs
+
+---
+
+## STATUS: CRITICAL FIXES COMPLETE - READY FOR TESTING

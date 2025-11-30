@@ -193,18 +193,27 @@ static void draw_action_buttons(AppState* state, int x, int y, int width) {
     int button_width = (width - 4 * BUTTON_SPACING) / 3;
     int current_x = x;
     
+    extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
+    SDL_Color btn_text = {255, 255, 255, 255};
+    
     // Create button
     SDL_Rect create_button = {current_x, y, button_width, BUTTON_HEIGHT};
     SDL_SetRenderDrawColor(state->renderer, 0, 120, 0, 255);
     SDL_RenderFillRect(state->renderer, &create_button);
-    // TODO: Render "Create New" text
+    SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
+    SDL_RenderDrawRect(state->renderer, &create_button);
+    draw_text(state->renderer, "Create New", 
+             create_button.x + (button_width - 70) / 2, create_button.y + 8, btn_text);
     current_x += button_width + BUTTON_SPACING;
     
     // Load button
     SDL_Rect load_button = {current_x, y, button_width, BUTTON_HEIGHT};
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 120, 255);
     SDL_RenderFillRect(state->renderer, &load_button);
-    // TODO: Render "Load" text
+    SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
+    SDL_RenderDrawRect(state->renderer, &load_button);
+    draw_text(state->renderer, "Load", 
+             load_button.x + (button_width - 30) / 2, load_button.y + 8, btn_text);
     current_x += button_width + BUTTON_SPACING;
     
     // Delete button (only if model selected)
@@ -212,7 +221,10 @@ static void draw_action_buttons(AppState* state, int x, int y, int width) {
         SDL_Rect delete_button = {current_x, y, button_width, BUTTON_HEIGHT};
         SDL_SetRenderDrawColor(state->renderer, 120, 0, 0, 255);
         SDL_RenderFillRect(state->renderer, &delete_button);
-        // TODO: Render "Delete" text
+        SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
+        SDL_RenderDrawRect(state->renderer, &delete_button);
+        draw_text(state->renderer, "Delete", 
+                 delete_button.x + (button_width - 40) / 2, delete_button.y + 8, btn_text);
     }
 }
 

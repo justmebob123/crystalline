@@ -794,6 +794,13 @@ void render(AppState* state) {
     // Sync hierarchical tabs to legacy tab for backward compatibility
     sync_hierarchical_to_legacy_tab(state);
     
+    // CRITICAL FIX: Sync input manager's current tab to match AppState
+    // Without this, input manager thinks we're still on the old tab
+    // and all inputs are skipped due to tab_id mismatch
+    if (g_input_manager) {
+        input_manager_set_tab(g_input_manager, state->current_tab);
+    }
+    
     // Render new UI: left sidebar and submenu
     render_left_sidebar(state->renderer, state);
     render_submenu(state->renderer, state);
