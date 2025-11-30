@@ -2225,3 +2225,508 @@ Similar structure to URL manager, but for viewing downloaded files:
 6. **Phase 6**: Integration with existing crawler
 7. **Phase 7**: Testing and validation
 
+
+---
+
+## 🔴 CRITICAL: COMPREHENSIVE UI/UX FIXES (NEW - HIGHEST PRIORITY)
+
+### Date Added: 2024-11-30
+### Status: CRITICAL - MUST FIX IMMEDIATELY
+
+Based on comprehensive user feedback, the following critical issues have been identified:
+
+---
+
+### PHASE 1: CRITICAL UI FIXES
+
+#### 1.1 Connect Crawler Tab to URL Manager Backend
+
+**Problem:**
+- Crawler tab uses old in-memory system
+- Does NOT use SQLite database
+- Does NOT use crawler_url_manager.c backend
+- URLs persist incorrectly from previous sessions
+
+**Solution:**
+```c
+// In app/ui/tabs/tab_crawler.c
+#include "../../../src/crawler/crawler_url_manager.h"
+
+// Replace all in-memory URL handling with:
+CrawlerURLManager* url_manager = crawler_url_manager_create("crawler.db");
+
+// Add URL:
+crawler_url_manager_add(url_manager, url_string);
+
+// Get next URL:
+char* next_url = crawler_url_manager_get_next(url_manager);
+
+// Mark crawled:
+crawler_url_manager_mark_crawled(url_manager, url_id);
+```
+
+**Files to Modify:**
+- `app/ui/tabs/tab_crawler.c` - Add includes, replace URL handling
+- `app/crawler_thread.c` - Use URL manager for crawling
+
+**Testing:**
+- [ ] URLs persist correctly across sessions
+- [ ] URLs don't duplicate from previous sessions
+- [ ] Crawler and Data tab show same URLs
+
+---
+
+#### 1.2 Fix Crawler Tab Layout Issues
+
+**Problems:**
+1. Buttons too wide (extend past window edge)
+2. "Web Crawler Control Center" text overlaps top tabs
+3. Prime configuration inputs have no labels
+4. URL patterns unclear if clickable
+
+**Solutions:**
+
+**1. Reduce Button Widths:**
+```c
+// Current (WRONG):
+int button_width = 200;  // Too wide
+
+// Fixed (CORRECT):
+int button_width = 150;  // Fits in panel
+```
+
+**2. Move Overlapping Text:**
+```c
+// Current (WRONG):
+draw_text("Web Crawler Control Center", x, 10);  // Overlaps tabs
+
+// Fixed (CORRECT):
+draw_text("Web Crawler Control Center", x, 60);  // Below tabs
+```
+
+**3. Add Input Labels:**
+```c
+// Add labels for each prime configuration input:
+draw_text("Randomization Seed:", x, y);
+draw_text("Prime Modulus:", x, y + 40);
+draw_text("Selection Method:", x, y + 80);
+```
+
+**4. Make URL Patterns Clickable:**
+```c
+// Add checkbox rendering:
+draw_checkbox(x, y, pattern->enabled);
+draw_text(pattern->name, x + 30, y);
+```
+
+**Files to Modify:**
+- `app/ui/tabs/tab_crawler.c` - Fix all layout issues
+
+---
+
+#### 1.3 Connect Models Tab to Model Manager
+
+**Problem:**
+- Shows "no models available"
+- Doesn't call `model_manager_list()`
+- Inconsistent with LLM/Training tabs
+
+**Solution:**
+```c
+// In app/ui/tabs/tab_models.c
+
+// Get list of models:
+char** model_names = NULL;
+size_t model_count = 0;
+model_manager_list(&model_names, &model_count);
+
+// Display each model:
+for (size_t i = 0; i < model_count; i++) {
+    CLLMModelStatus status;
+    model_manager_get_status(model_names[i], &status);
+    
+    // Draw model entry with status
+    draw_model_entry(x, y, model_names[i], &status);
+    y += 40;
+}
+```
+
+**Files to Modify:**
+- `app/ui/tabs/tab_models.c` - Add model_manager integration
+
+---
+
+#### 1.4 Fix Visualization Centering
+
+**Problem:**
+- All visualizations not centered
+- Calculator not centered
+- Layout doesn't account for 200px sidebar
+
+**Solution:**
+```c
+// In app/ui/layout_manager.c
+
+// Current (WRONG):
+int content_x = 0;
+int content_width = WINDOW_WIDTH;
+
+// Fixed (CORRECT):
+int content_x = SIDEBAR_WIDTH;  // 200px
+int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH - CONTROL_PANEL_WIDTH;
+
+// Center calculation:
+int center_x = content_x + (content_width / 2);
+int center_y = SUBMENU_HEIGHT + ((WINDOW_HEIGHT - SUBMENU_HEIGHT) / 2);
+```
+
+**Files to Modify:**
+- `app/ui/layout_manager.c` - Fix centering calculations
+- `app/visualization.c` - Use corrected center coordinates
+- `app/calculator.c` - Use corrected center coordinates
+
+---
+
+### PHASE 2: HIGH PRIORITY FIXES
+
+#### 2.1 Connect Data Tab to SQLite Database
+
+**Problem:**
+- Only shows "demo" data
+- Not connected to url_database
+- Not showing actual crawled URLs
+
+**Solution:**
+```c
+// In app/ui/tabs/tab_downloaded_files.c
+
+#include "../../../src/crawler/url_database.h"
+
+// Get crawled URLs:
+URLDatabase* db = url_database_open("crawler.db");
+URLEntry* urls = url_database_get_crawled(db, &count);
+
+// Display each URL:
+for (size_t i = 0; i < count; i++) {
+    draw_url_entry(x, y, &urls[i]);
+    y += 30;
+}
+```
+
+**Files to Modify:**
+- `app/ui/tabs/tab_downloaded_files.c` - Connect to database
+
+---
+
+#### 2.2 Fix Video Tab Issues
+
+**Problems:**
+1. Uses Unicode characters (violates standards)
+2. Overlapping text and text boxes
+
+**Solutions:**
+
+**1. Replace Unicode with ASCII:**
+```c
+// Current (WRONG):
+draw_text("▶ Play", x, y);  // Unicode
+
+// Fixed (CORRECT):
+draw_text("> Play", x, y);  // ASCII
+```
+
+**2. Fix Overlapping Layout:**
+```c
+// Add proper spacing:
+int spacing = 10;
+int y_offset = 0;
+
+draw_text("Label:", x, y + y_offset);
+y_offset += 30;  // Space before text box
+
+draw_textbox(x, y + y_offset, width, height);
+y_offset += height + spacing;  // Space after text box
+```
+
+**Files to Modify:**
+- `app/ui/tabs/tab_video.c` - Replace unicode, fix layout
+
+---
+
+### PHASE 3: NEW CRAWLER FEATURES
+
+#### 3.1 Human Text Extraction (vs Metadata)
+
+**Requirement:**
+Extract only human-generated text, ignore HTML metadata, scripts, styles, etc.
+
+**Implementation:**
+
+**Backend:**
+```c
+// Create src/crawler/text_extractor.c
+
+typedef struct {
+    bool extract_human_text_only;
+    bool remove_scripts;
+    bool remove_styles;
+    bool remove_navigation;
+    bool remove_ads;
+} TextExtractionOptions;
+
+char* extract_human_text(const char* html, TextExtractionOptions* opts);
+```
+
+**UI Integration:**
+```c
+// In app/ui/tabs/tab_crawler.c
+draw_checkbox(x, y, "Extract human text only");
+draw_checkbox(x, y + 30, "Remove scripts/styles");
+draw_checkbox(x, y + 60, "Remove navigation");
+```
+
+**CLI Integration:**
+```bash
+./cllm_crawler --human-text-only --remove-scripts
+```
+
+**Files to Create:**
+- `src/crawler/text_extractor.c`
+- `src/crawler/text_extractor.h`
+
+**Files to Modify:**
+- `app/ui/tabs/tab_crawler.c` - Add checkboxes
+- `tools/cllm_crawler.c` - Add CLI flags
+
+---
+
+#### 3.2 X.com (Twitter) Profile Crawler
+
+**Requirement:**
+Crawl X.com user profiles without API, extract posts and comments.
+
+**Implementation:**
+
+**Backend:**
+```c
+// Create src/crawler/xcom_crawler.c
+
+typedef struct {
+    char* username;
+    bool include_replies;
+    bool include_retweets;
+    int max_posts;
+} XComCrawlerOptions;
+
+typedef struct {
+    char* text;
+    char* timestamp;
+    int likes;
+    int retweets;
+    bool is_reply;
+} XComPost;
+
+XComPost* crawl_xcom_profile(const char* username, XComCrawlerOptions* opts, size_t* count);
+```
+
+**UI Integration:**
+```c
+// In app/ui/tabs/tab_crawler.c
+draw_checkbox(x, y, "X.com profile mode");
+draw_textbox(x, y + 30, "Username:");
+draw_checkbox(x, y + 70, "Include replies");
+draw_checkbox(x, y + 100, "Include retweets");
+```
+
+**CLI Integration:**
+```bash
+./cllm_crawler --xcom-profile username --include-replies --max-posts 1000
+```
+
+**Files to Create:**
+- `src/crawler/xcom_crawler.c`
+- `src/crawler/xcom_crawler.h`
+
+**Files to Modify:**
+- `app/ui/tabs/tab_crawler.c` - Add X.com options
+- `tools/cllm_crawler.c` - Add CLI flags
+
+---
+
+#### 3.3 Britannica/Etymonline Crawlers
+
+**Requirement:**
+Site-specific crawlers for Britannica.com and Etymonline.com
+
+**Implementation:**
+
+**Backend:**
+```c
+// Create src/crawler/site_specific_crawlers.c
+
+typedef enum {
+    SITE_BRITANNICA,
+    SITE_ETYMONLINE,
+    SITE_GENERIC
+} SiteType;
+
+typedef struct {
+    char* title;
+    char* content;
+    char* url;
+    SiteType site_type;
+} ArticleContent;
+
+SiteType detect_site_type(const char* url);
+ArticleContent* extract_article_content(const char* html, SiteType site_type);
+```
+
+**UI Integration:**
+```c
+// In app/ui/tabs/tab_crawler.c
+draw_checkbox(x, y, "Britannica mode");
+draw_checkbox(x, y + 30, "Etymonline mode");
+draw_checkbox(x, y + 60, "Auto-detect site type");
+```
+
+**CLI Integration:**
+```bash
+./cllm_crawler --site-type britannica --url "https://www.britannica.com/..."
+./cllm_crawler --site-type etymonline --url "https://www.etymonline.com/..."
+```
+
+**Files to Create:**
+- `src/crawler/site_specific_crawlers.c`
+- `src/crawler/site_specific_crawlers.h`
+
+**Files to Modify:**
+- `app/ui/tabs/tab_crawler.c` - Add site-specific options
+- `tools/cllm_crawler.c` - Add CLI flags
+
+---
+
+#### 3.4 GET Parameter Handling
+
+**Requirement:**
+Proper awareness and handling of GET parameters in URLs
+
+**Current State:**
+- `url_database.c` already preserves query_string ✅
+- Need to verify and add UI display
+
+**Implementation:**
+
+**Verify Backend:**
+```c
+// In src/crawler/url_database.c
+// Verify query_string field is populated:
+url->query_string = extract_query_string(url_string);
+```
+
+**UI Integration:**
+```c
+// In app/ui/tabs/tab_url_manager.c
+// Display GET parameters:
+if (url->query_string && strlen(url->query_string) > 0) {
+    draw_text("GET params:", x, y);
+    draw_text(url->query_string, x + 100, y);
+}
+```
+
+**Files to Verify:**
+- `src/crawler/url_database.c` - Verify query_string handling
+
+**Files to Modify:**
+- `app/ui/tabs/tab_url_manager.c` - Display GET parameters
+
+---
+
+### PHASE 4: SITE ANALYSIS
+
+#### 4.1 Analyze Target Sites
+
+**Sites to Analyze:**
+1. X.com (Twitter) profile pages
+2. Britannica.com article pages
+3. Etymonline.com word pages
+
+**Analysis Tasks:**
+- [ ] Examine HTML structure of each site
+- [ ] Identify human text vs metadata
+- [ ] Identify navigation elements
+- [ ] Identify ad elements
+- [ ] Identify main content containers
+- [ ] Document CSS selectors for content extraction
+
+**Tools to Use:**
+- `web-search` to find example pages
+- `scrape-webpage` to get HTML
+- `browser_navigate_to` for dynamic content
+
+---
+
+### PHASE 5: PREPROCESSOR UPDATES
+
+#### 5.1 Enhance Preprocessor
+
+**Current State:**
+- Basic HTML to text conversion
+- No selective extraction
+
+**Required Enhancements:**
+- [ ] Add human text extraction
+- [ ] Add metadata removal
+- [ ] Add script/style removal
+- [ ] Add navigation removal
+- [ ] Add site-specific extraction
+- [ ] Add GET parameter preservation
+
+**Files to Modify:**
+- `src/crawler/preprocessor.c` - Add new extraction modes
+
+---
+
+### PHASE 6: CLI TOOL UPDATES
+
+#### 6.1 Add New CLI Options
+
+**Tool: cllm_crawler**
+
+**New Options:**
+```bash
+--human-text-only          Extract only human text
+--remove-scripts           Remove scripts and styles
+--remove-navigation        Remove navigation elements
+--xcom-profile USERNAME    Crawl X.com profile
+--include-replies          Include replies (X.com)
+--include-retweets         Include retweets (X.com)
+--site-type TYPE           Use site-specific parser (britannica|etymonline)
+--max-posts N              Maximum posts to crawl
+```
+
+**Files to Modify:**
+- `tools/cllm_crawler.c` - Add all new options
+
+---
+
+### IMPLEMENTATION PRIORITY
+
+**Immediate (This Session):**
+1. Fix Crawler Tab Layout (1.2)
+2. Connect Crawler to URL Manager (1.1)
+3. Fix Visualization Centering (1.4)
+4. Connect Models Tab (1.3)
+
+**Next Session:**
+5. Connect Data Tab (2.1)
+6. Fix Video Tab (2.2)
+7. Implement Human Text Extraction (3.1)
+
+**Future Sessions:**
+8. Implement X.com Crawler (3.2)
+9. Implement Site-Specific Crawlers (3.3)
+10. Analyze Target Sites (4.1)
+
+---
+
+**END OF NEW REQUIREMENTS**

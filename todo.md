@@ -1,5 +1,47 @@
 # TODO - Crystalline CLLM Project
 
+## 🚨 CRITICAL USER FEEDBACK - COMPREHENSIVE UI/UX ISSUES IDENTIFIED
+
+### Issues Reported by User:
+
+1. **URL Manager Issues:**
+   - ❌ URLs persist from previous session (SQLite not properly implemented?)
+   - ❌ Crawler tab and Data tab appear to use different systems
+   - ❌ No integration between crawler backend and UI
+
+2. **Crawler Tab Layout Issues:**
+   - ❌ Buttons too wide (extend past window edge)
+   - ❌ "Web Crawler Control Center" text overlaps top tabs
+   - ❌ URL patterns look like checkboxes but unclear if clickable
+   - ❌ Prime configuration inputs have no labels
+   - ❌ Poor layout and organization
+
+3. **Models Tab Issues:**
+   - ❌ Shows "no models available" despite models being loaded
+   - ❌ Not integrated with model manager
+   - ❌ Inconsistent with LLM/Training/Crawler tabs
+
+4. **Data Tab Issues:**
+   - ❌ Only shows "demo" data
+   - ❌ Not connected to actual crawler database
+   - ❌ SQLite database not implemented properly
+
+5. **Visualization Tab Issues:**
+   - ❌ Visualizations not centered in display area
+   - ❌ Calculator not centered
+   - ❌ All visualization tabs have centering issues
+
+6. **Video Tab Issues:**
+   - ❌ Overlapping text and text boxes
+   - ❌ Uses Unicode characters instead of ASCII
+
+7. **Missing Functionality:**
+   - ❌ No option to extract only human-generated text (vs metadata)
+   - ❌ No X.com (Twitter) profile crawler
+   - ❌ No support for crawling Britannica/Etymonline
+   - ❌ No GET parameter awareness in crawler
+   - ❌ No preprocessor options for selective extraction
+
 ## RULES (ALWAYS FOLLOW)
 
 ### RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE
@@ -301,10 +343,59 @@ All implementations verified in source code:
 
 ---
 
-## AWAITING USER DIRECTION
+## 📋 COMPREHENSIVE UI/UX FIX PLAN
 
-Please choose your next priority:
-- **Option A**: Complete OBJECTIVE 20 (Testing & Validation) - Recommended
-- **Option B**: Clean up training pipeline (OBJECTIVE 2B-2D)
-- **Option C**: Test current implementation thoroughly
-- **Option D**: Specify different MASTER_PLAN objective
+### Phase 1: Bidirectional Analysis (CURRENT)
+- [ ] Analyze all UI tabs (layout, inputs, functionality)
+- [ ] Analyze all backend systems (crawler, URL manager, models)
+- [ ] Map UI → Backend connections
+- [ ] Map Backend → UI connections
+- [ ] Identify all disconnects and issues
+- [ ] Document all findings
+
+### Phase 2: Critical Fixes (HIGH PRIORITY)
+- [ ] Fix crawler tab layout (buttons, text overlap, labels)
+- [ ] Fix visualization centering issues (all tabs)
+- [ ] Fix video tab (remove unicode, fix overlaps)
+- [ ] Connect models tab to model manager
+- [ ] Connect data tab to SQLite database
+- [ ] Connect crawler tab to URL manager backend
+
+### Phase 3: SQLite Integration (HIGH PRIORITY)
+- [ ] Verify SQLite database implementation
+- [ ] Connect crawler to url_database.c
+- [ ] Connect data tab to url_database.c
+- [ ] Implement proper persistence
+- [ ] Test URL storage and retrieval
+
+### Phase 4: Advanced Crawler Features (NEW REQUIREMENTS)
+- [ ] Human text extraction (vs metadata)
+- [ ] X.com profile crawler (no API)
+- [ ] Britannica.com crawler
+- [ ] Etymonline.com crawler
+- [ ] GET parameter handling
+- [ ] Preprocessor options for selective extraction
+
+### Phase 5: CLI Tool Integration
+- [ ] Analyze all CLI tools
+- [ ] Verify complete functionality
+- [ ] Add command-line options for new features
+- [ ] Test all tools
+
+### Phase 6: Comprehensive Testing
+- [ ] Test all UI tabs
+- [ ] Test all backend systems
+- [ ] Test all integrations
+- [ ] Verify all functionality
+
+---
+
+## CURRENT PRIORITY: Phase 1 - Bidirectional Analysis
+
+I will now perform a comprehensive bidirectional analysis of:
+1. All UI tabs and their layouts
+2. All backend systems and APIs
+3. All connections between UI and backend
+4. All CLI tools and their functionality
+
+This will produce a detailed document identifying all issues and required fixes.
