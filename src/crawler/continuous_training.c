@@ -329,7 +329,14 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     if (!state) return NULL;
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
-    strncpy(state->model_path, model_path, sizeof(state->model_path) - 1);
+    
+    // Only copy model_path if it's not NULL
+    if (model_path) {
+        strncpy(state->model_path, model_path, sizeof(state->model_path) - 1);
+    } else {
+        state->model_path[0] = '\0';  // Empty string if no path
+    }
+    
     state->running = 1;
     state->files_trained = 0;
     state->num_threads = num_threads;

@@ -67,13 +67,14 @@ static void register_crawler_inputs_internal(InputManager* manager) {
 // Helper function to register LLM tab inputs
 static void register_llm_inputs_internal(InputManager* manager) {
     // LLM tab has chat input at bottom
-    // Input area: X = 210 (RENDER_OFFSET_X + 10), Y = 820 (bottom of screen)
+    // Made smaller and more reasonable - single line input
     int input_x = 210;
-    int input_y = 820;
-    int input_width = 1030;  // RENDER_WIDTH - 110
+    int input_y = 860;  // Moved down slightly
+    int input_width = 950;  // Reasonable width
+    int input_height = 40;  // Single line height
     
     input_manager_register(manager, "llm.chat_input", TAB_LLM, INPUT_TYPE_TEXT,
-                         (SDL_Rect){input_x, input_y, input_width, 80});
+                         (SDL_Rect){input_x, input_y, input_width, input_height});
     input_manager_set_text(manager, "llm.chat_input", "");
 }
 
