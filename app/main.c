@@ -3,6 +3,7 @@
 #include "app_common.h"
 #include "cllm_integration.h"
 #include "../include/cllm_format.h"
+#include "../include/cllm_model_manager.h"
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"
@@ -60,6 +61,15 @@ AppState* init_app(void) {
     // This ensures inputs are available immediately, regardless of which tab is visited first
     extern void init_all_inputs(InputManager* manager);
     init_all_inputs(g_input_manager);
+    
+    // Initialize global model manager
+    printf("\n=== Initializing Model Manager ===\n");
+    if (!model_manager_init("./models")) {
+        printf("WARNING: Failed to initialize model manager\n");
+    } else {
+        printf("Model manager initialized successfully\n");
+    }
+    printf("=== Model Manager Ready ===\n\n");
     
     // Initialize state
     state->mode = MODE_ULAM_SPIRAL;
