@@ -3,6 +3,7 @@
 #include "../../input_manager.h"
 #include "../../text_input.h"
 #include "../../ui_layout.h"
+#include "../model_selector.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -33,6 +34,9 @@ typedef struct {
 static ResearchFile research_files[MAX_FILES];
 static int file_count = 0;
 static int selected_file = -1;
+
+// Model selector
+static ModelSelector* research_model_selector = NULL;
 static char file_content[MAX_CONTENT_LENGTH];
 static int content_scroll = 0;
 static int file_list_scroll = 0;
@@ -171,6 +175,12 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     int panel_y = 60;
     int panel_width = CONTROL_PANEL_WIDTH;
     
+    // Initialize model selector on first draw
+    if (!research_model_selector) {
+        research_model_selector = model_selector_create(panel_x + 10, panel_y + 10, panel_width - 20, 30);
+        model_selector_update_list(research_model_selector);
+    }
+    
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color bg_color = {40, 40, 50, 255};
     SDL_Color button_color = {60, 60, 80, 255};
@@ -183,6 +193,16 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_RenderFillRect(renderer, &panel_rect);
     
     int y = panel_y + 10;
+    
+    // === SECTION 0: MODEL SELECTOR ===
+    draw_text(renderer, "MODEL", panel_x + 10, y, text_color);
+    y += 20;
+    
+    // Render model selector
+    if (research_model_selector) {
+        model_selector_render(research_model_selector, renderer);
+    }
+    y += 40; // Space for model selector
     
     // === SECTION 1: HEADER ===
     draw_text(renderer, "RESEARCH BROWSER", panel_x + 10, y, text_color);
@@ -412,6 +432,11 @@ bool handle_research_tab_event(AppState* state, SDL_Event* event) {
 
 void handle_research_tab_click(AppState* state, int x, int y) {
     if (!state) return;
+    
+    // Check model selector click first
+    if (research_model_selector && model_selector_handle_click(research_model_selector, x, y)) {
+        return;
+    }
     
     int panel_x = RENDER_WIDTH;
     

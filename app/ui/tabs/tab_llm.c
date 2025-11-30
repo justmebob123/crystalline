@@ -3,6 +3,7 @@
 #include "../../cllm_integration.h"
 #include "../../ui_layout.h"
 #include "../../input_manager.h"
+#include "../model_selector.h"
 #include "../../../include/cllm_utils.h"
 #include "../../../include/cllm_model_manager.h"
 #include <string.h>
@@ -70,6 +71,9 @@ typedef struct {
 // Chat state
 static ChatMessage chat_history[MAX_CHAT_MESSAGES];
 static int chat_message_count = 0;
+
+// Model selector
+static ModelSelector* llm_model_selector = NULL;
 static int chat_scroll_offset = 0;
 
 // UI state
@@ -684,6 +688,12 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     int panel_y = RENDER_OFFSET_Y;  // Fixed: account for submenu
     int panel_width = CONTROL_PANEL_WIDTH;
     
+    // Initialize model selector on first draw
+    if (!llm_model_selector) {
+        llm_model_selector = model_selector_create(panel_x + 10, panel_y + 50, panel_width - 20, 30);
+        model_selector_update_list(llm_model_selector);
+    }
+    
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color bg_color = {40, 40, 50, 255};
     SDL_Color button_color = {60, 60, 80, 255};
@@ -697,6 +707,17 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize dynamic layout
     LayoutContainer layout;
     layout_init(&layout, panel_rect, LAYOUT_VERTICAL, 10, 8);
+    
+    // === SECTION 0: MODEL SELECTOR ===
+    SDL_Rect selector_label = layout_add_label(&layout, "SELECT MODEL", 20);
+    draw_text(renderer, "SELECT MODEL", selector_label.x, selector_label.y, text_color);
+    
+    // Render model selector
+    if (llm_model_selector) {
+        model_selector_render(llm_model_selector, renderer);
+    }
+    layout_add_spacing(&layout, 40); // Space for model selector
+    layout_add_spacing(&layout, 10);
     
     // === SECTION 1: MODEL STATUS ===
     SDL_Rect model_label = layout_add_label(&layout, "CLLM MODEL", 20);
@@ -995,6 +1016,11 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
 
 void handle_llm_tab_click(AppState* state, int x, int y) {
     if (!state) return;
+    
+    // Check model selector click first
+    if (llm_model_selector && model_selector_handle_click(llm_model_selector, x, y)) {
+        return;
+    }
     
     // Handle model browser panel clicks
     if (model_browser_visible) {
