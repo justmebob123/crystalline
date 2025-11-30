@@ -881,7 +881,9 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     // === INPUT AREA ===
     int input_y = WINDOW_HEIGHT - input_height - 10;
     
-    g_input_rect = (SDL_Rect){RENDER_OFFSET_X + 10, input_y, chat_width - 110, input_height};  // Fixed: account for sidebar
+    // Input box with room for send button on the right
+    // Button will be 100px wide, positioned at right edge of input area
+    g_input_rect = (SDL_Rect){RENDER_OFFSET_X + 10, input_y, chat_width - 120, input_height};  // Leave 120px for button + gap
     SDL_Color input_bg = input_active ? (SDL_Color){50, 50, 70, 255} : (SDL_Color){40, 40, 50, 255};
     SDL_SetRenderDrawColor(renderer, input_bg.r, input_bg.g, input_bg.b, 255);
     SDL_RenderFillRect(renderer, &g_input_rect);
@@ -909,7 +911,8 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
                  (SDL_Color){100, 100, 100, 255});
     }
     
-    g_send_btn = (SDL_Rect){g_input_rect.x + g_input_rect.w + 10, input_y, 90, input_height};
+    // Send button positioned at right edge of input area (overlapping visually)
+    g_send_btn = (SDL_Rect){g_input_rect.x + g_input_rect.w + 10, input_y, 100, input_height};
     SDL_Color send_color = state->llm_generating ? 
         (SDL_Color){80, 80, 80, 255} : (SDL_Color){80, 150, 80, 255};
     SDL_SetRenderDrawColor(renderer, send_color.r, send_color.g, send_color.b, 255);
