@@ -1001,6 +1001,15 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
+    // Input box - CHECK FIRST (highest priority for user interaction)
+    if (x >= g_input_rect.x && x <= g_input_rect.x + g_input_rect.w &&
+        y >= g_input_rect.y && y <= g_input_rect.y + g_input_rect.h) {
+        input_active = true;
+        SDL_StartTextInput();
+        printf("LLM Tab: Input box clicked, input_active = true\n");
+        return;
+    }
+    
     // Handle thread list panel clicks
     if (thread_list_visible) {
         int panel_w = 400;
@@ -1041,12 +1050,11 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Input box
-    if (x >= g_input_rect.x && x <= g_input_rect.x + g_input_rect.w &&
-        y >= g_input_rect.y && y <= g_input_rect.y + g_input_rect.h) {
-        input_active = true;
-        SDL_StartTextInput();
-        return;
+    // Click elsewhere - deactivate input
+    if (input_active) {
+        input_active = false;
+        SDL_StopTextInput();
+        printf("LLM Tab: Input deactivated by clicking elsewhere\n");
     }
     
     // Send button
