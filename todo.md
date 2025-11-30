@@ -383,11 +383,11 @@ for (token_id in vocab_size) {
 **Goal:** Integrate model manager into existing tabs
 
 **Tasks:**
-- [ ] Update `app/ui/tabs/tab_training.c`
-  - [ ] Add model selector widget
-  - [ ] Use `model_manager_acquire_write()` for training
-  - [ ] Release model when done
-  - [ ] Handle model locking errors
+- [x] Update `app/ui/tabs/tab_training.c`
+  - [x] Use `model_manager_acquire_write()` for training
+  - [x] Release model when done (in stop_training_thread)
+  - [x] Handle model creation if not exists
+  - [ ] Add model selector widget to UI
 - [ ] Update `app/ui/tabs/tab_llm.c`
   - [ ] Add model selector widget
   - [ ] Use `model_manager_acquire_read()` for inference
@@ -396,6 +396,8 @@ for (token_id in vocab_size) {
   - [ ] Add model selector widget
   - [ ] Use appropriate access mode
 - [ ] Test tab integration
+
+**Progress:** Training tab backend complete, UI widget pending
 
 ---
 

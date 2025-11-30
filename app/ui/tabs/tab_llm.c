@@ -3,6 +3,7 @@
 #include "../../cllm_integration.h"
 #include "../../ui_layout.h"
 #include "../../../include/cllm_utils.h"
+#include "../../../include/cllm_model_manager.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
@@ -110,6 +111,46 @@ static SDL_Rect g_create_btn;
 static SDL_Rect g_load_btn;
 static SDL_Rect g_save_btn;
 static SDL_Rect g_temp_slider;
+
+// Helper function to acquire model for inference
+static bool acquire_model_for_inference(AppState* state, const char* model_name, 
+                                       uint32_t vocab_size, uint32_t embedding_dim,
+                                       uint32_t num_layers, uint32_t num_heads, uint32_t ff_dim) {
+    // Release previous model if any
+    if (state->cllm_model) {
+        // TODO: Track which model name was used to release correctly
+        // For now, we'll just set to NULL
+        state->cllm_model = NULL;
+    }
+    
+    // Try to acquire existing model
+    state->cllm_model = model_manager_acquire_read(model_name);
+    
+    if (!state->cllm_model) {
+        // Model doesn't exist, create it
+        printf("Model not found, creating %s...\n", model_name);
+        CLLMConfig* config = cllm_create_config(vocab_size, embedding_dim, num_layers, num_heads, ff_dim);
+        
+        if (config) {
+            ManagedModel* managed = model_manager_create(model_name, config);
+            cllm_free_config(config);
+            
+            if (managed) {
+                state->cllm_model = model_manager_acquire_read(model_name);
+            }
+        }
+    }
+    
+    if (state->cllm_model) {
+        printf("✓ Model acquired for inference\n");
+        if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
+        state->cllm_inference = cllm_inference_init(state->cllm_model);
+        return (state->cllm_inference != NULL);
+    }
+    
+    printf("ERROR: Failed to acquire model\n");
+    return false;
+}
 static SDL_Rect g_tokens_slider;
 static SDL_Rect g_browse_models_btn;
 // TODO: Implement model export feature
@@ -1070,12 +1111,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= tiny_btn.x && x <= tiny_btn.x + tiny_btn.w &&
             y >= tiny_btn.y && y <= tiny_btn.y + tiny_btn.h &&
             tiny_btn.y >= scroll_top && tiny_btn.y + tiny_btn.h <= scroll_bottom) {
-            printf("Creating TINY model (25M params)...\n");
-            state->cllm_model = app_create_cllm_model_tiny();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring TINY model (25M params)...\n");
+            acquire_model_for_inference(state, "tiny_model", 10000, 256, 4, 4, 1024);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
@@ -1087,12 +1124,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= small_btn.x && x <= small_btn.x + small_btn.w &&
             y >= small_btn.y && y <= small_btn.y + small_btn.h &&
             small_btn.y >= scroll_top && small_btn.y + small_btn.h <= scroll_bottom) {
-            printf("Creating SMALL model (117M params)...\n");
-            state->cllm_model = app_create_cllm_model_small();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring SMALL model (117M params)...\n");
+            acquire_model_for_inference(state, "small_model", 10000, 512, 6, 8, 2048);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
@@ -1104,12 +1137,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= medium_btn.x && x <= medium_btn.x + medium_btn.w &&
             y >= medium_btn.y && y <= medium_btn.y + medium_btn.h &&
             medium_btn.y >= scroll_top && medium_btn.y + medium_btn.h <= scroll_bottom) {
-            printf("Creating MEDIUM model (345M params)...\n");
-            state->cllm_model = app_create_cllm_model_medium();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring MEDIUM model (345M params)...\n");
+            acquire_model_for_inference(state, "medium_model", 10000, 768, 12, 12, 3072);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
@@ -1121,12 +1150,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= large_btn.x && x <= large_btn.x + large_btn.w &&
             y >= large_btn.y && y <= large_btn.y + large_btn.h &&
             large_btn.y >= scroll_top && large_btn.y + large_btn.h <= scroll_bottom) {
-            printf("Creating LARGE model (762M params)...\n");
-            state->cllm_model = app_create_cllm_model_large();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring LARGE model (762M params)...\n");
+            acquire_model_for_inference(state, "large_model", 10000, 1024, 24, 16, 4096);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
@@ -1138,12 +1163,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= huge_btn.x && x <= huge_btn.x + huge_btn.w &&
             y >= huge_btn.y && y <= huge_btn.y + huge_btn.h &&
             huge_btn.y >= scroll_top && huge_btn.y + huge_btn.h <= scroll_bottom) {
-            printf("Creating HUGE model (1.5B params)...\n");
-            state->cllm_model = app_create_cllm_model_huge();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring HUGE model (1.5B params)...\n");
+            acquire_model_for_inference(state, "huge_model", 10000, 1280, 36, 20, 5120);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
@@ -1155,12 +1176,8 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         if (x >= massive_btn.x && x <= massive_btn.x + massive_btn.w &&
             y >= massive_btn.y && y <= massive_btn.y + massive_btn.h &&
             massive_btn.y >= scroll_top && massive_btn.y + massive_btn.h <= scroll_bottom) {
-            printf("Creating MASSIVE model (3B params)...\n");
-            state->cllm_model = app_create_cllm_model_massive();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
+            printf("Acquiring MASSIVE model (3B params)...\n");
+            acquire_model_for_inference(state, "massive_model", 10000, 1536, 48, 24, 6144);
             model_size_dialog_visible = false;
             model_dialog_scroll = 0;
             return;
