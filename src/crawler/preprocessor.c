@@ -14,6 +14,7 @@
 #include <time.h>
 #include "content_filter.h"
 #include "site_handlers.h"
+#include "crawler_url_manager.h"
 
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
@@ -22,6 +23,9 @@
 extern int process_pdf_file(const char* input_path, const char* output_path);
 extern int process_image_file(const char* input_path, const char* output_path);
 extern int process_office_file(const char* input_path, const char* output_path);
+
+// Global URL manager for link extraction
+CrawlerURLManager* g_crawler_url_manager = NULL;
 
 /**
  * File type enumeration
@@ -270,10 +274,17 @@ static void clean_text(char* text) {
  * Extract links from HTML and add to crawl queue
  */
 static int extract_links(const char* html, const char* base_url, const char* queue_file) {
-    FILE* queue = fopen(queue_file, "a");
-    if (!queue) {
-        fprintf(stderr, "Failed to open queue file: %s\n", queue_file);
-        return -1;
+    // Try to use URL manager if available (passed via global)
+    extern CrawlerURLManager* g_crawler_url_manager;
+    
+    FILE* queue = NULL;
+    if (!g_crawler_url_manager) {
+        // Fallback to file-based system
+        queue = fopen(queue_file, "a");
+        if (!queue) {
+            fprintf(stderr, "Failed to open queue file: %s\n", queue_file);
+            return -1;
+        }
     }
     
     int links_found = 0;
@@ -355,19 +366,31 @@ static int extract_links(const char* html, const char* base_url, const char* que
                     // URL too long, skip it
                     continue;
                 }
-                fprintf(queue, "%s\n", full_url);
+                
+                // Add to database or file
+                if (g_crawler_url_manager) {
+                    crawler_url_manager_add(g_crawler_url_manager, full_url, base_url);
+                } else if (queue) {
+                    fprintf(queue, "%s\n", full_url);
+                }
                 links_found++;
             }
         } else if (strncmp(url, "http://", 7) == 0 || strncmp(url, "https://", 8) == 0) {
             // Absolute URL
-            fprintf(queue, "%s\n", url);
+            if (g_crawler_url_manager) {
+                crawler_url_manager_add(g_crawler_url_manager, url, base_url);
+            } else if (queue) {
+                fprintf(queue, "%s\n", url);
+            }
             links_found++;
         }
         
         p = url_end + 1;
     }
     
-    fclose(queue);
+    if (queue) {
+        fclose(queue);
+    }
     return links_found;
 }
 

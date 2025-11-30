@@ -70,7 +70,14 @@ CrawlerStateInternal* crawler_internal_init(const char* data_dir, const char* st
     if (!state) return NULL;
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
-    strncpy(state->start_url, start_url, sizeof(state->start_url) - 1);
+    
+    // start_url is now optional - only used if database is empty
+    if (start_url) {
+        strncpy(state->start_url, start_url, sizeof(state->start_url) - 1);
+    } else {
+        state->start_url[0] = '\0';
+    }
+    
     state->max_pages = max_pages;
     state->pages_crawled = 0;
     state->running = 1;
@@ -91,18 +98,20 @@ CrawlerStateInternal* crawler_internal_init(const char* data_dir, const char* st
     snprintf(path, sizeof(path), "%s/trained", data_dir);
     mkdir(path, 0755);
     
-    // Open link files
+    // Open link files (for fallback only)
     snprintf(path, sizeof(path), "%s/links_to_crawl.txt", data_dir);
     state->links_to_crawl = fopen(path, "a+");
     
     snprintf(path, sizeof(path), "%s/links_crawled.txt", data_dir);
     state->links_crawled = fopen(path, "a+");
     
-    // Add start URL to queue if files are empty
-    fseek(state->links_to_crawl, 0, SEEK_END);
-    if (ftell(state->links_to_crawl) == 0) {
-        fprintf(state->links_to_crawl, "%s\n", start_url);
-        fflush(state->links_to_crawl);
+    // Add start URL to queue ONLY if provided and files are empty
+    if (start_url && start_url[0] != '\0') {
+        fseek(state->links_to_crawl, 0, SEEK_END);
+        if (ftell(state->links_to_crawl) == 0) {
+            fprintf(state->links_to_crawl, "%s\n", start_url);
+            fflush(state->links_to_crawl);
+        }
     }
     
     return state;

@@ -636,10 +636,8 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
     draw_text(renderer, "WEB CRAWLER CONTROL CENTER", layout->content_area.x + 20,
               layout->content_area.y + 30, (SDL_Color){200, 200, 220, 255});
     
-    // Register inputs on first draw
-    if (layout->num_columns >= 2) {
-        register_crawler_inputs(&layout->columns[0], &layout->columns[1]);
-    }
+    // Note: Inputs are registered globally in input_registration.c
+    // No need to register here - just use them
     
     // Draw each column
     if (layout->num_columns >= 1) {
@@ -758,15 +756,10 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
                 return;
             }
             
-            // Start the crawler thread
+            // Start the crawler thread (no start URL - uses database)
             extern int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode);
-            if (start_crawler_thread(state, url_entry->url, g_crawler_state.extraction_mode) == 0) {
-                char log_msg[512];
-                int written = snprintf(log_msg, sizeof(log_msg), "Crawler started with URL: %s", url_entry->url);
-                if (written >= (int)sizeof(log_msg)) {
-                    strcpy(log_msg + sizeof(log_msg) - 4, "...");
-                }
-                add_activity_log(log_msg);
+            if (start_crawler_thread(state, NULL, g_crawler_state.extraction_mode) == 0) {
+                add_activity_log("Crawler started - processing URLs from database");
             } else {
                 add_activity_log("Error: Failed to start crawler");
             }

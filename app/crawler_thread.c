@@ -68,10 +68,14 @@ int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode 
     }
     
     printf("\n=== Starting Crawler ===\n");
-    printf("Start URL: %s\n", start_url);
+    if (start_url && start_url[0] != '\0') {
+        printf("Start URL: %s\n", start_url);
+    } else {
+        printf("Using URLs from database (no start URL)\n");
+    }
     printf("Data directory: %s\n", state->crawler_data_dir);
     
-    // Initialize crawler
+    // Initialize crawler (start_url can be NULL)
     g_crawler_state = crawler_state_init(state->crawler_data_dir, start_url, 0);
     if (!g_crawler_state) {
         fprintf(stderr, "ERROR: Failed to initialize crawler\n");

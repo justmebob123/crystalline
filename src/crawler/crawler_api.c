@@ -9,6 +9,7 @@
 #include "../../include/cllm_model_manager.h"
 #include "content_filter.h"
 #include "preprocessor.h"
+#include "crawler_url_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -178,7 +179,14 @@ CrawlerState* crawler_state_init_threaded(const char* data_dir, const char* star
     if (!state) return NULL;
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
-    strncpy(state->start_url, start_url, sizeof(state->start_url) - 1);
+    
+    // start_url is now optional - if NULL, crawler uses database URLs only
+    if (start_url) {
+        strncpy(state->start_url, start_url, sizeof(state->start_url) - 1);
+    } else {
+        state->start_url[0] = '\0';
+    }
+    
     state->max_pages = max_pages;
     state->running = 0;
     
@@ -237,6 +245,10 @@ int crawler_start(CrawlerState* state) {
     // Pass URL manager to internal crawler
     if (state->url_manager) {
         crawler_internal_set_url_manager((CrawlerStateInternal*)state->crawler_internal, state->url_manager);
+        
+        // Set global URL manager for preprocessor link extraction
+        extern CrawlerURLManager* g_crawler_url_manager;
+        g_crawler_url_manager = (CrawlerURLManager*)state->url_manager;
     }
     
     state->preprocessor_internal = preprocessor_init(state->data_dir);
