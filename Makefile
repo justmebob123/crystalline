@@ -322,7 +322,7 @@ CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
                   src/crawler/file_processor_image.c src/crawler/file_processor_office.c \
                   src/crawler/url_database.c src/crawler/url_filter.c \
                   src/crawler/url_priority.c src/crawler/url_blocker.c \
-                  src/crawler/crawler_url_manager.c
+                  src/crawler/crawler_url_manager.c src/crawler/content_filter.c
 CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 

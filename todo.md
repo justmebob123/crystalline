@@ -187,7 +187,88 @@
 - [x] Fixed HTML entities using fix_html_entities.py
 - [x] Build now successful ✅
 
-## OBJECTIVE 15 - Deferred Future Phases
+## OBJECTIVE 15 - Phase 4: Advanced Crawler Features (CURRENT)
+
+### Feature 1: Content Filtering ✅ PARTIALLY COMPLETE
+**Purpose:** Extract human-readable text vs metadata
+- [x] Analyze current crawler output (what's extracted now?) ✅
+- [x] Implement human text extraction option ✅
+- [x] Add content preprocessor for filtering ✅
+- [x] Add UI controls in Crawler tab for filtering options ✅
+- [ ] Wire extraction mode to preprocessor (needs state passing)
+- [ ] Add click handlers for radio buttons
+- [ ] Test with various websites
+
+**Implementation Complete:**
+- Created `src/crawler/content_filter.h` - Extraction mode enum and API
+- Created `src/crawler/content_filter.c` - Smart content extraction implementation
+- Created `src/crawler/preprocessor.h` - Preprocessor API with extraction mode
+- Updated `src/crawler/preprocessor.c` - Added extraction mode support
+- Updated `app/ui/tabs/tab_crawler.c` - Added UI radio buttons for mode selection
+- Updated `Makefile` - Added content_filter.c to build
+
+**Features Implemented:**
+- 4 extraction modes: ALL, HUMAN_TEXT, METADATA, MIXED
+- Content type classification (main, navigation, boilerplate, sidebar, metadata)
+- Semantic HTML5 tag recognition (article, main, nav, header, footer, aside)
+- Class/ID pattern matching for content identification
+- Smart filtering based on selected mode
+
+**UI Added:**
+- Radio buttons in Crawler tab Column 1
+- 4 options: Extract All, Human Text Only, Metadata Only, Mixed
+- Visual indication of selected mode
+
+**Remaining Work:**
+- Wire extraction mode from UI to preprocessor thread
+- Add click handlers for radio button selection
+- Test extraction quality with real websites
+
+### Feature 2: Site-Specific Crawlers
+**Purpose:** Specialized crawlers for specific sites
+- [ ] X.com (Twitter) profile crawler
+  * Extract tweets, profile info, followers
+  * Handle Twitter's dynamic loading
+  * Respect rate limits
+- [ ] Britannica.com crawler
+  * Extract encyclopedia entries
+  * Handle article structure
+  * Extract definitions and references
+- [ ] Etymonline.com crawler
+  * Extract word etymologies
+  * Handle etymology format
+  * Extract related words
+
+### Feature 3: Advanced Preprocessor Options
+**Purpose:** Expose advanced crawler options in UI
+- [ ] GET parameter handling UI controls
+- [ ] Content type classification options
+- [ ] Custom header configuration
+- [ ] Cookie management
+- [ ] JavaScript execution toggle
+
+## OBJECTIVE 15 - Phase 5: CLI Tool Integration (AFTER PHASE 4)
+
+### Task 1: Feature Parity Analysis
+- [ ] Create feature matrix (UI vs CLI)
+- [ ] Identify UI-only features
+- [ ] Identify CLI-only features
+- [ ] Document gaps
+
+### Task 2: CLI Tool Enhancement
+- [ ] Add missing features to CLI tools
+- [ ] Ensure same parameters available
+- [ ] Verify same functionality
+- [ ] Test all operations
+
+### Task 3: Documentation
+- [ ] Document CLI equivalents for all UI operations
+- [ ] Create CLI usage examples
+- [ ] Create workflow guides
+- [ ] Document best practices
+
+## Next Action
+Starting Phase 4 Feature 1: Analyzing current crawler output
 
 ### Phase 4: Advanced Crawler Features (DEFERRED - Future Work)
 **Purpose:** Enhance crawler with advanced features

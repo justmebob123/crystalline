@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include "content_filter.h"
 
 #define MAX_TEXT_SIZE (5 * 1024 * 1024)  // 5MB max text
 #define MIN_TEXT_LENGTH 100
@@ -122,6 +123,7 @@ typedef struct {
     char data_dir[1024];
     int running;
     int files_processed;
+    ExtractionMode extraction_mode;  // NEW: Content filtering mode
     pthread_mutex_t lock;
 } PreprocessorState;
 
@@ -485,7 +487,17 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
     // Debug: Show raw HTML size
     printf("  Raw HTML: %ld bytes\n", size);
     
-    remove_html_tags(html, text, MAX_TEXT_SIZE);
+    // Use smart extraction if mode is set, otherwise use legacy method
+    // For now, default to EXTRACT_ALL to maintain backward compatibility
+    ExtractionMode mode = EXTRACT_ALL;  // TODO: Get from state parameter
+    
+    if (mode == EXTRACT_ALL) {
+        // Legacy extraction - remove all tags
+        remove_html_tags(html, text, MAX_TEXT_SIZE);
+    } else {
+        // Smart extraction - filter based on content type
+        extract_content_smart(html, text, MAX_TEXT_SIZE, mode);
+    }
     free(html);
     
     // Debug: Show text after tag removal
@@ -624,6 +636,7 @@ PreprocessorState* preprocessor_init(const char* data_dir) {
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
     state->running = 1;
     state->files_processed = 0;
+    state->extraction_mode = EXTRACT_ALL;  // Default to extract everything
     pthread_mutex_init(&state->lock, NULL);
     
     return state;
@@ -636,4 +649,30 @@ void preprocessor_cleanup(PreprocessorState* state) {
     if (!state) return;
     pthread_mutex_destroy(&state->lock);
     free(state);
+}
+/**
+ * Set extraction mode for preprocessor
+ */
+void preprocessor_set_extraction_mode(PreprocessorState* state, ExtractionMode mode) {
+    if (!state) return;
+    
+    pthread_mutex_lock(&state->lock);
+    state->extraction_mode = mode;
+    pthread_mutex_unlock(&state->lock);
+    
+    const char* mode_names[] = {"ALL", "HUMAN_TEXT", "METADATA", "MIXED"};
+    printf("Extraction mode set to: %s\n", mode_names[mode]);
+}
+
+/**
+ * Get current extraction mode
+ */
+ExtractionMode preprocessor_get_extraction_mode(PreprocessorState* state) {
+    if (!state) return EXTRACT_ALL;
+    
+    pthread_mutex_lock(&state->lock);
+    ExtractionMode mode = state->extraction_mode;
+    pthread_mutex_unlock(&state->lock);
+    
+    return mode;
 }

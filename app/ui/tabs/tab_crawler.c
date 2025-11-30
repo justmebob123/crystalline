@@ -7,6 +7,7 @@
 #include "../../../src/crawler/link_management.h"
 #include "../../../src/crawler/url_patterns.h"
 #include "../../../src/crawler/crawler_url_manager.h"
+#include "../../../src/crawler/content_filter.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,6 +40,9 @@ typedef struct {
     bool pattern_onclick;
     bool pattern_data_attr;
     bool pattern_meta_refresh;
+    
+    // Content Filtering (NEW - Phase 4 Feature 1)
+    ExtractionMode extraction_mode;
     
     // Activity Log
     char activity_log[10][256];
@@ -80,6 +84,9 @@ static void init_crawler_tab_state(void) {
     g_crawler_state.pattern_onclick = true;
     g_crawler_state.pattern_data_attr = true;
     g_crawler_state.pattern_meta_refresh = true;
+    
+    // Set default extraction mode
+    g_crawler_state.extraction_mode = EXTRACT_ALL;
     
     g_crawler_state.inputs_registered = false;
     g_crawler_state.inputs_initialized = true;
@@ -348,6 +355,30 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
     
     draw_text(renderer, g_crawler_state.pattern_meta_refresh ? checkbox_on : checkbox_off, x, y, text_color);
     draw_text(renderer, "Meta refresh", x + 35, y, text_color);
+    y += 30;
+    
+    // Content Filtering section (NEW - Phase 4 Feature 1)
+    draw_section_header(renderer, "CONTENT FILTERING", x, y, (SDL_Color){180, 180, 200, 255});
+    y += 30;
+    
+    const char* radio_on = "(*)";
+    const char* radio_off = "( )";
+    
+    // Extraction mode radio buttons
+    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_ALL ? radio_on : radio_off, x, y, text_color);
+    draw_text(renderer, "Extract All (default)", x + 35, y, text_color);
+    y += 22;
+    
+    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_HUMAN_TEXT ? radio_on : radio_off, x, y, text_color);
+    draw_text(renderer, "Human Text Only", x + 35, y, success_color);
+    y += 22;
+    
+    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_METADATA ? radio_on : radio_off, x, y, text_color);
+    draw_text(renderer, "Metadata Only", x + 35, y, text_color);
+    y += 22;
+    
+    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_MIXED ? radio_on : radio_off, x, y, text_color);
+    draw_text(renderer, "Mixed (Content + Meta)", x + 35, y, text_color);
 }
 
 // ============================================================================
@@ -676,6 +707,9 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         add_activity_log("Load Config clicked (not yet implemented)");
         return;
     }
+    
+    // TODO: Add click handlers for extraction mode radio buttons
+    // This will be implemented when we add the radio button bounds tracking
 }
 
 void handle_crawler_tab_keyboard(AppState* state, int key) {

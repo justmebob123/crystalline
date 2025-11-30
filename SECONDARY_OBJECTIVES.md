@@ -2730,3 +2730,140 @@ if (url->query_string && strlen(url->query_string) > 0) {
 ---
 
 **END OF NEW REQUIREMENTS**
+
+---
+
+## 🔴 HIGH PRIORITY: LIBRARY STRUCTURE REORGANIZATION
+
+### Problem
+Currently, all libraries share the same directory structure with mixed includes and sources. This creates:
+- Cluttered directory structure
+- Difficult dependency management
+- Hard to maintain independent libraries
+- Prevents creating separate repositories for each library
+
+### Goal
+Reorganize each library into its own independent directory with proper `src/` and `include/` structure, similar to how `algorithms/` is already organized.
+
+### Current Structure (PROBLEMATIC)
+```
+crystalline/
+├── include/          # Mixed headers for ALL libraries
+│   ├── core/
+│   ├── geometry/
+│   ├── ai/
+│   ├── crawler/
+│   └── ...
+├── src/              # Mixed sources for ALL libraries
+│   ├── core/
+│   ├── geometry/
+│   ├── ai/
+│   ├── crawler/
+│   └── ...
+└── algorithms/       # ✅ Already properly structured
+    ├── include/
+    └── src/
+```
+
+### Target Structure (CLEAN)
+```
+crystalline/
+├── crystalline/      # Core crystalline math library
+│   ├── include/
+│   │   ├── core/
+│   │   ├── geometry/
+│   │   └── transcendental/
+│   └── src/
+│       ├── core/
+│       ├── geometry/
+│       └── transcendental/
+│
+├── algorithms/       # ✅ Already correct
+│   ├── include/
+│   └── src/
+│
+├── cllm/             # CLLM AI library
+│   ├── include/
+│   │   └── ai/
+│   └── src/
+│       ├── ai/
+│       └── infrastructure/
+│
+├── crawler/          # Web crawler library
+│   ├── include/
+│   │   └── crawler/
+│   └── src/
+│       └── crawler/
+│
+├── docproc/          # Document processing library
+│   ├── include/
+│   │   └── docproc/
+│   └── src/
+│       └── docproc/
+│
+├── app/              # Application (uses all libraries)
+│   └── ...
+│
+└── tools/            # CLI tools (use all libraries)
+    └── ...
+```
+
+### Benefits
+1. **Independent Management**: Each library can be developed independently
+2. **Clear Dependencies**: Library dependencies are explicit
+3. **Separate Repositories**: Easy to split into separate repos later
+4. **Clean Includes**: `#include <crystalline/core/bigint.h>` instead of `#include "../../../include/core/bigint.h"`
+5. **Better Build System**: Each library has its own Makefile
+6. **Easier Testing**: Each library can be tested independently
+
+### Implementation Plan
+
+#### Phase 1: Create New Directory Structure
+- [ ] Create `crystalline/` directory with `include/` and `src/`
+- [ ] Create `cllm/` directory with `include/` and `src/`
+- [ ] Create `crawler/` directory with `include/` and `src/`
+- [ ] Create `docproc/` directory with `include/` and `src/`
+
+#### Phase 2: Move Files
+- [ ] Move core, geometry, transcendental to `crystalline/`
+- [ ] Move ai and infrastructure to `cllm/`
+- [ ] Move crawler files to `crawler/`
+- [ ] Move document processing to `docproc/`
+
+#### Phase 3: Update Include Paths
+- [ ] Update all `#include` statements in source files
+- [ ] Update all `#include` statements in header files
+- [ ] Update Makefiles with new paths
+- [ ] Update `-I` flags in compiler commands
+
+#### Phase 4: Update Build System
+- [ ] Create Makefile for each library
+- [ ] Update root Makefile to build all libraries
+- [ ] Update library linking order
+- [ ] Test build system
+
+#### Phase 5: Verify and Test
+- [ ] Verify all libraries build independently
+- [ ] Verify all tools build correctly
+- [ ] Verify application builds correctly
+- [ ] Run tests to ensure functionality
+
+### Priority
+**HIGH PRIORITY** - This should be done before creating separate repositories and will make future maintenance much easier.
+
+### Estimated Time
+- Phase 1: 30 minutes
+- Phase 2: 1-2 hours
+- Phase 3: 2-3 hours (many files to update)
+- Phase 4: 1-2 hours
+- Phase 5: 1 hour
+**Total: 5-8 hours**
+
+### Notes
+- This is a large refactoring but necessary for long-term maintainability
+- Should be done in a separate branch and thoroughly tested
+- Will make the codebase much cleaner and easier to understand
+- Essential for eventually creating separate repositories
+
+---
+
