@@ -437,3 +437,255 @@
 ---
 
 **END OF AUDIT**
+---
+
+## 11. CRITICAL ARCHITECTURAL ISSUES DISCOVERED
+
+### Date: 2024-12-XX
+### Status: 🔴 CRITICAL - REQUIRES IMMEDIATE ATTENTION
+
+### 11.1 Geometric Algorithm in Wrong Layer
+
+**Issue:** The geometric pattern algorithm is in the CLLM layer instead of the Algorithms layer.
+
+**Current Location:** `src/ai/cllm_lattice_embeddings_geometric.c`
+**Correct Location:** `algorithms/src/lattice_embeddings.c`
+
+**Why This is Wrong:**
+- This is a fundamental algorithm, not CLLM-specific
+- Violates layer separation principles from MASTER_PLAN
+- Should be reusable by ANY system, not just CLLM
+- Algorithms layer is for general algorithms
+- CLLM layer is for CLLM-specific wrappers
+
+**Impact:**
+- Architectural violation
+- Prevents reuse by other systems
+- Incorrect dependency chain
+
+**Priority:** 🔴 HIGHEST
+
+**Action Required:**
+1. Move file to algorithms layer
+2. Update all references
+3. Update Makefiles
+4. Verify build
+
+### 11.2 No Global Model Manager
+
+**Issue:** Each component creates its own models independently.
+
+**Current State:**
+- Training tab creates its own model
+- LLM tab creates its own model
+- Crawler creates its own model
+- CLI tools create separate models
+- No sharing, no reuse, massive duplication
+
+**Why This is Wrong:**
+- Violates single source of truth principle
+- Massive memory waste
+- No model persistence
+- Can't share models between components
+- Can't train and infer simultaneously
+
+**Impact:**
+- Inefficient resource usage
+- Poor user experience
+- No model management
+- No concurrent access
+
+**Priority:** 🔴 HIGH
+
+**Action Required:**
+1. Create global model manager in CLLM library
+2. Implement model registry
+3. Implement concurrent access (rwlock)
+4. Create model management UI tab
+5. Update all tabs to use model manager
+6. Update all CLI tools to use model manager
+
+### 11.3 Models Recreated Every Time
+
+**Issue:** Models are recreated every time a tab is opened.
+
+**Current Behavior:**
+- Open training tab → creates new model
+- Close and reopen → creates another new model
+- Switch to LLM tab → creates yet another model
+
+**Why This is Wrong:**
+- Slow initialization (especially with geometric pattern)
+- Memory waste
+- Loss of training progress
+- No persistence
+
+**Impact:**
+- Poor performance
+- Bad user experience
+- Can't resume training
+- Can't save/load models
+
+**Priority:** 🔴 HIGH
+
+**Action Required:**
+- Implement model persistence in model manager
+- Cache loaded models
+- Only create when explicitly requested
+- Save models automatically
+
+### 11.4 No Concurrent Access Support
+
+**Issue:** Can't train and infer simultaneously.
+
+**Current Limitation:**
+- Training locks the entire model
+- Can't use inference during training
+- Single-threaded access only
+
+**Why This is Wrong:**
+- Inference should be read-only
+- Multiple inference sessions should be possible
+- Training shouldn't block inference
+
+**Impact:**
+- Can't test model while training
+- Can't use model in production while improving it
+- Poor resource utilization
+
+**Priority:** 🔴 HIGH
+
+**Action Required:**
+- Implement pthread_rwlock_t in model manager
+- Acquire read lock for inference
+- Acquire write lock for training
+- Support multiple concurrent readers
+
+### 11.5 No Model Selection UI
+
+**Issue:** No way to select which model to use.
+
+**Current Limitation:**
+- No model list
+- No model selection
+- No export/import
+- No model management
+
+**Why This is Wrong:**
+- Can't choose between models
+- Can't manage multiple models
+- Can't share models
+- No model metadata
+
+**Impact:**
+- Poor usability
+- Can't experiment with different models
+- Can't organize models
+
+**Priority:** 🟡 MEDIUM
+
+**Action Required:**
+- Create model management tab
+- Implement model selector widget
+- Add to all tabs
+- Support export/import
+
+---
+
+## 12. ARCHITECTURAL VIOLATIONS SUMMARY
+
+### Layer Violations
+
+**Layer 1 (Crystalline):** ✅ CLEAN
+- No violations found
+- Pure mathematics only
+- No threading, no atomics, no math.h
+
+**Layer 2 (Algorithms):** ⚠️ MISSING COMPONENT
+- Geometric algorithm should be here
+- Currently in wrong layer (CLLM)
+
+**Layer 3 (CLLM):** 🔴 CRITICAL ISSUES
+- Missing global model manager
+- Missing model registry
+- Each component creates own models
+- No concurrent access support
+
+**Layer 4 (Application):** 🔴 CRITICAL ISSUES
+- Missing model management tab
+- Tabs create own models
+- No model selector widget
+- No integration with model manager
+
+### Dependency Chain Violations
+
+**Current (WRONG):**
+```
+Application → CLLM (with geometric algorithm) → Algorithms → Crystalline
+```
+
+**Correct:**
+```
+Application → CLLM (with model manager) → Algorithms (with geometric algorithm) → Crystalline
+```
+
+---
+
+## 13. REMEDIATION PLAN
+
+### Phase 1: Fix Layer Violations (HIGHEST PRIORITY)
+- [ ] Move geometric algorithm to algorithms layer
+- [ ] Update all references
+- [ ] Verify build
+- [ ] Test functionality
+
+### Phase 2: Implement Model Manager (HIGH PRIORITY)
+- [ ] Create model manager in CLLM library
+- [ ] Implement model registry
+- [ ] Implement concurrent access
+- [ ] Add unit tests
+
+### Phase 3: Create Model Management UI (MEDIUM PRIORITY)
+- [ ] Create model management tab
+- [ ] Implement model selector widget
+- [ ] Add to all tabs
+- [ ] Test UI integration
+
+### Phase 4: Update All Components (MEDIUM PRIORITY)
+- [ ] Update training tab
+- [ ] Update LLM tab
+- [ ] Update crawler tab
+- [ ] Update CLI tools
+
+### Phase 5: Testing and Validation (LOW PRIORITY)
+- [ ] Test concurrent access
+- [ ] Test model persistence
+- [ ] Test UI integration
+- [ ] Test CLI integration
+
+---
+
+## 14. SUCCESS CRITERIA
+
+### Architecture
+- [ ] Geometric algorithm in algorithms layer
+- [ ] Model manager in CLLM library
+- [ ] Proper layer separation maintained
+- [ ] No dependency violations
+
+### Functionality
+- [ ] Models created once, reused everywhere
+- [ ] Can train and infer simultaneously
+- [ ] Models persist across sessions
+- [ ] Can select models in UI
+- [ ] Can manage models (create/load/delete/export/import)
+
+### Quality
+- [ ] Zero build errors
+- [ ] Zero build warnings
+- [ ] All tests pass
+- [ ] Documentation complete
+
+---
+
+**END OF AUDIT UPDATE**

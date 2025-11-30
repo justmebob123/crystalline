@@ -1156,3 +1156,309 @@ Before proceeding, please confirm:
 6. ✅ Custom C implementations where needed?
 
 **Ready to begin implementation upon your approval!**
+---
+
+## 🔴 CRITICAL PRIORITY: GLOBAL MODEL MANAGEMENT ARCHITECTURE
+
+### Problem Statement
+
+**CRITICAL ARCHITECTURAL ISSUES IDENTIFIED:**
+
+1. **Geometric Algorithm in Wrong Layer** ❌
+   - Currently in CLLM layer (`src/ai/cllm_lattice_embeddings_geometric.c`)
+   - Should be in Algorithms layer (fundamental algorithm)
+   - Violates layer separation principles
+
+2. **No Global Model Manager** ❌
+   - Each tab creates independent models
+   - Training tab has its own model
+   - LLM tab has its own model
+   - Crawler has its own model
+   - CLI tools create separate models
+   - Massive duplication and waste
+
+3. **Models Recreated Every Time** ❌
+   - Opening a tab recreates the model
+   - Slow initialization
+   - Memory waste
+   - Loss of training progress
+   - No persistence
+
+4. **No Concurrent Access** ❌
+   - Can't train and infer simultaneously
+   - Training locks everything
+   - Should support read-only inference during training
+
+5. **No Model Selection UI** ❌
+   - No way to choose between models
+   - No export/import functionality
+   - No model management interface
+
+### Correct Architecture
+
+#### Layer 1: Algorithms Library (Fundamental)
+```
+algorithms/
+├── src/
+│   └── lattice_embeddings.c          # Geometric pattern algorithm
+└── include/
+    └── lattice_embeddings.h          # Public API
+```
+
+**Purpose:** Pure geometric algorithm for ANY system to use
+
+**API:**
+```c
+void lattice_embeddings_init_geometric(
+    float* embeddings,
+    uint32_t vocab_size,
+    uint32_t embedding_dim
+);
+```
+
+#### Layer 2: CLLM Library (Model Management)
+```
+src/ai/
+├── cllm_model_manager.c              # Global model manager
+└── cllm_model_registry.c             # Model registry/catalog
+
+include/
+├── cllm_model_manager.h              # Model manager API
+└── cllm_model_registry.h             # Registry API
+```
+
+**Purpose:** Global model management for entire system
+
+**Features:**
+- Create/load/save models
+- Model registry (catalog of available models)
+- Concurrent access (read-only for inference)
+- Model locking (exclusive for training)
+- Model metadata (name, size, training status)
+
+**API:**
+```c
+// Model Manager
+typedef struct {
+    char name[256];
+    char path[1024];
+    CLLMModel* model;
+    bool is_training;
+    bool is_loaded;
+    pthread_rwlock_t lock;
+} ManagedModel;
+
+// Create/Load
+ManagedModel* model_manager_create(const char* name, CLLMConfig* config);
+ManagedModel* model_manager_load(const char* path);
+
+// Access Control
+CLLMModel* model_manager_acquire_read(const char* name);   // For inference
+CLLMModel* model_manager_acquire_write(const char* name);  // For training
+void model_manager_release(const char* name);
+
+// Registry
+ModelInfo* model_registry_list();
+ModelInfo* model_registry_get(const char* name);
+void model_registry_add(const char* name, const char* path);
+void model_registry_remove(const char* name);
+```
+
+#### Layer 3: Application (UI Integration)
+```
+app/
+├── ui/
+│   └── tabs/
+│       ├── tab_models.c              # NEW: Model Management Tab
+│       ├── tab_training.c            # Uses model manager
+│       ├── tab_llm.c                 # Uses model manager
+│       └── tab_crawler.c             # Uses model manager
+└── model_selector.c                  # Model selection widget
+```
+
+**Purpose:** UI for model management
+
+**Features:**
+- List all available models
+- Create new models
+- Load existing models
+- Delete models
+- Export/import models
+- Select model for each tab
+- Show model status (training/idle/in-use)
+
+#### Layer 4: CLI Tools (Shared Access)
+```
+tools/
+├── cllm_train                        # Uses model manager
+├── cllm_inference                    # Uses model manager
+└── cllm_model_manager                # CLI for model management
+```
+
+**Purpose:** CLI access to same models as UI
+
+**Features:**
+- Same model manager API
+- Can train while UI does inference
+- Can use models created in UI
+- Can create models for UI to use
+
+### Implementation Plan
+
+#### Phase 1: Move Geometric Algorithm to Algorithms Layer (HIGHEST PRIORITY)
+- [ ] Move `src/ai/cllm_lattice_embeddings_geometric.c` → `algorithms/src/lattice_embeddings.c`
+- [ ] Move `include/cllm_lattice_embeddings.h` → `algorithms/include/lattice_embeddings.h`
+- [ ] Update `src/ai/cllm_create.c` to use algorithms layer
+- [ ] Update `algorithms/Makefile` to include new file
+- [ ] Update main `Makefile` linking
+- [ ] Verify build with zero errors/warnings
+- [ ] Test that embeddings still work correctly
+
+#### Phase 2: Create Model Manager in CLLM Library (HIGH PRIORITY)
+- [ ] Create `src/ai/cllm_model_manager.c`
+  - [ ] Implement model creation
+  - [ ] Implement model loading
+  - [ ] Implement model saving
+  - [ ] Implement concurrent access (pthread_rwlock_t)
+  - [ ] Implement model locking
+  - [ ] Implement model metadata
+- [ ] Create `include/cllm_model_manager.h`
+  - [ ] Define ManagedModel struct
+  - [ ] Define API functions
+  - [ ] Document usage
+- [ ] Create `src/ai/cllm_model_registry.c`
+  - [ ] Implement model catalog
+  - [ ] Implement model search
+  - [ ] Implement model persistence
+- [ ] Create `include/cllm_model_registry.h`
+  - [ ] Define ModelInfo struct
+  - [ ] Define registry API
+- [ ] Add to libcllm build
+- [ ] Create unit tests
+
+#### Phase 3: Create Model Management Tab (MEDIUM PRIORITY)
+- [ ] Create `app/ui/tabs/tab_models.c`
+  - [ ] Implement model list view
+  - [ ] Implement create model dialog
+  - [ ] Implement load model dialog
+  - [ ] Implement delete model confirmation
+  - [ ] Implement export model dialog
+  - [ ] Implement import model dialog
+  - [ ] Show model status (training/idle/in-use)
+  - [ ] Show model metadata (size, vocab, layers)
+- [ ] Create `app/model_selector.c`
+  - [ ] Dropdown widget for model selection
+  - [ ] Refresh button
+  - [ ] Create new button
+  - [ ] Load button
+- [ ] Add tab to main UI
+- [ ] Test UI functionality
+
+#### Phase 4: Update Existing Tabs (MEDIUM PRIORITY)
+- [ ] Update `app/ui/tabs/tab_training.c`
+  - [ ] Remove local model creation
+  - [ ] Add model selector widget
+  - [ ] Use `model_manager_acquire_write()` for training
+  - [ ] Release model when done
+  - [ ] Handle model locking errors
+- [ ] Update `app/ui/tabs/tab_llm.c`
+  - [ ] Remove local model creation
+  - [ ] Add model selector widget
+  - [ ] Use `model_manager_acquire_read()` for inference
+  - [ ] Release model when done
+  - [ ] Support concurrent inference
+- [ ] Update `app/ui/tabs/tab_crawler.c`
+  - [ ] Remove local model creation
+  - [ ] Add model selector widget
+  - [ ] Use appropriate access mode
+  - [ ] Release model when done
+- [ ] Test tab integration
+
+#### Phase 5: Update CLI Tools (LOW PRIORITY)
+- [ ] Update `tools/cllm_train`
+  - [ ] Use model manager API
+  - [ ] Support model selection by name
+  - [ ] Support creating new models
+- [ ] Update `tools/cllm_inference`
+  - [ ] Use model manager API
+  - [ ] Support model selection by name
+  - [ ] Support read-only access
+- [ ] Create `tools/cllm_model_manager`
+  - [ ] List models
+  - [ ] Create models
+  - [ ] Delete models
+  - [ ] Export models
+  - [ ] Import models
+  - [ ] Show model info
+- [ ] Test CLI integration
+
+#### Phase 6: Testing and Validation (LOW PRIORITY)
+- [ ] Test concurrent access
+  - [ ] Train in one tab, infer in another
+  - [ ] Multiple inference sessions
+  - [ ] Proper locking behavior
+- [ ] Test model persistence
+  - [ ] Save and load models
+  - [ ] Resume training
+  - [ ] Model metadata preserved
+- [ ] Test UI integration
+  - [ ] Model selection works
+  - [ ] Status updates correctly
+  - [ ] Error handling
+- [ ] Test CLI integration
+  - [ ] CLI can use UI-created models
+  - [ ] UI can use CLI-created models
+  - [ ] Concurrent CLI and UI access
+- [ ] Test cross-tool access
+  - [ ] Train in CLI, infer in UI
+  - [ ] Train in UI, infer in CLI
+  - [ ] Multiple tools simultaneously
+
+### Benefits
+
+#### 1. Efficiency
+- Models created once, reused everywhere
+- No recreation overhead
+- Shared memory across tabs and tools
+
+#### 2. Consistency
+- Same model across all tabs
+- Same model between UI and CLI
+- Single source of truth
+
+#### 3. Flexibility
+- Choose different models for different tasks
+- Train one model while using another
+- Multiple models available simultaneously
+
+#### 4. Concurrency
+- Read-only inference during training
+- Multiple inference sessions
+- Proper locking prevents corruption
+
+#### 5. Persistence
+- Models saved automatically
+- Resume training from checkpoints
+- Export/import for sharing
+
+### Success Criteria
+
+- [ ] Geometric algorithm in algorithms layer
+- [ ] Model manager in CLLM library
+- [ ] Model management tab in UI
+- [ ] All tabs use model manager
+- [ ] All CLI tools use model manager
+- [ ] Can train and infer simultaneously
+- [ ] Models persist across sessions
+- [ ] Zero build errors/warnings
+- [ ] All tests pass
+
+### Priority Order
+
+1. **HIGHEST:** Move geometric algorithm to algorithms layer
+2. **HIGH:** Create model manager in CLLM library
+3. **MEDIUM:** Create model management tab
+4. **MEDIUM:** Update existing tabs
+5. **LOW:** Update CLI tools
+6. **LOW:** Testing and validation
+
