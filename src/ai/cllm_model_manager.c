@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <dirent.h>
 
 // Forward declarations for save/load (will implement later)
 static bool cllm_save_model_internal(CLLMModel* model, const char* path);
@@ -81,6 +82,46 @@ bool model_manager_init(const char* models_dir) {
     
     g_manager_initialized = true;
     printf("Model manager initialized: %s\n", g_model_manager.models_dir);
+    
+    // Load existing models from disk
+    printf("Loading existing models from disk...\n");
+    DIR* dir = opendir(g_model_manager.models_dir);
+    if (dir) {
+        struct dirent* entry;
+        int loaded_count = 0;
+        
+        while ((entry = readdir(dir)) != NULL) {
+            // Check if file ends with .cllm
+            size_t len = strlen(entry->d_name);
+            if (len > 5 && strcmp(entry->d_name + len - 5, ".cllm") == 0) {
+                // Extract model name (remove .cllm extension)
+                char model_name[MODEL_NAME_MAX];
+                strncpy(model_name, entry->d_name, len - 5);
+                model_name[len - 5] = '\0';
+                
+                // Build full path
+                char model_path[MODEL_PATH_MAX];
+                snprintf(model_path, sizeof(model_path), "%s/%s", 
+                        g_model_manager.models_dir, entry->d_name);
+                
+                // Load the model
+                printf("  Loading model: %s\n", model_name);
+                ManagedModel* managed = model_manager_load(model_name, model_path);
+                if (managed) {
+                    loaded_count++;
+                    printf("    ✓ Loaded successfully\n");
+                } else {
+                    printf("    ✗ Failed to load\n");
+                }
+            }
+        }
+        closedir(dir);
+        
+        printf("Loaded %d model(s) from disk\n", loaded_count);
+    } else {
+        printf("No existing models found (directory empty or inaccessible)\n");
+    }
+    
     return true;
 }
 
@@ -210,6 +251,14 @@ ManagedModel* model_manager_create(const char* name, const CLLMConfig* config) {
     
     printf("Created model '%s' (%u vocab, %u dim, %u layers)\n", 
            name, config->vocab_size, config->embedding_dim, config->num_layers);
+    
+    // Auto-save the model to disk
+    printf("Auto-saving model to disk: %s\n", managed->path);
+    if (cllm_save_model_internal(managed->model, managed->path)) {
+        printf("  ✓ Model saved successfully\n");
+    } else {
+        printf("  ✗ Warning: Failed to save model to disk\n");
+    }
     
     return managed;
 }
@@ -646,22 +695,13 @@ static bool cllm_save_model_internal(CLLMModel* model, const char* path) {
         return false;
     }
     
-    // TODO: Implement proper model serialization
-    // For now, use cllm_format functions if available
-    FILE* f = fopen(path, "wb");
-    if (!f) {
-        fprintf(stderr, "Failed to open file for writing: %s\n", path);
+    // Use proper cllm_write_model function
+    int result = cllm_write_model(model, path);
+    if (result != 0) {
+        fprintf(stderr, "Failed to save model to: %s\n", path);
         return false;
     }
     
-    // Write header
-    fwrite(&model->header, sizeof(CLLMHeader), 1, f);
-    
-    // Write embeddings
-    size_t embedding_size = model->vocab_size * model->embedding_dim;
-    fwrite(model->embeddings.embeddings, sizeof(float), embedding_size, f);
-    
-    fclose(f);
     return true;
 }
 
@@ -670,50 +710,12 @@ static CLLMModel* cllm_load_model_internal(const char* path) {
         return NULL;
     }
     
-    // TODO: Implement proper model deserialization
-    // For now, just create a new model with default config
-    FILE* f = fopen(path, "rb");
-    if (!f) {
-        fprintf(stderr, "Failed to open file for reading: %s\n", path);
-        return NULL;
-    }
-    
-    // Read header
-    CLLMHeader header;
-    if (fread(&header, sizeof(CLLMHeader), 1, f) != 1) {
-        fprintf(stderr, "Failed to read model header\n");
-        fclose(f);
-        return NULL;
-    }
-    
-    // Create config from header
-    CLLMConfig config = {
-        .vocab_size = (uint32_t)header.vocab_size,
-        .embedding_dim = (uint32_t)header.embedding_dim,
-        .num_layers = (uint32_t)header.num_layers,
-        .num_heads = header.num_heads,
-        .ff_dim = (uint32_t)header.embedding_dim * 4,  // Standard 4x
-        .max_seq_len = header.context_length,
-        .dropout = 0.1f
-    };
-    
-    // Create model
-    CLLMModel* model = cllm_create_model(&config);
+    // Use proper cllm_read_model function
+    CLLMModel* model = cllm_read_model(path);
     if (!model) {
-        fprintf(stderr, "Failed to create model\n");
-        fclose(f);
+        fprintf(stderr, "Failed to load model from: %s\n", path);
         return NULL;
     }
     
-    // Read embeddings
-    size_t embedding_size = header.vocab_size * header.embedding_dim;
-    if (fread(model->embeddings.embeddings, sizeof(float), embedding_size, f) != embedding_size) {
-        fprintf(stderr, "Failed to read embeddings\n");
-        cllm_free_model(model);
-        fclose(f);
-        return NULL;
-    }
-    
-    fclose(f);
     return model;
 }

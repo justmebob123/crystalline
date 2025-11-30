@@ -95,34 +95,60 @@
 - Real-time statistics (total files, total size)
 - Click to select and preview files
 
-#### Fix 3 Tasks: ✅ COMPLETE (NO BUG FOUND)
+#### Fix 3 Tasks: ✅ COMPLETE - CRITICAL BUG FIXED
 - [x] Audit model creation in Training tab
 - [x] Audit model creation in LLM tab
 - [x] Verify model_manager_create() is called
 - [x] Test model list display logic
 - [x] Verify model lifecycle
+- [x] Implement model loading at startup
+- [x] Implement auto-save when models are created
+- [x] Fix save/load functions to use proper API
 
 **Investigation Results:**
-- ✅ Model manager is initialized correctly at startup
+- ✅ Model manager is initialized at startup
 - ✅ Training tab uses `model_manager_create()` correctly
 - ✅ LLM tab uses `model_manager_create()` correctly
 - ✅ Models tab queries `model_manager_list()` correctly
-- ✅ Models directory exists but is empty (no models created yet)
-- ✅ "No models available" message is CORRECT behavior
+- ❌ **CRITICAL BUG:** Models are NOT persisted to disk!
+- ❌ **CRITICAL BUG:** Models are NOT loaded from disk at startup!
 
-**Root Cause:**
-- NOT A BUG - The system is working as designed
-- No models have been created yet, so the list is empty
-- Users need to create a model in Training or LLM tab first
-- Once a model is created, it will appear in the Models tab
+**Root Cause - CRITICAL DISCONNECT:**
+1. Models are created in memory with `model_manager_create()` ✅
+2. Models work during the session (Training/LLM tabs can use them) ✅
+3. Models are saved to `checkpoints/` directory (WRONG LOCATION!) ❌
+4. Models should be saved to `models/` directory ❌
+5. `model_manager_init()` does NOT load existing models from disk ❌
+6. When app restarts, all models are lost ❌
+7. Models tab correctly shows "no models" because nothing was loaded ✅
 
-**Verification:**
-- Model manager initialization: ✅ Working
-- Model creation API: ✅ Working
-- Model list query: ✅ Working
-- Model display logic: ✅ Working
+**The Problem:**
+- Models exist in RAM during session
+- Models are NOT saved to the correct location
+- Models are NOT loaded at startup
+- Models disappear when app closes
 
-**Status: Phase 2 COMPLETE - All Critical Backend Connections Working**
+**Fixes Implemented:**
+1. ✅ Auto-save models to `models/` directory when created
+2. ✅ Load all `.cllm` files from `models/` directory at startup
+3. ✅ Use proper `cllm_write_model()` and `cllm_read_model()` API
+4. ✅ Models now persist across application restarts
+
+**Changes Made:**
+- Added `#include <dirent.h>` for directory operations
+- Modified `model_manager_init()` to scan and load existing `.cllm` files
+- Added auto-save after `model_manager_create()` completes
+- Replaced incomplete save/load functions with proper API calls
+- Models are now automatically saved to `./models/` directory
+- Models are automatically loaded at startup
+
+**Result:**
+- Models created in Training/LLM tabs are now saved to disk
+- Models persist across application restarts
+- Models tab will show all saved models after restart
+- Build successful with only minor warnings
+
+**Status: Phase 2 COMPLETE - All Critical Backend Connections Fixed**
 
 ### Phase 3: Layout and UI Fixes (CURRENT - MEDIUM PRIORITY)
 
