@@ -692,6 +692,24 @@ bool model_manager_get_status(const char* name, bool* is_loaded,
     return true;
 }
 
+CLLMModel* model_manager_get_first(void) {
+    if (!g_manager_initialized) {
+        return NULL;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    // Return first model if any exist
+    CLLMModel* model = NULL;
+    if (g_model_manager.num_models > 0 && g_model_manager.models[0]) {
+        model = g_model_manager.models[0]->model;
+    }
+    
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    return model;
+}
+
 // ============================================================================
 // INTERNAL SAVE/LOAD FUNCTIONS (Stubs for now)
 // ============================================================================

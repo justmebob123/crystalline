@@ -255,6 +255,16 @@ bool model_manager_exists(const char* name);
 bool model_manager_get_status(const char* name, bool* is_loaded, 
                               bool* is_training, uint32_t* read_count);
 
+/**
+ * Get the first available model
+ * 
+ * Returns the first model in the manager's list.
+ * Useful for getting a default model when no specific model is requested.
+ * 
+ * @return Pointer to first model on success, NULL if no models exist
+ */
+CLLMModel* model_manager_get_first(void);
+
 #ifdef __cplusplus
 }
 #endif

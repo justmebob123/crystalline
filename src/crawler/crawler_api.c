@@ -6,6 +6,7 @@
  */
 
 #include "../../include/crawler.h"
+#include "../../include/cllm_model_manager.h"
 #include "content_filter.h"
 #include "preprocessor.h"
 #include <stdio.h>
@@ -242,9 +243,23 @@ int crawler_start(CrawlerState* state) {
     state->tokenizer_internal = tokenizer_init(state->data_dir);
     
     // Initialize training component
+    // Use existing model from model manager instead of creating new one
     char model_path[2048];
-    snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
-    state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+    
+    // Try to use the first available model from model manager
+    extern CLLMModel* model_manager_get_first(void);
+    CLLMModel* existing_model = model_manager_get_first();
+    
+    if (existing_model) {
+        // Use existing model
+        printf("✓ Using existing model from model manager\n");
+        state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+    } else {
+        // No existing model, create new one
+        snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+        printf("⚠ No existing model found, will create new one\n");
+        state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+    }
     
     // Start crawler thread (single thread for sequential downloading)
     if (pthread_create(&state->crawler_thread, NULL, crawler_thread_func, state->crawler_internal) != 0) {
