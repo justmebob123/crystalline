@@ -47,18 +47,67 @@
 #define SYN_GREEN_FREQ 750.0
 #define SYN_BLUE_FREQ 500.0
 
-// Tab modes
+// Main tab categories (left sidebar)
+typedef enum {
+    MAIN_TAB_VISUALIZATION,  // Prime visualization tabs
+    MAIN_TAB_AI,             // AI/ML tabs (LLM, Training, Research, Crawler)
+    MAIN_TAB_MODELS,         // Model management
+    MAIN_TAB_SYSTEM,         // System tabs (Benchmark, Adapters)
+    MAIN_TAB_DATA,           // Data management (URL Manager, Downloaded Files)
+    MAIN_TAB_COUNT
+} MainTab;
+
+// Visualization sub-tabs
+typedef enum {
+    VIZ_SUB_PRIME_SPIRAL,
+    VIZ_SUB_CALCULATOR,
+    VIZ_SUB_SPHERES,
+    VIZ_SUB_PRIME_FOLDING,
+    VIZ_SUB_VIDEO_GENERATOR,
+    VIZ_SUB_COUNT
+} VisualizationSubTab;
+
+// AI sub-tabs
+typedef enum {
+    AI_SUB_LLM,
+    AI_SUB_TRAINING,
+    AI_SUB_RESEARCH,
+    AI_SUB_CRAWLER,
+    AI_SUB_COUNT
+} AISubTab;
+
+// Models sub-tabs
+typedef enum {
+    MODELS_SUB_MANAGEMENT,
+    MODELS_SUB_COUNT
+} ModelsSubTab;
+
+// System sub-tabs
+typedef enum {
+    SYSTEM_SUB_BENCHMARK,
+    SYSTEM_SUB_ADAPTERS,
+    SYSTEM_SUB_COUNT
+} SystemSubTab;
+
+// Data sub-tabs
+typedef enum {
+    DATA_SUB_URL_MANAGER,
+    DATA_SUB_DOWNLOADED_FILES,
+    DATA_SUB_COUNT
+} DataSubTab;
+
+// Legacy TabMode for backward compatibility (will be removed)
 typedef enum {
     TAB_PRIME_SPIRAL,
     TAB_CALCULATOR,
     TAB_SPHERES,
     TAB_PRIME_FOLDING,
     TAB_VIDEO_GENERATOR,
-    TAB_LLM,           // NEW: LLM Interaction tab
-    TAB_TRAINING,      // NEW: Training tab
-    TAB_RESEARCH,      // NEW: Research data browser tab
-    TAB_CRAWLER,       // NEW: Web Crawler control tab
-    TAB_MODELS,        // NEW: Model Management tab
+    TAB_LLM,
+    TAB_TRAINING,
+    TAB_RESEARCH,
+    TAB_CRAWLER,
+    TAB_MODELS,
     TAB_COUNT
 } TabMode;
 
@@ -130,8 +179,18 @@ typedef struct {
     SDL_Surface* recording_surface;  // Surface for video recording (software)
     SDL_Renderer* recording_renderer; // Software renderer for recording
     
-    // Current tab
+    // Current tab (legacy - will be replaced)
     TabMode current_tab;
+    
+    // NEW: Hierarchical tab system
+    MainTab main_tab;
+    union {
+        VisualizationSubTab viz_sub;
+        AISubTab ai_sub;
+        ModelsSubTab models_sub;
+        SystemSubTab system_sub;
+        DataSubTab data_sub;
+    } sub_tab;
     
     // Prime data - OLD SYSTEM (deprecated, kept for compatibility)
     int* primes;

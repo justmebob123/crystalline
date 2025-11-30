@@ -264,19 +264,19 @@ The SECONDARY_OBJECTIVES.md contains:
 
 ---
 
-## PHASE 4: IMPLEMENTATION - UI REORGANIZATION ⏳
+## PHASE 4: IMPLEMENTATION - UI REORGANIZATION ⏳ IN PROGRESS
 
-### 4.1: Implement Left Sidebar Tab System
+### 4.1: Implement Left Sidebar Tab System ⏳ IN PROGRESS
+- [ ] Update `app/app_common.h`
+  - Add MainTab enum (AI, Models, System, Data)
+  - Add SubTab enums for each main tab
+  - Update AppState with main_tab and sub_tab
 - [ ] Update `app/ui.c`
   - Create render_left_sidebar()
   - Implement vertical tab buttons
   - Implement collapsible sections
   - Add icons for tabs
   - Handle tab switching
-- [ ] Update `app/app_common.h`
-  - Add MainTab enum (AI, Models, System, Data)
-  - Add SubTab enums for each main tab
-  - Update AppState with main_tab and sub_tab
 
 ### 4.2: Implement Submenu System
 - [ ] Create `app/ui/submenu.c`
