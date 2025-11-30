@@ -9,180 +9,172 @@
 - Rule 5: Always commit all changes using correct authentication
 - Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
-## Current Task: Complete Dynamic Training System Implementation - ALL PHASES
+## CRITICAL USER CLARIFICATION - Model History Storage
 
-## PROGRESS: 80% COMPLETE (8 of 12 Phases) ✅
+**USER REQUIREMENT:** Training history should be stored in DIRECTORIES, NOT in model files.
 
-### Completed Backend (100%)
-- ✅ Phase 1: Enhanced CLLMModel structure
-- ✅ Phase 2: Model metadata management (11 functions)
-- ✅ Phase 3: Per-model queue system (6 functions)
-- ✅ Phase 4: Batch accumulation system (8 functions)
-- ✅ Phase 5: Model renaming system (2 functions)
+**Reason:** Storing loss_history in the model file would lead to extremely large models.
 
-### Completed UI (75%)
-- ✅ Phase 6: Model selector component
-- ✅ Phase 7: Model selectors in all 4 tabs (Training, Crawler, LLM, Research)
+**Solution:** 
+- Remove `loss_history`, `history_size`, `history_capacity` from CLLMModel structure
+- Create separate history files in model directories: `models/<name>_history/`
+- Store training logs, loss values, metrics in separate files
+- Model file remains compact and efficient
 
-### Remaining Work (20%)
-- ⏳ Phase 7: Configuration controls (sliders, inputs) - 25% remaining
-- ⏳ Phase 8: Epoch tracking integration
-- ⏳ Phase 9: Layer validation
-- ⏳ Phase 10: Unified data ingestion
-- ⏳ Phase 11: Testing & validation
-- ⏳ Phase 12: Documentation
+**Future Consideration:** 
+- User mentioned 99%+ compression is possible using their mathematics
+- Would require deep analysis of crystalline lattice abacus design
+- Not implementing compression now - focus on directory-based storage
 
-**Estimated Remaining:** 5-8 hours
+---
 
-## Current Task: Complete Dynamic Training System Implementation - ALL PHASES
+## Current Task: Complete Dynamic Training System - Phase 7 Configuration Controls
 
-### NEW USER REQUIREMENTS (CRITICAL)
-1. **Model Naming & Renaming:**
-   - User can name models (not limited to 'crawler' or 'research')
-   - User can rename models (renames files and associated data)
-   - Default naming acceptable but not required
-   
-2. **Model Selection Across All Tabs:**
-   - Each tab should have model selector dropdown
-   - Main model controls under Models tab
-   - All tabs can select any loaded model
-   
-3. **Cross-Model Training:**
-   - Training tab can select any model
-   - Can import and train on data from ANY other model
-   - Example: Select model_A, train on model_B's data
+### PROGRESS: 80% COMPLETE (Phases 1-7 partially done)
 
-### Phase 1: Model Metadata Enhancement ✅ COMPLETE
-- [x] Add epochs_trained to CLLMModel structure
-- [x] Add target_epochs to CLLMModel structure
-- [x] Add queue_directory to CLLMModel structure
-- [x] Add config to CLLMModel structure (training_config struct)
-- [x] Add model_name field (user-defined name)
-- [x] Add loss_history, history_size, history_capacity fields
-- [ ] Update cllm_model_save() to serialize new fields (NEXT)
-- [ ] Update cllm_model_load() to deserialize new fields (NEXT)
-- [ ] Add cllm_model_get_epochs_trained()
-- [ ] Add cllm_model_set_target_epochs()
-- [ ] Add cllm_model_rename() function
-- [ ] Add cllm_model_get_name() function
-- [ ] Add cllm_model_set_name() function
+### Phase 7: Configuration Controls & Model Loading (CURRENT - 25% remaining)
 
-### Phase 2: Enhanced Model Manager (NEW) ⏳
-- [x] Add validation for unique model names (in cllm_model_metadata.c)
-- [x] Add default naming scheme (model_1, model_2, etc.)
-- [ ] Add model renaming capability (NEXT)
-- [ ] Rename model file when model renamed
-- [ ] Rename queue directory when model renamed
-- [ ] Update all references when model renamed
-- [ ] Add model_manager_rename_model()
+#### 7.1: Add Configuration Sliders to Training Tab ⏳ IN PROGRESS
+- [ ] Add batch_size slider (range: 1-16, default: 1)
+- [ ] Add sequence_length slider (range: 32-512, default: 64)
+- [ ] Add epochs slider (range: 1-100, default: 10)
+- [ ] Add learning_rate input field (default: 0.001)
+- [ ] Position sliders below model selector
+- [ ] Wire sliders to update AppState
+- [ ] Display current values next to sliders
 
-### Phase 3: Per-Model Queue System ✅ COMPLETE
-- [x] Create src/ai/model_queue_manager.h
-- [x] Create src/ai/model_queue_manager.c
-- [x] Implement create_model_queue()
-- [x] Implement add_to_model_queue()
-- [x] Implement get_next_from_queue()
-- [x] Implement get_queue_size()
-- [x] Implement clear_model_queue()
-- [x] Implement import_queue_from_model() (cross-model training)
-- [ ] Update crawler to use model-specific queue (LATER)
-- [ ] Update continuous_training to use model-specific queue (LATER)
+#### 7.2: Add Model Info Display ⏳ IN PROGRESS
+- [ ] Show epochs_trained for selected model
+- [ ] Show queue_size for selected model
+- [ ] Show num_layers for selected model
+- [ ] Show vocab_size for selected model
+- [ ] Position info panel on right side
 
-### Phase 4: Batch Accumulation System ✅ COMPLETE
-- [x] Create src/ai/batch_accumulator.h
-- [x] Create src/ai/batch_accumulator.c
-- [x] Implement batch_accumulator_create()
-- [x] Implement batch_accumulator_add()
-- [x] Implement batch_accumulator_ready()
-- [x] Implement batch_accumulator_get_batch()
-- [x] Implement batch_accumulator_clear()
-- [x] Implement batch_accumulator_destroy()
-- [x] Implement batch_accumulator_get_size()
-- [x] Implement batch_accumulator_get_required()
-- [ ] Integrate with continuous_training.c (LATER)
+#### 7.3: Wire Model Selectors to Load Models ⏳ CRITICAL
+- [ ] Training tab: Load selected model on change
+- [ ] Crawler tab: Load selected model on change
+- [ ] LLM tab: Load selected model on change
+- [ ] Research tab: Load selected model on change
+- [ ] Update all tabs when model changes
+- [ ] Handle model loading errors gracefully
 
-### Phase 5: Model Renaming System ✅ COMPLETE
-- [x] Implemented cllm_model_rename() function
-- [x] Rename model file
-- [x] Rename queue directory
-- [x] Update model metadata
-- [x] Delete old files
+#### 7.4: Fix Model History Storage ✅ COMPLETE
+- [x] Remove loss_history from CLLMModel structure
+- [x] Remove history_size from CLLMModel structure
+- [x] Remove history_capacity from CLLMModel structure
+- [x] Create model_history_manager.h/c
+- [x] Implement save_training_history(model_name, epoch, loss, metrics)
+- [x] Implement load_training_history(model_name)
+- [x] Create models/<name>_history/ directories
+- [x] Store history as separate files (CSV or JSON)
+- [ ] Update training pipeline to use new history system (NEXT)
 
-### Phase 6: Model Selector UI Component ✅ COMPLETE
-- [x] Created ModelSelector component
-- [x] Dropdown with model list
-- [x] Hover effects and visual feedback
-- [x] Change callbacks
-- [x] Integration with model manager
+---
 
-### Phase 7: Dynamic Configuration UI - All Tabs ⏳ 75% COMPLETE
-- [x] Add model selector to Training tab
-- [x] Add model selector to Crawler tab
-- [x] Add model selector to LLM tab
-- [x] Add model selector to Research tab
-- [ ] Add batch_size slider to Training tab (NEXT)
-- [ ] Add sequence_length slider to Training tab
-- [ ] Add epochs slider to Training tab
-- [ ] Add learning_rate input to Training tab
-- [ ] Add model info display (epochs_trained, queue_size, etc.)
-- [ ] Wire model selectors to actually load/use selected models
+### Phase 8: Epoch Tracking Integration (NEXT)
+- [ ] Wire epochs_trained to training pipeline
+- [ ] Update epochs_trained after each training session
+- [ ] Display epochs_trained in UI
+- [ ] Allow continuation training (add more epochs)
+- [ ] Save epochs_trained to model file
 
-### Phase 7: Training Tab Enhancements
-- [ ] Add batch_size slider
-- [ ] Add sequence_length slider
-- [ ] Add epochs slider
-- [ ] Add learning_rate input
-- [ ] Add current model info display
-- [ ] Add queue size display
-- [ ] Add epochs_trained display
-- [ ] Add target_epochs display
-- [ ] Add "Import Data From Model" dropdown (NEW)
-- [ ] Add "Import Data" button (NEW)
-- [ ] Wire configuration to training system
+### Phase 9: Layer Validation (NEXT)
+- [ ] Validate num_layers cannot be reduced
+- [ ] Show warning if user tries to reduce layers
+- [ ] Allow increasing layers (with proper initialization)
+- [ ] Update UI to reflect layer constraints
 
-### Phase 8: Epoch Tracking System
-- [ ] Implement cllm_model_get_epochs_trained()
-- [ ] Implement cllm_model_set_target_epochs()
-- [ ] Implement cllm_model_validate_epochs()
-- [ ] Implement cllm_model_continue_training()
-- [ ] Update training loop to track epochs
-- [ ] Update UI to display epoch information
-- [ ] Add epoch validation logic
+### Phase 10: Unified Data Ingestion (NEXT)
+- [ ] Update crawler to use per-model queues
+- [ ] Update continuous_training to use per-model queues
+- [ ] Update training tab to use per-model queues
+- [ ] Test cross-model training (import from other model's queue)
 
-### Phase 9: Layer Validation System
-- [ ] Implement cllm_model_validate_layers()
-- [ ] Implement cllm_model_is_layer_reduction()
-- [ ] Implement cllm_model_increase_layers()
-- [ ] Implement cllm_model_get_layer_constraints()
-- [ ] Add UI validation for layer changes
-- [ ] Add layer info display in UI
-- [ ] Prevent layer reduction on existing models
-
-### Phase 10: Unified Data Ingestion
-- [ ] Create manual file drop mechanism
-- [ ] Add "Add Training Data" button to Training tab
-- [ ] Implement file browser for selecting files
-- [ ] Tokenize selected files
-- [ ] Add to model-specific queue
-- [ ] Update crawler to use same queue format
-- [ ] Test unified queue system
-
-### Phase 11: Testing & Validation
-- [ ] Test per-model queues
-- [ ] Test batch accumulation
-- [ ] Test dynamic configuration
-- [ ] Test epoch tracking
-- [ ] Test layer validation
-- [ ] Test unified data ingestion
-- [ ] Test model selection across tabs
+### Phase 11: Integration Testing (NEXT)
+- [ ] Test model creation with custom names
 - [ ] Test model renaming
+- [ ] Test model selection across all tabs
+- [ ] Test training with different configurations
+- [ ] Test batch accumulation with small files
+- [ ] Test epoch continuation
 - [ ] Test cross-model training
-- [ ] Integration testing
 
-### Phase 12: Update SECONDARY_OBJECTIVES.md
-- [ ] Add model naming and renaming requirements
-- [ ] Add cross-model training requirements
-- [ ] Add model selector requirements for all tabs
-- [ ] Update implementation details
-- [ ] Add code examples
-- [ ] Document new APIs
+### Phase 12: Documentation (FINAL)
+- [ ] Update README with new features
+- [ ] Document per-model queue system
+- [ ] Document batch accumulation
+- [ ] Document epoch tracking
+- [ ] Document model renaming
+- [ ] Document cross-model training
+
+---
+
+## Implementation Order (Next Steps)
+
+1. **Fix Model History Storage** (30 min) - CRITICAL
+   - Remove history fields from CLLMModel
+   - Create model_history_manager
+   - Update save/load functions
+
+2. **Add Configuration Sliders** (1 hour)
+   - batch_size slider
+   - sequence_length slider
+   - epochs slider
+   - learning_rate input
+
+3. **Wire Model Selectors** (1 hour) - CRITICAL
+   - Implement callbacks for all 4 tabs
+   - Load selected model on change
+   - Update UI when model changes
+
+4. **Add Model Info Display** (30 min)
+   - Show epochs_trained
+   - Show queue_size
+   - Show model properties
+
+5. **Integration Testing** (2 hours)
+   - Test all features end-to-end
+   - Fix any bugs found
+   - Verify all pipelines work
+
+**Estimated Total: 5 hours**
+
+---
+
+## Files to Modify
+
+### Remove History from Model Structure
+- `include/cllm.h` - Remove loss_history fields
+- `src/ai/cllm_model_metadata.c` - Remove history functions
+
+### Create History Manager
+- `include/ai/model_history_manager.h` (NEW)
+- `src/ai/model_history_manager.c` (NEW)
+
+### Add Configuration Controls
+- `app/ui/tabs/tab_training.c` - Add sliders and info display
+
+### Wire Model Selectors
+- `app/ui/tabs/tab_training.c` - Add callback
+- `app/ui/tabs/tab_crawler.c` - Add callback
+- `app/ui/tabs/tab_llm.c` - Add callback
+- `app/ui/tabs/tab_research.c` - Add callback
+
+### Update Training Pipeline
+- `src/crawler/continuous_training.c` - Use new history system
+- `src/ai/cllm_training_threaded.c` - Use new history system
+
+---
+
+## Build Status
+- ✅ All libraries compile
+- ✅ Application compiles
+- ✅ Zero errors
+- ⚠️ Minor warnings (acceptable)
+
+---
+
+## Git Status
+- All changes committed and pushed
+- Working on main branch
+- Using correct authentication

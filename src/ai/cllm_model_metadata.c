@@ -151,56 +151,8 @@ int cllm_model_init_metadata(CLLMModel* model, const char* name) {
     model->training_config.weight_decay = 0.01f;
     model->training_config.gradient_clip = 1.0f;
     
-    // Initialize history
-    model->loss_history = NULL;
-    model->history_size = 0;
-    model->history_capacity = 0;
+    // NOTE: Training history is now stored in separate files
+    // in models/<name>_history/ directory (see model_history_manager.h)
     
     return 0;
-}
-
-/**
- * Add loss to history
- */
-int cllm_model_add_loss_to_history(CLLMModel* model, float loss) {
-    if (!model) return -1;
-    
-    // Expand capacity if needed
-    if (model->history_size >= model->history_capacity) {
-        int new_capacity = model->history_capacity == 0 ? 100 : model->history_capacity * 2;
-        float* new_history = realloc(model->loss_history, new_capacity * sizeof(float));
-        if (!new_history) {
-            fprintf(stderr, "Error: Failed to expand loss history\n");
-            return -1;
-        }
-        model->loss_history = new_history;
-        model->history_capacity = new_capacity;
-    }
-    
-    // Add loss
-    model->loss_history[model->history_size++] = loss;
-    return 0;
-}
-
-/**
- * Get loss history
- */
-const float* cllm_model_get_loss_history(CLLMModel* model, int* size) {
-    if (!model || !size) return NULL;
-    *size = model->history_size;
-    return model->loss_history;
-}
-
-/**
- * Clear loss history
- */
-void cllm_model_clear_loss_history(CLLMModel* model) {
-    if (!model) return;
-    
-    if (model->loss_history) {
-        free(model->loss_history);
-        model->loss_history = NULL;
-    }
-    model->history_size = 0;
-    model->history_capacity = 0;
 }

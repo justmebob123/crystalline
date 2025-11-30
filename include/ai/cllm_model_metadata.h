@@ -51,24 +51,11 @@ int cllm_model_validate_name_unique(const char* name);
 /**
  * Initialize model metadata with defaults
  * If name is NULL, generates default name
+ * 
+ * NOTE: Training history is now stored in separate files
+ * in models/<name>_history/ directory (see model_history_manager.h)
  */
 int cllm_model_init_metadata(CLLMModel* model, const char* name);
-
-/**
- * Add loss to history
- */
-int cllm_model_add_loss_to_history(CLLMModel* model, float loss);
-
-/**
- * Get loss history
- * Returns pointer to history array and sets size
- */
-const float* cllm_model_get_loss_history(CLLMModel* model, int* size);
-
-/**
- * Clear loss history
- */
-void cllm_model_clear_loss_history(CLLMModel* model);
 
 #ifdef __cplusplus
 }

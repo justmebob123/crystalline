@@ -240,10 +240,8 @@ typedef struct {
            float gradient_clip;
        } training_config;
        
-       // NEW: Training history
-       float* loss_history;         // Loss per epoch
-       int history_size;            // Number of recorded epochs
-       int history_capacity;        // Allocated capacity for history
+       // NOTE: Training history (loss, metrics) is stored in separate files
+       // in models/<name>_history/ directory to keep model files compact
    } CLLMModel;
 
 /*
