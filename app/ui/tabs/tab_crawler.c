@@ -3,6 +3,7 @@
 #include "../../input_manager.h"
 #include "../../crawler_thread.h"
 #include "../layout_manager.h"
+#include "../model_selector.h"
 #include "../../../src/crawler/prime_randomization.h"
 #include "../../../src/crawler/link_management.h"
 #include "../../../src/crawler/url_patterns.h"
@@ -76,6 +77,9 @@ static UIButton btn_start_crawler;
 static UIButton btn_reset_urls;
 static UIButton btn_save_config;
 static UIButton btn_load_config;
+
+// Model selector
+static ModelSelector* crawler_model_selector = NULL;
 
 // ============================================================================
 // INITIALIZATION
@@ -627,6 +631,17 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
     
     init_crawler_tab_state();
     
+    // Initialize model selector on first draw
+    if (!crawler_model_selector && layout->num_columns > 0) {
+        crawler_model_selector = model_selector_create(
+            layout->columns[0].x + 10,
+            layout->columns[0].y + 10,
+            layout->columns[0].width - 20,
+            30
+        );
+        model_selector_update_list(crawler_model_selector);
+    }
+    
     SDL_Renderer* renderer = state->renderer;
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color bg_color = {40, 40, 50, 255};
@@ -645,6 +660,11 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
     // Draw main title (positioned below submenu to avoid overlap)
     draw_text(renderer, "WEB CRAWLER CONTROL CENTER", layout->content_area.x + 20,
               layout->content_area.y + 30, (SDL_Color){200, 200, 220, 255});
+    
+    // Render model selector
+    if (crawler_model_selector) {
+        model_selector_render(crawler_model_selector, renderer);
+    }
     
     // Note: Inputs are registered globally in input_registration.c
     // No need to register here - just use them
@@ -678,6 +698,11 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
 
 void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
     if (!state) return;
+    
+    // Check model selector click first
+    if (crawler_model_selector && model_selector_handle_click(crawler_model_selector, mouse_x, mouse_y)) {
+        return;
+    }
     
     // Check Add URL button
     if (btn_add_url.visible && btn_add_url.enabled && 
