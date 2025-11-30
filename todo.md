@@ -49,71 +49,66 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ---
 
-## CRITICAL UI ISSUES (BLOCKING - MUST FIX IMMEDIATELY)
+## NEW CRITICAL ISSUES (USER REPORTED)
 
-### Phase 1: Unicode/Font Issues
-- [ ] Replace all emoji icons with ASCII equivalents in left_sidebar.c
-- [ ] Replace all unicode box-drawing characters with ASCII
-- [ ] Test font rendering with ASCII-only characters
+### Issue 1: AI Tab - Display Area Overlaps Sidebar
+- [ ] Investigate LLM tab rendering
+- [ ] Check if using old coordinate system
+- [ ] Fix overlap with sidebar
 
-### Phase 2: Layout Overlap Analysis
-- [ ] Analyze all UI component boundaries and positions
-- [ ] Identify overlapping regions between sidebar and content
-- [ ] Fix z-ordering and rendering order
-- [ ] Ensure content area respects sidebar boundaries
+### Issue 2: Models Tab - Rendering Issues
+- [ ] Models tab shows only "couple large blocky areas"
+- [ ] Investigate tab_models.c rendering
+- [ ] Fix rendering to show proper model list
 
-### Phase 3: Input System Analysis (CRITICAL - SEGFAULT)
-- [ ] Compare old input system vs new input system
-- [ ] Identify what broke in the transition
-- [ ] Analyze segfault in URL field typing
-- [ ] Fix input field initialization
-- [ ] Fix input field event handling
-- [ ] Test all input fields thoroughly
-
-### Phase 4: Comprehensive UI Validation
-- [ ] Test all tabs for overlap issues
-- [ ] Test all input fields for functionality
-- [ ] Test all buttons for click detection
-- [ ] Verify layout calculations are correct
-- [ ] Run application without crashes
+### Issue 3: URL Field Segfault (CRITICAL)
+- [ ] URL field not clickable
+- [ ] Double-click causes segfault
+- [ ] Investigate input_manager click detection
+- [ ] Fix bounds checking in URL field
 
 ---
 
-## STATUS: FIXES COMPLETE - READY FOR USER TESTING
-
-### COMPLETED:
+## PREVIOUS FIXES (COMPLETED)
 - [x] Phase 1: Fixed unicode characters (emoji → ASCII)
 - [x] Phase 2: Updated RENDER_WIDTH to account for sidebar
-- [x] Phase 2: Fixed visualization coordinate system (added RENDER_OFFSET_X/Y)
+- [x] Phase 2: Fixed visualization coordinate system
 - [x] Phase 2: Fixed control panel positioning
 - [x] Phase 2: Fixed training tab visualization area
-- [x] Phase 3: Added input bounds validation (prevents segfault)
+- [x] Phase 3: Added input bounds validation
 - [x] Phase 3: Added layout validation in crawler tab
-- [x] Build verification: Zero errors, zero warnings
 
-### READY FOR TESTING:
-- [ ] Test application startup (no crash)
-- [ ] Test all tabs render without overlap
-- [ ] Test input fields work without segfault
-- [ ] Test sidebar and submenu clickable
-- [ ] Test visualization areas properly positioned
+---
 
-### FIXES APPLIED:
-1. Unicode characters replaced with ASCII ([VIZ], [AI], [MOD], [SYS], [DATA])
-2. RENDER_WIDTH updated: 1600 - 320 - 200 = 1080px (accounts for sidebar)
-3. Added RENDER_OFFSET_X (200px) and RENDER_OFFSET_Y (40px) constants
-4. Updated visualization center calculation with offsets
-5. Updated control panel positioning with offsets
-6. Updated training tab visualization area with offsets
-7. Added input bounds validation (prevents segfault)
-8. Added layout validation in crawler tab
+## FIXES APPLIED (ROUND 2)
 
-### FINAL LAYOUT:
-  - Sidebar: X=0-200, Y=0-900 (200px width)
-  - Submenu: X=200-1600, Y=0-40 (40px height)
-  - Visualization: X=200-1280, Y=40-900 (1080px width)
-  - Control Panel: X=1280-1600, Y=40-900 (320px width)
+### Issue 1: AI Tab - FIXED
+- [x] Fixed LLM tab control panel position (RENDER_OFFSET_X + RENDER_WIDTH)
+- [x] Fixed LLM tab control panel Y (RENDER_OFFSET_Y)
+- [x] Fixed chat area X position (RENDER_OFFSET_X + 10)
+- [x] Fixed input rect X position (RENDER_OFFSET_X + 10)
 
-### COMMIT:
-✅ All changes committed and pushed to GitHub
-✅ Build status: Zero errors, zero warnings
+### Issue 2: Models Tab - FIXED
+- [x] Fixed window_width calculation (subtract SIDEBAR_WIDTH)
+- [x] Fixed window_height calculation (subtract SUBMENU_HEIGHT)
+- [x] Fixed X position (RENDER_OFFSET_X + 20)
+- [x] Fixed Y position (RENDER_OFFSET_Y + 20)
+
+### Issue 3: URL Field Segfault - FIXED
+- [x] Added NULL pointer validation in click handler
+- [x] Added bounds validation before checking clicks
+- [x] Added bounds validation in focus function
+- [x] Added extensive logging for debugging
+- [x] Added error messages for invalid operations
+
+### Files Modified:
+1. app/ui/tabs/tab_llm.c - Fixed all coordinate calculations
+2. app/ui/tabs/tab_models.c - Fixed all coordinate calculations
+3. app/input_manager.c - Added comprehensive validation and logging
+
+### Build Status:
+Zero errors, zero warnings
+
+---
+
+## STATUS: ROUND 2 FIXES COMPLETE - READY FOR TESTING

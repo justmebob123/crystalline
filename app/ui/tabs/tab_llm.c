@@ -675,8 +675,8 @@ void draw_chat_message(SDL_Renderer* renderer, ChatMessage* msg, int x, int y, i
 void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
-    int panel_x = RENDER_WIDTH;
-    int panel_y = 60;
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;  // Fixed: account for sidebar
+    int panel_y = RENDER_OFFSET_Y;  // Fixed: account for submenu
     int panel_width = CONTROL_PANEL_WIDTH;
     
     SDL_Color text_color = {220, 220, 220, 255};
@@ -840,11 +840,11 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Clear Chat", g_clear_chat_btn.x + 70, g_clear_chat_btn.y + 6, text_color);
     
     // === CHAT AREA (LEFT SIDE) ===
-    int chat_width = RENDER_WIDTH - 20;
+    int chat_width = RENDER_WIDTH - 20;  // Width is correct
     int input_height = 80;
     int chat_height = WINDOW_HEIGHT - 60 - input_height - 20;
     
-    g_chat_area = (SDL_Rect){10, 70, chat_width, chat_height};
+    g_chat_area = (SDL_Rect){RENDER_OFFSET_X + 10, RENDER_OFFSET_Y + 10, chat_width, chat_height};  // Fixed: account for sidebar
     SDL_SetRenderDrawColor(renderer, 25, 25, 35, 255);
     SDL_RenderFillRect(renderer, &g_chat_area);
     SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
@@ -876,7 +876,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     // === INPUT AREA ===
     int input_y = WINDOW_HEIGHT - input_height - 10;
     
-    g_input_rect = (SDL_Rect){10, input_y, chat_width - 110, input_height};
+    g_input_rect = (SDL_Rect){RENDER_OFFSET_X + 10, input_y, chat_width - 110, input_height};  // Fixed: account for sidebar
     SDL_Color input_bg = input_active ? (SDL_Color){50, 50, 70, 255} : (SDL_Color){40, 40, 50, 255};
     SDL_SetRenderDrawColor(renderer, input_bg.r, input_bg.g, input_bg.b, 255);
     SDL_RenderFillRect(renderer, &g_input_rect);

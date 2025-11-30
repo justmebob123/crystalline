@@ -283,10 +283,10 @@ static void draw_status_message(AppState* state, int x, int y, int width) {
 
 // Main draw function
 void draw_models_tab(AppState* state) {
-    int window_width = WINDOW_WIDTH - 40;
-    int window_height = WINDOW_HEIGHT - 100;
-    int x = 20;
-    int y = 60;
+    int window_width = WINDOW_WIDTH - SIDEBAR_WIDTH - 40;  // Fixed: account for sidebar
+    int window_height = WINDOW_HEIGHT - SUBMENU_HEIGHT - 60;  // Fixed: account for submenu
+    int x = RENDER_OFFSET_X + 20;  // Fixed: account for sidebar
+    int y = RENDER_OFFSET_Y + 20;  // Fixed: account for submenu
     
     // Two-column layout
     int left_width = window_width * 0.4;

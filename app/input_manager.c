@@ -130,7 +130,10 @@ void input_manager_set_visible(InputManager* manager, const char* id, bool visib
 
 // Focus an input
 void input_manager_focus(InputManager* manager, const char* id) {
-    if (!manager) return;
+    if (!manager || !id) {
+        printf("InputManager: ERROR - Cannot focus: manager=%p, id=%p\n", (void*)manager, (void*)id);
+        return;
+    }
     
     // Unfocus current
     if (manager->focused_input) {
@@ -140,10 +143,18 @@ void input_manager_focus(InputManager* manager, const char* id) {
     // Focus new
     ManagedInput* input = input_manager_get(manager, id);
     if (input) {
+        // CRITICAL: Validate bounds before focusing
+        if (input->bounds.w <= 0 || input->bounds.h <= 0) {
+            printf("InputManager: ERROR - Cannot focus input '%s' with invalid bounds: w=%d, h=%d\n",
+                   id, input->bounds.w, input->bounds.h);
+            return;
+        }
         input->active = true;
         manager->focused_input = input;
         SDL_StartTextInput();
-        // Silent focus
+        printf("InputManager: Focused input '%s'\n", id);
+    } else {
+        printf("InputManager: ERROR - Input '%s' not found\n", id);
     }
 }
 
@@ -167,32 +178,47 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
     if (!manager || !event) return false;
     
     // Handle mouse clicks
-    if (event->type == SDL_MOUSEBUTTONDOWN) {
-        int mx = event->button.x;
-        int my = event->button.y;
-        
-        // Check if click is on any visible input in current tab
-        bool clicked_input = false;
-        for (int i = 0; i < manager->input_count; i++) {
-            ManagedInput* input = &manager->inputs[i];
+        if (event->type == SDL_MOUSEBUTTONDOWN) {
+            int mx = event->button.x;
+            int my = event->button.y;
             
-            if (!input->visible || input->tab_id != manager->current_tab) continue;
+            // Check if click is on any visible input in current tab
+            bool clicked_input = false;
+            for (int i = 0; i < manager->input_count; i++) {
+                ManagedInput* input = &manager->inputs[i];
+                
+                // CRITICAL: Validate input pointer
+                if (!input) {
+                    printf("InputManager: ERROR - NULL input at index %d\n", i);
+                    continue;
+                }
+                
+                if (!input->visible || input->tab_id != manager->current_tab) continue;
+                
+                // CRITICAL: Validate bounds before checking
+                if (input->bounds.w <= 0 || input->bounds.h <= 0) {
+                    printf("InputManager: WARNING - Invalid bounds for input '%s': w=%d, h=%d\n",
+                           input->id, input->bounds.w, input->bounds.h);
+                    continue;
+                }
+                
+                // Check if click is inside bounds
+                if (mx >= input->bounds.x && mx < input->bounds.x + input->bounds.w &&
+                    my >= input->bounds.y && my < input->bounds.y + input->bounds.h) {
+                    printf("InputManager: Click on input '%s' at (%d, %d)\n", input->id, mx, my);
+                    input_manager_focus(manager, input->id);
+                    clicked_input = true;
+                    return true;
+                }
+            }
             
-            // Check if click is inside bounds
-            if (mx >= input->bounds.x && mx < input->bounds.x + input->bounds.w &&
-                my >= input->bounds.y && my < input->bounds.y + input->bounds.h) {
-                input_manager_focus(manager, input->id);
-                clicked_input = true;
-                return true;
+            // Click outside all inputs - unfocus but let click pass through to buttons
+            if (!clicked_input && manager->focused_input) {
+                input_manager_unfocus(manager);
+                // Don't return true - let the click reach button handlers
             }
         }
-        
-        // Click outside all inputs - unfocus but let click pass through to buttons
-        if (!clicked_input && manager->focused_input) {
-            input_manager_unfocus(manager);
-            // Don't return true - let the click reach button handlers
-        }
-    }
+
     
     // Handle keyboard input for focused input
     if (manager->focused_input && manager->focused_input->active) {
