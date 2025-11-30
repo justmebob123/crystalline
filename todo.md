@@ -64,14 +64,38 @@
 - Added cleanup function
 - Build successful with zero errors
 
-**Next: Fix 2 - Connect Downloaded Files Tab**
+**Next: Fix 2 - Connect Downloaded Files Tab (STARTING NOW)**
 
-#### Fix 2 Tasks (After Fix 1):
-- [ ] Query database for downloaded files
-- [ ] Scan crawler output directory
-- [ ] Display actual file list
-- [ ] Implement file preview
-- [ ] Implement click handlers
+#### Fix 2 Tasks: ✅ COMPLETE
+- [x] Query database for downloaded files
+- [x] Scan crawler output directory
+- [x] Display actual file list
+- [x] Implement file preview
+- [x] Implement click handlers
+
+**Changes Made:**
+- Added `CrawlerURLManager* url_manager` to state
+- Created `FileInfo` structure for file metadata
+- Implemented `init_downloaded_files_state()` for initialization
+- Implemented `refresh_file_list()` to query crawled URLs from database
+- Implemented `load_file_preview()` to read file contents
+- Updated `draw_file_browser()` to display real files from database
+- Updated `draw_file_preview()` to show actual file content
+- Added file selection by clicking in list
+- Added file size formatting and date display
+- Added file existence checking
+- Implemented cleanup function
+- Build successful with zero errors
+
+**Features:**
+- Shows all crawled URLs from database
+- Displays file metadata (name, domain, type, size, date)
+- File preview with first 4KB of content
+- Visual indication for missing files (grayed out)
+- Real-time statistics (total files, total size)
+- Click to select and preview files
+
+**Next: Fix 3 - Model Registration**
 
 #### Fix 3 Tasks (After Fix 2):
 - [ ] Audit model creation in Training tab
