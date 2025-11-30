@@ -157,6 +157,13 @@ void crawler_set_callback(CrawlerState* state, CrawlerCallback callback, void* u
 void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode);
 
 /**
+ * Set URL manager for database integration
+ * @param state Crawler state
+ * @param url_manager CrawlerURLManager pointer (void* to avoid circular dependency)
+ */
+void crawler_set_url_manager(CrawlerState* state, void* url_manager);
+
+/**
  * Cleanup crawler state
  * @param state Crawler state
  */
@@ -168,6 +175,7 @@ void crawler_state_cleanup(CrawlerState* state);
 
 // Internal component initialization
 CrawlerStateInternal* crawler_internal_init(const char* data_dir, const char* start_url, int max_pages);
+void crawler_internal_set_url_manager(CrawlerStateInternal* state, void* url_manager);
 void crawler_internal_cleanup(CrawlerStateInternal* state);
 void* crawler_thread_func(void* arg);
 

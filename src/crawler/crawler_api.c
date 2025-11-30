@@ -50,6 +50,7 @@ struct CrawlerState {
     void* preprocessor_internal;
     void* tokenizer_internal;
     void* training_internal;  // NEW: Training state
+    void* url_manager;        // CrawlerURLManager* for database integration
     
     // Status tracking
     int running;
@@ -232,6 +233,11 @@ int crawler_start(CrawlerState* state) {
         return -1;
     }
     
+    // Pass URL manager to internal crawler
+    if (state->url_manager) {
+        crawler_internal_set_url_manager((CrawlerStateInternal*)state->crawler_internal, state->url_manager);
+    }
+    
     state->preprocessor_internal = preprocessor_init(state->data_dir);
     state->tokenizer_internal = tokenizer_init(state->data_dir);
     
@@ -379,6 +385,22 @@ void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode) {
     if (state->preprocessor_internal) {
         preprocessor_set_extraction_mode((PreprocessorState*)state->preprocessor_internal, mode);
     }
+}
+
+/**
+ * Set URL manager for database integration
+ */
+void crawler_set_url_manager(CrawlerState* state, void* url_manager) {
+    if (!state) return;
+    
+    pthread_mutex_lock(&state->status_lock);
+    state->url_manager = url_manager;
+    
+    // Pass to internal crawler if already initialized
+    if (state->crawler_internal) {
+        crawler_internal_set_url_manager((CrawlerStateInternal*)state->crawler_internal, url_manager);
+    }
+    pthread_mutex_unlock(&state->status_lock);
 }
 
 

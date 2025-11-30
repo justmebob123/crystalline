@@ -846,3 +846,9 @@ void cleanup_crawler_tab(void) {
         g_crawler_state.url_manager = NULL;
     }
 }
+
+// Get URL manager from crawler tab
+void* get_crawler_url_manager(void) {
+    extern CrawlerTabState g_crawler_state;
+    return g_crawler_state.url_manager;
+}

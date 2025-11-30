@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include <curl/curl.h>
 #include <pthread.h>
+#include "crawler_url_manager.h"
+#include "url_database.h"
 #include <stdbool.h>
 #include "../../include/crawler.h"
 
@@ -55,8 +57,9 @@ static void get_timestamp(char* buffer, size_t size) {
     int running;
     int paused;  // NEW: Pause state
     pthread_mutex_t lock;
-    FILE* links_to_crawl;
-    FILE* links_crawled;
+    FILE* links_to_crawl;  // DEPRECATED: Will be removed
+    FILE* links_crawled;   // DEPRECATED: Will be removed
+    void* url_manager;     // CrawlerURLManager* (void* to avoid circular dependency)
    };
 
 /**
@@ -115,6 +118,15 @@ void crawler_internal_cleanup(CrawlerStateInternal* state) {
     if (state->links_crawled) fclose(state->links_crawled);
     pthread_mutex_destroy(&state->lock);
     free(state);
+}
+
+/**
+ * Set URL manager on internal crawler
+ */
+void crawler_internal_set_url_manager(CrawlerStateInternal* state, void* url_manager) {
+    if (state) {
+        state->url_manager = url_manager;
+    }
 }
 
 /**
@@ -228,6 +240,29 @@ int crawler_save_page(CrawlerStateInternal* state, const char* url, const char* 
 int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size) {
     pthread_mutex_lock(&state->lock);
     
+    // NEW: Use database if available
+    if (state->url_manager) {
+        CrawlerURLManager* manager = (CrawlerURLManager*)state->url_manager;
+        URLEntry* entry = crawler_url_manager_get_next(manager);
+        
+        if (entry) {
+            strncpy(url, entry->url, url_size - 1);
+            url[url_size - 1] = '\0';
+            
+            // Note: URL is already marked as pending in database
+            // We'll mark it as crawled after successful download
+            
+            free(entry);
+            pthread_mutex_unlock(&state->lock);
+            return 0;
+        } else {
+            // No URLs in database
+            pthread_mutex_unlock(&state->lock);
+            return -1;
+        }
+    }
+    
+    // FALLBACK: Use file-based queue (DEPRECATED)
     // Read all URLs into memory for prime-based selection
     fseek(state->links_to_crawl, 0, SEEK_SET);
     
@@ -307,8 +342,33 @@ int crawler_get_next_url(CrawlerStateInternal* state, char* url, size_t url_size
  */
 void crawler_mark_crawled(CrawlerStateInternal* state, const char* url) {
     pthread_mutex_lock(&state->lock);
-    fprintf(state->links_crawled, "%s\n", url);
-    fflush(state->links_crawled);
+    
+    // NEW: Update database if available
+    if (state->url_manager) {
+        CrawlerURLManager* manager = (CrawlerURLManager*)state->url_manager;
+        URLDatabase* db = crawler_url_manager_get_database(manager);
+        if (db) {
+            // Find URL by URL string and mark as crawled
+            int count = 0;
+            URLEntry** entries = url_db_query(db, NULL, &count);
+            if (entries) {
+                for (int i = 0; i < count; i++) {
+                    if (strcmp(entries[i]->url, url) == 0) {
+                        url_db_mark_crawled(db, entries[i]->id);
+                        break;
+                    }
+                }
+                url_db_free_entries(entries, count);
+            }
+        }
+    }
+    
+    // FALLBACK: Write to file (DEPRECATED)
+    if (state->links_crawled) {
+        fprintf(state->links_crawled, "%s\n", url);
+        fflush(state->links_crawled);
+    }
+    
     state->pages_crawled++;
     pthread_mutex_unlock(&state->lock);
 }

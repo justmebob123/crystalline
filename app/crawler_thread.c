@@ -82,6 +82,17 @@ int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode 
     // Set extraction mode
     crawler_set_extraction_mode(g_crawler_state, extraction_mode);
     
+    // NEW: Set URL manager for database integration
+    // Get URL manager from crawler tab state
+    extern void* get_crawler_url_manager(void);
+    void* url_manager = get_crawler_url_manager();
+    if (url_manager) {
+        crawler_set_url_manager(g_crawler_state, url_manager);
+        printf("✓ Crawler will use URL database for queue management\n");
+    } else {
+        printf("⚠ Warning: No URL manager available, using file-based queue\n");
+    }
+    
     // Set callback for events
     crawler_set_callback(g_crawler_state, crawler_event_callback, state);
     
