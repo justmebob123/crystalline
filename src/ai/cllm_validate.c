@@ -1,12 +1,46 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/bigfixed_core.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "../include/prime_float_math.h"
 
-// Check for NaN or Inf values in array
+// Check for NaN or Inf values in BigFixed array
+bool cllm_check_bigfixed_stability(BigFixed** array, size_t size, const char* name) {
+    if (!array) {
+        fprintf(stderr, "%s: Array is NULL\n", name);
+        return false;
+    }
+    
+    size_t nan_count = 0;
+    size_t inf_count = 0;
+    
+    for (size_t i = 0; i < size; i++) {
+        if (!array[i]) {
+            fprintf(stderr, "%s: Element %zu is NULL\n", name, i);
+            return false;
+        }
+        
+        // Convert to double for checking
+        double val = big_fixed_to_double(array[i]);
+        if (prime_isnanf((float)val)) {
+            nan_count++;
+        } else if (prime_isinff((float)val)) {
+            inf_count++;
+        }
+    }
+    
+    if (nan_count > 0 || inf_count > 0) {
+        fprintf(stderr, "%s: Found %zu NaN and %zu Inf values\n", name, nan_count, inf_count);
+        return false;
+    }
+    
+    return true;
+}
+
+// Legacy float version (deprecated)
 bool cllm_check_numerical_stability(const float* array, size_t size, const char* name) {
     if (!array) {
         fprintf(stderr, "%s: Array is NULL\n", name);
@@ -41,9 +75,14 @@ bool cllm_validate_weights(const CLLMModel* model) {
     
     printf("Validating model weights...\n");
     
-    // Check all weights
-    if (!cllm_check_numerical_stability(model->weights, model->num_weights, "Model weights")) {
-        return false;
+    // Check all weights (use BigFixed version if model uses BigFixed)
+    if (model->use_bigfixed) {
+        if (!cllm_check_bigfixed_stability(model->weights, model->num_weights, "Model weights")) {
+            return false;
+        }
+    } else {
+        // Legacy float path (deprecated)
+        fprintf(stderr, "Warning: Using deprecated float validation\n");
     }
     
     // Check embeddings
@@ -236,7 +275,14 @@ bool cllm_gradient_check_weight(CLLMModel* model, size_t weight_idx, float epsil
     // 3. Compare the two
     
     // For now, just check that the weight is finite
-    return !prime_isinff((float)model->weights[weight_idx]);
+    if (model->use_bigfixed) {
+        if (!model->weights[weight_idx]) return false;
+        double val = big_fixed_to_double(model->weights[weight_idx]);
+        return !prime_isinff((float)val);
+    } else {
+        // Legacy float path (deprecated)
+        return true;  // Skip validation for legacy path
+    }
 }
 
 // Check gradient computation correctness

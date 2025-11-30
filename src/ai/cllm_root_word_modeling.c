@@ -151,9 +151,7 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     // Ulam spiral: radius grows with square root of index
     float radius = prime_sqrt((float)prime_index + 1.0f);
     
-    // Golden angle for optimal packing
-    const float PHI = 1.618033988749894848f;
-    const float PI = 3.14159265358979323846f;
+    // Golden angle for optimal packing (use macros from prime_types.h)
     float golden_angle = 2.0f * PI / (PHI * PHI);
     float angle = golden_angle * (float)prime_index;
     
@@ -330,7 +328,7 @@ void cllm_compute_attention_fourier(const float* attention_weights,
                                     int seq_len) {
     if (!attention_weights || !fourier_output || seq_len <= 0) return;
     
-    const float PI = 3.14159265358979323846f;
+    // Use PI macro from prime_types.h
     
     for (int k = 0; k < seq_len; k++) {
         float real = 0.0f;
