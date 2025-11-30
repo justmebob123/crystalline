@@ -46,7 +46,11 @@ static double compute_L_from_clock_position(
     else positions_in_ring = 1000.0;
     
     double O = (double)pos.ring + ((double)pos.position / positions_in_ring);
-    double base = prime_pow(3.0, O);
+    // CRITICAL FIX: Bound the exponent to prevent overflow
+    // Use tanh to keep O in reasonable range, then scale
+    // This prevents 3^large_O from exploding to infinity
+    double bounded_O = prime_tanh(O / 5.0) * 5.0;  // Keep O in [-5, 5]
+    double base = prime_pow(3.0, bounded_O);
     
     // Product: cos(θ·φᵢ) where θ is clock angle
     // This encodes the angular position in the lattice
