@@ -319,13 +319,16 @@ CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
                   src/crawler/crawler_api.c src/crawler/file_processor.c \
                   src/crawler/prime_randomization.c src/crawler/link_management.c \
                   src/crawler/url_patterns.c src/crawler/file_processor_pdf.c \
-                  src/crawler/file_processor_image.c src/crawler/file_processor_office.c
+                  src/crawler/file_processor_image.c src/crawler/file_processor_office.c \
+                  src/crawler/url_database.c src/crawler/url_filter.c \
+                  src/crawler/url_priority.c src/crawler/url_blocker.c \
+                  src/crawler/crawler_url_manager.c
 CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
 CRAWLER_LIB = libcrawler.so
 
 $(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(CLLM_LIB)
 	@echo "Creating crawler shared library: $@"
-	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread
+	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -lcrystalline -lcllm -lcurl -lpthread -lsqlite3
 	@echo "✓ Crawler shared library created"
 
 $(CRAWLER_STATIC): $(CRAWLER_OBJECTS) $(CLLM_STATIC)

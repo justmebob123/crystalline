@@ -28,8 +28,8 @@ typedef struct {
     CrawlerPrimeConfig prime_config;
     bool prime_enabled;
     
-    // Link Management
-    LinkQueue* link_queue;
+    // URL Management (NEW - using SQLite database)
+    CrawlerURLManager* url_manager;
     int link_list_scroll;
     bool show_add_confirmation;
     int confirmation_timer;
@@ -69,8 +69,11 @@ static void init_crawler_tab_state(void) {
     prime_config_init_default(&g_crawler_state.prime_config);
     g_crawler_state.prime_enabled = true;
     
-    // Initialize link queue
-    g_crawler_state.link_queue = link_queue_create("data/crawler/link_queue.txt");
+    // Initialize URL manager with SQLite database
+    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler/crawler.db");
+    if (!g_crawler_state.url_manager) {
+        fprintf(stderr, "ERROR: Failed to create URL manager\n");
+    }
     
     // Enable all URL patterns by default
     g_crawler_state.pattern_href = true;
@@ -361,11 +364,18 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     draw_section_header(renderer, "LINK MANAGEMENT", x, y, (SDL_Color){180, 180, 200, 255});
     y += 30;
     
-    // Queue size
-    int queue_size = g_crawler_state.link_queue ? 
-                     link_queue_size(g_crawler_state.link_queue) : 0;
+    // Queue size (from SQLite database)
+    int total = 0, pending = 0, crawled = 0, blocked = 0;
+    if (g_crawler_state.url_manager) {
+        crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
+    }
     char queue_text[64];
-    snprintf(queue_text, sizeof(queue_text), "Queue Size: %d", queue_size);
+    snprintf(queue_text, sizeof(queue_text), "Pending URLs: %d", pending);
+    draw_text(renderer, queue_text, x, y, text_color);
+    y += 25;
+    
+    // Show crawled count
+    snprintf(queue_text, sizeof(queue_text), "Crawled: %d", crawled);
     draw_text(renderer, queue_text, x, y, text_color);
     y += 25;
     
@@ -559,17 +569,27 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
             if (url && strlen(url) > 0) {
                 // Validate URL (basic check)
                 if (strstr(url, "http://") == url || strstr(url, "https://") == url) {
-                    // Add to link queue
-                    if (g_crawler_state.link_queue) {
-                        link_queue_add(g_crawler_state.link_queue, url, 5, "manual");
+                    // Add to URL manager database
+                    if (g_crawler_state.url_manager) {
+                        int added = crawler_url_manager_add(g_crawler_state.url_manager, url, "manual");
                         
-                        // Add to activity log
-                        char log_msg[512];
-                        snprintf(log_msg, sizeof(log_msg), "Added URL: %s", url);
-                        add_activity_log(log_msg);
-                        
-                        // Clear input
-                        input_manager_set_text(g_input_manager, "crawler.add_url", "");
+                        if (added == 0) {
+                            // Add to activity log
+                            char log_msg[512];
+                            snprintf(log_msg, sizeof(log_msg), "Added URL: %s", url);
+                            add_activity_log(log_msg);
+                            
+                            // Clear input
+                            input_manager_set_text(g_input_manager, "crawler.add_url", "");
+                            
+                            // Show confirmation
+                            g_crawler_state.show_add_confirmation = true;
+                            g_crawler_state.confirmation_timer = 60;
+                        } else {
+                            add_activity_log("Error: Failed to add URL to database");
+                        }
+                    } else {
+                        add_activity_log("Error: URL manager not initialized");
                     }
                 } else {
                     add_activity_log("Error: URL must start with http:// or https://");
@@ -606,30 +626,41 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         } else {
             // Start the crawler
             
-            // Check if we have URLs in the queue
-            if (!g_crawler_state.link_queue || link_queue_size(g_crawler_state.link_queue) == 0) {
+            // Check if we have URLs in the database
+            int total = 0, pending = 0, crawled = 0, blocked = 0;
+            if (g_crawler_state.url_manager) {
+                crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
+            }
+            
+            if (!g_crawler_state.url_manager || pending == 0) {
                 add_activity_log("Error: No URLs in queue. Add a URL first.");
                 return;
             }
             
-            // Get the first URL from the queue to use as start URL
-            char start_url[1024];
-            if (link_queue_get_next(g_crawler_state.link_queue, start_url, sizeof(start_url)) != 0) {
-                add_activity_log("Error: Failed to get URL from queue");
+            // Get the next URL from the database
+            URLEntry* url_entry = crawler_url_manager_get_next(g_crawler_state.url_manager);
+            if (!url_entry || url_entry->url[0] == '\0') {
+                add_activity_log("Error: Failed to get URL from database");
+                if (url_entry) free(url_entry);
                 return;
             }
             
             // Start the crawler thread
             extern int start_crawler_thread(AppState* state, const char* start_url);
-            if (start_crawler_thread(state, start_url) == 0) {
+            if (start_crawler_thread(state, url_entry->url) == 0) {
                 char log_msg[512];
-                int written = snprintf(log_msg, sizeof(log_msg), "Crawler started with URL: %s", start_url);
+                int written = snprintf(log_msg, sizeof(log_msg), "Crawler started with URL: %s", url_entry->url);
                 if (written >= (int)sizeof(log_msg)) {
                     strcpy(log_msg + sizeof(log_msg) - 4, "...");
                 }
                 add_activity_log(log_msg);
             } else {
                 add_activity_log("Error: Failed to start crawler");
+            }
+            
+            // Free the URL entry (URLEntry is a struct with fixed-size arrays)
+            if (url_entry) {
+                free(url_entry);
             }
         }
         return;
@@ -661,8 +692,8 @@ void handle_crawler_tab_keyboard(AppState* state, int key) {
 // ============================================================================
 
 void cleanup_crawler_tab(void) {
-    if (g_crawler_state.link_queue) {
-        link_queue_destroy(g_crawler_state.link_queue);
-        g_crawler_state.link_queue = NULL;
+    if (g_crawler_state.url_manager) {
+        crawler_url_manager_destroy(g_crawler_state.url_manager);
+        g_crawler_state.url_manager = NULL;
     }
 }
