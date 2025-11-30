@@ -13,16 +13,13 @@ extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SD
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
 
-// Downloaded Files state
-typedef struct {
-    int selected_file_id;
-    int scroll_offset;
-    char search_query[256];
-    bool show_preview;
-} DownloadedFilesState;
-
-// TODO: Will be used for state management when backend integration is complete
-// static DownloadedFilesState files_state = {0};
+// Downloaded Files state (for future backend integration)
+// typedef struct {
+//     int selected_file_id;
+//     int scroll_offset;
+//     char search_query[256];
+//     bool show_preview;
+// } DownloadedFilesState;
 
 // Draw file browser section
 static void draw_file_browser(SDL_Renderer* renderer, int x, int y, int width, int height) {
