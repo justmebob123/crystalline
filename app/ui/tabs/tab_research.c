@@ -1,5 +1,6 @@
 // app/ui/tabs/tab_research.c - COMPLETE Research Data Browser Tab
 #include "../../app_common.h"
+#include "../../input_manager.h"
 #include "../../text_input.h"
 #include "../../ui_layout.h"
 #include <dirent.h>
@@ -380,6 +381,12 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, "Use the file list on the right ->", 
                  RENDER_WIDTH / 2 - 120, WINDOW_HEIGHT / 2 + 30, 
                  (SDL_Color){150, 150, 150, 255});
+    }
+    
+    // Render all inputs through InputManager
+    extern InputManager* g_input_manager;
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_RESEARCH);
     }
 }
 

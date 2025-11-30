@@ -984,6 +984,13 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, "Thinking...", indicator_x + 60, indicator_y + 12, 
                  (SDL_Color){150, 200, 255, 255});
     }
+    
+    // Render all inputs through InputManager
+    extern InputManager* g_input_manager;
+    extern TTF_Font* get_global_font(void);
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_LLM);
+    }
 }
 
 void handle_llm_tab_click(AppState* state, int x, int y) {

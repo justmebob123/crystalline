@@ -80,13 +80,24 @@
 - [ ] Fix all use-after-free errors
 - [ ] Test tab switching thoroughly
 
-### Phase 2: Input System Complete Overhaul (3-4 hours)
-- [ ] Fix SDL_StartTextInput() integration
-- [ ] Fix text rendering in all inputs
-- [ ] Fix cursor rendering and positioning
-- [ ] Implement proper text editing (insert, delete, backspace)
-- [ ] Fix Enter key submission
+### Phase 2: Input System Complete Overhaul (3-4 hours) - ROOT CAUSE FOUND!
+
+**CRITICAL DISCOVERY:** Only Training and Crawler tabs call `input_manager_render()`!
+- URL Manager tab: NOT rendering inputs ❌
+- LLM tab: NOT rendering inputs ❌  
+- Research tab: NOT rendering inputs ❌
+- Models tab: NOT rendering inputs ❌
+
+**The InputManager IS working correctly - tabs just aren't rendering the inputs!**
+
+- [x] Identify root cause: Missing input_manager_render() calls
+- [ ] Add input_manager_render() to URL Manager tab
+- [ ] Add input_manager_render() to LLM tab
+- [ ] Add input_manager_render() to Research tab
+- [ ] Add input_manager_render() to Models tab
 - [ ] Test all 19 inputs across all tabs
+- [ ] Verify text entry works everywhere
+- [ ] Verify cursor rendering
 - [ ] Verify callbacks work correctly
 
 ### Phase 3: ButtonManager Complete Implementation (4-5 hours)

@@ -1,5 +1,6 @@
 // app/ui/tabs/tab_url_manager.c - URL Manager Tab Implementation
 #include "../../app_common.h"
+#include "../../input_manager.h"
 #include "../../../src/crawler/crawler_url_manager.h"
 #include "../../../src/crawler/url_database.h"
 #include <SDL2/SDL_ttf.h>
@@ -361,6 +362,13 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
     draw_url_list(renderer, col1_x, content_y + PADDING, col1_width - PADDING, content_height - PADDING * 2);
     draw_actions_panel(renderer, col2_x, content_y + PADDING, col2_width - PADDING, content_height - PADDING * 2);
     draw_filters_panel(renderer, col3_x, content_y + PADDING, col3_width - PADDING * 2, content_height - PADDING * 2);
+    
+    // Render all inputs through InputManager
+    extern InputManager* g_input_manager;
+    extern TTF_Font* get_global_font(void);
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_URL_MANAGER);
+    }
 }
 
 // Handle keyboard input

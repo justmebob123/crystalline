@@ -2,6 +2,7 @@
 // Provides UI for creating, loading, saving, and managing CLLM models
 
 #include "../../app_common.h"
+#include "../../input_manager.h"
 #include "../../../include/cllm_model_manager.h"
 #include <stdio.h>
 #include <string.h>
@@ -347,6 +348,13 @@ void draw_models_tab(AppState* state) {
         int dialog_x = (WINDOW_WIDTH - dialog_width) / 2;
         int dialog_y = (WINDOW_HEIGHT - dialog_height) / 2;
         draw_create_dialog(state, dialog_x, dialog_y, dialog_width, dialog_height);
+    }
+    
+    // Render all inputs through InputManager
+    extern InputManager* g_input_manager;
+    extern TTF_Font* get_global_font(void);
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, state->renderer, get_global_font(), TAB_MODELS);
     }
 }
 
