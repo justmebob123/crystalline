@@ -308,13 +308,30 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.total_params = model->num_weights;
     
     // Allocate weights
-    model->weights = (float*)calloc(model->num_weights, sizeof(float));
-    if (!model->weights) {
-        fprintf(stderr, "Failed to allocate weights\n");
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
+       // Allocate BigFixed** weights array
+       model->weights = (BigFixed**)calloc(model->num_weights, sizeof(BigFixed*));
+       if (!model->weights) {
+           fprintf(stderr, "Failed to allocate weights array\n");
+           free(model->tokens);
+           free(model);
+           return NULL;
+       }
+       
+       // Allocate individual BigFixed weights
+       for (uint64_t i = 0; i < model->num_weights; i++) {
+           model->weights[i] = big_fixed_create(model->precision_bits);
+           if (!model->weights[i]) {
+               fprintf(stderr, "Failed to allocate BigFixed weight %lu\n", i);
+               // Cleanup already allocated weights
+               for (uint64_t j = 0; j < i; j++) {
+                   big_fixed_free(model->weights[j]);
+               }
+               free(model->weights);
+               free(model->tokens);
+               free(model);
+               return NULL;
+           }
+       }
     
     // Initialize embeddings
     model->embeddings.vocab_size = config->vocab_size;
