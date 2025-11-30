@@ -46,4 +46,4 @@ void big_truncate_dust(BigInt *result, const BigFixed *value,
 void big_round_dust(BigInt *result, const BigFixed *value,
                     int target_bits, int guard_bits);
 
-#endif /* PRIME_BIGINT_TRANSCENDENTAL_H */
+#endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);

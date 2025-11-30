@@ -853,3 +853,73 @@ void big_round_dust(BigInt *result, const BigFixed *value,
     (void)target_bits;   // Suppress unused warning
     (void)guard_bits;    // Suppress unused warning
 }
+/**
+ * Hyperbolic tangent: tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+ * 
+ * @param result Output BigFixed
+ * @param x Input BigFixed
+ * @param precision_bits Precision for calculation
+ */
+void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits) {
+    if (!result || !x) return;
+    
+    // For small values, use series expansion
+    // For large values, tanh(x) ≈ sign(x)
+    
+    // Check if |x| > 10 (tanh saturates)
+    BigFixed *abs_x, *ten;
+    abs_x = big_fixed_create(precision_bits);
+    ten = big_fixed_create(precision_bits);
+    big_fixed_abs(abs_x, x);
+    big_fixed_from_int(ten, 10);
+    
+    if (big_fixed_cmp(abs_x, ten) > 0) {
+        // Saturated: return sign(x)
+        if (big_fixed_is_negative(x)) {
+            big_fixed_from_int(result, -1);
+        } else {
+            big_fixed_from_int(result, 1);
+        }
+        big_fixed_free(abs_x);
+        big_fixed_free(ten);
+        return;
+    }
+    
+    // Compute e^x and e^-x
+    BigFixed *exp_x, *exp_neg_x, *neg_x;
+    exp_x = big_fixed_create(precision_bits);
+    exp_neg_x = big_fixed_create(precision_bits);
+    neg_x = big_fixed_create(precision_bits);
+    
+    big_exp(exp_x, x, precision_bits);
+    big_fixed_neg(neg_x, x);
+    big_exp(exp_neg_x, neg_x, precision_bits);
+    
+    // Compute numerator: e^x - e^-x
+    BigFixed* numerator = big_fixed_create(precision_bits);
+    big_fixed_sub(numerator, exp_x, exp_neg_x);
+    
+    // Compute denominator: e^x + e^-x
+    BigFixed* denominator = big_fixed_create(precision_bits);
+    big_fixed_add(denominator, exp_x, exp_neg_x);
+    
+    // Compute tanh = numerator / denominator
+    big_fixed_div(result, numerator, denominator);
+    
+    // Cleanup
+    big_fixed_free(abs_x);
+    big_fixed_free(ten);
+    big_fixed_free(exp_x);
+    big_fixed_free(exp_neg_x);
+    big_fixed_free(neg_x);
+    big_fixed_free(numerator);
+    big_fixed_free(denominator);
+}
+
+/**
+ * Hyperbolic tangent: tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+ * 
+ * @param result Output BigFixed
+ * @param x Input BigFixed
+ * @param precision_bits Precision for calculation
+ */

@@ -540,6 +540,27 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
 void cllm_free_model(CLLMModel* model) {
     if (!model) return;
     
+    // Free BigFixed weights if using arbitrary precision
+    if (model->use_bigfixed && model->weights) {
+        for (size_t i = 0; i < model->num_weights; i++) {
+            if (model->weights[i]) {
+                big_fixed_free(model->weights[i]);
+            }
+        }
+        free(model->weights);
+        model->weights = NULL;
+    } else if (model->weights) {
+        // Legacy float path (deprecated)
+        free(model->weights);
+        model->weights = NULL;
+    }
+    
+    // Free CrystallineEmbeddings if present
+    if (model->crystalline_embeddings) {
+        crystalline_embeddings_free(model->crystalline_embeddings);
+        model->crystalline_embeddings = NULL;
+    }
+    
     if (model->pos_encoding.spiral_positions) {
         free(model->pos_encoding.spiral_positions);
     }
@@ -563,10 +584,6 @@ void cllm_free_model(CLLMModel* model) {
     
     if (model->attention_layers) {
         free(model->attention_layers);
-    }
-    
-    if (model->weights) {
-        free(model->weights);
     }
     
     if (model->tokens) {
