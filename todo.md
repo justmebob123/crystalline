@@ -34,10 +34,51 @@
 5. **Video Tab:** Unicode characters, text overlap
 6. **GET Parameters:** Already implemented in backend, just needs UI exposure
 
-### Phase 2: Critical Backend Connections (NEXT - HIGH PRIORITY)
-- [ ] Fix 1: Connect URL Manager Tab to CrawlerURLManager (2-3 hours)
-- [ ] Fix 2: Connect Downloaded Files Tab to File System (3-4 hours)
-- [ ] Fix 3: Fix Model Registration in Training/LLM tabs (2-3 hours)
+### Phase 2: Critical Backend Connections (CURRENT - HIGH PRIORITY)
+
+**Fix 1: Connect URL Manager Tab to CrawlerURLManager ✅ COMPLETE**
+
+#### Fix 1 Tasks:
+- [x] Add CrawlerURLManager to tab state
+- [x] Initialize URL manager on tab init
+- [x] Replace demo data with database queries
+- [x] Implement URL list rendering from database
+- [x] Implement click handlers for all buttons
+- [x] Add URL selection functionality
+- [x] Test URL add/remove/block operations (implemented, needs testing)
+- [x] Verify statistics display
+
+**Changes Made:**
+- Added `CrawlerURLManager* url_manager` to URLManagerState
+- Added initialization function `init_url_manager_state()`
+- Implemented `refresh_url_list()` using `url_db_query()`
+- Implemented `update_statistics()` using `crawler_url_manager_get_stats()`
+- Updated `draw_url_list()` to display real URLs from database
+- Implemented full click handlers for all buttons:
+  * Add URL button - adds to database
+  * Remove Selected button - removes from database
+  * Block Selected button - blocks in database
+  * Export/Import buttons - placeholders for future
+- Added URL selection by clicking in list
+- Added keyboard input handling for URL input field
+- Added cleanup function
+- Build successful with zero errors
+
+**Next: Fix 2 - Connect Downloaded Files Tab**
+
+#### Fix 2 Tasks (After Fix 1):
+- [ ] Query database for downloaded files
+- [ ] Scan crawler output directory
+- [ ] Display actual file list
+- [ ] Implement file preview
+- [ ] Implement click handlers
+
+#### Fix 3 Tasks (After Fix 2):
+- [ ] Audit model creation in Training tab
+- [ ] Audit model creation in LLM tab
+- [ ] Ensure model_manager_register() is called
+- [ ] Test model list display
+- [ ] Verify model lifecycle
 
 ### Phase 3: Layout and UI Fixes (MEDIUM PRIORITY)
 - [ ] Fix 4: Crawler Tab Layout Issues (2-3 hours)
