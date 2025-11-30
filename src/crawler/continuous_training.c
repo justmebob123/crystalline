@@ -408,8 +408,28 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     // Use configuration from model if available, otherwise use defaults
     CLLMTrainingConfig config;
     if (model && model->training_config.batch_size > 0) {
-        // Use model's stored configuration
-        config = model->training_config;
+        // Use model's stored configuration (copy fields individually)
+        config = (CLLMTrainingConfig){
+            .num_epochs = model->training_config.num_epochs,
+            .batch_size = model->training_config.batch_size,
+            .sequence_length = model->training_config.sequence_length,
+            .learning_rate = model->training_config.learning_rate,
+            .weight_decay = model->training_config.weight_decay,
+            .gradient_clip = model->training_config.gradient_clip,
+            .warmup_steps = 100,
+            .save_every = 5,
+            .eval_interval = 100,
+            .max_steps = 10000,
+            .lr_decay_factor = 0.1f,
+            .lr_decay_steps = 1000,
+            .min_lr = 1e-6f,
+            .gradient_accumulation_steps = 4,
+            .use_mixed_precision = 0,
+            .loss_scale = 1024.0f,
+            .loss_scale_growth = 2.0f,
+            .loss_scale_backoff = 0.5f,
+            .loss_scale_window = 2000
+        };
         printf("Using model's training configuration:\n");
         printf("  batch_size: %d\n", config.batch_size);
         printf("  sequence_length: %d\n", config.sequence_length);

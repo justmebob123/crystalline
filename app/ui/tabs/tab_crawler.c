@@ -172,6 +172,8 @@ static void add_activity_log(const char* message) {
 // which receives the layout from the layout manager
 
 // Register inputs with InputManager (called once during first draw)
+// NOTE: Currently unused - inputs are registered globally in input_registration.c
+static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) __attribute__((unused));
 static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) {
     if (g_crawler_state.inputs_registered) return;
     

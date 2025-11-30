@@ -805,9 +805,6 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 20);
         draw_text(renderer, "MODEL INFO", info_label.x, info_label.y, text_color);
         
-        // Get model name from model selector
-        const char* model_name = model_selector ? model_selector_get_selected(model_selector) : "Unknown";
-        
         // Epochs trained
         int epochs_trained = state->cllm_model->epochs_trained;
         char epochs_info[64];
@@ -818,8 +815,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         // Queue size (if model has queue directory)
         if (state->cllm_model->queue_directory[0] != '\0') {
             // TODO: Implement get_queue_size() function
-            char queue_info[64];
-            snprintf(queue_info, sizeof(queue_info), "Queue: %s", state->cllm_model->queue_directory);
+            char queue_info[256];  // Increased buffer size to avoid truncation
+            snprintf(queue_info, sizeof(queue_info), "Queue: %.200s", state->cllm_model->queue_directory);
             SDL_Rect queue_info_rect = layout_add_label(&layout, queue_info, 16);
             draw_text(renderer, queue_info, queue_info_rect.x, queue_info_rect.y, text_color);
         }

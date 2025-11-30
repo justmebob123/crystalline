@@ -110,7 +110,10 @@ TrainingHistoryEntry* model_history_load_all(const char* model_name, int* num_en
     // Count lines (excluding header)
     char line[MAX_LINE];
     int count = 0;
-    fgets(line, sizeof(line), f); // Skip header
+    if (fgets(line, sizeof(line), f) == NULL) {
+        fclose(f);
+        return NULL;
+    }
     while (fgets(line, sizeof(line), f)) {
         count++;
     }
@@ -129,7 +132,11 @@ TrainingHistoryEntry* model_history_load_all(const char* model_name, int* num_en
     
     // Read entries
     rewind(f);
-    fgets(line, sizeof(line), f); // Skip header
+    if (fgets(line, sizeof(line), f) == NULL) {
+        free(entries);
+        fclose(f);
+        return NULL;
+    }
     
     int i = 0;
     while (fgets(line, sizeof(line), f) && i < count) {
