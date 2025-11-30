@@ -191,6 +191,8 @@ AppState* init_app(void) {
     state->llm_max_tokens = 512;       // Longer responses (was 100)
     state->training_data_path[0] = '\0';
     state->training_epochs = 10;
+    state->training_batch_size = 1;           // NEW: Default batch size
+    state->training_sequence_length = 64;     // NEW: Default sequence length
     state->training_thread_count = 0;  // 0 = auto-detect optimal
     state->training_learning_rate = 0.001f;
     state->training_in_progress = false;

@@ -88,6 +88,11 @@ static bool inputs_initialized = false;
 // Model selector
 static ModelSelector* model_selector = NULL;
 
+// Slider bounds (set during rendering)
+static SDL_Rect batch_slider_rect = {0};
+static SDL_Rect seq_slider_rect = {0};
+static SDL_Rect epochs_slider_rect = {0};
+
 // Crawler state
 static bool crawler_running = false;
 static int pages_crawled = 0;
@@ -705,6 +710,66 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     layout_add_spacing(&layout, 40); // Space for model selector
     layout_add_spacing(&layout, 10);
     
+    // === SECTION 0.5: TRAINING CONFIGURATION ===
+    SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 20);
+    draw_text(renderer, "CONFIGURATION", config_label.x, config_label.y, text_color);
+    
+    // Batch Size slider
+    char batch_label[64];
+    snprintf(batch_label, sizeof(batch_label), "Batch Size: %d", state->training_batch_size);
+    SDL_Rect batch_label_rect = layout_add_label(&layout, batch_label, 16);
+    draw_text(renderer, batch_label, batch_label_rect.x, batch_label_rect.y, text_color);
+    
+    batch_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &batch_slider_rect);
+    
+    // Slider handle (batch_size range: 1-16)
+    int batch_handle_x = batch_slider_rect.x + ((state->training_batch_size - 1) * batch_slider_rect.w) / 15;
+    SDL_Rect batch_handle = {batch_handle_x - 5, batch_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &batch_handle);
+    
+    // Sequence Length slider
+    char seq_label[64];
+    snprintf(seq_label, sizeof(seq_label), "Sequence Length: %d", state->training_sequence_length);
+    SDL_Rect seq_label_rect = layout_add_label(&layout, seq_label, 16);
+    draw_text(renderer, seq_label, seq_label_rect.x, seq_label_rect.y, text_color);
+    
+    seq_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &seq_slider_rect);
+    
+    // Slider handle (sequence_length range: 32-512)
+    int seq_handle_x = seq_slider_rect.x + ((state->training_sequence_length - 32) * seq_slider_rect.w) / 480;
+    SDL_Rect seq_handle = {seq_handle_x - 5, seq_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &seq_handle);
+    
+    // Epochs slider
+    char epochs_label[64];
+    snprintf(epochs_label, sizeof(epochs_label), "Epochs: %d", state->training_epochs);
+    SDL_Rect epochs_label_rect = layout_add_label(&layout, epochs_label, 16);
+    draw_text(renderer, epochs_label, epochs_label_rect.x, epochs_label_rect.y, text_color);
+    
+    epochs_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &epochs_slider_rect);
+    
+    // Slider handle (epochs range: 1-100)
+    int epochs_handle_x = epochs_slider_rect.x + ((state->training_epochs - 1) * epochs_slider_rect.w) / 99;
+    SDL_Rect epochs_handle = {epochs_handle_x - 5, epochs_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &epochs_handle);
+    
+    // Learning Rate input
+    char lr_label[64];
+    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
+    SDL_Rect lr_label_rect = layout_add_label(&layout, lr_label, 16);
+    draw_text(renderer, lr_label, lr_label_rect.x, lr_label_rect.y, text_color);
+    
+    layout_add_spacing(&layout, 10);
+    
     // === SECTION 1: STATUS ===
     SDL_Rect status_label = layout_add_label(&layout, "STATUS", 20);
     draw_text(renderer, "STATUS", status_label.x, status_label.y, text_color);
@@ -809,8 +874,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
     
     // Learning Rate
-    SDL_Rect lr_label = layout_add_label(&layout, "Learning Rate:", 16);
-    draw_text(renderer, "Learning Rate:", lr_label.x, lr_label.y, text_color);
+    SDL_Rect lr_section_label = layout_add_label(&layout, "Learning Rate:", 16);
+    draw_text(renderer, "Learning Rate:", lr_section_label.x, lr_section_label.y, text_color);
     layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
     
     // Epochs
@@ -963,6 +1028,40 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Check model selector click first
     if (model_selector && model_selector_handle_click(model_selector, x, y)) {
+        return;
+    }
+    
+    // Check slider clicks
+    if (rect_contains_point(batch_slider_rect, x, y)) {
+        // Calculate new batch size (1-16)
+        int offset = x - batch_slider_rect.x;
+        int new_value = 1 + (offset * 15) / batch_slider_rect.w;
+        if (new_value < 1) new_value = 1;
+        if (new_value > 16) new_value = 16;
+        state->training_batch_size = new_value;
+        printf("Batch size set to: %d\n", new_value);
+        return;
+    }
+    
+    if (rect_contains_point(seq_slider_rect, x, y)) {
+        // Calculate new sequence length (32-512)
+        int offset = x - seq_slider_rect.x;
+        int new_value = 32 + (offset * 480) / seq_slider_rect.w;
+        if (new_value < 32) new_value = 32;
+        if (new_value > 512) new_value = 512;
+        state->training_sequence_length = new_value;
+        printf("Sequence length set to: %d\n", new_value);
+        return;
+    }
+    
+    if (rect_contains_point(epochs_slider_rect, x, y)) {
+        // Calculate new epochs (1-100)
+        int offset = x - epochs_slider_rect.x;
+        int new_value = 1 + (offset * 99) / epochs_slider_rect.w;
+        if (new_value < 1) new_value = 1;
+        if (new_value > 100) new_value = 100;
+        state->training_epochs = new_value;
+        printf("Epochs set to: %d\n", new_value);
         return;
     }
     

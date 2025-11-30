@@ -327,6 +327,8 @@ typedef struct {
     char training_data_path[512];
     int training_epochs;
     float training_learning_rate;
+    int training_batch_size;        // NEW: Batch size for training
+    int training_sequence_length;   // NEW: Sequence length for training
     bool training_in_progress;
     float training_loss;
     int training_current_epoch;
