@@ -444,16 +444,18 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         
         
         for (size_t j = 0; j < w1_size; j++) {
-            model->ff_layers[i].w1_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w1;
+               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w1;
+               big_fixed_from_double(model->ff_layers[i].w1_lattice[j], rand_val);
         }
         for (size_t j = 0; j < config->ff_dim; j++) {
-            model->ff_layers[i].bias1[j] = 0.0f;  // Biases initialized to zero
+               big_fixed_from_double(model->ff_layers[i].bias1[j], 0.0);
         }
         for (size_t j = 0; j < w2_size; j++) {
-            model->ff_layers[i].w2_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w2;
+               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w2;
+               big_fixed_from_double(model->ff_layers[i].w2_lattice[j], rand_val);
         }
         for (size_t j = 0; j < config->embedding_dim; j++) {
-            model->ff_layers[i].bias2[j] = 0.0f;  // Biases initialized to zero
+               big_fixed_from_double(model->ff_layers[i].bias2[j], 0.0);
         }
     }
     
