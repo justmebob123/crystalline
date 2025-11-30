@@ -249,37 +249,9 @@ void init_training_tab(AppState* state) {
     viz_area_rect.w = RENDER_WIDTH - 20;
     viz_area_rect.h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
     
-    // Register inputs with global input manager
+    // NOTE: Inputs are now registered centrally at startup via init_all_inputs()
+    // This prevents duplicate registration and ensures all tabs have inputs immediately
     if (!inputs_initialized) {
-        extern InputManager* g_input_manager;
-        if (g_input_manager) {
-            int panel_x = RENDER_WIDTH + 10;
-            int input_width = CONTROL_PANEL_WIDTH - 20;
-            
-            // Register all training tab inputs with EXACT bounds from layout
-            input_manager_register(g_input_manager, "training.learning_rate", TAB_TRAINING, INPUT_TYPE_NUMBER,
-                                 (SDL_Rect){panel_x, 417, input_width, 25});
-            input_manager_set_text(g_input_manager, "training.learning_rate", "0.001");
-            
-            input_manager_register(g_input_manager, "training.epochs", TAB_TRAINING, INPUT_TYPE_NUMBER,
-                                 (SDL_Rect){panel_x, 474, input_width, 25});
-            input_manager_set_text(g_input_manager, "training.epochs", "10");
-            
-            input_manager_register(g_input_manager, "training.batch_size", TAB_TRAINING, INPUT_TYPE_NUMBER,
-                                 (SDL_Rect){panel_x, 531, input_width, 25});
-            input_manager_set_text(g_input_manager, "training.batch_size", "32");
-            
-            input_manager_register(g_input_manager, "training.thread_count", TAB_TRAINING, INPUT_TYPE_NUMBER,
-                                 (SDL_Rect){panel_x, 588, input_width, 25});
-            input_manager_set_text(g_input_manager, "training.thread_count", "0");
-            
-            input_manager_register(g_input_manager, "training.crawler_url", TAB_TRAINING, INPUT_TYPE_URL,
-                                 (SDL_Rect){panel_x, 686, input_width, 30});
-            input_manager_set_text(g_input_manager, "training.crawler_url", "");
-            
-            printf("Training tab: Registered 5 inputs with InputManager\n");
-        }
-        
         inputs_initialized = true;
     }
     

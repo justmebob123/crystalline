@@ -56,6 +56,11 @@ AppState* init_app(void) {
         return NULL;
     }
     
+    // CRITICAL: Register ALL tab inputs at startup
+    // This ensures inputs are available immediately, regardless of which tab is visited first
+    extern void init_all_inputs(InputManager* manager);
+    init_all_inputs(g_input_manager);
+    
     // Initialize state
     state->mode = MODE_ULAM_SPIRAL;
     state->fold_mode = FOLD_NONE;

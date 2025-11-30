@@ -49,113 +49,89 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ---
 
-## COMPREHENSIVE BIDIRECTIONAL ANALYSIS
+## UNIFIED INPUT SYSTEM MIGRATION - COMPREHENSIVE PLAN
 
-### Analysis of User's Debug Log
+### Phase 1: Create Centralized Input Registration System - COMPLETE
+- [x] Created input_registration.c with init_all_inputs() function
+- [x] Created input_registration.h header file
+- [x] Called init_all_inputs() during app initialization
+- [x] Registers inputs for ALL tabs at startup:
+  - Training tab: 5 inputs
+  - Crawler tab: 5 inputs
+  - LLM tab: 1 input
+  - Research tab: 1 input
+  - Models tab: 5 inputs
+  - URL Manager tab: 2 inputs
+- [x] Disabled lazy registration in training and crawler tabs
+- [x] Build successful: Zero errors, zero warnings
 
-#### What Worked:
-1. **Training Tab Inputs (tab_id=6)** - ALL 5 inputs worked perfectly:
-   - learning_rate: Click at (1175, 429) → Focused ✓
-   - epochs: Click at (1171, 489) → Focused ✓
-   - batch_size: Click at (1186, 550) → Focused ✓
-   - thread_count: Click at (1189, 603) → Focused ✓
-   - crawler_url: Click at (1148, 706) → Focused ✓
+### Phase 2: Migrate LLM Tab to InputManager
+- [ ] Remove custom input_active flag
+- [ ] Remove direct SDL_StartTextInput() calls
+- [ ] Create register_llm_inputs() function
+- [ ] Add input field for chat input
+- [ ] Update click handlers to use InputManager
+- [ ] Test LLM tab input functionality
 
-2. **Submenu Navigation** - Worked (tabs changed correctly)
+### Phase 3: Add InputManager to Research Tab
+- [ ] Create register_research_inputs() function
+- [ ] Add search input field
+- [ ] Add any other needed inputs
+- [ ] Update click handlers
+- [ ] Test Research tab
 
-3. **Sidebar Navigation** - Worked (main tabs changed)
+### Phase 4: Add InputManager to Models Tab
+- [ ] Create register_models_inputs() function
+- [ ] Add model name input (for create dialog)
+- [ ] Add configuration inputs (vocab, layers, etc.)
+- [ ] Update click handlers
+- [ ] Test Models tab
 
-#### What Did NOT Work:
-1. **Research Tab (tab=7)** - NO inputs registered
-   - Clicks at (1218, 165), (1131, 120), (1124, 212), (1271, 214), (1333, 206)
-   - All skipped because training inputs have tab_id=6
+### Phase 5: Add InputManager to URL Manager Tab
+- [ ] Create register_url_manager_inputs() function
+- [ ] Add search input field
+- [ ] Add URL input field
+- [ ] Add filter inputs
+- [ ] Update click handlers
+- [ ] Test URL Manager tab
 
-2. **LLM Tab (tab=5)** - NO inputs registered
-   - Clicks at (647, 845), (1239, 858), (1402, 172), (855, 300)
-   - All skipped because training inputs have tab_id=6
-   - Model creation failed: "ERROR: Failed to acquire model"
+### Phase 6: Fix Model Creation
+- [ ] Add detailed logging to model_manager_create()
+- [ ] Debug why creation fails
+- [ ] Fix configuration issues
+- [ ] Test model creation from UI
 
-3. **Models Tab (tab=9)** - NO inputs registered
-   - Click at (114, 191)
-   - All skipped because training inputs have tab_id=6
-
-#### Critical Discovery:
-**ONLY the Training tab has inputs registered!**
-- Training tab: 5 inputs registered ✓
-- LLM tab: 0 inputs registered ✗
-- Research tab: 0 inputs registered ✗
-- Crawler tab: 0 inputs registered ✗
-- Models tab: 0 inputs registered ✗
-
-### Root Cause Analysis
-
-#### Problem 1: Inputs Only Registered Once
-Inputs are registered when a tab is FIRST drawn, but:
-- Training tab was drawn first → inputs registered
-- Other tabs never drawn → inputs never registered
-- When you switch tabs, old inputs remain but with wrong tab_id
-
-#### Problem 2: No Input Cleanup on Tab Switch
-When switching tabs:
-- Old inputs stay in input_manager
-- New tab's inputs are never registered
-- Result: Wrong tab_id, all inputs skipped
-
-#### Problem 3: Lazy Registration Pattern
-Each tab registers inputs on first draw:
-```c
-if (!inputs_registered) {
-    register_inputs();
-    inputs_registered = true;
-}
-```
-But if tab is never drawn, inputs are never registered!
-
-### Solution Required
-
-#### Option A: Register All Inputs at Startup
-- Register inputs for ALL tabs during initialization
-- Each tab gets its inputs registered once
-- Pros: Simple, all inputs always available
-- Cons: Memory overhead, inputs for unused tabs
-
-#### Option B: Register/Unregister on Tab Switch
-- Register inputs when entering tab
-- Unregister inputs when leaving tab
-- Pros: Clean, only active tab has inputs
-- Cons: Complex, need cleanup logic
-
-#### Option C: Hybrid Approach (RECOMMENDED)
-- Register inputs on first tab visit
-- Keep inputs registered permanently
-- Update visibility based on current tab
-- Pros: Best of both worlds
-- Cons: Slight memory overhead
+### Phase 7: Comprehensive Testing
+- [ ] Test all tabs have inputs registered
+- [ ] Test tab switching updates current_tab
+- [ ] Test all input fields are clickable
+- [ ] Test all input fields accept text
+- [ ] Test all buttons work correctly
+- [ ] Verify no "wrong tab" messages
 
 ---
 
-## IMPLEMENTATION PLAN
+## STATUS: PHASE 1 COMPLETE - TESTING REQUIRED
 
-### Phase 1: Ensure All Tabs Register Inputs
-- [ ] Force draw of each tab during initialization
-- [ ] OR: Call register functions explicitly at startup
-- [ ] Verify all tabs have inputs registered
+### What's Been Fixed:
+1. ✅ Created centralized input registration system
+2. ✅ All 19 inputs registered at startup (not lazily)
+3. ✅ Training tab: 5 inputs
+4. ✅ Crawler tab: 5 inputs  
+5. ✅ LLM tab: 1 input (chat input)
+6. ✅ Research tab: 1 input (search)
+7. ✅ Models tab: 5 inputs (create dialog)
+8. ✅ URL Manager tab: 2 inputs (search, add URL)
 
-### Phase 2: Fix LLM Tab Input System
-- [ ] Investigate why LLM tab has no inputs
-- [ ] Check if LLM uses old text_input system
-- [ ] Migrate LLM to InputManager if needed
+### Expected Results:
+- All tabs should have inputs immediately available
+- No more "input_count=0" messages
+- No more "wrong tab" messages
+- All input fields should be clickable
+- Logging should show: "Total inputs registered: 19"
 
-### Phase 3: Fix Model Creation Error
-- [ ] Debug "ERROR: Failed to acquire model"
-- [ ] Check model_manager_create() function
-- [ ] Verify model creation parameters
-
-### Phase 4: Add Inputs to Missing Tabs
-- [ ] Research tab needs inputs
-- [ ] Crawler tab needs inputs registered
-- [ ] URL Manager tab needs inputs
-
----
-
-## STATUS: PERFORMING COMPREHENSIVE ANALYSIS
+### Next Steps:
+- Test application startup
+- Verify all inputs registered
+- Test each tab's input fields
+- Continue with Phase 2-7 if needed
