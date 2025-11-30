@@ -5,81 +5,120 @@
 - **Rule 1:** Always reread `MASTER_PLAN.md` before any action
 - **Rule 2:** Reference `AUDIT.md` for architectural state
 - **Rule 3:** Reference `SECONDARY_OBJECTIVES.md` for detailed tasks
-- **Rule 4:** Do not create new `.md` files (EXCEPTION: Analysis documents for critical architectural issues)
-- **Rule 5:** Always commit all changes using correct authentication:
-  ```bash
-  git add .
-  git commit -m "descriptive message"
-  git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
-  ```
+- **Rule 4:** Do not create new `.md` files (EXCEPTION: Critical analysis documents)
+- **Rule 5:** Always commit all changes using correct authentication
 - **Rule 6:** `MASTER_PLAN.md` is read-only - do not edit without explicit approval
 
-## CURRENT OBJECTIVE: COMPREHENSIVE INPUT SYSTEM ANALYSIS & REDESIGN
+## 🚨 CRITICAL SYSTEM FAILURES - IMMEDIATE ACTION REQUIRED
 
-### Phase 1: Bidirectional Analysis ✅ COMPLETE
-- [x] Analyze ALL inputs across ALL tabs (19 inputs documented)
-- [x] Analyze global InputManager system architecture
-- [x] Map all button click handlers across all tabs
-- [x] Identify architectural violations in LLM tab
-- [x] Document proper unified input/button system design
-- [x] Create comprehensive analysis document (INPUT_SYSTEM_ANALYSIS.md)
+### User-Reported Issues (ALL CRITICAL)
+1. ❌ **Memory Corruption** - Core dump when switching tabs
+2. ❌ **Input System Broken** - Cannot type in URL Manager or Crawler inputs
+3. ❌ **Crawler Database Disconnect** - Crawler ignores database, uses hardcoded URLs
+4. ❌ **Forced Model Creation** - Crawler creates new model despite existing one
+5. ❌ **ButtonManager Build Failure** - 13 undefined references, application won't compile
+6. ❌ **Quick Fix Failed** - Send button still doesn't work
 
-**KEY FINDINGS:**
-- Input box bounds: (210, 820, 1040, 80) - ends at x=1250
-- Send button position: x=1260 (10px gap from input box)
-- User clicks at x=1227 - INSIDE input box bounds!
-- Users expect send button closer to input box, not 10px away
-- **ROOT CAUSE:** Send button positioned too far right, users clicking where they expect it
+### Analysis Documents Created
+- ✅ `CRITICAL_ISSUES_ANALYSIS.md` - Comprehensive root cause analysis
+- ✅ `INPUT_SYSTEM_ANALYSIS.md` - Input/button system architecture
+- ✅ Updated `SECONDARY_OBJECTIVES.md` - Added 6 new critical objectives
 
-### Phase 2: Quick Fix (IN PROGRESS)
-- [ ] Move send button to x=1200 (inside input box right edge)
-- [ ] Reduce input box width to 990px to accommodate button
-- [ ] Rebuild and test send button functionality
+## RECOMMENDED ACTION PLAN
 
-### Phase 3: ButtonManager System Implementation (NEXT)
-- [ ] Create ButtonManager architecture (app/button_manager.h/c)
-- [ ] Create button registration system (app/button_registration.c)
-- [ ] Update event flow in main.c (check buttons before inputs)
-- [ ] Register all buttons from all tabs with callbacks
-- [ ] Remove button handling from tab click handlers
-- [ ] Update LLM tab to use ButtonManager
-- [ ] Test complete integration across all tabs
-- [ ] Document final unified input/button system
+### Option A: REVERT AND FIX (SAFEST - 6-8 hours)
+1. Revert ButtonManager changes to last working commit
+2. Fix memory corruption with valgrind
+3. Fix input system text entry
+4. Fix crawler database integration
+5. Fix model initialization
+6. Test thoroughly
+7. THEN properly implement ButtonManager
 
-## CRITICAL BUG FIXES (USER REPORTED) ✅ FIXED
+### Option B: FIX FORWARD (RISKIER - 10-14 hours)
+1. Fix memory corruption FIRST (critical)
+2. Fix input system SECOND (critical)
+3. Complete ButtonManager implementation
+4. Fix crawler database integration
+5. Fix model initialization
+6. Test everything
 
-### Issue 1: LLM Send Button Not Working ✅ FIXED
-**Problem:** User can type in text box but Send button doesn't work
-**Root Cause:** Input box width was 1060px, overlapping with send button at x=1260
+### Option C: HYBRID APPROACH (RECOMMENDED - 8-10 hours)
+1. Revert ButtonManager (30 min)
+2. Fix memory corruption (2-4 hours)
+3. Fix input system (1-2 hours)
+4. Fix crawler database (1-2 hours)
+5. Fix model initialization (30 min)
+6. Test thoroughly (1 hour)
+7. Properly implement ButtonManager later (3-4 hours)
 
-**Fix Applied:**
-- [x] Fixed input box width from 1060 to 1040 in app/input_registration.c
-- [x] Fixed input box height from 60 to 80 to match rendering
-- [x] Input box now: (210, 820, 1040, 80) - ends at x=1250
-- [x] Send button at: (1260, 820, 90, 80) - starts at x=1260
-- [x] 10px gap between input and button - no overlap
-- [x] Application rebuilt successfully
+## CURRENT STATUS
 
-**Result:** Send button clicks will no longer be captured by InputManager
+### What's Broken
+- ❌ Application crashes (core dump)
+- ❌ Inputs don't accept text
+- ❌ Buttons don't work (build failure)
+- ❌ Crawler ignores database
+- ❌ Unnecessary model re-initialization
+- ❌ Application won't compile
 
-### Issue 2: URL Manager Database Path Error ✅ FIXED
-**Problem:** `Failed to open URL database: data/crawler/urls.db`
-**Root Cause:** Directory `data/crawler/` didn't exist
+### What's Working
+- ✅ Database creation and URL storage
+- ✅ Model loading at startup
+- ✅ Basic rendering
+- ✅ Tab switching (until crash)
 
-**Fix Applied:**
-- [x] Fixed database path in all three tabs (tab_url_manager, tab_downloaded_files, tab_crawler)
-- [x] Added directory creation in crawler_url_manager_create()
-- [x] Added sys/stat.h and sys/types.h includes
-- [x] Directory now created with mkdir() if it doesn't exist
-- [x] Application rebuilt successfully
+## EXECUTION PLAN: COMPREHENSIVE FIX - ALL ISSUES
 
-**Result:** URL manager will create directory and database automatically
+**User Decision:** Fix EVERYTHING properly - no stubs, no shortcuts, complete solutions
 
-## OBJECTIVE 15 Phase 5: CLI Tool Integration (RESUME AFTER FIXES)
+### Phase 1: Memory Corruption Fix (2-4 hours)
+- [ ] Run valgrind to identify all memory errors
+- [ ] Enable ASAN (Address Sanitizer)
+- [ ] Fix all detected memory leaks
+- [ ] Fix all buffer overflows
+- [ ] Fix all use-after-free errors
+- [ ] Test tab switching thoroughly
 
-### Phase 5.3: Cleanup and Organization (IN PROGRESS)
-- [x] Remove legacy/redundant tools
-- [x] Move test tools to tests/ directory
-- [x] Update tests/Makefile
-- [ ] Fix remaining test tool build issues
-- [ ] Check main Makefile for legacy tool references
+### Phase 2: Input System Complete Overhaul (3-4 hours)
+- [ ] Fix SDL_StartTextInput() integration
+- [ ] Fix text rendering in all inputs
+- [ ] Fix cursor rendering and positioning
+- [ ] Implement proper text editing (insert, delete, backspace)
+- [ ] Fix Enter key submission
+- [ ] Test all 19 inputs across all tabs
+- [ ] Verify callbacks work correctly
+
+### Phase 3: ButtonManager Complete Implementation (4-5 hours)
+- [ ] Implement ALL 13 missing callbacks (NO STUBS)
+- [ ] Wire all buttons to actual functionality
+- [ ] Remove duplicate button handling from tabs
+- [ ] Test every button on every tab
+- [ ] Verify button states (hover, pressed, disabled)
+- [ ] Integration test entire system
+
+### Phase 4: Crawler Database Integration (2-3 hours)
+- [ ] Wire crawler to CrawlerURLManager
+- [ ] Remove ALL hardcoded URLs
+- [ ] Implement proper URL queue from database
+- [ ] Test URL addition workflow
+- [ ] Test crawler using database URLs
+- [ ] Verify URL status updates
+
+### Phase 5: Model Management Fix (1 hour)
+- [ ] Fix model name resolution
+- [ ] Use existing models
+- [ ] Eliminate unnecessary re-initialization
+- [ ] Test model loading
+
+### Phase 6: Comprehensive Testing (2-3 hours)
+- [ ] Test all inputs on all tabs
+- [ ] Test all buttons on all tabs
+- [ ] Test tab switching
+- [ ] Test crawler workflow
+- [ ] Test model loading
+- [ ] Memory leak testing
+- [ ] Stress testing
+
+**TOTAL ESTIMATED TIME: 14-22 hours**
+**APPROACH: Complete, proper solutions - NO SHORTCUTS**

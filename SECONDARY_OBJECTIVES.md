@@ -2867,3 +2867,170 @@ crystalline/
 
 ---
 
+
+## CRITICAL ISSUES - IMMEDIATE FIXES REQUIRED
+
+### OBJECTIVE: Fix Memory Corruption (Core Dump)
+**Priority:** CRITICAL
+**Status:** NOT STARTED
+
+#### Problem
+Application crashes with "malloc(): smallbin double linked list corrupted" when switching tabs.
+
+#### Root Cause
+Memory corruption from:
+- Double-free errors
+- Buffer overflows
+- Use-after-free
+- Invalid pointer manipulation
+
+#### Tasks
+- [ ] Run application with valgrind to detect memory errors
+- [ ] Enable Address Sanitizer (ASAN) for debugging
+- [ ] Check all malloc/free pairs for double-free
+- [ ] Verify all buffer sizes in string operations
+- [ ] Check pointer assignments in ButtonManager
+- [ ] Check pointer assignments in InputManager
+- [ ] Fix all detected memory errors
+- [ ] Test tab switching thoroughly
+
+#### Estimated Time
+2-4 hours
+
+---
+
+### OBJECTIVE: Fix Input System Failures
+**Priority:** CRITICAL
+**Status:** NOT STARTED
+
+#### Problem
+Inputs not working across multiple tabs:
+- URL Manager tab: `url_manager.add_url` input not responding
+- Crawler tab: `crawler.add_url` input not responding
+- User can click inputs (they get focus) but cannot type text
+
+#### Root Cause
+InputManager handles focus but text input is not being processed or displayed correctly.
+
+#### Tasks
+- [ ] Verify SDL_StartTextInput() is called when input is focused
+- [ ] Check if text is being stored in ManagedInput structure
+- [ ] Verify rendering code displays input text correctly
+- [ ] Check if SDL_TEXTINPUT events are being processed
+- [ ] Test text input on all tabs
+- [ ] Verify cursor rendering
+- [ ] Test backspace and delete keys
+- [ ] Test Enter key submission
+
+#### Estimated Time
+1-2 hours
+
+---
+
+### OBJECTIVE: Complete ButtonManager System
+**Priority:** HIGH
+**Status:** 80% COMPLETE (BUILD BROKEN)
+
+#### Problem
+ButtonManager system incomplete:
+- 13 undefined callback functions
+- Build fails with linker errors
+- Application cannot compile
+
+#### Missing Callbacks
+1. Crawler: `crawler_add_url_clicked`, `crawler_start_clicked`, `crawler_stop_clicked`
+2. Training: `training_start_clicked`, `training_stop_clicked`, `training_load_data_clicked`
+3. Models: `models_create_clicked`, `models_delete_clicked`, `models_load_clicked`
+4. URL Manager: `url_manager_add_clicked`, `url_manager_remove_clicked`, `url_manager_block_clicked`, `url_manager_refresh_clicked`
+
+#### Tasks
+- [ ] Create stub implementations for all 13 callbacks
+- [ ] Wire callbacks to existing tab functionality
+- [ ] Test each button individually
+- [ ] Remove duplicate button handling from tab click handlers
+- [ ] Integration test across all tabs
+- [ ] Verify no memory leaks in ButtonManager
+- [ ] Document ButtonManager architecture
+
+#### Estimated Time
+2-3 hours
+
+---
+
+### OBJECTIVE: Integrate Crawler with URL Database
+**Priority:** HIGH
+**Status:** NOT STARTED
+
+#### Problem
+Crawler ignores URL database and uses hardcoded URLs:
+- User adds URLs to database via UI ✓
+- Database stores URLs correctly ✓
+- Crawler does NOT read from database ✗
+- Crawler uses hardcoded "https://www.britannica.com/" ✗
+
+#### Root Cause
+Crawler is not integrated with CrawlerURLManager database system.
+
+#### Tasks
+- [ ] Find where crawler gets start URL (likely crawler_thread.c)
+- [ ] Replace hardcoded URL with database query
+- [ ] Implement url_db_get_next_url() integration
+- [ ] Remove all hardcoded URLs from crawler
+- [ ] Test URL addition via UI
+- [ ] Test crawler using database URLs
+- [ ] Verify URL status updates in database
+- [ ] Test URL prioritization
+
+#### Estimated Time
+1-2 hours
+
+---
+
+### OBJECTIVE: Fix Model Initialization
+**Priority:** MEDIUM
+**Status:** NOT STARTED
+
+#### Problem
+Crawler forces creation of new model despite existing model:
+- Application loads "saved_model" at startup ✓
+- Crawler looks for model named "model" ✗
+- Model not found, creates new 50000-token model ✗
+- Wastes time re-initializing primes, kissing spheres, embeddings ✗
+
+#### Root Cause
+Hardcoded model name mismatch in crawler code.
+
+#### Tasks
+- [ ] Find where crawler requests model by name
+- [ ] Change to use existing model ("saved_model")
+- [ ] OR: Make model name configurable
+- [ ] OR: Use first available model if specific name not found
+- [ ] Test crawler with existing model
+- [ ] Verify no unnecessary model initialization
+- [ ] Document model naming convention
+
+#### Estimated Time
+30 minutes - 1 hour
+
+---
+
+### OBJECTIVE: Revert ButtonManager Changes (CONTINGENCY)
+**Priority:** CONTINGENCY
+**Status:** NOT STARTED
+
+#### When to Use
+If fixing ButtonManager takes too long or causes more issues.
+
+#### Tasks
+- [ ] Identify last working commit (before ButtonManager)
+- [ ] Create backup branch of current work
+- [ ] Revert to last working commit
+- [ ] Verify application compiles
+- [ ] Verify application runs without crashes
+- [ ] Test all basic functionality
+- [ ] Document what was reverted
+
+#### Estimated Time
+30 minutes
+
+---
