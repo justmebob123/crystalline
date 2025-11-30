@@ -104,9 +104,9 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t num_heads;          // Number of attention heads
     uint32_t head_dim;           // Dimension per head
-    float* query_lattice;        // Query weight lattice
-    float* key_lattice;          // Key weight lattice
-    float* value_lattice;        // Value weight lattice
+    BigFixed** query_lattice;    // Query weight lattice (arbitrary precision)
+    BigFixed** key_lattice;      // Key weight lattice (arbitrary precision)
+    BigFixed** value_lattice;    // Value weight lattice (arbitrary precision)
 } AttentionLayer;
 
 /*
@@ -117,10 +117,10 @@ typedef struct {
     uint32_t input_dim;          // Input dimension
     uint32_t hidden_dim;         // Hidden layer dimension
     uint32_t output_dim;         // Output dimension
-    float* w1_lattice;           // First weight matrix
-    float* w2_lattice;           // Second weight matrix
-    float* bias1;                // First bias vector
-    float* bias2;                // Second bias vector
+    BigFixed** w1_lattice;       // First weight matrix (arbitrary precision)
+    BigFixed** w2_lattice;       // Second weight matrix (arbitrary precision)
+    BigFixed** bias1;            // First bias vector (arbitrary precision)
+    BigFixed** bias2;            // Second bias vector (arbitrary precision)
 } FeedForwardLayer;
 
 /*
@@ -130,8 +130,8 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t dim;                // Dimension to normalize
     float epsilon;               // Small constant for numerical stability
-    float* gamma;                // Scale parameters
-    float* beta;                 // Shift parameters
+    BigFixed** gamma;            // Scale parameters (arbitrary precision)
+    BigFixed** beta;             // Shift parameters (arbitrary precision)
 } CLLMLayerNorm;
 
 /*
@@ -262,8 +262,8 @@ typedef struct {
  * Layer Normalization
  */
 typedef struct {
-    float* gamma;                // Scale parameters
-    float* beta;                 // Shift parameters
+    BigFixed** gamma;                // Scale parameters (arbitrary precision)
+    BigFixed** beta;                 // Shift parameters (arbitrary precision)
     float epsilon;               // Small constant for stability
     uint32_t size;               // Layer size
 } LayerNorm;
@@ -272,10 +272,10 @@ typedef struct {
  * Attention Head
  */
 typedef struct {
-    float* query_weights;        // Query projection weights
-    float* key_weights;          // Key projection weights
-    float* value_weights;        // Value projection weights
-    float* output_weights;       // Output projection weights
+    BigFixed** query_weights;    // Query projection weights (arbitrary precision)
+    BigFixed** key_weights;      // Key projection weights (arbitrary precision)
+    BigFixed** value_weights;    // Value projection weights (arbitrary precision)
+    BigFixed** output_weights;   // Output projection weights (arbitrary precision)
     uint32_t head_dim;           // Dimension per head
 } AttentionHead;
 
@@ -287,8 +287,8 @@ typedef struct {
     uint32_t num_heads;          // Number of attention heads
     LayerNorm* ln1;              // Layer norm 1
     LayerNorm* ln2;              // Layer norm 2
-    float* ffn_weights1;         // Feed-forward network weights 1
-    float* ffn_weights2;         // Feed-forward network weights 2
+    BigFixed** ffn_weights1;     // Feed-forward network weights 1 (arbitrary precision)
+    BigFixed** ffn_weights2;     // Feed-forward network weights 2 (arbitrary precision)
     uint32_t ffn_dim;            // Feed-forward dimension
 } CLLMLayer;
 

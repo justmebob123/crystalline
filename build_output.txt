@@ -1,0 +1,102 @@
+Compiling [CORE]: src/core/bigfixed_constants.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigfixed_constants.c -o src/core/bigfixed_constants.o
+In file included from ./include/prime_bigint_transcendental.h:20,
+                 from src/core/bigfixed_constants.c:14:
+./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+Compiling [CORE]: src/core/bigfixed_core.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigfixed_core.c -o src/core/bigfixed_core.o
+Compiling [CORE]: src/core/bigint_conversions.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_conversions.c -o src/core/bigint_conversions.o
+Compiling [CORE]: src/core/bigint_core.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_core.c -o src/core/bigint_core.o
+Compiling [CORE]: src/core/bigint_ntt.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_ntt.c -o src/core/bigint_ntt.o
+Compiling [CORE]: src/core/cllm_angular_position.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/cllm_angular_position.c -o src/core/cllm_angular_position.o
+Compiling [CORE]: src/core/cllm_mathematical_constants.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/cllm_mathematical_constants.c -o src/core/cllm_mathematical_constants.o
+Compiling [CORE]: src/core/crystal_abacus.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/crystal_abacus.c -o src/core/crystal_abacus.o
+Compiling [CORE]: src/core/prime_lowlevel.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/prime_lowlevel.c -o src/core/prime_lowlevel.o
+Compiling [TRANS]: src/transcendental/prime_basic.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_basic.c -o src/transcendental/prime_basic.o
+Compiling [TRANS]: src/transcendental/prime_bigint_transcendental.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_bigint_transcendental.c -o src/transcendental/prime_bigint_transcendental.o
+In file included from ./include/prime_bigint_transcendental.h:20,
+                 from src/transcendental/prime_bigint_transcendental.c:14:
+./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+Compiling [TRANS]: src/transcendental/prime_float_math.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_float_math.c -o src/transcendental/prime_float_math.o
+Compiling [TRANS]: src/transcendental/prime_math.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_math.c -o src/transcendental/prime_math.o
+Compiling [TRANS]: src/transcendental/prime_math_custom.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_math_custom.c -o src/transcendental/prime_math_custom.o
+Compiling [GEOM]: src/geometry/clock_lattice.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/clock_lattice.c -o src/geometry/clock_lattice.o
+Compiling [GEOM]: src/geometry/lattice_algorithms.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/lattice_algorithms.c -o src/geometry/lattice_algorithms.o
+Compiling [GEOM]: src/geometry/prime_coords.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_coords.c -o src/geometry/prime_coords.o
+Compiling [GEOM]: src/geometry/prime_hyperdim.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_hyperdim.c -o src/geometry/prime_hyperdim.o
+Compiling [GEOM]: src/geometry/prime_lattice.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice.c -o src/geometry/prime_lattice.o
+Compiling [GEOM]: src/geometry/prime_lattice_core.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice_core.c -o src/geometry/prime_lattice_core.o
+In file included from ./include/../include/prime_bigint_transcendental.h:20,
+                 from src/geometry/prime_lattice_core.c:12:
+./include/../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+./include/../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
+Compiling [GEOM]: src/geometry/prime_lattice_geometry.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice_geometry.c -o src/geometry/prime_lattice_geometry.o
+Compiling [GEOM]: src/geometry/prime_matrix.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_matrix.c -o src/geometry/prime_matrix.o
+Compiling [GEOM]: src/geometry/prime_rainbow.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_rainbow.c -o src/geometry/prime_rainbow.o
+Creating crystalline shared library: libcrystalline.so
+gcc -shared -o libcrystalline.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_mathematical_constants.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/clock_lattice.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
+✓ Crystalline shared library created
+Creating crystalline static library: libcrystalline.a
+ar rcs libcrystalline.a src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_mathematical_constants.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/clock_lattice.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
+✓ Crystalline static library created
+Building algorithms shared library...
+make[1]: Entering directory '/workspace/algorithms'
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/numerical.c -o src/numerical.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/loss_functions.c -o src/loss_functions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/optimizers.c -o src/optimizers.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/backprop.c -o src/backprop.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/statistics.c -o src/statistics.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/threading.c -o src/threading.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/shared_memory.c -o src/shared_memory.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lock_free_queue.c -o src/lock_free_queue.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/sphere_packing.c -o src/sphere_packing.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/batch_processing.c -o src/batch_processing.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_prime_partitions.c -o src/hierarchical_prime_partitions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_sphere_positions.c -o src/lattice_sphere_positions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/angular_attention.c -o src/angular_attention.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/cymatic_modulation.c -o src/cymatic_modulation.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/ntt_attention.c -o src/ntt_attention.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_embeddings.c -o src/lattice_embeddings.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_embeddings_bigfixed.c -o src/lattice_embeddings_bigfixed.o
+In file included from ../include/prime_bigint_transcendental.h:20,
+                 from src/lattice_embeddings_bigfixed.c:12:
+../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
+   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
+      |                                           ^~~~
