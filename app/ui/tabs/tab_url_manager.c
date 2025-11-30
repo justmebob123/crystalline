@@ -1,7 +1,7 @@
 // app/ui/tabs/tab_url_manager.c - URL Manager Tab Implementation
 #include "../../app_common.h"
 #include "../../../src/crawler/crawler_url_manager.h"
-#include "../../../include/crawler/url_database.h"
+#include "../../../src/crawler/url_database.h"
 #include <SDL2/SDL_ttf.h>
 
 extern TTF_Font* get_global_font(void);
@@ -66,10 +66,10 @@ static void update_statistics(void) {
     if (!url_state.url_manager) return;
     
     crawler_url_manager_get_stats(url_state.url_manager, 
-                                  &amp;url_state.total_urls,
-                                  &amp;url_state.pending_urls,
-                                  &amp;url_state.crawled_urls,
-                                  &amp;url_state.blocked_urls);
+                                  &url_state.total_urls,
+                                  &url_state.pending_urls,
+                                  &url_state.crawled_urls,
+                                  &url_state.blocked_urls);
 }
 
 // Refresh URL list from database
@@ -87,7 +87,7 @@ static void refresh_url_list(void) {
     if (!db) return;
     
     // Query all URLs (no filter = get all)
-    url_state.url_list = url_db_query(db, NULL, &amp;url_state.url_list_count);
+    url_state.url_list = url_db_query(db, NULL, &url_state.url_list_count);
     
     url_state.url_list_dirty = false;
     
