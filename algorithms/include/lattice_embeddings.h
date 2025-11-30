@@ -1,12 +1,14 @@
 /**
- * cllm_lattice_embeddings.h - Geometric Pattern-Based Embeddings
+ * lattice_embeddings.h - Geometric Pattern-Based Embeddings
  * 
  * This header defines the interface for embedding initialization using
  * the geometric pattern directly, without any caching or pre-computation.
+ * 
+ * This is a fundamental algorithm in the algorithms layer, usable by ANY system.
  */
 
-#ifndef CLLM_LATTICE_EMBEDDINGS_H
-#define CLLM_LATTICE_EMBEDDINGS_H
+#ifndef LATTICE_EMBEDDINGS_H
+#define LATTICE_EMBEDDINGS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -26,7 +28,7 @@
  * @param vocab_size Number of tokens (can be ANY size)
  * @param embedding_dim Embedding dimension
  */
-void cllm_embeddings_init_lattice_geometric(
+void lattice_embeddings_init_geometric(
     float* embeddings,
     uint32_t vocab_size,
     uint32_t embedding_dim
@@ -42,7 +44,7 @@ void cllm_embeddings_init_lattice_geometric(
  * @param embedding_dim Embedding dimension
  * @param output Output embedding vector [embedding_dim]
  */
-void cllm_get_token_embedding_geometric(
+void lattice_get_token_embedding_geometric(
     uint32_t token_id,
     uint32_t embedding_dim,
     float* output
@@ -61,10 +63,10 @@ void cllm_get_token_embedding_geometric(
  * @param embedding_dim Embedding dimension
  * @return true if properties are satisfied
  */
-bool cllm_verify_geometric_embeddings(
+bool lattice_verify_geometric_embeddings(
     const float* embeddings,
     uint32_t vocab_size,
     uint32_t embedding_dim
 );
 
-#endif // CLLM_LATTICE_EMBEDDINGS_H
+#endif // LATTICE_EMBEDDINGS_H

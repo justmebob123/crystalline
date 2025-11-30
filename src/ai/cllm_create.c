@@ -2,7 +2,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_pure_crystalline.h"
-#include "cllm_lattice_embeddings.h"
+#include "lattice_embeddings.h"
 #include "../include/ai/cllm_kissing_spheres.h"
 #include "../include/cllm_lattice_cache.h"
 #include <stdlib.h>
@@ -305,7 +305,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
         // Use geometric pattern directly - INSTANT initialization
         // No caching needed - the pattern IS the algorithm
-        cllm_embeddings_init_lattice_geometric(
+        // Uses algorithms layer (fundamental algorithm, not CLLM-specific)
+        lattice_embeddings_init_geometric(
             model->embeddings.embeddings,
             config->vocab_size,
             config->embedding_dim

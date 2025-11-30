@@ -1,5 +1,5 @@
 /**
- * cllm_lattice_embeddings_geometric.c - Geometric Pattern-Based Embeddings
+ * lattice_embeddings.c - Geometric Pattern-Based Embeddings
  * 
  * This implements INSTANT embedding initialization using the geometric pattern
  * directly, without any pre-computation or caching. The pattern itself IS the
@@ -7,9 +7,11 @@
  * 
  * Key insight: Clock position → L(n,d,k,λ) is a pure geometric calculation
  * that can be done on-demand with O(1) complexity per dimension.
+ * 
+ * This is a fundamental algorithm in the algorithms layer, usable by ANY system.
  */
 
-#include "cllm_lattice_embeddings.h"
+#include "lattice_embeddings.h"
 #include "clock_lattice.h"
 #include "prime_lattice_core.h"
 #include "prime_float_math.h"
@@ -75,7 +77,7 @@ static double compute_L_from_clock_position(
  * @param vocab_size Number of tokens
  * @param embedding_dim Embedding dimension
  */
-void cllm_embeddings_init_lattice_geometric(
+void lattice_embeddings_init_geometric(
     float* embeddings,
     uint32_t vocab_size,
     uint32_t embedding_dim
@@ -118,7 +120,7 @@ void cllm_embeddings_init_lattice_geometric(
  * @param embedding_dim Embedding dimension
  * @param output Output embedding vector [embedding_dim]
  */
-void cllm_get_token_embedding_geometric(
+void lattice_get_token_embedding_geometric(
     uint32_t token_id,
     uint32_t embedding_dim,
     float* output
@@ -150,7 +152,7 @@ void cllm_get_token_embedding_geometric(
  * @param embedding_dim Embedding dimension
  * @return true if properties are satisfied
  */
-bool cllm_verify_geometric_embeddings(
+bool lattice_verify_geometric_embeddings(
     const float* embeddings,
     uint32_t vocab_size,
     uint32_t embedding_dim
