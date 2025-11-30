@@ -11,7 +11,7 @@
 
 ## ✅ RECENT FIXES COMPLETED
 
-### Critical Crash Fixed (Session 2024-12-29 - URGENT)
+### Critical Fixes (Session 2024-12-29 - URGENT)
 1. ✅ **Crawler Crash Fixed** - NULL pointer dereference in continuous_training_init()
    - Added NULL check before strncpy(model_path)
    - Crash occurred when reusing existing model
@@ -22,6 +22,13 @@
    - Changed from 1030x80 pixels to 950x40 pixels
    - Single-line input instead of huge multi-line box
    - Much more user-friendly
+
+3. ✅ **Crawler URL Queue Fixed** - URLs now advance properly
+   - Crawler was stuck on first URL, never moving to next
+   - Added url_db_mark_crawling() to mark URLs as in-progress
+   - get_next() now marks URL as 'crawling' immediately
+   - Prevents same URL from being selected repeatedly
+   - Crawler will now process all URLs in database sequentially
 
 ### 🎉 ALL LAYERS AUDIT COMPLETED (Session 2024-12-29)
 1. ✅ **Layer 3 (CLLM Library) Audit Complete** - All 64 files validated
