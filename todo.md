@@ -1,13 +1,13 @@
 # TODO - Crystalline CLLM Project
 
 ## RULES (ALWAYS AT TOP)
-- Rule 0: Always paste rules to top of todo.md with every response
-- Rule 1: Always reread MASTER_PLAN.md before any action
-- Rule 2: Reference AUDIT.md for architectural state
-- Rule 3: Reference SECONDARY_OBJECTIVES.md for detailed tasks
-- Rule 4: Do not create new .md files
-- Rule 5: Always commit all changes using correct authentication
-- Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
+- **Rule 0**: Always paste rules to top of todo.md with every response
+- **Rule 1**: Always reread MASTER_PLAN.md before any action
+- **Rule 2**: Reference AUDIT.md for architectural state
+- **Rule 3**: Reference SECONDARY_OBJECTIVES.md for detailed tasks
+- **Rule 4**: Do not create new .md files
+- **Rule 5**: Always commit all changes using correct authentication
+- **Rule 6**: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
 ## CRITICAL USER CLARIFICATION - Model History Storage
 

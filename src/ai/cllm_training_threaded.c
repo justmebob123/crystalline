@@ -1947,6 +1947,9 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     int batches_pushed = 0;
     size_t total_batches_in_epoch = cllm_batch_iterator_num_batches(system->batch_iterator);
     
+    // Log epoch information for clarity
+    printf("=== EPOCH %d: %zu batches to process ===\n", current_epoch, total_batches_in_epoch);
+    
     // Timing tracking for progress estimates
     time_t epoch_start_time = time(NULL);
     
@@ -2030,13 +2033,13 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
             if (pushed > 0) {
-                printf("  Training progress: %zu/%zu batches (%.1f%% complete)\n",
-                       popped, pushed, (popped * 100.0) / pushed);
+                printf("  Epoch %d progress: %zu/%zu batches (%.1f%% complete)\n",
+                       current_epoch, popped, pushed, (popped * 100.0) / pushed);
             }
         }
     }
     
-    printf("All batches processed!\n");
+    printf("=== EPOCH %d COMPLETE: All %zu batches processed! ===\n", current_epoch, total_batches_in_epoch);
     
     // Stop pre-fetch thread
     batch_queue_stop_prefetch(system);
