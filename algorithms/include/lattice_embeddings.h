@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "bigfixed_core.h"
 
 /**
  * Initialize embeddings using geometric pattern
@@ -70,3 +71,40 @@ bool lattice_verify_geometric_embeddings(
 );
 
 #endif // LATTICE_EMBEDDINGS_H
+
+/**
+ * Initialize embeddings using geometric pattern with BigFixed (arbitrary precision)
+ * 
+ * This is INSTANT with ARBITRARY PRECISION - no overflow, no precision loss.
+ * Works for ANY vocabulary size with O(vocab_size * embedding_dim) complexity.
+ * 
+ * @param embeddings Output embedding matrix [vocab_size][embedding_dim] (BigFixed)
+ * @param vocab_size Number of tokens (can be ANY size)
+ * @param embedding_dim Embedding dimension
+ * @param precision_bits Precision for BigFixed operations (e.g., 256)
+ */
+void lattice_embeddings_init_geometric_bigfixed(
+    BigFixed** embeddings,
+    uint32_t vocab_size,
+    uint32_t embedding_dim,
+    int precision_bits
+);
+
+/**
+ * Get embedding for a single token (on-demand) with BigFixed
+ * 
+ * This demonstrates that we can compute embeddings on-demand
+ * with arbitrary precision. Useful for dynamic vocabularies.
+ * 
+ * @param token_id Token ID
+ * @param embedding_dim Embedding dimension
+ * @param output Output embedding vector [embedding_dim] (BigFixed)
+ * @param precision_bits Precision for BigFixed operations
+ */
+void lattice_get_token_embedding_geometric_bigfixed(
+    uint32_t token_id,
+    uint32_t embedding_dim,
+    BigFixed* output,
+    int precision_bits
+);
+

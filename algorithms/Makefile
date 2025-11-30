@@ -25,7 +25,8 @@ SOURCES = src/numerical.c \
           src/angular_attention.c \
           src/cymatic_modulation.c \
           src/ntt_attention.c \
-          src/lattice_embeddings.c
+          src/lattice_embeddings.c \
+         src/lattice_embeddings_bigfixed.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
