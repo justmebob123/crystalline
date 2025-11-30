@@ -96,13 +96,19 @@ bool model_manager_init(const char* models_dir) {
             if (len > 5 && strcmp(entry->d_name + len - 5, ".cllm") == 0) {
                 // Extract model name (remove .cllm extension)
                 char model_name[MODEL_NAME_MAX];
-                strncpy(model_name, entry->d_name, len - 5);
-                model_name[len - 5] = '\0';
+                size_t name_len = (len - 5 < MODEL_NAME_MAX - 1) ? len - 5 : MODEL_NAME_MAX - 1;
+                memcpy(model_name, entry->d_name, name_len);
+                model_name[name_len] = '\0';
                 
                 // Build full path
                 char model_path[MODEL_PATH_MAX];
-                snprintf(model_path, sizeof(model_path), "%s/%s", 
+                int path_len = snprintf(model_path, sizeof(model_path), "%s/%s", 
                         g_model_manager.models_dir, entry->d_name);
+                if (path_len >= (int)sizeof(model_path)) {
+                    fprintf(stderr, "Model path too long: %s/%s\n", 
+                            g_model_manager.models_dir, entry->d_name);
+                    continue;
+                }
                 
                 // Load the model
                 printf("  Loading model: %s\n", model_name);

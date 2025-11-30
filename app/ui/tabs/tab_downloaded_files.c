@@ -215,7 +215,6 @@ static void draw_file_browser(SDL_Renderer* renderer, int x, int y, int width, i
     // File entries from database
     int entry_y = header_y + 35;
     SDL_Color text_color = {200, 200, 200, 255};
-    SDL_Color selected_color = {100, 150, 200, 255};
     SDL_Color missing_color = {150, 150, 150, 255};
     
     if (files_state.file_list && files_state.file_count > 0) {

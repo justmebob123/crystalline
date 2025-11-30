@@ -16,7 +16,15 @@
 // STATE MANAGEMENT
 // ============================================================================
 
-// UI Button structure (same as training tab)
+// UI Button structure
+typedef struct {
+    SDL_Rect bounds;
+    char label[64];
+    bool enabled;
+    bool visible;
+} UIButton;
+
+// Crawler tab state
 typedef struct {
     // Prime Configuration
     CrawlerPrimeConfig prime_config;
@@ -411,9 +419,9 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
     y += 30;
     
     // Toggle button for showing/hiding advanced options
-    const char* toggle_text = g_crawler_state.show_advanced_options ? "[-] Hide" : "[+] Show";
+    const char* advanced_toggle_text = g_crawler_state.show_advanced_options ? "[-] Hide" : "[+] Show";
     g_crawler_state.advanced_toggle_rect = (SDL_Rect){x, y, 100, 20};
-    draw_text(renderer, toggle_text, x, y, (SDL_Color){100, 200, 255, 255});
+    draw_text(renderer, advanced_toggle_text, x, y, (SDL_Color){100, 200, 255, 255});
     y += 25;
     
     // Show advanced options if expanded

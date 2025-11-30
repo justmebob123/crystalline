@@ -8,13 +8,13 @@
 /**
  * Preprocessor state structure
  */
-typedef struct {
+struct PreprocessorState {
     char data_dir[1024];
     int running;
     int files_processed;
     ExtractionMode extraction_mode;
     pthread_mutex_t lock;
-} PreprocessorState;
+};
 
 /**
  * Initialize preprocessor

@@ -20,7 +20,7 @@ extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SD
 typedef struct {
     CrawlerURLManager* url_manager;
     bool initialized;
-    int selected_url_id;
+    uint64_t selected_url_id;
     int scroll_offset;
     bool show_filters;
     bool show_blocked;
@@ -54,7 +54,7 @@ static void init_url_manager_state(void) {
     }
     
     url_state.initialized = true;
-    url_state.selected_url_id = -1;
+    url_state.selected_url_id = 0;
     url_state.scroll_offset = 0;
     url_state.url_list_dirty = true;
     
@@ -154,7 +154,6 @@ static void draw_url_list(SDL_Renderer* renderer, int x, int y, int width, int h
     // URL entries from database
     int entry_y = header_y + 35;
     SDL_Color text_color = {200, 200, 200, 255};
-    SDL_Color selected_color = {100, 150, 200, 255};
     SDL_Color pending_color = {255, 200, 100, 255};
     SDL_Color crawled_color = {100, 255, 100, 255};
     SDL_Color blocked_color = {255, 100, 100, 255};
@@ -434,7 +433,7 @@ void handle_url_manager_click(AppState* state, int x, int y) {
         
         if (url_index >= 0 && url_index < url_state.url_list_count) {
             url_state.selected_url_id = url_state.url_list[url_index]->id;
-            printf("Selected URL ID: %d\n", url_state.selected_url_id);
+            printf("Selected URL ID: %lu\n", (unsigned long)url_state.selected_url_id);
         }
         return;
     }
@@ -482,8 +481,8 @@ void handle_url_manager_click(AppState* state, int x, int y) {
             if (db) {
                 int result = url_db_remove(db, url_state.selected_url_id);
                 if (result == 0) {
-                    printf("Removed URL ID: %d\n", url_state.selected_url_id);
-                    url_state.selected_url_id = -1;
+                    printf("Removed URL ID: %lu\n", (unsigned long)url_state.selected_url_id);
+                    url_state.selected_url_id = 0;
                     url_state.url_list_dirty = true;
                     update_statistics();
                 } else {

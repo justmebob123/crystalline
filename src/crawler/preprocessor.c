@@ -349,8 +349,12 @@ static int extract_links(const char* html, const char* base_url, const char* que
                     protocol = "http://";
                 }
                 
-                snprintf(full_url, sizeof(full_url), "%s%.*s%s", 
+                int url_len = snprintf(full_url, sizeof(full_url), "%s%.*s%s", 
                         protocol, (int)domain_len, domain_start, url);
+                if (url_len >= (int)sizeof(full_url)) {
+                    // URL too long, skip it
+                    continue;
+                }
                 fprintf(queue, "%s\n", full_url);
                 links_found++;
             }
@@ -409,8 +413,12 @@ static int preprocess_file(const char* input_path, const char* output_path, cons
         return -1;
     }
     
-    fread(html, 1, size, f);
-    html[size] = '\0';
+    size_t bytes_read = fread(html, 1, size, f);
+    if (bytes_read != (size_t)size) {
+        fprintf(stderr, "Warning: Expected to read %ld bytes, got %zu bytes from %s\n", 
+                size, bytes_read, input_path);
+    }
+    html[bytes_read] = '\0';
     fclose(f);
     
     // Detect file type
@@ -585,8 +593,13 @@ void* preprocessor_thread_func(void* arg) {
             char* dot = strrchr(base, '.');
             if (dot) *dot = '\0';
             
-            snprintf(preprocessed_path, sizeof(preprocessed_path), 
+            int path_len = snprintf(preprocessed_path, sizeof(preprocessed_path), 
                     "%s/%s.txt", preprocessed_dir, base);
+            if (path_len >= (int)sizeof(preprocessed_path)) {
+                fprintf(stderr, "Preprocessed path too long, skipping: %s\n", base);
+                free(base);
+                continue;
+            }
             
             // Check if output exists
             if (access(preprocessed_path, F_OK) == 0) {
@@ -596,7 +609,12 @@ void* preprocessor_thread_func(void* arg) {
             
             // Process file
             char input_path[2048];
-            snprintf(input_path, sizeof(input_path), "%s/%s", raw_dir, entry->d_name);
+            int input_len = snprintf(input_path, sizeof(input_path), "%s/%s", raw_dir, entry->d_name);
+            if (input_len >= (int)sizeof(input_path)) {
+                fprintf(stderr, "Input path too long, skipping: %s\n", entry->d_name);
+                free(base);
+                continue;
+            }
             
             get_timestamp(timestamp, sizeof(timestamp));
             printf("%s Preprocessing: %s\n", timestamp, entry->d_name);

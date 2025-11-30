@@ -7,6 +7,7 @@
 
 #include "../../include/crawler.h"
 #include "content_filter.h"
+#include "preprocessor.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,7 +104,7 @@ static void trigger_callback(CrawlerState* state, CrawlerEventType type, const c
 static void* status_monitor_thread_func(void* arg) {
     CrawlerState* state = (CrawlerState*)arg;
     
-    char raw_dir[2048], preprocessed_dir[1024], queue_dir[1024], trained_dir[1024];
+    char raw_dir[2048], preprocessed_dir[2048], queue_dir[2048], trained_dir[2048];
     snprintf(raw_dir, sizeof(raw_dir), "%s/raw_pages", state->data_dir);
     snprintf(preprocessed_dir, sizeof(preprocessed_dir), "%s/preprocessed", state->data_dir);
     snprintf(queue_dir, sizeof(queue_dir), "%s/training_queue", state->data_dir);
@@ -235,7 +236,7 @@ int crawler_start(CrawlerState* state) {
     state->tokenizer_internal = tokenizer_init(state->data_dir);
     
     // Initialize training component
-    char model_path[1024];
+    char model_path[2048];
     snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
     state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
     
@@ -352,7 +353,9 @@ void crawler_get_status(CrawlerState* state, CrawlerStatus* status) {
     status->pages_tokenized = state->pages_tokenized;
     status->pages_trained = state->pages_trained;
     strncpy(status->current_url, state->current_url, sizeof(status->current_url) - 1);
+    status->current_url[sizeof(status->current_url) - 1] = '\0';
     strncpy(status->last_error, state->last_error, sizeof(status->last_error) - 1);
+    status->last_error[sizeof(status->last_error) - 1] = '\0';
     pthread_mutex_unlock(&state->status_lock);
 }
 
