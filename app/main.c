@@ -8,6 +8,7 @@
 #include "ui/tabs/tab_crawler.h"
 #include "ui/tabs/tab_models.h"
 #include "ui/layout_manager.h"
+#include "ui/left_sidebar.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
@@ -57,6 +58,11 @@ AppState* init_app(void) {
     state->mode = MODE_ULAM_SPIRAL;
     state->fold_mode = FOLD_NONE;
     state->current_tab = TAB_PRIME_SPIRAL;
+    
+    // Initialize hierarchical tab system
+    state->main_tab = MAIN_TAB_VISUALIZATION;
+    state->sub_tab.viz_sub = VIZ_SUB_PRIME_SPIRAL;
+    
     state->zoom = 1.0;
     state->animate = false;
     state->show_control_panel = true;
@@ -292,18 +298,16 @@ void expand_primes(AppState* state) {
 void handle_mouse_click(AppState* state, int x, int y) {
     // Silent mouse clicks (no terminal spam)
     
-    if (y < 40) {
-        int tab_width = RENDER_WIDTH / TAB_COUNT;
-        int new_tab = x / tab_width;
-        if (new_tab >= 0 && new_tab < TAB_COUNT) {
-            state->current_tab = new_tab;
-            // Update InputManager's current tab
-            extern InputManager* g_input_manager;
-            if (g_input_manager) {
-                input_manager_set_tab(g_input_manager, new_tab);
-            }
-            // Silent tab switching
-        }
+    // Check if clicking on left sidebar (200px width)
+    if (x < 200) {
+        handle_sidebar_click(state, x, y);
+        return;
+    }
+    
+    // Check if clicking on submenu bar (40px height, after sidebar)
+    if (y < 40 && x >= 200) {
+        handle_submenu_click(state, x, y);
+        return;
     }
     
     // Check if clicking on analyzed numbers in visualization area
@@ -714,11 +718,74 @@ void handle_input(AppState* state, SDL_Event* event) {
     }
 }
 
+// Helper function to sync hierarchical tabs with legacy tab system
+static void sync_hierarchical_to_legacy_tab(AppState* state) {
+    switch (state->main_tab) {
+        case MAIN_TAB_VISUALIZATION:
+            switch (state->sub_tab.viz_sub) {
+                case VIZ_SUB_PRIME_SPIRAL:
+                    state->current_tab = TAB_PRIME_SPIRAL;
+                    break;
+                case VIZ_SUB_CALCULATOR:
+                    state->current_tab = TAB_CALCULATOR;
+                    break;
+                case VIZ_SUB_SPHERES:
+                    state->current_tab = TAB_SPHERES;
+                    break;
+                case VIZ_SUB_PRIME_FOLDING:
+                    state->current_tab = TAB_PRIME_FOLDING;
+                    break;
+                case VIZ_SUB_VIDEO_GENERATOR:
+                    state->current_tab = TAB_VIDEO_GENERATOR;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case MAIN_TAB_AI:
+            switch (state->sub_tab.ai_sub) {
+                case AI_SUB_LLM:
+                    state->current_tab = TAB_LLM;
+                    break;
+                case AI_SUB_TRAINING:
+                    state->current_tab = TAB_TRAINING;
+                    break;
+                case AI_SUB_RESEARCH:
+                    state->current_tab = TAB_RESEARCH;
+                    break;
+                case AI_SUB_CRAWLER:
+                    state->current_tab = TAB_CRAWLER;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case MAIN_TAB_MODELS:
+            state->current_tab = TAB_MODELS;
+            break;
+        case MAIN_TAB_SYSTEM:
+            // Benchmark tab doesn't exist in legacy system yet
+            state->current_tab = TAB_PRIME_SPIRAL; // Default fallback
+            break;
+        case MAIN_TAB_DATA:
+            // Data tabs don't exist in legacy system yet
+            state->current_tab = TAB_PRIME_SPIRAL; // Default fallback
+            break;
+        default:
+            break;
+    }
+}
+
 void render(AppState* state) {
     SDL_SetRenderDrawColor(state->renderer, 10, 15, 20, 255);
     SDL_RenderClear(state->renderer);
     
-    draw_tabs(state->renderer, state);
+    // Sync hierarchical tabs to legacy tab for backward compatibility
+    sync_hierarchical_to_legacy_tab(state);
+    
+    // Render new UI: left sidebar and submenu
+    render_left_sidebar(state->renderer, state);
+    render_submenu(state->renderer, state);
     
     // Get layout for current tab
     TabLayout layout = get_tab_layout(state->current_tab, WINDOW_WIDTH, WINDOW_HEIGHT);
