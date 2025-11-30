@@ -1234,10 +1234,11 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             
             // Initialize training
             if (!state->cllm_training) {
+                // Use configuration from UI sliders
                 CLLMTrainingConfig config = {
                     .num_epochs = state->training_epochs,
-                    .batch_size = 4,
-                    .sequence_length = 32,
+                    .batch_size = state->training_batch_size,        // From UI slider
+                    .sequence_length = state->training_sequence_length, // From UI slider
                     .learning_rate = state->training_learning_rate,
                     .weight_decay = 0.01f,
                     .gradient_clip = 1.0f,
@@ -1247,7 +1248,7 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                     .max_steps = 10000,
                     
                     // Performance optimizations - ENABLED
-                    .gradient_accumulation_steps = 8,    // Effective batch size = 4 * 8 = 32
+                    .gradient_accumulation_steps = 8,    // Effective batch size = batch_size * 8
                     .use_mixed_precision = 1,            // Enable FP16/FP32 mixed precision
                     .loss_scale = 1024.0f,               // Initial loss scale for FP16
                     .loss_scale_growth = 2.0f,           // Growth factor for dynamic scaling
@@ -1255,6 +1256,17 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                     .loss_scale_window = 2000            // Steps before increasing loss scale
                 };
                 strcpy(config.optimizer, "adam");
+                
+                // Save configuration to model for future use
+                if (state->cllm_model) {
+                    state->cllm_model->training_config.learning_rate = config.learning_rate;
+                    state->cllm_model->training_config.batch_size = config.batch_size;
+                    state->cllm_model->training_config.sequence_length = config.sequence_length;
+                    state->cllm_model->training_config.num_epochs = config.num_epochs;
+                    state->cllm_model->training_config.weight_decay = config.weight_decay;
+                    state->cllm_model->training_config.gradient_clip = config.gradient_clip;
+                    printf("Saved training configuration to model\n");
+                }
                 
                 // Build vocabulary
                    // Set status for vocabulary building

@@ -405,29 +405,41 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     }
     
     // Initialize training state
-    // NOTE: Reduced batch size for small tokenized files from crawler
-    // Most crawled pages have 100-1000 tokens, so we need smaller batches
-    CLLMTrainingConfig config = {
-        .num_epochs = 100,  // Dynamic - will train until convergence or max_steps
-        .batch_size = 1,          // Reduced from 4 (single sequence per batch)
-        .sequence_length = 64,    // Reduced from 256 (64 tokens per sequence)
-        .learning_rate = 0.001f,
-        .weight_decay = 0.01f,
-        .gradient_clip = 1.0f,
-        .warmup_steps = 100,
-        .save_every = 5,
-        .eval_interval = 100,
-        .max_steps = 10000,
-        .lr_decay_factor = 0.1f,
-        .lr_decay_steps = 1000,
-        .min_lr = 1e-6f,
-        .gradient_accumulation_steps = 4,  // Accumulate over 4 steps (effective batch size = 16)
-        .use_mixed_precision = 0,          // Disabled by default (enable for 2-3x speedup)
-        .loss_scale = 1024.0f,
-        .loss_scale_growth = 2.0f,
-        .loss_scale_backoff = 0.5f,
-        .loss_scale_window = 2000
-    };
+    // Use configuration from model if available, otherwise use defaults
+    CLLMTrainingConfig config;
+    if (model && model->training_config.batch_size > 0) {
+        // Use model's stored configuration
+        config = model->training_config;
+        printf("Using model's training configuration:\n");
+        printf("  batch_size: %d\n", config.batch_size);
+        printf("  sequence_length: %d\n", config.sequence_length);
+        printf("  num_epochs: %d\n", config.num_epochs);
+        printf("  learning_rate: %.4f\n", config.learning_rate);
+    } else {
+        // Use default configuration
+        config = (CLLMTrainingConfig){
+            .num_epochs = 100,  // Dynamic - will train until convergence or max_steps
+            .batch_size = 1,          // Reduced from 4 (single sequence per batch)
+            .sequence_length = 64,    // Reduced from 256 (64 tokens per sequence)
+            .learning_rate = 0.001f,
+            .weight_decay = 0.01f,
+            .gradient_clip = 1.0f,
+            .warmup_steps = 100,
+            .save_every = 5,
+            .eval_interval = 100,
+            .max_steps = 10000,
+            .lr_decay_factor = 0.1f,
+            .lr_decay_steps = 1000,
+            .min_lr = 1e-6f,
+            .gradient_accumulation_steps = 4,  // Accumulate over 4 steps (effective batch size = 16)
+            .use_mixed_precision = 0,          // Disabled by default (enable for 2-3x speedup)
+            .loss_scale = 1024.0f,
+            .loss_scale_growth = 2.0f,
+            .loss_scale_backoff = 0.5f,
+            .loss_scale_window = 2000
+        };
+        printf("Using default training configuration\n");
+    }
     strcpy(config.optimizer, "adam");
     strcpy(config.lr_scheduler, "cosine");  // Use cosine decay by default
     

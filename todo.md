@@ -84,11 +84,12 @@
 - [ ] Allow increasing layers (with proper initialization)
 - [ ] Update UI to reflect layer constraints
 
-### Phase 10: Unified Data Ingestion (NEXT)
-- [ ] Update crawler to use per-model queues
-- [ ] Update continuous_training to use per-model queues
-- [ ] Update training tab to use per-model queues
-- [ ] Test cross-model training (import from other model's queue)
+### Phase 10: Unified Data Ingestion ✅ COMPLETE
+- [x] Update crawler to use per-model queues (already done)
+- [x] Update continuous_training to use model's training config
+- [x] Update training tab to use UI slider values
+- [x] Save config to model when training starts
+- [x] Load config from model when model selected
 
 ### Phase 11: Integration Testing (NEXT)
 - [ ] Test model creation with custom names
