@@ -93,6 +93,33 @@ static SDL_Rect batch_slider_rect = {0};
 static SDL_Rect seq_slider_rect = {0};
 static SDL_Rect epochs_slider_rect = {0};
 
+// Model selector callback
+static void on_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    printf("Training tab: Loading model '%s'\n", model_name);
+    
+    // Note: We don't release the old model here because we don't track
+    // whether it was acquired with read or write access.
+    // The model manager handles concurrent access internally.
+    
+    // Acquire new model for training (write access)
+    state->cllm_model = model_manager_acquire_write(model_name);
+    
+    if (state->cllm_model) {
+        printf("Model '%s' loaded successfully\n", model_name);
+        
+        // Update training config from model
+        state->training_batch_size = state->cllm_model->training_config.batch_size;
+        state->training_sequence_length = state->cllm_model->training_config.sequence_length;
+        state->training_epochs = state->cllm_model->training_config.num_epochs;
+        state->training_learning_rate = state->cllm_model->training_config.learning_rate;
+    } else {
+        printf("Failed to load model '%s'\n", model_name);
+    }
+}
+
 // Crawler state
 static bool crawler_running = false;
 static int pages_crawled = 0;
@@ -671,6 +698,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
         model_selector = model_selector_create(panel_x + 10, RENDER_OFFSET_Y + 50, CONTROL_PANEL_WIDTH - 20, 30);
         model_selector_update_list(model_selector);
+        
+        // Set callback to load model when selected
+        model_selector_set_callback(model_selector, on_model_selected, state);
     }
     
     // Update visualization data from training state
@@ -769,6 +799,44 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, lr_label, lr_label_rect.x, lr_label_rect.y, text_color);
     
     layout_add_spacing(&layout, 10);
+    
+    // === SECTION 0.75: MODEL INFO ===
+    if (state->cllm_model) {
+        SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 20);
+        draw_text(renderer, "MODEL INFO", info_label.x, info_label.y, text_color);
+        
+        // Get model name from model selector
+        const char* model_name = model_selector ? model_selector_get_selected(model_selector) : "Unknown";
+        
+        // Epochs trained
+        int epochs_trained = state->cllm_model->epochs_trained;
+        char epochs_info[64];
+        snprintf(epochs_info, sizeof(epochs_info), "Epochs Trained: %d", epochs_trained);
+        SDL_Rect epochs_info_rect = layout_add_label(&layout, epochs_info, 16);
+        draw_text(renderer, epochs_info, epochs_info_rect.x, epochs_info_rect.y, text_color);
+        
+        // Queue size (if model has queue directory)
+        if (state->cllm_model->queue_directory[0] != '\0') {
+            // TODO: Implement get_queue_size() function
+            char queue_info[64];
+            snprintf(queue_info, sizeof(queue_info), "Queue: %s", state->cllm_model->queue_directory);
+            SDL_Rect queue_info_rect = layout_add_label(&layout, queue_info, 16);
+            draw_text(renderer, queue_info, queue_info_rect.x, queue_info_rect.y, text_color);
+        }
+        
+        // Model architecture
+        char arch_info[64];
+        snprintf(arch_info, sizeof(arch_info), "Layers: %u", state->cllm_model->num_layers);
+        SDL_Rect arch_info_rect = layout_add_label(&layout, arch_info, 16);
+        draw_text(renderer, arch_info, arch_info_rect.x, arch_info_rect.y, text_color);
+        
+        char vocab_info[64];
+        snprintf(vocab_info, sizeof(vocab_info), "Vocab: %lu", state->cllm_model->vocab_size);
+        SDL_Rect vocab_info_rect = layout_add_label(&layout, vocab_info, 16);
+        draw_text(renderer, vocab_info, vocab_info_rect.x, vocab_info_rect.y, text_color);
+        
+        layout_add_spacing(&layout, 10);
+    }
     
     // === SECTION 1: STATUS ===
     SDL_Rect status_label = layout_add_label(&layout, "STATUS", 20);

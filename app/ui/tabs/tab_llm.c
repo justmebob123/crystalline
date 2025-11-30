@@ -74,6 +74,23 @@ static int chat_message_count = 0;
 
 // Model selector
 static ModelSelector* llm_model_selector = NULL;
+
+// Model selector callback for LLM
+static void on_llm_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    printf("LLM tab: Loading model '%s'\n", model_name);
+    
+    // Acquire new model for inference (read access)
+    state->cllm_model = model_manager_acquire_read(model_name);
+    
+    if (state->cllm_model) {
+        printf("LLM: Model '%s' loaded successfully\n", model_name);
+    } else {
+        printf("LLM: Failed to load model '%s'\n", model_name);
+    }
+}
 static int chat_scroll_offset = 0;
 
 // UI state
@@ -692,6 +709,9 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     if (!llm_model_selector) {
         llm_model_selector = model_selector_create(panel_x + 10, panel_y + 50, panel_width - 20, 30);
         model_selector_update_list(llm_model_selector);
+        
+        // Set callback to load model when selected
+        model_selector_set_callback(llm_model_selector, on_llm_model_selected, state);
     }
     
     SDL_Color text_color = {220, 220, 220, 255};

@@ -4,6 +4,7 @@
 #include "../../crawler_thread.h"
 #include "../layout_manager.h"
 #include "../model_selector.h"
+#include "../../../include/cllm_model_manager.h"
 #include "../../../src/crawler/prime_randomization.h"
 #include "../../../src/crawler/link_management.h"
 #include "../../../src/crawler/url_patterns.h"
@@ -80,6 +81,23 @@ static UIButton btn_load_config;
 
 // Model selector
 static ModelSelector* crawler_model_selector = NULL;
+
+// Model selector callback for crawler
+static void on_crawler_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    printf("Crawler tab: Loading model '%s'\n", model_name);
+    
+    // Acquire new model for crawler (write access for training)
+    state->cllm_model = model_manager_acquire_write(model_name);
+    
+    if (state->cllm_model) {
+        printf("Crawler: Model '%s' loaded successfully\n", model_name);
+    } else {
+        printf("Crawler: Failed to load model '%s'\n", model_name);
+    }
+}
 
 // ============================================================================
 // INITIALIZATION
@@ -640,6 +658,9 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
             30
         );
         model_selector_update_list(crawler_model_selector);
+        
+        // Set callback to load model when selected
+        model_selector_set_callback(crawler_model_selector, on_crawler_model_selected, state);
     }
     
     SDL_Renderer* renderer = state->renderer;

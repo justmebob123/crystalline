@@ -43,20 +43,20 @@
 - [x] Wire sliders to update AppState
 - [x] Display current values next to sliders
 
-#### 7.2: Add Model Info Display ⏳ IN PROGRESS
-- [ ] Show epochs_trained for selected model
-- [ ] Show queue_size for selected model
-- [ ] Show num_layers for selected model
-- [ ] Show vocab_size for selected model
-- [ ] Position info panel on right side
+#### 7.2: Add Model Info Display ✅ COMPLETE
+- [x] Show epochs_trained for selected model
+- [x] Show queue_size for selected model
+- [x] Show num_layers for selected model
+- [x] Show vocab_size for selected model
+- [x] Position info panel below configuration
 
-#### 7.3: Wire Model Selectors to Load Models ⏳ CRITICAL
-- [ ] Training tab: Load selected model on change
-- [ ] Crawler tab: Load selected model on change
-- [ ] LLM tab: Load selected model on change
-- [ ] Research tab: Load selected model on change
-- [ ] Update all tabs when model changes
-- [ ] Handle model loading errors gracefully
+#### 7.3: Wire Model Selectors to Load Models ✅ COMPLETE
+- [x] Training tab: Load selected model on change
+- [x] Crawler tab: Load selected model on change
+- [x] LLM tab: Load selected model on change
+- [x] Research tab: Load selected model on change
+- [x] Update all tabs when model changes
+- [x] Handle model loading errors gracefully
 
 #### 7.4: Fix Model History Storage ✅ COMPLETE
 - [x] Remove loss_history from CLLMModel structure

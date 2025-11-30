@@ -4,6 +4,7 @@
 #include "../../text_input.h"
 #include "../../ui_layout.h"
 #include "../model_selector.h"
+#include "../../../include/cllm_model_manager.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -37,6 +38,23 @@ static int selected_file = -1;
 
 // Model selector
 static ModelSelector* research_model_selector = NULL;
+
+// Model selector callback for research
+static void on_research_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    printf("Research tab: Loading model '%s'\n", model_name);
+    
+    // Acquire new model for research (read access)
+    state->cllm_model = model_manager_acquire_read(model_name);
+    
+    if (state->cllm_model) {
+        printf("Research: Model '%s' loaded successfully\n", model_name);
+    } else {
+        printf("Research: Failed to load model '%s'\n", model_name);
+    }
+}
 static char file_content[MAX_CONTENT_LENGTH];
 static int content_scroll = 0;
 static int file_list_scroll = 0;
@@ -179,6 +197,9 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     if (!research_model_selector) {
         research_model_selector = model_selector_create(panel_x + 10, panel_y + 10, panel_width - 20, 30);
         model_selector_update_list(research_model_selector);
+        
+        // Set callback to load model when selected
+        model_selector_set_callback(research_model_selector, on_research_model_selected, state);
     }
     
     SDL_Color text_color = {220, 220, 220, 255};
