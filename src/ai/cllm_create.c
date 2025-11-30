@@ -387,9 +387,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         // Initialize attention weights with Xavier initialization
         float xavier_std = prime_sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
         for (size_t j = 0; j < qkv_size; j++) {
-            model->attention_layers[i].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
-            model->attention_layers[i].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
-            model->attention_layers[i].value_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+               big_fixed_from_double(model->attention_layers[i].query_lattice[j], rand_val);
+               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+               big_fixed_from_double(model->attention_layers[i].key_lattice[j], rand_val);
+               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+               big_fixed_from_double(model->attention_layers[i].value_lattice[j], rand_val);
         }
     }
     
