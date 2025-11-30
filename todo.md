@@ -49,66 +49,65 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ---
 
-## NEW CRITICAL ISSUES (USER REPORTED)
+## CRITICAL ISSUES (USER REPORTED - ROUND 3)
 
-### Issue 1: AI Tab - Display Area Overlaps Sidebar
-- [ ] Investigate LLM tab rendering
-- [ ] Check if using old coordinate system
-- [ ] Fix overlap with sidebar
+### Issue 1: URL Input Field Not Clickable (CRITICAL)
+- [ ] URL field does not highlight when clicked
+- [ ] Clicks not detected - hotkeys execute instead
+- [ ] Input manager not receiving click events
+- [ ] Need to debug input bounds and click detection
 
-### Issue 2: Models Tab - Rendering Issues
-- [ ] Models tab shows only "couple large blocky areas"
-- [ ] Investigate tab_models.c rendering
-- [ ] Fix rendering to show proper model list
-
-### Issue 3: URL Field Segfault (CRITICAL)
-- [ ] URL field not clickable
-- [ ] Double-click causes segfault
-- [ ] Investigate input_manager click detection
-- [ ] Fix bounds checking in URL field
+### Issue 2: Models Tab Completely Broken
+- [ ] Only shows "blocky areas"
+- [ ] No actual content rendering
+- [ ] Need to investigate draw_model_list and draw_model_details
+- [ ] May have incomplete implementation
 
 ---
 
-## PREVIOUS FIXES (COMPLETED)
-- [x] Phase 1: Fixed unicode characters (emoji → ASCII)
-- [x] Phase 2: Updated RENDER_WIDTH to account for sidebar
-- [x] Phase 2: Fixed visualization coordinate system
-- [x] Phase 2: Fixed control panel positioning
-- [x] Phase 2: Fixed training tab visualization area
-- [x] Phase 3: Added input bounds validation
-- [x] Phase 3: Added layout validation in crawler tab
+## INVESTIGATION PLAN
+
+### Phase 1: Debug URL Input Field
+1. [ ] Add logging to show registered input bounds
+2. [ ] Add logging to show click coordinates
+3. [ ] Check if crawler tab is setting current_tab correctly
+4. [ ] Verify input bounds are in correct coordinate space
+5. [ ] Test if bounds overlap with sidebar/submenu
+
+### Phase 2: Fix Models Tab
+1. [ ] Check draw_model_list implementation
+2. [ ] Check draw_model_details implementation
+3. [ ] Verify model manager is returning data
+4. [ ] Complete any TODO sections in rendering
 
 ---
 
-## FIXES APPLIED (ROUND 2)
+## FIXES APPLIED (ROUND 3)
 
-### Issue 1: AI Tab - FIXED
-- [x] Fixed LLM tab control panel position (RENDER_OFFSET_X + RENDER_WIDTH)
-- [x] Fixed LLM tab control panel Y (RENDER_OFFSET_Y)
-- [x] Fixed chat area X position (RENDER_OFFSET_X + 10)
-- [x] Fixed input rect X position (RENDER_OFFSET_X + 10)
+### Issue 1: URL Input Field - DEBUGGING ADDED
+- [x] Added extensive logging to input_manager.c:
+  - Logs all input registrations with bounds
+  - Logs all click events with coordinates and current_tab
+  - Logs which inputs are being checked
+  - Logs tab mismatches
+  - Logs successful focus operations
+- [x] This will help identify why URL field not clickable
 
 ### Issue 2: Models Tab - FIXED
-- [x] Fixed window_width calculation (subtract SIDEBAR_WIDTH)
-- [x] Fixed window_height calculation (subtract SUBMENU_HEIGHT)
-- [x] Fixed X position (RENDER_OFFSET_X + 20)
-- [x] Fixed Y position (RENDER_OFFSET_Y + 20)
-
-### Issue 3: URL Field Segfault - FIXED
-- [x] Added NULL pointer validation in click handler
-- [x] Added bounds validation before checking clicks
-- [x] Added bounds validation in focus function
-- [x] Added extensive logging for debugging
-- [x] Added error messages for invalid operations
-
-### Files Modified:
-1. app/ui/tabs/tab_llm.c - Fixed all coordinate calculations
-2. app/ui/tabs/tab_models.c - Fixed all coordinate calculations
-3. app/input_manager.c - Added comprehensive validation and logging
+- [x] Completed all TODO sections in draw_model_list()
+- [x] Completed all TODO sections in draw_model_details()
+- [x] Completed all TODO sections in draw_action_buttons()
+- [x] Completed all TODO sections in draw_status_message()
+- [x] Fixed in_use field (should be read_count > 0)
+- [x] Tab now shows:
+  - Model list with names, status, and size info
+  - Model details panel with full configuration
+  - Action buttons (Create, Load, Delete)
+  - Status messages
 
 ### Build Status:
 Zero errors, zero warnings
 
 ---
 
-## STATUS: ROUND 2 FIXES COMPLETE - READY FOR TESTING
+## STATUS: ROUND 3 FIXES COMPLETE - READY FOR TESTING WITH LOGGING

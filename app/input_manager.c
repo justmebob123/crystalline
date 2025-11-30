@@ -75,6 +75,10 @@ ManagedInput* input_manager_register(
     input->on_submit = NULL;
     input->user_data = NULL;
     
+    // Log registration
+    printf("InputManager: Registered '%s' tab=%d bounds=(%d,%d,%d,%d)\n",
+           id, tab_id, bounds.x, bounds.y, bounds.w, bounds.h);
+    
     // Silent registration
     return input;
 }
@@ -182,6 +186,9 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
             int mx = event->button.x;
             int my = event->button.y;
             
+            printf("InputManager: Click at (%d, %d), current_tab=%d, input_count=%d\n",
+                   mx, my, manager->current_tab, manager->input_count);
+            
             // Check if click is on any visible input in current tab
             bool clicked_input = false;
             for (int i = 0; i < manager->input_count; i++) {
@@ -193,7 +200,15 @@ bool input_manager_handle_event(InputManager* manager, SDL_Event* event) {
                     continue;
                 }
                 
-                if (!input->visible || input->tab_id != manager->current_tab) continue;
+                if (!input->visible || input->tab_id != manager->current_tab) {
+                    if (input->tab_id != manager->current_tab) {
+                        printf("  Input '%s': tab_id=%d (skipped - wrong tab)\n", input->id, input->tab_id);
+                    }
+                    continue;
+                }
+                
+                printf("  Checking input '%s': bounds=(%d,%d,%d,%d)\n",
+                       input->id, input->bounds.x, input->bounds.y, input->bounds.w, input->bounds.h);
                 
                 // CRITICAL: Validate bounds before checking
                 if (input->bounds.w <= 0 || input->bounds.h <= 0) {

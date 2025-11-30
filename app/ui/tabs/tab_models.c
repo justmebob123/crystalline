@@ -116,7 +116,9 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
     int current_y = y + PANEL_PADDING;
     
     // Title
-    // TODO: Render "Available Models" title
+    SDL_Color title_color = {200, 220, 255, 255};
+    extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
+    draw_text(state->renderer, "Available Models", x + PANEL_PADDING, current_y, title_color);
     current_y += 40;
     
     // Get model list
@@ -125,7 +127,10 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
     
     if (model_count == 0) {
         // No models message
-        // TODO: Render "No models available. Create a new model to get started."
+        SDL_Color msg_color = {150, 150, 150, 255};
+        draw_text(state->renderer, "No models available.", x + PANEL_PADDING, current_y, msg_color);
+        current_y += 20;
+        draw_text(state->renderer, "Create a new model to get started.", x + PANEL_PADDING, current_y, msg_color);
         current_y += 30;
     } else {
         // Draw each model
@@ -150,9 +155,28 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
             SDL_RenderDrawRect(state->renderer, &model_rect);
             
             // Model info
-            // TODO: Render model name
-            // TODO: Render model status (training/idle/in-use)
-            // TODO: Render model size info
+            SDL_Color name_color = {220, 220, 220, 255};
+            SDL_Color info_color = {150, 170, 190, 255};
+            
+            if (models[i]) {
+                // Model name
+                draw_text(state->renderer, models[i]->name, 
+                         model_rect.x + 10, model_rect.y + 10, name_color);
+                
+                // Model status
+                const char* status = models[i]->read_count > 0 ? "In Use" : "Idle";
+                SDL_Color status_color = models[i]->read_count > 0 ? 
+                    (SDL_Color){100, 255, 100, 255} : (SDL_Color){150, 150, 150, 255};
+                draw_text(state->renderer, status, 
+                         model_rect.x + 10, model_rect.y + 30, status_color);
+                
+                // Model size info
+                char size_info[128];
+                snprintf(size_info, sizeof(size_info), "Vocab: %u | Layers: %u",
+                        models[i]->vocab_size, models[i]->num_layers);
+                draw_text(state->renderer, size_info,
+                         model_rect.x + 10, model_rect.y + 45, info_color);
+            }
             
             current_y += 70;
         }
