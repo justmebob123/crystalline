@@ -108,13 +108,23 @@
 - [ ] Verify button states (hover, pressed, disabled)
 - [ ] Integration test entire system
 
-### Phase 4: Crawler Database Integration (2-3 hours)
-- [ ] Wire crawler to CrawlerURLManager
-- [ ] Remove ALL hardcoded URLs
-- [ ] Implement proper URL queue from database
+### Phase 4: Crawler Database Integration (2-3 hours) - ROOT CAUSE FOUND!
+
+**CRITICAL DISCOVERY:** Crawler uses FILE-BASED queue, NOT database!
+- UI adds URLs to database via CrawlerURLManager ✓
+- Crawler reads URLs from `links_to_crawl` FILE ✗
+- They are COMPLETELY DISCONNECTED!
+
+**The crawler_get_next_url() function reads from a FILE, not the database!**
+
+- [x] Identify root cause: File-based vs database-based queue
+- [ ] Modify crawler_get_next_url() to use CrawlerURLManager
+- [ ] Pass CrawlerURLManager to crawler_state_init()
+- [ ] Update crawler to mark URLs as crawled in database
+- [ ] Remove file-based queue system
 - [ ] Test URL addition workflow
 - [ ] Test crawler using database URLs
-- [ ] Verify URL status updates
+- [ ] Verify URL status updates in database
 
 ### Phase 5: Model Management Fix (1 hour)
 - [ ] Fix model name resolution
