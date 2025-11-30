@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -I../include -mavx2 -mfma
-LDFLAGS = -L.. -lcrystalline -lcllm -lm -Wl,-rpath,'$$ORIGIN/..'
+LDFLAGS = -L.. -L../algorithms -lcrystalline -lcllm -lalgorithms -lm -Wl,-rpath,'$$ORIGIN/..'
 
 # Test directories
 UNIT_DIR = unit
@@ -31,12 +31,20 @@ VALIDATION_TESTS = \
 # Mathematical integration tests
 MATH_TESTS = test_mathematical_integration
 
+# Diagnostic tests (moved from tools/)
+DIAGNOSTIC_TESTS = \
+        test_simple_init \
+        test_token_init \
+        test_hierarchical \
+        quick_inference_check \
+        profile_kissing_spheres
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS)
 
-.PHONY: all unit integration performance validation clean run-unit run-integration run-performance run-validation run-all
+.PHONY: all unit integration performance validation diagnostic clean run-unit run-integration run-performance run-validation run-diagnostic run-all
 
-all: unit integration
+all: unit integration diagnostic
 
 unit: $(UNIT_TESTS)
 
@@ -45,6 +53,8 @@ integration: $(INTEGRATION_TESTS)
 performance: $(PERFORMANCE_TESTS)
 
 validation: $(VALIDATION_TESTS)
+
+diagnostic: $(DIAGNOSTIC_TESTS)
 
 # Unit test compilation
 $(UNIT_DIR)/test_softmax_backward: $(UNIT_DIR)/test_softmax_backward.c
@@ -169,3 +179,40 @@ run-math: test_mathematical_integration
 	@./test_mathematical_integration
 	@echo ""
 	@echo "✓ Mathematical integration tests completed"
+
+# Diagnostic tests (moved from tools/)
+test_simple_init: test_simple_init.c
+	@echo "Building test_simple_init..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_simple_init built"
+
+test_token_init: test_token_init.c
+	@echo "Building test_token_init..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_token_init built"
+
+test_hierarchical: test_hierarchical.c
+	@echo "Building test_hierarchical..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_hierarchical built"
+
+quick_inference_check: quick_inference_check.c
+	@echo "Building quick_inference_check..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ quick_inference_check built"
+
+profile_kissing_spheres: profile_kissing_spheres.c
+	@echo "Building profile_kissing_spheres..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ profile_kissing_spheres built"
+
+run-diagnostic: $(DIAGNOSTIC_TESTS)
+	@echo ""
+	@echo "Running diagnostic tests..."
+	@echo ""
+	@for test in $(DIAGNOSTIC_TESTS); do \
+		echo "Running $$test..."; \
+		./$$test || true; \
+		echo ""; \
+	done
+	@echo "✓ Diagnostic tests completed"

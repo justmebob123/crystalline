@@ -92,12 +92,21 @@ InputManager now has FULL control of LLM tab input with proper callbacks. No mor
 
 **Result:** tools/ directory now contains only 22 production tools (down from 30)
 
-#### Step 4: Clean Up Makefile
-- [ ] Remove legacy tool targets
-- [ ] Update test tool paths
-- [ ] Verify all targets build correctly
+#### Step 4: Update Makefile for Test Tools ⏳ IN PROGRESS
+- [x] Added diagnostic tests section to tests/Makefile
+- [x] Added build targets for all 5 moved test tools
+- [x] Updated LDFLAGS to include -lalgorithms
+- [x] Added run-diagnostic target
+- [ ] Fix API mismatches in test_hierarchical.c
+- [ ] Fix API mismatches in quick_inference_check.c
+- [ ] Verify all test tools build successfully
 
-#### Step 5: Organize Libraries (SECONDARY_OBJECTIVES)
+#### Step 5: Clean Up Main Makefile
+- [ ] Check for references to deleted legacy tools
+- [ ] Verify all tool targets are correct
+- [ ] Ensure clean build works
+
+#### Step 6: Organize Libraries (SECONDARY_OBJECTIVES)
 - [ ] Review SECONDARY_OBJECTIVES library organization
 - [ ] Implement proper categorization
 - [ ] Update build system
