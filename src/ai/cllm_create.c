@@ -340,7 +340,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     
     // Initialize with small random values
     for (uint64_t i = 0; i < embedding_weights; i++) {
-        model->embeddings.embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+           // Initialize with small random BigFixed values
+           double rand_val = ((double)rand() / RAND_MAX - 0.5) * 0.1;
+           big_fixed_from_double(model->embeddings.embeddings[i], rand_val);
     }
     
     // Allocate attention layers
