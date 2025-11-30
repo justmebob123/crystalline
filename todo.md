@@ -4,7 +4,7 @@
 
 ## 🔒 MANDATORY RULES (PASTE AT TOP OF EVERY RESPONSE)
 
-**MASTER PLAN READ: ✅ Beginning of response**
+**MASTER PLAN READ: ✅ Completed - Proceeding with Phase 4**
 
 ### ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
 **HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
@@ -369,34 +369,33 @@ for (token_id in vocab_size) {
 - prime_cos: 0.013 µs
 - prime_log: 0.014 µs
 
-## 🎯 CURRENT WORK: GLOBAL MODEL MANAGEMENT (Phase 3)
+## 🎯 CURRENT WORK: GLOBAL MODEL MANAGEMENT (Phase 4)
 
 ### Phase 3: Create Model Management Tab ✅ COMPLETE
 
-**Status:** Model management tab created and integrated
-
-**Completed Tasks:**
-- [x] Created `app/ui/tabs/tab_models.c` - Model management UI
-- [x] Created `app/ui/tabs/tab_models.h` - Header file
-- [x] Added TAB_MODELS to app_common.h enum
-- [x] Integrated tab into main.c render loop
-- [x] Added tab button to ui.c
-- [x] Fixed pthread_rwlock_t compilation issue (added -D_POSIX_C_SOURCE=200809L)
-- [x] Fixed all compiler warnings
+**Completed:**
+- [x] Model management tab UI created and integrated
 - [x] Build verified: Zero errors, zero warnings
+- [x] All changes committed and pushed to GitHub
 
-**Features Implemented:**
-- Model list view with selection
-- Model details panel
-- Action buttons (Create, Load, Delete)
-- Create model dialog (skeleton)
-- Status message system
-- Two-column layout
+### Phase 4: Update Existing Tabs (CURRENT)
 
-**Next Steps:**
-- [ ] Phase 4: Update existing tabs to use model manager
-- [ ] Phase 5: Update CLI tools to use model manager
-- [ ] Phase 6: Testing and validation
+**Goal:** Integrate model manager into existing tabs
+
+**Tasks:**
+- [ ] Update `app/ui/tabs/tab_training.c`
+  - [ ] Add model selector widget
+  - [ ] Use `model_manager_acquire_write()` for training
+  - [ ] Release model when done
+  - [ ] Handle model locking errors
+- [ ] Update `app/ui/tabs/tab_llm.c`
+  - [ ] Add model selector widget
+  - [ ] Use `model_manager_acquire_read()` for inference
+  - [ ] Support concurrent inference
+- [ ] Update `app/ui/tabs/tab_crawler.c`
+  - [ ] Add model selector widget
+  - [ ] Use appropriate access mode
+- [ ] Test tab integration
 
 ---
 
