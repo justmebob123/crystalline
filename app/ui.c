@@ -92,7 +92,8 @@ void draw_tabs(SDL_Renderer* renderer, AppState* state) {
         "LLM",
         "Training",
         "Research",
-        "Crawler"
+        "Crawler",
+        "Models"
     };
     
     int tab_width = RENDER_WIDTH / TAB_COUNT;

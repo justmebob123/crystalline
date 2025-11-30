@@ -6,6 +6,7 @@
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"
+#include "ui/tabs/tab_models.h"
 #include "ui/layout_manager.h"
 
 // Global pointer for lattice cache access from helper functions
@@ -764,6 +765,10 @@ void render(AppState* state) {
         case TAB_CRAWLER:
             // Pass layout to crawler tab for proper rendering
             draw_crawler_tab_with_layout(state, &layout);
+            break;
+        case TAB_MODELS:
+            // Draw models management tab
+            draw_models_tab(state);
             break;
         case TAB_COUNT:
             break;

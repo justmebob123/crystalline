@@ -19,6 +19,7 @@
 #ifndef CLLM_MODEL_MANAGER_H
 #define CLLM_MODEL_MANAGER_H
 
+#define _POSIX_C_SOURCE 200809L
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
