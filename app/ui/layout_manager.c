@@ -9,21 +9,26 @@
 static TabLayout calculate_split_layout(int window_width, int window_height) {
     TabLayout layout = {0};
     layout.type = LAYOUT_SPLIT;
-    layout.tab_bar_height = 60;
+    layout.tab_bar_height = 40;  // Submenu height
     layout.window_width = window_width;
     layout.window_height = window_height;
     
-    // Visualization area (left side)
-    layout.visualization_area.x = 0;
-    layout.visualization_area.y = layout.tab_bar_height;
-    layout.visualization_area.w = window_width - CONTROL_PANEL_WIDTH;
-    layout.visualization_area.h = window_height - layout.tab_bar_height;
+    // Account for left sidebar (200px) and submenu (40px)
+    int sidebar_width = 200;
+    int content_width = window_width - sidebar_width;
+    int content_height = window_height - layout.tab_bar_height;
     
-    // Control panel (right side)
+    // Visualization area (left side of content area)
+    layout.visualization_area.x = sidebar_width;
+    layout.visualization_area.y = layout.tab_bar_height;
+    layout.visualization_area.w = content_width - CONTROL_PANEL_WIDTH;
+    layout.visualization_area.h = content_height;
+    
+    // Control panel (right side of content area)
     layout.control_area.x = window_width - CONTROL_PANEL_WIDTH;
     layout.control_area.y = layout.tab_bar_height;
     layout.control_area.w = CONTROL_PANEL_WIDTH;
-    layout.control_area.h = window_height - layout.tab_bar_height;
+    layout.control_area.h = content_height;
     
     layout.num_columns = 1;
     layout.columns[0].x = layout.control_area.x + 10;
@@ -43,13 +48,13 @@ static TabLayout calculate_full_width_2col(int window_width, int window_height,
                                            float col1_percent) {
     TabLayout layout = {0};
     layout.type = LAYOUT_FULL_WIDTH;
-    layout.tab_bar_height = 60;
+    layout.tab_bar_height = 40;  // Submenu height
     layout.window_width = window_width;
     layout.window_height = window_height;
     
     // Full content area
     int margin = 20;
-    layout.content_area.x = margin;
+    layout.content_area.x = 200 + margin;  // Sidebar width + margin
     layout.content_area.y = layout.tab_bar_height;
     layout.content_area.w = window_width - (margin * 2);
     layout.content_area.h = window_height - layout.tab_bar_height;
@@ -82,13 +87,13 @@ static TabLayout calculate_full_width_2col(int window_width, int window_height,
 static TabLayout calculate_full_width_3col(int window_width, int window_height) {
     TabLayout layout = {0};
     layout.type = LAYOUT_FULL_WIDTH;
-    layout.tab_bar_height = 60;
+    layout.tab_bar_height = 40;  // Submenu height
     layout.window_width = window_width;
     layout.window_height = window_height;
     
     // Full content area
     int margin = 20;
-    layout.content_area.x = margin;
+    layout.content_area.x = 200 + margin;  // Sidebar width + margin
     layout.content_area.y = layout.tab_bar_height;
     layout.content_area.w = window_width - (margin * 2);
     layout.content_area.h = window_height - layout.tab_bar_height;
