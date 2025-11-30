@@ -533,3 +533,10 @@ tools/cllm_model_manager: $(CLLM_LIB)
 	$(CC) $(CFLAGS) -o tools/cllm_model_manager tools/cllm_model_manager.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Model manager tool built: tools/cllm_model_manager"
+
+tools/diagnose_inference: $(CLLM_LIB)
+	@echo "Building inference diagnostic tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/diagnose_inference tools/diagnose_inference.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Inference diagnostic tool built: tools/diagnose_inference"
