@@ -100,7 +100,7 @@ bool cllm_validate_config(const CLLMConfig* config) {
  * 
  * Prints configuration details for debugging
  */
-void cllm_print_config(CLLMConfig* config) {
+void cllm_print_config(const CLLMConfig* config) {
     if (!config) {
         printf("Configuration: NULL\n");
         return;
