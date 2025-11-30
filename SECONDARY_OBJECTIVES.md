@@ -2,13 +2,428 @@
 
 ## Overview
 This document outlines comprehensive enhancements to the Crystalline system, focusing on:
-1. **CRITICAL: Fix Rainbow Table to Use Clock Lattice Mapping** (NEW - HIGH PRIORITY)
-2. Complete UI enhancements (all pending features)
-3. Advanced crawler controls with prime-based randomization
-4. Pure C implementation of all file processors (no Python dependencies)
-5. Proper library organization and categorization
-6. Advanced URL pattern detection
-7. Dependency management for multiple Linux distributions
+1. **CRITICAL: Dynamic Training System with Per-Model Queues** (NEW - HIGHEST PRIORITY)
+2. **CRITICAL: Model Naming, Renaming, and Cross-Model Training** (NEW - HIGHEST PRIORITY)
+3. **CRITICAL: Model Selection Across All Tabs** (NEW - HIGHEST PRIORITY)
+4. **CRITICAL: Fix Rainbow Table to Use Clock Lattice Mapping** (HIGH PRIORITY)
+5. Complete UI enhancements (all pending features)
+6. Advanced crawler controls with prime-based randomization
+7. Pure C implementation of all file processors (no Python dependencies)
+8. Proper library organization and categorization
+9. Advanced URL pattern detection
+10. Dependency management for multiple Linux distributions
+
+---
+
+## 🔴 CRITICAL PRIORITY 1: DYNAMIC TRAINING SYSTEM WITH PER-MODEL QUEUES
+
+### Overview
+Implement a complete dynamic training system where each model has its own training queue, configuration, and epoch tracking. This replaces the current hardcoded single-model system.
+
+### Current Problems
+- ❌ Hardcoded batch_size=1, sequence_length=64, epochs=5
+- ❌ Single global queue (crawler_data/tokenized/)
+- ❌ No per-model configuration or tracking
+- ❌ No batch accumulation (fails on small inputs)
+- ❌ No epoch tracking or continuation
+- ❌ No layer validation
+
+### Required Implementation
+
+#### 1.1 Enhanced Model Structure
+**File:** `include/cllm.h`
+
+Add new fields to CLLMModel:
+```c
+typedef struct {
+    // Existing fields
+    uint32_t vocab_size;
+    uint32_t embedding_dim;
+    uint32_t num_layers;         // FIXED - cannot be reduced
+    uint32_t num_heads;
+    uint32_t ff_dim;
+    
+    // Model weights (existing)
+    float* embeddings;
+    CLLMLayer* layers;
+    float* output_weights;
+    float* lattice_coords;
+    uint32_t* symmetry_groups;
+    
+    // NEW: Training metadata
+    char model_name[256];        // User-defined model name
+    int epochs_trained;          // Total epochs trained so far
+    int target_epochs;           // Target epochs for next training session
+    char queue_directory[512];   // Path to model-specific queue
+    CLLMTrainingConfig config;   // Per-model training configuration
+    
+    // NEW: Training history
+    float* loss_history;         // Loss per epoch
+    int history_size;            // Number of recorded epochs
+} CLLMModel;
+```
+
+#### 1.2 Per-Model Queue System
+**Files:** `include/ai/model_queue_manager.h`, `src/ai/model_queue_manager.c`
+
+```c
+// Create queue for model
+int create_model_queue(const char* model_name);
+
+// Add file to model's queue
+int add_to_model_queue(const char* model_name, const char* tokenized_file);
+
+// Get next file from model's queue
+char* get_next_from_queue(const char* model_name);
+
+// Get queue size
+int get_queue_size(const char* model_name);
+
+// Clear queue
+int clear_model_queue(const char* model_name);
+
+// NEW: Import queue from another model (cross-model training)
+int import_queue_from_model(const char* target_model, const char* source_model);
+```
+
+**Directory Structure:**
+```
+models/
+    ├── model1.cllm
+    ├── model1_queue/
+    │   ├── file1.txt (tokenized)
+    │   ├── file2.txt (tokenized)
+    │   └── file3.txt (tokenized)
+    ├── model2.cllm
+    ├── model2_queue/
+    │   ├── file1.txt (tokenized)
+    │   └── file2.txt (tokenized)
+    └── crawler_model.cllm
+        └── crawler_model_queue/
+            ├── crawled1.txt (tokenized)
+            └── crawled2.txt (tokenized)
+```
+
+#### 1.3 Batch Accumulation System
+**Files:** `include/ai/batch_accumulator.h`, `src/ai/batch_accumulator.c`
+
+```c
+typedef struct {
+    uint32_t* token_buffer;      // Accumulated tokens
+    size_t buffer_size;          // Current buffer size
+    size_t buffer_capacity;      // Maximum buffer capacity
+    int target_batch_size;       // Target batch size
+    int sequence_length;         // Sequence length
+    pthread_mutex_t lock;        // Thread safety
+} BatchAccumulator;
+
+// Initialize accumulator
+BatchAccumulator* batch_accumulator_create(int batch_size, int seq_len);
+
+// Add tokens to accumulator
+int batch_accumulator_add(BatchAccumulator* acc, uint32_t* tokens, size_t num_tokens);
+
+// Check if ready for training
+int batch_accumulator_ready(BatchAccumulator* acc);
+
+// Get batch for training
+int batch_accumulator_get_batch(BatchAccumulator* acc, uint32_t** batch_tokens, size_t* batch_size);
+
+// Clear accumulator
+void batch_accumulator_clear(BatchAccumulator* acc);
+```
+
+**Example Flow:**
+```
+File 1: 50 tokens → Buffer: 50 (not ready)
+File 2: 30 tokens → Buffer: 80 (not ready)
+File 3: 80 tokens → Buffer: 160 (not ready)
+File 4: 100 tokens → Buffer: 260 (READY!)
+  → Create batch with 256 tokens
+  → Train model
+  → Buffer: 4 tokens remaining
+```
+
+#### 1.4 Epoch Tracking System
+**File:** `src/ai/cllm_model_manager.c`
+
+```c
+// Get epochs trained
+int cllm_model_get_epochs_trained(CLLMModel* model);
+
+// Set target epochs
+int cllm_model_set_target_epochs(CLLMModel* model, int target);
+
+// Validate epoch configuration
+int cllm_model_validate_epochs(CLLMModel* model, int target_epochs);
+
+// Continue training from checkpoint
+int cllm_model_continue_training(CLLMModel* model, int additional_epochs);
+```
+
+**Example:**
+```
+Initial: epochs_trained=0, target_epochs=10
+  → Train for 10 epochs
+  → epochs_trained=10
+
+Later: epochs_trained=10, target_epochs=20
+  → Train for 10 more epochs
+  → epochs_trained=20
+
+Cannot: epochs_trained=20, target_epochs=15
+  → ERROR: Cannot reduce epochs (minimum is 20)
+```
+
+#### 1.5 Layer Validation System
+**File:** `src/ai/cllm_model_manager.c`
+
+```c
+// Validate layer configuration
+int cllm_model_validate_layers(CLLMModel* existing_model, int new_layers);
+
+// Check if layer reduction
+int cllm_model_is_layer_reduction(CLLMModel* model, int new_layers);
+
+// Increase layers (with proper initialization)
+int cllm_model_increase_layers(CLLMModel* model, int new_layers);
+
+// Get layer constraints
+typedef struct {
+    int min_layers;      // Minimum layers (from existing model)
+    int max_layers;      // Maximum layers (system limit)
+    int current_layers;  // Current layers
+    int can_reduce;      // 0 = cannot reduce, 1 = can reduce (new model)
+} LayerConstraints;
+
+LayerConstraints cllm_model_get_layer_constraints(CLLMModel* model);
+```
+
+### Priority: HIGHEST
+This is the foundation for all dynamic training features.
+
+---
+
+## 🔴 CRITICAL PRIORITY 2: MODEL NAMING, RENAMING, AND CROSS-MODEL TRAINING
+
+### Overview
+Allow users to name and rename models with automatic file and directory renaming. Enable cross-model training where one model can train on another model's data.
+
+### Required Implementation
+
+#### 2.1 Model Naming System
+**File:** `src/ai/cllm_model_manager.c`
+
+```c
+// Set model name
+int cllm_model_set_name(CLLMModel* model, const char* name);
+
+// Get model name
+const char* cllm_model_get_name(CLLMModel* model);
+
+// Validate model name (unique, valid characters)
+int cllm_model_validate_name(const char* name);
+
+// Generate default name (model_1, model_2, etc.)
+char* cllm_model_generate_default_name(void);
+```
+
+#### 2.2 Model Renaming System
+**File:** `src/ai/cllm_model_manager.c`
+
+```c
+// Rename model (renames file and queue directory)
+int model_manager_rename_model(const char* old_name, const char* new_name);
+
+// Implementation:
+// 1. Validate new name is unique
+// 2. Rename model file: models/old_name.cllm → models/new_name.cllm
+// 3. Rename queue directory: models/old_name_queue/ → models/new_name_queue/
+// 4. Update model->model_name field
+// 5. Update model->queue_directory field
+// 6. Save model with new name
+// 7. Delete old model file
+```
+
+**Example:**
+```
+Before:
+  models/model_1.cllm
+  models/model_1_queue/
+
+Rename "model_1" to "research_papers":
+  models/research_papers.cllm
+  models/research_papers_queue/
+```
+
+#### 2.3 Cross-Model Training System
+**File:** `src/ai/model_queue_manager.c`
+
+```c
+// Import training data from another model's queue
+int import_queue_from_model(const char* target_model, const char* source_model);
+
+// Implementation:
+// 1. Get source model's queue directory
+// 2. Copy all tokenized files to target model's queue
+// 3. Maintain source files (don't move, copy)
+// 4. Update target model's queue size
+// 5. Log import operation
+```
+
+**Example:**
+```
+Training Tab:
+  Selected Model: model_A
+  Import Data From: [dropdown: model_B, model_C, crawler_model]
+  [Import Data Button]
+  
+Result:
+  model_A_queue/ now contains copies of model_B_queue/ files
+  model_A can train on model_B's data
+  model_B's queue unchanged
+```
+
+### Priority: HIGHEST
+Essential for flexible model management and cross-model learning.
+
+---
+
+## 🔴 CRITICAL PRIORITY 3: MODEL SELECTION ACROSS ALL TABS
+
+### Overview
+Every tab should have a model selector dropdown. Main model controls are in Models tab, but all tabs can select and use any loaded model.
+
+### Required Implementation
+
+#### 3.1 Global Model Selection State
+**File:** `app/main.c`
+
+```c
+typedef struct {
+    char selected_model_training[256];   // Training tab selection
+    char selected_model_crawler[256];    // Crawler tab selection
+    char selected_model_llm[256];        // LLM tab selection
+    char selected_model_research[256];   // Research tab selection
+    pthread_mutex_t lock;                // Thread safety
+} GlobalModelSelection;
+
+GlobalModelSelection g_model_selection = {0};
+```
+
+#### 3.2 Model Selector UI Component
+**File:** `app/ui/model_selector.c` (NEW)
+
+```c
+typedef struct {
+    int x, y, width, height;
+    char selected_model[256];
+    char** model_list;
+    int num_models;
+    int dropdown_open;
+    void (*on_change)(const char* model_name);
+} ModelSelector;
+
+// Create model selector
+ModelSelector* model_selector_create(int x, int y, int width, int height);
+
+// Render model selector
+void model_selector_render(ModelSelector* selector);
+
+// Handle click
+int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_y);
+
+// Update model list
+void model_selector_update_list(ModelSelector* selector);
+
+// Get selected model
+const char* model_selector_get_selected(ModelSelector* selector);
+```
+
+#### 3.3 Integration with All Tabs
+
+**Training Tab** (`app/ui/tabs/tab_training.c`):
+```c
+// Add model selector at top
+ModelSelector* training_model_selector;
+
+// Add "Import Data From" selector
+ModelSelector* import_data_selector;
+
+// Render both selectors
+model_selector_render(training_model_selector);
+model_selector_render(import_data_selector);
+
+// When model selected, update configuration display
+void on_training_model_change(const char* model_name) {
+    // Load model configuration
+    // Update UI with model's batch_size, epochs, etc.
+    // Update queue size display
+}
+```
+
+**Crawler Tab** (`app/ui/tabs/tab_crawler.c`):
+```c
+// Add model selector at top
+ModelSelector* crawler_model_selector;
+
+// Default to "crawler_model" but allow selection
+// When model selected, crawler writes to that model's queue
+```
+
+**LLM Tab** (`app/ui/tabs/tab_llm.c`):
+```c
+// Add model selector at top
+ModelSelector* llm_model_selector;
+
+// When model selected, use that model for inference
+```
+
+**Research Tab** (`app/ui/tabs/tab_research.c`):
+```c
+// Add model selector at top
+ModelSelector* research_model_selector;
+
+// When model selected, use that model for research tasks
+```
+
+**Models Tab** (`app/ui/tabs/tab_models.c`):
+```c
+// Main model management controls
+// - Create new model (with name input)
+// - Rename existing model
+// - Delete model
+// - View model details
+// - Model list with all loaded models
+```
+
+### UI Layout Example
+
+```
+┌─────────────────────────────────────────┐
+│ Training Tab                            │
+├─────────────────────────────────────────┤
+│ Model: [dropdown: model_1, model_2, ...]│
+│                                         │
+│ Configuration:                          │
+│   Batch Size: [slider: 1-32] [4]      │
+│   Sequence Length: [slider: 32-512] [64]│
+│   Epochs: [slider: 1-100] [10]        │
+│                                         │
+│ Current Model Info:                     │
+│   Name: model_1                        │
+│   Layers: 6 (cannot reduce)            │
+│   Epochs Trained: 15                   │
+│   Target Epochs: 25 (will train 10 more)│
+│   Queue Size: 42 files                 │
+│                                         │
+│ Import Data From: [dropdown: model_2, ...]│
+│ [Import Data] [Start Training] [Stop]  │
+└─────────────────────────────────────────┘
+```
+
+### Priority: HIGHEST
+Essential for multi-model workflow and user flexibility.
 
 ---
 

@@ -223,7 +223,28 @@ typedef struct {
     
     // Training metadata
     TrainingMetadata training_meta;    // Training information
-} CLLMModel;
+       
+       // NEW: Dynamic training system metadata
+       char model_name[256];        // User-defined model name
+       int epochs_trained;          // Total epochs trained so far
+       int target_epochs;           // Target epochs for next training session
+       char queue_directory[512];   // Path to model-specific queue
+       
+       // NEW: Training configuration (per-model)
+       struct {
+           float learning_rate;
+           int batch_size;
+           int sequence_length;
+           int num_epochs;
+           float weight_decay;
+           float gradient_clip;
+       } training_config;
+       
+       // NEW: Training history
+       float* loss_history;         // Loss per epoch
+       int history_size;            // Number of recorded epochs
+       int history_capacity;        // Allocated capacity for history
+   } CLLMModel;
 
 /*
  * Layer Normalization

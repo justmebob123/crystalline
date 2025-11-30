@@ -9,75 +9,142 @@
 - Rule 5: Always commit all changes using correct authentication
 - Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
-## Current Task: Comprehensive Training System Analysis ✅ COMPLETE
+## Current Task: Implement Dynamic Training System
 
-### Phase 1: Read Master Plan ✅
-- [x] Read MASTER_PLAN.md completely (2,977 lines)
-- [x] Identified training system objectives (OBJECTIVE 2, 14-20)
-- [x] Identified model management objectives
-- [x] Identified queue system requirements
+### NEW USER REQUIREMENTS (CRITICAL)
+1. **Model Naming & Renaming:**
+   - User can name models (not limited to 'crawler' or 'research')
+   - User can rename models (renames files and associated data)
+   - Default naming acceptable but not required
+   
+2. **Model Selection Across All Tabs:**
+   - Each tab should have model selector dropdown
+   - Main model controls under Models tab
+   - All tabs can select any loaded model
+   
+3. **Cross-Model Training:**
+   - Training tab can select any model
+   - Can import and train on data from ANY other model
+   - Example: Select model_A, train on model_B's data
 
-### Phase 2: Bidirectional Analysis - Training Architecture ✅
-- [x] Analyzed current training pipeline implementation
-- [x] Analyzed current model management system
-- [x] Analyzed current queue system (single global queue)
-- [x] Identified gaps between current state and requirements
+### Phase 1: Model Metadata Enhancement (CURRENT) ⏳
+- [ ] Add epochs_trained to CLLMModel structure
+- [ ] Add target_epochs to CLLMModel structure
+- [ ] Add queue_directory to CLLMModel structure
+- [ ] Add config to CLLMModel structure
+- [ ] Add model_name field (user-defined name)
+- [ ] Update cllm_model_save() to serialize new fields
+- [ ] Update cllm_model_load() to deserialize new fields
+- [ ] Add cllm_model_get_epochs_trained()
+- [ ] Add cllm_model_set_target_epochs()
+- [ ] Add cllm_model_rename() function
+- [ ] Add cllm_model_get_name() function
+- [ ] Add cllm_model_set_name() function
 
-### Phase 3: Bidirectional Analysis - Data Flow ✅
-- [x] Analyzed preprocessing pipeline
-- [x] Analyzed tokenization process
-- [x] Analyzed training data flow
-- [x] Mapped data flow from input to trained model
+### Phase 2: Enhanced Model Manager (NEW) ⏳
+- [ ] Add model renaming capability
+- [ ] Rename model file when model renamed
+- [ ] Rename queue directory when model renamed
+- [ ] Update all references when model renamed
+- [ ] Add model_manager_rename_model()
+- [ ] Add validation for unique model names
+- [ ] Add default naming scheme (model_1, model_2, etc.)
 
-### Phase 4: Bidirectional Analysis - Feature Parity ✅
-- [x] Compared crawler training vs manual training
-- [x] Compared CLI tools vs UI capabilities
-- [x] Identified missing dynamic configuration options
-- [x] Identified missing per-model queue systems
+### Phase 3: Per-Model Queue System
+- [ ] Create src/ai/model_queue_manager.h
+- [ ] Create src/ai/model_queue_manager.c
+- [ ] Implement create_model_queue()
+- [ ] Implement add_to_model_queue()
+- [ ] Implement get_next_from_queue()
+- [ ] Implement get_queue_size()
+- [ ] Implement clear_model_queue()
+- [ ] Implement import_queue_from_model() (NEW - cross-model training)
+- [ ] Update crawler to use model-specific queue
+- [ ] Update continuous_training to use model-specific queue
 
-### Phase 5: Design Unified Training System ✅
-- [x] Designed per-model queue architecture
-- [x] Designed dynamic training configuration
-- [x] Designed unified data ingestion system
-- [x] Designed model-specific training isolation
+### Phase 4: Batch Accumulation System
+- [ ] Create src/ai/batch_accumulator.h
+- [ ] Create src/ai/batch_accumulator.c
+- [ ] Implement batch_accumulator_create()
+- [ ] Implement batch_accumulator_add()
+- [ ] Implement batch_accumulator_ready()
+- [ ] Implement batch_accumulator_get_batch()
+- [ ] Implement batch_accumulator_clear()
+- [ ] Integrate with continuous_training.c
 
-### Phase 6: Update Documentation ✅
-- [x] Created TRAINING_SYSTEM_ANALYSIS.md (comprehensive 800+ line analysis)
-- [x] Documented all user requirements
-- [x] Documented current architecture gaps
-- [x] Documented proposed architecture
-- [x] Documented implementation plan (10 phases, 25-35 hours)
+### Phase 5: Dynamic Configuration UI - Models Tab
+- [ ] Add model name input field (create/rename)
+- [ ] Add rename button for existing models
+- [ ] Add validation for unique names
+- [ ] Add default name generation
+- [ ] Update model creation dialog
+- [ ] Update model details panel
+- [ ] Add model selector dropdown (main control)
 
-## Analysis Summary
+### Phase 6: Dynamic Configuration UI - All Tabs
+- [ ] Add model selector dropdown to Training tab
+- [ ] Add model selector dropdown to Crawler tab
+- [ ] Add model selector dropdown to LLM tab
+- [ ] Add model selector dropdown to Research tab
+- [ ] Wire all selectors to model manager
+- [ ] Ensure consistent model selection across tabs
 
-**Document Created:** `TRAINING_SYSTEM_ANALYSIS.md` (800+ lines)
+### Phase 7: Training Tab Enhancements
+- [ ] Add batch_size slider
+- [ ] Add sequence_length slider
+- [ ] Add epochs slider
+- [ ] Add learning_rate input
+- [ ] Add current model info display
+- [ ] Add queue size display
+- [ ] Add epochs_trained display
+- [ ] Add target_epochs display
+- [ ] Add "Import Data From Model" dropdown (NEW)
+- [ ] Add "Import Data" button (NEW)
+- [ ] Wire configuration to training system
 
-**Key Findings:**
-1. **Current State:** Hardcoded batch_size=1, sequence_length=64, epochs=5
-2. **Current Queue:** Single global queue (crawler_data/tokenized/)
-3. **Current Model Management:** No per-model configuration or queues
-4. **Current Limitations:** No batch accumulation, no epoch tracking, no dynamic config
+### Phase 8: Epoch Tracking System
+- [ ] Implement cllm_model_get_epochs_trained()
+- [ ] Implement cllm_model_set_target_epochs()
+- [ ] Implement cllm_model_validate_epochs()
+- [ ] Implement cllm_model_continue_training()
+- [ ] Update training loop to track epochs
+- [ ] Update UI to display epoch information
+- [ ] Add epoch validation logic
 
-**User Requirements Identified:**
-1. Dynamic batch size and epochs configuration
-2. Accumulation of small inputs until batch size reached
-3. Dynamic layer configuration (with constraints for existing models)
-4. Epoch tracking per model (epochs_trained, target_epochs)
-5. Per-model training queues (not global queues)
-6. Unified data ingestion (crawler + manual file drops)
-7. Model selection in training tab
-8. Model-specific training data tracking
+### Phase 9: Layer Validation System
+- [ ] Implement cllm_model_validate_layers()
+- [ ] Implement cllm_model_is_layer_reduction()
+- [ ] Implement cllm_model_increase_layers()
+- [ ] Implement cllm_model_get_layer_constraints()
+- [ ] Add UI validation for layer changes
+- [ ] Add layer info display in UI
+- [ ] Prevent layer reduction on existing models
 
-**Proposed Solution:**
-- 10-phase implementation plan
-- Per-model queue system (models/model_name_queue/)
-- Batch accumulation system
-- Dynamic configuration UI
-- Epoch tracking with continuation support
-- Layer validation with constraints
-- Unified data ingestion
-- Model selection in Training tab
+### Phase 10: Unified Data Ingestion
+- [ ] Create manual file drop mechanism
+- [ ] Add "Add Training Data" button to Training tab
+- [ ] Implement file browser for selecting files
+- [ ] Tokenize selected files
+- [ ] Add to model-specific queue
+- [ ] Update crawler to use same queue format
+- [ ] Test unified queue system
 
-**Estimated Effort:** 25-35 hours total
+### Phase 11: Testing & Validation
+- [ ] Test per-model queues
+- [ ] Test batch accumulation
+- [ ] Test dynamic configuration
+- [ ] Test epoch tracking
+- [ ] Test layer validation
+- [ ] Test unified data ingestion
+- [ ] Test model selection across tabs
+- [ ] Test model renaming
+- [ ] Test cross-model training
+- [ ] Integration testing
 
-**Next Step:** Awaiting user approval to proceed with implementation
+### Phase 12: Update SECONDARY_OBJECTIVES.md
+- [ ] Add model naming and renaming requirements
+- [ ] Add cross-model training requirements
+- [ ] Add model selector requirements for all tabs
+- [ ] Update implementation details
+- [ ] Add code examples
+- [ ] Document new APIs
