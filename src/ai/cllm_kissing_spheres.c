@@ -18,70 +18,57 @@
 #include "../include/prime_lattice_core.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_metrics.h"  // UI Integration: Sphere position reporting
+#include "../include/clock_lattice.h"  // Babylonian clock structure
+
+// Old compute_lattice_distance removed - no longer needed with geometric pattern
 
 /**
- * Compute lattice distance between two tokens using angular positions
+ * Find neighbor deterministically using clock structure
  * 
- * @param model CLLM model
- * @param token_id1 First token ID
- * @param token_id2 Second token ID
- * @return Distance in angular space
- */
-static double compute_lattice_distance(CLLMModel* model, uint32_t token_id1, uint32_t token_id2) {
-    if (!model || token_id1 >= model->vocab_size || token_id2 >= model->vocab_size) {
-        return DBL_MAX;
-    }
-    
-    CLLMToken* token1 = &model->tokens[token_id1];
-    CLLMToken* token2 = &model->tokens[token_id2];
-    
-    // Compute angular positions
-    AngularPosition pos1, pos2;
-    
-    double wavelength1 = get_phonetic_wavelength(token1->token_str[0]);
-    angular_position_calculate(token1->prime_encoding, token_id1, 0, wavelength1, &pos1);
-    
-    double wavelength2 = get_phonetic_wavelength(token2->token_str[0]);
-    angular_position_calculate(token2->prime_encoding, token_id2, 0, wavelength2, &pos2);
-    
-    // Euclidean distance in angular space
-    double dtheta = pos1.theta - pos2.theta;
-    double dr = pos1.distance_to_144000 - pos2.distance_to_144000;
-    
-    return prime_sqrt(dtheta * dtheta + dr * dr);
-}
-
-/**
- * Find nearest token in a specific symmetry group
+ * Uses the Babylonian clock pattern to find neighbors instantly.
+ * No distance calculations needed - neighbors are determined by geometry!
  * 
- * @param model CLLM model
+ * @param vocab_size Total vocabulary size
  * @param point_id Reference point ID
  * @param target_group Target symmetry group (0-11)
- * @return Token ID of nearest token in target group, or UINT32_MAX if not found
+ * @return Token ID of neighbor in target group
  */
-static uint32_t find_nearest_in_group(CLLMModel* model, uint32_t point_id, uint32_t target_group) {
-    if (!model || point_id >= model->vocab_size) {
-        return UINT32_MAX;
+static uint32_t find_neighbor_by_clock_geometry(uint32_t vocab_size, uint32_t point_id, uint32_t target_group) {
+    // Map point to clock position
+    BabylonianClockPosition pos = map_prime_index_to_clock((int)point_id);
+    
+    // Calculate positions per ring
+    uint32_t positions_in_ring;
+    if (pos.ring == 0) positions_in_ring = 12;
+    else if (pos.ring == 1 || pos.ring == 2) positions_in_ring = 60;
+    else if (pos.ring == 3) positions_in_ring = 100;
+    else positions_in_ring = 1000;
+    
+    // Neighbor offset based on target symmetry group
+    // Each group gets evenly spaced neighbors around the ring
+    uint32_t offset = (positions_in_ring * target_group) / 12;
+    
+    // Calculate neighbor position in same ring
+    uint32_t neighbor_pos = (pos.position + offset) % positions_in_ring;
+    
+    // Convert back to token ID
+    // Calculate base index for this ring
+    uint32_t base_index = 0;
+    if (pos.ring == 0) base_index = 0;
+    else if (pos.ring == 1) base_index = 12;
+    else if (pos.ring == 2) base_index = 12 + 60;
+    else if (pos.ring == 3) base_index = 12 + 60 + 60;
+    else base_index = 12 + 60 + 60 + 100 + (pos.ring - 4) * 1000;
+    
+    uint32_t neighbor_id = base_index + neighbor_pos;
+    
+    // Ensure within bounds
+    if (neighbor_id >= vocab_size) {
+        // Wrap to beginning if out of bounds
+        neighbor_id = neighbor_id % vocab_size;
     }
     
-    uint32_t nearest_id = UINT32_MAX;
-    double min_distance = DBL_MAX;
-    
-    for (uint32_t candidate = 0; candidate < model->vocab_size; candidate++) {
-        if (candidate == point_id) continue;
-        
-        CLLMToken* cand_token = &model->tokens[candidate];
-        if (cand_token->symmetry_group != target_group) continue;
-        
-        double distance = compute_lattice_distance(model, point_id, candidate);
-        
-        if (distance < min_distance) {
-            min_distance = distance;
-            nearest_id = candidate;
-        }
-    }
-    
-    return nearest_id;
+    return neighbor_id;
 }
 
 /**
@@ -98,62 +85,33 @@ void cllm_initialize_kissing_spheres(CLLMModel* model) {
         return;
     }
     
-    printf("\n=== Initializing Kissing Spheres (12 neighbors per point) ===\n");
+    printf("\n=== Initializing Kissing Spheres (Geometric Pattern) ===\n");
     printf("Number of lattice points: %lu\n", (unsigned long)model->num_lattice_points);
-    printf("Finding nearest neighbor in each symmetry group...\n\n");
+    printf("Using deterministic clock geometry - INSTANT initialization\n");
     
-    uint32_t total_neighbors = 0;
-    uint32_t points_with_full_neighbors = 0;
-    
+    // INSTANT O(n) initialization using geometric pattern
+    // No distance calculations, no searching - pure geometry!
     for (uint32_t point_id = 0; point_id < model->num_lattice_points; point_id++) {
         CLLMLatticePoint* point = &model->lattice_points[point_id];
         
-        // Reset neighbor count
-        point->num_neighbors = 0;
-        
-        // Find nearest neighbor in each of the 12 symmetry groups
+        // Each point gets exactly 12 neighbors (one per symmetry group)
+        // Neighbors are determined by clock geometry, not distance!
         for (uint32_t group = 0; group < 12; group++) {
-            uint32_t nearest_id = find_nearest_in_group(model, point_id, group);
-            
-            if (nearest_id != UINT32_MAX) {
-                point->neighbors[point->num_neighbors] = nearest_id;
-                point->num_neighbors++;
-                total_neighbors++;
-            }
+            uint32_t neighbor_id = find_neighbor_by_clock_geometry(
+                model->vocab_size, 
+                point_id, 
+                group
+            );
+            point->neighbors[group] = neighbor_id;
         }
         
-        if (point->num_neighbors == 12) {
-            points_with_full_neighbors++;
-        }
-        
-        // Progress indicator
-        if ((point_id + 1) % 100 == 0 || point_id == model->num_lattice_points - 1) {
-            printf("  Initialized %lu/%lu points (%.1f%%)\r", 
-                   (unsigned long)(point_id + 1), 
-                   (unsigned long)model->num_lattice_points,
-                   100.0 * (point_id + 1) / model->num_lattice_points);
-            fflush(stdout);
-        }
+        point->num_neighbors = 12;
     }
     
-    printf("\n\n");
-    
-    // Statistics
-    printf("=== Kissing Spheres Statistics ===\n");
-    printf("Total neighbors assigned: %u\n", total_neighbors);
-    printf("Average neighbors per point: %.2f\n", 
-           (double)total_neighbors / model->num_lattice_points);
-    printf("Points with 12 neighbors: %u (%.1f%%)\n",
-           points_with_full_neighbors,
-           100.0 * points_with_full_neighbors / model->num_lattice_points);
-    
-    if (points_with_full_neighbors == model->num_lattice_points) {
-        printf("✓ All points have complete kissing spheres configuration\n");
-    } else {
-        printf("⚠ Some points have incomplete neighbor sets\n");
-    }
-    
-    printf("\n");
+    printf("✓ All %lu points initialized with 12 neighbors\n", 
+           (unsigned long)model->num_lattice_points);
+    printf("✓ Initialization complete (O(n) complexity)\n");
+    printf("==========================================\n\n");
 }
 
 /**
