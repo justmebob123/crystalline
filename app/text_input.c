@@ -7,7 +7,7 @@ void text_input_init(TextInput* input, const char* label, int x, int y, int w, i
     if (!input) return;
     
     printf("DEBUG: text_input_init called for '%s', clearing text\n", label ? label : "NULL");
-    memset(input->text, 0, MAX_INPUT_LENGTH);
+    memset(input->text, 0, sizeof(input->text));
     input->cursor_pos = 0;
     input->active = false;
     input->bounds.x = x;
@@ -66,7 +66,7 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
             }
         }
         
-        if (len < MAX_INPUT_LENGTH - 1) {
+        if (len < TEXT_INPUT_MAX_LENGTH - 1) {
             input->text[len] = c;
             input->text[len + 1] = '\0';
             input->cursor_pos = len + 1;
@@ -83,7 +83,7 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
                 char* clipboard = SDL_GetClipboardText();
                 if (clipboard) {
                     // Clear current text and paste clipboard content
-                    int remaining = MAX_INPUT_LENGTH - 1;
+                    int remaining = TEXT_INPUT_MAX_LENGTH - 1;
                     strncpy(input->text, clipboard, remaining);
                     input->text[remaining] = '\0';
                     input->cursor_pos = strlen(input->text);
@@ -110,7 +110,7 @@ bool text_input_handle_event(TextInput* input, SDL_Event* event) {
             if (strlen(input->text) > 0) {
                 SDL_SetClipboardText(input->text);
                 printf("Cut to clipboard: %s\n", input->text);
-                memset(input->text, 0, MAX_INPUT_LENGTH);
+                memset(input->text, 0, TEXT_INPUT_MAX_LENGTH);
                 input->cursor_pos = 0;
             }
             return true;
@@ -260,8 +260,8 @@ void text_input_set_text(TextInput* input, const char* text) {
     
     printf("DEBUG: text_input_set_text called, old='%s', new='%s'\n", 
            input->text, text);
-    strncpy(input->text, text, MAX_INPUT_LENGTH - 1);
-    input->text[MAX_INPUT_LENGTH - 1] = '\0';
+    strncpy(input->text, text, TEXT_INPUT_MAX_LENGTH - 1);
+    input->text[TEXT_INPUT_MAX_LENGTH - 1] = '\0';
     input->cursor_pos = strlen(input->text);
     printf("DEBUG: After set_text, text='%s'\n", input->text);
 }
@@ -270,7 +270,7 @@ void text_input_clear(TextInput* input) {
     if (!input) return;
     
     printf("DEBUG: text_input_clear called! text was='%s'\n", input->text);
-    memset(input->text, 0, MAX_INPUT_LENGTH);
+    memset(input->text, 0, TEXT_INPUT_MAX_LENGTH);
     input->cursor_pos = 0;
 }
 

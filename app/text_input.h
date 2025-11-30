@@ -5,12 +5,12 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 
-#ifndef MAX_INPUT_LENGTH
-#define MAX_INPUT_LENGTH 256
+#ifndef TEXT_INPUT_MAX_LENGTH
+#define TEXT_INPUT_MAX_LENGTH 256
 #endif
 
 typedef struct {
-    char text[MAX_INPUT_LENGTH];
+    char text[TEXT_INPUT_MAX_LENGTH];
     int cursor_pos;
     bool active;
     SDL_Rect bounds;
