@@ -18,6 +18,7 @@
 #include "cllm_utils.h"
 #include "cllm_training_threaded.h"
 #include "cllm_batch.h"
+#include "cllm_model_manager.h"
 
 #define MAX_TOKENS_PER_FILE 100000
 
@@ -336,21 +337,35 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
     
     // NEW: Load or create model if not provided
     if (model) {
+        // If model provided, use it directly (legacy support)
         state->model = model;
     } else {
-        // Try to load existing model
-        state->model = cllm_read_model(model_path);
+        // Extract model name from path (e.g., "models/crawler.cllm" -> "crawler")
+        char model_name[256] = "crawler_model";
+        const char* last_slash = strrchr(model_path, '/');
+        if (last_slash) {
+            const char* name_start = last_slash + 1;
+            const char* dot = strrchr(name_start, '.');
+            if (dot) {
+                size_t len = dot - name_start;
+                if (len < sizeof(model_name)) {
+                    strncpy(model_name, name_start, len);
+                    model_name[len] = '\0';
+                }
+            }
+        }
+        
+        char timestamp[32];
+        get_timestamp(timestamp, sizeof(timestamp));
+        
+        // Try to acquire existing model from model manager
+        state->model = model_manager_acquire_write(model_name);
+        
         if (!state->model) {
-            // Create new model with default configuration
-            char timestamp[32];
-            get_timestamp(timestamp, sizeof(timestamp));
-            printf("%s No existing model found, creating new model...\n", timestamp);
+            // Model doesn't exist, create it
+            printf("%s Creating new model '%s' via model manager...\n", timestamp, model_name);
             
-            // Create default config
-            // NOTE: These are conservative defaults. The system supports:
-            // - vocab_size: 100K-250K+ for multilingual models
-            // - embedding_dim: 1024-8192+ (dynamic, no hardcoded limits)
-            // - max_seq_len: 2048-4096+ for long-range dependencies
+            // Create default config for crawler
             CLLMConfig default_config = {
                 .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
                 .embedding_dim = 1024,    // Increased from 512 (better representations)
@@ -360,12 +375,25 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
                 .max_seq_len = 1024,      // Increased from 512 (longer context)
                 .dropout = 0.1f
             };
-            state->model = cllm_create_model(&default_config);
-            if (!state->model) {
-                fprintf(stderr, "%s Failed to create model\n", timestamp);
+            
+            // Create model through model manager
+            if (model_manager_create(model_name, &default_config) != 0) {
+                fprintf(stderr, "%s Failed to create model via model manager\n", timestamp);
                 free(state);
                 return NULL;
             }
+            
+            // Now acquire it for training
+            state->model = model_manager_acquire_write(model_name);
+            if (!state->model) {
+                fprintf(stderr, "%s Failed to acquire newly created model\n", timestamp);
+                free(state);
+                return NULL;
+            }
+            
+            printf("%s Model '%s' created and acquired for training\n", timestamp, model_name);
+        } else {
+            printf("%s Using existing model '%s' from model manager\n", timestamp, model_name);
         }
     }
     
@@ -449,6 +477,25 @@ void continuous_training_cleanup(ContinuousTrainingState* state) {
     
     if (state->training) {
         cllm_training_free(state->training);
+    }
+    
+    // Release model back to model manager
+    if (state->model) {
+        // Extract model name from path to release it
+        char model_name[256] = "crawler_model";
+        const char* last_slash = strrchr(state->model_path, '/');
+        if (last_slash) {
+            const char* name_start = last_slash + 1;
+            const char* dot = strrchr(name_start, '.');
+            if (dot) {
+                size_t len = dot - name_start;
+                if (len < sizeof(model_name)) {
+                    strncpy(model_name, name_start, len);
+                    model_name[len] = '\0';
+                }
+            }
+        }
+        model_manager_release_write(model_name);
     }
     
     pthread_mutex_destroy(&state->lock);
