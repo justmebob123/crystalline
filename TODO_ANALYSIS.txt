@@ -1,0 +1,335 @@
+src/ai/infrastructure/cllm_batch.c:796:    // TODO: Implement pool resizing
+src/ai/infrastructure/cllm_batch.c-797-    // This is complex and requires careful handling of in-use batches
+src/ai/infrastructure/cllm_batch.c-798-    
+--
+src/ai/infrastructure/cllm_control_process.c:487:    // TODO: Implement intelligent rebalancing based on load metrics
+src/ai/infrastructure/cllm_control_process.c-488-    // For now, this is a placeholder
+src/ai/infrastructure/cllm_control_process.c-489-    
+--
+src/ai/infrastructure/cllm_control_process.c:533:    // TODO: Implement sphere recovery logic
+src/ai/infrastructure/cllm_control_process.c-534-    // This would involve:
+src/ai/infrastructure/cllm_control_process.c-535-    // 1. Detecting the failure
+--
+src/ai/infrastructure/cllm_control_process.c:588:    // TODO: Implement gradient collection from all spheres
+src/ai/infrastructure/cllm_control_process.c-589-    // This would involve:
+src/ai/infrastructure/cllm_control_process.c-590-    // 1. Sending gradient request messages
+--
+src/ai/infrastructure/cllm_control_process.c:612:    // TODO: Implement checkpoint saving
+src/ai/infrastructure/cllm_control_process.c-613-    // This would involve:
+src/ai/infrastructure/cllm_control_process.c-614-    // 1. Pausing training
+--
+src/ai/infrastructure/cllm_control_process.c:627:    // TODO: Implement checkpoint restoration
+src/ai/infrastructure/cllm_control_process.c-628-    // This would involve:
+src/ai/infrastructure/cllm_control_process.c-629-    // 1. Loading checkpoint from disk
+--
+src/ai/infrastructure/cllm_control_process.c:806:        // TODO: Traverse hierarchy and count sphere states
+src/ai/infrastructure/cllm_control_process.c-807-        
+src/ai/infrastructure/cllm_control_process.c-808-        pthread_mutex_unlock(&cp->hierarchy_mutex);
+--
+src/ai/infrastructure/cllm_lattice_hierarchy.c:606:                // TODO: Implement work stealing response
+src/ai/infrastructure/cllm_lattice_hierarchy.c-607-                break;
+src/ai/infrastructure/cllm_lattice_hierarchy.c-608-                
+--
+src/ai/infrastructure/cllm_lattice_hierarchy.c:611:                // TODO: Implement work acceptance
+src/ai/infrastructure/cllm_lattice_hierarchy.c-612-                break;
+src/ai/infrastructure/cllm_lattice_hierarchy.c-613-                
+--
+src/ai/infrastructure/cllm_lattice_hierarchy.c:621:                // TODO: Implement weight synchronization
+src/ai/infrastructure/cllm_lattice_hierarchy.c-622-                break;
+src/ai/infrastructure/cllm_lattice_hierarchy.c-623-                
+--
+src/ai/infrastructure/cllm_thread_allocation.c:421: * TODO: Implement dynamic rebalancing based on actual workloads
+src/ai/infrastructure/cllm_thread_allocation.c-422- */
+src/ai/infrastructure/cllm_thread_allocation.c-423-int rebalance_thread_allocation(ThreadAllocationStrategy* strategy,
+--
+src/ai/infrastructure/cllm_thread_allocation.c:429:    // TODO: Implement dynamic rebalancing
+src/ai/infrastructure/cllm_thread_allocation.c-430-    // For now, just recalculate load balance factor
+src/ai/infrastructure/cllm_thread_allocation.c-431-    strategy->load_balance_factor = calculate_load_balance_factor(strategy);
+--
+src/ai/infrastructure/cllm_training_loop.c:224:        // TODO: Actual batch processing would go here
+src/ai/infrastructure/cllm_training_loop.c-225-        // For now, this is a placeholder
+src/ai/infrastructure/cllm_training_loop.c-226-        
+--
+src/ai/infrastructure/cllm_training_loop.c:267:    // TODO: Actual forward/backward pass would go here
+src/ai/infrastructure/cllm_training_loop.c-268-    // For now, this is a placeholder
+src/ai/infrastructure/cllm_training_loop.c-269-    
+--
+src/ai/infrastructure/cllm_training_loop.c:626:    // TODO: Write actual model state
+src/ai/infrastructure/cllm_training_loop.c-627-    
+src/ai/infrastructure/cllm_training_loop.c-628-    fclose(fp);
+--
+src/ai/infrastructure/cllm_training_loop.c:698:    // TODO: Read actual model state
+src/ai/infrastructure/cllm_training_loop.c-699-    
+src/ai/infrastructure/cllm_training_loop.c-700-    fclose(fp);
+--
+src/ai/infrastructure/cllm_training_loop.c:744:    // TODO: Implement checkpoint cleanup
+src/ai/infrastructure/cllm_training_loop.c-745-    // This would involve:
+src/ai/infrastructure/cllm_training_loop.c-746-    // 1. List all checkpoints
+--
+src/ai/cllm_training_threaded.c:68:    float* local_gradients;  // TODO: Remove after shared memory integration
+src/ai/cllm_training_threaded.c-69-    size_t gradient_size;
+src/ai/cllm_training_threaded.c-70-    
+--
+src/ai/cllm_training_threaded.c:373:        // TODO: Implement full attention with thread-local caching
+src/ai/cllm_training_threaded.c-374-        // For now, just copy input to output (identity mapping)
+src/ai/cllm_training_threaded.c-375-        memcpy(local_ctx->attention_outputs[layer], layer_input, 
+--
+src/ai/cllm_training_threaded.c:1296:        int num_heads = 8;  // TODO: Get from model config
+src/ai/cllm_training_threaded.c-1297-        
+src/ai/cllm_training_threaded.c-1298-        system->sphere_contexts[i]->thread_local_training = thread_local_training_create(
+--
+src/ai/cllm_training_threaded.c:1901: * TODO: Implement gradient accumulation in future training enhancements
+src/ai/cllm_training_threaded.c-1902- */
+src/ai/cllm_training_threaded.c-1903-static void accumulate_gradients(ThreadedTrainingSystem* system) __attribute__((unused));
+--
+src/ai/cllm_hierarchical_training.c:382:    // TODO: Store in proper structure
+src/ai/cllm_hierarchical_training.c-383-    (void)batch_loss;
+src/ai/cllm_hierarchical_training.c-384-    (void)tokens_processed;
+--
+src/ai/cllm_hierarchical_training.c:395:    // TODO: Implement actual load tracking
+src/ai/cllm_hierarchical_training.c-396-    static atomic_int counter = ATOMIC_VAR_INIT(0);
+src/ai/cllm_hierarchical_training.c-397-    int idx = atomic_fetch_add(&counter, 1) % sphere->num_children;
+--
+src/ai/cllm_hierarchical_training.c:530:    // TODO: Use cllm_simd_accumulate_gradients when available
+src/ai/cllm_hierarchical_training.c-531-    for (size_t i = 0; i < gradient_size; i++) {
+src/ai/cllm_hierarchical_training.c-532-        parent_acc->gradients[i] += child_gradients[i];
+--
+src/ai/cllm_hierarchical_training.c:1056:        // TODO: Cleanup
+src/ai/cllm_hierarchical_training.c-1057-        free(system);
+src/ai/cllm_hierarchical_training.c-1058-        return NULL;
+--
+src/ai/cllm_hierarchical_training.c:1064:        // TODO: Cleanup
+src/ai/cllm_hierarchical_training.c-1065-        free(system);
+src/ai/cllm_hierarchical_training.c-1066-        return NULL;
+--
+src/ai/cllm_hierarchical_training.c:1073:        // TODO: Cleanup
+src/ai/cllm_hierarchical_training.c-1074-        free(system);
+src/ai/cllm_hierarchical_training.c-1075-        return NULL;
+--
+src/ai/cllm_hierarchical_training.c:1162:    // TODO: Free hierarchy
+src/ai/cllm_hierarchical_training.c:1163:    // TODO: Free system
+src/ai/cllm_hierarchical_training.c-1164-    
+src/ai/cllm_hierarchical_training.c-1165-    printf("✓ Hierarchical training system freed\n");
+--
+src/ai/cllm_metrics.c:103:        // TODO: Collect thread states, positions, workloads
+src/ai/cllm_metrics.c-104-        // This requires access to ThreadedTrainingSystem internals
+src/ai/cllm_metrics.c-105-    }
+--
+src/ai/cllm_optimizer.c:167:            // TODO: Allocate separate Adam state for each layer type
+src/ai/cllm_optimizer.c-168-            float* grad_q = training->attention_grads[layer].query_lattice;
+src/ai/cllm_optimizer.c-169-            float* grad_k = training->attention_grads[layer].key_lattice;
+--
+src/ai/cllm_threads.c:101:                        // TODO: Actual batch processing here
+src/ai/cllm_threads.c-102-                        // For now, just simulate work
+src/ai/cllm_threads.c-103-                        usleep(100);  // 100 microseconds
+--
+src/ai/cllm_threads.c:283:                        // TODO: Actual gradient accumulation
+src/ai/cllm_threads.c-284-                        atomic_store(&sphere->gradient_ready, 1);
+src/ai/cllm_threads.c-285-                        atomic_store(&sphere->state, HIERARCHY_STATE_READY);
+--
+src/ai/cllm_lll_embeddings.c:117:    // TODO: Implement proper Moore-Penrose pseudo-inverse
+src/ai/cllm_lll_embeddings.c-118-    float** inverse = (float**)malloc(original_dim * sizeof(float*));
+src/ai/cllm_lll_embeddings.c-119-    for (int i = 0; i < original_dim; i++) {
+--
+src/ai/cllm_simd_gradient_ops.c:212:    // TODO: Implement proper atomic float operations using compare-and-swap
+src/ai/cllm_simd_gradient_ops.c-213-    dest[index] += value;
+src/ai/cllm_simd_gradient_ops.c-214-}
+--
+src/core/cllm_angular_position.c:145:    // TODO: Implement full BigFixed version for maximum precision
+src/core/cllm_angular_position.c-146-    (void)constants;  // Unused for now
+src/core/cllm_angular_position.c-147-    
+--
+src/transcendental/prime_bigint_transcendental.c:521: * TODO: Implement CORDIC for atan
+src/transcendental/prime_bigint_transcendental.c-522- */
+src/transcendental/prime_bigint_transcendental.c-523-void big_atan(BigFixed *result, const BigFixed *x, int precision_bits) {
+--
+src/geometry/prime_rainbow.c:221:    // TODO: Organize by symmetry group in tree structure
+src/geometry/prime_rainbow.c-222-    if (!g_rainbow_table.root) {
+src/geometry/prime_rainbow.c-223-        g_rainbow_table.root = node;
+--
+src/geometry/prime_rainbow.c:256:    // Simple traversal for now (TODO: optimize with indexing)
+src/geometry/prime_rainbow.c-257-    if (!g_rainbow_table.root) return NULL;
+src/geometry/prime_rainbow.c-258-    
+--
+src/crawler/preprocessor.c:525:    ExtractionMode mode = EXTRACT_ALL;  // TODO: Get from state parameter
+src/crawler/preprocessor.c-526-    
+src/crawler/preprocessor.c-527-    if (mode == EXTRACT_ALL) {
+--
+app/cllm_integration.c:467:        // TODO: Add proper cleanup
+app/cllm_integration.c-468-        cllm_free_config(config);
+app/cllm_integration.c-469-        return NULL;
+--
+app/ui/sphere_visualization.c:90:// TODO: Use this when implementing thread state visualization in Phase 4.2
+app/ui/sphere_visualization.c-91-static SDL_Color get_thread_state_color(int state) __attribute__((unused));
+app/ui/sphere_visualization.c-92-static SDL_Color get_thread_state_color(int state) {
+--
+app/ui/tabs/tab_llm.c:119:// TODO: Implement these features in Phase 4.4
+app/ui/tabs/tab_llm.c-120-// static float repetition_penalty = 1.0f;
+app/ui/tabs/tab_llm.c-121-// static float frequency_penalty = 0.0f;
+--
+app/ui/tabs/tab_llm.c:126:// TODO: Implement generation state tracking
+app/ui/tabs/tab_llm.c-127-// static bool is_generating = false;
+app/ui/tabs/tab_llm.c-128-// static int tokens_generated = 0;
+--
+app/ui/tabs/tab_llm.c:147:        // TODO: Track which model name was used to release correctly
+app/ui/tabs/tab_llm.c-148-        // For now, we'll just set to NULL
+app/ui/tabs/tab_llm.c-149-        state->cllm_model = NULL;
+--
+app/ui/tabs/tab_llm.c:182:// TODO: Implement model export feature
+app/ui/tabs/tab_llm.c-183-// static SDL_Rect g_export_model_btn;
+app/ui/tabs/tab_llm.c-184-// static SDL_Rect g_new_thread_btn;
+--
+app/ui/tabs/tab_llm.c:247:        // TODO: Extract model metadata from file
+app/ui/tabs/tab_llm.c-248-        info->vocab_size = 0;
+app/ui/tabs/tab_llm.c-249-        info->num_layers = 0;
+--
+app/ui/tabs/tab_llm.c:288:// TODO: Implement thread management in Phase 4.4
+app/ui/tabs/tab_llm.c-289-// Create new conversation thread
+app/ui/tabs/tab_llm.c-290-static void create_new_thread(void) __attribute__((unused));
+--
+app/ui/tabs/tab_llm.c:368:    // TODO: Implement hover effects in Phase 4.4
+app/ui/tabs/tab_llm.c-369-    // SDL_Color hover_color = {50, 50, 60, 255};
+app/ui/tabs/tab_llm.c-370-    (void)selected_color; // Will be used when selection is implemented
+--
+app/ui/tabs/tab_llm.c:1055:            // Handle panel clicks (TODO: implement specific button handling)
+app/ui/tabs/tab_llm.c-1056-            // For now, just close on any click inside
+app/ui/tabs/tab_llm.c-1057-            model_browser_visible = false;
+--
+app/ui/tabs/tab_llm.c:1077:            // Handle panel clicks (TODO: implement specific button handling)
+app/ui/tabs/tab_llm.c-1078-            thread_list_visible = false;
+app/ui/tabs/tab_llm.c-1079-        } else {
+--
+app/ui/tabs/tab_training.c:79:// TODO: Implement collapsible panels in Phase 4.3
+app/ui/tabs/tab_training.c-80-// static SDL_Rect framework_header_rect;
+app/ui/tabs/tab_training.c-81-// static SDL_Rect performance_header_rect;
+--
+app/ui/tabs/tab_training.c:131: * TODO: Implement in Phase 4.3
+app/ui/tabs/tab_training.c-132- */
+app/ui/tabs/tab_training.c-133-static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
+--
+app/ui/tabs/tab_training.c:817:            // TODO: Implement get_queue_size() function
+app/ui/tabs/tab_training.c-818-            char queue_info[256];  // Increased buffer size to avoid truncation
+app/ui/tabs/tab_training.c-819-            snprintf(queue_info, sizeof(queue_info), "Queue: %.200s", state->cllm_model->queue_directory);
+--
+app/ui/tabs/tab_training.c:1190:                // TODO: Get model name from model selector widget
+app/ui/tabs/tab_training.c-1191-                const char* model_name = "default_model";
+app/ui/tabs/tab_training.c-1192-                
+--
+app/ui/tabs/tab_models.c:63:    // TODO: Render "Create New Model" title
+app/ui/tabs/tab_models.c-64-    current_y += 40;
+app/ui/tabs/tab_models.c-65-    
+--
+app/ui/tabs/tab_models.c:67:    // TODO: Render "Model Name:" label
+app/ui/tabs/tab_models.c:68:    // TODO: Render text input field
+app/ui/tabs/tab_models.c-69-    current_y += 50;
+app/ui/tabs/tab_models.c-70-    
+--
+app/ui/tabs/tab_models.c:72:    // TODO: Render "Vocabulary Size:" label
+app/ui/tabs/tab_models.c:73:    // TODO: Render number input field
+app/ui/tabs/tab_models.c-74-    current_y += 50;
+app/ui/tabs/tab_models.c-75-    
+--
+app/ui/tabs/tab_models.c:77:    // TODO: Render "Embedding Dimension:" label
+app/ui/tabs/tab_models.c:78:    // TODO: Render number input field
+app/ui/tabs/tab_models.c-79-    current_y += 50;
+app/ui/tabs/tab_models.c-80-    
+--
+app/ui/tabs/tab_models.c:82:    // TODO: Render "Number of Layers:" label
+app/ui/tabs/tab_models.c:83:    // TODO: Render number input field
+app/ui/tabs/tab_models.c-84-    current_y += 50;
+app/ui/tabs/tab_models.c-85-    
+--
+app/ui/tabs/tab_models.c:87:    // TODO: Render "Number of Heads:" label
+app/ui/tabs/tab_models.c:88:    // TODO: Render number input field
+app/ui/tabs/tab_models.c-89-    current_y += 50;
+app/ui/tabs/tab_models.c-90-    
+--
+app/ui/tabs/tab_models.c:98:    // TODO: Render "Create" text
+app/ui/tabs/tab_models.c-99-    
+app/ui/tabs/tab_models.c-100-    // Cancel button
+--
+app/ui/tabs/tab_models.c:103:    // TODO: Render "Cancel" text
+app/ui/tabs/tab_models.c-104-}
+app/ui/tabs/tab_models.c-105-
+--
+app/ui/tabs/tab_models.c:189:    // TODO: Fix model_manager_list() to return a copy, then we can free it.
+app/ui/tabs/tab_models.c-190-    // if (models) {
+app/ui/tabs/tab_models.c-191-    //     free(models);
+--
+app/ui/tabs/tab_models.c:248:        // TODO: Render "Select a model to view details"
+app/ui/tabs/tab_models.c-249-        return;
+app/ui/tabs/tab_models.c-250-    }
+--
+app/ui/tabs/tab_models.c:267:    // TODO: Render model name
+app/ui/tabs/tab_models.c-268-    current_y += 40;
+app/ui/tabs/tab_models.c-269-    
+app/ui/tabs/tab_models.c:270:    // TODO: Render vocabulary size
+app/ui/tabs/tab_models.c-271-    current_y += 30;
+app/ui/tabs/tab_models.c-272-    
+app/ui/tabs/tab_models.c:273:    // TODO: Render embedding dimension
+app/ui/tabs/tab_models.c-274-    current_y += 30;
+app/ui/tabs/tab_models.c-275-    
+app/ui/tabs/tab_models.c:276:    // TODO: Render number of layers
+app/ui/tabs/tab_models.c-277-    current_y += 30;
+app/ui/tabs/tab_models.c-278-    
+app/ui/tabs/tab_models.c:279:    // TODO: Render number of heads
+app/ui/tabs/tab_models.c-280-    current_y += 30;
+app/ui/tabs/tab_models.c-281-    
+app/ui/tabs/tab_models.c:282:    // TODO: Render model status
+app/ui/tabs/tab_models.c-283-    current_y += 30;
+app/ui/tabs/tab_models.c-284-    
+app/ui/tabs/tab_models.c:285:    // TODO: Render file path
+app/ui/tabs/tab_models.c-286-    current_y += 30;
+app/ui/tabs/tab_models.c-287-    
+--
+app/ui/tabs/tab_models.c:294:    // TODO: Render "Export" text
+app/ui/tabs/tab_models.c-295-    
+app/ui/tabs/tab_models.c-296-    SDL_Rect save_button = {x + PANEL_PADDING + 130, current_y, 120, BUTTON_HEIGHT};
+--
+app/ui/tabs/tab_models.c:299:    // TODO: Render "Save" text
+app/ui/tabs/tab_models.c-300-    
+app/ui/tabs/tab_models.c-301-    // NOTE: Do NOT free models array - it's the internal model manager array!
+--
+app/ui/tabs/tab_models.c:304:    // TODO: Fix model_manager_list() to return a copy, then we can free it.
+app/ui/tabs/tab_models.c-305-    // if (models) {
+app/ui/tabs/tab_models.c-306-    //     free(models);
+--
+app/ui/tabs/tab_models.c:321:    // TODO: Render status message text
+app/ui/tabs/tab_models.c-322-    
+app/ui/tabs/tab_models.c-323-    // Decrease timer
+--
+app/ui/tabs/tab_models.c:373:    // TODO: Implement click handling
+app/ui/tabs/tab_models.c-374-    // - Model selection
+app/ui/tabs/tab_models.c-375-    // - Button clicks
+--
+app/ui/tabs/tab_url_manager.c:539:        // TODO: Implement export functionality
+app/ui/tabs/tab_url_manager.c-540-        return;
+app/ui/tabs/tab_url_manager.c-541-    }
+--
+app/ui/tabs/tab_url_manager.c:551:        // TODO: Implement import functionality
+app/ui/tabs/tab_url_manager.c-552-        return;
+app/ui/tabs/tab_url_manager.c-553-    }
+--
+app/ui/tabs/tab_downloaded_files.c:529:    // TODO: Add button click handlers (Open, Delete, Re-crawl)
+app/ui/tabs/tab_downloaded_files.c-530-}
+app/ui/tabs/tab_downloaded_files.c-531-
+--
+app/ui/tabs/tab_video.c:43:    // SDL_Color bg_color = {20, 20, 30, 255}; // TODO: Use for background
+app/ui/tabs/tab_video.c-44-    SDL_Color text_color = {220, 220, 220, 255};
+app/ui/tabs/tab_video.c-45-    SDL_Color panel_color = {30, 30, 40, 255};
+--
+app/ui/tabs/tab_video.c:55:    // int h = WINDOW_HEIGHT - 80; // TODO: Use for panel height
+app/ui/tabs/tab_video.c-56-    
+app/ui/tabs/tab_video.c-57-    // Title (positioned to avoid submenu overlap)
+--
+app/training_thread.c:498:        const char* model_name = "default_model"; // TODO: Get from model selector
+app/training_thread.c-499-        model_manager_release_write(model_name);
+app/training_thread.c-500-        state->cllm_model = NULL;
+--
+app/workspace.c:134:    // TODO: Implement directory listing
+app/workspace.c-135-    // For now, just return 0
+app/workspace.c-136-    (void)base_dir;
+--
+algorithms/src/threading.c:638:    // TODO: Implement dynamic rebalancing based on actual workloads
+algorithms/src/threading.c-639-    // For now, just recalculate load balance factor
+algorithms/src/threading.c-640-    strategy->load_balance_factor = calculate_load_balance_factor(strategy);

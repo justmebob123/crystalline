@@ -68,11 +68,28 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.radius = 1.00;  // Inner ring (100% from center)
         
     } else {
-        // Beyond 232: Continue pattern with larger rings
-        pos.ring = 4;
-        pos.position = prime_index - 232;
+        // Beyond 232: WRAP AROUND using modular arithmetic (12-fold symmetry)
+        // This keeps the system bounded while maintaining the spiral structure
+        
+        // Use logarithmic spiral: ring grows with log₃(prime_index)
+        // This keeps ring bounded while allowing infinite primes
+        int adjusted_index = prime_index - 232;
+        
+        // Map to ring using log₃ (keeps growth bounded)
+        // ring = floor(log₃(adjusted_index + 1)) + 4
+        // But cap at ring 7 to keep 3^ring manageable
+        double log3_val = prime_log(adjusted_index + 1.0) / prime_log(3.0);
+        pos.ring = ((int)log3_val % 4) + 4;  // Rings 4-7, wrapping
+        
+        // Position within ring using modular arithmetic
+        // Use 1000 positions per ring for fine granularity
+        pos.position = adjusted_index % 1000;
+        
+        // Angle based on position (full rotation per 1000 positions)
         pos.angle = (pos.position * 2.0 * PRIME_PI) / 1000.0;
-        pos.radius = 1.25;
+        
+        // Radius grows slowly with ring (1.0 to 1.75)
+        pos.radius = 1.0 + (pos.ring - 4) * 0.25;
     }
     
     return pos;

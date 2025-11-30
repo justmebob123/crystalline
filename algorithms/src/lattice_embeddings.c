@@ -45,12 +45,12 @@ static double compute_L_from_clock_position(
     else if (pos.ring == 3) positions_in_ring = 100.0;
     else positions_in_ring = 1000.0;
     
+    // O is naturally bounded by the clock lattice design:
+    // - Ring 0-3: O = 0 to 4
+    // - Ring 4-7: O = 4 to 8 (wrapping via modular arithmetic)
+    // This keeps 3^O manageable (3^8 = 6561, well within float range)
     double O = (double)pos.ring + ((double)pos.position / positions_in_ring);
-    // CRITICAL FIX: Bound the exponent to prevent overflow
-    // Use tanh to keep O in reasonable range, then scale
-    // This prevents 3^large_O from exploding to infinity
-    double bounded_O = prime_tanh(O / 5.0) * 5.0;  // Keep O in [-5, 5]
-    double base = prime_pow(3.0, bounded_O);
+    double base = prime_pow(3.0, O);
     
     // Product: cos(θ·φᵢ) where θ is clock angle
     // This encodes the angular position in the lattice
