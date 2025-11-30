@@ -11,6 +11,18 @@
 
 ## ✅ RECENT FIXES COMPLETED
 
+### Critical Crash Fixed (Session 2024-12-29 - URGENT)
+1. ✅ **Crawler Crash Fixed** - NULL pointer dereference in continuous_training_init()
+   - Added NULL check before strncpy(model_path)
+   - Crash occurred when reusing existing model
+   - ASAN detected SEGV at line 332
+   - Crawler now starts successfully
+
+2. ✅ **LLM Input Size Fixed** - Reduced from obnoxiously huge to reasonable
+   - Changed from 1030x80 pixels to 950x40 pixels
+   - Single-line input instead of huge multi-line box
+   - Much more user-friendly
+
 ### 🎉 ALL LAYERS AUDIT COMPLETED (Session 2024-12-29)
 1. ✅ **Layer 3 (CLLM Library) Audit Complete** - All 64 files validated
    - Zero math.h violations found
