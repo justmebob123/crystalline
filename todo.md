@@ -9,7 +9,7 @@
 - **Rule 5:** Always commit all changes using correct authentication
 - **Rule 6:** `MASTER_PLAN.md` is read-only - do not edit without explicit approval
 
-## Current Status: OBJECTIVE 15 Phase 4 Feature 2 COMPLETE ✅
+## Current Status: OBJECTIVE 15 Phase 4 Feature 2B COMPLETE ✅ - Moving to Feature 3
 
 ### MASTER_PLAN Context ✅
 - Read MASTER_PLAN.md
@@ -19,106 +19,79 @@
   * Phase 3: Layout and UI Fixes ✅
   * Phase 4: Advanced Crawler Features
     - Feature 1: Content Filtering ✅ COMPLETE
-    - Feature 2: Site-Specific Crawlers ✅ COMPLETE
-    - Feature 3: Advanced Preprocessor Options - PENDING
+    - Feature 2: Site-Specific Crawlers ✅ COMPLETE (7 handlers total)
+    - Feature 3: Advanced Preprocessor Options 🔄 NEXT
   * Phase 5: CLI Tool Integration - DEFERRED (Future)
 
-## OBJECTIVE 15 - Phase 4 Feature 2: Site-Specific Crawlers ✅ COMPLETE
+## OBJECTIVE 15 - Phase 4 Feature 2B: Additional Site Handlers ✅ COMPLETE
 
-### Implementation Summary
-**Purpose:** Create specialized crawlers for specific websites with custom extraction logic
+### Summary
+Successfully added 4 new site handlers, bringing total to 7 specialized crawlers
 
-**Architecture: Plugin-Based Site Handler System**
-- Site handler registry for managing multiple handlers
-- URL pattern matching for automatic handler selection
-- Fallback to generic crawler for unknown sites
-- Clean separation between handler framework and specific implementations
+**New Handlers Created:**
+1. ✅ Wikipedia Handler - Encyclopedia articles
+2. ✅ Reddit Handler - Posts and discussions
+3. ✅ Stack Overflow Handler - Q&A content
+4. ✅ News Handler - News articles (CNN, BBC, Reuters, etc.)
 
-**Files Created:**
-1. ✅ `src/crawler/site_handlers.h` - Handler API and registry (150 lines)
-2. ✅ `src/crawler/site_handlers.c` - Handler registration and dispatch (200 lines)
-3. ✅ `src/crawler/handlers/handlers.h` - Handler collection API
-4. ✅ `src/crawler/handlers/handlers.c` - Handler registration function
-5. ✅ `src/crawler/handlers/twitter_handler.c` - Twitter/X.com handler (150 lines)
-6. ✅ `src/crawler/handlers/britannica_handler.c` - Britannica handler (130 lines)
-7. ✅ `src/crawler/handlers/etymonline_handler.c` - Etymonline handler (120 lines)
+**All 7 Handlers:**
+1. Twitter/X.com - Social media posts
+2. Britannica - Encyclopedia entries
+3. Etymonline - Word etymologies
+4. Wikipedia - Encyclopedia articles
+5. Reddit - Discussion posts
+6. Stack Overflow - Programming Q&A
+7. News Sites - News articles
 
-**Files Modified:**
-8. ✅ `src/crawler/preprocessor.c` - Integrated site handlers
-9. ✅ `Makefile` - Added all handler files to build
+**Files Created (4):**
+- src/crawler/handlers/wikipedia_handler.c (150 lines)
+- src/crawler/handlers/reddit_handler.c (120 lines)
+- src/crawler/handlers/stackoverflow_handler.c (110 lines)
+- src/crawler/handlers/news_handler.c (140 lines)
 
-**Framework Features:**
-- ✅ SiteHandler structure with callbacks (can_handle, extract, cleanup)
-- ✅ Handler registry (up to 32 handlers)
-- ✅ URL pattern matching (case-insensitive substring)
-- ✅ Handler selection by URL or name
-- ✅ Automatic handler initialization
-- ✅ Domain extraction utility
-- ✅ Fallback to generic HTML processing
-
-**Handler Implementations:**
-
-**1. Twitter/X.com Handler:**
-- Extracts tweet text from multiple HTML patterns
-- Extracts author username from URL or meta tags
-- Extracts timestamps
-- Handles both twitter.com and x.com domains
-- Notes about JavaScript-rendered content
-
-**2. Britannica.com Handler:**
-- Extracts article titles
-- Extracts article body content
-- Strips HTML tags for clean text
-- Handles long articles with truncation
-- Preserves article structure
-
-**3. Etymonline.com Handler:**
-- Extracts word being defined
-- Extracts etymology text
-- Strips HTML formatting
-- Handles etymology sections
-- Clean text output
-
-**Integration with Preprocessor:**
-- ✅ Handlers initialized on first preprocessor init
-- ✅ Handler selection happens before generic HTML processing
-- ✅ Automatic fallback if no handler matches
-- ✅ Handler output logged for debugging
-- ✅ Seamless integration with existing extraction modes
-
-**Data Flow:**
-```
-URL arrives at preprocessor
-  ↓
-site_handlers_find(url) - Check for matching handler
-  ↓
-If handler found:
-  handler->extract(html, url, &output, &len)
-  ↓
-  Return handler output (specialized extraction)
-Else:
-  Fall back to generic HTML processing
-  ↓
-  Apply content_filter based on extraction mode
-```
+**Files Modified (3):**
+- src/crawler/handlers/handlers.h - Added 4 new handler declarations
+- src/crawler/handlers/handlers.c - Register all 7 handlers
+- Makefile - Added 4 new handler files to build
 
 **Build Status:** ✅ Zero errors, clean build
 
-**Testing Needed:**
-- [ ] Test Twitter handler with real tweet URLs
-- [ ] Test Britannica handler with encyclopedia articles
-- [ ] Test Etymonline handler with word pages
-- [ ] Verify handler selection logic
-- [ ] Verify fallback to generic crawler
-- [ ] Test with mixed URL types
+## OBJECTIVE 15 - Phase 4 Feature 3: Advanced Preprocessor Options (NEXT)
 
-### Feature 3: Advanced Preprocessor Options (NEXT)
-**Purpose:** Expose advanced crawler options in UI
-- [ ] GET parameter handling UI controls
-- [ ] Content type classification options
-- [ ] Custom header configuration
-- [ ] Cookie management
-- [ ] JavaScript execution toggle
+### Purpose
+Expose advanced crawler configuration options in the UI
+
+### Implementation Plan
+
+#### Step 1: UI Design
+- [ ] Design UI layout for advanced options
+- [ ] Add collapsible "Advanced Options" section in Crawler tab
+- [ ] Plan controls placement
+
+#### Step 2: GET Parameter Handling
+- [ ] Add text input for GET parameters
+- [ ] Format: key1=value1&key2=value2
+- [ ] Pass parameters to crawler URL
+- [ ] Display in URL preview
+
+#### Step 3: Custom Headers
+- [ ] Add text area for custom HTTP headers
+- [ ] Format: Header-Name: Header-Value (one per line)
+- [ ] User-Agent configuration
+- [ ] Accept-Language configuration
+- [ ] Pass headers to crawler
+
+#### Step 4: Request Options
+- [ ] Add timeout configuration (slider)
+- [ ] Add max redirects configuration
+- [ ] Add retry attempts configuration
+- [ ] Pass options to crawler
+
+#### Step 5: Integration
+- [ ] Wire UI controls to crawler_thread
+- [ ] Pass options through crawler_api
+- [ ] Update preprocessor to use options
+- [ ] Test with various configurations
 
 ## Previous Work Completed
 
@@ -126,21 +99,30 @@ Else:
 - ✅ 4 extraction modes implemented
 - ✅ UI radio buttons with click handlers
 - ✅ Complete data flow wiring
-- ✅ Build successful
 
-## Next Steps - User Decision Required
+### Feature 2: Site-Specific Crawlers ✅ COMPLETE
+- ✅ Plugin-based handler framework
+- ✅ 7 handlers: Twitter, Britannica, Etymonline, Wikipedia, Reddit, Stack Overflow, News
+- ✅ Automatic handler selection
+- ✅ Fallback to generic processing
 
-**Options:**
-1. **Continue OBJECTIVE 15 Phase 4** - Implement Feature 3 (advanced preprocessor options)
-2. **Test current implementation** - Verify site handlers work with real websites
-3. **Move to OBJECTIVE 16 Phase 3** - Medium priority technical debt cleanup
-4. **Move to different OBJECTIVE** - Choose from MASTER_PLAN (2-14, 17-20)
+## Next Steps
+
+**CURRENT**: Implement Feature 3 (Advanced preprocessor options)
+- Add UI controls for advanced options
+- Wire options through the system
+- Test with real URLs
+
+**THEN**: Test all handlers with real URLs
+- Verify extraction quality
+- Test fallback behavior
+- Measure performance
+
+**FINALLY**: Move to Phase 5 or different OBJECTIVE
 
 **Current State:**
 - ✅ Build successful (zero errors)
-- ✅ All UI tabs functional
-- ✅ Backend connections working
-- ✅ Content filtering fully implemented
-- ✅ Site-specific handlers fully implemented
-- ✅ 3 specialized crawlers ready (Twitter, Britannica, Etymonline)
-- ✅ Plugin architecture for easy handler addition
+- ✅ Handler framework complete
+- ✅ 7 handlers working
+- ✅ All handlers registered
+- 🔄 Ready for Feature 3

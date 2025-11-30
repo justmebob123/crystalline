@@ -28,5 +28,29 @@ void register_all_handlers(void) {
         site_handlers_register(etymonline);
     }
     
-    printf("Site handlers registration complete\n");
+    // Register Wikipedia handler
+    const SiteHandler* wikipedia = get_wikipedia_handler();
+    if (wikipedia) {
+        site_handlers_register(wikipedia);
+    }
+    
+    // Register Reddit handler
+    const SiteHandler* reddit = get_reddit_handler();
+    if (reddit) {
+        site_handlers_register(reddit);
+    }
+    
+    // Register Stack Overflow handler
+    const SiteHandler* stackoverflow = get_stackoverflow_handler();
+    if (stackoverflow) {
+        site_handlers_register(stackoverflow);
+    }
+    
+    // Register News handler
+    const SiteHandler* news = get_news_handler();
+    if (news) {
+        site_handlers_register(news);
+    }
+    
+    printf("Site handlers registration complete (7 handlers registered)\n");
 }

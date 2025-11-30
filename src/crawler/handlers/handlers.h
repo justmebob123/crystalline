@@ -9,6 +9,10 @@
 const SiteHandler* get_twitter_handler(void);
 const SiteHandler* get_britannica_handler(void);
 const SiteHandler* get_etymonline_handler(void);
+const SiteHandler* get_wikipedia_handler(void);
+const SiteHandler* get_reddit_handler(void);
+const SiteHandler* get_stackoverflow_handler(void);
+const SiteHandler* get_news_handler(void);
 
 /**
  * Register all built-in handlers
