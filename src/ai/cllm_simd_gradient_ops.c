@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <pthread.h>
 
 // CPU feature detection
 #ifdef __x86_64__
@@ -208,7 +209,29 @@ void cllm_simd_accumulate_segment(float* restrict dest,
 void cllm_simd_accumulate_boundary(float* restrict dest,
                                    float value,
                                    size_t index) {
-    // Simple non-atomic addition for now
-    // TODO: Implement proper atomic float operations using compare-and-swap
+    // Atomic float addition using compare-and-swap
+    // This ensures thread-safe gradient accumulation
+    
+    #if defined(__GNUC__) || defined(__clang__)
+    // Use GCC/Clang atomic builtins
+    union {
+        float f;
+        uint32_t i;
+    } old_val, new_val;
+    
+    do {
+        old_val.f = dest[index];
+        new_val.f = old_val.f + value;
+    } while (!__sync_bool_compare_and_swap(
+        (uint32_t*)&dest[index],
+        old_val.i,
+        new_val.i
+    ));
+    #else
+    // Fallback: Use mutex (slower but safe)
+    static pthread_mutex_t gradient_lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&gradient_lock);
     dest[index] += value;
+    pthread_mutex_unlock(&gradient_lock);
+    #endif
 }
