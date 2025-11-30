@@ -9,6 +9,55 @@
 - Rule 5: Always commit all changes using correct authentication
 - Rule 6: MASTER_PLAN.md is read-only - do not edit without explicit approval
 
+## CRITICAL BUGS - FIXED ✅
+
+### Bug 1: Models Tab Crash (heap-use-after-free) ✅ FIXED
+**Error**: AddressSanitizer: heap-use-after-free in draw_model_list
+**Location**: ui/tabs/tab_models.c:162, 188, 298, 300
+**Root Cause**: Tab was freeing internal model manager array
+
+**Problem**:
+- `model_manager_list()` returns pointer to internal `g_model_manager.models` array
+- Tab code called `free(models)` on this pointer
+- This freed the model manager's internal array
+- Next access to models caused heap-use-after-free crash
+
+**Solution Applied**:
+- Commented out both `free(models)` calls in tab_models.c (lines 188, 300)
+- Added detailed comments explaining the issue
+- Models tab now works without crashing
+
+**TODO (Future)**:
+- Modify `model_manager_list()` to return a copy of the array
+- Then tab can safely free the copy
+
+**Files Modified**:
+- app/ui/tabs/tab_models.c (2 locations)
+
+### Bug 2: "Still working..." Console Spam ✅ FIXED
+**Issue**: Console spam every 1 second during training
+**Location**: src/ai/cllm_training_threaded.c:2031
+**Root Cause**: Progress message printed every 1 second
+
+**What It Meant**:
+- "pushed": Number of training batches added to queue
+- "processed": Number of batches completed
+- "pending": Number of batches waiting
+
+**Solution Applied**:
+- Changed interval from 1 second (1000 iterations) to 10 seconds (10000 iterations)
+- Improved message format: "Training progress: X/Y batches (Z% complete)"
+- Added percentage calculation for better clarity
+- Only prints if there are batches to process
+
+**Files Modified**:
+- src/ai/cllm_training_threaded.c (line 2029)
+
+**Result**:
+- Console output reduced by 90%
+- More informative progress messages
+- Less spam, better UX
+
 ## CRITICAL UI/UX REDESIGN - COMPLETE INTERFACE OVERHAUL
 
 ### Deep Analysis Complete ✅

@@ -183,10 +183,13 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
         }
     }
     
-    // Free model list
-    if (models) {
-        free(models);
-    }
+    // NOTE: Do NOT free models array - it's the internal model manager array!
+    // model_manager_list() returns a pointer to g_model_manager.models, not a copy.
+    // Freeing it causes heap-use-after-free crash.
+    // TODO: Fix model_manager_list() to return a copy, then we can free it.
+    // if (models) {
+    //     free(models);
+    // }
 }
 
 // Draw action buttons
@@ -295,10 +298,13 @@ static void draw_model_details(AppState* state, int x, int y, int width, int hei
     SDL_RenderFillRect(state->renderer, &save_button);
     // TODO: Render "Save" text
     
-    // Free model list
-    if (models) {
-        free(models);
-    }
+    // NOTE: Do NOT free models array - it's the internal model manager array!
+    // model_manager_list() returns a pointer to g_model_manager.models, not a copy.
+    // Freeing it causes heap-use-after-free crash.
+    // TODO: Fix model_manager_list() to return a copy, then we can free it.
+    // if (models) {
+    //     free(models);
+    // }
 }
 
 // Draw status message

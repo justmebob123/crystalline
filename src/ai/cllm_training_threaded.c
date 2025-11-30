@@ -2025,11 +2025,14 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         usleep(1000);  // 1ms
         
         wait_iterations++;
-        if (wait_iterations % 1000 == 0) {
+        // Print progress every 10 seconds instead of every 1 second (reduced spam)
+        if (wait_iterations % 10000 == 0) {
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
-            printf("  Still working... (pushed: %zu, processed: %zu, pending: %zu)\n",
-                   pushed, popped, pending);
+            if (pushed > 0) {
+                printf("  Training progress: %zu/%zu batches (%.1f%% complete)\n",
+                       popped, pushed, (popped * 100.0) / pushed);
+            }
         }
     }
     
