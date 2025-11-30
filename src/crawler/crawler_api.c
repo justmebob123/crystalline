@@ -6,6 +6,7 @@
  */
 
 #include "../../include/crawler.h"
+#include "content_filter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,9 @@ struct CrawlerState {
     char start_url[512];
     int max_pages;
     int num_threads;  // Number of threads per stage (preprocessor, tokenizer, training)
+    
+    
+    ExtractionMode extraction_mode;  // Content extraction mode
     
     // Thread handles
     pthread_t crawler_thread;
@@ -181,6 +185,9 @@ CrawlerState* crawler_state_init_threaded(const char* data_dir, const char* star
     } else {
         state->num_threads = num_threads;
     }
+    
+    // Set default extraction mode
+    state->extraction_mode = EXTRACT_ALL;
     
     // Initialize thread arrays to NULL
     state->preprocessor_threads = NULL;
@@ -357,6 +364,20 @@ void crawler_set_callback(CrawlerState* state, CrawlerCallback callback, void* u
     state->callback_user_data = user_data;
     pthread_mutex_unlock(&state->status_lock);
 }
+
+void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode) {
+    if (!state) return;
+    
+    pthread_mutex_lock(&state->status_lock);
+    state->extraction_mode = mode;
+    pthread_mutex_unlock(&state->status_lock);
+    
+    // If preprocessor is already initialized, update it
+    if (state->preprocessor_internal) {
+        preprocessor_set_extraction_mode((PreprocessorState*)state->preprocessor_internal, mode);
+    }
+}
+
 
 void crawler_state_cleanup(CrawlerState* state) {
     if (!state) return;

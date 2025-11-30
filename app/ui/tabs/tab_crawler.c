@@ -18,13 +18,6 @@
 
 // UI Button structure (same as training tab)
 typedef struct {
-    SDL_Rect bounds;
-    char label[64];
-    bool enabled;
-    bool visible;
-} UIButton;
-
-typedef struct {
     // Prime Configuration
     CrawlerPrimeConfig prime_config;
     bool prime_enabled;
@@ -43,6 +36,10 @@ typedef struct {
     
     // Content Filtering (NEW - Phase 4 Feature 1)
     ExtractionMode extraction_mode;
+    SDL_Rect radio_extract_all;
+    SDL_Rect radio_extract_human;
+    SDL_Rect radio_extract_metadata;
+    SDL_Rect radio_extract_mixed;
     
     // Activity Log
     char activity_log[10][256];
@@ -357,26 +354,37 @@ static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout
     draw_text(renderer, "Meta refresh", x + 35, y, text_color);
     y += 30;
     
-    // Content Filtering section (NEW - Phase 4 Feature 1)
+        // Content Filtering section (NEW - Phase 4 Feature 1)
     draw_section_header(renderer, "CONTENT FILTERING", x, y, (SDL_Color){180, 180, 200, 255});
     y += 30;
     
     const char* radio_on = "(*)";
     const char* radio_off = "( )";
     
-    // Extraction mode radio buttons
+    // Extraction mode radio buttons (store bounds for click detection)
+    int radio_width = 200;
+    int radio_height = 20;
+    
+    // Extract All
+    g_crawler_state.radio_extract_all = (SDL_Rect){x, y, radio_width, radio_height};
     draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_ALL ? radio_on : radio_off, x, y, text_color);
     draw_text(renderer, "Extract All (default)", x + 35, y, text_color);
     y += 22;
     
+    // Human Text Only
+    g_crawler_state.radio_extract_human = (SDL_Rect){x, y, radio_width, radio_height};
     draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_HUMAN_TEXT ? radio_on : radio_off, x, y, text_color);
     draw_text(renderer, "Human Text Only", x + 35, y, success_color);
     y += 22;
     
+    // Metadata Only
+    g_crawler_state.radio_extract_metadata = (SDL_Rect){x, y, radio_width, radio_height};
     draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_METADATA ? radio_on : radio_off, x, y, text_color);
     draw_text(renderer, "Metadata Only", x + 35, y, text_color);
     y += 22;
     
+    // Mixed
+    g_crawler_state.radio_extract_mixed = (SDL_Rect){x, y, radio_width, radio_height};
     draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_MIXED ? radio_on : radio_off, x, y, text_color);
     draw_text(renderer, "Mixed (Content + Meta)", x + 35, y, text_color);
 }
@@ -674,8 +682,8 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
             }
             
             // Start the crawler thread
-            extern int start_crawler_thread(AppState* state, const char* start_url);
-            if (start_crawler_thread(state, url_entry->url) == 0) {
+            extern int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode);
+            if (start_crawler_thread(state, url_entry->url, g_crawler_state.extraction_mode) == 0) {
                 char log_msg[512];
                 int written = snprintf(log_msg, sizeof(log_msg), "Crawler started with URL: %s", url_entry->url);
                 if (written >= (int)sizeof(log_msg)) {
@@ -701,15 +709,37 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
         return;
     }
     
-    // Check Load Config button
+        // Check Load Config button
     if (btn_load_config.visible && btn_load_config.enabled &&
         rect_contains_point(btn_load_config.bounds, mouse_x, mouse_y)) {
         add_activity_log("Load Config clicked (not yet implemented)");
         return;
     }
     
-    // TODO: Add click handlers for extraction mode radio buttons
-    // This will be implemented when we add the radio button bounds tracking
+    // Check extraction mode radio buttons
+    if (rect_contains_point(g_crawler_state.radio_extract_all, mouse_x, mouse_y)) {
+        g_crawler_state.extraction_mode = EXTRACT_ALL;
+        add_activity_log("Extraction mode: Extract All");
+        return;
+    }
+    
+    if (rect_contains_point(g_crawler_state.radio_extract_human, mouse_x, mouse_y)) {
+        g_crawler_state.extraction_mode = EXTRACT_HUMAN_TEXT;
+        add_activity_log("Extraction mode: Human Text Only");
+        return;
+    }
+    
+    if (rect_contains_point(g_crawler_state.radio_extract_metadata, mouse_x, mouse_y)) {
+        g_crawler_state.extraction_mode = EXTRACT_METADATA;
+        add_activity_log("Extraction mode: Metadata Only");
+        return;
+    }
+    
+    if (rect_contains_point(g_crawler_state.radio_extract_mixed, mouse_x, mouse_y)) {
+        g_crawler_state.extraction_mode = EXTRACT_MIXED;
+        add_activity_log("Extraction mode: Mixed (Content + Metadata)");
+        return;
+    }
 }
 
 void handle_crawler_tab_keyboard(AppState* state, int key) {

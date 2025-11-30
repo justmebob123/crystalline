@@ -50,7 +50,7 @@ static void crawler_event_callback(const CrawlerEvent* event, void* user_data __
     fflush(stdout);
 }
 
-int start_crawler_thread(AppState* state, const char* start_url) {
+int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode) {
     pthread_mutex_lock(&g_crawler_mutex);
     
     // Check if already running
@@ -78,6 +78,9 @@ int start_crawler_thread(AppState* state, const char* start_url) {
         pthread_mutex_unlock(&g_crawler_mutex);
         return -1;
     }
+    
+    // Set extraction mode
+    crawler_set_extraction_mode(g_crawler_state, extraction_mode);
     
     // Set callback for events
     crawler_set_callback(g_crawler_state, crawler_event_callback, state);

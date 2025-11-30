@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include "../src/crawler/content_filter.h"
 
 // Forward declarations for internal component states
 typedef struct CrawlerStateInternal CrawlerStateInternal;
@@ -152,6 +153,8 @@ void crawler_get_status(CrawlerState* state, CrawlerStatus* status);
  * @param user_data User data passed to callback
  */
 void crawler_set_callback(CrawlerState* state, CrawlerCallback callback, void* user_data);
+
+void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode);
 
 /**
  * Cleanup crawler state
