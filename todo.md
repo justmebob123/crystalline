@@ -193,16 +193,19 @@ The SECONDARY_OBJECTIVES.md contains:
   - Implement export/import functionality
   - Implement statistics functions
 
-### 3.2: Implement URL Filtering
-- [ ] Create `src/crawler/url_filter.h`
+### 3.2: Implement URL Filtering ✅ COMPLETE
+- [x] Create `src/crawler/url_filter.h`
   - Define filter rules struct
   - Define filter API
-- [ ] Create `src/crawler/url_filter.c`
-  - Implement file type filtering
-  - Implement domain whitelist/blacklist
-  - Implement regex pattern matching
-  - Implement GET parameter preservation
-  - Implement should_crawl_url()
+- [x] Create `src/crawler/url_filter.c`
+  - Implement file type filtering (10 types: html, pdf, txt, doc, images, video, audio, archives, code, data)
+  - Implement domain whitelist/blacklist with dynamic arrays
+  - Implement regex pattern matching with compiled patterns
+  - Implement GET parameter preservation settings
+  - Implement should_crawl_url() with comprehensive checks
+  - Implement add/remove operations for all filter types
+  - Implement save/load configuration to file
+  - Implement get_config() for UI access
 
 ### 3.3: Implement URL Prioritization
 - [ ] Create `src/crawler/url_priority.h`
