@@ -119,6 +119,14 @@ void crawler_url_manager_get_stats(CrawlerURLManager* manager, int* total, int* 
 URLDatabase* crawler_url_manager_get_database(CrawlerURLManager* manager);
 
 /**
+ * Reset all URLs to pending status (for recrawling)
+ * 
+ * @param manager Manager handle
+ * @return Number of URLs reset, -1 on error
+ */
+int crawler_url_manager_reset_all(CrawlerURLManager* manager);
+
+/**
  * Get URL filter
  * 
  * @param manager Manager handle

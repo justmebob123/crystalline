@@ -702,3 +702,26 @@ void url_db_free_entries(URLEntry** entries, int count) {
     
     free(entries);
 }
+
+/**
+ * Reset all URLs to pending status (for recrawling)
+ */
+int url_db_reset_all_to_pending(URLDatabase* db) {
+    if (!db || !db->db) return -1;
+    
+    const char* sql = "UPDATE urls SET status = 'pending', last_crawled = NULL, crawl_count = 0 WHERE status != 'pending';";
+    
+    char* err_msg = NULL;
+    int rc = sqlite3_exec(db->db, sql, NULL, NULL, &err_msg);
+    
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "ERROR: Failed to reset URLs: %s\n", err_msg);
+        sqlite3_free(err_msg);
+        return -1;
+    }
+    
+    int changes = sqlite3_changes(db->db);
+    printf("Reset %d URLs to pending status\n", changes);
+    
+    return changes;
+}

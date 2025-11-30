@@ -73,6 +73,7 @@ static CrawlerTabState g_crawler_state = {0};
 static UIButton btn_add_url;
 static UIButton btn_clear_url;
 static UIButton btn_start_crawler;
+static UIButton btn_reset_urls;
 static UIButton btn_save_config;
 static UIButton btn_load_config;
 
@@ -590,6 +591,15 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
                     text_color, mouse_x, mouse_y);
     y += 45;
     
+    // Reset All URLs button - USE COLUMN WIDTH FOR SIZING
+    btn_reset_urls.bounds = (SDL_Rect){x, y, content_width, 30};
+    btn_reset_urls.enabled = true;
+    btn_reset_urls.visible = true;
+    strncpy(btn_reset_urls.label, "Reset All URLs", sizeof(btn_reset_urls.label) - 1);
+    draw_button_rect(renderer, btn_reset_urls.bounds, "Reset All URLs", (SDL_Color){180, 100, 60, 255},
+                    text_color, mouse_x, mouse_y);
+    y += 40;
+    
     // Save Config button - USE COLUMN WIDTH FOR SIZING
     btn_save_config.bounds = (SDL_Rect){x, y, content_width, 30};
     btn_save_config.enabled = true;
@@ -743,17 +753,23 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
                 crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
             }
             
-            if (!g_crawler_state.url_manager || pending == 0) {
-                add_activity_log("Error: No URLs in queue. Add a URL first.");
+            if (!g_crawler_state.url_manager || total == 0) {
+                add_activity_log("Error: No URLs in database. Add a URL first.");
                 return;
             }
             
-            // Get the next URL from the database
-            URLEntry* url_entry = crawler_url_manager_get_next(g_crawler_state.url_manager);
-            if (!url_entry || url_entry->url[0] == '\0') {
-                add_activity_log("Error: Failed to get URL from database");
-                if (url_entry) free(url_entry);
-                return;
+            // If no pending URLs but we have crawled ones, auto-reset them
+            if (pending == 0 && crawled > 0) {
+                add_activity_log("No pending URLs. Resetting all URLs to pending...");
+                int reset_count = crawler_url_manager_reset_all(g_crawler_state.url_manager);
+                if (reset_count > 0) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "Reset %d URLs to pending status", reset_count);
+                    add_activity_log(msg);
+                } else {
+                    add_activity_log("Error: Failed to reset URLs");
+                    return;
+                }
             }
             
             // Start the crawler thread (no start URL - uses database)
@@ -763,11 +779,38 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
             } else {
                 add_activity_log("Error: Failed to start crawler");
             }
-            
-            // Free the URL entry (URLEntry is a struct with fixed-size arrays)
-            if (url_entry) {
-                free(url_entry);
-            }
+        }
+        return;
+    }
+    
+    // Check Reset All URLs button
+    if (btn_reset_urls.visible && btn_reset_urls.enabled &&
+        rect_contains_point(btn_reset_urls.bounds, mouse_x, mouse_y)) {
+        
+        if (!g_crawler_state.url_manager) {
+            add_activity_log("Error: URL manager not initialized");
+            return;
+        }
+        
+        // Get stats before reset
+        int total = 0, pending = 0, crawled = 0, blocked = 0;
+        crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
+        
+        if (total == 0) {
+            add_activity_log("No URLs in database to reset");
+            return;
+        }
+        
+        // Reset all URLs to pending
+        int reset_count = crawler_url_manager_reset_all(g_crawler_state.url_manager);
+        if (reset_count > 0) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "Reset %d URLs to pending status", reset_count);
+            add_activity_log(msg);
+        } else if (reset_count == 0) {
+            add_activity_log("All URLs already pending - nothing to reset");
+        } else {
+            add_activity_log("Error: Failed to reset URLs");
         }
         return;
     }

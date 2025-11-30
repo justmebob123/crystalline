@@ -363,3 +363,12 @@ int crawler_url_manager_import(CrawlerURLManager* manager, const char* file_path
     
     return url_db_import(manager->database, file_path);
 }
+
+/**
+ * Reset all URLs to pending status (for recrawling)
+ */
+int crawler_url_manager_reset_all(CrawlerURLManager* manager) {
+    if (!manager || !manager->database) return -1;
+    
+    return url_db_reset_all_to_pending(manager->database);
+}

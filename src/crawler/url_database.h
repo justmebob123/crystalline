@@ -203,6 +203,14 @@ int url_db_export(URLDatabase* db, const char* file_path);
 int url_db_import(URLDatabase* db, const char* file_path);
 
 /**
+ * Reset all URLs to pending status (for recrawling)
+ * 
+ * @param db Database handle
+ * @return Number of URLs reset, -1 on error
+ */
+int url_db_reset_all_to_pending(URLDatabase* db);
+
+/**
  * Free URL entry
  * 
  * @param entry URL entry to free
