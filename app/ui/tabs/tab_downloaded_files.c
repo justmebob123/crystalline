@@ -57,7 +57,7 @@ static void init_downloaded_files_state(void) {
     if (files_state.initialized) return;
     
     // Create URL manager with database
-    files_state.url_manager = crawler_url_manager_create("data/crawler/crawler.db");
+    files_state.url_manager = crawler_url_manager_create("data/crawler");
     if (!files_state.url_manager) {
         fprintf(stderr, "ERROR: Failed to create URL manager for Downloaded Files tab\n");
         return;

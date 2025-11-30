@@ -47,7 +47,7 @@ static void init_url_manager_state(void) {
     if (url_state.initialized) return;
     
     // Create URL manager with database
-    url_state.url_manager = crawler_url_manager_create("data/crawler/crawler.db");
+    url_state.url_manager = crawler_url_manager_create("data/crawler");
     if (!url_state.url_manager) {
         fprintf(stderr, "ERROR: Failed to create URL manager for URL Manager tab\n");
         return;

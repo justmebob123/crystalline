@@ -88,7 +88,7 @@ static void init_crawler_tab_state(void) {
     g_crawler_state.prime_enabled = true;
     
     // Initialize URL manager with SQLite database
-    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler/crawler.db");
+    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler");
     if (!g_crawler_state.url_manager) {
         fprintf(stderr, "ERROR: Failed to create URL manager\n");
     }
