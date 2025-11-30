@@ -76,22 +76,31 @@
 - [x] Implement batch_accumulator_get_required()
 - [ ] Integrate with continuous_training.c (LATER)
 
-### Phase 5: Dynamic Configuration UI - Models Tab
-- [ ] Add model name input field (create/rename)
-- [ ] Add rename button for existing models
-- [ ] Add validation for unique names
-- [ ] Add default name generation
-- [ ] Update model creation dialog
-- [ ] Update model details panel
-- [ ] Add model selector dropdown (main control)
+### Phase 5: Model Renaming System ✅ COMPLETE
+- [x] Implemented cllm_model_rename() function
+- [x] Rename model file
+- [x] Rename queue directory
+- [x] Update model metadata
+- [x] Delete old files
 
-### Phase 6: Dynamic Configuration UI - All Tabs
-- [ ] Add model selector dropdown to Training tab
-- [ ] Add model selector dropdown to Crawler tab
-- [ ] Add model selector dropdown to LLM tab
-- [ ] Add model selector dropdown to Research tab
+### Phase 6: Model Selector UI Component ✅ COMPLETE
+- [x] Created ModelSelector component
+- [x] Dropdown with model list
+- [x] Hover effects and visual feedback
+- [x] Change callbacks
+- [x] Integration with model manager
+
+### Phase 7: Dynamic Configuration UI - All Tabs (CURRENT) ⏳
+- [ ] Add model selector to Training tab
+- [ ] Add model selector to Crawler tab
+- [ ] Add model selector to LLM tab
+- [ ] Add model selector to Research tab
+- [ ] Add batch_size slider to Training tab
+- [ ] Add sequence_length slider to Training tab
+- [ ] Add epochs slider to Training tab
+- [ ] Add learning_rate input to Training tab
+- [ ] Add model info display (epochs_trained, queue_size, etc.)
 - [ ] Wire all selectors to model manager
-- [ ] Ensure consistent model selection across tabs
 
 ### Phase 7: Training Tab Enhancements
 - [ ] Add batch_size slider

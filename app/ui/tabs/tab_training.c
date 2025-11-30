@@ -15,6 +15,7 @@
 #include "../../training_thread.h"
 #include "../../ui_layout.h"
 #include "../../input_manager.h"
+#include "../model_selector.h"
    #include "../sphere_visualization.h"
 #include "../../time_format.h"
 #include "cllm_format.h"
@@ -83,6 +84,9 @@ static SDL_Rect viz_area_rect;
 
 // Input initialization flag
 static bool inputs_initialized = false;
+
+// Model selector
+static ModelSelector* model_selector = NULL;
 
 // Crawler state
 static bool crawler_running = false;
@@ -657,6 +661,13 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         tab_initialized = true;
     }
     
+    // Initialize model selector on first draw
+    if (!model_selector) {
+        int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+        model_selector = model_selector_create(panel_x + 10, RENDER_OFFSET_Y + 50, CONTROL_PANEL_WIDTH - 20, 30);
+        model_selector_update_list(model_selector);
+    }
+    
     // Update visualization data from training state
     update_training_visualization(state);
     
@@ -682,6 +693,17 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize layout system
     LayoutContainer layout;
     layout_init(&layout, panel_rect, LAYOUT_VERTICAL, 10, 8);
+    
+    // === SECTION 0: MODEL SELECTOR ===
+    SDL_Rect model_label = layout_add_label(&layout, "MODEL", 20);
+    draw_text(renderer, "MODEL", model_label.x, model_label.y, text_color);
+    
+    // Render model selector
+    if (model_selector) {
+        model_selector_render(model_selector, renderer);
+    }
+    layout_add_spacing(&layout, 40); // Space for model selector
+    layout_add_spacing(&layout, 10);
     
     // === SECTION 1: STATUS ===
     SDL_Rect status_label = layout_add_label(&layout, "STATUS", 20);
@@ -938,6 +960,11 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Update visualization
     update_training_visualization(state);
+    
+    // Check model selector click first
+    if (model_selector && model_selector_handle_click(model_selector, x, y)) {
+        return;
+    }
     
     // Input clicks are now handled by InputManager in main event loop
     // No need for tab-specific input click handling
