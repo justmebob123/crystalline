@@ -48,12 +48,36 @@ Input box click handler was being checked AFTER other UI elements (thread list, 
 - [x] Build cllm_crawler CLI tool - ✅ BUILT AND TESTED
 - [x] Update Makefile to include -lalgorithms for crawler
 
-### Phase 5.3: Cleanup and Organization ⏳ NEXT
-- [ ] Remove legacy tools (cllm_tokenize_old.c, cllm_vocab_build_old.c)
-- [ ] Move test tools to tests/ directory
-- [ ] Evaluate and build/remove remaining unbuilt tools
-- [ ] Clean up Makefile
-- [ ] Organize libraries as per SECONDARY_OBJECTIVES
+### Phase 5.3: Cleanup and Organization ⏳ IN PROGRESS
+
+#### Step 1: Remove Legacy Tools ✅ COMPLETE
+- [x] Removed tools/cllm_tokenize_old.c
+- [x] Removed tools/cllm_vocab_build_old.c
+- [ ] Update Makefile to remove references (if any)
+
+#### Step 2: Move Test Tools to tests/ Directory ✅ COMPLETE
+- [x] Moved tools/test_simple_init.c to tests/
+- [x] Moved tools/test_token_init.c to tests/
+- [x] Moved tools/test_hierarchical.c to tests/
+- [x] Moved tools/quick_inference_check.c to tests/
+- [x] Moved tools/profile_kissing_spheres.c to tests/
+- [ ] Update Makefile test targets
+
+#### Step 3: Evaluate Remaining Unbuilt Tools ✅ COMPLETE
+- [x] Removed tools/web_scraper.c (redundant with cllm_crawler)
+- [x] Moved profile_kissing_spheres.c to tests/ (diagnostic tool)
+
+**Result:** tools/ directory now contains only 22 production tools (down from 30)
+
+#### Step 4: Clean Up Makefile
+- [ ] Remove legacy tool targets
+- [ ] Update test tool paths
+- [ ] Verify all targets build correctly
+
+#### Step 5: Organize Libraries (SECONDARY_OBJECTIVES)
+- [ ] Review SECONDARY_OBJECTIVES library organization
+- [ ] Implement proper categorization
+- [ ] Update build system
 
 ### Phase 5.4: Library Reorganization (from SECONDARY_OBJECTIVES)
 - [ ] Review SECONDARY_OBJECTIVES.md library organization section
