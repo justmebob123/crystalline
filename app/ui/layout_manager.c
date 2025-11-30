@@ -56,7 +56,7 @@ static TabLayout calculate_full_width_2col(int window_width, int window_height,
     int margin = 20;
     layout.content_area.x = 200 + margin;  // Sidebar width + margin
     layout.content_area.y = layout.tab_bar_height;
-    layout.content_area.w = window_width - (margin * 2);
+    layout.content_area.w = window_width - 200 - (margin * 2);
     layout.content_area.h = window_height - layout.tab_bar_height;
     
     layout.num_columns = 2;
@@ -95,7 +95,7 @@ static TabLayout calculate_full_width_3col(int window_width, int window_height) 
     int margin = 20;
     layout.content_area.x = 200 + margin;  // Sidebar width + margin
     layout.content_area.y = layout.tab_bar_height;
-    layout.content_area.w = window_width - (margin * 2);
+    layout.content_area.w = window_width - 200 - (margin * 2);
     layout.content_area.h = window_height - layout.tab_bar_height;
     
     layout.num_columns = 3;

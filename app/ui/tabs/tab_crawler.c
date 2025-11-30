@@ -457,7 +457,9 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     y += 30;
     
     // Start/Stop button - STORE BOUNDS FOR CLICK DETECTION
-    btn_start_crawler.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 35};
+    // Use fixed width instead of full column to prevent extending past window
+    int button_width = 180;  // Fixed width that fits nicely
+    btn_start_crawler.bounds = (SDL_Rect){x, y, button_width, 35};
     btn_start_crawler.enabled = true;
     btn_start_crawler.visible = true;
     
@@ -472,7 +474,8 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     y += 45;
     
     // Save Config button - STORE BOUNDS FOR CLICK DETECTION
-    btn_save_config.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 30};
+    // Use fixed width to prevent extending past window
+    btn_save_config.bounds = (SDL_Rect){x, y, 180, 30};
     btn_save_config.enabled = true;
     btn_save_config.visible = true;
     strncpy(btn_save_config.label, "Save Config", sizeof(btn_save_config.label) - 1);
@@ -481,7 +484,8 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     y += 40;
     
     // Load Config button - STORE BOUNDS FOR CLICK DETECTION
-    btn_load_config.bounds = (SDL_Rect){x, y, col->width - (col->padding * 2), 30};
+    // Use fixed width to prevent extending past window
+    btn_load_config.bounds = (SDL_Rect){x, y, 180, 30};
     btn_load_config.enabled = true;
     btn_load_config.visible = true;
     strncpy(btn_load_config.label, "Load Config", sizeof(btn_load_config.label) - 1);
@@ -513,9 +517,9 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
         draw_panel_background(renderer, &layout->columns[i], bg_color);
     }
     
-    // Draw main title
+    // Draw main title (moved below submenu to avoid overlap)
     draw_text(renderer, "WEB CRAWLER CONTROL CENTER", layout->content_area.x + 20,
-              layout->content_area.y - 35, (SDL_Color){200, 200, 220, 255});
+              layout->content_area.y + 10, (SDL_Color){200, 200, 220, 255});
     
     // Register inputs on first draw
     if (layout->num_columns >= 2) {
