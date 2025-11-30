@@ -359,6 +359,7 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
                                         int mouse_x, int mouse_y) {
     int x = col->x + col->padding;
     int y = col->y + col->padding;
+    int content_width = col->width - (col->padding * 2);
     
     // Section header
     draw_section_header(renderer, "LINK MANAGEMENT", x, y, (SDL_Color){180, 180, 200, 255});
@@ -386,15 +387,16 @@ static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLay
     // Input rendered by InputManager
     y += 30;
     
-    // Add and Clear buttons - STORE BOUNDS FOR CLICK DETECTION
-    btn_add_url.bounds = (SDL_Rect){x, y, 80, 25};
+    // Add and Clear buttons - USE COLUMN WIDTH FOR SIZING
+    int button_width = (content_width - 10) / 2;  // Split column width between two buttons
+    btn_add_url.bounds = (SDL_Rect){x, y, button_width, 25};
     btn_add_url.enabled = true;
     btn_add_url.visible = true;
     strncpy(btn_add_url.label, "Add", sizeof(btn_add_url.label) - 1);
     draw_button_rect(renderer, btn_add_url.bounds, "Add", (SDL_Color){60, 60, 80, 255},
                     text_color, mouse_x, mouse_y);
     
-    btn_clear_url.bounds = (SDL_Rect){x + 90, y, 80, 25};
+    btn_clear_url.bounds = (SDL_Rect){x + button_width + 10, y, button_width, 25};
     btn_clear_url.enabled = true;
     btn_clear_url.visible = true;
     strncpy(btn_clear_url.label, "Clear", sizeof(btn_clear_url.label) - 1);
@@ -438,6 +440,7 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
                                 int mouse_x, int mouse_y) {
     int x = col->x + col->padding;
     int y = col->y + col->padding;
+    int content_width = col->width - (col->padding * 2);
     
     // Section header
     draw_section_header(renderer, "CRAWLER STATUS", x, y, (SDL_Color){180, 180, 200, 255});
@@ -456,10 +459,8 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
     
     y += 30;
     
-    // Start/Stop button - STORE BOUNDS FOR CLICK DETECTION
-    // Use fixed width instead of full column to prevent extending past window
-    int button_width = 180;  // Fixed width that fits nicely
-    btn_start_crawler.bounds = (SDL_Rect){x, y, button_width, 35};
+    // Start/Stop button - USE COLUMN WIDTH FOR SIZING
+    btn_start_crawler.bounds = (SDL_Rect){x, y, content_width, 35};
     btn_start_crawler.enabled = true;
     btn_start_crawler.visible = true;
     
@@ -473,9 +474,8 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
                     text_color, mouse_x, mouse_y);
     y += 45;
     
-    // Save Config button - STORE BOUNDS FOR CLICK DETECTION
-    // Use fixed width to prevent extending past window
-    btn_save_config.bounds = (SDL_Rect){x, y, 180, 30};
+    // Save Config button - USE COLUMN WIDTH FOR SIZING
+    btn_save_config.bounds = (SDL_Rect){x, y, content_width, 30};
     btn_save_config.enabled = true;
     btn_save_config.visible = true;
     strncpy(btn_save_config.label, "Save Config", sizeof(btn_save_config.label) - 1);
@@ -483,9 +483,8 @@ static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
                     text_color, mouse_x, mouse_y);
     y += 40;
     
-    // Load Config button - STORE BOUNDS FOR CLICK DETECTION
-    // Use fixed width to prevent extending past window
-    btn_load_config.bounds = (SDL_Rect){x, y, 180, 30};
+    // Load Config button - USE COLUMN WIDTH FOR SIZING
+    btn_load_config.bounds = (SDL_Rect){x, y, content_width, 30};
     btn_load_config.enabled = true;
     btn_load_config.visible = true;
     strncpy(btn_load_config.label, "Load Config", sizeof(btn_load_config.label) - 1);
@@ -517,9 +516,9 @@ void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
         draw_panel_background(renderer, &layout->columns[i], bg_color);
     }
     
-    // Draw main title (moved below submenu to avoid overlap)
+    // Draw main title (positioned below submenu to avoid overlap)
     draw_text(renderer, "WEB CRAWLER CONTROL CENTER", layout->content_area.x + 20,
-              layout->content_area.y + 10, (SDL_Color){200, 200, 220, 255});
+              layout->content_area.y + 30, (SDL_Color){200, 200, 220, 255});
     
     // Register inputs on first draw
     if (layout->num_columns >= 2) {
