@@ -1462,3 +1462,762 @@ tools/
 5. **LOW:** Update CLI tools
 6. **LOW:** Testing and validation
 
+
+---
+
+## 🆕 NEW OBJECTIVE: COMPREHENSIVE URL MANAGEMENT SYSTEM
+
+### Priority: HIGH (User Request)
+
+### Overview
+Implement a complete URL management system with database backend, filtering, blocking, prioritization, and UI for managing crawled content.
+
+### Requirements from User
+1. Add and remove URLs easily
+2. Preserve GET parameters in URLs (critical!)
+3. Block specific pages/links/websites
+4. File type selection/deselection
+5. Block patterns (regex support)
+6. Prioritize uncrawled pages (timestamp tracking)
+7. View downloaded pages/files
+8. Comprehensive URL manager with all features
+
+### Phase 1: URL Database Backend
+
+#### 1.1: Create URL Database Schema
+**File:** `src/crawler/url_database.h`
+
+```c
+#ifndef URL_DATABASE_H
+#define URL_DATABASE_H
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <time.h>
+
+// URL entry in database
+typedef struct {
+    uint64_t id;
+    char url[4096];              // Full URL with GET parameters
+    char domain[256];
+    char path[2048];
+    char query_string[1024];     // GET parameters preserved
+    char file_type[32];          // html, pdf, txt, etc.
+    time_t first_seen;
+    time_t last_crawled;
+    int crawl_count;
+    int priority;
+    char status[32];             // pending, crawled, failed, blocked
+    char source_url[4096];
+    bool blocked;
+} URLEntry;
+
+// URL database handle
+typedef struct URLDatabase URLDatabase;
+
+// Create/open database
+URLDatabase* url_db_open(const char* db_path);
+void url_db_close(URLDatabase* db);
+
+// URL operations
+int url_db_add(URLDatabase* db, const char* url, const char* source_url);
+int url_db_remove(URLDatabase* db, uint64_t id);
+int url_db_block(URLDatabase* db, uint64_t id);
+int url_db_unblock(URLDatabase* db, uint64_t id);
+int url_db_mark_crawled(URLDatabase* db, uint64_t id);
+int url_db_mark_failed(URLDatabase* db, uint64_t id);
+
+// Query operations
+URLEntry* url_db_get_next(URLDatabase* db);  // Get highest priority uncrawled
+URLEntry** url_db_query(URLDatabase* db, const char* filter, int* count);
+URLEntry* url_db_get_by_id(URLDatabase* db, uint64_t id);
+bool url_db_exists(URLDatabase* db, const char* url);
+
+// Statistics
+int url_db_count_total(URLDatabase* db);
+int url_db_count_pending(URLDatabase* db);
+int url_db_count_crawled(URLDatabase* db);
+int url_db_count_blocked(URLDatabase* db);
+
+// Export/Import
+int url_db_export(URLDatabase* db, const char* file_path);
+int url_db_import(URLDatabase* db, const char* file_path);
+
+#endif // URL_DATABASE_H
+```
+
+#### 1.2: Implement URL Database
+**File:** `src/crawler/url_database.c`
+
+Use SQLite for robust database management:
+- Table: urls (id, url, domain, path, query_string, file_type, first_seen, last_crawled, crawl_count, priority, status, source_url, blocked)
+- Indexes on: url (unique), domain, status, priority, last_crawled
+- Preserve full URL including GET parameters
+- Parse URL to extract domain, path, query string
+- Calculate priority based on: uncrawled (high), domain diversity, timestamp
+
+#### 1.3: Create URL Filter System
+**File:** `src/crawler/url_filter.h`
+
+```c
+#ifndef URL_FILTER_H
+#define URL_FILTER_H
+
+#include <stdbool.h>
+
+// Filter configuration
+typedef struct {
+    // File type filters
+    bool allow_html;
+    bool allow_pdf;
+    bool allow_txt;
+    bool allow_doc;
+    bool allow_images;
+    bool allow_video;
+    bool allow_audio;
+    bool allow_archives;
+    bool allow_code;
+    bool allow_data;
+    
+    // Domain filters
+    char** domain_whitelist;
+    int whitelist_count;
+    char** domain_blacklist;
+    int blacklist_count;
+    
+    // Pattern filters
+    char** url_patterns;      // Regex patterns
+    int pattern_count;
+    
+    // GET parameter handling
+    bool preserve_query_params;
+    bool strip_tracking_params;
+    char** tracking_param_names;
+    int tracking_param_count;
+} URLFilterConfig;
+
+// Filter handle
+typedef struct URLFilter URLFilter;
+
+// Create filter
+URLFilter* url_filter_create(URLFilterConfig* config);
+void url_filter_destroy(URLFilter* filter);
+
+// Filter operations
+bool url_filter_should_crawl(URLFilter* filter, const char* url);
+bool url_filter_is_allowed_type(URLFilter* filter, const char* file_type);
+bool url_filter_is_allowed_domain(URLFilter* filter, const char* domain);
+bool url_filter_matches_pattern(URLFilter* filter, const char* url);
+
+// Configuration
+int url_filter_add_domain_whitelist(URLFilter* filter, const char* domain);
+int url_filter_add_domain_blacklist(URLFilter* filter, const char* domain);
+int url_filter_add_pattern(URLFilter* filter, const char* pattern);
+int url_filter_remove_domain_whitelist(URLFilter* filter, const char* domain);
+int url_filter_remove_domain_blacklist(URLFilter* filter, const char* domain);
+int url_filter_remove_pattern(URLFilter* filter, const char* pattern);
+
+// Save/Load
+int url_filter_save(URLFilter* filter, const char* file_path);
+int url_filter_load(URLFilter* filter, const char* file_path);
+
+#endif // URL_FILTER_H
+```
+
+#### 1.4: Create URL Blocker System
+**File:** `src/crawler/url_blocker.h`
+
+```c
+#ifndef URL_BLOCKER_H
+#define URL_BLOCKER_H
+
+#include <stdbool.h>
+
+// Block pattern types
+typedef enum {
+    BLOCK_EXACT_URL,
+    BLOCK_DOMAIN,
+    BLOCK_PATH_PREFIX,
+    BLOCK_REGEX_PATTERN
+} BlockPatternType;
+
+// Block pattern
+typedef struct {
+    BlockPatternType type;
+    char pattern[2048];
+    char description[256];
+    time_t added_time;
+} BlockPattern;
+
+// Blocker handle
+typedef struct URLBlocker URLBlocker;
+
+// Create blocker
+URLBlocker* url_blocker_create(const char* patterns_file);
+void url_blocker_destroy(URLBlocker* blocker);
+
+// Block operations
+int url_blocker_add_pattern(URLBlocker* blocker, BlockPatternType type, const char* pattern, const char* description);
+int url_blocker_remove_pattern(URLBlocker* blocker, int pattern_id);
+bool url_blocker_is_blocked(URLBlocker* blocker, const char* url);
+
+// Query patterns
+BlockPattern** url_blocker_get_patterns(URLBlocker* blocker, int* count);
+BlockPattern* url_blocker_get_pattern(URLBlocker* blocker, int pattern_id);
+
+// Test pattern
+bool url_blocker_test_pattern(URLBlocker* blocker, const char* pattern, const char* test_url);
+
+// Save/Load
+int url_blocker_save(URLBlocker* blocker);
+int url_blocker_load(URLBlocker* blocker);
+
+#endif // URL_BLOCKER_H
+```
+
+#### 1.5: Create URL Prioritization System
+**File:** `src/crawler/url_priority.h`
+
+```c
+#ifndef URL_PRIORITY_H
+#define URL_PRIORITY_H
+
+#include "url_database.h"
+#include <stdint.h>
+
+// Priority factors
+typedef struct {
+    float uncrawled_bonus;      // Bonus for never-crawled URLs
+    float domain_diversity;     // Bonus for underrepresented domains
+    float time_decay;           // Decay for recently crawled
+    float depth_penalty;        // Penalty for deep URLs
+    float prime_randomization;  // Prime-based random factor
+} PriorityFactors;
+
+// Priority calculator
+typedef struct URLPriority URLPriority;
+
+// Create priority calculator
+URLPriority* url_priority_create(PriorityFactors* factors);
+void url_priority_destroy(URLPriority* priority);
+
+// Calculate priority
+int url_priority_calculate(URLPriority* priority, URLEntry* entry, int domain_count);
+
+// Update domain statistics
+void url_priority_update_domain_stats(URLPriority* priority, const char* domain);
+
+// Get prime-based random value
+uint64_t url_priority_prime_random(URLPriority* priority, uint64_t seed);
+
+#endif // URL_PRIORITY_H
+```
+
+### Phase 2: Downloaded Files Management
+
+#### 2.1: Create Downloaded Files Database
+**File:** `src/crawler/file_database.h`
+
+```c
+#ifndef FILE_DATABASE_H
+#define FILE_DATABASE_H
+
+#include <stdint.h>
+#include <time.h>
+
+// Downloaded file entry
+typedef struct {
+    uint64_t id;
+    char url[4096];
+    char file_path[2048];
+    char domain[256];
+    char file_type[32];
+    uint64_t file_size;
+    time_t download_time;
+    char content_type[128];
+    int http_status;
+} FileEntry;
+
+// File database handle
+typedef struct FileDatabase FileDatabase;
+
+// Create/open database
+FileDatabase* file_db_open(const char* db_path);
+void file_db_close(FileDatabase* db);
+
+// File operations
+int file_db_add(FileDatabase* db, const char* url, const char* file_path);
+int file_db_remove(FileDatabase* db, uint64_t id);
+FileEntry* file_db_get_by_url(FileDatabase* db, const char* url);
+FileEntry** file_db_query(FileDatabase* db, const char* filter, int* count);
+
+// Statistics
+int file_db_count_total(FileDatabase* db);
+int file_db_count_by_domain(FileDatabase* db, const char* domain);
+int file_db_count_by_type(FileDatabase* db, const char* file_type);
+uint64_t file_db_total_size(FileDatabase* db);
+
+#endif // FILE_DATABASE_H
+```
+
+---
+
+## 🆕 NEW OBJECTIVE: UI REORGANIZATION WITH LEFT SIDEBAR
+
+### Priority: HIGH (User Request)
+
+### Overview
+Reorganize the entire UI to use a left sidebar with vertical tabs and hierarchical submenus.
+
+### Requirements from User
+1. Tabs on left side instead of top
+2. Main AI tab containing: LLM, Training, Research, Crawler
+3. Submenu system for organizing related tabs
+4. Collapsible sections
+5. Icons for each tab
+
+### Phase 1: Update AppState Structure
+
+#### 1.1: Update app/app_common.h
+
+```c
+// Main tab categories (left sidebar)
+typedef enum {
+    MAIN_TAB_AI,
+    MAIN_TAB_MODELS,
+    MAIN_TAB_SYSTEM,
+    MAIN_TAB_DATA,
+    MAIN_TAB_COUNT
+} MainTab;
+
+// AI sub-tabs
+typedef enum {
+    AI_SUB_LLM,
+    AI_SUB_TRAINING,
+    AI_SUB_RESEARCH,
+    AI_SUB_CRAWLER,
+    AI_SUB_COUNT
+} AISubTab;
+
+// Models sub-tabs
+typedef enum {
+    MODELS_SUB_MANAGEMENT,
+    MODELS_SUB_COUNT
+} ModelsSubTab;
+
+// System sub-tabs
+typedef enum {
+    SYSTEM_SUB_BENCHMARK,
+    SYSTEM_SUB_ADAPTERS,
+    SYSTEM_SUB_COUNT
+} SystemSubTab;
+
+// Data sub-tabs
+typedef enum {
+    DATA_SUB_URL_MANAGER,
+    DATA_SUB_DOWNLOADED_FILES,
+    DATA_SUB_COUNT
+} DataSubTab;
+
+// Update AppState
+typedef struct {
+    // ... existing fields ...
+    
+    // New tab system
+    MainTab main_tab;
+    union {
+        AISubTab ai_sub;
+        ModelsSubTab models_sub;
+        SystemSubTab system_sub;
+        DataSubTab data_sub;
+    } sub_tab;
+    
+    // ... rest of fields ...
+} AppState;
+```
+
+### Phase 2: Implement Left Sidebar
+
+#### 2.1: Create app/ui/left_sidebar.c
+
+```c
+#include "left_sidebar.h"
+#include "../app_common.h"
+
+#define SIDEBAR_WIDTH 200
+#define TAB_HEIGHT 50
+#define ICON_SIZE 24
+
+// Render left sidebar with vertical tabs
+void render_left_sidebar(SDL_Renderer* renderer, AppState* state) {
+    // Background
+    SDL_SetRenderDrawColor(renderer, 40, 40, 45, 255);
+    SDL_Rect sidebar = {0, 0, SIDEBAR_WIDTH, WINDOW_HEIGHT};
+    SDL_RenderFillRect(renderer, &sidebar);
+    
+    // Render main tabs
+    int y = 10;
+    
+    // AI Tab
+    render_main_tab(renderer, state, MAIN_TAB_AI, "🤖 AI", 0, y);
+    y += TAB_HEIGHT;
+    
+    // Models Tab
+    render_main_tab(renderer, state, MAIN_TAB_MODELS, "📊 Models", 0, y);
+    y += TAB_HEIGHT;
+    
+    // System Tab
+    render_main_tab(renderer, state, MAIN_TAB_SYSTEM, "⚙️ System", 0, y);
+    y += TAB_HEIGHT;
+    
+    // Data Tab
+    render_main_tab(renderer, state, MAIN_TAB_DATA, "📁 Data", 0, y);
+    y += TAB_HEIGHT;
+}
+
+// Render individual main tab button
+void render_main_tab(SDL_Renderer* renderer, AppState* state, MainTab tab, const char* label, int x, int y) {
+    SDL_Rect button = {x, y, SIDEBAR_WIDTH, TAB_HEIGHT};
+    
+    // Highlight if active
+    if (state->main_tab == tab) {
+        SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 50, 50, 55, 255);
+    }
+    
+    SDL_RenderFillRect(renderer, &button);
+    
+    // Border
+    SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
+    SDL_RenderDrawRect(renderer, &button);
+    
+    // Label (render text)
+    // ... text rendering code ...
+}
+
+// Handle sidebar click
+void handle_sidebar_click(AppState* state, int x, int y) {
+    if (x > SIDEBAR_WIDTH) return;
+    
+    int tab_index = y / TAB_HEIGHT;
+    
+    switch (tab_index) {
+        case 0: state->main_tab = MAIN_TAB_AI; break;
+        case 1: state->main_tab = MAIN_TAB_MODELS; break;
+        case 2: state->main_tab = MAIN_TAB_SYSTEM; break;
+        case 3: state->main_tab = MAIN_TAB_DATA; break;
+    }
+}
+```
+
+### Phase 3: Implement Submenu System
+
+#### 3.1: Create app/ui/submenu.c
+
+```c
+#include "submenu.h"
+#include "../app_common.h"
+
+#define SUBMENU_HEIGHT 40
+#define SUBMENU_Y (0)
+#define SUBMENU_X (SIDEBAR_WIDTH)
+#define SUBMENU_WIDTH (WINDOW_WIDTH - SIDEBAR_WIDTH)
+
+// Render horizontal submenu bar
+void render_submenu(SDL_Renderer* renderer, AppState* state) {
+    // Background
+    SDL_SetRenderDrawColor(renderer, 50, 50, 55, 255);
+    SDL_Rect submenu_bar = {SUBMENU_X, SUBMENU_Y, SUBMENU_WIDTH, SUBMENU_HEIGHT};
+    SDL_RenderFillRect(renderer, &submenu_bar);
+    
+    // Render submenu items based on main tab
+    switch (state->main_tab) {
+        case MAIN_TAB_AI:
+            render_ai_submenu(renderer, state);
+            break;
+        case MAIN_TAB_MODELS:
+            render_models_submenu(renderer, state);
+            break;
+        case MAIN_TAB_SYSTEM:
+            render_system_submenu(renderer, state);
+            break;
+        case MAIN_TAB_DATA:
+            render_data_submenu(renderer, state);
+            break;
+    }
+}
+
+// Render AI submenu
+void render_ai_submenu(SDL_Renderer* renderer, AppState* state) {
+    int x = SUBMENU_X + 10;
+    int button_width = 120;
+    
+    render_submenu_button(renderer, state, "LLM Chat", x, SUBMENU_Y, button_width, SUBMENU_HEIGHT, 
+                         state->sub_tab.ai_sub == AI_SUB_LLM);
+    x += button_width + 10;
+    
+    render_submenu_button(renderer, state, "Training", x, SUBMENU_Y, button_width, SUBMENU_HEIGHT,
+                         state->sub_tab.ai_sub == AI_SUB_TRAINING);
+    x += button_width + 10;
+    
+    render_submenu_button(renderer, state, "Research", x, SUBMENU_Y, button_width, SUBMENU_HEIGHT,
+                         state->sub_tab.ai_sub == AI_SUB_RESEARCH);
+    x += button_width + 10;
+    
+    render_submenu_button(renderer, state, "Crawler", x, SUBMENU_Y, button_width, SUBMENU_HEIGHT,
+                         state->sub_tab.ai_sub == AI_SUB_CRAWLER);
+}
+
+// Handle submenu click
+void handle_submenu_click(AppState* state, int x, int y) {
+    if (y > SUBMENU_HEIGHT) return;
+    if (x < SUBMENU_X) return;
+    
+    int button_index = (x - SUBMENU_X - 10) / 130;  // 120 width + 10 spacing
+    
+    switch (state->main_tab) {
+        case MAIN_TAB_AI:
+            if (button_index >= 0 && button_index < AI_SUB_COUNT) {
+                state->sub_tab.ai_sub = (AISubTab)button_index;
+            }
+            break;
+        // ... other cases ...
+    }
+}
+```
+
+### Phase 4: Create URL Manager Tab
+
+#### 4.1: Create app/ui/tabs/tab_url_manager.c
+
+```c
+#include "tab_url_manager.h"
+#include "../../app_common.h"
+#include "../../../src/crawler/url_database.h"
+#include "../../../src/crawler/url_filter.h"
+#include "../../../src/crawler/url_blocker.h"
+
+typedef struct {
+    URLDatabase* db;
+    URLFilter* filter;
+    URLBlocker* blocker;
+    
+    // UI state
+    int selected_url_id;
+    int scroll_offset;
+    char search_query[256];
+    char add_url_input[4096];
+    char add_pattern_input[2048];
+    
+    // Filters
+    bool show_pending;
+    bool show_crawled;
+    bool show_blocked;
+    char domain_filter[256];
+} URLManagerState;
+
+// Initialize URL manager tab
+void tab_url_manager_init(AppState* state) {
+    URLManagerState* url_state = calloc(1, sizeof(URLManagerState));
+    
+    url_state->db = url_db_open("data/urls.db");
+    url_state->filter = url_filter_create(NULL);  // Load from config
+    url_state->blocker = url_blocker_create("data/block_patterns.txt");
+    
+    url_state->show_pending = true;
+    url_state->show_crawled = true;
+    url_state->show_blocked = false;
+    
+    state->url_manager_state = url_state;
+}
+
+// Render URL manager tab
+void tab_url_manager_render(SDL_Renderer* renderer, AppState* state) {
+    URLManagerState* url_state = state->url_manager_state;
+    
+    int content_x = SIDEBAR_WIDTH;
+    int content_y = SUBMENU_HEIGHT;
+    int content_w = WINDOW_WIDTH - SIDEBAR_WIDTH;
+    int content_h = WINDOW_HEIGHT - SUBMENU_HEIGHT;
+    
+    // Split into 3 panels: URL list (left), actions (top-right), filters (bottom-right)
+    int list_w = content_w * 0.6;
+    int panel_w = content_w * 0.4;
+    int actions_h = content_h * 0.4;
+    int filters_h = content_h * 0.6;
+    
+    // Render URL list
+    render_url_list(renderer, url_state, content_x, content_y, list_w, content_h);
+    
+    // Render actions panel
+    render_actions_panel(renderer, url_state, content_x + list_w, content_y, panel_w, actions_h);
+    
+    // Render filters panel
+    render_filters_panel(renderer, url_state, content_x + list_w, content_y + actions_h, panel_w, filters_h);
+}
+
+// Render URL list with sortable columns
+void render_url_list(SDL_Renderer* renderer, URLManagerState* state, int x, int y, int w, int h) {
+    // Header
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_Rect header = {x, y, w, 30};
+    SDL_RenderFillRect(renderer, &header);
+    
+    // Columns: [Select] [URL] [Domain] [Status] [Last Crawled]
+    int col_x = x + 5;
+    render_text(renderer, "☐", col_x, y + 5);  // Checkbox
+    col_x += 30;
+    render_text(renderer, "URL", col_x, y + 5);
+    col_x += w * 0.4;
+    render_text(renderer, "Domain", col_x, y + 5);
+    col_x += w * 0.2;
+    render_text(renderer, "Status", col_x, y + 5);
+    col_x += w * 0.2;
+    render_text(renderer, "Last Crawled", col_x, y + 5);
+    
+    // URL entries
+    int entry_y = y + 35;
+    int entry_h = 25;
+    
+    // Query URLs from database
+    int count = 0;
+    URLEntry** entries = url_db_query(state->db, NULL, &count);
+    
+    for (int i = state->scroll_offset; i < count && entry_y < y + h; i++) {
+        URLEntry* entry = entries[i];
+        
+        // Alternate row colors
+        if (i % 2 == 0) {
+            SDL_SetRenderDrawColor(renderer, 45, 45, 50, 255);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 50, 50, 55, 255);
+        }
+        
+        SDL_Rect row = {x, entry_y, w, entry_h};
+        SDL_RenderFillRect(renderer, &row);
+        
+        // Render entry data
+        col_x = x + 5;
+        render_text(renderer, entry->id == state->selected_url_id ? "☑" : "☐", col_x, entry_y + 5);
+        col_x += 30;
+        render_text_truncated(renderer, entry->url, col_x, entry_y + 5, w * 0.4 - 10);
+        col_x += w * 0.4;
+        render_text(renderer, entry->domain, col_x, entry_y + 5);
+        col_x += w * 0.2;
+        render_text(renderer, entry->status, col_x, entry_y + 5);
+        col_x += w * 0.2;
+        
+        char time_str[64];
+        format_time(entry->last_crawled, time_str, sizeof(time_str));
+        render_text(renderer, time_str, col_x, entry_y + 5);
+        
+        entry_y += entry_h;
+    }
+    
+    // Free query results
+    free(entries);
+}
+
+// Render actions panel
+void render_actions_panel(SDL_Renderer* renderer, URLManagerState* state, int x, int y, int w, int h) {
+    // Background
+    SDL_SetRenderDrawColor(renderer, 55, 55, 60, 255);
+    SDL_Rect panel = {x, y, w, h};
+    SDL_RenderFillRect(renderer, &panel);
+    
+    // Title
+    render_text(renderer, "Actions", x + 10, y + 10);
+    
+    int button_y = y + 40;
+    int button_h = 30;
+    int button_w = w - 20;
+    
+    // Add URL input and button
+    render_text(renderer, "Add URL:", x + 10, button_y);
+    button_y += 20;
+    render_input_field(renderer, state->add_url_input, x + 10, button_y, button_w, 25);
+    button_y += 30;
+    render_button(renderer, "Add", x + 10, button_y, button_w, button_h);
+    button_y += button_h + 10;
+    
+    // Remove selected button
+    render_button(renderer, "Remove Selected", x + 10, button_y, button_w, button_h);
+    button_y += button_h + 10;
+    
+    // Block selected button
+    render_button(renderer, "Block Selected", x + 10, button_y, button_w, button_h);
+    button_y += button_h + 10;
+    
+    // Export button
+    render_button(renderer, "Export List", x + 10, button_y, button_w, button_h);
+    button_y += button_h + 10;
+    
+    // Import button
+    render_button(renderer, "Import List", x + 10, button_y, button_w, button_h);
+}
+
+// Render filters panel
+void render_filters_panel(SDL_Renderer* renderer, URLManagerState* state, int x, int y, int w, int h) {
+    // Background
+    SDL_SetRenderDrawColor(renderer, 55, 55, 60, 255);
+    SDL_Rect panel = {x, y, w, h};
+    SDL_RenderFillRect(renderer, &panel);
+    
+    // Title
+    render_text(renderer, "Filters", x + 10, y + 10);
+    
+    int checkbox_y = y + 40;
+    int checkbox_h = 25;
+    
+    // Status filters
+    render_checkbox(renderer, "Show Pending", state->show_pending, x + 10, checkbox_y);
+    checkbox_y += checkbox_h;
+    render_checkbox(renderer, "Show Crawled", state->show_crawled, x + 10, checkbox_y);
+    checkbox_y += checkbox_h;
+    render_checkbox(renderer, "Show Blocked", state->show_blocked, x + 10, checkbox_y);
+    checkbox_y += checkbox_h + 10;
+    
+    // File type filters
+    render_text(renderer, "File Types:", x + 10, checkbox_y);
+    checkbox_y += 20;
+    render_checkbox(renderer, "HTML", state->filter->allow_html, x + 10, checkbox_y);
+    checkbox_y += checkbox_h;
+    render_checkbox(renderer, "PDF", state->filter->allow_pdf, x + 10, checkbox_y);
+    checkbox_y += checkbox_h;
+    render_checkbox(renderer, "TXT", state->filter->allow_txt, x + 10, checkbox_y);
+    checkbox_y += checkbox_h;
+    render_checkbox(renderer, "Images", state->filter->allow_images, x + 10, checkbox_y);
+    checkbox_y += checkbox_h + 10;
+    
+    // Block patterns
+    render_text(renderer, "Block Patterns:", x + 10, checkbox_y);
+    checkbox_y += 20;
+    render_input_field(renderer, state->add_pattern_input, x + 10, checkbox_y, w - 20, 25);
+    checkbox_y += 30;
+    render_button(renderer, "Add Pattern", x + 10, checkbox_y, w - 20, 30);
+}
+```
+
+### Phase 5: Create Downloaded Files Viewer Tab
+
+#### 5.1: Create app/ui/tabs/tab_downloaded_files.c
+
+Similar structure to URL manager, but for viewing downloaded files:
+- File browser with tree view
+- File preview panel
+- File actions (open, delete, re-crawl)
+- Search functionality
+
+---
+
+## Implementation Priority
+
+1. **Phase 1.2-1.5**: Implement URL database, filter, blocker, priority systems (Backend)
+2. **Phase 2**: Implement downloaded files database (Backend)
+3. **Phase 3**: Update UI structure (app_common.h, left sidebar, submenu)
+4. **Phase 4**: Implement URL Manager tab (UI)
+5. **Phase 5**: Implement Downloaded Files Viewer tab (UI)
+6. **Phase 6**: Integration with existing crawler
+7. **Phase 7**: Testing and validation
+

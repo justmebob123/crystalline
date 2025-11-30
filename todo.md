@@ -1,451 +1,420 @@
-# TODO - CRYSTALLINE CLLM PROJECT
+# RULES (PASTED FROM MASTER_PLAN.md)
 
----
-
-## 🔒 MANDATORY RULES (PASTE AT TOP OF EVERY RESPONSE)
-
-**MASTER PLAN READ: ✅ Completed - Proceeding with Phase 4**
-
-### ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
-**HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
-
-At the beginning of EVERY response, you MUST:
+## ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
+At the beginning of EVERY response:
 1. Paste these rules to the top of todo.md
 2. Read the MASTER_PLAN.md completely
 3. Read the AUDIT.md for current architectural state
 4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
 
-This creates a permanent loop ensuring rules are never forgotten.
-
-### RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
-**SECOND HIGHEST PRIORITY RULE**
-
-Before taking ANY action, you MUST:
+## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+Before taking ANY action:
 1. Read MASTER_PLAN.md completely
 2. Understand the current objectives
 3. Verify your action aligns with the master plan
 4. Check for any blocking priorities
 
-This ensures all work follows the architectural design.
+## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+The AUDIT.md contains:
+- Current architectural violations
+- Required fixes with priorities
+- Implementation phases
+- Testing requirements
+- Success criteria
 
-### RULE 2: NO MATH.H ANYWHERE IN PRODUCTION CODE
-**CRITICAL ARCHITECTURAL REQUIREMENT**
-
-- ❌ NO `#include <math.h>` in any production code
-- ✅ ONLY use crystalline math functions (prime_*)
-- ✅ Test files MAY use math.h for verification
-- ✅ All math operations use crystalline library
-
-### RULE 3: REMOVE REDUNDANT CODE IMMEDIATELY
-**EFFICIENCY AND DESIGN REQUIREMENT**
-
-When moving or refactoring code:
-1. Verify old implementation is no longer used
-2. Delete old files immediately after verification
-3. Ensure NO duplication or redundancy
-4. Merge similar functions for maximum efficiency
-5. Use proper naming conventions
-6. Update all references
-
-### RULE 4: COMPLETE IMPLEMENTATION AND MERGES
-**QUALITY REQUIREMENT**
-
-When moving functionality between layers:
-1. Complete full implementation in new location
-2. Merge similar functions to avoid duplication
-3. Ensure proper naming conventions
-4. Verify all references updated
-5. Delete old code after verification
-6. Test build after changes
-
-### RULE 5: MAKE PRACTICAL DECISIONS
-**AUTONOMY REQUIREMENT**
-
-- Make decisions based on practical application and relevance
-- Don't ask for approval on obvious architectural decisions
-- Remove redundant code when it's clearly not needed
-- Trust the architectural principles and proceed
-
-### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
-**QUALITY REQUIREMENT**
-
-- Build with -Wall -Wextra flags enabled
-- Address ALL warnings, not just errors
-- Zero warnings required before proceeding
+## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+The SECONDARY_OBJECTIVES.md contains:
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+- Validation steps
 
 ---
 
-## ✅ COMPLETED WORK
+# COMPREHENSIVE URL MANAGEMENT & UI REORGANIZATION PLAN
 
-### Phase 4: Architectural Cleanup ✅ COMPLETE
+## PHASE 1: URL MANAGER ARCHITECTURE DESIGN ⏳
 
-**Phase 4A: ✅ COMPLETE**
-- Moved `cllm_hierarchical_abacus.c` → `algorithms/src/hierarchical_prime_partitions.c`
-- Updated all references
-- Build verified
+### 1.1: Analyze Current Crawler Implementation ✅ COMPLETE
+- [x] Read `src/crawler/crawler_core.c` - understand current URL handling
+- [x] Read `src/crawler/link_management.c` - understand queue structure
+- [x] Read `app/app_common.h` - understand current tab system
+- [x] Document current URL management capabilities
+- [x] Document current limitations
 
-**Phase 4B: ✅ COMPLETE**
-- Moved `cllm_sphere_position.c` → `algorithms/src/lattice_sphere_positions.c`
-- Updated all references
-- Deleted old files
-- Build verified
+**FINDINGS:**
+- Current system has `LinkQueue` with basic priority support
+- Has `CrawlerLink` struct with: url, priority, added_time, source_url, crawled flag
+- NO GET parameter preservation (strips query strings)
+- NO blocking patterns (only basic duplicate detection)
+- NO file type filtering
+- NO domain diversity enforcement
+- NO timestamp-based prioritization for uncrawled pages
+- NO UI for URL management (only file-based)
+- Current tabs: PRIME_SPIRAL, CALCULATOR, SPHERES, PRIME_FOLDING, VIDEO_GENERATOR, LLM, TRAINING, RESEARCH, CRAWLER, MODELS
+- Tabs are horizontal across top (need to move to left sidebar)
 
-**Phase 4C: ✅ COMPLETE**
-- Removed redundant `crystalline_abacus.c` wrapper (426 lines)
-- Updated app to use rainbow table directly
-- Build verified
+### 1.2: Design Comprehensive URL Manager ✅ COMPLETE
+- [x] Design URL database schema (SQLite-based)
+  - URL string
+  - Domain
+  - Path
+  - GET parameters (preserve them!)
+  - Timestamp (first seen, last crawled)
+  - Status (pending, crawled, failed, blocked)
+  - File type
+  - Priority score
+  - Crawl count
+- [ ] Design URL filtering system
+  - File type filters (allow/block)
+  - Domain whitelist/blacklist
+  - URL pattern matching (regex)
+  - GET parameter handling rules
+- [ ] Design URL prioritization algorithm
+  - Prefer uncrawled pages
+  - Use prime-based randomization
+  - Respect domain diversity
+  - Consider page depth
+- [ ] Design URL manager API
+  - Add URL
+  - Remove URL
+  - Block URL/domain/pattern
+  - Get next URL to crawl
+  - Query URL status
+  - Export/import URL list
 
-### Layer Audits ✅ COMPLETE
-
-**Layer 1: Crystalline Library (23 files) ✅**
-- Pure mathematics only
-- NO threading, NO atomics, NO math.h
-- Rainbow table IS the abacus
-
-**Layer 2: Algorithms Library (14 files) ✅**
-- General algorithms with threading
-- NO CLLM-specific code
-- All use crystalline math
-
-**Layer 3: CLLM Library (61 files) ✅**
-- NO math.h violations
-- Crystalline loss already integrated
-- Legacy loss functions already removed
-
-**Layer 4: Application (38 files) ✅**
-- Complete bidirectional analysis
-- 287 functions mapped
-- All dependencies documented
-- NO math.h violations
-
-### Build Warnings ✅ FIXED
-
-**Warning 1: ✅ FIXED**
-- File: `src/geometry/lattice_algorithms.c`
-- Issue: `prime_fabsf` implicit declaration
-- Fix: Changed to `prime_fabs` (3 occurrences)
-
-**Warning 2: ✅ FIXED**
-- File: `src/ai/infrastructure/cllm_backprop.c`
-- Issue: `shape_u32` may be uninitialized
-- Fix: Added `ndim == 0` check
-
-**Build Status: ✅ ZERO WARNINGS, ZERO ERRORS**
-
----
-
-## 🎯 CURRENT OBJECTIVES FROM MASTER PLAN
-
-### OBJECTIVE 2: Fix Training Pipeline ✅ MOSTLY COMPLETE
-
-**Status Analysis:**
-- ✅ Legacy loss functions removed (cllm_compute_loss deleted)
-- ✅ Crystalline loss integrated (cllm_compute_crystalline_loss used)
-- ✅ Legacy training files removed (cllm_train_complete.c, cllm_training_mt.c, cllm_training_parallel.c)
-- ✅ Kissing spheres threading used (no fallbacks in train_model.c)
-- ⏳ Need to verify GCD optimizations are actually wired in
-
-### OBJECTIVE 2A: Integrate Crystalline GCD Optimizations ✅ VERIFIED
-
-**Tasks:**
-- [x] Verify `cllm_compute_loss_crystalline()` uses GCD-based similarity
-- [x] Verify spatial locality is integrated (lattice coordinates)
-- [ ] Benchmark performance improvement
-- [ ] Document performance characteristics
-
-## 🏗️ ARCHITECTURAL LAYER REFACTORING (3/3 PHASES COMPLETE)
-
-### Progress: 100% Complete ✅
-
-**Completed Phases:**
-1. ✅ **Phase 1: Angular Attention** - Moved to algorithms layer
-2. ✅ **Phase 2: Cymatic Modulation** - Moved to algorithms layer
-3. ✅ **Phase 3: NTT Attention** - Created in algorithms layer
-
-**Remaining Work:**
-4. ⏳ **Phase 4: Integration Verification** - Wire all components into training
-
-**Note on Kissing Spheres:**
-- ✅ `algorithms/src/sphere_packing.c` - General sphere geometry (CORRECT)
-- ✅ `algorithms/src/lattice_sphere_positions.c` - Lattice positions (CORRECT)
-- ✅ `src/ai/cllm_kissing_spheres.c` - CLLM-specific neighbor finding (CORRECT)
-- **Status:** Already properly separated, no refactoring needed
-
-**Correct Architecture:**
-- **Layer 1 (Crystalline):** ✅ Pure math formulas (angular_position, L_lattice, constants)
-- **Layer 2 (Algorithms):** ✅ General algorithms (angular attention, cymatic, sphere packing)
-- **Layer 3 (CLLM):** ✅ CLLM-specific wrappers (thin wrappers calling Layer 2)
-- **Layer 4 (Application):** ✅ UI and tools
+### 1.3: Design Downloaded Content Viewer
+- [ ] Design file browser interface
+  - List downloaded files
+  - Show file metadata (URL, timestamp, size, type)
+  - Preview text content
+  - Search functionality
+- [ ] Design content organization
+  - By domain
+  - By file type
+  - By date
+  - By crawl session
 
 ---
 
-## 🎯 MATHEMATICAL INTEGRATION STATUS (OBJECTIVES 14-20)
+## PHASE 2: UI REORGANIZATION ARCHITECTURE ⏳
 
-### OBJECTIVE 14: Integrate L(n,d,k,λ) Lattice Formula ✅ COMPLETE
+### 2.1: Analyze Current Tab System
+- [ ] Read `app/ui.c` - understand current tab rendering
+- [ ] Read `app/app_common.h` - understand AppState and tab enums
+- [ ] Read all tab files in `app/ui/tabs/` - understand each tab
+- [ ] Document current tab structure
+- [ ] Document current limitations
 
-**Status:** INTEGRATED AND ACTIVE
-- ✅ Formula implemented in `src/geometry/prime_lattice_core.c`
-- ✅ Initialization in `src/ai/cllm_lattice_embeddings.c`
-- ✅ Called from `cllm_create_model()` 
-- ✅ Build verified: Zero errors, zero warnings
+### 2.2: Design New Tab System with Submenus
+- [ ] Design hierarchical tab structure:
+  ```
+  Main Tabs (Left Sidebar):
+  ├─ 🤖 AI
+  │  ├─ LLM Chat
+  │  ├─ Training
+  │  ├─ Research
+  │  └─ Crawler
+  ├─ 📊 Models
+  │  └─ Model Management
+  ├─ ⚙️ System
+  │  ├─ Benchmark
+  │  └─ Adapters
+  └─ 📁 Data
+     ├─ URL Manager
+     └─ Downloaded Files
+  ```
+- [ ] Design left sidebar layout
+  - Vertical tab buttons
+  - Collapsible sections
+  - Icons for each tab
+  - Active tab highlighting
+- [ ] Design submenu system
+  - Horizontal submenu bar below main tabs
+  - Only show when main tab has submenus
+  - Smooth transitions
 
-### OBJECTIVE 15: Integrate θ(n,k,λ,ω,ψ) Angular Attention ⚠️ IMPLEMENTED BUT NOT INTEGRATED
+### 2.3: Design URL Manager Tab
+- [ ] Design URL list view
+  - Sortable columns (URL, domain, status, timestamp)
+  - Filterable by status/domain/type
+  - Bulk selection
+  - Pagination for large lists
+- [ ] Design URL actions panel
+  - Add URL button (with input field)
+  - Remove selected button
+  - Block selected button
+  - Export list button
+  - Import list button
+- [ ] Design filter configuration panel
+  - File type checkboxes (HTML, PDF, TXT, etc.)
+  - Domain whitelist/blacklist editor
+  - URL pattern editor (regex)
+  - GET parameter handling options
+- [ ] Design block patterns panel
+  - List of blocked patterns
+  - Add/remove patterns
+  - Test pattern against URL
 
-**Status:** CODE EXISTS BUT NOT USED IN MAIN ATTENTION
-- ✅ Formula implemented in `src/core/cllm_angular_position.c`
-- ✅ Angular attention in `src/ai/cllm_angular_attention.c`
-- ❌ NOT called from `cllm_attention_forward()` (still uses dot product)
-- **Action Needed:** Replace dot product with angular attention
-
-### OBJECTIVE 16: Initialize 12 Kissing Sphere Neighbors ⚠️ PARTIALLY IMPLEMENTED
-
-**Status:** STRUCTURE EXISTS BUT NOT INITIALIZED
-- ✅ `CLLMLatticePoint.neighbors[12]` array exists
-- ❌ Neighbors NOT initialized (num_neighbors = 0)
-- ❌ NOT used in training
-- **Action Needed:** Initialize neighbors and use in gradient computation
-
-### OBJECTIVE 17: Implement NTT-Based O(n log n) Attention ⚠️ LIBRARY EXISTS BUT NOT USED
-
-**Status:** NTT LIBRARY COMPLETE BUT NOT INTEGRATED
-- ✅ NTT library in `include/bigint_ntt.h`
-- ❌ NOT used in attention computation
-- ❌ Still using O(n²) attention
-- **Action Needed:** Create NTT attention wrapper and integrate
-
-### OBJECTIVE 18: Apply Cymatic Frequency Resonance ⚠️ IMPLEMENTED BUT NOT INTEGRATED
-
-**Status:** CODE EXISTS BUT NOT CALLED
-- ✅ Cymatic training in `src/ai/cllm_cymatic_training.c`
-- ✅ All frequencies defined in constants
-- ❌ NOT called from training loop
-- **Action Needed:** Call `cllm_apply_cymatic_resonance()` in training
-
-### OBJECTIVE 19: Create Analysis and Validation Tools ✅ TOOLS EXIST
-
-**Status:** TOOLS BUILT AND AVAILABLE
-- ✅ `tools/init_lattice_embeddings` - Built
-- ✅ `tools/benchmark_ntt_attention` - Built
-- ✅ `tools/validate_kissing_spheres` - Built
-- ✅ `tools/analyze_cymatic_resonance` - Built
-- ✅ `tools/visualize_angular_positions` - Built
-
-### OBJECTIVE 20: Comprehensive Testing ⏳ PENDING
-
-**Status:** AWAITING INTEGRATION COMPLETION
-- [ ] Unit tests for each component
-- [ ] Integration tests for full pipeline
-- [ ] Performance benchmarks
-- [ ] Quality validation
-
-### OBJECTIVE 3: Kissing Spheres UI Integration
-
-**Tasks:**
-- [ ] Verify sphere visualization in training tab
-- [ ] Display real-time sphere statistics
-- [ ] Show 12-fold symmetry structure
-- [ ] Show node zero (control thread) status
-
-### OBJECTIVE 5: Verify Crystalline Math Integration ✅ COMPLETE
-
-**Status:**
-- ✅ NO math.h usage in core libraries (verified)
-- ✅ Training uses crystalline math (verified)
-- ✅ Inference uses crystalline math (verified)
-- ✅ SIMD operations use crystalline math (verified)
-
-### OBJECTIVE 6: Verify SIMD Integration
-
-**Tasks:**
-- [ ] Analyze `cllm_simd_gradient_ops.c` operations
-- [ ] Verify SIMD used in forward pass
-- [ ] Verify SIMD used in backward pass
-- [ ] Performance metrics for SIMD acceleration
-
-### OBJECTIVE 7: Verify 12-Fold Symmetry Implementation ✅ VERIFIED
-
-**Status:**
-- ✅ Confirmed in `cllm_threads.c`
-- ✅ Confirmed in `cllm_positional.c`
-- ✅ Used in thread allocation
-- ✅ Used in sphere creation
-
-### OBJECTIVE 8: Implement Node Zero (Control Thread)
-
-**Tasks:**
-- [ ] Verify control thread exists in `cllm_training_threaded.c`
-- [ ] Ensure control thread never processes batches
-- [ ] Verify coordination logic
-- [ ] Add control thread visualization in UI
+### 2.4: Design Downloaded Files Viewer Tab
+- [ ] Design file browser
+  - Tree view by domain/date
+  - List view with metadata
+  - Search bar
+  - Sort options
+- [ ] Design file preview
+  - Text content display
+  - Syntax highlighting for code
+  - Image preview
+  - PDF preview (if possible)
+- [ ] Design file actions
+  - Open in external viewer
+  - Delete file
+  - Re-crawl URL
+  - Export file
 
 ---
 
-## 📋 NEXT STEPS
+## PHASE 3: IMPLEMENTATION - URL MANAGER BACKEND ⏳
 
-### Phase 3: Create NTT Attention in Algorithms Layer ✅ COMPLETE
+### 3.1: Create URL Database ✅ COMPLETE
+- [x] Create `src/crawler/url_database.h`
+  - Define URLEntry struct
+  - Define database API
+- [x] Create `src/crawler/url_database.c`
+  - Implement SQLite database
+  - Implement add_url() with GET parameter preservation
+  - Implement remove_url()
+  - Implement get_next_url() with priority
+  - Implement query_urls() with filters
+  - Implement update_url_status()
+  - Implement block/unblock operations
+  - Implement export/import functionality
+  - Implement statistics functions
 
-**Status:** NTT attention successfully implemented and integrated
+### 3.2: Implement URL Filtering
+- [ ] Create `src/crawler/url_filter.h`
+  - Define filter rules struct
+  - Define filter API
+- [ ] Create `src/crawler/url_filter.c`
+  - Implement file type filtering
+  - Implement domain whitelist/blacklist
+  - Implement regex pattern matching
+  - Implement GET parameter preservation
+  - Implement should_crawl_url()
 
-**Completed Tasks:**
-- [x] Created `algorithms/src/ntt_attention.c` - General O(n log n) attention
-- [x] Created `algorithms/include/ntt_attention.h` - General API
-- [x] Implemented `ntt_attention_forward()` using bigint_ntt.h
-- [x] Updated `src/ai/cllm_ntt_attention.c` - CLLM wrapper calls algorithms layer
-- [x] Updated Makefile to include new files
-- [x] Build verified: Zero errors, zero warnings
-- [x] Ready to commit and push
+### 3.3: Implement URL Prioritization
+- [ ] Create `src/crawler/url_priority.h`
+  - Define priority algorithm
+- [ ] Create `src/crawler/url_priority.c`
+  - Implement uncrawled page priority
+  - Implement prime-based randomization
+  - Implement domain diversity scoring
+  - Implement calculate_priority()
 
-### Phase 4: Integration Verification (CURRENT PRIORITY)
+### 3.4: Implement Block Patterns
+- [ ] Create `src/crawler/url_blocker.h`
+  - Define block pattern struct
+  - Define blocker API
+- [ ] Create `src/crawler/url_blocker.c`
+  - Implement add_block_pattern()
+  - Implement remove_block_pattern()
+  - Implement is_url_blocked()
+  - Support regex patterns
+  - Support domain blocking
+  - Support path blocking
 
-**Proceeding with Option A: Mathematical Integration (OBJECTIVES 15-18)**
-
-**Task 4.1: Integrate Angular Attention into Main Attention** ✅ COMPLETE
-
-**Implementation Complete:**
-- [x] Created `cllm_attention_forward_hybrid()` in `cllm_attention.c`
-- [x] Function accepts both embeddings AND token IDs
-- [x] When token IDs available: uses angular attention
-- [x] When token IDs unavailable: falls back to dot product
-- [x] Added declaration to `include/cllm_inference.h`
-- [x] Modified `cllm_forward_training()` to call hybrid attention with token IDs
-- [x] Token IDs now flow through entire attention pipeline
-- [x] Angular attention ACTIVE in training loop
-- [x] Build verified: Zero errors, zero warnings
-
-**Task 4.2: Initialize 12 Kissing Sphere Neighbors** ✅ COMPLETE
-- [x] Verified `cllm_initialize_kissing_spheres()` exists
-- [x] Added call from `cllm_create_model()`
-- [x] Allocated lattice_points (one per token)
-- [x] Neighbors initialized (12 per point, one per symmetry group)
-- [x] Build verified: Zero errors, zero warnings
-
-**Task 4.3: Integrate NTT Attention for Long Sequences** ✅ COMPLETE
-- [x] Added sequence length check in hybrid attention
-- [x] Calls NTT attention for seq_len >= 256
-- [x] Uses angular attention for shorter sequences with token IDs
-- [x] Falls back to standard attention otherwise
-- [x] Build verified: Zero errors, zero warnings
-
-**Task 4.4: Wire Cymatic Resonance into Training Loop** ✅ COMPLETE
-- [x] Located training step in `src/ai/cllm_training.c`
-- [x] Added `cllm_apply_cymatic_resonance()` after gradients
-- [x] Applied before optimizer step
-- [x] Uses 6 cymatic frequencies (432-963 Hz)
-- [x] Build verified: Zero errors, zero warnings
-
-🎉 **ALL PHASE 4 TASKS COMPLETE!** 🎉
-
----
-
-## 🔍 CRITICAL DISCOVERY: Real Bottleneck Found
-
-### Analysis Complete ✅
-- ✅ Prime generation profiled: 1.5ms for 10k primes (FAST!)
-- ✅ Rainbow table structure analyzed: Perfect 12-fold symmetry
-- ✅ Real bottleneck identified: L_lattice() in embedding initialization
-- ✅ Performance measured: 285 seconds for 10k vocab × 512 dims
-
-### The Real Problem
-**L_lattice() is called millions of times during model creation:**
-- Tiny model (100 × 64): 6,400 calls = 356ms
-- Small model (10k × 512): 5,120,000 calls = 285 seconds (4.75 minutes!)
-- Each call: ~0.056ms (transcendental operations)
-
-### Root Cause
-```c
-// In cllm_embeddings_init_lattice():
-for (token_id in vocab_size) {
-    for (dim in embedding_dim) {
-        L_value = L_lattice(prime, dim, k, λ, ω, p, q);  // EXPENSIVE!
-    }
-}
-```
-
-### Component Profiling
-- O_exponent: 0.115 µs
-- theta_n: 0.101 µs
-- nu_lambda: 0.066 µs
-- **prime_pow: 0.044 µs (main bottleneck)**
-- prime_cos: 0.013 µs
-- prime_log: 0.014 µs
-
-## 🎯 CURRENT WORK: GLOBAL MODEL MANAGEMENT (Phase 4)
-
-### Phase 3: Create Model Management Tab ✅ COMPLETE
-
-**Completed:**
-- [x] Model management tab UI created and integrated
-- [x] Build verified: Zero errors, zero warnings
-- [x] All changes committed and pushed to GitHub
-
-### Phase 4: Update Existing Tabs ✅ COMPLETE
-
-**Goal:** Integrate model manager into existing tabs
-
-**Completed Tasks:**
-- [x] Update `app/ui/tabs/tab_training.c`
-  - [x] Use `model_manager_acquire_write()` for training
-  - [x] Release model when done with `model_manager_release_write()`
-  - [x] Handle model creation if not exists
-  - [x] Proper error handling
-- [x] Update `app/ui/tabs/tab_llm.c`
-  - [x] Created `acquire_model_for_inference()` helper function
-  - [x] Use `model_manager_acquire_read()` for inference
-  - [x] Updated all 5 model size buttons (Tiny, Small, Medium, Large, Huge, Massive)
-  - [x] Support concurrent inference (read-only access)
-  - [x] Models created on-demand if not exist
-- [x] Crawler tab - No model usage (N/A)
-- [x] Build verified: Zero errors, zero warnings
-- [x] All changes committed and pushed to GitHub
-
-**Benefits Achieved:**
-- ✅ Models shared across all tabs
-- ✅ Can train and infer simultaneously
-- ✅ No duplicate model creation
-- ✅ Proper concurrent access with read/write locks
-- ✅ Models created once, reused everywhere
-
-**Next:** Phase 5 - Update CLI tools (optional) or Phase 6 - Testing
+### 3.5: Update Crawler Integration
+- [ ] Update `src/crawler/crawler.c`
+  - Use url_database for URL storage
+  - Use url_filter for filtering
+  - Use url_priority for selection
+  - Use url_blocker for blocking
+  - Preserve GET parameters in URLs
+  - Implement domain diversity in crawling
 
 ---
 
-## 🎯 SUCCESS CRITERIA
+## PHASE 4: IMPLEMENTATION - UI REORGANIZATION ⏳
 
-### Build System: ✅ ACHIEVED
-- ✅ Zero warnings
-- ✅ Zero errors
-- ✅ All libraries compile
-- ✅ All tools compile
+### 4.1: Implement Left Sidebar Tab System
+- [ ] Update `app/ui.c`
+  - Create render_left_sidebar()
+  - Implement vertical tab buttons
+  - Implement collapsible sections
+  - Add icons for tabs
+  - Handle tab switching
+- [ ] Update `app/app_common.h`
+  - Add MainTab enum (AI, Models, System, Data)
+  - Add SubTab enums for each main tab
+  - Update AppState with main_tab and sub_tab
 
-### Architecture: ✅ ACHIEVED
-- ✅ Clean layer separation
-- ✅ NO math.h in production code
-- ✅ NO redundant code
-- ✅ Proper naming conventions
+### 4.2: Implement Submenu System
+- [ ] Create `app/ui/submenu.c`
+  - Implement render_submenu()
+  - Handle submenu switching
+  - Smooth transitions
+- [ ] Create `app/ui/submenu.h`
+  - Define submenu API
 
-### Integration: 🔄 VERIFYING
-- ✅ Crystalline loss integrated
-- ⏳ GCD optimizations verified
-- ⏳ SIMD integration verified
-- ⏳ Control thread verified
-
----
-
-## 📝 NOTES
-
-### Training Pipeline Status
-- ✅ Legacy files removed
-- ✅ Crystalline loss integrated
-- ✅ Kissing spheres threading used
-- ⏳ Need to verify GCD optimizations are wired in
-
-### Build Status
-- ✅ Zero warnings achieved
-- ✅ All libraries build successfully
-- ✅ All tools build successfully
+### 4.3: Reorganize Existing Tabs
+- [ ] Move LLM tab under AI main tab
+- [ ] Move Training tab under AI main tab
+- [ ] Move Research tab under AI main tab
+- [ ] Move Crawler tab under AI main tab
+- [ ] Keep Models tab as main tab
+- [ ] Move Benchmark under System main tab
+- [ ] Move Adapters under System main tab
 
 ---
 
-**CURRENT STATUS:** Build warnings fixed, proceeding with optimization verification
+## PHASE 5: IMPLEMENTATION - URL MANAGER UI ⏳
 
-**NEXT ACTION:** Verify crystalline GCD optimizations are actually wired into training loop
+### 5.1: Create URL Manager Tab
+- [ ] Create `app/ui/tabs/tab_url_manager.c`
+  - Implement URL list view
+  - Implement sortable columns
+  - Implement filtering
+  - Implement pagination
+- [ ] Create `app/ui/tabs/tab_url_manager.h`
+  - Define tab API
+
+### 5.2: Implement URL Actions Panel
+- [ ] Add URL input field and button
+- [ ] Implement remove selected URLs
+- [ ] Implement block selected URLs
+- [ ] Implement export URL list
+- [ ] Implement import URL list
+
+### 5.3: Implement Filter Configuration
+- [ ] Create file type filter checkboxes
+- [ ] Create domain whitelist/blacklist editor
+- [ ] Create URL pattern editor
+- [ ] Create GET parameter handling options
+- [ ] Save/load filter configuration
+
+### 5.4: Implement Block Patterns Panel
+- [ ] Display list of blocked patterns
+- [ ] Add pattern input and button
+- [ ] Remove pattern button
+- [ ] Test pattern functionality
+
+---
+
+## PHASE 6: IMPLEMENTATION - DOWNLOADED FILES VIEWER ⏳
+
+### 6.1: Create Downloaded Files Tab
+- [ ] Create `app/ui/tabs/tab_downloaded_files.c`
+  - Implement file browser
+  - Implement tree view
+  - Implement list view
+  - Implement search
+- [ ] Create `app/ui/tabs/tab_downloaded_files.h`
+  - Define tab API
+
+### 6.2: Implement File Preview
+- [ ] Implement text content display
+- [ ] Implement syntax highlighting
+- [ ] Implement image preview (if possible)
+- [ ] Implement PDF preview (if possible)
+
+### 6.3: Implement File Actions
+- [ ] Open in external viewer
+- [ ] Delete file
+- [ ] Re-crawl URL
+- [ ] Export file
+
+---
+
+## PHASE 7: TESTING & VALIDATION ⏳
+
+### 7.1: Test URL Manager Backend
+- [ ] Test URL database operations
+- [ ] Test URL filtering
+- [ ] Test URL prioritization
+- [ ] Test block patterns
+- [ ] Test GET parameter preservation
+- [ ] Test domain diversity
+
+### 7.2: Test UI Reorganization
+- [ ] Test left sidebar navigation
+- [ ] Test submenu switching
+- [ ] Test all existing tabs still work
+- [ ] Test smooth transitions
+
+### 7.3: Test URL Manager UI
+- [ ] Test adding/removing URLs
+- [ ] Test blocking URLs/domains/patterns
+- [ ] Test filtering and sorting
+- [ ] Test export/import
+- [ ] Test pagination
+
+### 7.4: Test Downloaded Files Viewer
+- [ ] Test file browsing
+- [ ] Test file preview
+- [ ] Test file actions
+- [ ] Test search functionality
+
+---
+
+## PHASE 8: DOCUMENTATION ⏳
+
+### 8.1: Update User Documentation
+- [ ] Document new tab organization
+- [ ] Document URL manager features
+- [ ] Document downloaded files viewer
+- [ ] Create user guide with screenshots
+
+### 8.2: Update Developer Documentation
+- [ ] Document URL database schema
+- [ ] Document URL manager API
+- [ ] Document filter system
+- [ ] Document UI architecture changes
+
+---
+
+## PHASE 9: INTEGRATION & POLISH ⏳
+
+### 9.1: Integrate with Existing Features
+- [ ] Update crawler to use new URL manager
+- [ ] Update training tab to show crawler status
+- [ ] Ensure model manager works with new UI
+
+### 9.2: Polish UI
+- [ ] Add icons for all tabs
+- [ ] Improve visual consistency
+- [ ] Add tooltips
+- [ ] Add keyboard shortcuts
+- [ ] Optimize rendering performance
+
+### 9.3: Final Testing
+- [ ] End-to-end testing
+- [ ] Performance testing
+- [ ] User acceptance testing
+
+---
+
+## NOTES
+
+**Key Requirements from User:**
+1. ✅ URL manager for adding/removing URLs
+2. ✅ Preserve GET parameters in URLs
+3. ✅ Block specific pages/links/websites
+4. ✅ Comprehensive URL manager with all features
+5. ✅ File type selection/deselection
+6. ✅ Block patterns
+7. ✅ Prioritize uncrawled pages (timestamp tracking)
+8. ✅ View downloaded pages/files
+9. ✅ Reorganize tabs with submenus
+10. ✅ Main AI tab with LLM, training, research, crawler
+11. ✅ Tabs on left side instead of top
+
+**Architectural Principles:**
+- Follow MASTER_PLAN layer architecture
+- Use crystalline math only (no math.h)
+- Proper error handling
+- Clean separation of concerns
+- Comprehensive testing
+
+**Current Status:** Planning phase complete, ready to proceed with implementation
