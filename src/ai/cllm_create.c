@@ -484,8 +484,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         
         // Initialize gamma to 1.0 and beta to 0.0
         for (uint32_t j = 0; j < config->embedding_dim; j++) {
-            model->layer_norms[i].gamma[j] = 1.0f;
-            model->layer_norms[i].beta[j] = 0.0f;
+               big_fixed_from_double(model->layer_norms[i].gamma[j], 1.0);
+               big_fixed_from_double(model->layer_norms[i].beta[j], 0.0);
         }
     }
     
