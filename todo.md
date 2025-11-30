@@ -222,17 +222,26 @@ The SECONDARY_OBJECTIVES.md contains:
   - Implement configurable priority factors
   - Uses crystalline math (prime_expf) for decay calculation
 
-### 3.4: Implement Block Patterns
-- [ ] Create `src/crawler/url_blocker.h`
-  - Define block pattern struct
-  - Define blocker API
-- [ ] Create `src/crawler/url_blocker.c`
-  - Implement add_block_pattern()
-  - Implement remove_block_pattern()
-  - Implement is_url_blocked()
-  - Support regex patterns
-  - Support domain blocking
-  - Support path blocking
+### 3.4: Implement Block Patterns ✅ COMPLETE
+- [x] Create `src/crawler/url_blocker.h`
+  - Define block pattern struct with 4 types
+  - Define blocker API with comprehensive operations
+- [x] Create `src/crawler/url_blocker.c`
+  - Implement add_block_pattern() with auto-save
+  - Implement remove_block_pattern() with cleanup
+  - Implement is_url_blocked() checking all patterns
+  - Support 4 pattern types:
+    * BLOCK_EXACT_URL - exact URL match
+    * BLOCK_DOMAIN - entire domain blocking
+    * BLOCK_PATH_PREFIX - path prefix matching
+    * BLOCK_REGEX_PATTERN - regex pattern matching
+  - Implement enable/disable for patterns
+  - Implement pattern testing (test before adding)
+  - Implement save/load to file for persistence
+  - Implement get_patterns() for UI display
+  - Compiled regex patterns for performance
+  - Dynamic pattern array (grows as needed)
+  - Pattern metadata (ID, description, added time, enabled)
 
 ### 3.5: Update Crawler Integration
 - [ ] Update `src/crawler/crawler.c`
