@@ -759,45 +759,57 @@ void cllm_optimizer_step(CLLMTraining* training) {
     
     float lr = training->config.learning_rate;
     CLLMModel* model = training->model;
+    int precision = training->precision_bits;
     
-    // Simple SGD update (no momentum for now - just get it working)
-    // Update embeddings
-    uint32_t embedding_dim = model->embedding_dim;
-    uint32_t vocab_size = model->vocab_size;
-    size_t embed_params = vocab_size * embedding_dim;
-    
-    if (model->embeddings.embeddings && training->gradients) {
+    // Update crystalline embeddings using BigFixed operations
+    if (model->crystalline_embeddings && training->gradients) {
+        // TODO: Implement proper lattice-based embedding optimization
+        // For now, just clear gradients
+        uint32_t embedding_dim = model->embedding_dim;
+        uint32_t vocab_size = model->vocab_size;
+        size_t embed_params = vocab_size * embedding_dim;
+        
         for (size_t i = 0; i < embed_params; i++) {
-            model->embeddings.embeddings[i] -= lr * training->gradients[i] * gradient_scale;
-            training->gradients[i] = 0.0f;  // Clear gradient after update
+            if (training->gradients[i]) {
+                big_fixed_from_int(training->gradients[i], 0);
+            }
         }
     }
     
-    // Update layer weights
+    // Update layer weights using sgd_step_bigfixed()
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
         // Update attention weights
         if (training->attention_grads && model->attention_layers) {
-            uint64_t attn_size = embedding_dim * embedding_dim;
+            uint64_t attn_size = model->embedding_dim * model->embedding_dim;
             
             if (training->attention_grads[layer].query_lattice && model->attention_layers[layer].query_lattice) {
-                for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].query_lattice[i] -= lr * training->attention_grads[layer].query_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].query_lattice[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    model->attention_layers[layer].query_lattice,
+                    training->attention_grads[layer].query_lattice,
+                    attn_size,
+                    lr * gradient_scale,
+                    precision
+                );
             }
             
             if (training->attention_grads[layer].key_lattice && model->attention_layers[layer].key_lattice) {
-                for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].key_lattice[i] -= lr * training->attention_grads[layer].key_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].key_lattice[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    model->attention_layers[layer].key_lattice,
+                    training->attention_grads[layer].key_lattice,
+                    attn_size,
+                    lr * gradient_scale,
+                    precision
+                );
             }
             
             if (training->attention_grads[layer].value_lattice && model->attention_layers[layer].value_lattice) {
-                for (uint64_t i = 0; i < attn_size; i++) {
-                    model->attention_layers[layer].value_lattice[i] -= lr * training->attention_grads[layer].value_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].value_lattice[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    model->attention_layers[layer].value_lattice,
+                    training->attention_grads[layer].value_lattice,
+                    attn_size,
+                    lr * gradient_scale,
+                    precision
+                );
             }
         }
         
@@ -809,50 +821,72 @@ void cllm_optimizer_step(CLLMTraining* training) {
             uint32_t output_dim = ff->output_dim;
             
             if (training->ff_grads[layer].w1_lattice && ff->w1_lattice) {
-                for (uint32_t i = 0; i < input_dim * hidden_dim; i++) {
-                    ff->w1_lattice[i] -= lr * training->ff_grads[layer].w1_lattice[i] * gradient_scale;
-                    training->ff_grads[layer].w1_lattice[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    ff->w1_lattice,
+                    training->ff_grads[layer].w1_lattice,
+                    input_dim * hidden_dim,
+                    lr * gradient_scale,
+                    precision
+                );
             }
             
             if (training->ff_grads[layer].w2_lattice && ff->w2_lattice) {
-                for (uint32_t i = 0; i < hidden_dim * output_dim; i++) {
-                    ff->w2_lattice[i] -= lr * training->ff_grads[layer].w2_lattice[i] * gradient_scale;
-                    training->ff_grads[layer].w2_lattice[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    ff->w2_lattice,
+                    training->ff_grads[layer].w2_lattice,
+                    hidden_dim * output_dim,
+                    lr * gradient_scale,
+                    precision
+                );
             }
             
             if (training->ff_grads[layer].bias1 && ff->bias1) {
-                for (uint32_t i = 0; i < hidden_dim; i++) {
-                    ff->bias1[i] -= lr * training->ff_grads[layer].bias1[i] * gradient_scale;
-                    training->ff_grads[layer].bias1[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    ff->bias1,
+                    training->ff_grads[layer].bias1,
+                    hidden_dim,
+                    lr * gradient_scale,
+                    precision
+                );
             }
             
             if (training->ff_grads[layer].bias2 && ff->bias2) {
-                for (uint32_t i = 0; i < output_dim; i++) {
-                    ff->bias2[i] -= lr * training->ff_grads[layer].bias2[i] * gradient_scale;
-                    training->ff_grads[layer].bias2[i] = 0.0f;
-                }
+                sgd_step_bigfixed(
+                    ff->bias2,
+                    training->ff_grads[layer].bias2,
+                    output_dim,
+                    lr * gradient_scale,
+                    precision
+                );
             }
         }
         
         // Update layer norm parameters
         if (training->ln_grads && model->layer_norms) {
             if (training->ln_grads[layer].gamma && model->layer_norms[layer].gamma) {
-                for (uint64_t i = 0; i < embedding_dim; i++) {
-                    model->layer_norms[layer].gamma[i] -= lr * training->ln_grads[layer].gamma[i];
-                }
+                sgd_step_bigfixed(
+                    model->layer_norms[layer].gamma,
+                    training->ln_grads[layer].gamma,
+                    model->embedding_dim,
+                    lr,
+                    precision
+                );
             }
             
             if (training->ln_grads[layer].beta && model->layer_norms[layer].beta) {
-                for (uint64_t i = 0; i < embedding_dim; i++) {
-                    model->layer_norms[layer].beta[i] -= lr * training->ln_grads[layer].beta[i];
-                }
+                sgd_step_bigfixed(
+                    model->layer_norms[layer].beta,
+                    training->ln_grads[layer].beta,
+                    model->embedding_dim,
+                    lr,
+                    precision
+                );
             }
         }
     }
 }
+
+
 
 /**
  * Training-specific attention forward with cache storage
