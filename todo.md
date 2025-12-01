@@ -30,14 +30,18 @@ All code must compile with zero warnings before moving to the next objective.
 
 ## 🎯 CURRENT: OBJECTIVE 25 - FIX BUILD WARNINGS
 
-**Progress:** 71 → 66 warnings (5 fixed, 7% reduction)
+**Progress:** 71 → 48 warnings (23 fixed, 32% reduction)
 **Remaining Categories:**
 - HIGH: 35 type mismatches (BigFixed** vs float*)
-- MEDIUM: 8 unused variables/parameters
 - MEDIUM: 11 sign comparisons (uint32_t vs int)
-- LOW: 6 unused functions
-- LOW: 5 statements with no effect
-- LOW: 1 misc warning
+- LOW: 2 misc warnings
+
+**Files with Warnings:**
+- cllm_training.c: 29 warnings (60%)
+- cllm_optimizer.c: 10 warnings (21%)
+- cllm_validate.c: 7 warnings (15%)
+- cllm_lll_embeddings.c: 1 warning (2%)
+- cllm_utils.c: 1 warning (2%)
 
 ---
 
