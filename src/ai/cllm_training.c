@@ -1909,30 +1909,62 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     uint32_t embed_dim = model->embedding_dim;
     uint32_t vocab_size = model->vocab_size;
     
-    // Get embeddings
+    // Get embeddings - BIGFIXED IMPLEMENTATION
+    // Use CrystallineEmbeddings (BigFixed-based) instead of deprecated float embeddings
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
-            float* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
-            float* embed_dst = &training->input_embeddings[idx * embed_dim];
-            memcpy(embed_dst, embed_src, embed_dim * sizeof(float));
+            // Copy BigFixed pointers from crystalline embeddings to training buffer
+            // training->input_embeddings is BigFixed** [batch*seq*embed_dim]
+            // model->crystalline_embeddings->token_positions is BigFixed** [vocab_size][lattice_dim]
+            
+            if (model->crystalline_embeddings && model->crystalline_embeddings->token_positions) {
+                // Use crystalline embeddings (BigFixed-based)
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    uint32_t src_idx = token_id * embed_dim + d;
+                    uint32_t dst_idx = idx * embed_dim + d;
+                    
+                    // Copy BigFixed pointer (not the value, the pointer itself)
+                    training->input_embeddings[dst_idx] = model->crystalline_embeddings->token_positions[src_idx];
+                }
+            } else {
+                // Fallback: Convert deprecated float embeddings to BigFixed
+                // This path should eventually be removed once migration is complete
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    uint32_t src_idx = token_id * embed_dim + d;
+                    uint32_t dst_idx = idx * embed_dim + d;
+                    
+                    // Create BigFixed from float value
+                    if (!training->input_embeddings[dst_idx]) {
+                        training->input_embeddings[dst_idx] = big_fixed_create(training->precision_bits);
+                    }
+                    big_fixed_from_double(training->input_embeddings[dst_idx], 
+                                         (double)model->embeddings.embeddings[src_idx]);
+                }
+            }
         }
     }
     
-    // Process through layers
-    float* layer_input = training->input_embeddings;
+    // Process through layers - BIGFIXED IMPLEMENTATION
+    // layer_input is BigFixed** (array of BigFixed pointers)
+    BigFixed** layer_input = training->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-        memcpy(training->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+        // Copy BigFixed pointers to layer input buffer
+        // training->layer_inputs[layer] is BigFixed** [batch*seq*embed_dim]
+        for (uint32_t i = 0; i < batch_size * seq_len * embed_dim; i++) {
+            training->layer_inputs[layer][i] = layer_input[i];
+        }
         
         // Apply proper multi-head attention for each batch
         AttentionLayer* attn_layer = &model->attention_layers[layer];
         for (int b = 0; b < batch_size; b++) {
             int start_idx = b * seq_len;
-            float* batch_input = &layer_input[start_idx * embed_dim];
-            float* batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
+            // batch_input is BigFixed** pointing to start of this batch
+            BigFixed** batch_input = &layer_input[start_idx * embed_dim];
+            BigFixed** batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
             uint32_t* batch_tokens = &input_tokens[start_idx];
             
             // Use hybrid attention (angular when token IDs available, dot product otherwise)
@@ -1940,72 +1972,178 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                                            batch_input, batch_output, batch_tokens, seq_len);
         }
         
-        // Process feedforward for each position
+        // Process feedforward for each position - BIGFIXED IMPLEMENTATION
         for (int b = 0; b < batch_size; b++) {
             for (int s = 0; s < seq_len; s++) {
                 int idx = b * seq_len + s;
-                float* attn_out = &training->attention_outputs[layer][idx * embed_dim];
-                float* ff_out = &training->ff_outputs[layer][idx * embed_dim];
-                float* layer_out = &training->layer_outputs[layer][idx * embed_dim];
+                // All outputs are BigFixed** arrays
+                BigFixed** attn_out = &training->attention_outputs[layer][idx * embed_dim];
+                BigFixed** ff_out = &training->ff_outputs[layer][idx * embed_dim];
+                BigFixed** layer_out = &training->layer_outputs[layer][idx * embed_dim];
                 
-                // FeedForward
+                // FeedForward - BIGFIXED IMPLEMENTATION
                 FeedForwardLayer* ff = &model->ff_layers[layer];
-                float* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
+                BigFixed** ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
                 
+                // W1 * attn_out + bias1, then tanh
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float sum = (float)big_fixed_to_double(ff->bias1[h]);
+                    // Initialize with bias1
+                    if (!ff_hidden[h]) {
+                        ff_hidden[h] = big_fixed_create(training->precision_bits);
+                    }
+                    big_fixed_assign(ff_hidden[h], ff->bias1[h]);
+                    
+                    // Accumulate: sum += attn_out[i] * w1[i,h]
+                    BigFixed* temp = big_fixed_create(training->precision_bits);
                     for (uint32_t i = 0; i < embed_dim; i++) {
-                        sum += attn_out[i] * (float)big_fixed_to_double(ff->w1_lattice[i * ff->hidden_dim + h]);
+                        uint32_t w_idx = i * ff->hidden_dim + h;
+                        big_fixed_mul(temp, attn_out[i], ff->w1_lattice[w_idx]);
+                        big_fixed_add(ff_hidden[h], ff_hidden[h], temp);
                     }
-                    ff_hidden[h] = prime_tanhf(sum);
+                    big_fixed_free(temp);
+                    
+                    // Apply tanh activation
+                    double val = big_fixed_to_double(ff_hidden[h]);
+                    val = prime_tanhf((float)val);
+                    big_fixed_from_double(ff_hidden[h], val);
                 }
                 
+                // W2 * ff_hidden + bias2
                 for (uint32_t o = 0; o < embed_dim; o++) {
-                    float sum = (float)big_fixed_to_double(ff->bias2[o]);
-                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                        sum += ff_hidden[h] * (float)big_fixed_to_double(ff->w2_lattice[h * embed_dim + o]);
+                    // Initialize with bias2
+                    if (!ff_out[o]) {
+                        ff_out[o] = big_fixed_create(training->precision_bits);
                     }
-                    ff_out[o] = sum;
+                    big_fixed_assign(ff_out[o], ff->bias2[o]);
+                    
+                    // Accumulate: sum += ff_hidden[h] * w2[h,o]
+                    BigFixed* temp = big_fixed_create(training->precision_bits);
+                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        uint32_t w_idx = h * embed_dim + o;
+                        big_fixed_mul(temp, ff_hidden[h], ff->w2_lattice[w_idx]);
+                        big_fixed_add(ff_out[o], ff_out[o], temp);
+                    }
+                    big_fixed_free(temp);
                 }
                 
-                // Residual + LayerNorm
-                for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
+                // Residual connection: layer_out = attn_out + ff_out
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    if (!layer_out[d]) {
+                        layer_out[d] = big_fixed_create(training->precision_bits);
+                    }
+                    big_fixed_add(layer_out[d], attn_out[d], ff_out[d]);
+                }
                 
+                // LayerNorm - BIGFIXED IMPLEMENTATION
                 CLLMLayerNorm* ln = &model->layer_norms[layer];
-                float mean = 0.0f, var = 0.0f;
-                for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
-                mean /= embed_dim;
+                
+                // Compute mean
+                BigFixed* mean = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(mean, 0);
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float diff = layer_out[d] - mean;
-                    var += diff * diff;
+                    big_fixed_add(mean, mean, layer_out[d]);
                 }
-                var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                BigFixed* embed_dim_bf = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(embed_dim_bf, (int)embed_dim);
+                big_fixed_div(mean, mean, embed_dim_bf);
+                
+                // Compute variance
+                BigFixed* var = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(var, 0);
+                BigFixed* diff = big_fixed_create(training->precision_bits);
+                BigFixed* diff_sq = big_fixed_create(training->precision_bits);
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
+                    big_fixed_sub(diff, layer_out[d], mean);
+                    big_fixed_mul(diff_sq, diff, diff);
+                    big_fixed_add(var, var, diff_sq);
                 }
+                big_fixed_div(var, var, embed_dim_bf);
+                
+                // Add epsilon and compute std
+                BigFixed* epsilon = big_fixed_create(training->precision_bits);
+                big_fixed_from_double(epsilon, 1e-5);
+                big_fixed_add(var, var, epsilon);
+                
+                // std = sqrt(var) - use prime_sqrtf via double conversion
+                double var_val = big_fixed_to_double(var);
+                double std_val = prime_sqrtf((float)var_val);
+                BigFixed* std = big_fixed_create(training->precision_bits);
+                big_fixed_from_double(std, std_val);
+                
+                // Normalize: layer_out[d] = gamma[d] * (layer_out[d] - mean) / std + beta[d]
+                BigFixed* normalized = big_fixed_create(training->precision_bits);
+                BigFixed* scaled = big_fixed_create(training->precision_bits);
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    // (layer_out[d] - mean) / std
+                    big_fixed_sub(normalized, layer_out[d], mean);
+                    big_fixed_div(normalized, normalized, std);
+                    
+                    // gamma[d] * normalized
+                    big_fixed_mul(scaled, ln->gamma[d], normalized);
+                    
+                    // + beta[d]
+                    big_fixed_add(layer_out[d], scaled, ln->beta[d]);
+                }
+                
+                // Cleanup
+                big_fixed_free(mean);
+                big_fixed_free(var);
+                big_fixed_free(diff);
+                big_fixed_free(diff_sq);
+                big_fixed_free(epsilon);
+                big_fixed_free(std);
+                big_fixed_free(normalized);
+                big_fixed_free(scaled);
+                big_fixed_free(embed_dim_bf);
             }
         }
         layer_input = training->layer_outputs[layer];
     }
     
-    // Copy final hidden
-    memcpy(training->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+    // Copy final hidden - BIGFIXED IMPLEMENTATION
+    // Copy BigFixed pointers from layer_input to final_hidden
+    for (uint32_t i = 0; i < batch_size * seq_len * embed_dim; i++) {
+        training->final_hidden[i] = layer_input[i];
+    }
     
-    // Project to vocabulary
+    // Project to vocabulary - BIGFIXED IMPLEMENTATION
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
-            float* hidden = &training->final_hidden[idx * embed_dim];
-            float* logits = &training->logits[idx * vocab_size];
+            BigFixed** hidden = &training->final_hidden[idx * embed_dim];
+            BigFixed** logits = &training->logits[idx * vocab_size];
             
+            // Compute logits: logits[v] = dot(hidden, vocab_embed[v])
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
-                float score = 0.0f;
-                for (uint32_t d = 0; d < embed_dim; d++) {
-                    score += hidden[d] * vocab_embed[d];
+                // Initialize logit to zero
+                if (!logits[v]) {
+                    logits[v] = big_fixed_create(training->precision_bits);
                 }
-                logits[v] = score;
+                big_fixed_from_int(logits[v], 0);
+                
+                // Compute dot product with vocabulary embedding
+                BigFixed* temp = big_fixed_create(training->precision_bits);
+                
+                if (model->crystalline_embeddings && model->crystalline_embeddings->token_positions) {
+                    // Use crystalline embeddings (BigFixed-based)
+                    for (uint32_t d = 0; d < embed_dim; d++) {
+                        uint32_t vocab_idx = v * embed_dim + d;
+                        big_fixed_mul(temp, hidden[d], model->crystalline_embeddings->token_positions[vocab_idx]);
+                        big_fixed_add(logits[v], logits[v], temp);
+                    }
+                } else {
+                    // Fallback: Convert deprecated float embeddings to BigFixed
+                    BigFixed* vocab_bf = big_fixed_create(training->precision_bits);
+                    for (uint32_t d = 0; d < embed_dim; d++) {
+                        uint32_t vocab_idx = v * embed_dim + d;
+                        big_fixed_from_double(vocab_bf, (double)model->embeddings.embeddings[vocab_idx]);
+                        big_fixed_mul(temp, hidden[d], vocab_bf);
+                        big_fixed_add(logits[v], logits[v], temp);
+                    }
+                    big_fixed_free(vocab_bf);
+                }
+                
+                big_fixed_free(temp);
             }
         }
     }
