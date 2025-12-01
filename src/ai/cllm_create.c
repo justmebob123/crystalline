@@ -159,15 +159,14 @@ CLLMModel* cllm_create_model_bigfixed(const CLLMConfig* config) {
         return NULL;
     }
     
-    // Initialize each BigFixed weight
+    // Allocate each BigFixed weight
     for (uint64_t i = 0; i < model->num_weights; i++) {
-        model->weights[i] = (BigFixed*)malloc(sizeof(BigFixed));
+        model->weights[i] = big_fixed_create(128);  // 128-bit precision
         if (!model->weights[i]) {
             fprintf(stderr, "Failed to allocate BigFixed weight %lu\n", i);
             // Free previously allocated weights
             for (uint64_t j = 0; j < i; j++) {
                 big_fixed_free(model->weights[j]);
-                free(model->weights[j]);
             }
             free(model->weights);
             crystalline_embeddings_free(model->crystalline_embeddings);
@@ -175,9 +174,21 @@ CLLMModel* cllm_create_model_bigfixed(const CLLMConfig* config) {
             free(model);
             return NULL;
         }
-        
-        // Initialize with small random values using BigFixed
-        // Range: [-0.05, 0.05]
+    }
+    
+    // OBJECTIVE 14: Initialize embeddings using L(n,d,k,λ) lattice formula
+    // Use the proper lattice_embeddings_init_geometric_bigfixed function
+    printf("Initializing embeddings with L(n,d,k,λ) lattice formula (BigFixed)...\n");
+    lattice_embeddings_init_geometric_bigfixed(
+        model->weights,  // First vocab_size * embedding_dim weights are embeddings
+        config->vocab_size,
+        config->embedding_dim,
+        128  // precision
+    );
+    
+    // Initialize remaining weights (attention, feedforward) with small random values
+    printf("Initializing attention and feedforward weights...\n");
+    for (uint64_t i = embedding_weights; i < model->num_weights; i++) {
         double rand_val = ((double)rand() / RAND_MAX - 0.5) * 0.1;
         big_fixed_from_double(model->weights[i], rand_val);
     }
