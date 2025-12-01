@@ -198,7 +198,12 @@
   - Reduced section headers from 20px to 18px
   - Reduced model selector space from 40px to 30px
   - Total savings: 506px (from 1325px to 819px)
-- [ ] Fix model selector display
+- [x] Fix model selector display ✅
+  - Added app_common.h include for draw_text function
+  - Implemented text rendering for selected model name
+  - Implemented text rendering for dropdown items
+  - Shows "Select Model..." placeholder when no model selected
+  - Dropdown items now display model names properly
 - [ ] Fix LLM tab input positioning
 - [ ] Fix crawler tab URL field
 - [ ] Fix research tab text overlay

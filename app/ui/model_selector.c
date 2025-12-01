@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #include "ui/model_selector.h"
 #include "cllm_model_manager.h"
+#include "../app_common.h"  // For draw_text function
 
 #define MAX_MODELS 32
 #define DROPDOWN_ITEM_HEIGHT 30
@@ -127,8 +128,14 @@ void model_selector_render(ModelSelector* selector, SDL_Renderer* renderer) {
     SDL_RenderDrawRect(renderer, &button_rect);
     
     // Text (selected model name)
-    // Note: Actual text rendering would use SDL_ttf
-    // For now, just draw the dropdown indicator
+    if (selector->selected_model[0] != '\0') {
+        draw_text(renderer, selector->selected_model, 
+                 selector->x + 5, selector->y + 8, selector->text_color);
+    } else {
+        draw_text(renderer, "Select Model...", 
+                 selector->x + 5, selector->y + 8, 
+                 (SDL_Color){150, 150, 150, 255});
+    }
     
     // Draw dropdown arrow
     int arrow_x = selector->x + selector->width - 20;
@@ -200,7 +207,11 @@ void model_selector_render(ModelSelector* selector, SDL_Renderer* renderer) {
                 SDL_RenderFillRect(renderer, &item_rect);
             }
             
-            // Item text would be rendered here with SDL_ttf
+               // Draw item text
+               if (selector->model_list && selector->model_list[item_index]) {
+                   draw_text(renderer, selector->model_list[item_index],
+                            item_rect.x + 5, item_rect.y + 8, selector->text_color);
+               }
         }
     }
 }
