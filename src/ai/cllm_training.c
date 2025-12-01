@@ -28,6 +28,7 @@
 #include "../include/ai/cllm_loss.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
+#include "bigfixed_array_utils.h"
 #include "../include/ai/cllm_angular_attention.h"
 #include "../include/cllm_simd_utils.h"
 #include "../include/ai/cllm_cymatic_training.h"
@@ -558,13 +559,13 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         for (uint32_t i = 0; i < num_layers; i++) {
             uint32_t layer_num_heads = model->attention_layers[i].num_heads;
             
-            training->attention_cache[i].queries = (float*)calloc(max_seq_len * embed_dim, sizeof(float));
-            training->attention_cache[i].keys = (float*)calloc(max_seq_len * embed_dim, sizeof(float));
-            training->attention_cache[i].values = (float*)calloc(max_seq_len * embed_dim, sizeof(float));
+            training->attention_cache[i].queries = bigfixed_array_create(max_seq_len * embed_dim, 128);
+            training->attention_cache[i].keys = bigfixed_array_create(max_seq_len * embed_dim, 128);
+            training->attention_cache[i].values = bigfixed_array_create(max_seq_len * embed_dim, 128);
             training->attention_cache[i].attention_weights = 
-                (float*)calloc(layer_num_heads * max_seq_len * max_seq_len, sizeof(float));
+                bigfixed_array_create(layer_num_heads * max_seq_len * max_seq_len, 128);
             training->attention_cache[i].scores = 
-                (float*)calloc(layer_num_heads * max_seq_len * max_seq_len, sizeof(float));
+                bigfixed_array_create(layer_num_heads * max_seq_len * max_seq_len, 128);
             
             if (!training->attention_cache[i].queries || !training->attention_cache[i].keys ||
                 !training->attention_cache[i].values || !training->attention_cache[i].attention_weights ||
