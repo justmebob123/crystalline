@@ -156,8 +156,58 @@
 - [ ] Integrate Ulam spiral sorting (if beneficial)
 - [ ] Integrate GCD caching (if beneficial)
 
-## 🚀 RECOMMENDED NEXT ACTION
-**Proceed with OBJECTIVE 3** - Kissing Spheres UI Integration
-- User-facing feature
-- Demonstrates the crystalline architecture visually
-- High impact for understanding the system
+## 🚨 CRITICAL PRIORITY: UI SYSTEM REPAIR
+
+### User-Reported Issues
+1. **Training Tab:** Inputs and buttons overlap, can't see start training button
+2. **Model Selection:** Dropdown doesn't display anything
+3. **LLM Tab:** Ugly overlaid text field, off-center, ignores original prompt input
+4. **Crawler Tab:** URL field extends outside panel
+5. **Research Tab:** Text overlaid on input label
+6. **Calculator:** Off-center from main display area
+7. **Video Tab:** Off-center from main display area
+
+### Phase 1: Architecture Analysis ✅
+- [x] Analyzed layout system (app/ui_layout.c)
+- [x] Analyzed training tab (1491 lines)
+- [x] Analyzed LLM tab structure
+- [x] Identified layout constants (WINDOW_WIDTH=1600, SIDEBAR=200, CONTROL_PANEL=320)
+- [x] Identified layout system (LayoutContainer with vertical/horizontal flow)
+
+### Phase 2: Root Cause Analysis ✅
+- [x] Analyzed layout overflow - 1325px content in 860px space
+- [x] Identified 465px overflow (54%!)
+- [x] Found duplicate configuration sections
+- [x] Found model selector rendering order issue
+- [x] Identified input overlay in LLM tab
+- [x] Created comprehensive repair plan document
+
+### Root Causes Identified:
+1. **Training Tab:** 465px overflow - duplicate sliders/inputs, excessive spacing
+2. **Model Selector:** Rendering before layout calculations
+3. **LLM Tab:** Duplicate input fields, hardcoded positions
+4. **Other Tabs:** Using old hardcoded positions vs layout system
+
+### Phase 3: Systematic Repair
+- [x] Fix training tab layout overflow ✅ (819px in 860px space, 41px margin)
+  - Removed duplicate PARAMETERS text inputs (kept sliders)
+  - Removed CRAWLER section (belongs in crawler tab)
+  - Reduced file list from 100px to 60px
+  - Reduced spacing from 10px to 5px
+  - Reduced button heights from 35px to 30px
+  - Reduced section headers from 20px to 18px
+  - Reduced model selector space from 40px to 30px
+  - Total savings: 506px (from 1325px to 819px)
+- [ ] Fix model selector display
+- [ ] Fix LLM tab input positioning
+- [ ] Fix crawler tab URL field
+- [ ] Fix research tab text overlay
+- [ ] Fix calculator centering
+- [ ] Fix video tab centering
+
+### Phase 4: Verification
+- [ ] Test all tabs for proper layout
+- [ ] Verify no overlapping elements
+- [ ] Verify all buttons visible and clickable
+- [ ] Verify all inputs properly positioned
+- [ ] Document layout system properly

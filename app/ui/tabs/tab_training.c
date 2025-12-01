@@ -730,18 +730,18 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     layout_init(&layout, panel_rect, LAYOUT_VERTICAL, 10, 8);
     
     // === SECTION 0: MODEL SELECTOR ===
-    SDL_Rect model_label = layout_add_label(&layout, "MODEL", 20);
+    SDL_Rect model_label = layout_add_label(&layout, "MODEL", 18);
     draw_text(renderer, "MODEL", model_label.x, model_label.y, text_color);
     
     // Render model selector
     if (model_selector) {
         model_selector_render(model_selector, renderer);
     }
-    layout_add_spacing(&layout, 40); // Space for model selector
-    layout_add_spacing(&layout, 10);
+    layout_add_spacing(&layout, 30); // Space for model selector
+    layout_add_spacing(&layout, 5);
     
     // === SECTION 0.5: TRAINING CONFIGURATION ===
-    SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 20);
+    SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 18);
     draw_text(renderer, "CONFIGURATION", config_label.x, config_label.y, text_color);
     
     // Batch Size slider
@@ -792,17 +792,11 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &epochs_handle);
     
-    // Learning Rate input
-    char lr_label[64];
-    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
-    SDL_Rect lr_label_rect = layout_add_label(&layout, lr_label, 16);
-    draw_text(renderer, lr_label, lr_label_rect.x, lr_label_rect.y, text_color);
-    
-    layout_add_spacing(&layout, 10);
+    layout_add_spacing(&layout, 5);
     
     // === SECTION 0.75: MODEL INFO ===
     if (state->cllm_model) {
-        SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 20);
+        SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 18);
         draw_text(renderer, "MODEL INFO", info_label.x, info_label.y, text_color);
         
         // Epochs trained
@@ -832,11 +826,11 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         SDL_Rect vocab_info_rect = layout_add_label(&layout, vocab_info, 16);
         draw_text(renderer, vocab_info, vocab_info_rect.x, vocab_info_rect.y, text_color);
         
-        layout_add_spacing(&layout, 10);
+        layout_add_spacing(&layout, 5);
     }
     
     // === SECTION 1: STATUS ===
-    SDL_Rect status_label = layout_add_label(&layout, "STATUS", 20);
+    SDL_Rect status_label = layout_add_label(&layout, "STATUS", 18);
     draw_text(renderer, "STATUS", status_label.x, status_label.y, text_color);
     
     const char* status = state->training_in_progress ? "Training..." : "Ready";
@@ -854,10 +848,10 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect model_rect = layout_add_label(&layout, model_status, 18);
     draw_text(renderer, model_status, model_rect.x, model_rect.y, model_color);
     
-    layout_add_spacing(&layout, 10);
+    layout_add_spacing(&layout, 5);
     
     // === SECTION 2: TRAINING DATA ===
-    SDL_Rect data_label = layout_add_label(&layout, "TRAINING DATA", 20);
+    SDL_Rect data_label = layout_add_label(&layout, "TRAINING DATA", 18);
     draw_text(renderer, "TRAINING DATA", data_label.x, data_label.y, text_color);
     
     // Buttons row
@@ -898,7 +892,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, file_info, file_info_rect.x, file_info_rect.y, text_color);
     
     // File list
-    file_list_rect = layout_add_element(&layout, 0, 100);
+    file_list_rect = layout_add_element(&layout, 0, 60);
     SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
     SDL_RenderFillRect(renderer, &file_list_rect);
     SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
@@ -932,53 +926,14 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         file_y += 16;
     }
     
-    layout_add_spacing(&layout, 10);
+    layout_add_spacing(&layout, 5);
     
-    // === SECTION 3: PARAMETERS ===
-    SDL_Rect params_label = layout_add_label(&layout, "PARAMETERS", 20);
-    draw_text(renderer, "PARAMETERS", params_label.x, params_label.y, text_color);
-    
-    // Learning Rate
-    SDL_Rect lr_section_label = layout_add_label(&layout, "Learning Rate:", 16);
-    draw_text(renderer, "Learning Rate:", lr_section_label.x, lr_section_label.y, text_color);
-    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
-    
-    // Epochs
-    SDL_Rect ep_label = layout_add_label(&layout, "Epochs:", 16);
-    draw_text(renderer, "Epochs:", ep_label.x, ep_label.y, text_color);
-    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
-    
-    // Batch Size
-    SDL_Rect bs_label = layout_add_label(&layout, "Batch Size:", 16);
-    draw_text(renderer, "Batch Size:", bs_label.x, bs_label.y, text_color);
-    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
-    
-    // Threads
-    SDL_Rect tc_label = layout_add_label(&layout, "Threads (0=auto):", 16);
-    draw_text(renderer, "Threads (0=auto):", tc_label.x, tc_label.y, text_color);
-    layout_add_element(&layout, 0, 25);  // Reserve space for input (rendered by InputManager)
-    
-    layout_add_spacing(&layout, 15);
-    
-    // === SECTION 4: CRAWLER URL (PROMINENT) ===
-    SDL_Rect crawler_section = layout_add_label(&layout, "CRAWLER START URL", 20);
-    draw_text(renderer, "CRAWLER START URL", crawler_section.x, crawler_section.y, 
-             (SDL_Color){100, 200, 255, 255});
-    
-    SDL_Rect cu_help = layout_add_label(&layout, "Enter URL to begin crawling:", 14);
-    draw_text(renderer, "Enter URL to begin crawling:", cu_help.x, cu_help.y, 
-             (SDL_Color){150, 150, 150, 255});
-    
-    layout_add_element(&layout, 0, 30);  // Reserve space for input (rendered by InputManager)
-    
-    layout_add_spacing(&layout, 10);
-    
-    // === SECTION 5: ACTIONS ===
-    SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 20);
+    // === SECTION 3: ACTIONS ===
+    SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 18);
     draw_text(renderer, "ACTIONS", actions_label.x, actions_label.y, text_color);
     
     // Start Training button
-    btn_start_training.bounds = layout_add_button(&layout, NULL, 0, 35);
+    btn_start_training.bounds = layout_add_button(&layout, NULL, 0, 30);
     btn_start_training.enabled = true;
     btn_start_training.visible = true;
     
@@ -995,7 +950,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
              btn_start_training.bounds.y + 11, (SDL_Color){255, 255, 255, 255});
     
     // Start Crawler button (NEW!)
-    btn_start_crawler.bounds = layout_add_button(&layout, NULL, 0, 35);
+    btn_start_crawler.bounds = layout_add_button(&layout, NULL, 0, 30);
     btn_start_crawler.enabled = true;
     btn_start_crawler.visible = true;
     
