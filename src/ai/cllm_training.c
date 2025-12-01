@@ -1034,7 +1034,7 @@ static void cllm_attention_forward_training(
     
     // Compute Q, K, V for each position
     BigFixed* temp = big_fixed_create(precision);
-    for (uint32_t pos = 0; pos < seq_len; pos++) {
+    for (uint32_t pos = 0; pos < (uint32_t)seq_len; pos++) {
         BigFixed** input_pos = &input[pos * embed_dim];
         
         // Compute Q = input * W_q
@@ -1076,8 +1076,8 @@ static void cllm_attention_forward_training(
     big_fixed_from_double(scale, scale_val);
     
     BigFixed* dot_prod = big_fixed_create(precision);
-    for (uint32_t i = 0; i < seq_len; i++) {
-        for (uint32_t j = 0; j < seq_len; j++) {
+    for (uint32_t i = 0; i < (uint32_t)seq_len; i++) {
+        for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
             big_fixed_from_int(dot_prod, 0);
             
             // Dot product of Q[i] and K[j]
@@ -1096,33 +1096,33 @@ static void cllm_attention_forward_training(
     big_fixed_free(scale);
     
     // Apply softmax to each row (convert to float for softmax, then back to BigFixed)
-    for (uint32_t i = 0; i < seq_len; i++) {
+    for (uint32_t i = 0; i < (uint32_t)seq_len; i++) {
         // Convert row to float array
         float* row = (float*)malloc(seq_len * sizeof(float));
-        for (uint32_t j = 0; j < seq_len; j++) {
+        for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
             row[j] = (float)big_fixed_to_double(scores[i * seq_len + j]);
         }
         
         // Apply softmax using crystalline math
         float max_val = row[0];
-        for (uint32_t j = 1; j < seq_len; j++) {
+        for (uint32_t j = 1; j < (uint32_t)seq_len; j++) {
             if (row[j] > max_val) max_val = row[j];
         }
         
         double sum = 0.0;
-        for (uint32_t j = 0; j < seq_len; j++) {
+        for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
             row[j] = prime_expf(row[j] - max_val);
             sum += row[j];
         }
         
         if (sum > 1e-10) {
-            for (uint32_t j = 0; j < seq_len; j++) {
+            for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
                 row[j] /= (float)sum;
             }
         }
         
         // Convert back to BigFixed
-        for (uint32_t j = 0; j < seq_len; j++) {
+        for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
             big_fixed_from_double(scores[i * seq_len + j], (double)row[j]);
         }
         
@@ -1131,11 +1131,11 @@ static void cllm_attention_forward_training(
     
     // Compute output = scores * V
     BigFixed* weighted_sum = big_fixed_create(precision);
-    for (uint32_t i = 0; i < seq_len; i++) {
+    for (uint32_t i = 0; i < (uint32_t)seq_len; i++) {
         for (uint32_t d = 0; d < embed_dim; d++) {
             big_fixed_from_int(weighted_sum, 0);
             
-            for (uint32_t j = 0; j < seq_len; j++) {
+            for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
                 BigFixed* weighted_val = big_fixed_create(precision);
                 big_fixed_mul(weighted_val, scores[i * seq_len + j], values[j * embed_dim + d]);
                 big_fixed_add(weighted_sum, weighted_sum, weighted_val);
@@ -3413,8 +3413,8 @@ void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer,
             float* scores = (float*)malloc(seq_len * seq_len * sizeof(float));
             if (!scores) continue;
             
-            for (uint32_t i = 0; i < seq_len; i++) {
-                for (uint32_t j = 0; j < seq_len; j++) {
+            for (uint32_t i = 0; i < (uint32_t)seq_len; i++) {
+                for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
                     scores[i * seq_len + j] = cllm_attention_score_angular(
                         model, token_ids[i], token_ids[j], h
                     );
@@ -3425,10 +3425,10 @@ void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer,
             }
             
             // Apply attention to values
-            for (uint32_t i = 0; i < seq_len; i++) {
+            for (uint32_t i = 0; i < (uint32_t)seq_len; i++) {
                 for (uint32_t d = 0; d < head_dim; d++) {
                     float sum = 0.0f;
-                    for (uint32_t j = 0; j < seq_len; j++) {
+                    for (uint32_t j = 0; j < (uint32_t)seq_len; j++) {
                         size_t value_idx = j * embed_dim + h * head_dim + d;
                         sum += scores[i * seq_len + j] * input[value_idx];
                     }
