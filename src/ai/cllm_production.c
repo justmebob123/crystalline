@@ -10,7 +10,7 @@
  */
 
 #include "cllm_training.h"
-#include "ai/cllm_simple_loss.h"
+#include "ai/cllm_loss.h"
 #include "cllm_format.h"
 #include <stdlib.h>
 #include <string.h>

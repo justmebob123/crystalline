@@ -28,7 +28,7 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_control_process.h"
-#include "ai/cllm_simple_loss.h"
+#include "ai/cllm_loss.h"
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics

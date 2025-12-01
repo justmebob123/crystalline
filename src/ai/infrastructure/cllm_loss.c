@@ -1,4 +1,4 @@
-#include "ai/cllm_loss.h"
+#include "ai/cllm_tensor_loss.h"
 #include "ai/cllm_batch.h"
 #include "prime_float_math.h"
 #include <stdlib.h>

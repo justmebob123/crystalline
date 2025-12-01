@@ -25,7 +25,7 @@
 #include "../include/cllm_training.h"
 #include "../algorithms/include/bigfixed_math_wrappers.h"
 #include "../algorithms/include/optimizers_bigfixed.h"
-#include "../include/ai/cllm_simple_loss.h"
+#include "../include/ai/cllm_loss.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/ai/cllm_angular_attention.h"

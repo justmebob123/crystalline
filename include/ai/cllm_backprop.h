@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "cllm_batch.h"
-#include "cllm_loss.h"
+#include "cllm_tensor_loss.h"
 #include "cllm_lattice_hierarchy.h"
 
 #ifdef __cplusplus
