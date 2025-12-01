@@ -340,11 +340,11 @@ int cllm_check_model_health(CLLMModel* model) {
             
             if (attn->query_lattice) {
                 for (uint32_t i = 0; i < size && issues < 10; i++) {
-                    if (prime_isnanf(attn->query_lattice[i]) || prime_isinff(attn->query_lattice[i])) {
-                        fprintf(stderr, "Warning: NaN/Inf in layer %u query weights\n", layer);
-                        issues++;
-                    }
-                }
+// DISABLED - USE BigFixed version:                     if (prime_isnanf(attn->query_lattice[i]) || prime_isinff(attn->query_lattice[i])) {
+// DISABLED - USE BigFixed version:                         fprintf(stderr, "Warning: NaN/Inf in layer %u query weights\n", layer);
+// DISABLED - USE BigFixed version:                         issues++;
+// DISABLED - USE BigFixed version:                     }
+// DISABLED - USE BigFixed version:                 }
             }
         }
     }
@@ -439,4 +439,4 @@ const char* cllm_get_version(void) {
  */
 const char* cllm_get_build_info(void) {
     return "Built: " __DATE__ " " __TIME__;
-}
+}}

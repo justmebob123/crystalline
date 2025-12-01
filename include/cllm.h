@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Forward declarations
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -291,6 +293,8 @@ typedef struct {
     BigFixed** ffn_weights2;     // Feed-forward network weights 2 (arbitrary precision)
     uint32_t ffn_dim;            // Feed-forward dimension
 } CLLMLayer;
+
+// Forward declarations
 
 #ifdef __cplusplus
 }

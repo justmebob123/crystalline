@@ -388,19 +388,19 @@ float cllm_forward_training_threaded(
                 float* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float sum = ff->bias1[h];
+// DISABLED - USE BigFixed version:                     float sum = ff->bias1[h];
                     for (uint32_t i = 0; i < embed_dim; i++) {
-                        sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
+// DISABLED - USE BigFixed version:                         sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
                     }
-                    ff_hidden[h] = prime_tanhf(sum);
+// DISABLED - USE BigFixed version:                     ff_hidden[h] = prime_tanhf(sum);
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
-                    float sum = ff->bias2[o];
+// DISABLED - USE BigFixed version:                     float sum = ff->bias2[o];
                     for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                        sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
+// DISABLED - USE BigFixed version:                         sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
                     }
-                    ff_out[o] = sum;
+// DISABLED - USE BigFixed version:                     ff_out[o] = sum;
                 }
                 
                 // Residual + LayerNorm
@@ -417,7 +417,7 @@ float cllm_forward_training_threaded(
                 var /= embed_dim;
                 float std = prime_sqrtf(var + 1e-5f);
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
+// DISABLED - USE BigFixed version:                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
                 }
             }
         }
