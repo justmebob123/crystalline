@@ -28,6 +28,7 @@
 #include "../include/ai/cllm_simple_loss.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
+#include "../include/ai/cllm_angular_attention.h"
 #include "../include/cllm_simd_utils.h"
 #include "../include/ai/cllm_cymatic_training.h"
 // #include "../include/cllm_crystalline_training.h"
@@ -3394,10 +3395,50 @@ void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer,
                                    float* input, float* output,
                                    uint32_t* token_ids, float* key_cache, 
                                    float* value_cache, int seq_len) {
-    (void)model; (void)token_ids; (void)key_cache; (void)value_cache;
     if (!layer || !input || !output || seq_len == 0) return;
     
-    // For now, use standard attention (angular attention requires token IDs and model context)
-    // TODO: Implement proper hybrid (angular + dot product) attention
-    cllm_attention_forward_bigfixed(layer, input, output, key_cache, value_cache, seq_len, 128);
+    // OBJECTIVE 15: Use angular position attention when token IDs are available
+    if (model && token_ids) {
+        // Use angular position-based attention (θ(n,k,λ,ω,ψ) formula)
+        // This encodes 12-fold symmetry and cymatic patterns
+        uint32_t num_heads = layer->num_heads;
+        uint32_t head_dim = layer->head_dim;
+        uint32_t embed_dim = num_heads * head_dim;
+        
+        // Process each attention head
+        for (uint32_t h = 0; h < num_heads; h++) {
+            // Compute attention scores using angular positions
+            float* scores = (float*)malloc(seq_len * seq_len * sizeof(float));
+            if (!scores) continue;
+            
+            for (uint32_t i = 0; i < seq_len; i++) {
+                for (uint32_t j = 0; j < seq_len; j++) {
+                    scores[i * seq_len + j] = cllm_attention_score_angular(
+                        model, token_ids[i], token_ids[j], h
+                    );
+                }
+                
+                // Apply softmax to scores for this query
+                cllm_attention_softmax(&scores[i * seq_len], seq_len);
+            }
+            
+            // Apply attention to values
+            for (uint32_t i = 0; i < seq_len; i++) {
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    float sum = 0.0f;
+                    for (uint32_t j = 0; j < seq_len; j++) {
+                        size_t value_idx = j * embed_dim + h * head_dim + d;
+                        sum += scores[i * seq_len + j] * input[value_idx];
+                    }
+                    size_t out_idx = i * embed_dim + h * head_dim + d;
+                    output[out_idx] = sum;
+                }
+            }
+            
+            free(scores);
+        }
+    } else {
+        // Fallback to BigFixed attention when token IDs not available
+        cllm_attention_forward_bigfixed(layer, input, output, key_cache, value_cache, seq_len, 128);
+    }
 }
