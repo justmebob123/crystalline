@@ -31,12 +31,15 @@ typedef struct {
     // KV cache for attention
     int kv_cache_size;           // Size of KV cache
     int kv_cache_used;           // Number of cached positions
-    float* key_cache;            // Cached keys
-    float* value_cache;          // Cached values
+    BigFixed** key_cache;        // Cached keys (BigFixed)
+    BigFixed** value_cache;      // Cached values (BigFixed)
     
     // Working buffers
-    float* hidden_states;        // Hidden state buffer
-    float* logits;               // Output logits buffer
+    BigFixed** hidden_states;    // Hidden state buffer (BigFixed)
+    BigFixed** logits;           // Output logits buffer (BigFixed)
+       
+       // Precision for BigFixed operations
+       int precision;               // BigFixed precision (default: 128)
 } CLLMInference;
 
 /* Function declarations */
