@@ -78,6 +78,8 @@ void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_valu
  * @param bias_correction1 Bias correction for first moment
  * @param bias_correction2 Bias correction for second moment
  */
+// Legacy float-based Adam update - unused (kept for reference)
+__attribute__((unused))
 static void adam_update_params(float* weights, float* gradients, float* m, float* v,
                                size_t size, float learning_rate, float beta1, float beta2,
                                float epsilon, float bias_correction1, float bias_correction2) {
@@ -140,112 +142,19 @@ void cllm_adam_step(CLLMTraining* training, float learning_rate) {
     printf("DEBUG: Updating embeddings...\n");
     fflush(stdout);
     
-    // Update embeddings (if gradients available)
-    if (model->embeddings.embeddings) {
-        size_t embed_size = model->vocab_size * model->embedding_dim;
-        float* m = training->optimizer_state;
-        float* v = &training->optimizer_state[embed_size];
-        
-        printf("DEBUG: embed_size=%zu, grad[0]=%.8f\n", embed_size, training->gradients[0]);
-        fflush(stdout);
-        
-        adam_update_params(model->embeddings.embeddings, training->gradients,
-                          m, v, embed_size, learning_rate, beta1, beta2,
-                          epsilon, bias_correction1, bias_correction2);
-        
-        printf("DEBUG: After update, embed[0]=%.8f\n", model->embeddings.embeddings[0]);
-        fflush(stdout);
-    }
-    
-    // Update attention layers
-    if (training->attention_grads && model->attention_layers) {
-        for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-            AttentionLayer* attn = &model->attention_layers[layer];
-            size_t weight_size = attn->num_heads * attn->head_dim * attn->head_dim;
-            
-            // For now, use simple gradient descent without Adam state for layer weights
-            // TODO: Allocate separate Adam state for each layer type
-            float* grad_q = training->attention_grads[layer].query_lattice;
-            float* grad_k = training->attention_grads[layer].key_lattice;
-            float* grad_v = training->attention_grads[layer].value_lattice;
-            
-            if (grad_q && attn->query_lattice) {
-                for (size_t i = 0; i < weight_size; i++) {
-// DISABLED - USE BigFixed version:                     attn->query_lattice[i] -= learning_rate * grad_q[i];
-                }
-            }
-            
-            if (grad_k && attn->key_lattice) {
-                for (size_t i = 0; i < weight_size; i++) {
-// DISABLED - USE BigFixed version:                     attn->key_lattice[i] -= learning_rate * grad_k[i];
-                }
-            }
-            
-            if (grad_v && attn->value_lattice) {
-                for (size_t i = 0; i < weight_size; i++) {
-// DISABLED - USE BigFixed version:                     attn->value_lattice[i] -= learning_rate * grad_v[i];
-                }
-            }
-        }
-    }
-    
-    // Update feed-forward layers
-    if (training->ff_grads && model->ff_layers) {
-        for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-            FeedForwardLayer* ff = &model->ff_layers[layer];
-            
-            // Update W1
-            if (training->ff_grads[layer].w1_lattice && ff->w1_lattice) {
-                size_t w1_size = ff->input_dim * ff->hidden_dim;
-                for (size_t i = 0; i < w1_size; i++) {
-// DISABLED - USE BigFixed version:                     ff->w1_lattice[i] -= learning_rate * training->ff_grads[layer].w1_lattice[i];
-                }
-            }
-            
-            // Update W2
-            if (training->ff_grads[layer].w2_lattice && ff->w2_lattice) {
-                size_t w2_size = ff->hidden_dim * ff->output_dim;
-                for (size_t i = 0; i < w2_size; i++) {
-// DISABLED - USE BigFixed version:                     ff->w2_lattice[i] -= learning_rate * training->ff_grads[layer].w2_lattice[i];
-                }
-            }
-            
-            // Update bias1
-            if (training->ff_grads[layer].bias1 && ff->bias1) {
-                for (uint32_t i = 0; i < ff->hidden_dim; i++) {
-// DISABLED - USE BigFixed version:                     ff->bias1[i] -= learning_rate * training->ff_grads[layer].bias1[i];
-                }
-            }
-            
-            // Update bias2
-            if (training->ff_grads[layer].bias2 && ff->bias2) {
-                for (uint32_t i = 0; i < ff->output_dim; i++) {
-// DISABLED - USE BigFixed version:                     ff->bias2[i] -= learning_rate * training->ff_grads[layer].bias2[i];
-                }
-            }
-        }
-    }
-    
-    // Update layer normalization
-    if (training->ln_grads && model->layer_norms) {
-        for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-            CLLMLayerNorm* ln = &model->layer_norms[layer];
-            
-            // Update gamma
-            if (training->ln_grads[layer].gamma && ln->gamma) {
-                for (uint32_t i = 0; i < ln->dim; i++) {
-// DISABLED - USE BigFixed version:                     ln->gamma[i] -= learning_rate * training->ln_grads[layer].gamma[i];
-                }
-            }
-            
-            // Update beta
-            if (training->ln_grads[layer].beta && ln->beta) {
-                for (uint32_t i = 0; i < ln->dim; i++) {
-// DISABLED - USE BigFixed version:                     ln->beta[i] -= learning_rate * training->ln_grads[layer].beta[i];
-                }
-            }
-        }
-    }
+    // LEGACY FLOAT CODE - DISABLED
+    // Use cllm_adam_step_bigfixed() instead
+    // This function is kept for API compatibility but does nothing
+    (void)learning_rate;
+    (void)beta1;
+    (void)beta2;
+    (void)epsilon;
+    (void)t;
+    (void)bias_correction1;
+    (void)bias_correction2;
+    (void)model;
+    // LEGACY FLOAT CODE - All operations disabled
+    // The actual optimizer work is done by cllm_adam_step_bigfixed()
 }
 
 /**
@@ -256,21 +165,12 @@ void cllm_adam_step(CLLMTraining* training, float learning_rate) {
  * @param momentum Momentum coefficient (typically 0.9)
  */
 void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum) {
-    if (!training || !training->gradients || !training->optimizer_state) return;
-    
-    size_t total_params = training->model->header.total_params;
-    
-    float* weights = training->model->weights;
-    float* gradients = training->gradients;
-    float* velocity = training->optimizer_state;
-    
-    for (size_t i = 0; i < total_params; i++) {
-        // Update velocity: v = momentum * v - lr * grad
-        velocity[i] = momentum * velocity[i] - learning_rate * gradients[i];
-        
-        // Update weights: w = w + v
-        weights[i] += velocity[i];
-    }
+    // LEGACY FLOAT CODE - DISABLED
+    // Use BigFixed optimizer functions instead
+    (void)training;
+    (void)learning_rate;
+    (void)momentum;
+    return;
 }
 
 /**

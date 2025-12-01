@@ -7,8 +7,8 @@
 #include "../include/prime_float_math.h"
 #include <string.h>
 
-// Forward declaration of Adam optimizer
-extern void cllm_adam_step(CLLMTraining* training, float learning_rate);
+// Forward declaration of BigFixed Adam optimizer
+extern void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate);
 
 /**
  * Optimizer step with gradient accumulation and Adam
@@ -99,7 +99,7 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
         }
     }
     
-    // Use the proper Adam optimizer from cllm_optimizer.c
+    // Use the proper BigFixed Adam optimizer from cllm_training.c
     // This provides momentum, adaptive learning rates, and bias correction
-    cllm_adam_step(training, training->config.learning_rate);
+    cllm_adam_step_bigfixed(training, training->config.learning_rate);
 }
