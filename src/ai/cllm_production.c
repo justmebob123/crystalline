@@ -365,25 +365,13 @@ void clip_gradients(CLLMTraining* training, float max_norm) {
     for (uint32_t layer = 0; layer < num_layers; layer++) {
         if (training->attention_grads) {
             uint64_t attn_size = embed_dim * embed_dim;
-            for (uint64_t i = 0; i < attn_size; i++) {
-// DISABLED - USE BigFixed version:                 grad_norm += training->attention_grads[layer].query_lattice[i] * 
-                            training->attention_grads[layer].query_lattice[i];
-// DISABLED - USE BigFixed version:                 grad_norm += training->attention_grads[layer].key_lattice[i] * 
-                            training->attention_grads[layer].key_lattice[i];
-// DISABLED - USE BigFixed version:                 grad_norm += training->attention_grads[layer].value_lattice[i] * 
-                            training->attention_grads[layer].value_lattice[i];
-            }
+            // DISABLED - Legacy float gradient norm calculation
+            // Now handled by BigFixed version
+            (void)attn_size;  // Suppress unused warning
         }
         
-        if (training->ff_grads) {
-            uint64_t ff_size = embed_dim * embed_dim;
-            for (uint64_t i = 0; i < ff_size; i++) {
-// DISABLED - USE BigFixed version:                 grad_norm += training->ff_grads[layer].w1_lattice[i] * 
-                            training->ff_grads[layer].w1_lattice[i];
-// DISABLED - USE BigFixed version:                 grad_norm += training->ff_grads[layer].w2_lattice[i] * 
-                            training->ff_grads[layer].w2_lattice[i];
-            }
-        }
+        // DISABLED - Legacy float gradient norm calculation for feedforward
+        // Now handled by BigFixed version
     }
     
     grad_norm = prime_sqrtf(grad_norm);
