@@ -1594,9 +1594,22 @@ float cllm_train_epoch(CLLMTraining* training) {
         // OBJECTIVE 18: Apply cymatic resonance to gradients
         // Modulates gradients with cymatic frequencies (432 Hz, 528 Hz, etc.)
         // for smoother convergence and better final loss
-        // NOTE: Cymatic resonance currently expects float* but we have BigFixed**
-        // This is disabled until a BigFixed version is implemented
-        // cllm_apply_cymatic_resonance(training->model, training->gradients, training->current_step);
+        
+        // Convert BigFixed** gradients to float* for cymatic modulation
+        size_t embed_size = training->model->vocab_size * training->model->embedding_dim;
+        float* float_gradients = (float*)calloc(embed_size, sizeof(float));
+        if (float_gradients) {
+            // Convert BigFixed** to float*
+            bigfixed_array_to_float(float_gradients, training->gradients, embed_size);
+            
+            // Apply cymatic resonance modulation
+            cllm_apply_cymatic_resonance(training->model, float_gradients, training->current_step);
+            
+            // Convert back to BigFixed**
+            bigfixed_array_from_float(training->gradients, float_gradients, embed_size);
+            
+            free(float_gradients);
+        }
         
         // Update learning rate based on schedule (warmup + decay)
         cllm_update_learning_rate(training);
