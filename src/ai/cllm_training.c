@@ -1306,6 +1306,423 @@ float cllm_train_epoch(CLLMTraining* training) {
 /**
  * Forward pass with activation storage for training
  */
+
+
+void cllm_attention_forward_bigfixed(
+    CLLMTraining* training,
+    uint32_t layer_idx,
+    AttentionLayer* attn_layer,
+    BigFixed** input,
+    BigFixed** output,
+    int seq_len,
+    uint32_t embed_dim,
+    int precision
+) {
+    if (!training || !attn_layer || !input || !output) return;
+    
+    uint32_t num_heads = attn_layer->num_heads;
+    uint32_t head_dim = attn_layer->head_dim;
+    
+    // Allocate temporary buffers for Q, K, V
+    BigFixed** queries = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** keys = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** values = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    
+    for (int i = 0; i < seq_len * embed_dim; i++) {
+        queries[i] = big_fixed_create(precision);
+        keys[i] = big_fixed_create(precision);
+        values[i] = big_fixed_create(precision);
+    }
+    
+    // Compute Q, K, V projections
+    for (int s = 0; s < seq_len; s++) {
+        BigFixed** input_pos = &input[s * embed_dim];
+        BigFixed** q_pos = &queries[s * embed_dim];
+        BigFixed** k_pos = &keys[s * embed_dim];
+        BigFixed** v_pos = &values[s * embed_dim];
+        
+        // Q = input * W_q
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            BigFixed sum;
+            big_fixed_create_init(&sum, precision);
+            big_fixed_from_int(&sum, 0);
+            
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                BigFixed prod;
+                big_fixed_create_init(&prod, precision);
+                big_fixed_mul(&prod, input_pos[i], attn_layer->query_lattice[i * embed_dim + d]);
+                big_fixed_add(&sum, &sum, &prod);
+                big_fixed_free(&prod);
+            }
+            
+            big_fixed_assign(q_pos[d], &sum);
+            big_fixed_free(&sum);
+        }
+        
+        // K = input * W_k
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            BigFixed sum;
+            big_fixed_create_init(&sum, precision);
+            big_fixed_from_int(&sum, 0);
+            
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                BigFixed prod;
+                big_fixed_create_init(&prod, precision);
+                big_fixed_mul(&prod, input_pos[i], attn_layer->key_lattice[i * embed_dim + d]);
+                big_fixed_add(&sum, &sum, &prod);
+                big_fixed_free(&prod);
+            }
+            
+            big_fixed_assign(k_pos[d], &sum);
+            big_fixed_free(&sum);
+        }
+        
+        // V = input * W_v
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            BigFixed sum;
+            big_fixed_create_init(&sum, precision);
+            big_fixed_from_int(&sum, 0);
+            
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                BigFixed prod;
+                big_fixed_create_init(&prod, precision);
+                big_fixed_mul(&prod, input_pos[i], attn_layer->value_lattice[i * embed_dim + d]);
+                big_fixed_add(&sum, &sum, &prod);
+                big_fixed_free(&prod);
+            }
+            
+            big_fixed_assign(v_pos[d], &sum);
+            big_fixed_free(&sum);
+        }
+    }
+    
+    // Compute attention scores and apply to values
+    // For each head
+    for (uint32_t h = 0; h < num_heads; h++) {
+        uint32_t head_offset = h * head_dim;
+        
+        // Allocate attention scores matrix [seq_len x seq_len]
+        BigFixed** scores = (BigFixed**)calloc(seq_len * seq_len, sizeof(BigFixed*));
+        for (int i = 0; i < seq_len * seq_len; i++) {
+            scores[i] = big_fixed_create(precision);
+        }
+        
+        // Compute scores: Q * K^T / sqrt(head_dim)
+        BigFixed sqrt_head_dim;
+        big_fixed_create_init(&sqrt_head_dim, precision);
+        big_fixed_from_int(&sqrt_head_dim, head_dim);
+        big_sqrt(&sqrt_head_dim, &sqrt_head_dim, precision);
+        
+        for (int i = 0; i < seq_len; i++) {
+            for (int j = 0; j < seq_len; j++) {
+                BigFixed score;
+                big_fixed_create_init(&score, precision);
+                big_fixed_from_int(&score, 0);
+                
+                // Dot product of query[i] and key[j] for this head
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod, 
+                        queries[i * embed_dim + head_offset + d],
+                        keys[j * embed_dim + head_offset + d]
+                    );
+                    big_fixed_add(&score, &score, &prod);
+                    big_fixed_free(&prod);
+                }
+                
+                // Scale by sqrt(head_dim)
+                big_fixed_div(&score, &score, &sqrt_head_dim);
+                big_fixed_assign(scores[i * seq_len + j], &score);
+                big_fixed_free(&score);
+            }
+        }
+        
+        big_fixed_free(&sqrt_head_dim);
+        
+        // Apply softmax to each row
+        for (int i = 0; i < seq_len; i++) {
+            BigFixed** row = &scores[i * seq_len];
+            
+            // Find max for numerical stability
+            BigFixed max_score;
+            big_fixed_create_init(&max_score, precision);
+            big_fixed_assign(&max_score, row[0]);
+            
+            for (int j = 1; j < seq_len; j++) {
+                if (big_fixed_cmp(row[j], &max_score) > 0) {
+                    big_fixed_assign(&max_score, row[j]);
+                }
+            }
+            
+            // Compute exp and sum
+            BigFixed sum;
+            big_fixed_create_init(&sum, precision);
+            big_fixed_from_int(&sum, 0);
+            
+            for (int j = 0; j < seq_len; j++) {
+                BigFixed diff, exp_val;
+                big_fixed_create_init(&diff, precision);
+                big_fixed_create_init(&exp_val, precision);
+                
+                big_fixed_sub(&diff, row[j], &max_score);
+                big_exp(&exp_val, &diff, precision);
+                big_fixed_assign(row[j], &exp_val);
+                big_fixed_add(&sum, &sum, &exp_val);
+                
+                big_fixed_free(&diff);
+                big_fixed_free(&exp_val);
+            }
+            
+            // Normalize
+            for (int j = 0; j < seq_len; j++) {
+                big_fixed_div(row[j], row[j], &sum);
+            }
+            
+            big_fixed_free(&max_score);
+            big_fixed_free(&sum);
+        }
+        
+        // Apply attention to values: output = scores * V
+        for (int i = 0; i < seq_len; i++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                BigFixed sum;
+                big_fixed_create_init(&sum, precision);
+                big_fixed_from_int(&sum, 0);
+                
+                for (int j = 0; j < seq_len; j++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod,
+                        scores[i * seq_len + j],
+                        values[j * embed_dim + head_offset + d]
+                    );
+                    big_fixed_add(&sum, &sum, &prod);
+                    big_fixed_free(&prod);
+                }
+                
+                big_fixed_assign(output[i * embed_dim + head_offset + d], &sum);
+                big_fixed_free(&sum);
+            }
+        }
+        
+        // Free scores
+        for (int i = 0; i < seq_len * seq_len; i++) {
+            big_fixed_free(scores[i]);
+        }
+        free(scores);
+    }
+    
+    // Free temporary buffers
+    for (int i = 0; i < seq_len * embed_dim; i++) {
+        big_fixed_free(queries[i]);
+        big_fixed_free(keys[i]);
+        big_fixed_free(values[i]);
+    }
+    free(queries);
+    free(keys);
+    free(values);
+}
+
+
+float cllm_forward_training_bigfixed(CLLMTraining* training, uint32_t* input_tokens) {
+    if (!training || !input_tokens) return 0.0f;
+    
+    CLLMModel* model = training->model;
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    int precision = training->precision_bits;
+    
+    // Get embeddings from CrystallineEmbeddings (already BigFixed)
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t token_id = input_tokens[idx];
+            if (token_id >= vocab_size) continue;
+            
+            // Get BigFixed embedding from CrystallineEmbeddings
+            BigFixed* embedding = crystalline_embeddings_get(
+                model->crystalline_embeddings,
+                token_id
+            );
+            
+            // Copy to input buffer
+            if (embedding) {
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    big_fixed_assign(
+                        training->input_embeddings[idx * embed_dim + d],
+                        &embedding[d]
+                    );
+                }
+            }
+        }
+    }
+    
+    // Process through layers with BigFixed
+    BigFixed** layer_input = training->input_embeddings;
+    
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        // Copy layer input
+        size_t layer_size = batch_size * seq_len * embed_dim;
+        for (size_t i = 0; i < layer_size; i++) {
+            big_fixed_assign(training->layer_inputs[layer][i], layer_input[i]);
+        }
+        
+        // Attention forward pass with BigFixed
+        AttentionLayer* attn_layer = &model->attention_layers[layer];
+        for (int b = 0; b < batch_size; b++) {
+            int start_idx = b * seq_len;
+            BigFixed** batch_input = &layer_input[start_idx * embed_dim];
+            BigFixed** batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
+            
+            // Multi-head attention with BigFixed
+            cllm_attention_forward_bigfixed(
+                training, layer, attn_layer,
+                batch_input, batch_output,
+                seq_len, embed_dim, precision
+            );
+        }
+        
+        // Feed-forward with BigFixed
+        for (int b = 0; b < batch_size; b++) {
+            for (int s = 0; s < seq_len; s++) {
+                int idx = b * seq_len + s;
+                BigFixed** attn_out = &training->attention_outputs[layer][idx * embed_dim];
+                BigFixed** ff_out = &training->ff_outputs[layer][idx * embed_dim];
+                BigFixed** layer_out = &training->layer_outputs[layer][idx * embed_dim];
+                
+                FeedForwardLayer* ff = &model->ff_layers[layer];
+                BigFixed** ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
+                
+                // First layer: input -> hidden with tanh activation
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    BigFixed sum;
+                    big_fixed_create_init(&sum, precision);
+                    big_fixed_assign(&sum, ff->bias1[h]);
+                    
+                    for (uint32_t i = 0; i < embed_dim; i++) {
+                        BigFixed prod;
+                        big_fixed_create_init(&prod, precision);
+                        big_fixed_mul(&prod, attn_out[i], ff->w1_lattice[i * ff->hidden_dim + h]);
+                        big_fixed_add(&sum, &sum, &prod);
+                        big_fixed_free(&prod);
+                    }
+                    
+                    // Apply tanh activation
+                    big_tanh(ff_hidden[h], &sum, precision);
+                    big_fixed_free(&sum);
+                }
+                
+                // Second layer: hidden -> output
+                for (uint32_t o = 0; o < embed_dim; o++) {
+                    BigFixed sum;
+                    big_fixed_create_init(&sum, precision);
+                    big_fixed_assign(&sum, ff->bias2[o]);
+                    
+                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        BigFixed prod;
+                        big_fixed_create_init(&prod, precision);
+                        big_fixed_mul(&prod, ff_hidden[h], ff->w2_lattice[h * embed_dim + o]);
+                        big_fixed_add(&sum, &sum, &prod);
+                        big_fixed_free(&prod);
+                    }
+                    
+                    big_fixed_assign(ff_out[o], &sum);
+                    big_fixed_free(&sum);
+                }
+                
+                // Residual connection
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    big_fixed_add(layer_out[d], attn_out[d], ff_out[d]);
+                }
+                
+                // Layer normalization with BigFixed
+                CLLMLayerNorm* ln = &model->layer_norms[layer];
+                
+                // Compute mean
+                BigFixed mean, var, std;
+                big_fixed_create_init(&mean, precision);
+                big_fixed_create_init(&var, precision);
+                big_fixed_create_init(&std, precision);
+                
+                BigFixed zero;
+                big_fixed_create_init(&zero, precision);
+                big_fixed_from_int(&zero, 0);
+                big_fixed_assign(&mean, &zero);
+                
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    big_fixed_add(&mean, &mean, layer_out[d]);
+                }
+                
+                BigFixed embed_dim_fixed;
+                big_fixed_create_init(&embed_dim_fixed, precision);
+                big_fixed_from_int(&embed_dim_fixed, embed_dim);
+                big_fixed_div(&mean, &mean, &embed_dim_fixed);
+                
+                // Compute variance
+                big_fixed_assign(&var, &zero);
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    BigFixed diff, diff_sq;
+                    big_fixed_create_init(&diff, precision);
+                    big_fixed_create_init(&diff_sq, precision);
+                    
+                    big_fixed_sub(&diff, layer_out[d], &mean);
+                    big_fixed_mul(&diff_sq, &diff, &diff);
+                    big_fixed_add(&var, &var, &diff_sq);
+                    
+                    big_fixed_free(&diff);
+                    big_fixed_free(&diff_sq);
+                }
+                big_fixed_div(&var, &var, &embed_dim_fixed);
+                
+                // Add epsilon and compute std
+                BigFixed epsilon;
+                big_fixed_create_init(&epsilon, precision);
+                big_fixed_from_double(&epsilon, 1e-5);
+                big_fixed_add(&var, &var, &epsilon);
+                big_sqrt(&std, &var, precision);
+                
+                // Normalize
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    BigFixed normalized, scaled;
+                    big_fixed_create_init(&normalized, precision);
+                    big_fixed_create_init(&scaled, precision);
+                    
+                    big_fixed_sub(&normalized, layer_out[d], &mean);
+                    big_fixed_div(&normalized, &normalized, &std);
+                    big_fixed_mul(&scaled, ln->gamma[d], &normalized);
+                    big_fixed_add(layer_out[d], &scaled, ln->beta[d]);
+                    
+                    big_fixed_free(&normalized);
+                    big_fixed_free(&scaled);
+                }
+                
+                big_fixed_free(&mean);
+                big_fixed_free(&var);
+                big_fixed_free(&std);
+                big_fixed_free(&zero);
+                big_fixed_free(&embed_dim_fixed);
+                big_fixed_free(&epsilon);
+            }
+        }
+        
+        layer_input = training->layer_outputs[layer];
+    }
+    
+    // Copy final hidden state
+    size_t final_size = batch_size * seq_len * embed_dim;
+    for (size_t i = 0; i < final_size; i++) {
+        big_fixed_assign(training->final_hidden[i], layer_input[i]);
+    }
+    
+    // Compute logits (final_hidden * output_weights)
+    // For now, return 0.0f - loss computation will be added in next phase
+    return 0.0f;
+}
+
+
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     if (!training || !input_tokens) return 0.0f;
     
