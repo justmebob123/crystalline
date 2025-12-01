@@ -2,6 +2,7 @@
 #define CLLM_NTT_ATTENTION_H
 
 #include <stdint.h>
+#include "../bigfixed_core.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,3 +63,28 @@ void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim);
 #endif
 
 #endif /* CLLM_NTT_ATTENTION_H */
+/**
+ * NTT Attention with BigFixed Support
+ * 
+ * Wrapper that converts BigFixed** to float*, applies NTT attention,
+ * and converts back to BigFixed**.
+ * 
+ * @param query Query matrix [seq_len x head_dim] (BigFixed**)
+ * @param key Key matrix [seq_len x head_dim] (BigFixed**)
+ * @param value Value matrix [seq_len x head_dim] (BigFixed**)
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension  
+ * @param output Output matrix [seq_len x head_dim] (BigFixed**)
+ * @param precision Precision bits for BigFixed
+ * @return 0 on success, -1 on failure
+ */
+int cllm_attention_ntt_forward_bigfixed(
+    BigFixed** query,
+    BigFixed** key,
+    BigFixed** value,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    BigFixed** output,
+    int precision
+);
+

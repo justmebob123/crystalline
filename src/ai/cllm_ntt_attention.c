@@ -19,6 +19,8 @@
 #include "../include/ai/cllm_ntt_attention.h"
 #include "../../algorithms/include/ntt_attention.h"
 #include "../include/prime_float_math.h"
+#include "../include/bigfixed_core.h"
+#include "../include/bigfixed_array_utils.h"
 
 /**
  * Compute attention using NTT (O(n log n) complexity)
@@ -216,4 +218,72 @@ cleanup:
     free(value);
     free(output_ntt);
     free(output_std);
+}
+/**
+ * NTT Attention with BigFixed Support
+ * 
+ * Wrapper that converts BigFixed** to float*, applies NTT attention,
+ * and converts back to BigFixed**.
+ * 
+ * @param query Query matrix [seq_len x head_dim] (BigFixed**)
+ * @param key Key matrix [seq_len x head_dim] (BigFixed**)
+ * @param value Value matrix [seq_len x head_dim] (BigFixed**)
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension
+ * @param output Output matrix [seq_len x head_dim] (BigFixed**)
+ * @param precision Precision bits for BigFixed
+ * @return 0 on success, -1 on failure
+ */
+int cllm_attention_ntt_forward_bigfixed(
+    BigFixed** query,
+    BigFixed** key,
+    BigFixed** value,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    BigFixed** output,
+    int precision)
+{
+    (void)precision;  // Reserved for future precision-aware conversion
+    
+    if (!query || !key || !value || !output || seq_len == 0 || head_dim == 0) {
+        return -1;
+    }
+    
+    size_t total_size = seq_len * head_dim;
+    
+    // Allocate float arrays
+    float* query_f = (float*)calloc(total_size, sizeof(float));
+    float* key_f = (float*)calloc(total_size, sizeof(float));
+    float* value_f = (float*)calloc(total_size, sizeof(float));
+    float* output_f = (float*)calloc(total_size, sizeof(float));
+    
+    if (!query_f || !key_f || !value_f || !output_f) {
+        free(query_f);
+        free(key_f);
+        free(value_f);
+        free(output_f);
+        return -1;
+    }
+    
+    // Convert BigFixed** to float*
+    bigfixed_array_to_float(query_f, query, total_size);
+    bigfixed_array_to_float(key_f, key, total_size);
+    bigfixed_array_to_float(value_f, value, total_size);
+    
+    // Call NTT attention (O(n log n))
+    int result = cllm_attention_ntt_forward(query_f, key_f, value_f, 
+                                            seq_len, head_dim, output_f);
+    
+    if (result == 0) {
+        // Convert back to BigFixed**
+        bigfixed_array_from_float(output, output_f, total_size);
+    }
+    
+    // Cleanup
+    free(query_f);
+    free(key_f);
+    free(value_f);
+    free(output_f);
+    
+    return result;
 }
