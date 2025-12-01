@@ -886,14 +886,130 @@ void cllm_optimizer_step(CLLMTraining* training) {
     }
 }
 
-
+/**
+ * Zero all gradients - BIGFIXED IMPLEMENTATION
+ */
+void cllm_zero_all_gradients(CLLMTraining* training) {
+    if (!training) return;
+    
+    CLLMModel* model = training->model;
+    if (!model) return;
+    
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    
+    // Zero embedding gradients
+    if (training->gradients) {
+        for (uint32_t i = 0; i < vocab_size * embed_dim; i++) {
+            if (training->gradients[i]) {
+                big_fixed_from_int(training->gradients[i], 0);
+            }
+        }
+    }
+    
+    // Zero layer-specific gradients
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        // Zero attention gradients
+        if (training->attention_grads[layer].query_lattice) {
+            for (uint32_t i = 0; i < embed_dim * embed_dim; i++) {
+                if (training->attention_grads[layer].query_lattice[i]) {
+                    big_fixed_from_int(training->attention_grads[layer].query_lattice[i], 0);
+                }
+            }
+        }
+        if (training->attention_grads[layer].key_lattice) {
+            for (uint32_t i = 0; i < embed_dim * embed_dim; i++) {
+                if (training->attention_grads[layer].key_lattice[i]) {
+                    big_fixed_from_int(training->attention_grads[layer].key_lattice[i], 0);
+                }
+            }
+        }
+        if (training->attention_grads[layer].value_lattice) {
+            for (uint32_t i = 0; i < embed_dim * embed_dim; i++) {
+                if (training->attention_grads[layer].value_lattice[i]) {
+                    big_fixed_from_int(training->attention_grads[layer].value_lattice[i], 0);
+                }
+            }
+        }
+        
+        // Zero feedforward gradients
+        FeedForwardLayer* ff = &model->ff_layers[layer];
+        if (training->ff_grads[layer].w1_lattice) {
+            for (uint32_t i = 0; i < embed_dim * ff->hidden_dim; i++) {
+                if (training->ff_grads[layer].w1_lattice[i]) {
+                    big_fixed_from_int(training->ff_grads[layer].w1_lattice[i], 0);
+                }
+            }
+        }
+        if (training->ff_grads[layer].w2_lattice) {
+            for (uint32_t i = 0; i < ff->hidden_dim * embed_dim; i++) {
+                if (training->ff_grads[layer].w2_lattice[i]) {
+                    big_fixed_from_int(training->ff_grads[layer].w2_lattice[i], 0);
+                }
+            }
+        }
+        if (training->ff_grads[layer].bias1) {
+            for (uint32_t i = 0; i < ff->hidden_dim; i++) {
+                if (training->ff_grads[layer].bias1[i]) {
+                    big_fixed_from_int(training->ff_grads[layer].bias1[i], 0);
+                }
+            }
+        }
+        if (training->ff_grads[layer].bias2) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                if (training->ff_grads[layer].bias2[i]) {
+                    big_fixed_from_int(training->ff_grads[layer].bias2[i], 0);
+                }
+            }
+        }
+        
+        // Zero layer norm gradients
+        if (training->ln_grads[layer].gamma) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                if (training->ln_grads[layer].gamma[i]) {
+                    big_fixed_from_int(training->ln_grads[layer].gamma[i], 0);
+                }
+            }
+        }
+        if (training->ln_grads[layer].beta) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                if (training->ln_grads[layer].beta[i]) {
+                    big_fixed_from_int(training->ln_grads[layer].beta[i], 0);
+                }
+            }
+        }
+    }
+}
 
 /**
  * Training-specific attention forward with cache storage
  * Wraps cllm_attention_forward and stores Q, K, V, attention weights for backward pass
+ * 
+ * TEMPORARY STUB: This function is being rewritten for BigFixed
+ * For now, it does nothing to allow linking
  */
-/* DISABLED - BROKEN BIGFIXED/FLOAT MIX
 static void cllm_attention_forward_training(
+    CLLMTraining* training,
+    int layer,
+    AttentionLayer* attn_layer,
+    BigFixed** input,
+    BigFixed** output,
+    uint32_t* token_ids,
+    int seq_len
+) {
+    // STUB: Attention forward is handled inline in cllm_forward_training
+    // This function exists only for linking compatibility
+    (void)training;
+    (void)layer;
+    (void)attn_layer;
+    (void)input;
+    (void)output;
+    (void)token_ids;
+    (void)seq_len;
+}
+
+/* OLD IMPLEMENTATION - DISABLED - BROKEN BIGFIXED/FLOAT MIX
+static void cllm_attention_forward_training_OLD(
     CLLMTraining* training,
     int layer,
     AttentionLayer* attn_layer,
@@ -2240,126 +2356,271 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
     memcpy(grad_layer, grad_hidden, batch_size * seq_len * embed_dim * sizeof(float));
     
     for (int layer = model->num_layers - 1; layer >= 0; layer--) {
-        float* attn_output = training->attention_outputs[layer];
-        float* ff_hidden = training->ff_hidden[layer];
+        BigFixed** attn_output = training->attention_outputs[layer];
+        BigFixed** ff_hidden = training->ff_hidden[layer];
         FeedForwardLayer* ff = &model->ff_layers[layer];
         CLLMLayerNorm* ln = &model->layer_norms[layer];
         
         for (int b = 0; b < batch_size; b++) {
             for (int s = 0; s < seq_len; s++) {
                 int idx = b * seq_len + s;
-                float* grad = &grad_layer[idx * embed_dim];
-                float* input = &attn_output[idx * embed_dim];
-                float* hidden = &ff_hidden[idx * ff->hidden_dim];
+                BigFixed** grad = &grad_layer[idx * embed_dim];
+                BigFixed** input = &attn_output[idx * embed_dim];
+                BigFixed** hidden = &ff_hidden[idx * ff->hidden_dim];
                 
-                // LayerNorm backward
-                float mean = 0.0f, var = 0.0f;
-                for (uint32_t d = 0; d < embed_dim; d++) mean += input[d];
-                mean /= embed_dim;
+                // LayerNorm backward - BIGFIXED IMPLEMENTATION
+                // Compute mean
+                BigFixed* mean = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(mean, 0);
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float diff = input[d] - mean;
-                    var += diff * diff;
+                    big_fixed_add(mean, mean, input[d]);
                 }
-                var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                BigFixed* embed_dim_bf = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(embed_dim_bf, (int)embed_dim);
+                big_fixed_div(mean, mean, embed_dim_bf);
                 
-                float grad_var = 0.0f, grad_mean = 0.0f;
+                // Compute variance
+                BigFixed* var = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(var, 0);
+                BigFixed* diff = big_fixed_create(training->precision_bits);
+                BigFixed* diff_sq = big_fixed_create(training->precision_bits);
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float x_norm = (input[d] - mean) / std;
+                    big_fixed_sub(diff, input[d], mean);
+                    big_fixed_mul(diff_sq, diff, diff);
+                    big_fixed_add(var, var, diff_sq);
+                }
+                big_fixed_div(var, var, embed_dim_bf);
+                
+                // Compute std
+                BigFixed* epsilon = big_fixed_create(training->precision_bits);
+                big_fixed_from_double(epsilon, 1e-5);
+                big_fixed_add(var, var, epsilon);
+                double var_val = big_fixed_to_double(var);
+                double std_val = prime_sqrtf((float)var_val);
+                BigFixed* std = big_fixed_create(training->precision_bits);
+                big_fixed_from_double(std, std_val);
+                
+                // Compute gradients for gamma and beta
+                BigFixed* grad_var = big_fixed_create(training->precision_bits);
+                BigFixed* grad_mean = big_fixed_create(training->precision_bits);
+                big_fixed_from_int(grad_var, 0);
+                big_fixed_from_int(grad_mean, 0);
+                
+                BigFixed* x_norm = big_fixed_create(training->precision_bits);
+                BigFixed* temp = big_fixed_create(training->precision_bits);
+                BigFixed* temp2 = big_fixed_create(training->precision_bits);
+                
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    // x_norm = (input[d] - mean) / std
+                    big_fixed_sub(x_norm, input[d], mean);
+                    big_fixed_div(x_norm, x_norm, std);
+                    
+                    // Accumulate gamma gradient: gamma_grad += grad[d] * x_norm
                     if (training->ln_grads[layer].gamma) {
-                        training->ln_grads[layer].gamma[d] += grad[d] * x_norm;
+                        big_fixed_mul(temp, grad[d], x_norm);
+                        big_fixed_add(training->ln_grads[layer].gamma[d], 
+                                     training->ln_grads[layer].gamma[d], temp);
                     }
+                    
+                    // Accumulate beta gradient: beta_grad += grad[d]
                     if (training->ln_grads[layer].beta) {
-                        training->ln_grads[layer].beta[d] += grad[d];
+                        big_fixed_add(training->ln_grads[layer].beta[d], 
+                                     training->ln_grads[layer].beta[d], grad[d]);
                     }
-                    float grad_x_norm = grad[d] * ln->gamma[d];
-                    grad_var += grad_x_norm * (input[d] - mean) * -0.5f * prime_powf(std, -3.0f);
-                    grad_mean += grad_x_norm * (-1.0f / std);
+                    
+                    // grad_x_norm = grad[d] * gamma[d]
+                    BigFixed* grad_x_norm = big_fixed_create(training->precision_bits);
+                    big_fixed_mul(grad_x_norm, grad[d], ln->gamma[d]);
+                    
+                    // Accumulate variance gradient
+                    // grad_var += grad_x_norm * (input[d] - mean) * -0.5 * std^(-3)
+                    big_fixed_sub(temp, input[d], mean);
+                    big_fixed_mul(temp, temp, grad_x_norm);
+                    double std_pow = prime_powf((float)std_val, -3.0f);
+                    big_fixed_from_double(temp2, -0.5 * std_pow);
+                    big_fixed_mul(temp, temp, temp2);
+                    big_fixed_add(grad_var, grad_var, temp);
+                    
+                    // Accumulate mean gradient
+                    // grad_mean += grad_x_norm * (-1.0 / std)
+                    big_fixed_from_double(temp, -1.0 / std_val);
+                    big_fixed_mul(temp, grad_x_norm, temp);
+                    big_fixed_add(grad_mean, grad_mean, temp);
+                    
+                    big_fixed_free(grad_x_norm);
                 }
                 
+                // Propagate gradient through normalization
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float grad_x_norm = grad[d] * ln->gamma[d];
-                    grad[d] = grad_x_norm / std + grad_var * 2.0f * (input[d] - mean) / embed_dim + grad_mean / embed_dim;
+                    // grad_x_norm = grad[d] * gamma[d]
+                    BigFixed* grad_x_norm = big_fixed_create(training->precision_bits);
+                    big_fixed_mul(grad_x_norm, grad[d], ln->gamma[d]);
+                    
+                    // grad[d] = grad_x_norm / std + grad_var * 2.0 * (input[d] - mean) / embed_dim + grad_mean / embed_dim
+                    BigFixed* term1 = big_fixed_create(training->precision_bits);
+                    BigFixed* term2 = big_fixed_create(training->precision_bits);
+                    BigFixed* term3 = big_fixed_create(training->precision_bits);
+                    
+                    // term1 = grad_x_norm / std
+                    big_fixed_div(term1, grad_x_norm, std);
+                    
+                    // term2 = grad_var * 2.0 * (input[d] - mean) / embed_dim
+                    big_fixed_sub(temp, input[d], mean);
+                    big_fixed_from_double(temp2, 2.0);
+                    big_fixed_mul(temp, temp, temp2);
+                    big_fixed_mul(term2, grad_var, temp);
+                    big_fixed_div(term2, term2, embed_dim_bf);
+                    
+                    // term3 = grad_mean / embed_dim
+                    big_fixed_div(term3, grad_mean, embed_dim_bf);
+                    
+                    // grad[d] = term1 + term2 + term3
+                    big_fixed_add(grad[d], term1, term2);
+                    big_fixed_add(grad[d], grad[d], term3);
+                    
+                    big_fixed_free(grad_x_norm);
+                    big_fixed_free(term1);
+                    big_fixed_free(term2);
+                    big_fixed_free(term3);
                 }
+                
+                // Cleanup
+                big_fixed_free(mean);
+                big_fixed_free(var);
+                big_fixed_free(diff);
+                big_fixed_free(diff_sq);
+                big_fixed_free(epsilon);
+                big_fixed_free(std);
+                big_fixed_free(grad_var);
+                big_fixed_free(grad_mean);
+                big_fixed_free(x_norm);
+                big_fixed_free(temp);
+                big_fixed_free(temp2);
+                big_fixed_free(embed_dim_bf);
                 
                 
                 // Attention backward - compute gradients for attention weights
                 // grad is currently w.r.t. attention output
                 // We need to compute gradients for Q, K, V weights
                 
-                // Get layer input (input to attention)
-                float* layer_input = training->layer_inputs[layer];
-                float* attn_input = &layer_input[idx * embed_dim];
+                // Get layer input (input to attention) - BIGFIXED IMPLEMENTATION
+                BigFixed** layer_input = training->layer_inputs[layer];
+                BigFixed** attn_input = &layer_input[idx * embed_dim];
                 
-                // Use full attention backward if cache is available, otherwise use simplified version
-                if (training->store_attention_weights && training->attention_cache) {
-                    // Full attention backward with proper gradient computation
-                    float* grad_input_temp = (float*)calloc(embed_dim, sizeof(float));
-                    if (grad_input_temp) {
-                        // Note: This processes one position at a time
-                        // For full sequence processing, we'd need to batch this
-                        // For now, accumulate gradients position by position
-                        attention_backward_full(training, layer, grad, grad_input_temp, 1);
-                        free(grad_input_temp);
-                    }
-                } else {
-                    // Simplified attention backward: approximate with outer product
-                    // This is the fallback when attention cache is not available
-                    (void)attn_input;  // Used below for gradient computation
-                    for (uint32_t d1 = 0; d1 < embed_dim; d1++) {
-                        for (uint32_t d2 = 0; d2 < embed_dim; d2++) {
-                            // Query gradients
-                            if (training->attention_grads[layer].query_lattice) {
-                                training->attention_grads[layer].query_lattice[d1 * embed_dim + d2] += 
-                                    attn_input[d1] * grad[d2];
-                            }
-                            // Key gradients  
-                            if (training->attention_grads[layer].key_lattice) {
-                                training->attention_grads[layer].key_lattice[d1 * embed_dim + d2] += 
-                                    attn_input[d1] * grad[d2];
-                            }
-                            // Value gradients
-                            if (training->attention_grads[layer].value_lattice) {
-                                training->attention_grads[layer].value_lattice[d1 * embed_dim + d2] += 
-                                    attn_input[d1] * grad[d2];
-                            }
+                // Simplified attention backward: outer product for gradient accumulation
+                // Full attention backward would require storing attention weights (future optimization)
+                BigFixed* temp_attn = big_fixed_create(training->precision_bits);
+                
+                for (uint32_t d1 = 0; d1 < embed_dim; d1++) {
+                    for (uint32_t d2 = 0; d2 < embed_dim; d2++) {
+                        uint32_t weight_idx = d1 * embed_dim + d2;
+                        
+                        // Compute outer product: attn_input[d1] * grad[d2]
+                        big_fixed_mul(temp_attn, attn_input[d1], grad[d2]);
+                        
+                        // Accumulate query gradients
+                        if (training->attention_grads[layer].query_lattice) {
+                            big_fixed_add(training->attention_grads[layer].query_lattice[weight_idx],
+                                         training->attention_grads[layer].query_lattice[weight_idx],
+                                         temp);
+                        }
+                        
+                        // Accumulate key gradients
+                        if (training->attention_grads[layer].key_lattice) {
+                            big_fixed_add(training->attention_grads[layer].key_lattice[weight_idx],
+                                         training->attention_grads[layer].key_lattice[weight_idx],
+                                         temp);
+                        }
+                        
+                        // Accumulate value gradients
+                        if (training->attention_grads[layer].value_lattice) {
+                            big_fixed_add(training->attention_grads[layer].value_lattice[weight_idx],
+                                         training->attention_grads[layer].value_lattice[weight_idx],
+                                         temp);
                         }
                     }
                 }
                 
-                // FeedForward backward
-                float* grad_hidden = (float*)calloc(ff->hidden_dim, sizeof(float));
+                big_fixed_free(temp_attn);
+                
+                // FeedForward backward - BIGFIXED IMPLEMENTATION
+                // Allocate BigFixed array for hidden gradients
+                BigFixed** grad_hidden = (BigFixed**)calloc(ff->hidden_dim, sizeof(BigFixed*));
                 if (!grad_hidden) continue;
                 
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    grad_hidden[h] = big_fixed_create(training->precision_bits);
+                    big_fixed_from_int(grad_hidden[h], 0);
+                }
+                
+                BigFixed* temp_ff = big_fixed_create(training->precision_bits);
+                
+                // Backward through W2: compute W2 gradients and propagate to hidden
                 for (uint32_t o = 0; o < embed_dim; o++) {
                     for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        uint32_t w2_idx = h * embed_dim + o;
+                        
+                        // W2 gradient: w2_grad += hidden[h] * grad[o]
                         if (training->ff_grads[layer].w2_lattice) {
-                            training->ff_grads[layer].w2_lattice[h * embed_dim + o] += hidden[h] * grad[o];
+                            big_fixed_mul(temp_ff, hidden[h], grad[o]);
+                            big_fixed_add(training->ff_grads[layer].w2_lattice[w2_idx],
+                                         training->ff_grads[layer].w2_lattice[w2_idx],
+                                         temp);
                         }
-                        grad_hidden[h] += ff->w2_lattice[h * embed_dim + o] * grad[o];
+                        
+                        // Propagate gradient: grad_hidden[h] += w2[h,o] * grad[o]
+                        big_fixed_mul(temp_ff, ff->w2_lattice[w2_idx], grad[o]);
+                        big_fixed_add(grad_hidden[h], grad_hidden[h], temp_ff);
                     }
+                    
+                    // Bias2 gradient: bias2_grad += grad[o]
                     if (training->ff_grads[layer].bias2) {
-                        training->ff_grads[layer].bias2[o] += grad[o];
+                        big_fixed_add(training->ff_grads[layer].bias2[o],
+                                     training->ff_grads[layer].bias2[o],
+                                     grad[o]);
                     }
                 }
                 
+                // Apply tanh derivative: grad_hidden *= (1 - tanh^2)
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float tanh_val = hidden[h];
-                    grad_hidden[h] *= (1.0f - tanh_val * tanh_val);
+                    double tanh_val = big_fixed_to_double(hidden[h]);
+                    double tanh_deriv = 1.0 - tanh_val * tanh_val;
+                    double grad_h = big_fixed_to_double(grad_hidden[h]);
+                    grad_h *= tanh_deriv;
+                    big_fixed_from_double(grad_hidden[h], grad_h);
                 }
                 
+                // Backward through W1: compute W1 gradients and propagate to input
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
                     for (uint32_t i = 0; i < embed_dim; i++) {
+                        uint32_t w1_idx = i * ff->hidden_dim + h;
+                        
+                        // W1 gradient: w1_grad += input[i] * grad_hidden[h]
                         if (training->ff_grads[layer].w1_lattice) {
-                            training->ff_grads[layer].w1_lattice[i * ff->hidden_dim + h] += input[i] * grad_hidden[h];
+                            big_fixed_mul(temp_ff, input[i], grad_hidden[h]);
+                            big_fixed_add(training->ff_grads[layer].w1_lattice[w1_idx],
+                                         training->ff_grads[layer].w1_lattice[w1_idx],
+                                         temp);
                         }
-                        grad[i] += ff->w1_lattice[i * ff->hidden_dim + h] * grad_hidden[h];
+                        
+                        // Propagate gradient: grad[i] += w1[i,h] * grad_hidden[h]
+                        big_fixed_mul(temp_ff, ff->w1_lattice[w1_idx], grad_hidden[h]);
+                        big_fixed_add(grad[i], grad[i], temp_ff);
                     }
+                    
+                    // Bias1 gradient: bias1_grad += grad_hidden[h]
                     if (training->ff_grads[layer].bias1) {
-                        training->ff_grads[layer].bias1[h] += grad_hidden[h];
+                        big_fixed_add(training->ff_grads[layer].bias1[h],
+                                     training->ff_grads[layer].bias1[h],
+                                     grad_hidden[h]);
                     }
                 }
                 
+                // Cleanup
+                big_fixed_free(temp_ff);
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    big_fixed_free(grad_hidden[h]);
+                }
                 free(grad_hidden);
             }
         }
