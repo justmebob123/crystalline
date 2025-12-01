@@ -11,36 +11,33 @@ At the beginning of EVERY response, you MUST:
 
 ---
 
-## 🎯 CURRENT OBJECTIVE: OBJECTIVE 21 - Fix Backwards "Simple Loss" Naming
+## ✅ COMPLETED: OBJECTIVE 21 - Fix Backwards "Simple Loss" Naming
+
+Successfully renamed:
+- `cllm_simple_loss.h` → `cllm_loss.h` (THE REAL LOSS)
+- `cllm_loss.h` → `cllm_tensor_loss.h` (infrastructure)
+- Updated all includes
+- Build verified: Zero errors, 78 warnings (no new warnings)
+
+---
+
+## 🎯 CURRENT OBJECTIVE: OBJECTIVE 22 - Delete Unused Infrastructure Files
 
 ### The Problem
-`cllm_simple_loss.h` contains THE REAL crystalline GCD-based loss function.
-The name "simple" is BACKWARDS - it implies a stub/simplified version, but it's the COMPLETE implementation!
+83KB of dead code in infrastructure layer that's never called
 
-### The Solution
-Rename files to reflect reality:
-- `include/ai/cllm_simple_loss.h` → `include/ai/cllm_loss.h` (THE REAL LOSS)
-- `include/ai/cllm_loss.h` → `include/ai/cllm_tensor_loss.h` (Infrastructure Tensor API)
+### Files to Delete
+- `src/ai/infrastructure/cllm_backprop.c` (22KB) - No calls found
+- `src/ai/infrastructure/cllm_loss.c` (30KB) - Only used by unused backprop
+- `src/ai/infrastructure/cllm_training_loop.c` (31KB) - Defined but never called
+- `include/ai/cllm_backprop.h` - Header for unused backprop
+- `include/ai/cllm_training_loop.h` - Header for unused training loop
 
 ### Tasks
-
-#### Step 1: Rename Infrastructure Loss First (to avoid conflict)
-- [x] Rename `include/ai/cllm_loss.h` → `include/ai/cllm_tensor_loss.h`
-- [ ] Update includes in `src/ai/infrastructure/cllm_loss.c`
-- [ ] Update includes in `include/ai/cllm_backprop.h`
+- [ ] Delete unused .c files
+- [ ] Delete unused .h files
+- [ ] Update Makefile to remove deleted files
 - [ ] Test build
-
-#### Step 2: Rename Simple Loss to Loss
-- [ ] Rename `include/ai/cllm_simple_loss.h` → `include/ai/cllm_loss.h`
-- [ ] Update includes in `src/ai/cllm_training.c`
-- [ ] Update includes in `src/ai/cllm_production.c`
-- [ ] Update includes in `src/ai/cllm_training_threaded.c`
-- [ ] Test build
-
-#### Step 3: Verify and Commit
-- [ ] Full clean build
-- [ ] Verify zero errors
-- [ ] Verify no new warnings
 - [ ] Commit changes
 
 ---
