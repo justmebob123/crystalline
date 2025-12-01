@@ -39,6 +39,45 @@ Use proper git authentication with GITHUB_TOKEN.
 ## RULE 6: FOLLOW THE ESTABLISHED ARCHITECTURE
 Never violate the layer separation or architectural principles.
 
+## RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
+All code must compile with zero warnings before moving to the next objective.
+
+---
+
+2. Read the MASTER_PLAN.md completely
+3. Read the AUDIT.md for current architectural state
+4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
+
+## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+Before taking ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Understand the current objectives
+3. Verify your action aligns with the master plan
+4. Check for any blocking priorities
+
+## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+Always consult AUDIT.md to understand:
+- What is broken
+- What needs fixing
+- What is blocking other work
+- What the correct architecture should be
+
+## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+Use SECONDARY_OBJECTIVES.md for:
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+
+## RULE 4: DO NOT CREATE NEW MD FILES
+All documentation goes in existing files or master plan only.
+
+## RULE 5: COMMIT AND PUSH AFTER EACH MAJOR MILESTONE
+Use proper git authentication with GITHUB_TOKEN.
+
+## RULE 6: FOLLOW THE ESTABLISHED ARCHITECTURE
+Never violate the layer separation or architectural principles.
+
 ## TODO: Fix BigFixed Migration - THE RIGHT WAY
 
 ### WHAT I DID WRONG
