@@ -57,6 +57,16 @@ git commit -m "descriptive message"
 git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
 ```
 
+### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING (from MASTER_PLAN)
+**MANDATORY BEFORE NEXT OBJECTIVE**
+
+All code must compile with zero warnings before moving to the next objective.
+- Build with -Wall -Wextra flags enabled
+- Address ALL warnings, not just errors
+- Categorize warnings by priority (High, Medium, Low)
+- Fix high-priority warnings immediately
+- Document any warnings that cannot be fixed
+
 ---
 
 ## 🎯 CURRENT OBJECTIVES (from MASTER_PLAN and SECONDARY_OBJECTIVES)
@@ -130,7 +140,7 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ### Build Status:
 - ✅ Zero compilation errors
-- ⚠️ 79 warnings (type mismatches)
+- ⚠️ **72 warnings** (down from 79)
 - ✅ All libraries build successfully
 - ✅ All tools build successfully
 
@@ -138,7 +148,29 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 - ✅ Training path: 100% BigFixed coverage
 - ❌ Inference path: Uses float arithmetic (VIOLATION of OBJECTIVE 3A)
 - ✅ BigFixed implementations: Complete and ready
-- ⚠️ Type mismatches: 79 warnings to address
+- ⚠️ Type mismatches: 72 warnings to address
+
+### Warning Breakdown (72 total):
+**High Priority (Type Mismatches - 18 warnings):**
+- `cllm_inference.c`: 5 warnings (incompatible pointer types, implicit declarations)
+- `cllm_layernorm.c`: 3 warnings (BigFixed** vs float* assignments)
+- `cllm_optimizer.c`: 9 warnings (BigFixed** vs float* type mismatches)
+- `cllm_lll_embeddings.c`: 1 warning (BigFixed** vs float* assignment)
+
+**Medium Priority (Implicit Declarations - 3 warnings):**
+- `cllm_feedforward.c`: 1 warning (implicit declaration of cllm_feedforward_bigfixed)
+- `cllm_inference.c`: 2 warnings (implicit declarations - already counted above)
+- `cllm_layernorm.c`: 1 warning (implicit declaration - already counted above)
+
+**Low Priority (Unused/Format - 6 warnings):**
+- `cllm_feedforward.c`: 1 warning (unused function matmul_add_bias)
+- `cllm_feedforward_bigfixed.c`: 1 warning (unused parameter precision)
+- `cllm_optimizer.c`: 1 warning (format string mismatch)
+- `cllm_optimizer_wrapper.c`: 1 warning (unused variable gradient_scale)
+- `cllm_production.c`: 6 warnings (statement with no effect, unused variable)
+- `cllm_training.c`: 2 warnings (sign comparison)
+
+**Remaining warnings in other files:** ~45 warnings (need full analysis)
 
 ### Completed Work:
 - [x] Created `cllm_feedforward_bigfixed.c` (COMPLETE - NO STUBS)
@@ -150,17 +182,151 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 ---
 
-## 🚀 NEXT STEPS
+## 🚀 SYSTEMATIC WARNING FIX PLAN
 
-**IMMEDIATE ACTION:** Start PHASE 1 - Convert Inference to BigFixed
+### PHASE 1: Fix Missing Header Includes (5 warnings) ✅ PRIORITY 1
+**Estimated Time:** 10 minutes
+**Impact:** Eliminates implicit declaration warnings
 
-1. Analyze `include/cllm_inference.h` structure
-2. Analyze `src/ai/cllm_inference.c` implementation
-3. Update CLLMInference structure to use BigFixed**
-4. Update inference forward pass to use BigFixed functions
-5. Test and verify
+**Tasks:**
+- [ ] Add `#include "cllm_feedforward_bigfixed.h"` to `cllm_feedforward.c`
+- [ ] Add `#include "cllm_layernorm_bigfixed.h"` to `cllm_layernorm.c`
+- [ ] Add `#include "cllm_layernorm_bigfixed.h"` to `cllm_inference.c`
+- [ ] Add `#include "cllm_feedforward_bigfixed.h"` to `cllm_inference.c`
+- [ ] Add `#include "optimizers_bigfixed.h"` to `cllm_training.c`
+- [ ] Verify build: should reduce warnings from 72 to 67
 
-**STATUS:** 🟢 CLEAN BUILD ACHIEVED - Ready for Systematic Warning Fixes
+### PHASE 2: Fix Type Mismatches in cllm_layernorm.c (2 warnings) ✅ PRIORITY 2
+**Estimated Time:** 5 minutes
+**Impact:** Fixes gamma/beta allocations
+
+**Tasks:**
+- [ ] Line 68-69: Change `malloc()` to `bigfixed_array_create()`
+- [ ] Update `cllm_layer_norm_init()` to use BigFixed allocations
+- [ ] Verify build: should reduce warnings from 67 to 65
+
+### PHASE 3: Fix Type Mismatches in cllm_optimizer.c (9 warnings) ✅ PRIORITY 3
+**Estimated Time:** 15 minutes
+**Impact:** Fixes optimizer state handling
+
+**Tasks:**
+- [ ] Lines 146-147: Fix m and v initialization (BigFixed** vs float*)
+- [ ] Line 149: Fix printf format string for BigFixed
+- [ ] Line 152: Fix adam_update_params call
+- [ ] Lines 168-170: Fix attention gradient pointers
+- [ ] Lines 263-265: Fix SGD momentum pointers
+- [ ] Verify build: should reduce warnings from 65 to 56
+
+### PHASE 4: Fix Type Mismatches in cllm_training.c (11 warnings) ✅ PRIORITY 4
+**Estimated Time:** 20 minutes
+**Impact:** Fixes training buffer allocations
+
+**Tasks:**
+- [ ] Lines 559-564: Fix buffer assignments (5 warnings)
+- [ ] Line 1592: Fix cymatic resonance call
+- [ ] Line 2434: Fix conditional expression
+- [ ] Lines 2461, 2489, 2520: Fix pointer initializations
+- [ ] Line 3401: Fix attention forward call (4 arguments)
+- [ ] Verify build: should reduce warnings from 56 to 45
+
+### PHASE 5: Fix Type Mismatches in Other Files (8 warnings) ✅ PRIORITY 5
+**Estimated Time:** 15 minutes
+
+**Tasks:**
+- [ ] `cllm_inference.c` (2): Fix attention forward arguments
+- [ ] `cllm_lll_embeddings.c` (1): Fix gradient assignment
+- [ ] `cllm_validate.c` (6): Fix numerical stability check calls
+- [ ] Verify build: should reduce warnings from 45 to 37
+
+### PHASE 6: Fix Low Priority Warnings (37 warnings) ⚠️ PRIORITY 6
+**Estimated Time:** 30 minutes
+
+**Tasks:**
+- [ ] Fix 13 sign comparison warnings in `cllm_training.c`
+- [ ] Remove/suppress 12 unused variable/function warnings
+- [ ] Fix 1 format string warning
+- [ ] Fix 1 control flow warning
+- [ ] Verify build: should achieve ZERO warnings
+
+### COMPLETION CRITERIA:
+- ✅ Zero compilation errors (already achieved)
+- ✅ Zero warnings (target)
+- ✅ All libraries build successfully
+- ✅ All tools build successfully
+- ✅ Commit and push to GitHub
+
+**ESTIMATED TOTAL TIME:** 1.5 hours for complete warning elimination
+
+**STATUS:** 🟡 72 WARNINGS TO FIX - Systematic Approach Required
+
+## 📋 COMPREHENSIVE WARNING ANALYSIS (72 Total)
+
+### Category 1: Missing Header Includes (4 warnings - EASY FIX)
+**Root Cause:** BigFixed function declarations not included in headers
+
+**Files:**
+- `cllm_feedforward.c:128` - implicit declaration of `cllm_feedforward_bigfixed`
+- `cllm_inference.c:276` - implicit declaration of `cllm_layer_norm_bigfixed`
+- `cllm_inference.c:286` - implicit declaration of `cllm_feedforward_bigfixed`
+- `cllm_layernorm.c:33` - implicit declaration of `cllm_layer_norm_bigfixed`
+- `cllm_training.c:791` - implicit declaration of `sgd_step_bigfixed`
+
+**Fix:** Add proper #include statements for BigFixed headers
+
+### Category 2: Type Mismatches BigFixed** vs float* (30 warnings - CRITICAL)
+**Root Cause:** Structures partially converted to BigFixed but code still uses float*
+
+**Files:**
+- `cllm_inference.c` (2 warnings): Arguments to `cllm_attention_forward_bigfixed`
+- `cllm_layernorm.c` (2 warnings): Assignments to BigFixed** from float*
+- `cllm_lll_embeddings.c` (1 warning): Assignment to BigFixed** from float*
+- `cllm_optimizer.c` (9 warnings): Multiple BigFixed** vs float* mismatches
+- `cllm_training.c` (11 warnings): Multiple type mismatches
+- `cllm_validate.c` (6 warnings): Arguments to `cllm_check_numerical_stability`
+
+**Fix:** Update allocations to use `bigfixed_array_create()` instead of `malloc()`
+
+### Category 3: Sign Comparison Warnings (13 warnings - LOW PRIORITY)
+**Files:**
+- `cllm_training.c` (13 warnings): uint32_t vs int comparisons
+
+**Fix:** Cast int to uint32_t or change variable types
+
+### Category 4: Unused Variables/Functions (12 warnings - LOW PRIORITY)
+**Files:**
+- `cllm_feedforward.c` (1): unused function `matmul_add_bias`
+- `cllm_feedforward_bigfixed.c` (1): unused parameter `precision`
+- `cllm_optimizer_wrapper.c` (1): unused variable `gradient_scale`
+- `cllm_production.c` (6): statements with no effect, unused variable
+- `cllm_training.c` (2): unused parameters
+- `cllm_training_threaded.c` (3): unused variables
+- `cllm_utils.c` (6): unused functions
+
+**Fix:** Remove unused code or mark with `(void)` to suppress warnings
+
+### Category 5: Format String Warnings (1 warning - MEDIUM)
+**Files:**
+- `cllm_optimizer.c:149` - format '%f' expects double but got BigFixed*
+
+**Fix:** Convert BigFixed to float for printf or use proper format
+
+### Category 6: Control Flow Warnings (1 warning - MEDIUM)
+**Files:**
+- `cllm_utils.c:442` - control reaches end of non-void function
+
+**Fix:** Add return statement
+
+### Category 7: Pointer Type Mismatch in Conditional (1 warning - MEDIUM)
+**Files:**
+- `cllm_training.c:2434` - pointer type mismatch in conditional expression
+
+**Fix:** Ensure both branches of ternary operator have same type
+
+**PRIORITY ORDER FOR FIXES:**
+1. **HIGHEST**: Category 2 (Type Mismatches) - 30 warnings - Blocks BigFixed migration
+2. **HIGH**: Category 1 (Missing Headers) - 5 warnings - Easy quick wins
+3. **MEDIUM**: Categories 5, 6, 7 (Format, Control Flow, Conditional) - 3 warnings
+4. **LOW**: Categories 3, 4 (Sign Compare, Unused) - 25 warnings
 
 ## 📝 PROGRESS LOG
 

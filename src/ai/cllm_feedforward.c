@@ -11,6 +11,7 @@
 #include "../include/cllm_simd_utils.h"
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"
+#include "cllm_feedforward_bigfixed.h"
 
 // Forward declaration
 void cllm_feedforward_free(FeedForwardLayer* layer);

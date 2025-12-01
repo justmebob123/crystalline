@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/prime_float_math.h"
+#include "cllm_layernorm_bigfixed.h"
+#include "cllm_feedforward_bigfixed.h"
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
