@@ -211,3 +211,57 @@ void cllm_init_model(CLLMModel* model);  // Legacy random initialization
 void cllm_init_model_lattice(CLLMModel* model);  // Lattice formula initialization (RECOMMENDED)
 
 #endif /* CLLM_TRAINING_H */
+// BigFixed implementations of feedforward and layer normalization
+void cllm_feedforward_bigfixed(
+    FeedForwardLayer* layer,
+    BigFixed** input,
+    BigFixed** output,
+    int precision
+);
+
+void cllm_feedforward_backward_bigfixed(
+    FeedForwardLayer* layer,
+    BigFixed** input,
+    BigFixed** hidden,
+    BigFixed** grad_output,
+    BigFixed** grad_input,
+    BigFixed** grad_w1,
+    BigFixed** grad_b1,
+    BigFixed** grad_w2,
+    BigFixed** grad_b2,
+    int precision
+);
+
+void cllm_layer_norm_bigfixed(
+    CLLMLayerNorm* ln,
+    BigFixed** input,
+    BigFixed** output,
+    int precision
+);
+
+void cllm_layer_norm_batch_bigfixed(
+    CLLMLayerNorm* ln,
+    BigFixed** input,
+    BigFixed** output,
+    int batch_size,
+    int precision
+);
+
+void cllm_layer_norm_init_bigfixed(
+    CLLMLayerNorm* ln,
+    uint32_t dim,
+    float epsilon,
+    int precision
+);
+
+void cllm_layer_norm_free_bigfixed(CLLMLayerNorm* ln);
+
+void cllm_layer_norm_backward_bigfixed(
+    CLLMLayerNorm* ln,
+    BigFixed** input,
+    BigFixed** grad_output,
+    BigFixed** grad_input,
+    BigFixed** grad_gamma,
+    BigFixed** grad_beta,
+    int precision
+);
