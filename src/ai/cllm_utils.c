@@ -354,8 +354,5 @@ int cllm_check_model_health(CLLMModel* model) {
         return 0;
     }
     
-    return 1;
-}
-
-// Unused utility functions removed - were never called in codebase
+    return 1;  // Model is healthy
 }
