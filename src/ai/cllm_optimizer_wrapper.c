@@ -33,6 +33,7 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     
     // Scale gradients by 1/accum_steps
     float gradient_scale = 1.0f / (float)accum_steps;
+    (void)gradient_scale;  // Currently unused - reserved for future gradient scaling
     
     CLLMModel* model = training->model;
     

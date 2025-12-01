@@ -391,6 +391,7 @@ void clip_gradients(CLLMTraining* training, float max_norm) {
     // Clip if necessary
     if (grad_norm > max_norm) {
         float scale = max_norm / grad_norm;
+        (void)scale;  // Currently unused - reserved for gradient clipping
         
         // Scale embedding gradients
         if (training->gradients) {

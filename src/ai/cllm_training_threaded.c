@@ -386,6 +386,7 @@ float cllm_forward_training_threaded(
                 // FeedForward
                 FeedForwardLayer* ff = &model->ff_layers[layer];
                 float* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
+                (void)ff_hidden;  // Reserved for future use
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
 // DISABLED - USE BigFixed version:                     float sum = ff->bias1[h];
@@ -407,6 +408,7 @@ float cllm_forward_training_threaded(
                 for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
                 
                 CLLMLayerNorm* ln = &model->layer_norms[layer];
+                (void)ln;  // Reserved for future use
                 float mean = 0.0f, var = 0.0f;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
                 mean /= embed_dim;
@@ -416,6 +418,7 @@ float cllm_forward_training_threaded(
                 }
                 var /= embed_dim;
                 float std = prime_sqrtf(var + 1e-5f);
+                (void)std;  // Reserved for future use
                 for (uint32_t d = 0; d < embed_dim; d++) {
 // DISABLED - USE BigFixed version:                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
                 }

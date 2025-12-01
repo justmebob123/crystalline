@@ -1001,6 +1001,8 @@ static void cllm_attention_forward_training(
     uint32_t* token_ids,
     int seq_len
 ) {
+    (void)layer;  // Reserved for future layer-specific optimizations
+    (void)token_ids;  // Reserved for future token-aware attention
     if (!training || !attn_layer || !input || !output || seq_len <= 0) return;
     
     uint32_t num_heads = attn_layer->num_heads;
