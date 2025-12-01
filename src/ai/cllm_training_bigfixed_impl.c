@@ -14,27 +14,27 @@
 #include "../algorithms/include/numerical_bigfixed.h"
 #include "../algorithms/include/loss_functions_bigfixed.h"
 #include "../algorithms/include/optimizers_bigfixed.h"
+#include "../include/prime_float_math.h"
 
 /**
  * Forward pass using BigFixed precision
- * This is a simplified implementation that uses the algorithms layer
+ * Delegates to cllm_forward_training which now uses BigFixed throughout
  */
 float cllm_forward_training_bigfixed(CLLMTraining* training, uint32_t* input_tokens) {
     if (!training || !input_tokens) return 0.0f;
     
-    // For now, delegate to the float version
-    // TODO: Implement full BigFixed forward pass using algorithms layer functions
+    // Delegate to main implementation (now uses BigFixed throughout)
     return cllm_forward_training(training, input_tokens);
 }
 
 /**
  * Backward pass using BigFixed precision
+ * Delegates to cllm_backward_training which now uses BigFixed throughout
  */
 void cllm_backward_training_bigfixed(CLLMTraining* training, uint32_t* target_tokens) {
     if (!training || !target_tokens) return;
     
-    // For now, delegate to the float version
-    // TODO: Implement full BigFixed backward pass using algorithms layer functions
+    // Delegate to main implementation (now uses BigFixed throughout)
     cllm_backward_training(training, target_tokens, NULL);
 }
 

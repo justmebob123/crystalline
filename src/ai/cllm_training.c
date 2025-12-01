@@ -1063,7 +1063,7 @@ static void cllm_attention_forward_training(
     
     // scores[i,j] = dot(Q[i], K[j]) / sqrt(head_dim)
     BigFixed* scale = big_fixed_create(precision);
-    double scale_val = 1.0 / sqrt((double)head_dim);
+    double scale_val = 1.0 / prime_sqrtf((double)head_dim);
     big_fixed_from_double(scale, scale_val);
     
     BigFixed* dot_prod = big_fixed_create(precision);
@@ -3220,7 +3220,7 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
     memcpy(values, input, seq_len * embed_dim * sizeof(float));
     
     // Compute attention scores
-    float scale = 1.0f / sqrtf((float)head_dim);
+    float scale = 1.0f / prime_sqrtf((float)head_dim);
     for (uint32_t i = 0; i < seq_len; i++) {
         for (uint32_t j = 0; j < seq_len; j++) {
             float score = 0.0f;
@@ -3241,7 +3241,7 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
         
         double sum = 0.0;
         for (uint32_t j = 0; j < seq_len; j++) {
-            row[j] = expf(row[j] - max_val);
+            row[j] = prime_expf(row[j] - max_val);
             sum += row[j];
         }
         
@@ -3264,7 +3264,6 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
     }
     
     free(queries);
-    free(keys);
     free(keys);
     free(values);
     free(scores);

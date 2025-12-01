@@ -1,0 +1,124 @@
+# WARNING ANALYSIS - BigFixed Migration
+
+## Summary Statistics
+Total Warnings: 87
+
+## Category Breakdown
+
+### 1. CRITICAL: Math.h Violations (4 warnings)
+**Priority: HIGHEST - Violates MASTER_PLAN OBJECTIVE 3A**
+
+Location: src/ai/cllm_training.c
+- Line 1066: Uses sqrt() - should use prime_sqrtf()
+- Line 3223: Uses sqrtf() - should use prime_sqrtf()
+- Line 3244: Uses expf() - should use prime_expf()
+
+Location: src/ai/cllm_training_bigfixed_impl.c
+- Line 85: Missing prime_expf() declaration
+- Line 98: Missing prime_logf() declaration
+
+**Impact:** Violates crystalline math requirement - NO standard math allowed
+**Fix:** Replace all standard math calls with crystalline equivalents
+
+### 2. CRITICAL: Memory Bug (1 warning)
+**Priority: HIGHEST - Actual Bug**
+
+Location: src/ai/cllm_training.c:3268
+- Pointer 'keys' used after 'free'
+- This is a real bug that will cause crashes
+
+**Impact:** Runtime crash, memory corruption
+**Fix:** Remove duplicate free() call
+
+### 3. HIGH: Incompatible Pointer Types (50+ warnings)
+**Priority: HIGH - Type Safety**
+
+Pattern: BigFixed** vs float* mismatches
+Files affected:
+- cllm_feedforward.c (8 warnings)
+- cllm_layernorm.c (2 warnings)
+- cllm_optimizer.c (9 warnings)
+- cllm_training.c (10 warnings)
+- cllm_validate.c (7 warnings)
+- cllm_lll_embeddings.c (1 warning)
+
+**Impact:** Type safety issues, potential runtime errors
+**Fix:** Update function signatures and allocations to use BigFixed**
+
+### 4. MEDIUM: Implicit Function Declarations (3 warnings)
+**Priority: MEDIUM**
+
+Location: src/ai/cllm_training.c
+- Line 786: sgd_step_bigfixed() not declared
+- Missing includes for BigFixed optimizer functions
+
+**Impact:** Linker may fail, undefined behavior
+**Fix:** Add proper includes for BigFixed functions
+
+### 5. LOW: Sign Comparison Warnings (18 warnings)
+**Priority: LOW - Code Quality**
+
+Location: src/ai/cllm_training.c
+- Multiple uint32_t vs int comparisons in loops
+
+**Impact:** Potential logic errors with large values
+**Fix:** Cast to consistent types
+
+### 6. LOW: Unused Variables/Functions (11 warnings)
+**Priority: LOW - Code Cleanup**
+
+Locations:
+- cllm_layernorm.c: unused 'normalized'
+- cllm_optimizer_wrapper.c: unused 'gradient_scale'
+- cllm_production.c: unused 'scale'
+- cllm_training.c: unused parameters
+- cllm_training_threaded.c: unused variables
+- cllm_utils.c: unused functions
+
+**Impact:** Code bloat, confusion
+**Fix:** Remove or use variables, or mark with (void)
+
+### 7. LOW: Statement with No Effect (5 warnings)
+**Priority: LOW**
+
+Location: src/ai/cllm_production.c
+- Lines 370, 372, 374, 382, 384
+- Statements that do nothing
+
+**Impact:** Dead code
+**Fix:** Remove or complete the statements
+
+### 8. LOW: Control Flow Warning (1 warning)
+**Priority: LOW**
+
+Location: src/ai/cllm_utils.c:442
+- Function can reach end without return
+
+**Impact:** Undefined behavior
+**Fix:** Add return statement
+
+## Priority Order for Fixes
+
+1. **CRITICAL (5 warnings):**
+   - Fix math.h violations (4)
+   - Fix memory bug (1)
+
+2. **HIGH (50+ warnings):**
+   - Fix incompatible pointer types
+
+3. **MEDIUM (3 warnings):**
+   - Fix implicit declarations
+
+4. **LOW (29 warnings):**
+   - Fix sign comparisons
+   - Remove unused code
+   - Fix control flow
+
+## Estimated Effort
+
+- Critical fixes: 1-2 hours
+- High priority fixes: 3-4 hours
+- Medium priority fixes: 1 hour
+- Low priority fixes: 2 hours
+
+Total: 7-9 hours of work
