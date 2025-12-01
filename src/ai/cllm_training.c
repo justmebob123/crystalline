@@ -1758,102 +1758,271 @@ int cllm_load_checkpoint(CLLMTraining* training, const char* filename) {
 void cllm_training_cleanup(CLLMTraining* training) {
     if (!training) return;
     
-    // Free training data
-    // NOTE: training->tokens is typically a pointer to external data (dataset->tokens)
-    // and should NOT be freed here. Set to NULL before calling cleanup if you don't want it freed.
-    // free(training->tokens);  // REMOVED - tokens are owned by dataset
-    free(training->gradients);
-    free(training->optimizer_state);
+    // Get sizes for cleanup
+    size_t embed_size = training->model ? training->model->vocab_size * training->model->embedding_dim : 0;
+    uint32_t num_layers = training->model ? training->model->num_layers : 0;
     
-    // Free mixed precision buffers
-    free(training->master_weights);
+    // Free BigFixed gradient buffers
+    if (training->gradients) {
+        for (size_t i = 0; i < embed_size; i++) {
+            if (training->gradients[i]) {
+                big_fixed_free(training->gradients[i]);
+            }
+        }
+        free(training->gradients);
+    }
+    
+    // Free BigFixed optimizer state
+    if (training->optimizer_state) {
+        for (size_t i = 0; i < embed_size * 2; i++) {
+            if (training->optimizer_state[i]) {
+                big_fixed_free(training->optimizer_state[i]);
+            }
+        }
+        free(training->optimizer_state);
+    }
+    
+    // Free BigFixed master weights
+    if (training->master_weights) {
+        for (size_t i = 0; i < embed_size; i++) {
+            if (training->master_weights[i]) {
+                big_fixed_free(training->master_weights[i]);
+            }
+        }
+        free(training->master_weights);
+    }
+    
+    // Free mixed precision buffers (still float)
     free(training->fp16_activations);
     free(training->fp16_gradients);
     
-    // Free attention gradient buffers
-    if (training->attention_grads) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->attention_grads[i].query_lattice);
-            free(training->attention_grads[i].key_lattice);
-            free(training->attention_grads[i].value_lattice);
+    // Free BigFixed attention gradient buffers
+    if (training->attention_grads && training->model) {
+        for (uint32_t i = 0; i < num_layers; i++) {
+            AttentionLayer* layer = &training->model->attention_layers[i];
+            uint32_t dim = layer->num_heads * layer->head_dim;
+            size_t weight_size = dim * dim;
+            
+            if (training->attention_grads[i].query_lattice) {
+                for (size_t j = 0; j < weight_size; j++) {
+                    if (training->attention_grads[i].query_lattice[j]) {
+                        big_fixed_free(training->attention_grads[i].query_lattice[j]);
+                    }
+                }
+                free(training->attention_grads[i].query_lattice);
+            }
+            
+            if (training->attention_grads[i].key_lattice) {
+                for (size_t j = 0; j < weight_size; j++) {
+                    if (training->attention_grads[i].key_lattice[j]) {
+                        big_fixed_free(training->attention_grads[i].key_lattice[j]);
+                    }
+                }
+                free(training->attention_grads[i].key_lattice);
+            }
+            
+            if (training->attention_grads[i].value_lattice) {
+                for (size_t j = 0; j < weight_size; j++) {
+                    if (training->attention_grads[i].value_lattice[j]) {
+                        big_fixed_free(training->attention_grads[i].value_lattice[j]);
+                    }
+                }
+                free(training->attention_grads[i].value_lattice);
+            }
         }
         free(training->attention_grads);
     }
     
-    // Free feed-forward gradient buffers
-    if (training->ff_grads) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->ff_grads[i].w1_lattice);
-            free(training->ff_grads[i].w2_lattice);
-            free(training->ff_grads[i].bias1);
-            free(training->ff_grads[i].bias2);
+    // Free BigFixed feed-forward gradient buffers
+    if (training->ff_grads && training->model) {
+        for (uint32_t i = 0; i < num_layers; i++) {
+            FeedForwardLayer* layer = &training->model->ff_layers[i];
+            size_t w1_size = layer->input_dim * layer->hidden_dim;
+            size_t w2_size = layer->hidden_dim * layer->output_dim;
+            
+            if (training->ff_grads[i].w1_lattice) {
+                for (size_t j = 0; j < w1_size; j++) {
+                    if (training->ff_grads[i].w1_lattice[j]) {
+                        big_fixed_free(training->ff_grads[i].w1_lattice[j]);
+                    }
+                }
+                free(training->ff_grads[i].w1_lattice);
+            }
+            
+            if (training->ff_grads[i].w2_lattice) {
+                for (size_t j = 0; j < w2_size; j++) {
+                    if (training->ff_grads[i].w2_lattice[j]) {
+                        big_fixed_free(training->ff_grads[i].w2_lattice[j]);
+                    }
+                }
+                free(training->ff_grads[i].w2_lattice);
+            }
+            
+            if (training->ff_grads[i].bias1) {
+                for (size_t j = 0; j < layer->hidden_dim; j++) {
+                    if (training->ff_grads[i].bias1[j]) {
+                        big_fixed_free(training->ff_grads[i].bias1[j]);
+                    }
+                }
+                free(training->ff_grads[i].bias1);
+            }
+            
+            if (training->ff_grads[i].bias2) {
+                for (size_t j = 0; j < layer->output_dim; j++) {
+                    if (training->ff_grads[i].bias2[j]) {
+                        big_fixed_free(training->ff_grads[i].bias2[j]);
+                    }
+                }
+                free(training->ff_grads[i].bias2);
+            }
         }
         free(training->ff_grads);
     }
     
-    // Free layer norm gradient buffers
-    if (training->ln_grads) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->ln_grads[i].gamma);
-            free(training->ln_grads[i].beta);
+    // Free BigFixed layer norm gradient buffers
+    if (training->ln_grads && training->model) {
+        for (uint32_t i = 0; i < num_layers; i++) {
+            CLLMLayerNorm* layer = &training->model->layer_norms[i];
+            
+            if (training->ln_grads[i].gamma) {
+                for (size_t j = 0; j < layer->dim; j++) {
+                    if (training->ln_grads[i].gamma[j]) {
+                        big_fixed_free(training->ln_grads[i].gamma[j]);
+                    }
+                }
+                free(training->ln_grads[i].gamma);
+            }
+            
+            if (training->ln_grads[i].beta) {
+                for (size_t j = 0; j < layer->dim; j++) {
+                    if (training->ln_grads[i].beta[j]) {
+                        big_fixed_free(training->ln_grads[i].beta[j]);
+                    }
+                }
+                free(training->ln_grads[i].beta);
+            }
         }
         free(training->ln_grads);
     }
     
-    // Free backward pass buffers (OPTIMIZATION)
+    // Free backward pass buffers (still float - not used in BigFixed training)
     free(training->backward_embeddings);
     free(training->backward_grad_output);
     free(training->backward_layer_input);
     free(training->backward_layer_grad);
     free(training->backward_temp_grad);
     
-    // Free embedding cache (OPTIMIZATION)
+    // Free embedding cache (still float - not used in BigFixed training)
     free(training->cached_input_embeddings);
     free(training->cached_target_embeddings);
     
-    // Free forward pass activation storage
-    free(training->input_embeddings);
-    free(training->final_hidden);
-    free(training->logits);
+    // Free BigFixed forward pass activation storage
+    size_t seq_size = training->config.batch_size * training->config.sequence_length * training->model->embedding_dim;
+    size_t logits_size = training->config.batch_size * training->config.sequence_length * training->model->vocab_size;
     
+    if (training->input_embeddings) {
+        for (size_t i = 0; i < seq_size; i++) {
+            if (training->input_embeddings[i]) {
+                big_fixed_free(training->input_embeddings[i]);
+            }
+        }
+        free(training->input_embeddings);
+    }
+    
+    if (training->final_hidden) {
+        for (size_t i = 0; i < seq_size; i++) {
+            if (training->final_hidden[i]) {
+                big_fixed_free(training->final_hidden[i]);
+            }
+        }
+        free(training->final_hidden);
+    }
+    
+    if (training->logits) {
+        for (size_t i = 0; i < logits_size; i++) {
+            if (training->logits[i]) {
+                big_fixed_free(training->logits[i]);
+            }
+        }
+        free(training->logits);
+    }
+    
+    // Free BigFixed per-layer activations
     if (training->layer_inputs) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->layer_inputs[i]);
+        for (uint32_t i = 0; i < num_layers; i++) {
+            if (training->layer_inputs[i]) {
+                for (size_t j = 0; j < seq_size; j++) {
+                    if (training->layer_inputs[i][j]) {
+                        big_fixed_free(training->layer_inputs[i][j]);
+                    }
+                }
+                free(training->layer_inputs[i]);
+            }
         }
         free(training->layer_inputs);
     }
     
     if (training->attention_outputs) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->attention_outputs[i]);
+        for (uint32_t i = 0; i < num_layers; i++) {
+            if (training->attention_outputs[i]) {
+                for (size_t j = 0; j < seq_size; j++) {
+                    if (training->attention_outputs[i][j]) {
+                        big_fixed_free(training->attention_outputs[i][j]);
+                    }
+                }
+                free(training->attention_outputs[i]);
+            }
         }
         free(training->attention_outputs);
     }
     
     if (training->ff_outputs) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->ff_outputs[i]);
+        for (uint32_t i = 0; i < num_layers; i++) {
+            if (training->ff_outputs[i]) {
+                for (size_t j = 0; j < seq_size; j++) {
+                    if (training->ff_outputs[i][j]) {
+                        big_fixed_free(training->ff_outputs[i][j]);
+                    }
+                }
+                free(training->ff_outputs[i]);
+            }
         }
         free(training->ff_outputs);
     }
     
     if (training->layer_outputs) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->layer_outputs[i]);
+        for (uint32_t i = 0; i < num_layers; i++) {
+            if (training->layer_outputs[i]) {
+                for (size_t j = 0; j < seq_size; j++) {
+                    if (training->layer_outputs[i][j]) {
+                        big_fixed_free(training->layer_outputs[i][j]);
+                    }
+                }
+                free(training->layer_outputs[i]);
+            }
         }
         free(training->layer_outputs);
     }
     
     if (training->ff_hidden) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            free(training->ff_hidden[i]);
+        for (uint32_t i = 0; i < num_layers; i++) {
+            if (training->ff_hidden[i]) {
+                for (size_t j = 0; j < seq_size * 4; j++) {
+                    if (training->ff_hidden[i][j]) {
+                        big_fixed_free(training->ff_hidden[i][j]);
+                    }
+                }
+                free(training->ff_hidden[i]);
+            }
         }
         free(training->ff_hidden);
     }
     
-    // Free attention cache (OPTIMIZATION)
+    // Free BigFixed attention cache
     if (training->attention_cache) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+        for (uint32_t i = 0; i < num_layers; i++) {
+            // Note: attention cache sizes would need to be tracked
+            // For now, just free the pointers
             if (training->attention_cache[i].queries) free(training->attention_cache[i].queries);
             if (training->attention_cache[i].keys) free(training->attention_cache[i].keys);
             if (training->attention_cache[i].values) free(training->attention_cache[i].values);
@@ -1866,7 +2035,6 @@ void cllm_training_cleanup(CLLMTraining* training) {
     free(training);
 }
 
-// Alias for compatibility
 void cllm_training_free(CLLMTraining* training) {
     cllm_training_cleanup(training);
 }
