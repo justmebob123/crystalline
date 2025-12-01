@@ -982,11 +982,8 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
 }
 
 /**
- * Training-specific attention forward with cache storage
- * Wraps cllm_attention_forward and stores Q, K, V, attention weights for backward pass
- * 
- * TEMPORARY STUB: This function is being rewritten for BigFixed
- * For now, it does nothing to allow linking
+ * Training-specific attention forward with BigFixed precision
+ * Computes multi-head attention using BigFixed operations
  */
 static void cllm_attention_forward_training(
     CLLMTraining* training,
@@ -997,15 +994,166 @@ static void cllm_attention_forward_training(
     uint32_t* token_ids,
     int seq_len
 ) {
-    // STUB: Attention forward is handled inline in cllm_forward_training
-    // This function exists only for linking compatibility
-    (void)training;
-    (void)layer;
-    (void)attn_layer;
-    (void)input;
-    (void)output;
-    (void)token_ids;
-    (void)seq_len;
+    if (!training || !attn_layer || !input || !output || seq_len <= 0) return;
+    
+    uint32_t num_heads = attn_layer->num_heads;
+    uint32_t head_dim = attn_layer->head_dim;
+    uint32_t embed_dim = num_heads * head_dim;
+    int precision = training->precision_bits;
+    
+    // Allocate Q, K, V matrices [seq_len x embed_dim]
+    BigFixed** queries = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** keys = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** values = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    
+    if (!queries || !keys || !values) {
+        free(queries);
+        free(keys);
+        free(values);
+        return;
+    }
+    
+    // Initialize BigFixed elements
+    for (uint32_t i = 0; i < seq_len * embed_dim; i++) {
+        queries[i] = big_fixed_create(precision);
+        keys[i] = big_fixed_create(precision);
+        values[i] = big_fixed_create(precision);
+        big_fixed_from_int(queries[i], 0);
+        big_fixed_from_int(keys[i], 0);
+        big_fixed_from_int(values[i], 0);
+    }
+    
+    // Compute Q, K, V for each position
+    BigFixed* temp = big_fixed_create(precision);
+    for (uint32_t pos = 0; pos < seq_len; pos++) {
+        BigFixed** input_pos = &input[pos * embed_dim];
+        
+        // Compute Q = input * W_q
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], attn_layer->query_lattice[i * embed_dim + d]);
+                big_fixed_add(queries[pos * embed_dim + d], queries[pos * embed_dim + d], temp);
+            }
+        }
+        
+        // Compute K = input * W_k
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], attn_layer->key_lattice[i * embed_dim + d]);
+                big_fixed_add(keys[pos * embed_dim + d], keys[pos * embed_dim + d], temp);
+            }
+        }
+        
+        // Compute V = input * W_v
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], attn_layer->value_lattice[i * embed_dim + d]);
+                big_fixed_add(values[pos * embed_dim + d], values[pos * embed_dim + d], temp);
+            }
+        }
+    }
+    big_fixed_free(temp);
+    
+    // Compute attention scores [seq_len x seq_len]
+    BigFixed** scores = (BigFixed**)calloc(seq_len * seq_len, sizeof(BigFixed*));
+    for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+        scores[i] = big_fixed_create(precision);
+        big_fixed_from_int(scores[i], 0);
+    }
+    
+    // scores[i,j] = dot(Q[i], K[j]) / sqrt(head_dim)
+    BigFixed* scale = big_fixed_create(precision);
+    double scale_val = 1.0 / sqrt((double)head_dim);
+    big_fixed_from_double(scale, scale_val);
+    
+    BigFixed* dot_prod = big_fixed_create(precision);
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t j = 0; j < seq_len; j++) {
+            big_fixed_from_int(dot_prod, 0);
+            
+            // Dot product of Q[i] and K[j]
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                BigFixed* prod = big_fixed_create(precision);
+                big_fixed_mul(prod, queries[i * embed_dim + d], keys[j * embed_dim + d]);
+                big_fixed_add(dot_prod, dot_prod, prod);
+                big_fixed_free(prod);
+            }
+            
+            // Scale by 1/sqrt(head_dim)
+            big_fixed_mul(scores[i * seq_len + j], dot_prod, scale);
+        }
+    }
+    big_fixed_free(dot_prod);
+    big_fixed_free(scale);
+    
+    // Apply softmax to each row (convert to float for softmax, then back to BigFixed)
+    for (uint32_t i = 0; i < seq_len; i++) {
+        // Convert row to float array
+        float* row = (float*)malloc(seq_len * sizeof(float));
+        for (uint32_t j = 0; j < seq_len; j++) {
+            row[j] = (float)big_fixed_to_double(scores[i * seq_len + j]);
+        }
+        
+        // Apply softmax using crystalline math
+        float max_val = row[0];
+        for (uint32_t j = 1; j < seq_len; j++) {
+            if (row[j] > max_val) max_val = row[j];
+        }
+        
+        double sum = 0.0;
+        for (uint32_t j = 0; j < seq_len; j++) {
+            row[j] = prime_expf(row[j] - max_val);
+            sum += row[j];
+        }
+        
+        if (sum > 1e-10) {
+            for (uint32_t j = 0; j < seq_len; j++) {
+                row[j] /= (float)sum;
+            }
+        }
+        
+        // Convert back to BigFixed
+        for (uint32_t j = 0; j < seq_len; j++) {
+            big_fixed_from_double(scores[i * seq_len + j], (double)row[j]);
+        }
+        
+        free(row);
+    }
+    
+    // Compute output = scores * V
+    BigFixed* weighted_sum = big_fixed_create(precision);
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            big_fixed_from_int(weighted_sum, 0);
+            
+            for (uint32_t j = 0; j < seq_len; j++) {
+                BigFixed* weighted_val = big_fixed_create(precision);
+                big_fixed_mul(weighted_val, scores[i * seq_len + j], values[j * embed_dim + d]);
+                big_fixed_add(weighted_sum, weighted_sum, weighted_val);
+                big_fixed_free(weighted_val);
+            }
+            
+            if (!output[i * embed_dim + d]) {
+                output[i * embed_dim + d] = big_fixed_create(precision);
+            }
+            big_fixed_assign(output[i * embed_dim + d], weighted_sum);
+        }
+    }
+    big_fixed_free(weighted_sum);
+    
+    // Cleanup
+    for (uint32_t i = 0; i < seq_len * embed_dim; i++) {
+        big_fixed_free(queries[i]);
+        big_fixed_free(keys[i]);
+        big_fixed_free(values[i]);
+    }
+    for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+        big_fixed_free(scores[i]);
+    }
+    free(queries);
+    free(keys);
+    free(values);
+    free(scores);
 }
 
 /* OLD IMPLEMENTATION - DISABLED - BROKEN BIGFIXED/FLOAT MIX
@@ -3050,9 +3198,76 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
     (void)key_cache; (void)value_cache;
     if (!layer || !input || !output || seq_len == 0) return;
     
-    // STUB: Just copy input to output
-    uint32_t embed_dim = layer->num_heads * layer->head_dim;
-    memcpy(output, input, seq_len * embed_dim * sizeof(float));
+    uint32_t num_heads = layer->num_heads;
+    uint32_t head_dim = layer->head_dim;
+    uint32_t embed_dim = num_heads * head_dim;
+    
+    // Allocate Q, K, V
+    float* queries = (float*)calloc(seq_len * embed_dim, sizeof(float));
+    float* keys = (float*)calloc(seq_len * embed_dim, sizeof(float));
+    float* values = (float*)calloc(seq_len * embed_dim, sizeof(float));
+    float* scores = (float*)calloc(seq_len * seq_len, sizeof(float));
+    
+    if (!queries || !keys || !values || !scores) {
+        free(queries); free(keys); free(values); free(scores);
+        return;
+    }
+    
+    // Compute Q, K, V (simplified - assumes W_q, W_k, W_v are identity for now)
+    // TODO: This needs proper BigFixed implementation
+    memcpy(queries, input, seq_len * embed_dim * sizeof(float));
+    memcpy(keys, input, seq_len * embed_dim * sizeof(float));
+    memcpy(values, input, seq_len * embed_dim * sizeof(float));
+    
+    // Compute attention scores
+    float scale = 1.0f / sqrtf((float)head_dim);
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t j = 0; j < seq_len; j++) {
+            float score = 0.0f;
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                score += queries[i * embed_dim + d] * keys[j * embed_dim + d];
+            }
+            scores[i * seq_len + j] = score * scale;
+        }
+    }
+    
+    // Apply softmax
+    for (uint32_t i = 0; i < seq_len; i++) {
+        float* row = &scores[i * seq_len];
+        float max_val = row[0];
+        for (uint32_t j = 1; j < seq_len; j++) {
+            if (row[j] > max_val) max_val = row[j];
+        }
+        
+        double sum = 0.0;
+        for (uint32_t j = 0; j < seq_len; j++) {
+            row[j] = expf(row[j] - max_val);
+            sum += row[j];
+        }
+        
+        if (sum > 1e-10) {
+            for (uint32_t j = 0; j < seq_len; j++) {
+                row[j] /= (float)sum;
+            }
+        }
+    }
+    
+    // Compute output = scores * V
+    memset(output, 0, seq_len * embed_dim * sizeof(float));
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t j = 0; j < seq_len; j++) {
+            float weight = scores[i * seq_len + j];
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                output[i * embed_dim + d] += weight * values[j * embed_dim + d];
+            }
+        }
+    }
+    
+    free(queries);
+    free(keys);
+    free(keys);
+    free(values);
+    free(scores);
 }
 
 void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, 
@@ -3062,7 +3277,7 @@ void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer,
     (void)model; (void)token_ids; (void)key_cache; (void)value_cache;
     if (!layer || !input || !output || seq_len == 0) return;
     
-    // STUB: Just copy input to output
-    uint32_t embed_dim = layer->num_heads * layer->head_dim;
-    memcpy(output, input, seq_len * embed_dim * sizeof(float));
+    // For now, use standard attention (angular attention requires token IDs and model context)
+    // TODO: Implement proper hybrid (angular + dot product) attention
+    cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
 }
