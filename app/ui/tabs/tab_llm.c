@@ -920,37 +920,12 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     }
     
     // === INPUT AREA ===
+    // NOTE: Input field is now rendered by InputManager (see below)
+    // Just set the bounds for the send button positioning
     int input_y = WINDOW_HEIGHT - input_height - 10;
+    g_input_rect = (SDL_Rect){RENDER_OFFSET_X + 10, input_y, chat_width - 120, input_height};
     
-    // Input box with room for send button on the right
-    // Button will be 100px wide, positioned at right edge of input area
-    g_input_rect = (SDL_Rect){RENDER_OFFSET_X + 10, input_y, chat_width - 120, input_height};  // Leave 120px for button + gap
-    SDL_Color input_bg = input_active ? (SDL_Color){50, 50, 70, 255} : (SDL_Color){40, 40, 50, 255};
-    SDL_SetRenderDrawColor(renderer, input_bg.r, input_bg.g, input_bg.b, 255);
-    SDL_RenderFillRect(renderer, &g_input_rect);
-    SDL_SetRenderDrawColor(renderer, input_active ? active_color.r : text_color.r,
-                           input_active ? active_color.g : text_color.g,
-                           input_active ? active_color.b : text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &g_input_rect);
-    
-    if (strlen(state->llm_input_text) > 0) {
-        int text_y = g_input_rect.y + 8;
-        int chars_per_line = (g_input_rect.w - 20) / 7;
-        for (size_t i = 0; i < strlen(state->llm_input_text); i += chars_per_line) {
-            char line[256];
-            int len = (int)strlen(state->llm_input_text + i);
-            if (len > chars_per_line) len = chars_per_line;
-            memcpy(line, state->llm_input_text + i, (size_t)len);
-            line[len] = '\0';
-            draw_text(renderer, line, g_input_rect.x + 8, text_y, text_color);
-            text_y += 16;
-            if (text_y > g_input_rect.y + g_input_rect.h - 10) break;
-        }
-    } else {
-        draw_text(renderer, "Type your message...", 
-                 g_input_rect.x + 8, g_input_rect.y + 30,
-                 (SDL_Color){100, 100, 100, 255});
-    }
+    // Placeholder text is handled by InputManager - no manual drawing needed
     
     // Send button positioned at right edge of input area (overlapping visually)
     g_send_btn = (SDL_Rect){g_input_rect.x + g_input_rect.w + 10, input_y, 100, input_height};

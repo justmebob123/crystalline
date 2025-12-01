@@ -204,7 +204,13 @@
   - Implemented text rendering for dropdown items
   - Shows "Select Model..." placeholder when no model selected
   - Dropdown items now display model names properly
-- [ ] Fix LLM tab input positioning
+- [x] Fix LLM tab input positioning ✅
+  - Removed duplicate manual input field drawing
+  - InputManager now handles all input rendering
+  - Removed manual background/border drawing
+  - Removed manual text rendering loop
+  - Removed duplicate placeholder text
+  - Input field now properly managed by single system
 - [ ] Fix crawler tab URL field
 - [ ] Fix research tab text overlay
 - [ ] Fix calculator centering
