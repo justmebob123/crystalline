@@ -1953,17 +1953,17 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                 float* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float sum = ff->bias1[h];
+                    float sum = (float)big_fixed_to_double(ff->bias1[h]);
                     for (uint32_t i = 0; i < embed_dim; i++) {
-                        sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
+                        sum += attn_out[i] * (float)big_fixed_to_double(ff->w1_lattice[i * ff->hidden_dim + h]);
                     }
                     ff_hidden[h] = prime_tanhf(sum);
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
-                    float sum = ff->bias2[o];
+                    float sum = (float)big_fixed_to_double(ff->bias2[o]);
                     for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                        sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
+                        sum += ff_hidden[h] * (float)big_fixed_to_double(ff->w2_lattice[h * embed_dim + o]);
                     }
                     ff_out[o] = sum;
                 }

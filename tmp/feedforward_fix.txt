@@ -1,0 +1,51 @@
+// PROPER BIGFIXED: FeedForward Layer 1 (W1 * input + bias1)
+                   int precision = training->precision_bits;
+                   for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                       // Initialize sum with bias1
+                       BigFixed* sum = big_fixed_create(precision);
+                       big_fixed_assign(sum, ff->bias1[h]);
+                       
+                       // Accumulate: sum += attn_out[i] * w1_lattice[i,h]
+                       for (uint32_t i = 0; i < embed_dim; i++) {
+                           BigFixed* attn_val = big_fixed_create(precision);
+                           big_fixed_from_double(attn_val, (double)attn_out[i]);
+                           
+                           BigFixed* prod = big_fixed_create(precision);
+                           big_fixed_mul(prod, attn_val, ff->w1_lattice[i * ff->hidden_dim + h]);
+                           big_fixed_add(sum, sum, prod);
+                           
+                           big_fixed_free(attn_val);
+                           big_fixed_free(prod);
+                       }
+                       
+                       // Apply tanh activation
+                       BigFixed* activated = big_fixed_create(precision);
+                       bigfixed_tanh(activated, sum, precision);
+                       ff_hidden[h] = (float)big_fixed_to_double(activated);
+                       
+                       big_fixed_free(sum);
+                       big_fixed_free(activated);
+                   }
+                   
+                   // PROPER BIGFIXED: FeedForward Layer 2 (W2 * hidden + bias2)
+                   for (uint32_t o = 0; o < embed_dim; o++) {
+                       // Initialize sum with bias2
+                       BigFixed* sum = big_fixed_create(precision);
+                       big_fixed_assign(sum, ff->bias2[o]);
+                       
+                       // Accumulate: sum += ff_hidden[h] * w2_lattice[h,o]
+                       for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                           BigFixed* hidden_val = big_fixed_create(precision);
+                           big_fixed_from_double(hidden_val, (double)ff_hidden[h]);
+                           
+                           BigFixed* prod = big_fixed_create(precision);
+                           big_fixed_mul(prod, hidden_val, ff->w2_lattice[h * embed_dim + o]);
+                           big_fixed_add(sum, sum, prod);
+                           
+                           big_fixed_free(hidden_val);
+                           big_fixed_free(prod);
+                       }
+                       
+                       ff_out[o] = (float)big_fixed_to_double(sum);
+                       big_fixed_free(sum);
+                   }
