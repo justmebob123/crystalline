@@ -1,3 +1,4 @@
+#include <stdlib.h>
 /**
  * lattice_embeddings_bigfixed.c - BigFixed Geometric Pattern-Based Embeddings
  * 

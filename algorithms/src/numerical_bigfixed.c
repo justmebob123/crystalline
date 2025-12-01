@@ -1,3 +1,7 @@
+// BigFixed helper macros
+#define BF_CREATE_INIT(var, prec) BigFixed var; var = *big_fixed_create(prec)
+#define BF_FREE(var) big_fixed_free(&var)
+
 #include "numerical.h"
 #include "bigfixed_core.h"
 #include "prime_bigint_transcendental.h"
@@ -22,12 +26,12 @@ void matrix_multiply_bigfixed(
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < k; j++) {
             BigFixed sum;
-            big_fixed_create_init(&sum, precision);
+            BigFixed sum = *big_fixed_create(precision);
             big_fixed_from_int(&sum, 0);
             
             for (int p = 0; p < n; p++) {
                 BigFixed prod;
-                big_fixed_create_init(&prod, precision);
+                BigFixed prod = *big_fixed_create(precision);
                 big_fixed_mul(&prod, A[i * n + p], B[p * k + j]);
                 big_fixed_add(&sum, &sum, &prod);
                 big_fixed_free(&prod);
@@ -80,7 +84,7 @@ void dot_product_bigfixed(
     
     for (int i = 0; i < size; i++) {
         BigFixed prod;
-        big_fixed_create_init(&prod, precision);
+        BigFixed prod = *big_fixed_create(precision);
         big_fixed_mul(&prod, a[i], b[i]);
         big_fixed_add(result, result, &prod);
         big_fixed_free(&prod);
@@ -99,7 +103,7 @@ void layer_norm_bigfixed(
     
     // Compute mean
     BigFixed mean;
-    big_fixed_create_init(&mean, precision);
+    BigFixed mean = *big_fixed_create(precision);
     big_fixed_from_int(&mean, 0);
     
     for (int i = 0; i < size; i++) {
@@ -107,19 +111,19 @@ void layer_norm_bigfixed(
     }
     
     BigFixed size_fixed;
-    big_fixed_create_init(&size_fixed, precision);
+    BigFixed size_fixed = *big_fixed_create(precision);
     big_fixed_from_int(&size_fixed, size);
     big_fixed_div(&mean, &mean, &size_fixed);
     
     // Compute variance
     BigFixed var;
-    big_fixed_create_init(&var, precision);
+    BigFixed var = *big_fixed_create(precision);
     big_fixed_from_int(&var, 0);
     
     for (int i = 0; i < size; i++) {
         BigFixed diff, diff_sq;
-        big_fixed_create_init(&diff, precision);
-        big_fixed_create_init(&diff_sq, precision);
+        BigFixed diff = *big_fixed_create(precision);
+        BigFixed diff_sq = *big_fixed_create(precision);
         
         big_fixed_sub(&diff, input[i], &mean);
         big_fixed_mul(&diff_sq, &diff, &diff);
@@ -132,8 +136,8 @@ void layer_norm_bigfixed(
     
     // Add epsilon and compute std
     BigFixed epsilon, std;
-    big_fixed_create_init(&epsilon, precision);
-    big_fixed_create_init(&std, precision);
+    BigFixed epsilon = *big_fixed_create(precision);
+    BigFixed std = *big_fixed_create(precision);
     big_fixed_from_double(&epsilon, 1e-5);
     big_fixed_add(&var, &var, &epsilon);
     big_sqrt(&std, &var, precision);
@@ -141,8 +145,8 @@ void layer_norm_bigfixed(
     // Normalize and scale
     for (int i = 0; i < size; i++) {
         BigFixed normalized, scaled;
-        big_fixed_create_init(&normalized, precision);
-        big_fixed_create_init(&scaled, precision);
+        BigFixed normalized = *big_fixed_create(precision);
+        BigFixed scaled = *big_fixed_create(precision);
         
         big_fixed_sub(&normalized, input[i], &mean);
         big_fixed_div(&normalized, &normalized, &std);
@@ -169,7 +173,7 @@ void relu_bigfixed(
     if (!input || !output) return;
     
     BigFixed zero;
-    big_fixed_create_init(&zero, precision);
+    BigFixed zero = *big_fixed_create(precision);
     big_fixed_from_int(&zero, 0);
     
     for (int i = 0; i < size; i++) {

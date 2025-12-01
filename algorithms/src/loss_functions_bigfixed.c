@@ -1,3 +1,7 @@
+// BigFixed helper macros
+#define BF_CREATE_INIT(var, prec) BigFixed var; var = *big_fixed_create(prec)
+#define BF_FREE(var) big_fixed_free(&var)
+
 #include "loss_functions.h"
 #include "bigfixed_core.h"
 #include "prime_bigint_transcendental.h"
@@ -20,7 +24,7 @@ void cross_entropy_loss_bigfixed(
     if (!logits || !targets || !loss) return;
     
     BigFixed sum;
-    big_fixed_create_init(&sum, precision);
+    BigFixed sum = *big_fixed_create(precision);
     big_fixed_from_int(&sum, 0);
     
     for (int i = 0; i < batch_size; i++) {
@@ -31,7 +35,7 @@ void cross_entropy_loss_bigfixed(
         
         // Apply softmax and compute log probability
         BigFixed max_logit;
-        big_fixed_create_init(&max_logit, precision);
+        BigFixed max_logit = *big_fixed_create(precision);
         big_fixed_assign(&max_logit, logit_row[0]);
         
         for (int j = 1; j < num_classes; j++) {
@@ -41,13 +45,13 @@ void cross_entropy_loss_bigfixed(
         }
         
         BigFixed exp_sum;
-        big_fixed_create_init(&exp_sum, precision);
+        BigFixed exp_sum = *big_fixed_create(precision);
         big_fixed_from_int(&exp_sum, 0);
         
         for (int j = 0; j < num_classes; j++) {
             BigFixed diff, exp_val;
-            big_fixed_create_init(&diff, precision);
-            big_fixed_create_init(&exp_val, precision);
+            BigFixed diff = *big_fixed_create(precision);
+            BigFixed exp_val = *big_fixed_create(precision);
             
             big_fixed_sub(&diff, logit_row[j], &max_logit);
             big_exp(&exp_val, &diff, precision);
@@ -59,12 +63,12 @@ void cross_entropy_loss_bigfixed(
         
         // log_prob = logit[target] - max - log(sum)
         BigFixed log_sum, target_logit_norm, log_prob, neg_log_prob;
-        big_fixed_create_init(&log_sum, precision);
-        big_fixed_create_init(&target_logit_norm, precision);
-        big_fixed_create_init(&log_prob, precision);
-        big_fixed_create_init(&neg_log_prob, precision);
+        BigFixed log_sum = *big_fixed_create(precision);
+        BigFixed target_logit_norm = *big_fixed_create(precision);
+        BigFixed log_prob = *big_fixed_create(precision);
+        BigFixed neg_log_prob = *big_fixed_create(precision);
         
-        big_log(&log_sum, &exp_sum, precision);
+        big_ln(&log_sum, &exp_sum, precision);
         big_fixed_sub(&target_logit_norm, logit_row[target], &max_logit);
         big_fixed_sub(&log_prob, &target_logit_norm, &log_sum);
         big_fixed_neg(&neg_log_prob, &log_prob);
@@ -81,7 +85,7 @@ void cross_entropy_loss_bigfixed(
     
     // Average loss
     BigFixed batch_size_fixed;
-    big_fixed_create_init(&batch_size_fixed, precision);
+    BigFixed batch_size_fixed = *big_fixed_create(precision);
     big_fixed_from_int(&batch_size_fixed, batch_size);
     big_fixed_div(loss, &sum, &batch_size_fixed);
     
@@ -98,7 +102,7 @@ void softmax_bigfixed(
     
     // Find max for numerical stability
     BigFixed max_logit;
-    big_fixed_create_init(&max_logit, precision);
+    BigFixed max_logit = *big_fixed_create(precision);
     big_fixed_assign(&max_logit, logits[0]);
     
     for (int i = 1; i < size; i++) {
@@ -109,13 +113,13 @@ void softmax_bigfixed(
     
     // Compute exp and sum
     BigFixed sum;
-    big_fixed_create_init(&sum, precision);
+    BigFixed sum = *big_fixed_create(precision);
     big_fixed_from_int(&sum, 0);
     
     for (int i = 0; i < size; i++) {
         BigFixed diff, exp_val;
-        big_fixed_create_init(&diff, precision);
-        big_fixed_create_init(&exp_val, precision);
+        BigFixed diff = *big_fixed_create(precision);
+        BigFixed exp_val = *big_fixed_create(precision);
         
         big_fixed_sub(&diff, logits[i], &max_logit);
         big_exp(&exp_val, &diff, precision);
@@ -144,7 +148,7 @@ void log_softmax_bigfixed(
     
     // Find max
     BigFixed max_logit;
-    big_fixed_create_init(&max_logit, precision);
+    BigFixed max_logit = *big_fixed_create(precision);
     big_fixed_assign(&max_logit, logits[0]);
     
     for (int i = 1; i < size; i++) {
@@ -155,13 +159,13 @@ void log_softmax_bigfixed(
     
     // Compute log(sum(exp))
     BigFixed sum;
-    big_fixed_create_init(&sum, precision);
+    BigFixed sum = *big_fixed_create(precision);
     big_fixed_from_int(&sum, 0);
     
     for (int i = 0; i < size; i++) {
         BigFixed diff, exp_val;
-        big_fixed_create_init(&diff, precision);
-        big_fixed_create_init(&exp_val, precision);
+        BigFixed diff = *big_fixed_create(precision);
+        BigFixed exp_val = *big_fixed_create(precision);
         
         big_fixed_sub(&diff, logits[i], &max_logit);
         big_exp(&exp_val, &diff, precision);
@@ -172,13 +176,13 @@ void log_softmax_bigfixed(
     }
     
     BigFixed log_sum;
-    big_fixed_create_init(&log_sum, precision);
-    big_log(&log_sum, &sum, precision);
+    BigFixed log_sum = *big_fixed_create(precision);
+    big_ln(&log_sum, &sum, precision);
     
     // log_softmax[i] = logit[i] - max - log(sum)
     for (int i = 0; i < size; i++) {
         BigFixed temp;
-        big_fixed_create_init(&temp, precision);
+        BigFixed temp = *big_fixed_create(precision);
         big_fixed_sub(&temp, logits[i], &max_logit);
         big_fixed_sub(logits[i], &temp, &log_sum);
         big_fixed_free(&temp);
