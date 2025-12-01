@@ -211,10 +211,27 @@
   - Removed manual text rendering loop
   - Removed duplicate placeholder text
   - Input field now properly managed by single system
-- [ ] Fix crawler tab URL field
-- [ ] Fix research tab text overlay
-- [ ] Fix calculator centering
-- [ ] Fix video tab centering
+- [x] Fix crawler tab URL field ✅
+  - Fixed hardcoded X position from 756px to 690px (correct column 2)
+  - Fixed width from 486px to 420px (fits within column)
+  - Eliminated 122px overflow
+  - URL field now properly contained within panel
+- [x] Fix research tab text overlay ✅
+  - Fixed panel_x calculation (was RENDER_WIDTH, should be RENDER_OFFSET_X + RENDER_WIDTH)
+  - Fixed search input X position (was 200px off)
+  - Search input now properly positioned in panel
+  - No more text overlay on input label
+- [x] Fix calculator centering ✅
+  - Changed from hardcoded x_base=100 to centered calculation
+  - Calculator now centered at X=340px in render area
+  - Minimap also centered properly
+  - Professional centered layout
+- [x] Fix video tab centering ✅
+  - Fixed X position to account for sidebar (RENDER_OFFSET_X + 20)
+  - Fixed Y position to account for submenu (RENDER_OFFSET_Y + 20)
+  - Video tab now properly positioned in render area
+
+## Phase 4: All Remaining UI Fixes - COMPLETE ✅
 
 ### Phase 4: Verification
 - [ ] Test all tabs for proper layout

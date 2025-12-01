@@ -48,9 +48,9 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Color error_color = {255, 100, 100, 255};
     SDL_Color recording_color = {255, 50, 50, 255};
     
-    // Layout
-    int x = 20;
-    int y = 60;
+    // Layout (centered in render area, accounting for sidebar)
+    int x = RENDER_OFFSET_X + 20;
+    int y = RENDER_OFFSET_Y + 20;
     int w = RENDER_WIDTH - 40;
     // int h = WINDOW_HEIGHT - 80; // TODO: Use for panel height
     

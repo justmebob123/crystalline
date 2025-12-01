@@ -36,10 +36,13 @@ static void register_training_inputs_internal(InputManager* manager) {
 // Helper function to register crawler tab inputs
 static void register_crawler_inputs_internal(InputManager* manager) {
     // Crawler tab uses 3-column layout
-    // Column 1: X = 220 (RENDER_OFFSET_X + margin)
-    // Column 2: X = 756 (approximate middle column)
-    int col1_x = 230;
-    int col2_x = 756;
+    // Layout calculation: content_width = 1360px, 3 columns = 440px each
+    // Column 1: X = 220 (SIDEBAR + margin)
+    // Column 2: X = 680 (220 + 440 + 20 spacing)
+    // Column 3: X = 1140 (680 + 440 + 20 spacing)
+    int col1_x = 230;  // 220 + 10 padding
+    int col2_x = 690;  // 680 + 10 padding
+    int col_width = 420;  // 440 - 20 (10px padding each side)
     
     // Column 1 inputs (prime configuration)
     input_manager_register(manager, "crawler.frequency", TAB_CRAWLER, INPUT_TYPE_NUMBER,
@@ -58,9 +61,9 @@ static void register_crawler_inputs_internal(InputManager* manager) {
                          (SDL_Rect){col1_x, 259, 150, 22});
     input_manager_set_text(manager, "crawler.delay_max", "11");
     
-    // Column 2 input (add URL)
+    // Column 2 input (add URL) - fixed width to fit within column
     input_manager_register(manager, "crawler.add_url", TAB_CRAWLER, INPUT_TYPE_URL,
-                         (SDL_Rect){col2_x, 123, 486, 22});
+                         (SDL_Rect){col2_x, 123, col_width, 22});
     input_manager_set_text(manager, "crawler.add_url", "");
 }
 

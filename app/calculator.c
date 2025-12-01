@@ -405,18 +405,24 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
 // Main calculator drawing function with mini-map
 void draw_calculator_with_minimap(SDL_Renderer* renderer, AppState* state) {
     // Layout:
-    // Top: Mini-map visualization (full width, 300px height)
-    // Bottom: Calculator UI (full width, remaining height)
+    // Top: Mini-map visualization (centered in render area)
+    // Bottom: Calculator UI (centered in render area)
     
     int minimap_height = 300;
-    int calc_start_y = minimap_height + 50;
+    int minimap_width = RENDER_WIDTH - 100;
+    int calc_width = 800;
     
-    // Draw mini-map at top
-    draw_minimap_visualization(renderer, state, 50, 50, RENDER_WIDTH - 100, minimap_height);
+    // Center minimap in render area
+    int minimap_x = RENDER_OFFSET_X + (RENDER_WIDTH - minimap_width) / 2;
+    int minimap_y = RENDER_OFFSET_Y + 10;
     
-    // Calculator UI below
-    int x_base = 100;
+    // Center calculator in render area
+    int x_base = RENDER_OFFSET_X + (RENDER_WIDTH - calc_width) / 2;
+    int calc_start_y = minimap_y + minimap_height + 50;
     int y_pos = calc_start_y;
+    
+    // Draw mini-map at top (centered)
+    draw_minimap_visualization(renderer, state, minimap_x, minimap_y, minimap_width, minimap_height);
     
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color green = {100, 255, 100, 255};

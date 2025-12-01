@@ -182,15 +182,16 @@ static const char* format_time(time_t time) {
 void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
-    // Initialize search input once
+    // Calculate panel position (RENDER_OFFSET_X + RENDER_WIDTH)
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    int panel_y = RENDER_OFFSET_Y;
+    
+    // Initialize search input once (using correct panel_x position)
     if (!search_input_initialized) {
-        text_input_init(&search_input, "Search:", RENDER_WIDTH + 10, 150, 260, 25);
+        text_input_init(&search_input, "Search:", panel_x + 10, 150, 260, 25);
         text_input_set_text(&search_input, search_query);
         search_input_initialized = true;
     }
-    
-    int panel_x = RENDER_WIDTH;
-    int panel_y = 60;
     int panel_width = CONTROL_PANEL_WIDTH;
     
     // Initialize model selector on first draw
