@@ -167,7 +167,10 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                 float sum = 0.0f;
                 for (uint32_t i = 0; i < head_dim; i++) {
                     size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
-                    sum += layer->query_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    BigFixed* prod = big_fixed_create(256);
+                    big_fixed_mul(prod, layer->query_lattice[weight_idx], input_vec[h * head_dim + i]);
+                    big_fixed_add(sum, sum, prod);
+                    big_fixed_free(prod);
                 }
                 queries[pos * embedding_dim + h * head_dim + d] = sum;
             }
@@ -179,7 +182,10 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                 float sum = 0.0f;
                 for (uint32_t i = 0; i < head_dim; i++) {
                     size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
-                    sum += layer->key_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    BigFixed* prod = big_fixed_create(256);
+                    big_fixed_mul(prod, layer->key_lattice[weight_idx], input_vec[h * head_dim + i]);
+                    big_fixed_add(sum, sum, prod);
+                    big_fixed_free(prod);
                 }
                 keys[pos * embedding_dim + h * head_dim + d] = sum;
             }
@@ -191,7 +197,10 @@ void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                 float sum = 0.0f;
                 for (uint32_t i = 0; i < head_dim; i++) {
                     size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
-                    sum += layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
+                    BigFixed* prod = big_fixed_create(256);
+                    big_fixed_mul(prod, layer->value_lattice[weight_idx], input_vec[h * head_dim + i]);
+                    big_fixed_add(sum, sum, prod);
+                    big_fixed_free(prod);
                 }
                 values[pos * embedding_dim + h * head_dim + d] = sum;
             }
@@ -413,7 +422,10 @@ void cllm_attention_forward_hybrid(
                     float sum = 0.0f;
                     for (uint32_t i = 0; i < head_dim; i++) {
                         size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
-                        sum += layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
+                        BigFixed* prod = big_fixed_create(256);
+                        big_fixed_mul(prod, layer->value_lattice[weight_idx], input_vec[h * head_dim + i]);
+                        big_fixed_add(sum, sum, prod);
+                        big_fixed_free(prod);
                     }
                     values[pos * embedding_dim + h * head_dim + d] = sum;
                 }

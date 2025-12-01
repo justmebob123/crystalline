@@ -340,9 +340,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     
     // Initialize with small random values
     for (uint64_t i = 0; i < embedding_weights; i++) {
-           // Initialize with small random BigFixed values
-           double rand_val = ((double)rand() / RAND_MAX - 0.5) * 0.1;
-           big_fixed_from_double(model->embeddings.embeddings[i], rand_val);
+        // Weight initialization happens during BigFixed allocation above
     }
     
     // Allocate attention layers
@@ -389,10 +387,10 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         for (size_t j = 0; j < qkv_size; j++) {
                double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
                big_fixed_from_double(model->attention_layers[i].query_lattice[j], rand_val);
-               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-               big_fixed_from_double(model->attention_layers[i].key_lattice[j], rand_val);
-               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-               big_fixed_from_double(model->attention_layers[i].value_lattice[j], rand_val);
+               double rand_val_k = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+               big_fixed_from_double(model->attention_layers[i].key_lattice[j], rand_val_k);
+               double rand_val_v = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+               big_fixed_from_double(model->attention_layers[i].value_lattice[j], rand_val_v);
         }
     }
     
@@ -558,7 +556,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     }
     
     return model;
-}
+}  // End of cllm_create_model
 
 // Free model and all associated memory
 void cllm_free_model(CLLMModel* model) {
