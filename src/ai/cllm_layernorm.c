@@ -10,7 +10,6 @@
 #include "../include/prime_float_math.h"
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"
-#include "cllm_layernorm_bigfixed.h"
 
 /**
  * Apply layer normalization

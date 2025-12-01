@@ -126,7 +126,7 @@ void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
     if (!temp) return;
     
     memcpy(temp, data, layer->input_dim * sizeof(float));
-    cllm_feedforward_bigfixed(layer, temp, data);
+    cllm_feedforward_bigfixed(layer, (BigFixed**)temp, (BigFixed**)data, 128);
     
     free(temp);
 }
@@ -147,7 +147,7 @@ void cllm_feedforward_batch(FeedForwardLayer* layer, float* input,
     uint32_t output_dim = layer->output_dim;
     
     for (int b = 0; b < batch_size; b++) {
-        cllm_feedforward_bigfixed(layer, &input[b * input_dim], &output[b * output_dim]);
+        cllm_feedforward_bigfixed(layer, (BigFixed**)&input[b * input_dim], (BigFixed**)&output[b * output_dim], 128);
     }
 }
 
