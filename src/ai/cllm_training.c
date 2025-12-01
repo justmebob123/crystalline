@@ -118,7 +118,7 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
  * - Uses model->tokens[id].lattice_coords (LEARNED positions)
  * - Provides gradient signal for learning
  */
-float cllm_compute_crystalline_loss(
+float cllm_compute_loss(
     CLLMModel* model,
     uint32_t* input_tokens,
     uint32_t* target_tokens,
@@ -177,9 +177,9 @@ float cllm_compute_crystalline_loss(
     return count > 0 ? total_loss / count : 0.0f;
 }
 
-// REMOVED: Legacy cllm_compute_loss() function (lines 178-216)
-// This function was DEPRECATED and WRONG - it used token IDs for GCD instead of learned prime encodings.
-// All code now uses cllm_compute_crystalline_loss() which correctly uses model->tokens[id].prime_encoding.
+// NOTE: cllm_compute_loss() is the ONLY loss function in the system.
+// Uses GCD-based similarity with learned prime encodings from model->tokens[id].prime_encoding.
+// No fallbacks, no alternatives - this IS the crystalline design.
 
 /**
  * Sort tokens by Ulam spiral position for better cache locality
@@ -1544,7 +1544,7 @@ float cllm_train_epoch(CLLMTraining* training) {
         cllm_forward_training(training, input_tokens);
         
         // Compute loss using PURE CRYSTALLINE LOSS (GCD-based with learned prime encodings)
-        float loss = cllm_compute_crystalline_loss(training->model, input_tokens, target_tokens, 
+        float loss = cllm_compute_loss(training->model, input_tokens, target_tokens, 
                                                    training->config.batch_size * training->config.sequence_length);
         epoch_loss += loss;
         num_batches++;

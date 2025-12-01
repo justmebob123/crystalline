@@ -1,7 +1,7 @@
 /*
  * CLLM Loss Computation - Utility Functions
  * 
- * NOTE: The main loss function is cllm_compute_crystalline_loss() in cllm_training.c
+ * NOTE: The main loss function is cllm_compute_loss() in cllm_training.c
  * This file contains only utility functions for metrics and evaluation.
  */
 

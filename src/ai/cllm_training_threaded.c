@@ -715,7 +715,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // PURE CRYSTALLINE LOSS (ASI Design - Phase 1)
         // Uses learned prime encodings and lattice positions
         // This is deterministic GCD-based loss, not standard cross-entropy
-        float seq_loss = cllm_compute_crystalline_loss(
+        float seq_loss = cllm_compute_loss(
             training->model,
             &batch->input_ids[offset],
             &batch->target_ids[offset],

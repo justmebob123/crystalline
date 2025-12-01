@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /**
- * Pure Crystalline Loss Function (The ONLY Loss Function)
+ * Compute Loss (The ONLY Loss Function)
  * 
  * Uses deterministic GCD-based similarity with learned prime encodings
  * and lattice positions. This is the core of the crystalline design.
@@ -18,9 +18,9 @@ extern "C" {
  * @param input_tokens Input token IDs
  * @param target_tokens Target token IDs
  * @param num_tokens Number of tokens
- * @return Average crystalline loss
+ * @return Average loss
  */
-float cllm_compute_crystalline_loss(
+float cllm_compute_loss(
     CLLMModel* model,
     uint32_t* input_tokens,
     uint32_t* target_tokens,
@@ -28,7 +28,7 @@ float cllm_compute_crystalline_loss(
 );
 
 /**
- * Compute crystalline loss with detailed statistics
+ * Compute loss with detailed statistics
  * 
  * @param model CLLM model
  * @param input_tokens Input token IDs
@@ -36,9 +36,9 @@ float cllm_compute_crystalline_loss(
  * @param num_tokens Number of tokens
  * @param avg_gcd_sim Output: average GCD similarity
  * @param avg_spatial_sim Output: average spatial similarity
- * @return Average crystalline loss
+ * @return Average loss
  */
-float cllm_compute_crystalline_loss_detailed(
+float cllm_compute_loss_detailed(
     CLLMModel* model,
     uint32_t* input_tokens,
     uint32_t* target_tokens,
