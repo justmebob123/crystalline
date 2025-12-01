@@ -296,6 +296,21 @@ typedef struct {
 
 // Forward declarations
 
+// Lattice initialization functions (cllm_lattice_init.c)
+void cllm_lattice_aware_init(CLLMModel* model, float scale);
+void cllm_crystalline_init(CLLMModel* model, float base_scale);
+void cllm_symmetric_init(CLLMModel* model, float scale);
+void cllm_hierarchical_lattice_init(CLLMModel* model, int num_levels, float base_scale);
+
+// OBJECTIVE 16: Kissing sphere neighbor initialization
+// Note: Declaration in include/ai/cllm_kissing_spheres.h takes precedence
+void cllm_process_lattice_point_with_neighbors(
+    CLLMModel* model,
+    uint32_t point_id,
+    BigFixed** gradients,
+    uint32_t embedding_dim
+);
+
 #ifdef __cplusplus
 }
 #endif
