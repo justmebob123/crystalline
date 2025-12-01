@@ -26,6 +26,7 @@
  * @param precision BigFixed precision
  */
 static void gelu_bigfixed(BigFixed* x, BigFixed* result, int precision) {
+    (void)precision;  // Unused parameter - kept for API consistency
     const double sqrt_2_over_pi = 0.7978845608; // sqrt(2/π)
     const double coeff = 0.044715;
     

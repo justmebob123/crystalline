@@ -76,28 +76,6 @@ void cllm_activation_relu(float* x, int size) {
 }
 
 /**
- * Matrix-vector multiplication: output = matrix * input + bias
- * Uses SIMD for vectorization
- * 
- * @param matrix Weight matrix [output_dim x input_dim]
- * @param input Input vector [input_dim]
- * @param bias Bias vector [output_dim]
- * @param output Output vector [output_dim]
- * @param input_dim Input dimension
- * @param output_dim Output dimension
- */
-static void matmul_add_bias(float* matrix, float* input, float* bias, 
-                           float* output, int input_dim, int output_dim) {
-    // Use SIMD matrix-vector multiply
-    simd_matrix_vector_multiply(output, matrix, input, output_dim, input_dim);
-    
-    // Add bias if present
-    if (bias) {
-        vector_add(output, output, bias, output_dim);
-    }
-}
-
-/**
  * Feed-forward network forward pass
  * 
  * FFN(x) = W2 * GELU(W1 * x + b1) + b2

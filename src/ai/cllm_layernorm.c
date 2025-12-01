@@ -26,8 +26,8 @@ void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon) {
     ln->epsilon = epsilon;
     
     // Allocate gamma and beta using BigFixed
-    ln->gamma = bigfixed_array_create(dim);
-    ln->beta = bigfixed_array_create(dim);
+    ln->gamma = bigfixed_array_create(dim, 128);
+    ln->beta = bigfixed_array_create(dim, 128);
     
     if (!ln->gamma || !ln->beta) {
         if (ln->gamma) bigfixed_array_free(ln->gamma, dim);
@@ -36,8 +36,8 @@ void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon) {
     }
     
     // Initialize gamma to 1.0 and beta to 0.0 using BigFixed
-    BigFixed* one = big_fixed_create();
-    BigFixed* zero = big_fixed_create();
+    BigFixed* one = big_fixed_create(128);
+    BigFixed* zero = big_fixed_create(128);
     big_fixed_from_double(one, 1.0);
     big_fixed_from_double(zero, 0.0);
     
