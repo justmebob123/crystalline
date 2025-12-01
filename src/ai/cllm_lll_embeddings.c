@@ -16,6 +16,7 @@
 #include <string.h>
 #include "../include/prime_float_math.h"
 #include <stdio.h>
+#include "bigfixed_array_utils.h"
 
 typedef struct {
     float** basis;           // LLL-reduced basis (reduced_dim × original_dim)
@@ -280,9 +281,11 @@ void lll_integrate_training(CLLMTraining* training, int target_dim) {
     training->model->embeddings.embeddings = reduced_embeddings;
     training->model->embedding_dim = target_dim;
     
-    // Update gradient buffers
-    free(training->gradients);
-    training->gradients = (float*)calloc(training->model->vocab_size * target_dim, sizeof(float));
+    // Update gradient buffers - use BigFixed
+    if (training->gradients) {
+        bigfixed_array_free(training->gradients, training->model->vocab_size * training->model->embedding_dim);
+    }
+    training->gradients = bigfixed_array_create(training->model->vocab_size * target_dim, 128);
     
     printf("LLL reduction integrated: %d → %d dimensions\n", 
            reducer->original_dim, reducer->reduced_dim);
