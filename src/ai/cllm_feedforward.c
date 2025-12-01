@@ -105,30 +105,6 @@ static void matmul_add_bias(float* matrix, float* input, float* bias,
  * @param input Input vector [input_dim]
  * @param output Output vector [output_dim]
  */
-void cllm_feedforward(FeedForwardLayer* layer, float* input, float* output) {
-    if (!layer || !input || !output) return;
-    
-    uint32_t input_dim = layer->input_dim;
-    uint32_t hidden_dim = layer->hidden_dim;
-    uint32_t output_dim = layer->output_dim;
-    
-    // Allocate hidden layer buffer
-    float* hidden = (float*)malloc(hidden_dim * sizeof(float));
-    if (!hidden) return;
-    
-    // First linear layer: hidden = W1 * input + b1
-    matmul_add_bias(layer->w1_lattice, input, layer->bias1, 
-                   hidden, input_dim, hidden_dim);
-    
-    // Apply GELU activation
-    cllm_activation_gelu(hidden, hidden_dim);
-    
-    // Second linear layer: output = W2 * hidden + b2
-    matmul_add_bias(layer->w2_lattice, hidden, layer->bias2,
-                   output, hidden_dim, output_dim);
-    
-    free(hidden);
-}
 
 /**
  * Feed-forward network forward pass (in-place)
@@ -149,7 +125,7 @@ void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
     if (!temp) return;
     
     memcpy(temp, data, layer->input_dim * sizeof(float));
-    cllm_feedforward(layer, temp, data);
+    cllm_feedforward_bigfixed(layer, temp, data);
     
     free(temp);
 }
@@ -170,7 +146,7 @@ void cllm_feedforward_batch(FeedForwardLayer* layer, float* input,
     uint32_t output_dim = layer->output_dim;
     
     for (int b = 0; b < batch_size; b++) {
-        cllm_feedforward(layer, &input[b * input_dim], &output[b * output_dim]);
+        cllm_feedforward_bigfixed(layer, &input[b * input_dim], &output[b * output_dim]);
     }
 }
 

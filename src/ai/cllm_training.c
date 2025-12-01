@@ -3388,81 +3388,6 @@ void cllm_attention_forward_bigfixed(
     free(scores);
 }
 
-void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
-                           float* key_cache, float* value_cache, int seq_len) {
-    (void)key_cache; (void)value_cache;
-    if (!layer || !input || !output || seq_len == 0) return;
-    
-    uint32_t num_heads = layer->num_heads;
-    uint32_t head_dim = layer->head_dim;
-    uint32_t embed_dim = num_heads * head_dim;
-    
-    // Allocate Q, K, V
-    float* queries = (float*)calloc(seq_len * embed_dim, sizeof(float));
-    float* keys = (float*)calloc(seq_len * embed_dim, sizeof(float));
-    float* values = (float*)calloc(seq_len * embed_dim, sizeof(float));
-    float* scores = (float*)calloc(seq_len * seq_len, sizeof(float));
-    
-    if (!queries || !keys || !values || !scores) {
-        free(queries); free(keys); free(values); free(scores);
-        return;
-    }
-    
-    // Compute Q, K, V (simplified - assumes W_q, W_k, W_v are identity for now)
-    // TODO: This needs proper BigFixed implementation
-    memcpy(queries, input, seq_len * embed_dim * sizeof(float));
-    memcpy(keys, input, seq_len * embed_dim * sizeof(float));
-    memcpy(values, input, seq_len * embed_dim * sizeof(float));
-    
-    // Compute attention scores
-    float scale = 1.0f / prime_sqrtf((float)head_dim);
-    for (uint32_t i = 0; i < seq_len; i++) {
-        for (uint32_t j = 0; j < seq_len; j++) {
-            float score = 0.0f;
-            for (uint32_t d = 0; d < embed_dim; d++) {
-                score += queries[i * embed_dim + d] * keys[j * embed_dim + d];
-            }
-            scores[i * seq_len + j] = score * scale;
-        }
-    }
-    
-    // Apply softmax
-    for (uint32_t i = 0; i < seq_len; i++) {
-        float* row = &scores[i * seq_len];
-        float max_val = row[0];
-        for (uint32_t j = 1; j < seq_len; j++) {
-            if (row[j] > max_val) max_val = row[j];
-        }
-        
-        double sum = 0.0;
-        for (uint32_t j = 0; j < seq_len; j++) {
-            row[j] = prime_expf(row[j] - max_val);
-            sum += row[j];
-        }
-        
-        if (sum > 1e-10) {
-            for (uint32_t j = 0; j < seq_len; j++) {
-                row[j] /= (float)sum;
-            }
-        }
-    }
-    
-    // Compute output = scores * V
-    memset(output, 0, seq_len * embed_dim * sizeof(float));
-    for (uint32_t i = 0; i < seq_len; i++) {
-        for (uint32_t j = 0; j < seq_len; j++) {
-            float weight = scores[i * seq_len + j];
-            for (uint32_t d = 0; d < embed_dim; d++) {
-                output[i * embed_dim + d] += weight * values[j * embed_dim + d];
-            }
-        }
-    }
-    
-    free(queries);
-    free(keys);
-    free(values);
-    free(scores);
-}
 
 void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, 
                                    float* input, float* output,
@@ -3473,5 +3398,5 @@ void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer,
     
     // For now, use standard attention (angular attention requires token IDs and model context)
     // TODO: Implement proper hybrid (angular + dot product) attention
-    cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
+    cllm_attention_forward_bigfixed(layer, input, output, key_cache, value_cache, seq_len, 128);
 }

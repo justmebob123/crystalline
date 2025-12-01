@@ -222,71 +222,8 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
 }
 
 // Layer normalization (old version for compatibility)
-void cllm_layer_norm_old(float* x, CLLMLayerNorm* ln, uint32_t dim) {
-    if (!x || !ln) return;
-    
-    // Compute mean
-    float mean = 0.0f;
-    for (uint32_t i = 0; i < dim; i++) {
-        mean += x[i];
-    }
-    mean /= dim;
-    
-    // Compute variance
-    float var = 0.0f;
-    for (uint32_t i = 0; i < dim; i++) {
-        float diff = x[i] - mean;
-        var += diff * diff;
-    }
-    var /= dim;
-    
-    // Normalize
-    float std = prime_sqrtf(var + ln->epsilon);
-    for (uint32_t i = 0; i < dim; i++) {
-        x[i] = (x[i] - mean) / std;
-        
-        // Apply learned parameters if available
-        if (ln->gamma && ln->beta) {
-// DISABLED - USE BigFixed version:             x[i] = x[i] * ln->gamma[i] + ln->beta[i];
-        }
-    }
-}
 
 // Feed-forward network
-void cllm_feed_forward(float* x, FeedForwardLayer* ff) {
-    if (!x || !ff) return;
-    
-    uint32_t input_dim = ff->input_dim;
-    uint32_t hidden_dim = ff->hidden_dim;
-    
-    // Allocate temporary buffer
-    float* hidden = (float*)calloc(hidden_dim, sizeof(float));
-    if (!hidden) return;
-    
-    // First layer: input -> hidden
-    if (ff->w1_lattice && ff->bias1) {
-        for (uint32_t i = 0; i < hidden_dim; i++) {
-// DISABLED - USE BigFixed version:             hidden[i] = ff->bias1[i];
-            for (uint32_t j = 0; j < input_dim; j++) {
-// DISABLED - USE BigFixed version:                 hidden[i] += x[j] * ff->w1_lattice[j * hidden_dim + i];
-            }
-            // ReLU activation
-            if (hidden[i] < 0) hidden[i] = 0;
-        }
-    }
-    
-    // Second layer: hidden -> output
-    if (ff->w2_lattice && ff->bias2) {
-        for (uint32_t i = 0; i < input_dim; i++) {
-// DISABLED - USE BigFixed version:             x[i] = ff->bias2[i];
-            for (uint32_t j = 0; j < hidden_dim; j++) {
-// DISABLED - USE BigFixed version:                 x[i] += hidden[j] * ff->w2_lattice[j * input_dim + i];
-            }
-        }
-    }
-    
-    free(hidden);
-}
 
 // Forward pass
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
@@ -336,23 +273,23 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         
         for (uint32_t layer = 0; layer < model->num_layers; layer++) {
             // Layer norm
-            cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[layer], embed_dim);
+            cllm_layer_norm_bigfixed(inference->hidden_states, &model->layer_norms[layer], embed_dim);
             
             // Attention - use proper multi-head attention
             AttentionLayer* attn_layer = &model->attention_layers[layer];
-            cllm_attention_forward(attn_layer, inference->hidden_states, attn_output, NULL, NULL, 1);
+            cllm_attention_forward_bigfixed(attn_layer, inference->hidden_states, attn_output, NULL, NULL, 1, 128);
             
             // Copy attention output back to hidden states
             memcpy(inference->hidden_states, attn_output, embed_dim * sizeof(float));
             
             // Feed-forward
-            cllm_feed_forward(inference->hidden_states, &model->ff_layers[layer]);
+            cllm_feedforward_bigfixed(inference->hidden_states, &model->ff_layers[layer]);
         }
         
         free(attn_output);
         
         // Final layer norm
-        cllm_layer_norm_old(inference->hidden_states, &model->layer_norms[model->num_layers - 1], embed_dim);
+        cllm_layer_norm_bigfixed(inference->hidden_states, &model->layer_norms[model->num_layers - 1], embed_dim);
     }
 
     

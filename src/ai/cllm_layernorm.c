@@ -20,36 +20,6 @@
  * @param input Input vector [dim]
  * @param output Output normalized vector [dim]
  */
-void cllm_layer_norm(CLLMLayerNorm* ln, float* input, float* output) {
-    if (!ln || !input || !output) return;
-    
-    uint32_t dim = ln->dim;
-    float epsilon = ln->epsilon;
-    
-    // Compute mean
-    float mean = 0.0f;
-    for (uint32_t i = 0; i < dim; i++) {
-        mean += input[i];
-    }
-    mean /= (float)dim;
-    
-    // Compute variance
-    float variance = 0.0f;
-    for (uint32_t i = 0; i < dim; i++) {
-        float diff = input[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= (float)dim;
-    
-    // Compute standard deviation
-    float std = prime_sqrt(variance + epsilon);
-    
-    // Normalize and apply affine transformation
-    for (uint32_t i = 0; i < dim; i++) {
-        float normalized = (input[i] - mean) / std;
-// DISABLED - USE BigFixed version:         output[i] = ln->gamma[i] * normalized + ln->beta[i];
-    }
-}
 
 /**
  * Apply layer normalization in-place
@@ -60,7 +30,7 @@ void cllm_layer_norm(CLLMLayerNorm* ln, float* input, float* output) {
 void cllm_layer_norm_inplace(CLLMLayerNorm* ln, float* data) {
     if (!ln || !data) return;
     
-    cllm_layer_norm(ln, data, data);
+    cllm_layer_norm_bigfixed(ln, data, data);
 }
 
 /**
@@ -77,7 +47,7 @@ void cllm_layer_norm_batch(CLLMLayerNorm* ln, float* input, float* output, int b
     uint32_t dim = ln->dim;
     
     for (int b = 0; b < batch_size; b++) {
-        cllm_layer_norm(ln, &input[b * dim], &output[b * dim]);
+        cllm_layer_norm_bigfixed(ln, &input[b * dim], &output[b * dim]);
     }
 }
 
