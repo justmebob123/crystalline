@@ -126,3 +126,13 @@ void cllm_set_max_tokens(CLLMInference* inference, int max_tokens);
 void cllm_inference_cleanup(CLLMInference* inference);
 
 #endif /* CLLM_INFERENCE_H */
+// BigFixed version of attention for inference
+void cllm_attention_forward_bigfixed(
+    AttentionLayer* layer,
+    BigFixed** input,
+    BigFixed** output,
+    BigFixed** key_cache,
+    BigFixed** value_cache,
+    int seq_len,
+    int precision
+);

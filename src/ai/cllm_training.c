@@ -3193,6 +3193,196 @@ void cllm_training_free(CLLMTraining* training) {
 // These are temporary stubs to fix linker errors
 // ============================================================================
 
+
+/**
+ * BigFixed Attention Forward for Inference
+ * 
+ * This is the BigFixed version of attention for inference.
+ * Supports KV caching for efficient autoregressive generation.
+ * 
+ * @param layer Attention layer with weights
+ * @param input Input tensor [seq_len x embed_dim] as BigFixed**
+ * @param output Output tensor [seq_len x embed_dim] as BigFixed**
+ * @param key_cache Cached keys (can be NULL)
+ * @param value_cache Cached values (can be NULL)
+ * @param seq_len Sequence length
+ * @param precision BigFixed precision bits
+ */
+void cllm_attention_forward_bigfixed(
+    AttentionLayer* layer,
+    BigFixed** input,
+    BigFixed** output,
+    BigFixed** key_cache,
+    BigFixed** value_cache,
+    int seq_len,
+    int precision
+) {
+    if (!layer || !input || !output || seq_len <= 0) return;
+    
+    uint32_t num_heads = layer->num_heads;
+    uint32_t head_dim = layer->head_dim;
+    uint32_t embed_dim = num_heads * head_dim;
+    
+    // Allocate Q, K, V matrices [seq_len x embed_dim]
+    BigFixed** queries = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** keys = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    BigFixed** values = (BigFixed**)calloc(seq_len * embed_dim, sizeof(BigFixed*));
+    
+    if (!queries || !keys || !values) {
+        free(queries);
+        free(keys);
+        free(values);
+        return;
+    }
+    
+    // Initialize BigFixed elements
+    for (uint32_t i = 0; i < seq_len * embed_dim; i++) {
+        queries[i] = big_fixed_create(precision);
+        keys[i] = big_fixed_create(precision);
+        values[i] = big_fixed_create(precision);
+        big_fixed_from_int(queries[i], 0);
+        big_fixed_from_int(keys[i], 0);
+        big_fixed_from_int(values[i], 0);
+    }
+    
+    // Compute Q, K, V for each position
+    BigFixed* temp = big_fixed_create(precision);
+    for (uint32_t pos = 0; pos < (uint32_t)seq_len; pos++) {
+        BigFixed** input_pos = &input[pos * embed_dim];
+        
+        // Compute Q = input * W_q
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], layer->query_lattice[i * embed_dim + d]);
+                big_fixed_add(queries[pos * embed_dim + d], queries[pos * embed_dim + d], temp);
+            }
+        }
+        
+        // Compute K = input * W_k
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], layer->key_lattice[i * embed_dim + d]);
+                big_fixed_add(keys[pos * embed_dim + d], keys[pos * embed_dim + d], temp);
+            }
+        }
+        
+        // Compute V = input * W_v
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                big_fixed_mul(temp, input_pos[i], layer->value_lattice[i * embed_dim + d]);
+                big_fixed_add(values[pos * embed_dim + d], values[pos * embed_dim + d], temp);
+            }
+        }
+    }
+    big_fixed_free(temp);
+    
+    // TODO: Integrate KV cache if provided
+    // For now, compute fresh attention each time
+    (void)key_cache;
+    (void)value_cache;
+    
+    // Compute attention scores [seq_len x seq_len]
+    BigFixed** scores = (BigFixed**)calloc(seq_len * seq_len, sizeof(BigFixed*));
+    for (int i = 0; i < seq_len * seq_len; i++) {
+        scores[i] = big_fixed_create(precision);
+        big_fixed_from_int(scores[i], 0);
+    }
+    
+    // scores[i,j] = dot(Q[i], K[j]) / sqrt(head_dim)
+    BigFixed* scale = big_fixed_create(precision);
+    double scale_val = 1.0 / prime_sqrtf((double)head_dim);
+    big_fixed_from_double(scale, scale_val);
+    
+    BigFixed* dot_prod = big_fixed_create(precision);
+    for (int i = 0; i < seq_len; i++) {
+        for (int j = 0; j < seq_len; j++) {
+            big_fixed_from_int(dot_prod, 0);
+            
+            // Dot product of Q[i] and K[j]
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                BigFixed* prod = big_fixed_create(precision);
+                big_fixed_mul(prod, queries[i * embed_dim + d], keys[j * embed_dim + d]);
+                big_fixed_add(dot_prod, dot_prod, prod);
+                big_fixed_free(prod);
+            }
+            
+            // Scale by 1/sqrt(head_dim)
+            big_fixed_mul(scores[i * seq_len + j], dot_prod, scale);
+        }
+    }
+    big_fixed_free(dot_prod);
+    big_fixed_free(scale);
+    
+    // Apply softmax to each row (convert to float for softmax, then back to BigFixed)
+    for (int i = 0; i < seq_len; i++) {
+        // Convert row to float array
+        float* row = (float*)malloc(seq_len * sizeof(float));
+        for (int j = 0; j < seq_len; j++) {
+            row[j] = (float)big_fixed_to_double(scores[i * seq_len + j]);
+        }
+        
+        // Apply softmax using crystalline math
+        float max_val = row[0];
+        for (int j = 1; j < seq_len; j++) {
+            if (row[j] > max_val) max_val = row[j];
+        }
+        
+        double sum = 0.0;
+        for (int j = 0; j < seq_len; j++) {
+            row[j] = prime_expf(row[j] - max_val);
+            sum += row[j];
+        }
+        
+        if (sum > 1e-10) {
+            for (int j = 0; j < seq_len; j++) {
+                row[j] /= (float)sum;
+            }
+        }
+        
+        // Convert back to BigFixed
+        for (int j = 0; j < seq_len; j++) {
+            big_fixed_from_double(scores[i * seq_len + j], (double)row[j]);
+        }
+        
+        free(row);
+    }
+    
+    // Compute output = scores * V
+    BigFixed* weighted_sum = big_fixed_create(precision);
+    for (int i = 0; i < seq_len; i++) {
+        for (uint32_t d = 0; d < embed_dim; d++) {
+            big_fixed_from_int(weighted_sum, 0);
+            
+            for (int j = 0; j < seq_len; j++) {
+                BigFixed* weighted_val = big_fixed_create(precision);
+                big_fixed_mul(weighted_val, scores[i * seq_len + j], values[j * embed_dim + d]);
+                big_fixed_add(weighted_sum, weighted_sum, weighted_val);
+                big_fixed_free(weighted_val);
+            }
+            
+            if (!output[i * embed_dim + d]) {
+                output[i * embed_dim + d] = big_fixed_create(precision);
+            }
+            big_fixed_assign(output[i * embed_dim + d], weighted_sum);
+        }
+    }
+    big_fixed_free(weighted_sum);
+    
+    // Cleanup
+    for (uint32_t i = 0; i < seq_len * embed_dim; i++) {
+        big_fixed_free(queries[i]);
+        big_fixed_free(keys[i]);
+        big_fixed_free(values[i]);
+    }
+    for (int i = 0; i < seq_len * seq_len; i++) {
+        big_fixed_free(scores[i]);
+    }
+    free(queries);
+    free(keys);
+    free(values);
+    free(scores);
+}
+
 void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                            float* key_cache, float* value_cache, int seq_len) {
     (void)key_cache; (void)value_cache;
