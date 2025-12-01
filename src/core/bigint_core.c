@@ -131,9 +131,25 @@ bool big_is_zero(const BigInt *n) {
 }
 
 void big_copy(BigInt *dest, const BigInt *src) {
-    if (!dest || !src) return;
+    if (!dest || !src) {
+        fprintf(stderr, "ERROR: big_copy called with NULL pointer (dest=%p, src=%p)\n",
+                (void*)dest, (void*)src);
+        return;
+    }
+    
+    // Verify source has valid data pointer
+    if (!src->d) {
+        fprintf(stderr, "ERROR: big_copy source has NULL data pointer\n");
+        return;
+    }
     
     big_ensure_capacity(dest, src->len);
+    
+    // Verify destination has valid data pointer after ensure_capacity
+    if (!dest->d) {
+        fprintf(stderr, "ERROR: big_copy destination has NULL data pointer after ensure_capacity\n");
+        return;
+    }
     
     for (size_t i = 0; i < src->len; i++) {
         dest->d[i] = src->d[i];

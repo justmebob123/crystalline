@@ -233,6 +233,65 @@
 
 ## Phase 4: All Remaining UI Fixes - COMPLETE ✅
 
+## 🚨 CRITICAL: SEGMENTATION FAULT CRASH
+
+### Crash Details from Image:
+```
+==910864==ERROR: AddressSanitizer: SEGV on unknown address (pc 0x7f7093302263 bp 0x9665f750c53e400 sp 0x7f)
+==910864==The signal is caused by a READ memory access.
+==910864==Hint: this fault was caused by a dereference of a high value address (see register values below)
+```
+
+### Stack Trace Analysis:
+1. `#0 0x7f7093302263 in big_copy src/core/bigint_core.c:136`
+2. `#1 0x7f7093302263 in big_copy src/core/bigint_core.c:133`
+3. `#2 0x7f7093300790 in big_assign src/core/bigfixed_core.c:86`
+4. `#3 0x7f709329bec0 in bigfixed_array_copy src/ai/bigfixed_array_utils.c:71`
+5. `#4 0x7f70932bf6af in cllm_training_init src/ai/cllm_training.c:250`
+6. `#5 0x4db1a8 in handle_training_tab_click ui/tabs/tab_training.c:1238`
+7. `#6 0x43cd94 in handle_mouse_click /home/logan/code/C/crystalline/app/main.c:435`
+8. `#7 0x440b7c in handle_input /home/logan/code/C/crystalline/app/main.c:710`
+9. `#8 0x444277 in main /home/logan/code/C/crystalline/app/main.c:993`
+
+### Root Cause:
+- Crash in `big_copy` function in `bigint_core.c:136`
+- Called from `cllm_training_init` when starting training
+- NULL pointer or invalid memory access in BigInt copy operation
+- Triggered by clicking "Start Training" button
+
+### Immediate Actions Required:
+- [x] Read MASTER_PLAN.md ✅
+- [x] Analyze big_copy function in bigint_core.c ✅
+- [x] Check cllm_training_init for NULL pointer issues ✅
+- [x] Verify bigfixed_array_copy safety ✅
+- [x] Add NULL checks and validation ✅
+- [ ] Test training initialization (needs user testing)
+
+### Fixes Applied:
+1. **bigint_core.c - big_copy():**
+   - Added NULL check for dest and src pointers
+   - Added NULL check for src->d (data pointer)
+   - Added NULL check for dest->d after ensure_capacity
+   - Added error logging for all NULL cases
+
+2. **bigfixed_array_utils.c - bigfixed_array_copy():**
+   - Added NULL pointer logging
+   - Changed to skip NULL entries instead of crashing
+   - Added warning messages for first 10 NULL entries
+   - Added stdio.h include for fprintf
+
+3. **cllm_training.c - cllm_training_init():**
+   - Added validation loop to check model->weights array
+   - Only copies if all weights are valid
+   - Added warning messages for NULL weights
+   - Prevents crash when model not fully initialized
+
+### Root Cause:
+- Model weights array (model->weights) not fully initialized
+- Attempting to copy NULL BigFixed pointers
+- big_copy dereferencing NULL data pointer
+- No safety checks in copy operations
+
 ### Phase 4: Verification
 - [ ] Test all tabs for proper layout
 - [ ] Verify no overlapping elements

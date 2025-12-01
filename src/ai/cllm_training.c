@@ -243,12 +243,22 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         size_t total_params = model->header.total_params;
         if (total_params > 0 && total_params < 1000000000) {
             training->master_weights = bigfixed_array_create(total_params, training->precision_bits);
+            // Only copy if both master_weights and model->weights are valid
             if (training->master_weights && model->weights) {
-                // Copy current weights to master weights
-                // Copy BigFixed weights to master_weights
-                    if (model->weights) {
-                        bigfixed_array_copy(training->master_weights, model->weights, total_params);
+                // Verify all BigFixed pointers are valid before copying
+                bool all_valid = true;
+                for (size_t i = 0; i < total_params && i < 100; i++) {  // Check first 100
+                    if (!model->weights[i]) {
+                        all_valid = false;
+                        printf("WARNING: model->weights[%zu] is NULL, skipping copy\n", i);
+                        break;
                     }
+                }
+                if (all_valid) {
+                    bigfixed_array_copy(training->master_weights, model->weights, total_params);
+                } else {
+                    printf("WARNING: Model weights not fully initialized, skipping master weights copy\n");
+                }
             }
         }
     }
