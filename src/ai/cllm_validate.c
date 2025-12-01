@@ -100,21 +100,21 @@ bool cllm_validate_weights(const CLLMModel* model) {
         
         snprintf(name, sizeof(name), "Attention layer %u query", i);
         if (model->attention_layers[i].query_lattice) {
-            if (!cllm_check_numerical_stability(model->attention_layers[i].query_lattice, layer_size, name)) {
+            if (!cllm_check_bigfixed_stability(model->attention_layers[i].query_lattice, layer_size, name)) {
                 return false;
             }
         }
         
         snprintf(name, sizeof(name), "Attention layer %u key", i);
         if (model->attention_layers[i].key_lattice) {
-            if (!cllm_check_numerical_stability(model->attention_layers[i].key_lattice, layer_size, name)) {
+            if (!cllm_check_bigfixed_stability(model->attention_layers[i].key_lattice, layer_size, name)) {
                 return false;
             }
         }
         
         snprintf(name, sizeof(name), "Attention layer %u value", i);
         if (model->attention_layers[i].value_lattice) {
-            if (!cllm_check_numerical_stability(model->attention_layers[i].value_lattice, layer_size, name)) {
+            if (!cllm_check_bigfixed_stability(model->attention_layers[i].value_lattice, layer_size, name)) {
                 return false;
             }
         }
@@ -127,7 +127,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
         snprintf(name, sizeof(name), "FF layer %u W1", i);
         if (model->ff_layers[i].w1_lattice) {
             size_t w1_size = model->ff_layers[i].input_dim * model->ff_layers[i].hidden_dim;
-            if (!cllm_check_numerical_stability(model->ff_layers[i].w1_lattice, w1_size, name)) {
+            if (!cllm_check_bigfixed_stability(model->ff_layers[i].w1_lattice, w1_size, name)) {
                 return false;
             }
         }
@@ -135,7 +135,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
         snprintf(name, sizeof(name), "FF layer %u W2", i);
         if (model->ff_layers[i].w2_lattice) {
             size_t w2_size = model->ff_layers[i].hidden_dim * model->ff_layers[i].output_dim;
-            if (!cllm_check_numerical_stability(model->ff_layers[i].w2_lattice, w2_size, name)) {
+            if (!cllm_check_bigfixed_stability(model->ff_layers[i].w2_lattice, w2_size, name)) {
                 return false;
             }
         }
@@ -158,12 +158,12 @@ bool cllm_validate_layer_norms(const CLLMModel* model) {
         char name[64];
         
         snprintf(name, sizeof(name), "LayerNorm %u gamma", i);
-        if (!cllm_check_numerical_stability(model->layer_norms[i].gamma, model->layer_norms[i].dim, name)) {
+        if (!cllm_check_bigfixed_stability(model->layer_norms[i].gamma, model->layer_norms[i].dim, name)) {
             return false;
         }
         
         snprintf(name, sizeof(name), "LayerNorm %u beta", i);
-        if (!cllm_check_numerical_stability(model->layer_norms[i].beta, model->layer_norms[i].dim, name)) {
+        if (!cllm_check_bigfixed_stability(model->layer_norms[i].beta, model->layer_norms[i].dim, name)) {
             return false;
         }
         
