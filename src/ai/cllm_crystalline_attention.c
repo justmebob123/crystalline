@@ -377,22 +377,42 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
     for (int pos = 0; pos < seq_len; pos++) {
         const float* input_vec = &input[pos * embedding_dim];
         
-        for (uint32_t h = 0; h < num_heads; h++) {
-            for (uint32_t d = 0; d < head_dim; d++) {
-                float q_sum = 0.0f, k_sum = 0.0f, v_sum = 0.0f;
-                
-                for (uint32_t i = 0; i < head_dim; i++) {
-                    size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
-// DISABLED - USE BigFixed version:                     q_sum += layer->query_lattice[weight_idx] * input_vec[h * head_dim + i];
-// DISABLED - USE BigFixed version:                     k_sum += layer->key_lattice[weight_idx] * input_vec[h * head_dim + i];
-// DISABLED - USE BigFixed version:                     v_sum += layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
-                }
-                
-                queries[pos * embedding_dim + h * head_dim + d] = q_sum;
-                keys[pos * embedding_dim + h * head_dim + d] = k_sum;
-                values[pos * embedding_dim + h * head_dim + d] = v_sum;
-            }
-        }
+           // BIGFIXED IMPLEMENTATION - NO FLOATS
+           // Use dot_product_bigfixed() from algorithms layer
+           for (uint32_t h = 0; h < num_heads; h++) {
+               for (uint32_t d = 0; d < head_dim; d++) {
+                   // Allocate BigFixed results
+                   BigFixed* q_sum = big_fixed_create(64);  // Use default precision
+                   BigFixed* k_sum = big_fixed_create(64);
+                   BigFixed* v_sum = big_fixed_create(64);
+                   
+                   if (!q_sum || !k_sum || !v_sum) {
+                       if (q_sum) big_fixed_free(q_sum);
+                       if (k_sum) big_fixed_free(k_sum);
+                       if (v_sum) big_fixed_free(v_sum);
+                       continue;
+                   }
+                   
+                   // Compute dot products using BigFixed (NO FLOATS!)
+                   // For now, initialize to zero (proper implementation needs input_embeddings as BigFixed**)
+                   big_fixed_from_int(q_sum, 0);
+                   big_fixed_from_int(k_sum, 0);
+                   big_fixed_from_int(v_sum, 0);
+                   
+                   // TODO: Implement proper dot product when input_embeddings is BigFixed**
+                   // dot_product_bigfixed(weight_q, input_head, q_sum, head_dim, 64);
+                   
+                   // Store results (convert to float for now - will be removed when queries/keys/values are BigFixed**)
+                   queries[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(q_sum);
+                   keys[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(k_sum);
+                   values[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(v_sum);
+                   
+                   // Cleanup
+                   big_fixed_free(q_sum);
+                   big_fixed_free(k_sum);
+                   big_fixed_free(v_sum);
+               }
+           }
     }
     
     // Apply crystalline attention for each position and head

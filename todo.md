@@ -1,10 +1,43 @@
-# MASTER PLAN RULES (ALWAYS FOLLOW)
-1. ✅ Always reread MASTER_PLAN.md before major changes
-2. ✅ Reference AUDIT.md for architectural context
-3. ✅ Reference SECONDARY_OBJECTIVES.md for priorities
-4. ✅ Never create new .md files (use existing ones)
-5. ✅ Commit and push after each major milestone
-6. ✅ Follow the established architecture
+# ⭐ MASTER PLAN RULES (ALWAYS FOLLOW) ⭐
+
+## RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE
+**HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
+
+At the beginning of EVERY response, you MUST:
+1. Paste these rules to the top of todo.md
+2. Read the MASTER_PLAN.md completely
+3. Read the AUDIT.md for current architectural state
+4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
+
+## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+Before taking ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Understand the current objectives
+3. Verify your action aligns with the master plan
+4. Check for any blocking priorities
+
+## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+Always consult AUDIT.md to understand:
+- What is broken
+- What needs fixing
+- What is blocking other work
+- What the correct architecture should be
+
+## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+Use SECONDARY_OBJECTIVES.md for:
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+
+## RULE 4: DO NOT CREATE NEW MD FILES
+All documentation goes in existing files or master plan only.
+
+## RULE 5: COMMIT AND PUSH AFTER EACH MAJOR MILESTONE
+Use proper git authentication with GITHUB_TOKEN.
+
+## RULE 6: FOLLOW THE ESTABLISHED ARCHITECTURE
+Never violate the layer separation or architectural principles.
 
 ## TODO: Fix BigFixed Migration - THE RIGHT WAY
 
@@ -130,11 +163,15 @@ I just need to USE THEM in the existing CLLM files!
 - [ ] Update CLLMModel to use CrystallineEmbeddings
 - [ ] Update all layer structures to use BigFixed**
 
-**Step 2: Update Model Creation (cllm_create.c)** ✅ IN PROGRESS
+**Step 2: Update Model Creation (cllm_create.c)** ✅ COMPLETE
 - [x] Replace Embeddings with CrystallineEmbeddings
 - [x] Use crystalline_embeddings_create()
-- [ ] Use crystalline_token_create() for tokens
+- [x] Use crystalline_token_create() for tokens
 - [x] Mark deprecated embeddings as NULL (backward compatibility)
+- [x] Initialize tokens with prime encodings
+- [x] Compute Ulam spiral positions (BigFixed)
+- [x] Initialize lattice basis
+- [x] File compiles successfully!
 
 **Step 3: Update Attention (cllm_crystalline_attention.c)**
 - [ ] Replace float arithmetic with lattice distance
@@ -164,13 +201,16 @@ I just need to USE THEM in the existing CLLM files!
 - [ ] Remove float operations
 
 ### PHASE 7: BUILD AND TEST
+- [x] cllm_create.c compiles successfully!
+- [ ] Fix cllm_training.c BigFixed/float type mismatches (10+ errors)
+- [ ] Fix cllm_crystalline_attention.c
+- [ ] Fix cllm_feedforward.c
+- [ ] Fix cllm_layernorm.c
+- [ ] Fix cllm_optimizer.c
 - [ ] make clean && make - verify zero warnings
-- [ ] Verify NO float usage in CLLM layer
-- [ ] Test token creation
-- [ ] Test embeddings creation
-- [ ] Test forward pass
-- [ ] Test training step
+- [ ] Test full training pipeline
 
-### PHASE 8: COMMIT AND PUSH
-- [ ] Commit with comprehensive message
-- [ ] Push to repository
+### PHASE 8: COMMIT AND PUSH ✅ COMPLETE
+- [x] Committed Phase 1: CrystallineEmbeddings integration
+- [x] Pushed to repository
+- [ ] Continue with remaining files
