@@ -29,7 +29,8 @@ SOURCES = src/numerical.c \
           src/lattice_embeddings_bigfixed.c \
           src/loss_functions_bigfixed.c \
           src/optimizers_bigfixed.c \
-          src/numerical_bigfixed.c
+          src/numerical_bigfixed.c \
+          src/bigfixed_math_wrappers.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)

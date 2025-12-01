@@ -23,6 +23,7 @@
 #include "../include/prime_float_math.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
+#include "../algorithms/include/bigfixed_math_wrappers.h"
 #include "../include/ai/cllm_simple_loss.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
@@ -1384,7 +1385,7 @@ void cllm_adam_step_bigfixed(
         BigFixed denom = *big_fixed_create(precision);
         BigFixed update = *big_fixed_create(precision);
         
-        big_sqrt(&sqrt_v, v, precision);
+        bigfixed_sqrt(&sqrt_v, v, precision);
         big_fixed_add(&denom, &sqrt_v, &epsilon);
         big_fixed_div(&temp1, m, &denom);
         big_fixed_mul(&update, &learning_rate, &temp1);
@@ -1637,7 +1638,7 @@ void cllm_backward_training_bigfixed(
             BigFixed diff;
             BigFixed diff = *big_fixed_create(precision);
             big_fixed_sub(&diff, logit_row[j], &max_logit);
-            big_exp(&probs[j], &diff, precision);
+            bigfixed_exp(&probs[j], &diff, precision);
             big_fixed_add(&sum, &sum, &probs[j]);
             big_fixed_free(&diff);
         }
@@ -1850,7 +1851,7 @@ float cllm_compute_loss_bigfixed(
             BigFixed diff;
             BigFixed diff = *big_fixed_create(precision);
             big_fixed_sub(&diff, logit_row[j], &max_logit);
-            big_exp(&exp_logits[j], &diff, precision);
+            bigfixed_exp(&exp_logits[j], &diff, precision);
             big_fixed_add(&sum, &sum, &exp_logits[j]);
             big_fixed_free(&diff);
         }
@@ -1862,7 +1863,7 @@ float cllm_compute_loss_bigfixed(
         
         BigFixed log_sum;
         BigFixed log_sum = *big_fixed_create(precision);
-        big_ln(&log_sum, &sum, precision);
+        bigfixed_ln(&log_sum, &sum, precision);
         
         BigFixed target_logit_normalized;
         BigFixed target_logit_normalized = *big_fixed_create(precision);
@@ -2009,7 +2010,7 @@ void cllm_attention_forward_bigfixed(
         BigFixed sqrt_head_dim;
         BigFixed sqrt_head_dim = *big_fixed_create(precision);
         big_fixed_from_int(&sqrt_head_dim, head_dim);
-        big_sqrt(&sqrt_head_dim, &sqrt_head_dim, precision);
+        bigfixed_sqrt(&sqrt_head_dim, &sqrt_head_dim, precision);
         
         for (int i = 0; i < seq_len; i++) {
             for (int j = 0; j < seq_len; j++) {
@@ -2064,7 +2065,7 @@ void cllm_attention_forward_bigfixed(
                 BigFixed exp_val = *big_fixed_create(precision);
                 
                 big_fixed_sub(&diff, row[j], &max_score);
-                big_exp(&exp_val, &diff, precision);
+                bigfixed_exp(&exp_val, &diff, precision);
                 big_fixed_assign(row[j], &exp_val);
                 big_fixed_add(&sum, &sum, &exp_val);
                 
@@ -2209,7 +2210,7 @@ float cllm_forward_training_bigfixed(CLLMTraining* training, uint32_t* input_tok
                     }
                     
                     // Apply tanh activation
-                    big_tanh(ff_hidden[h], &sum, precision);
+                    bigfixed_tanh(ff_hidden[h], &sum, precision);
                     big_fixed_free(&sum);
                 }
                 
@@ -2280,7 +2281,7 @@ float cllm_forward_training_bigfixed(CLLMTraining* training, uint32_t* input_tok
                 BigFixed epsilon = *big_fixed_create(precision);
                 big_fixed_from_double(&epsilon, 1e-5);
                 big_fixed_add(&var, &var, &epsilon);
-                big_sqrt(&std, &var, precision);
+                bigfixed_sqrt(&std, &var, precision);
                 
                 // Normalize
                 for (uint32_t d = 0; d < embed_dim; d++) {
