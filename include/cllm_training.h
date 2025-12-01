@@ -74,8 +74,11 @@ typedef struct {
     // Gradient accumulation state
     int accumulation_step;       // Current accumulation step (0 to gradient_accumulation_steps-1)
     
+    // BIGFIXED PRECISION CONFIGURATION
+    int precision_bits;          // Precision for all BigFixed operations (from model)
+    
     // Mixed precision training state
-    float* master_weights;       // FP32 master copy of weights (for mixed precision)
+    BigFixed** master_weights;   // BigFixed master copy of weights (arbitrary precision)
     uint16_t* fp16_activations;  // FP16 activation buffer
     uint16_t* fp16_gradients;    // FP16 gradient buffer
     float current_loss_scale;    // Current dynamic loss scale
@@ -86,26 +89,26 @@ typedef struct {
     int current_batch_offset;    // Current batch offset in tokens
     
     // Optimizer state
-    float* gradients;            // Gradient buffer for embeddings
-    float* optimizer_state;      // Optimizer state (e.g., momentum, variance)
+    BigFixed** gradients;        // BigFixed gradient buffer (arbitrary precision)
+    BigFixed** optimizer_state;  // BigFixed optimizer state (momentum, variance)
     
     // Layer-specific gradient buffers
     struct {
-        float* query_lattice;    // Gradients for query weights
-        float* key_lattice;      // Gradients for key weights
-        float* value_lattice;    // Gradients for value weights
+        BigFixed** query_lattice;    // Gradients for query weights (arbitrary precision)
+        BigFixed** key_lattice;      // Gradients for key weights (arbitrary precision)
+        BigFixed** value_lattice;    // Gradients for value weights (arbitrary precision)
     }* attention_grads;          // Array of num_layers
     
     struct {
-        float* w1_lattice;       // Gradients for W1
-        float* w2_lattice;       // Gradients for W2
-        float* bias1;            // Gradients for bias1
-        float* bias2;            // Gradients for bias2
+        BigFixed** w1_lattice;       // Gradients for W1 (arbitrary precision)
+        BigFixed** w2_lattice;       // Gradients for W2 (arbitrary precision)
+        BigFixed** bias1;            // Gradients for bias1 (arbitrary precision)
+        BigFixed** bias2;            // Gradients for bias2 (arbitrary precision)
     }* ff_grads;                 // Array of num_layers
     
     struct {
-        float* gamma;            // Gradients for gamma
-        float* beta;             // Gradients for beta
+        BigFixed** gamma;            // Gradients for gamma (arbitrary precision)
+        BigFixed** beta;             // Gradients for beta (arbitrary precision)
     }* ln_grads;                 // Array of num_layers
     
     // Pre-allocated backward pass buffers (OPTIMIZATION)
@@ -122,22 +125,22 @@ typedef struct {
     int cached_batch_size;           // Size of embedding cache
     
     // Forward pass activation storage
-    float* input_embeddings;         // Input embeddings [batch * seq * embed]
-    float** layer_inputs;            // Per-layer inputs [num_layers][batch * seq * embed]
-    float** attention_outputs;       // Per-layer attention outputs
-    float** ff_outputs;              // Per-layer FF outputs
-    float** layer_outputs;           // Per-layer final outputs
-    float** ff_hidden;               // Per-layer FF hidden states
-    float* final_hidden;             // Final hidden state
-    float* logits;                   // Output logits [batch * seq * vocab]
+    BigFixed** input_embeddings;     // Input embeddings [batch * seq * embed] (arbitrary precision)
+    BigFixed*** layer_inputs;        // Per-layer inputs [num_layers][batch * seq * embed]
+    BigFixed*** attention_outputs;   // Per-layer attention outputs
+    BigFixed*** ff_outputs;          // Per-layer FF outputs
+    BigFixed*** layer_outputs;       // Per-layer final outputs
+    BigFixed*** ff_hidden;           // Per-layer FF hidden states
+    BigFixed** final_hidden;         // Final hidden state
+    BigFixed** logits;               // Output logits [batch * seq * vocab]
     
     // Attention backward pass storage (for full gradient computation)
     struct {
-        float* attention_weights;    // [num_heads * seq_len * seq_len]
-        float* queries;              // [seq_len * embedding_dim]
-        float* keys;                 // [seq_len * embedding_dim]
-        float* values;               // [seq_len * embedding_dim]
-        float* scores;               // [num_heads * seq_len * seq_len]
+        BigFixed** attention_weights;    // [num_heads * seq_len * seq_len]
+        BigFixed** queries;              // [seq_len * embedding_dim]
+        BigFixed** keys;                 // [seq_len * embedding_dim]
+        BigFixed** values;               // [seq_len * embedding_dim]
+        BigFixed** scores;               // [num_heads * seq_len * seq_len]
     }* attention_cache;              // Array of num_layers
     
     int cached_seq_len;              // Cached sequence length
