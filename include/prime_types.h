@@ -295,6 +295,7 @@ typedef struct PrimeRainbowNode {
     RainbowEntry entry;                    // Entry data
     struct PrimeRainbowNode **children;    // Child nodes
     int child_count;                       // Number of children
+    int capacity;                          // Allocated capacity (for efficient growth)
 } PrimeRainbowNode;
 
 // Rainbow table structure

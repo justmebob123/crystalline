@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 #include "clock_lattice.h"
 #include "../include/prime_math_custom.h"
 
@@ -36,6 +37,8 @@ void rainbow_table_init(void) {
     }
     
     g_rainbow_initialized = true;
+    
+    printf("Rainbow table initialized\n");
 }
 
 void rainbow_table_cleanup(void) {
@@ -216,24 +219,44 @@ int rainbow_table_add_prime(BigInt* prime) {
     node->entry = entry;
     node->children = NULL;
     node->child_count = 0;
+    node->capacity = 0;
     
     // Add to tree (simple: just add as child of root for now)
-    // TODO: Organize by symmetry group in tree structure
     if (!g_rainbow_table.root) {
+        // First prime becomes root
         g_rainbow_table.root = node;
-    } else {
-        // Add as child of root
-        PrimeRainbowNode** new_children = (PrimeRainbowNode**)realloc(
-            g_rainbow_table.root->children,
-            (g_rainbow_table.root->child_count + 1) * sizeof(PrimeRainbowNode*)
+        // Pre-allocate space for children (expect ~10,000 primes)
+        g_rainbow_table.root->capacity = 16384;  // Start with 16K capacity
+        g_rainbow_table.root->children = (PrimeRainbowNode**)malloc(
+            g_rainbow_table.root->capacity * sizeof(PrimeRainbowNode*)
         );
-        if (!new_children) {
+        if (!g_rainbow_table.root->children) {
             big_free(entry.prime);
             free(entry.prime);
             free(node);
+            g_rainbow_table.root = NULL;
             return -1;
         }
-        g_rainbow_table.root->children = new_children;
+    } else {
+        // Check if we need to grow the array
+        if (g_rainbow_table.root->child_count >= g_rainbow_table.root->capacity) {
+            // Double capacity (amortized O(1) instead of O(n²))
+            int new_capacity = g_rainbow_table.root->capacity * 2;
+            PrimeRainbowNode** new_children = (PrimeRainbowNode**)realloc(
+                g_rainbow_table.root->children,
+                new_capacity * sizeof(PrimeRainbowNode*)
+            );
+            if (!new_children) {
+                big_free(entry.prime);
+                free(entry.prime);
+                free(node);
+                return -1;
+            }
+            g_rainbow_table.root->children = new_children;
+            g_rainbow_table.root->capacity = new_capacity;
+        }
+        
+        // Add child (no realloc needed - we have space)
         g_rainbow_table.root->children[g_rainbow_table.root->child_count] = node;
         g_rainbow_table.root->child_count++;
     }
