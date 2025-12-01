@@ -1308,6 +1308,142 @@ float cllm_train_epoch(CLLMTraining* training) {
  */
 
 
+
+
+float cllm_train_step_bigfixed(
+    CLLMTraining* training,
+    uint32_t* input_tokens,
+    uint32_t* target_tokens
+) {
+    if (!training || !input_tokens || !target_tokens) return 0.0f;
+    
+    CLLMModel* model = training->model;
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t vocab_size = model->vocab_size;
+    int precision = training->precision_bits;
+    
+    // Forward pass with BigFixed
+    cllm_forward_training_bigfixed(training, input_tokens);
+    
+    // Compute loss with BigFixed
+    float loss = cllm_compute_loss_bigfixed(
+        training,
+        training->logits,
+        target_tokens,
+        batch_size,
+        seq_len,
+        vocab_size,
+        precision
+    );
+    
+    return loss;
+}
+
+
+float cllm_compute_loss_bigfixed(
+    CLLMTraining* training,
+    BigFixed** logits,
+    uint32_t* target_tokens,
+    int batch_size,
+    int seq_len,
+    uint32_t vocab_size,
+    int precision
+) {
+    if (!training || !logits || !target_tokens) return 0.0f;
+    
+    BigFixed total_loss;
+    big_fixed_create_init(&total_loss, precision);
+    big_fixed_from_int(&total_loss, 0);
+    
+    int total_tokens = batch_size * seq_len;
+    
+    for (int i = 0; i < total_tokens; i++) {
+        uint32_t target = target_tokens[i];
+        if (target >= vocab_size) continue;
+        
+        BigFixed** logit_row = &logits[i * vocab_size];
+        
+        // Apply softmax to logits
+        // Find max for numerical stability
+        BigFixed max_logit;
+        big_fixed_create_init(&max_logit, precision);
+        big_fixed_assign(&max_logit, logit_row[0]);
+        
+        for (uint32_t j = 1; j < vocab_size; j++) {
+            if (big_fixed_cmp(logit_row[j], &max_logit) > 0) {
+                big_fixed_assign(&max_logit, logit_row[j]);
+            }
+        }
+        
+        // Compute exp and sum
+        BigFixed sum;
+        big_fixed_create_init(&sum, precision);
+        big_fixed_from_int(&sum, 0);
+        
+        BigFixed* exp_logits = (BigFixed*)calloc(vocab_size, sizeof(BigFixed));
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            big_fixed_create_init(&exp_logits[j], precision);
+            
+            BigFixed diff;
+            big_fixed_create_init(&diff, precision);
+            big_fixed_sub(&diff, logit_row[j], &max_logit);
+            big_exp(&exp_logits[j], &diff, precision);
+            big_fixed_add(&sum, &sum, &exp_logits[j]);
+            big_fixed_free(&diff);
+        }
+        
+        // Compute log(softmax[target]) = log(exp(logit[target]) / sum)
+        //                                = logit[target] - max - log(sum)
+        BigFixed log_prob;
+        big_fixed_create_init(&log_prob, precision);
+        
+        BigFixed log_sum;
+        big_fixed_create_init(&log_sum, precision);
+        big_log(&log_sum, &sum, precision);
+        
+        BigFixed target_logit_normalized;
+        big_fixed_create_init(&target_logit_normalized, precision);
+        big_fixed_sub(&target_logit_normalized, logit_row[target], &max_logit);
+        big_fixed_sub(&log_prob, &target_logit_normalized, &log_sum);
+        
+        // Negative log likelihood
+        BigFixed neg_log_prob;
+        big_fixed_create_init(&neg_log_prob, precision);
+        big_fixed_neg(&neg_log_prob, &log_prob);
+        
+        // Add to total loss
+        big_fixed_add(&total_loss, &total_loss, &neg_log_prob);
+        
+        // Cleanup
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            big_fixed_free(&exp_logits[j]);
+        }
+        free(exp_logits);
+        big_fixed_free(&max_logit);
+        big_fixed_free(&sum);
+        big_fixed_free(&log_prob);
+        big_fixed_free(&log_sum);
+        big_fixed_free(&target_logit_normalized);
+        big_fixed_free(&neg_log_prob);
+    }
+    
+    // Average loss
+    BigFixed total_tokens_fixed;
+    big_fixed_create_init(&total_tokens_fixed, precision);
+    big_fixed_from_int(&total_tokens_fixed, total_tokens);
+    big_fixed_div(&total_loss, &total_loss, &total_tokens_fixed);
+    
+    // Convert to float for reporting
+    double loss_double = big_fixed_to_double(&total_loss);
+    
+    big_fixed_free(&total_loss);
+    big_fixed_free(&total_tokens_fixed);
+    
+    return (float)loss_double;
+}
+
+
 void cllm_attention_forward_bigfixed(
     CLLMTraining* training,
     uint32_t layer_idx,
@@ -1717,8 +1853,46 @@ float cllm_forward_training_bigfixed(CLLMTraining* training, uint32_t* input_tok
         big_fixed_assign(training->final_hidden[i], layer_input[i]);
     }
     
-    // Compute logits (final_hidden * output_weights)
-    // For now, return 0.0f - loss computation will be added in next phase
+    // Compute logits: final_hidden * embedding_weights^T
+    // This projects back to vocabulary space
+    size_t logits_size = batch_size * seq_len * vocab_size;
+    
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int pos_idx = b * seq_len + s;
+            BigFixed** hidden = &training->final_hidden[pos_idx * embed_dim];
+            BigFixed** logit_row = &training->logits[pos_idx * vocab_size];
+            
+            // For each vocabulary token
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                BigFixed sum;
+                big_fixed_create_init(&sum, precision);
+                big_fixed_from_int(&sum, 0);
+                
+                // Get embedding for this vocab token
+                BigFixed* vocab_embedding = crystalline_embeddings_get(
+                    model->crystalline_embeddings,
+                    v
+                );
+                
+                if (vocab_embedding) {
+                    // Dot product: hidden . vocab_embedding
+                    for (uint32_t d = 0; d < embed_dim; d++) {
+                        BigFixed prod;
+                        big_fixed_create_init(&prod, precision);
+                        big_fixed_mul(&prod, hidden[d], &vocab_embedding[d]);
+                        big_fixed_add(&sum, &sum, &prod);
+                        big_fixed_free(&prod);
+                    }
+                }
+                
+                big_fixed_assign(logit_row[v], &sum);
+                big_fixed_free(&sum);
+            }
+        }
+    }
+    
+    // Return 0.0f - loss will be computed separately
     return 0.0f;
 }
 
