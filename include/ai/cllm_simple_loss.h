@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /**
- * Pure Crystalline Loss Function (ASI Design)
+ * Pure Crystalline Loss Function (The ONLY Loss Function)
  * 
  * Uses deterministic GCD-based similarity with learned prime encodings
  * and lattice positions. This is the core of the crystalline design.
@@ -48,17 +48,7 @@ float cllm_compute_crystalline_loss_detailed(
 );
 
 /**
- * LEGACY: Standard cross-entropy loss (for comparison only)
- * 
- * @param logits Predicted logits [vocab_size]
- * @param target Target token ID
- * @param vocab_size Vocabulary size
- * @return Cross-entropy loss value
- */
-float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size);
-
-/**
- * Compute cross-entropy loss gradient
+ * Compute loss gradient for backpropagation
  * 
  * @param logits Predicted logits [vocab_size]
  * @param target Target token ID
@@ -67,6 +57,39 @@ float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_
  */
 void cllm_compute_loss_gradient(float* logits, uint32_t target, 
                                 int vocab_size, float* grad_output);
+
+/**
+ * Compute perplexity from loss
+ * 
+ * @param loss Loss value
+ * @return Perplexity value
+ */
+float cllm_compute_perplexity(float loss);
+
+/**
+ * Compute accuracy
+ * 
+ * @param logits Predicted logits [batch_size x vocab_size]
+ * @param targets Target token IDs [batch_size]
+ * @param batch_size Batch size
+ * @param vocab_size Vocabulary size
+ * @return Accuracy (0 to 1)
+ */
+float cllm_compute_accuracy(float* logits, uint32_t* targets,
+                           int batch_size, int vocab_size);
+
+/**
+ * Compute top-k accuracy
+ * 
+ * @param logits Predicted logits [batch_size x vocab_size]
+ * @param targets Target token IDs [batch_size]
+ * @param batch_size Batch size
+ * @param vocab_size Vocabulary size
+ * @param k Top-k value
+ * @return Top-k accuracy (0 to 1)
+ */
+float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets,
+                                  int batch_size, int vocab_size, int k);
 
 #ifdef __cplusplus
 }

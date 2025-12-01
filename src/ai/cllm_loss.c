@@ -1,6 +1,8 @@
 /*
- * CLLM Loss Computation
- * Implements loss functions and gradient computation for training
+ * CLLM Loss Computation - Utility Functions
+ * 
+ * NOTE: The main loss function is cllm_compute_crystalline_loss() in cllm_training.c
+ * This file contains only utility functions for metrics and evaluation.
  */
 
 #include <stdio.h>
@@ -43,38 +45,7 @@ static void softmax_inplace(float* logits, int size) {
 }
 
 /**
- * Compute cross-entropy loss
- * 
- * Loss = -log(P(target))
- * 
- * @param logits Predicted logits [vocab_size]
- * @param target Target token ID
- * @param vocab_size Vocabulary size
- * @return Cross-entropy loss value
- */
-float cllm_compute_cross_entropy_loss(float* logits, uint32_t target, int vocab_size) {
-    if (!logits || target >= (uint32_t)vocab_size || vocab_size <= 0) {
-        return 0.0f;
-    }
-    
-    // Create copy for softmax
-    float* probs = (float*)malloc(vocab_size * sizeof(float));
-    if (!probs) return 0.0f;
-    
-    memcpy(probs, logits, vocab_size * sizeof(float));
-    
-    // Apply softmax
-    softmax_inplace(probs, vocab_size);
-    
-    // Compute loss: -log(P(target))
-    float loss = -prime_log(probs[target] + 1e-8f);
-    
-    free(probs);
-    return loss;
-}
-
-/**
- * Compute cross-entropy loss gradient
+ * Compute loss gradient for backpropagation
  * 
  * Gradient = P(predicted) - 1[target]
  * where 1[target] is one-hot vector
@@ -99,139 +70,15 @@ void cllm_compute_loss_gradient(float* logits, uint32_t target,
 }
 
 /**
- * Compute batch cross-entropy loss
- * 
- * @param logits Predicted logits [batch_size x vocab_size]
- * @param targets Target token IDs [batch_size]
- * @param batch_size Batch size
- * @param vocab_size Vocabulary size
- * @return Average loss over batch
- */
-float cllm_compute_batch_loss(float* logits, uint32_t* targets, 
-                              int batch_size, int vocab_size) {
-    if (!logits || !targets || batch_size <= 0 || vocab_size <= 0) {
-        return 0.0f;
-    }
-    
-    float total_loss = 0.0f;
-    
-    for (int i = 0; i < batch_size; i++) {
-        float* batch_logits = &logits[i * vocab_size];
-        float loss = cllm_compute_cross_entropy_loss(batch_logits, targets[i], vocab_size);
-        total_loss += loss;
-    }
-    
-    return total_loss / (float)batch_size;
-}
-
-/**
  * Compute perplexity from loss
  * 
  * Perplexity = exp(loss)
  * 
- * @param loss Cross-entropy loss
+ * @param loss Loss value
  * @return Perplexity value
  */
 float cllm_compute_perplexity(float loss) {
     return prime_exp(loss);
-}
-
-/**
- * Compute label smoothing loss
- * Smooths the target distribution to prevent overconfidence
- * 
- * @param logits Predicted logits [vocab_size]
- * @param target Target token ID
- * @param vocab_size Vocabulary size
- * @param smoothing Smoothing factor (typically 0.1)
- * @return Smoothed cross-entropy loss
- */
-float cllm_compute_label_smoothing_loss(float* logits, uint32_t target, 
-                                       int vocab_size, float smoothing) {
-    if (!logits || target >= (uint32_t)vocab_size || vocab_size <= 0) {
-        return 0.0f;
-    }
-    
-    // Create copy for softmax
-    float* probs = (float*)malloc(vocab_size * sizeof(float));
-    if (!probs) return 0.0f;
-    
-    memcpy(probs, logits, vocab_size * sizeof(float));
-    softmax_inplace(probs, vocab_size);
-    
-    // Compute smoothed target distribution
-    float confidence = 1.0f - smoothing;
-    float smooth_prob = smoothing / (float)vocab_size;
-    
-    // Loss = -sum(q * log(p))
-    // where q is smoothed target distribution
-    float loss = 0.0f;
-    for (int i = 0; i < vocab_size; i++) {
-        float q = (i == (int)target) ? confidence + smooth_prob : smooth_prob;
-        loss -= q * prime_log(probs[i] + 1e-8f);
-    }
-    
-    free(probs);
-    return loss;
-}
-
-/**
- * Compute KL divergence loss
- * Measures divergence between predicted and target distributions
- * 
- * @param logits Predicted logits [vocab_size]
- * @param target_dist Target distribution [vocab_size]
- * @param vocab_size Vocabulary size
- * @return KL divergence
- */
-float cllm_compute_kl_divergence(float* logits, float* target_dist, int vocab_size) {
-    if (!logits || !target_dist || vocab_size <= 0) {
-        return 0.0f;
-    }
-    
-    // Compute predicted probabilities
-    float* probs = (float*)malloc(vocab_size * sizeof(float));
-    if (!probs) return 0.0f;
-    
-    memcpy(probs, logits, vocab_size * sizeof(float));
-    softmax_inplace(probs, vocab_size);
-    
-    // KL(P||Q) = sum(P * log(P/Q))
-    float kl = 0.0f;
-    for (int i = 0; i < vocab_size; i++) {
-        if (target_dist[i] > 1e-8f) {
-            kl += target_dist[i] * prime_log((target_dist[i] + 1e-8f) / (probs[i] + 1e-8f));
-        }
-    }
-    
-    free(probs);
-    return kl;
-}
-
-/**
- * Compute sequence loss (for full sequence prediction)
- * 
- * @param logits Predicted logits [seq_len x vocab_size]
- * @param targets Target token IDs [seq_len]
- * @param seq_len Sequence length
- * @param vocab_size Vocabulary size
- * @return Average loss over sequence
- */
-float cllm_compute_sequence_loss(float* logits, uint32_t* targets,
-                                 int seq_len, int vocab_size) {
-    if (!logits || !targets || seq_len <= 0 || vocab_size <= 0) {
-        return 0.0f;
-    }
-    
-    float total_loss = 0.0f;
-    
-    for (int t = 0; t < seq_len; t++) {
-        float* step_logits = &logits[t * vocab_size];
-        float loss = cllm_compute_cross_entropy_loss(step_logits, targets[t], vocab_size);
-        total_loss += loss;
-    }
-    
-    return total_loss / (float)seq_len;
 }
 
 /**
