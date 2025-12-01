@@ -333,15 +333,31 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
            }
        }
     
-    // Initialize embeddings
+    // Initialize PURE CRYSTALLINE EMBEDDINGS (BigFixed-based, NO floats)
+    // This replaces the deprecated float-based embeddings
+    model->crystalline_embeddings = crystalline_embeddings_create(
+        config->vocab_size,
+        3  // 3D lattice for now
+    );
+    
+    if (!model->crystalline_embeddings) {
+        fprintf(stderr, "Failed to create crystalline embeddings\n");
+        for (uint64_t j = 0; j < model->num_weights; j++) {
+            big_fixed_free(model->weights[j]);
+        }
+        free(model->weights);
+        free(model->tokens);
+        free(model);
+        return NULL;
+    }
+    
+    // DEPRECATED: Keep old embeddings structure for backward compatibility
+    // but mark it as invalid (NULL pointers)
     model->embeddings.vocab_size = config->vocab_size;
     model->embeddings.embedding_dim = config->embedding_dim;
-    model->embeddings.embeddings = model->weights;
-    
-    // Initialize with small random values
-    for (uint64_t i = 0; i < embedding_weights; i++) {
-        // Weight initialization happens during BigFixed allocation above
-    }
+    model->embeddings.embeddings = NULL;  // DO NOT USE - use crystalline_embeddings instead
+    model->embeddings.lattice_transform = NULL;
+    model->embeddings.inverse_transform = NULL;
     
     // Allocate attention layers
     model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));
@@ -514,25 +530,37 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         return NULL;
     }
     
-    // PHASE 1: Initialize Crystalline Prime Encodings (ASI Design)
-    if (model->tokens) {
-        printf("\n=== Initializing Crystalline Structure ===\n");
-        printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
-        
-        // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
-        // Use geometric pattern directly - INSTANT initialization
-        // No caching needed - the pattern IS the algorithm
-        // Uses algorithms layer (fundamental algorithm, not CLLM-specific)
-        lattice_embeddings_init_geometric(
-            model->embeddings.embeddings,
-            config->vocab_size,
-            config->embedding_dim
-        );
-        
-        printf("✓ Crystalline prime encodings initialized\n");
-        printf("✓ 12D lattice coordinates computed\n");
-        printf("==========================================\n\n");
-    }
+       // PHASE 1: Initialize Crystalline Prime Encodings (ASI Design)
+       if (model->tokens && model->crystalline_embeddings) {
+           printf("\n=== Initializing Crystalline Structure ===\n");
+           printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
+           
+           // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
+           // PURE BIGFIXED IMPLEMENTATION - NO FLOATS
+           // Initialize tokens with prime-based representation
+           for (uint32_t token_id = 0; token_id < config->vocab_size; token_id++) {
+               // Get nth prime for this token
+               uint64_t prime = crystalline_get_nth_prime(token_id);
+               
+               // Create token with prime encoding
+               char token_str[64];
+               snprintf(token_str, sizeof(token_str), "token_%u", token_id);
+               CrystallineToken* token = crystalline_token_create(token_id, token_str, prime);
+               
+               if (token) {
+                   // Add token to embeddings (computes Ulam spiral position automatically)
+                   crystalline_embeddings_add_token(model->crystalline_embeddings, token);
+               }
+           }
+           
+           // Initialize lattice basis
+           crystalline_initialize_basis(model->crystalline_embeddings);
+           
+           printf("✓ %u tokens initialized with prime encodings (BigFixed)\n", config->vocab_size);
+           printf("✓ Ulam spiral positions computed (NO FLOATS)\n");
+           printf("✓ Lattice basis initialized\n");
+           printf("==========================================\n\n");
+       }
     
     // OBJECTIVE 16: Initialize lattice points for kissing spheres
     // Allocate lattice points (one per token)
