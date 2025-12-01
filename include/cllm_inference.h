@@ -4,12 +4,14 @@
 /*
  * cllm_inference.h - Auto-generated header file
  * Source: cllm_inference.c
+ * OBJECTIVE 3A: BigFixed migration for arbitrary precision
  */
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
+#include "bigfixed_core.h"
 
 /* Local includes */
 #include "cllm.h"
@@ -19,6 +21,7 @@ typedef struct { int idx; float prob; } IndexProb;
 
 /*
  * CLLM Inference Engine - Runtime inference state
+ * OBJECTIVE 3A: Uses BigFixed for arbitrary precision arithmetic
  */
 typedef struct {
     CLLMModel* model;            // Pointer to the model
@@ -28,15 +31,18 @@ typedef struct {
     int max_tokens;              // Maximum tokens to generate
     float repetition_penalty;    // Repetition penalty factor
     
-    // KV cache for attention
+    // KV cache for attention - BigFixed for arbitrary precision
     int kv_cache_size;           // Size of KV cache
     int kv_cache_used;           // Number of cached positions
-    float* key_cache;            // Cached keys
-    float* value_cache;          // Cached values
+    BigFixed** key_cache;        // Cached keys (BigFixed**)
+    BigFixed** value_cache;      // Cached values (BigFixed**)
     
-    // Working buffers
-    float* hidden_states;        // Hidden state buffer
-    float* logits;               // Output logits buffer
+    // Working buffers - BigFixed for arbitrary precision
+    BigFixed** hidden_states;    // Hidden state buffer (BigFixed**)
+    BigFixed** logits;           // Output logits buffer (BigFixed**)
+    
+    // Precision for BigFixed operations
+    int precision;               // BigFixed precision (default 128)
        
 } CLLMInference;
 
