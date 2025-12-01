@@ -29,7 +29,9 @@
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
 #include "../include/ai/cllm_cymatic_training.h"
-// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
+// #include "../include/cllm_crystalline_training.h"
+#include "bigfixed_core.h"
+#include "bigfixed_array_utils.h"  // CONSOLIDATED: Functions moved here
 
 #define MAX_BATCH_SIZE 128
 #define MAX_SEQUENCE_LENGTH 2048
@@ -235,10 +237,13 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (config->use_mixed_precision) {
         size_t total_params = model->header.total_params;
         if (total_params > 0 && total_params < 1000000000) {
-            training->master_weights = (float*)malloc(total_params * sizeof(float));
+            training->master_weights = bigfixed_array_create(total_params, training->precision_bits);
             if (training->master_weights && model->weights) {
                 // Copy current weights to master weights
-                memcpy(training->master_weights, model->weights, total_params * sizeof(float));
+                // Copy BigFixed weights to master_weights
+                    if (model->weights) {
+                        bigfixed_array_copy(training->master_weights, model->weights, total_params);
+                    }
             }
         }
     }

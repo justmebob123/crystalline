@@ -9,6 +9,8 @@
 #include "../include/cllm.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
+#include "bigfixed_core.h"
+#include "bigfixed_array_utils.h"
 
 // Forward declaration
 void cllm_feedforward_free(FeedForwardLayer* layer);
@@ -192,10 +194,10 @@ void cllm_feedforward_init(FeedForwardLayer* layer, uint32_t input_dim,
     size_t w1_size = input_dim * hidden_dim;
     size_t w2_size = hidden_dim * output_dim;
     
-    layer->w1_lattice = (float*)calloc(w1_size, sizeof(float));
-    layer->w2_lattice = (float*)calloc(w2_size, sizeof(float));
-    layer->bias1 = (float*)calloc(hidden_dim, sizeof(float));
-    layer->bias2 = (float*)calloc(output_dim, sizeof(float));
+    layer->w1_lattice = bigfixed_array_create(w1_size, 128);  // Using default precision
+    layer->w2_lattice = bigfixed_array_create(w2_size, 128);
+    layer->bias1 = bigfixed_array_create(hidden_dim, 128);
+    layer->bias2 = bigfixed_array_create(output_dim, 128);
     
     if (!layer->w1_lattice || !layer->w2_lattice || 
         !layer->bias1 || !layer->bias2) {
