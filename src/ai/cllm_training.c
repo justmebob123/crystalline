@@ -1310,6 +1310,458 @@ float cllm_train_epoch(CLLMTraining* training) {
 
 
 
+
+
+
+void cllm_adam_step_bigfixed(
+    CLLMTraining* training,
+    float learning_rate_float
+) {
+    if (!training) return;
+    
+    CLLMModel* model = training->model;
+    int precision = training->precision_bits;
+    size_t embed_size = model->vocab_size * model->embedding_dim;
+    
+    // Convert learning rate to BigFixed
+    BigFixed learning_rate;
+    big_fixed_create_init(&learning_rate, precision);
+    big_fixed_from_double(&learning_rate, learning_rate_float);
+    
+    // Adam hyperparameters
+    BigFixed beta1, beta2, epsilon;
+    big_fixed_create_init(&beta1, precision);
+    big_fixed_create_init(&beta2, precision);
+    big_fixed_create_init(&epsilon, precision);
+    
+    big_fixed_from_double(&beta1, 0.9);
+    big_fixed_from_double(&beta2, 0.999);
+    big_fixed_from_double(&epsilon, 1e-8);
+    
+    BigFixed one;
+    big_fixed_create_init(&one, precision);
+    big_fixed_from_int(&one, 1);
+    
+    BigFixed one_minus_beta1, one_minus_beta2;
+    big_fixed_create_init(&one_minus_beta1, precision);
+    big_fixed_create_init(&one_minus_beta2, precision);
+    big_fixed_sub(&one_minus_beta1, &one, &beta1);
+    big_fixed_sub(&one_minus_beta2, &one, &beta2);
+    
+    // Update embeddings (simplified - would need proper gradient accumulation)
+    for (size_t i = 0; i < embed_size && i < 1000; i++) {  // Limit for now
+        if (!training->gradients[i]) continue;
+        
+        BigFixed* m = training->optimizer_state[i * 2];      // First moment
+        BigFixed* v = training->optimizer_state[i * 2 + 1];  // Second moment
+        BigFixed* g = training->gradients[i];                // Gradient
+        
+        // m = beta1 * m + (1 - beta1) * g
+        BigFixed temp1, temp2;
+        big_fixed_create_init(&temp1, precision);
+        big_fixed_create_init(&temp2, precision);
+        
+        big_fixed_mul(&temp1, &beta1, m);
+        big_fixed_mul(&temp2, &one_minus_beta1, g);
+        big_fixed_add(m, &temp1, &temp2);
+        
+        // v = beta2 * v + (1 - beta2) * g^2
+        BigFixed g_squared;
+        big_fixed_create_init(&g_squared, precision);
+        big_fixed_mul(&g_squared, g, g);
+        
+        big_fixed_mul(&temp1, &beta2, v);
+        big_fixed_mul(&temp2, &one_minus_beta2, &g_squared);
+        big_fixed_add(v, &temp1, &temp2);
+        
+        // weight = weight - lr * m / (sqrt(v) + epsilon)
+        BigFixed sqrt_v, denom, update;
+        big_fixed_create_init(&sqrt_v, precision);
+        big_fixed_create_init(&denom, precision);
+        big_fixed_create_init(&update, precision);
+        
+        big_sqrt(&sqrt_v, v, precision);
+        big_fixed_add(&denom, &sqrt_v, &epsilon);
+        big_fixed_div(&temp1, m, &denom);
+        big_fixed_mul(&update, &learning_rate, &temp1);
+        
+        // Update weight (would need to map to actual model weights)
+        // For now, just update master_weights
+        if (training->master_weights && training->master_weights[i]) {
+            big_fixed_sub(training->master_weights[i], training->master_weights[i], &update);
+        }
+        
+        // Cleanup
+        big_fixed_free(&temp1);
+        big_fixed_free(&temp2);
+        big_fixed_free(&g_squared);
+        big_fixed_free(&sqrt_v);
+        big_fixed_free(&denom);
+        big_fixed_free(&update);
+        
+        // Zero out gradient for next iteration
+        big_fixed_from_int(g, 0);
+    }
+    
+    // Update layer weights (attention, FF, layer norm)
+    // This would be done similarly for each layer's gradients
+    
+    // Cleanup
+    big_fixed_free(&learning_rate);
+    big_fixed_free(&beta1);
+    big_fixed_free(&beta2);
+    big_fixed_free(&epsilon);
+    big_fixed_free(&one);
+    big_fixed_free(&one_minus_beta1);
+    big_fixed_free(&one_minus_beta2);
+}
+
+
+void cllm_layernorm_backward_bigfixed(
+    CLLMTraining* training,
+    uint32_t layer_idx,
+    BigFixed** grad_output,
+    int batch_size,
+    int seq_len,
+    uint32_t embed_dim,
+    int precision
+) {
+    // Simplified layer norm backward pass
+    // In full implementation, this would compute gradients for gamma and beta
+    // For now, just pass through the gradient
+    // (Layer norm backward is complex and would require storing forward pass statistics)
+}
+
+void cllm_feedforward_backward_bigfixed(
+    CLLMTraining* training,
+    uint32_t layer_idx,
+    BigFixed** grad_output,
+    int batch_size,
+    int seq_len,
+    uint32_t embed_dim,
+    int precision
+) {
+    CLLMModel* model = training->model;
+    FeedForwardLayer* ff = &model->ff_layers[layer_idx];
+    
+    // Backprop through feed-forward network
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            BigFixed** grad_ff_out = &grad_output[idx * embed_dim];
+            BigFixed** ff_hidden = &training->ff_hidden[layer_idx][idx * ff->hidden_dim];
+            BigFixed** attn_out = &training->attention_outputs[layer_idx][idx * embed_dim];
+            
+            // Gradient w.r.t. W2 and bias2
+            for (uint32_t o = 0; o < embed_dim; o++) {
+                // grad_bias2[o] += grad_ff_out[o]
+                big_fixed_add(
+                    training->ff_grads[layer_idx].bias2[o],
+                    training->ff_grads[layer_idx].bias2[o],
+                    grad_ff_out[o]
+                );
+                
+                // grad_W2[:, o] += ff_hidden * grad_ff_out[o]
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod, ff_hidden[h], grad_ff_out[o]);
+                    big_fixed_add(
+                        training->ff_grads[layer_idx].w2_lattice[h * embed_dim + o],
+                        training->ff_grads[layer_idx].w2_lattice[h * embed_dim + o],
+                        &prod
+                    );
+                    big_fixed_free(&prod);
+                }
+            }
+            
+            // Gradient w.r.t. hidden layer
+            BigFixed** grad_hidden = (BigFixed**)calloc(ff->hidden_dim, sizeof(BigFixed*));
+            for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                grad_hidden[h] = big_fixed_create(precision);
+                big_fixed_from_int(grad_hidden[h], 0);
+                
+                for (uint32_t o = 0; o < embed_dim; o++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod, grad_ff_out[o], ff->w2_lattice[h * embed_dim + o]);
+                    big_fixed_add(grad_hidden[h], grad_hidden[h], &prod);
+                    big_fixed_free(&prod);
+                }
+                
+                // Gradient of tanh: (1 - tanh^2(x))
+                BigFixed tanh_grad;
+                big_fixed_create_init(&tanh_grad, precision);
+                BigFixed one;
+                big_fixed_create_init(&one, precision);
+                big_fixed_from_int(&one, 1);
+                
+                BigFixed tanh_sq;
+                big_fixed_create_init(&tanh_sq, precision);
+                big_fixed_mul(&tanh_sq, ff_hidden[h], ff_hidden[h]);
+                big_fixed_sub(&tanh_grad, &one, &tanh_sq);
+                
+                big_fixed_mul(grad_hidden[h], grad_hidden[h], &tanh_grad);
+                
+                big_fixed_free(&tanh_grad);
+                big_fixed_free(&one);
+                big_fixed_free(&tanh_sq);
+            }
+            
+            // Gradient w.r.t. W1 and bias1
+            for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                // grad_bias1[h] += grad_hidden[h]
+                big_fixed_add(
+                    training->ff_grads[layer_idx].bias1[h],
+                    training->ff_grads[layer_idx].bias1[h],
+                    grad_hidden[h]
+                );
+                
+                // grad_W1[:, h] += attn_out * grad_hidden[h]
+                for (uint32_t i = 0; i < embed_dim; i++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod, attn_out[i], grad_hidden[h]);
+                    big_fixed_add(
+                        training->ff_grads[layer_idx].w1_lattice[i * ff->hidden_dim + h],
+                        training->ff_grads[layer_idx].w1_lattice[i * ff->hidden_dim + h],
+                        &prod
+                    );
+                    big_fixed_free(&prod);
+                }
+            }
+            
+            // Gradient w.r.t. attention output (input to FF)
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                BigFixed sum;
+                big_fixed_create_init(&sum, precision);
+                big_fixed_from_int(&sum, 0);
+                
+                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                    BigFixed prod;
+                    big_fixed_create_init(&prod, precision);
+                    big_fixed_mul(&prod, grad_hidden[h], ff->w1_lattice[i * ff->hidden_dim + h]);
+                    big_fixed_add(&sum, &sum, &prod);
+                    big_fixed_free(&prod);
+                }
+                
+                // Add to grad_output (for residual connection)
+                big_fixed_add(grad_ff_out[i], grad_ff_out[i], &sum);
+                big_fixed_free(&sum);
+            }
+            
+            // Cleanup
+            for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                big_fixed_free(grad_hidden[h]);
+            }
+            free(grad_hidden);
+        }
+    }
+}
+
+void cllm_attention_backward_bigfixed(
+    CLLMTraining* training,
+    uint32_t layer_idx,
+    BigFixed** grad_output,
+    int batch_size,
+    int seq_len,
+    uint32_t embed_dim,
+    int precision
+) {
+    // Simplified attention backward pass
+    // Full implementation would backprop through attention mechanism
+    // For now, accumulate gradients for query, key, value weights
+    // (Attention backward is very complex and would require storing attention weights)
+    
+    CLLMModel* model = training->model;
+    AttentionLayer* attn = &model->attention_layers[layer_idx];
+    
+    // For now, just pass through gradient to layer input
+    // In full implementation, this would compute gradients for Q, K, V weights
+}
+
+
+void cllm_backward_training_bigfixed(
+    CLLMTraining* training,
+    uint32_t* target_tokens
+) {
+    if (!training || !target_tokens) return;
+    
+    CLLMModel* model = training->model;
+    int batch_size = training->config.batch_size;
+    int seq_len = training->config.sequence_length;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    int precision = training->precision_bits;
+    
+    // Allocate gradient for logits
+    BigFixed** grad_logits = (BigFixed**)calloc(batch_size * seq_len * vocab_size, sizeof(BigFixed*));
+    for (int i = 0; i < batch_size * seq_len * vocab_size; i++) {
+        grad_logits[i] = big_fixed_create(precision);
+        big_fixed_from_int(grad_logits[i], 0);
+    }
+    
+    // Compute gradient of loss w.r.t. logits (softmax gradient)
+    int total_tokens = batch_size * seq_len;
+    
+    for (int i = 0; i < total_tokens; i++) {
+        uint32_t target = target_tokens[i];
+        if (target >= vocab_size) continue;
+        
+        BigFixed** logit_row = &training->logits[i * vocab_size];
+        BigFixed** grad_row = &grad_logits[i * vocab_size];
+        
+        // Compute softmax probabilities
+        BigFixed max_logit;
+        big_fixed_create_init(&max_logit, precision);
+        big_fixed_assign(&max_logit, logit_row[0]);
+        
+        for (uint32_t j = 1; j < vocab_size; j++) {
+            if (big_fixed_cmp(logit_row[j], &max_logit) > 0) {
+                big_fixed_assign(&max_logit, logit_row[j]);
+            }
+        }
+        
+        BigFixed sum;
+        big_fixed_create_init(&sum, precision);
+        big_fixed_from_int(&sum, 0);
+        
+        BigFixed* probs = (BigFixed*)calloc(vocab_size, sizeof(BigFixed));
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            big_fixed_create_init(&probs[j], precision);
+            
+            BigFixed diff;
+            big_fixed_create_init(&diff, precision);
+            big_fixed_sub(&diff, logit_row[j], &max_logit);
+            big_exp(&probs[j], &diff, precision);
+            big_fixed_add(&sum, &sum, &probs[j]);
+            big_fixed_free(&diff);
+        }
+        
+        // Normalize to get probabilities
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            big_fixed_div(&probs[j], &probs[j], &sum);
+        }
+        
+        // Gradient: prob - 1 for target, prob for others
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            if (j == target) {
+                BigFixed one;
+                big_fixed_create_init(&one, precision);
+                big_fixed_from_int(&one, 1);
+                big_fixed_sub(grad_row[j], &probs[j], &one);
+                big_fixed_free(&one);
+            } else {
+                big_fixed_assign(grad_row[j], &probs[j]);
+            }
+            
+            // Scale by 1/total_tokens
+            BigFixed scale;
+            big_fixed_create_init(&scale, precision);
+            big_fixed_from_int(&scale, total_tokens);
+            big_fixed_div(grad_row[j], grad_row[j], &scale);
+            big_fixed_free(&scale);
+        }
+        
+        // Cleanup
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            big_fixed_free(&probs[j]);
+        }
+        free(probs);
+        big_fixed_free(&max_logit);
+        big_fixed_free(&sum);
+    }
+    
+    // Backpropagate through output projection (logits = final_hidden * embeddings^T)
+    // grad_final_hidden = grad_logits * embeddings
+    BigFixed** grad_final_hidden = (BigFixed**)calloc(batch_size * seq_len * embed_dim, sizeof(BigFixed*));
+    for (int i = 0; i < batch_size * seq_len * embed_dim; i++) {
+        grad_final_hidden[i] = big_fixed_create(precision);
+        big_fixed_from_int(grad_final_hidden[i], 0);
+    }
+    
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int pos_idx = b * seq_len + s;
+            BigFixed** grad_logit_row = &grad_logits[pos_idx * vocab_size];
+            BigFixed** grad_hidden = &grad_final_hidden[pos_idx * embed_dim];
+            
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                BigFixed sum;
+                big_fixed_create_init(&sum, precision);
+                big_fixed_from_int(&sum, 0);
+                
+                for (uint32_t v = 0; v < vocab_size; v++) {
+                    BigFixed* vocab_embedding = crystalline_embeddings_get(
+                        model->crystalline_embeddings,
+                        v
+                    );
+                    
+                    if (vocab_embedding) {
+                        BigFixed prod;
+                        big_fixed_create_init(&prod, precision);
+                        big_fixed_mul(&prod, grad_logit_row[v], &vocab_embedding[d]);
+                        big_fixed_add(&sum, &sum, &prod);
+                        big_fixed_free(&prod);
+                    }
+                }
+                
+                big_fixed_assign(grad_hidden[d], &sum);
+                big_fixed_free(&sum);
+            }
+        }
+    }
+    
+    // Backpropagate through layers (in reverse order)
+    BigFixed** grad_layer_output = grad_final_hidden;
+    
+    for (int layer = model->num_layers - 1; layer >= 0; layer--) {
+        // Backprop through layer norm
+        cllm_layernorm_backward_bigfixed(
+            training, layer, grad_layer_output,
+            batch_size, seq_len, embed_dim, precision
+        );
+        
+        // Backprop through feed-forward
+        cllm_feedforward_backward_bigfixed(
+            training, layer, grad_layer_output,
+            batch_size, seq_len, embed_dim, precision
+        );
+        
+        // Backprop through attention
+        cllm_attention_backward_bigfixed(
+            training, layer, grad_layer_output,
+            batch_size, seq_len, embed_dim, precision
+        );
+        
+        // grad_layer_output now points to gradient for this layer's input
+    }
+    
+    // Accumulate gradients for embeddings
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int pos_idx = b * seq_len + s;
+            BigFixed** grad_embed = &grad_layer_output[pos_idx * embed_dim];
+            
+            // Accumulate into training->gradients
+            // (This would need token ID to know which embedding to update)
+            // For now, we'll handle this in the optimizer step
+        }
+    }
+    
+    // Cleanup
+    for (int i = 0; i < batch_size * seq_len * vocab_size; i++) {
+        big_fixed_free(grad_logits[i]);
+    }
+    free(grad_logits);
+    
+    for (int i = 0; i < batch_size * seq_len * embed_dim; i++) {
+        big_fixed_free(grad_final_hidden[i]);
+    }
+    free(grad_final_hidden);
+}
+
+
 float cllm_train_step_bigfixed(
     CLLMTraining* training,
     uint32_t* input_tokens,
@@ -1336,6 +1788,12 @@ float cllm_train_step_bigfixed(
         vocab_size,
         precision
     );
+    
+    // Backward pass with BigFixed
+    cllm_backward_training_bigfixed(training, target_tokens);
+    
+    // Optimizer step with BigFixed
+    cllm_adam_step_bigfixed(training, training->config.learning_rate);
     
     return loss;
 }
