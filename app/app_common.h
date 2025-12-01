@@ -378,6 +378,12 @@ typedef struct {
         bool stats_table_expanded;
         bool terminal_expanded;
     } training_panels;
+    
+    // Control thread initialization status (MASTER_PLAN architecture)
+    bool abacus_initializing;  // True while abacus is being initialized
+    bool abacus_ready;         // True when abacus is ready for use
+    bool model_loading;        // True while model is being loaded
+    bool model_ready;          // True when model is ready for inference
 } AppState;
 
 // Utility functions - use library versions where available

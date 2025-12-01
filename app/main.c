@@ -217,52 +217,9 @@ AppState* init_app(void) {
         strcpy(state->crawler_data_dir, "crawler_data");
     }
     
-    // Auto-load default model if it exists
-    printf("=== CLLM Model Management ===\n");
-    const char* default_model_path = "models/saved_model.cllm";
-    
-    // Check if default model exists
-    FILE* test_file = fopen(default_model_path, "rb");
-    if (test_file) {
-        fclose(test_file);
-        printf("Found default model: %s\n", default_model_path);
-        printf("Loading model...\n");
-        
-        state->cllm_model = cllm_read_model(default_model_path);
-        if (state->cllm_model) {
-            printf("✓ Model loaded successfully!\n");
-            printf("  Vocabulary size: %lu\n", (unsigned long)state->cllm_model->vocab_size);
-            printf("  Embedding dimension: %lu\n", (unsigned long)state->cllm_model->embedding_dim);
-            printf("  Number of layers: %d\n", state->cllm_model->num_layers);
-            
-            // Create inference context
-            state->cllm_inference = cllm_inference_init(state->cllm_model);
-            if (state->cllm_inference) {
-                printf("✓ Inference context created\n");
-                strcpy(state->llm_output_text, "Model loaded and ready. Type a message to chat!");
-            } else {
-                printf("✗ Failed to create inference context\n");
-                strcpy(state->llm_output_text, "Model loaded but inference failed. Try reloading.");
-            }
-        } else {
-            printf("✗ Failed to load model from %s\n", default_model_path);
-            state->cllm_model = NULL;
-            state->cllm_inference = NULL;
-            strcpy(state->llm_output_text, "Failed to load model. You can create a new one in the Training tab.");
-        }
-    } else {
-        printf("No default model found at %s\n", default_model_path);
-        printf("Options:\n");
-        printf("  1. Go to Training tab and click START TRAINING to create a new model\n");
-        printf("  2. Go to LLM tab and click LOAD MODEL to load an existing model\n");
-        printf("  3. Existing models will be found in models/ directory\n");
-        
-        state->cllm_model = NULL;
-        state->cllm_inference = NULL;
-        strcpy(state->llm_output_text, "No model loaded. Start training to create a new model, or load an existing one.");
-    }
-    
-    printf("=== CLLM System Ready ===\n\n");
+    // Model loading moved to control thread - happens in background
+    // Set initial message
+    strcpy(state->llm_output_text, "Initializing system... Please wait.");
     
     return state;
 }
@@ -270,6 +227,10 @@ AppState* init_app(void) {
 void cleanup(AppState* state) {
     if (!state) return;
     if (state->is_recording) stop_recording(state);
+    
+    // CRITICAL: Stop control thread before cleanup
+    extern void stop_control_thread(void);
+    stop_control_thread();
     
     // CRITICAL: Stop crawler thread before cleanup
     extern void stop_crawler_thread(void);
@@ -964,18 +925,25 @@ int main(int argc, char* argv[]) {
     // Set global pointer for lattice cache access
     app_state_global = state;
     
-    // PHASE 1: Initialize global crystalline abacus (CRITICAL)
-    // This MUST happen before any model creation or prime operations
-    extern int app_initialize_global_abacus(void);
-    if (app_initialize_global_abacus() != 0) {
-        fprintf(stderr, "CRITICAL ERROR: Failed to initialize global abacus\n");
-        cleanup(state);
-        return 1;
-    }
+    // Initialize status flags
+    state->abacus_initializing = false;
+    state->abacus_ready = false;
+    state->model_loading = false;
+    state->model_ready = false;
+    
+    // CRITICAL: Start control thread for background initialization
+    // This implements MASTER_PLAN architecture - main loop continues immediately
+    // Heavy initialization (abacus, model loading) happens in background
+    extern void start_control_thread(AppState* state);
+    start_control_thread(state);
     
     // Initialize workspace system
     extern void workspace_init(AppState* state, const char* workspace_path);
     workspace_init(state, workspace_path);
+    
+    // NOTE: Model loading now happens in control thread (background)
+    // The code below has been moved to control_thread.c
+    // Main loop continues immediately - UI is responsive during initialization
     
     if (create_workspace && workspace_path) {
         extern int workspace_create_directories(AppState* state);
