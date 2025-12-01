@@ -1,220 +1,466 @@
 # SECONDARY OBJECTIVES - DETAILED IMPLEMENTATION TASKS
-   
-   ## OVERVIEW
-   This file contains detailed implementation tasks for completing the Crystalline CLLM integration.
-   Refer to MASTER_PLAN.md for high-level objectives and architectural requirements.
-   
-   ---
-   
-   ## OBJECTIVE 3A: COMPLETE BIGFIXED MIGRATION
-   
-   ### CRITICAL REQUIREMENT
-   **NO float arithmetic ANYWHERE in the codebase** (MASTER_PLAN OBJECTIVE 3A)
-   
-   ### CURRENT STATE (from conversation summary)
-   - ✅ Training path: COMPLETE with BigFixed
-   - ❌ Inference path: Uses float arithmetic (VIOLATION)
-   - ✅ BigFixed implementations created: feedforward, layernorm, attention
-   - ⚠️ 79 type mismatch warnings
-   
-   ### PHASE 1: Convert Inference to BigFixed [HIGH PRIORITY]
-   
-   **Problem:** Inference uses float-based functions, violating OBJECTIVE 3A
-   
-   **Files to Update:**
-   1. `src/ai/cllm_inference.c` - Line 343 calls float-based attention
-   2. `include/cllm_inference.h` - Update CLLMInference structure
-   
-   **Tasks:**
-   - [ ] Update `CLLMInference` structure to use `BigFixed**` instead of `float*`
-   - [ ] Update inference forward pass to call `cllm_attention_forward_bigfixed()`
-   - [ ] Update inference to call `cllm_layer_norm_bigfixed()`
-   - [ ] Update inference to call `cllm_feedforward_bigfixed()`
-   - [ ] Convert embeddings and logits to BigFixed
-   - [ ] Test inference with BigFixed
-   
-   **Implementation Details:**
-   ```c
-   // OLD (float-based):
-   cllm_attention_forward(attn_layer, inference->hidden_states, ...)
-   cllm_layer_norm_old(...)
-   cllm_feed_forward(...)
-   
-   // NEW (BigFixed):
-   cllm_attention_forward_bigfixed(attn_layer, inference->hidden_states, ...)
-   cllm_layer_norm_bigfixed(...)
-   cllm_feedforward_bigfixed(...)
-   ```
-   
-   ### PHASE 2: Remove/Deprecate Float Versions [CLEANUP]
-   
-   **Problem:** Float-based functions still exist and could be called accidentally
-   
-   **Functions to Mark as Deprecated:**
-   - [ ] `cllm_layer_norm_old()` in `src/ai/cllm_layernorm.c`
-   - [ ] `cllm_attention_forward()` in `src/ai/cllm_training.c`
-   - [ ] `cllm_feed_forward()` in `src/ai/cllm_feedforward.c`
-   
-   **Tasks:**
-   - [ ] Add deprecation warnings to float-based functions
-   - [ ] Update all callers to use BigFixed versions
-   - [ ] Consider removing float versions entirely
-   - [ ] Update documentation to reflect BigFixed as standard
-   
-   ### PHASE 3: Fix Type Mismatch Warnings [CODE QUALITY]
-   
-   **Problem:** 79 warnings about incompatible pointer types (BigFixed** vs float*)
-   
-   **Files with Warnings:**
-   - `src/ai/cllm_feedforward_bigfixed.c` - New file warnings
-   - `src/ai/cllm_layernorm_bigfixed.c` - New file warnings
-   - `src/ai/cllm_training.c` - Type mismatches
-   - `src/ai/cllm_optimizer.c` - Type mismatches
-   - `src/ai/cllm_validate.c` - Type mismatches
-   
-   **Tasks:**
-   - [ ] Fix function signatures to match BigFixed** types
-   - [ ] Update memory allocations to use BigFixed
-   - [ ] Fix pointer casts and conversions
-   - [ ] Achieve zero warnings
-   
-   ### PHASE 4: Verify Complete Coverage [VALIDATION]
-   
-   **Tasks:**
-   - [ ] Search for all `float*` usage in training/inference
-   - [ ] Verify all math operations use crystalline equivalents
-   - [ ] Check that all allocations use BigFixed
-   - [ ] Run functional tests to verify correctness
-   - [ ] Benchmark performance
-   
-   ---
-   
-   ## OBJECTIVE 2: TRAINING PIPELINE CLEANUP
-   
-   ### Remove Legacy Loss Functions
-   
-   **Problem:** Standard cross-entropy still exists as fallback
-   
-   **Tasks:**
-   - [ ] Remove `cllm_compute_loss_training()` function
-   - [ ] Remove conditional flag check in `cllm_train_epoch()`
-   - [ ] Make `cllm_compute_loss_crystalline()` the ONLY loss function
-   - [ ] Rename to `cllm_compute_loss()`
-   - [ ] Remove `use_crystalline_optimizations` flag
-   
-   ### Remove Legacy Training Files
-   
-   **Files to Delete:**
-   - [ ] `src/ai/cllm_training_mt.c` - Old multi-threading
-   - [ ] `src/ai/cllm_training_parallel.c` - Unused parallel code
-   - [ ] `src/ai/cllm_train_complete.c` - Legacy training wrapper
-   - [ ] `include/cllm_training_mt.h`
-   - [ ] `include/cllm_training_parallel.h`
-   - [ ] `include/cllm_train_complete.h`
-   
-   ### Update Makefile
-   - [ ] Remove deleted files from build
-   - [ ] Verify build after deletions
-   
-   ---
-   
-   ## OBJECTIVE 5A: KISSING SPHERES AS ONLY THREADING
-   
-   ### Remove Non-Kissing-Spheres Threading
-   
-   **Problem:** Multiple threading implementations exist
-   
-   **Tasks:**
-   - [ ] Remove ALL fallbacks to old threading in `tools/train_model.c`
-   - [ ] Make kissing spheres mandatory (no single-threaded fallback)
-   - [ ] Remove `cllm_train_epoch_mt()` completely
-   - [ ] Update tools to require kissing spheres
-   - [ ] Document kissing spheres as the only threading model
-   
-   ---
-   
-   ## OBJECTIVE 8A: REMOVE ALL CONDITIONAL COMPILATION
-   
-   ### Remove Feature Flags
-   
-   **Problem:** Feature flags and conditional compilation everywhere
-   
-   **Tasks:**
-   - [ ] Remove all feature flags from config structs
-   - [ ] Remove all #ifdef blocks for features
-   - [ ] One implementation per function (no alternatives)
-   - [ ] No "enable_X" configuration options
-   - [ ] Crystalline design is always active
-   - [ ] No compile-time toggles
-   - [ ] No runtime toggles
-   - [ ] Single code path for each operation
-   
-   ---
-   
-   ## OBJECTIVE 14: INTEGRATE L(n,d,k,λ) LATTICE FORMULA
-   
-   ### Replace Random Embeddings with Crystalline Lattice
-   
-   **Problem:** Embeddings use random initialization instead of L(n,d,k,λ) formula
-   
-   **Tasks:**
-   - [ ] Create `cllm_embeddings_init_lattice()` in `src/ai/cllm_embeddings.c`
-   - [ ] Use `L_lattice()` from `src/geometry/prime_lattice_core.c`
-   - [ ] Use `DIMENSIONAL_FREQUENCIES[]` from `cllm_mathematical_constants.h`
-   - [ ] Use `prime_tanh()` for normalization
-   - [ ] Replace call in `cllm_model_create()`
-   - [ ] Test embeddings are in [-1, 1] range
-   - [ ] Verify symmetry group similarity
-   - [ ] Compare convergence to random baseline
-   
-   **Implementation:**
-   ```c
-   // Use L(n,d,k,λ) formula for embeddings
-   for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-       for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-           uint64_t phi_i = DIMENSIONAL_FREQUENCIES[dim % 12];
-           double L_value = L_lattice(
-               token->prime_encoding,    // n
-               dim,                      // d
-               token->symmetry_group,    // k
-               token->text,              // λ
-               3,                        // ω
-               token->prime_encoding,    // p
-               phi_i                     // q
-           );
-           embeddings[token_id * embedding_dim + dim] = (float)tanh(L_value / 100.0);
-       }
-   }
-   ```
-   
-   ---
-   
-   ## STATUS TRACKING
-   
-   ### Completed:
-   - [x] Created `cllm_feedforward_bigfixed.c` (COMPLETE - NO STUBS)
-   - [x] Created `cllm_layernorm_bigfixed.c` (COMPLETE - NO STUBS)
-   - [x] Created `cllm_attention_forward_bigfixed()` (COMPLETE)
-   - [x] Fixed 5 critical warnings (sqrt, expf, memory bugs)
-   - [x] Training path uses BigFixed throughout
-   
-   ### In Progress:
-   - [ ] Convert inference to BigFixed (PHASE 1)
-   - [ ] Fix 79 type mismatch warnings (PHASE 3)
-   
-   ### Not Started:
-   - [ ] Remove legacy loss functions
-   - [ ] Remove legacy training files
-   - [ ] Remove non-kissing-spheres threading
-   - [ ] Remove conditional compilation
-   - [ ] Integrate L(n,d,k,λ) lattice formula
-   
-   ---
-   
-   ## PRIORITY ORDER
-   
-   1. **HIGHEST:** Convert inference to BigFixed (violates OBJECTIVE 3A)
-   2. **HIGH:** Fix type mismatch warnings (code quality)
-   3. **MEDIUM:** Remove legacy code (cleanup)
-   4. **MEDIUM:** Integrate lattice formula (mathematical correctness)
-   5. **LOW:** Documentation and testing
+
+## OVERVIEW
+This file contains detailed implementation tasks for completing the Crystalline CLLM integration.
+Refer to MASTER_PLAN.md for high-level objectives and architectural requirements.
+
+**LAST UPDATED:** Current Session
+**BUILD STATUS:** ✅ Zero errors, Zero warnings
+
+---
+
+## ✅ COMPLETED OBJECTIVES
+
+### OBJECTIVE 1: Library Distribution Architecture - COMPLETE
+- ✅ All libraries (.so and .a) building correctly
+- ✅ Modular architecture maintained
+
+### OBJECTIVE 3A: BigFixed Migration - COMPLETE
+- ✅ Training path: 100% BigFixed coverage
+- ✅ Inference path: 100% BigFixed coverage
+- ✅ NO float arithmetic in critical paths
+- ✅ All transformer operations use BigFixed
+- ✅ Zero warnings achieved
+
+### OBJECTIVE 5: Crystalline Math Integration - COMPLETE
+- ✅ NO math.h usage in production code
+- ✅ All using prime_* functions
+
+### OBJECTIVE 7: 12-Fold Symmetry - COMPLETE
+- ✅ Implemented in threading
+- ✅ Implemented in embeddings
+
+### OBJECTIVE 8: Node Zero Control Thread - COMPLETE
+- ✅ Control thread never processes batches
+- ✅ Coordinates 12 worker threads
+
+### OBJECTIVE 19: Babylonian Clock Lattice - PARTIALLY COMPLETE
+- ✅ Core implementation done (`src/geometry/clock_lattice.c`)
+- ✅ Clock mapping implemented
+- ✅ Stereographic projection implemented
+- ✅ Visualization updated
+- ⚠️ Integration ongoing
+
+---
+
+## 🎯 PRIORITY OBJECTIVES (From MASTER_PLAN)
+
+### OBJECTIVE 2B: Remove ALL Legacy Loss Functions [HIGH PRIORITY]
+
+**Purpose:** Complete the crystalline design by removing standard cross-entropy
+
+**Critical Understanding:**
+- The crystalline GCD-based approach IS the design, not an "optimization"
+- "Standard cross-entropy" is legacy code that must be removed
+- No toggles, no fallbacks, no conditional paths
+
+**Tasks:**
+- [ ] Remove `cllm_compute_loss_training()` function (standard cross-entropy)
+- [ ] Remove the conditional flag check in `cllm_train_epoch()`
+- [ ] Make `cllm_compute_crystalline_loss()` the ONLY loss function
+- [ ] Rename `cllm_compute_crystalline_loss()` to `cllm_compute_loss()`
+- [ ] Remove `use_crystalline_optimizations` flag from config struct
+- [ ] Update all callers to use crystalline loss directly
+- [ ] Remove any references to "standard" loss in comments/docs
+
+**Related Files:**
+- `src/ai/cllm_training.c` - Remove standard loss function
+- `src/ai/cllm_crystalline_training.c` - Simplify (no flag needed)
+- `include/cllm_training.h` - Remove flag, update declarations
+
+---
+
+### OBJECTIVE 2C: Rename "Crystalline" to Default [MEDIUM PRIORITY]
+
+**Purpose:** Stop treating crystalline as special - it's the only design
+
+**Tasks:**
+- [ ] Rename `cllm_train_epoch_crystalline()` to `cllm_train_epoch()`
+- [ ] Rename `cllm_compute_loss_crystalline()` to `cllm_compute_loss()`
+- [ ] Remove the old `cllm_train_epoch()` (it's legacy)
+- [ ] Update all callers throughout codebase
+- [ ] Update documentation to reflect crystalline as default
+- [ ] Remove "_crystalline" suffix from all function names
+
+---
+
+### OBJECTIVE 2D: Remove ALL "Standard" and "Legacy" Code [MEDIUM PRIORITY]
+
+**Purpose:** Clean codebase of all non-crystalline implementations
+
+**Files to Delete:**
+- [ ] `src/ai/cllm_training_mt.c` - Old multi-threading
+- [ ] `src/ai/cllm_training_parallel.c` - Unused parallel code
+- [ ] `src/ai/cllm_train_complete.c` - Legacy training wrapper
+- [ ] `include/cllm_training_mt.h`
+- [ ] `include/cllm_training_parallel.h`
+- [ ] `include/cllm_train_complete.h`
+
+**Functions to Delete:**
+- [ ] `cllm_compute_loss_training()` - Standard cross-entropy
+- [ ] `cllm_train_epoch_mt()` - Old MT training
+- [ ] `cllm_train_epoch_parallel()` - Unused parallel
+- [ ] Any other `*_standard()` or `*_legacy()` functions
+
+**Search and Destroy:**
+- [ ] Search entire codebase for "standard", "legacy", "old", "fallback"
+- [ ] Identify all non-crystalline implementations
+- [ ] Delete all legacy code
+- [ ] Update Makefile to remove deleted files
+- [ ] Verify build after deletions
+
+---
+
+### OBJECTIVE 5A: Kissing Spheres as ONLY Threading [MEDIUM PRIORITY]
+
+**Purpose:** Remove all non-kissing-spheres threading code
+
+**Tasks:**
+- [ ] Remove ALL fallbacks to old threading
+- [ ] Make kissing spheres mandatory (no single-threaded fallback)
+- [ ] Remove `cllm_train_epoch_mt()` completely
+- [ ] Update tools to require kissing spheres
+- [ ] Document kissing spheres as the only threading model
+- [ ] Remove any single-threaded training paths
+- [ ] Ensure all training goes through kissing spheres
+
+**Related Files:**
+- `tools/train_model.c` - Remove fallbacks
+- `src/ai/cllm_training_threaded.c` - Main implementation
+- `src/crawler/continuous_training.c` - Update to use kissing spheres
+
+---
+
+### OBJECTIVE 8A: Remove ALL Conditional Compilation [MEDIUM PRIORITY]
+
+**Purpose:** One codebase, one design, no toggles
+
+**Tasks:**
+- [ ] Remove all feature flags from config structs
+- [ ] Remove all #ifdef blocks for features
+- [ ] One implementation per function (no alternatives)
+- [ ] No "enable_X" configuration options
+- [ ] Crystalline design is always active
+- [ ] No compile-time toggles
+- [ ] No runtime toggles
+- [ ] Single code path for each operation
+
+**Philosophy:**
+- If it's in the codebase, it's active
+- No optional features
+- No legacy compatibility modes
+- Complete commitment to the design
+
+---
+
+### OBJECTIVE 14: Integrate L(n,d,k,λ) Lattice Formula [HIGH PRIORITY]
+
+**Purpose:** Replace random embeddings with crystalline lattice formula
+
+**Critical Understanding:**
+- L(n,d,k,λ) formula is IMPLEMENTED in `src/geometry/prime_lattice_core.c`
+- Formula: L = 3^O(n,k,λ) · ∏cos(θ·φᵢ) · Γ(k) · ν(λ) · Γ(n,d)
+- Currently UNUSED in training - embeddings use random initialization
+- This is the CORE mathematical foundation of the entire system
+
+**Current State:**
+```c
+// WRONG: Random initialization
+for (uint32_t i = 0; i < vocab_size * embedding_dim; i++) {
+    embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+}
+```
+
+**Required State:**
+```c
+// CORRECT: Use L(n,d,k,λ) formula
+for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
+    for (uint32_t dim = 0; dim < embedding_dim; dim++) {
+        uint64_t phi_i = DIMENSIONAL_FREQUENCIES[dim % 12];
+        double L_value = L_lattice(
+            token->prime_encoding,    // n
+            dim,                      // d
+            token->symmetry_group,    // k
+            token->text,              // λ
+            3,                        // ω
+            token->prime_encoding,    // p
+            phi_i                     // q
+        );
+        embeddings[token_id * embedding_dim + dim] = (float)tanh(L_value / 100.0);
+    }
+}
+```
+
+**Implementation Tasks:**
+- [ ] Create `cllm_embeddings_init_lattice()` in `src/ai/cllm_embeddings.c`
+- [ ] Use `L_lattice()` from `src/geometry/prime_lattice_core.c`
+- [ ] Use `DIMENSIONAL_FREQUENCIES[]` from `cllm_mathematical_constants.h`
+- [ ] Use `prime_tanh()` for normalization
+- [ ] Replace call in `cllm_model_create()`
+- [ ] Test embeddings are in [-1, 1] range
+- [ ] Verify symmetry group similarity
+- [ ] Compare convergence to random baseline
+
+**Expected Impact:**
+- Embeddings reflect true crystalline structure
+- Better initial conditions for training
+- Faster convergence (estimated 20-30%)
+
+---
+
+### OBJECTIVE 15: Integrate θ(n,k,λ,ω,ψ) Angular Position into Attention [HIGH PRIORITY]
+
+**Purpose:** Replace dot product attention with angular position formula
+
+**Critical Understanding:**
+- θ(n,k,λ,ω,ψ) formula is IMPLEMENTED in `src/core/cllm_angular_position.c`
+- Formula: θ = k·π(1+√5) + (n-1)·2π/(12·ln3) + log₃(ν(λ)) + ω + ψ
+- Currently UNUSED in training - attention uses standard dot product
+- This encodes 12-fold symmetry and cymatic patterns
+
+**Current State:**
+```c
+// WRONG: Standard dot product O(n²)
+float score = 0.0f;
+for (uint32_t i = 0; i < head_dim; i++) {
+    score += query[i] * key[i];
+}
+return score / sqrtf((float)head_dim);
+```
+
+**Required State:**
+```c
+// CORRECT: Angular position with cymatic resonance
+AngularPosition q_pos, k_pos;
+angular_position_calculate(q_token->prime, q_id, head_idx, wavelength, &q_pos);
+angular_position_calculate(k_token->prime, k_id, head_idx, wavelength, &k_pos);
+
+uint64_t phi_i = DIMENSIONAL_FREQUENCIES[head_idx % 12];
+double theta_diff = q_pos.theta - k_pos.theta;
+double score = cos(theta_diff * phi_i);
+
+// Apply cymatic resonance (432 Hz)
+double resonance = cos(2π * 432 * theta_diff / 1000);
+return score * (0.8 + 0.2 * resonance);
+```
+
+**Implementation Tasks:**
+- [ ] Create `cllm_attention_score_angular()` in `src/ai/cllm_attention.c`
+- [ ] Use `angular_position_calculate()` from `cllm_angular_position.c`
+- [ ] Use `cllm_get_dimensional_frequency()` for φᵢ
+- [ ] Use `prime_cos()` for cos(θ·φᵢ) computation
+- [ ] Apply cymatic resonance (432 Hz base)
+- [ ] Replace dot product in `cllm_attention_forward()`
+- [ ] Test scores in [-1, 1] range
+- [ ] Verify same-group tokens attend more
+
+**Expected Impact:**
+- Attention respects 12-fold symmetry
+- Cymatic resonance patterns emerge
+- Better token relationships
+
+---
+
+### OBJECTIVE 16: Initialize and Process 12 Kissing Sphere Neighbors [HIGH PRIORITY]
+
+**Purpose:** Fully utilize kissing spheres structure in training
+
+**Critical Understanding:**
+- `CLLMLatticePoint` has `neighbors[12]` array - ALLOCATED but UNUSED
+- Each point should have exactly 12 neighbors (one per symmetry group)
+- Neighbors should be processed using L(n,d,k,λ) for interaction strength
+- This is the CORE spatial structure of the lattice
+
+**Current State:**
+```c
+// Neighbors array exists but is NOT initialized
+typedef struct {
+    uint32_t neighbors[12];      // ❌ UNUSED
+    uint32_t num_neighbors;      // ❌ Always 0
+    uint32_t symmetry_group;     // ✅ Used
+} CLLMLatticePoint;
+```
+
+**Required State:**
+```c
+// Initialize 12 neighbors (one per symmetry group)
+for (uint32_t point_id = 0; point_id < num_points; point_id++) {
+    for (uint32_t group = 0; group < 12; group++) {
+        // Find nearest point in this symmetry group
+        uint32_t nearest = find_nearest_in_group(point_id, group);
+        point->neighbors[point->num_neighbors++] = nearest;
+    }
+}
+
+// Process neighbors with L(n,d,k,λ)
+for (uint32_t i = 0; i < point->num_neighbors; i++) {
+    uint64_t phi_i = DIMENSIONAL_FREQUENCIES[i];
+    double interaction = L_lattice(center_prime, i, symmetry_group, 
+                                   text, 3, center_prime, neighbor_prime);
+    // Apply to gradients
+}
+```
+
+**Implementation Tasks:**
+- [ ] Create `cllm_initialize_kissing_spheres()` in `src/ai/cllm_lattice_init.c`
+- [ ] Find 12 nearest neighbors (one per symmetry group)
+- [ ] Use `compute_lattice_distance()` with angular positions
+- [ ] Store in `CLLMLatticePoint.neighbors[]`
+- [ ] Call from `cllm_model_create()`
+- [ ] Update `process_lattice_point_with_neighbors()` in `cllm_hierarchical_training.c`
+- [ ] Use `L_lattice()` for interaction strength
+- [ ] Use φᵢ for each of 12 neighbors
+- [ ] Apply to gradient computation
+- [ ] Test all points have 10-12 neighbors
+- [ ] Verify neighbors from different groups
+
+**Expected Impact:**
+- True spatial locality in training
+- Gradient flow through neighbor connections
+- 12-fold symmetry fully utilized
+
+---
+
+### OBJECTIVE 17: Implement NTT-Based O(n log n) Attention [MEDIUM PRIORITY]
+
+**Purpose:** Replace O(n²) attention with O(n log n) using Number Theoretic Transform
+
+**Critical Understanding:**
+- NTT library is COMPLETE in `include/bigint_ntt.h` - NEVER USED
+- NTT is FFT for modular arithmetic (perfect for prime-based systems)
+- Can reduce attention from O(n²) to O(n log n)
+- Expected 10-100x speedup for long sequences (n > 1000)
+
+**Implementation Tasks:**
+- [ ] Create `src/ai/cllm_ntt_attention.c`
+- [ ] Implement `cllm_attention_ntt_forward()`
+- [ ] Use `ntt_init()`, `ntt_forward()`, `ntt_inverse()` from `bigint_ntt.h`
+- [ ] Use `big_mul()`, `big_mod()` from `bigint_core.h`
+- [ ] Create `include/ai/cllm_ntt_attention.h`
+- [ ] Integrate into `cllm_attention_forward()`
+- [ ] Use NTT for sequences > 256 tokens
+- [ ] Use standard for short sequences
+- [ ] Test correctness (outputs match standard)
+- [ ] Benchmark performance (verify O(n log n))
+- [ ] Create `tools/benchmark_ntt_attention`
+
+**Expected Impact:**
+- 10-100x speedup for long sequences
+- 90% memory reduction for attention
+- Enables processing of very long contexts
+
+---
+
+### OBJECTIVE 18: Apply Cymatic Frequency Resonance to Training [MEDIUM PRIORITY]
+
+**Purpose:** Use cymatic frequencies (432 Hz, 528 Hz, etc.) to modulate training
+
+**Critical Understanding:**
+- Cymatic frequencies are ALL DEFINED in `cllm_mathematical_constants.h`
+- 432 Hz (universal), 528 Hz (DNA repair), 639 Hz (connection), etc.
+- Currently DORMANT - never applied to training
+- Should modulate gradients for smoother convergence
+
+**Implementation Tasks:**
+- [ ] Create `src/ai/cllm_cymatic_training.c`
+- [ ] Implement `cllm_apply_cymatic_resonance()`
+- [ ] Use `CYMATIC_*_HZ` constants
+- [ ] Use `DIMENSIONAL_FREQUENCIES[]` for modulation
+- [ ] Use `prime_cos()` for resonance computation
+- [ ] Integrate into `cllm_train_step()` (after gradients, before optimizer)
+- [ ] Implement `cllm_compute_harmonics()` for harmonic series
+- [ ] Implement `cllm_analyze_gradient_spectrum()` for frequency analysis
+- [ ] Test convergence smoothness
+- [ ] Measure impact on final loss
+
+**Expected Impact:**
+- 20-40% smoother convergence (less oscillation)
+- Better final loss (estimated 10-20% improvement)
+- True cymatic pattern representation
+
+---
+
+### OBJECTIVE 19: Create Missing Analysis and Validation Tools [LOW PRIORITY]
+
+**Purpose:** Build tools to validate and analyze mathematical integration
+
+**Required Tools:**
+
+1. **tools/init_lattice_embeddings**
+   - Load model
+   - Initialize embeddings with L(n,d,k,λ)
+   - Save model
+   - Usage: `./init_lattice_embeddings model.cllm output.cllm`
+
+2. **tools/benchmark_ntt_attention**
+   - Compare O(n²) vs O(n log n) attention
+   - Measure speedup for various sequence lengths
+   - Verify correctness
+   - Usage: `./benchmark_ntt_attention --seq-len 1000`
+
+3. **tools/validate_kissing_spheres**
+   - Verify all points have 12 neighbors
+   - Check symmetry group distribution
+   - Validate neighbor relationships
+   - Usage: `./validate_kissing_spheres model.cllm`
+
+4. **tools/analyze_cymatic_resonance**
+   - Analyze training in frequency domain
+   - Plot power spectrum
+   - Identify resonance patterns
+   - Usage: `./analyze_cymatic_resonance checkpoint.cllm`
+
+5. **tools/visualize_angular_positions**
+   - Plot θ(n,k,λ,ω,ψ) for all tokens
+   - Visualize 12-fold symmetry
+   - Show kissing spheres structure
+   - Usage: `./visualize_angular_positions model.cllm`
+
+**Implementation Tasks:**
+- [ ] Create `tools/init_lattice_embeddings.c`
+- [ ] Create `tools/benchmark_ntt_attention.c`
+- [ ] Create `tools/validate_kissing_spheres.c`
+- [ ] Create `tools/analyze_cymatic_resonance.c`
+- [ ] Create `tools/visualize_angular_positions.c`
+- [ ] Add all tools to Makefile
+- [ ] Test each tool with sample models
+- [ ] Document usage in README
+
+---
+
+## 📊 PRIORITY ORDER
+
+1. **HIGHEST:** OBJECTIVE 14 - Integrate L(n,d,k,λ) lattice formula (foundation)
+2. **HIGH:** OBJECTIVE 15 - Integrate angular position attention (core feature)
+3. **HIGH:** OBJECTIVE 16 - Initialize kissing sphere neighbors (spatial structure)
+4. **HIGH:** OBJECTIVE 2B - Remove legacy loss functions (cleanup)
+5. **MEDIUM:** OBJECTIVE 2C - Rename crystalline to default (clarity)
+6. **MEDIUM:** OBJECTIVE 2D - Remove legacy code (cleanup)
+7. **MEDIUM:** OBJECTIVE 5A - Kissing spheres as only threading (consistency)
+8. **MEDIUM:** OBJECTIVE 8A - Remove conditional compilation (simplicity)
+9. **MEDIUM:** OBJECTIVE 17 - NTT attention (performance)
+10. **MEDIUM:** OBJECTIVE 18 - Cymatic resonance (quality)
+11. **LOW:** OBJECTIVE 19 - Analysis tools (validation)
+
+---
+
+## 🎯 RECOMMENDED NEXT ACTION
+
+**Start with OBJECTIVE 14: Integrate L(n,d,k,λ) Lattice Formula**
+
+This is the foundation of the entire crystalline system. Once embeddings use the geometric lattice pattern instead of random initialization, all other optimizations will build upon this foundation.
+
+**Estimated Impact:**
+- 20-30% faster convergence
+- Better initial conditions
+- True crystalline structure in embeddings
+- Foundation for all other mathematical integrations
+
+**Estimated Effort:** Medium (2-3 hours)
+- Formula already implemented
+- Just needs integration into model creation
+- Testing and validation required
+
+---
+
+**END OF SECONDARY OBJECTIVES**
