@@ -1,4 +1,4 @@
-# TODO - OBJECTIVE 25: FIX REMAINING 48 BUILD WARNINGS
+# TODO - OBJECTIVE 25: FIX BUILD WARNINGS - NEARLY COMPLETE! 🎉
 
 ## 🔒 RULES (PASTED FROM MASTER_PLAN)
 
@@ -14,216 +14,75 @@ All code must compile with zero warnings before moving to the next objective.
 
 ---
 
-## ✅ COMPLETED OBJECTIVES
+## ✅ COMPLETED WORK
 
-- ✅ OBJECTIVE 2B: Remove legacy loss functions
-- ✅ OBJECTIVE 2C: Rename crystalline to default
-- ✅ OBJECTIVE 21: Fix backwards "simple_loss" naming
-- ✅ OBJECTIVE 22: Delete 83KB unused infrastructure code
-- ✅ Architecture analysis complete
-- ✅ WARNING_ANALYSIS.md created (comprehensive categorization)
-- ✅ Phase 1: Code Quality & Quick Wins (23 warnings)
-  * LayerNorm BigFixed integration (3)
-  * Unused functions/variables (15)
-  * No-effect statements (5)
-- ✅ Phase 2: Type & Comparison Fixes (16 warnings)
-  * LLL embeddings allocation (1)
-  * All sign comparisons (15)
-- ✅ WARNING_FIX_PROGRESS.md created (tracking document)
-- ✅ OBJECTIVE_25_SUMMARY.md created (comprehensive report)
+### Phase 1: Syntax Error Fixes
+- [x] Fixed unclosed braces in cllm_utils.c (lines 342-358)
+- [x] Uncommented cllm_adam_step_bigfixed function (was disabled)
+- [x] Fixed duplicate variable declarations in cllm_adam_step_bigfixed
+- [x] Added cllm_adam_step_bigfixed to include/cllm_training.h
+- [x] Build now completes successfully with all libraries created
 
 ---
 
-## 🎯 CURRENT: OBJECTIVE 25 - FIX BUILD WARNINGS
+## 🎯 CURRENT STATUS
 
-**Progress:** 71 → 32 warnings (39 fixed, 55% reduction!)
-**Remaining Categories:**
-- HIGH: 31 type mismatches (BigFixed** vs float*)
-- LOW: 1 control flow warning
+**MAJOR PROGRESS:** 71 → 9 warnings (87% reduction!)
 
-**Files with Warnings:**
-- cllm_training.c: 14 warnings (44%)
-- cllm_optimizer.c: 10 warnings (31%)
-- cllm_validate.c: 7 warnings (22%)
-- cllm_utils.c: 1 warning (3%)
+**Remaining Warnings:** 9 (all in src/ai/cllm_training.c)
+- Line 1597: Incompatible pointer type (BigFixed** vs float*) in cllm_apply_cymatic_resonance
+- Line 2430: Pointer type mismatch in conditional expression
+- Line 2457: Incompatible pointer type (float* vs BigFixed**)
+- Line 2485: Incompatible pointer type (float* vs BigFixed**)
+- Line 2516: Incompatible pointer type (BigFixed** vs float*)
+- Lines 3436 (4 warnings): Incompatible pointer types in cllm_attention_forward_bigfixed arguments
 
----
-
-## 📋 PHASE 1: FIX HIGH-PRIORITY TYPE MISMATCHES (60 warnings)
-
-### 1.1: Inference Functions (8 warnings in cllm_inference.c)
-
-**Problem:** Helper functions expect float* but receive BigFixed**
-
-- [ ] Create `cllm_apply_temperature_bigfixed()` in cllm_inference.c
-- [ ] Create `cllm_softmax_bigfixed()` in cllm_inference.c
-- [ ] Create `cllm_sample_top_k_bigfixed()` in cllm_inference.c
-- [ ] Create `cllm_sample_top_p_bigfixed()` in cllm_inference.c
-- [ ] Update `cllm_generate()` to use BigFixed versions
-- [ ] Test build (should reduce warnings by 8)
-- [ ] Commit changes
-
-### 1.2: Optimizer Functions (12 warnings in cllm_optimizer.c)
-
-**Problem:** Optimizer expects float* but receives BigFixed**
-
-- [ ] Create `adam_update_params_bigfixed()` static function
-- [ ] Update `cllm_adam_step()` to use BigFixed operations
-- [ ] Update `cllm_sgd_momentum_step()` to use BigFixed operations
-- [ ] Fix printf format (use bigfixed_to_double for printing)
-- [ ] Test build (should reduce warnings by 12)
-- [ ] Commit changes
-
-### 1.3: Training Type Mismatches (25 warnings in cllm_training.c)
-
-**Problem:** Mixed float* and BigFixed** allocations
-
-- [ ] Fix attention cache allocations (lines 561-566) - use bigfixed_array_create
-- [ ] Fix backward pass type handling (lines 2436, 2463, 2491, 2522)
-- [ ] Fix attention forward argument types (line 3442)
-- [ ] Fix cymatic resonance call (line 1594)
-- [ ] Test build (should reduce warnings by 25)
-- [ ] Commit changes
-
-### 1.4: LayerNorm Functions (3 warnings in cllm_layernorm.c)
-
-**Problem:** Missing include and wrong allocation
-
-- [ ] Add `#include "cllm_layernorm_bigfixed.h"` at top
-- [ ] Fix gamma allocation (line 68) - use bigfixed_array_create
-- [ ] Fix beta allocation (line 69) - use bigfixed_array_create
-- [ ] Test build (should reduce warnings by 3)
-- [ ] Commit changes
-
-### 1.5: Validation Functions (7 warnings in cllm_validate.c)
-
-**Problem:** Validation expects float* but receives BigFixed**
-
-- [ ] Create `cllm_check_numerical_stability_bigfixed()` function
-- [ ] Update all 7 call sites to use BigFixed version
-- [ ] Test build (should reduce warnings by 7)
-- [ ] Commit changes
-
-### 1.6: LLL Embeddings (1 warning in cllm_lll_embeddings.c)
-
-**Problem:** Wrong allocation type
-
-- [ ] Fix line 285 - use bigfixed_array_create instead of calloc
-- [ ] Test build (should reduce warnings by 1)
-- [ ] Commit changes
-
-### 1.7: Tools Inference (4 warnings in tools/cllm_inference.c)
-
-**Problem:** Same as main inference
-
-- [ ] Update to use BigFixed versions of helper functions
-- [ ] Test build (should reduce warnings by 4)
-- [ ] Commit changes
-
-**Phase 1 Total:** Should eliminate 60 warnings
+**Files:** All warnings in `src/ai/cllm_training.c`
 
 ---
 
-## 📋 PHASE 2: FIX MEDIUM-PRIORITY WARNINGS (27 warnings)
+## 📋 REMAINING WORK
 
-### 2.1: Sign Comparisons (14 warnings in cllm_training.c)
+### Fix Final 9 Type Mismatch Warnings in cllm_training.c
 
-**Problem:** Comparing uint32_t with int
-
-- [ ] Cast comparisons to same type
-- [ ] Or change variable types to match
+#### Warning 1: Line 1597 - cllm_apply_cymatic_resonance
+- [ ] Check function signature in include/ai/cllm_cymatic_training.h
+- [ ] Either update function to accept BigFixed** or cast the argument
 - [ ] Test build
-- [ ] Commit changes
 
-### 2.2: Unused Variables (5 warnings)
-
-- [ ] Fix `gradient_scale` in cllm_optimizer_wrapper.c:35
-- [ ] Fix `scale` in cllm_production.c:393
-- [ ] Fix `ff_hidden` in cllm_training_threaded.c:388
-- [ ] Fix `ln` in cllm_training_threaded.c:409
-- [ ] Fix `std` in cllm_training_threaded.c:418
+#### Warning 2: Line 2430 - Conditional Expression
+- [ ] Fix pointer type mismatch in gradient_buffer conditional
+- [ ] Ensure both branches return compatible types
 - [ ] Test build
-- [ ] Commit changes
 
-### 2.3: Unused Parameters (3 warnings)
-
-- [ ] Fix `precision` in cllm_feedforward_bigfixed.c:28 - add (void)precision
-- [ ] Fix `layer` in cllm_training.c:997 - add (void)layer
-- [ ] Fix `token_ids` in cllm_training.c:1001 - add (void)token_ids
+#### Warnings 3-5: Lines 2457, 2485, 2516 - Pointer Initializations
+- [ ] Fix logits initialization (line 2457)
+- [ ] Fix hidden initialization (line 2485)
+- [ ] Fix grad initialization (line 2516)
 - [ ] Test build
-- [ ] Commit changes
 
-### 2.4: Unused Functions (5 warnings in cllm_utils.c)
-
-- [ ] Mark functions as static inline or remove:
-  - cllm_reset_model (line 365)
-  - cllm_clone_config (line 399)
-  - cllm_compare_configs (line 414)
-  - cllm_get_version (line 431)
-  - cllm_get_build_info (line 440)
+#### Warnings 6-9: Line 3436 - cllm_attention_forward_bigfixed Arguments
+- [ ] Fix input argument type (arg 2)
+- [ ] Fix output argument type (arg 3)
+- [ ] Fix key_cache argument type (arg 4)
+- [ ] Fix value_cache argument type (arg 5)
 - [ ] Test build
-- [ ] Commit changes
 
-**Phase 2 Total:** Should eliminate 27 warnings
+### Final Steps
+- [ ] Verify zero warnings: `make clean && make 2>&1 | grep "warning:" | wc -l`
+- [ ] Commit all changes with proper message
+- [ ] Update OBJECTIVE_25_SUMMARY.md with final results
+- [ ] Mark Objective 25 as COMPLETE
 
 ---
 
-## 📋 PHASE 3: FIX LOW-PRIORITY WARNINGS (7 warnings)
+## 🎉 ACHIEVEMENTS
 
-### 3.1: Statements with No Effect (5 warnings in cllm_production.c)
+- ✅ Fixed syntax error in cllm_utils.c
+- ✅ Enabled cllm_adam_step_bigfixed function
+- ✅ Fixed duplicate variable declarations
+- ✅ Build completes successfully
+- ✅ All libraries created
+- ✅ 87% warning reduction (71 → 9)
 
-- [ ] Fix lines 370, 372, 374, 382, 384 in clip_gradients function
-- [ ] Either assign to variable or remove statements
-- [ ] Test build
-- [ ] Commit changes
-
-### 3.2: Control Flow (1 warning in cllm_utils.c)
-
-- [ ] Add return statement at line 442
-- [ ] Test build
-- [ ] Commit changes
-
-### 3.3: Pointer Mismatch (1 warning in cllm_training.c)
-
-- [ ] Fix line 2436 conditional expression
-- [ ] Add proper cast
-- [ ] Test build
-- [ ] Commit changes
-
-**Phase 3 Total:** Should eliminate 7 warnings
-
----
-
-## 🎯 EXECUTION STRATEGY
-
-**Start with:** Phase 1.1 (Inference functions) - Most visible to users
-**Then:** Work through each category systematically
-**Goal:** Zero warnings build
-
-**After each fix:**
-1. Test build
-2. Verify warning count decreased
-3. Commit changes
-4. Move to next category
-
----
-
-## 📊 PROGRESS TRACKING
-
-- [ ] Phase 1.1: Inference (8 warnings)
-- [ ] Phase 1.2: Optimizer (12 warnings)
-- [ ] Phase 1.3: Training (25 warnings)
-- [ ] Phase 1.4: LayerNorm (3 warnings)
-- [ ] Phase 1.5: Validation (7 warnings)
-- [ ] Phase 1.6: LLL Embeddings (1 warning)
-- [ ] Phase 1.7: Tools Inference (4 warnings)
-- [ ] Phase 2.1: Sign Comparisons (14 warnings)
-- [ ] Phase 2.2: Unused Variables (5 warnings)
-- [ ] Phase 2.3: Unused Parameters (3 warnings)
-- [ ] Phase 2.4: Unused Functions (5 warnings)
-- [ ] Phase 3.1: No Effect Statements (5 warnings)
-- [ ] Phase 3.2: Control Flow (1 warning)
-- [ ] Phase 3.3: Pointer Mismatch (1 warning)
-
-**Target:** 0 warnings
-**Current:** 78 warnings
+**Next:** Fix the final 9 type mismatch warnings to achieve zero warnings!

@@ -344,7 +344,7 @@ int cllm_check_model_health(CLLMModel* model) {
 // DISABLED - USE BigFixed version:                         fprintf(stderr, "Warning: NaN/Inf in layer %u query weights\n", layer);
 // DISABLED - USE BigFixed version:                         issues++;
 // DISABLED - USE BigFixed version:                     }
-// DISABLED - USE BigFixed version:                 }
+                }
             }
         }
     }

@@ -163,6 +163,7 @@ void cllm_training_free(CLLMTraining* training);
 void cllm_training_cleanup(CLLMTraining* training);
 
 void cllm_adam_step(CLLMTraining* training, float learning_rate);
+void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate);
 void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum);
 void cllm_update_learning_rate(CLLMTraining* training);
 float cllm_get_learning_rate(CLLMTraining* training);

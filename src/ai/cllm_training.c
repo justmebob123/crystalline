@@ -1634,7 +1634,6 @@ float cllm_train_epoch(CLLMTraining* training) {
 
 
 
-/* DISABLED - BROKEN BIGFIXED IMPLEMENTATION
 void cllm_adam_step_bigfixed(
     CLLMTraining* training,
     float learning_rate_float
@@ -1646,12 +1645,10 @@ void cllm_adam_step_bigfixed(
     size_t embed_size = model->vocab_size * model->embedding_dim;
     
     // Convert learning rate to BigFixed
-    BigFixed learning_rate;
     BigFixed learning_rate = *big_fixed_create(precision);
     big_fixed_from_double(&learning_rate, learning_rate_float);
     
     // Adam hyperparameters
-    BigFixed beta1, beta2, epsilon;
     BigFixed beta1 = *big_fixed_create(precision);
     BigFixed beta2 = *big_fixed_create(precision);
     BigFixed epsilon = *big_fixed_create(precision);
@@ -1660,11 +1657,9 @@ void cllm_adam_step_bigfixed(
     big_fixed_from_double(&beta2, 0.999);
     big_fixed_from_double(&epsilon, 1e-8);
     
-    BigFixed one;
     BigFixed one = *big_fixed_create(precision);
     big_fixed_from_int(&one, 1);
     
-    BigFixed one_minus_beta1, one_minus_beta2;
     BigFixed one_minus_beta1 = *big_fixed_create(precision);
     BigFixed one_minus_beta2 = *big_fixed_create(precision);
     big_fixed_sub(&one_minus_beta1, &one, &beta1);
@@ -1679,7 +1674,6 @@ void cllm_adam_step_bigfixed(
         BigFixed* g = training->gradients[i];                // Gradient
         
         // m = beta1 * m + (1 - beta1) * g
-        BigFixed temp1, temp2;
         BigFixed temp1 = *big_fixed_create(precision);
         BigFixed temp2 = *big_fixed_create(precision);
         
@@ -1688,7 +1682,6 @@ void cllm_adam_step_bigfixed(
         big_fixed_add(m, &temp1, &temp2);
         
         // v = beta2 * v + (1 - beta2) * g^2
-        BigFixed g_squared;
         BigFixed g_squared = *big_fixed_create(precision);
         big_fixed_mul(&g_squared, g, g);
         
@@ -1697,7 +1690,6 @@ void cllm_adam_step_bigfixed(
         big_fixed_add(v, &temp1, &temp2);
         
         // weight = weight - lr * m / (sqrt(v) + epsilon)
-        BigFixed sqrt_v, denom, update;
         BigFixed sqrt_v = *big_fixed_create(precision);
         BigFixed denom = *big_fixed_create(precision);
         BigFixed update = *big_fixed_create(precision);
@@ -1737,7 +1729,6 @@ void cllm_adam_step_bigfixed(
     big_fixed_free(&one_minus_beta1);
     big_fixed_free(&one_minus_beta2);
 }
-*/
 
 
 /* DISABLED - BROKEN BIGFIXED: cllm_layernorm_backward_bigfixed
