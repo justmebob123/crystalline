@@ -3127,3 +3127,37 @@ void cllm_training_free(CLLMTraining* training) {
     cllm_training_cleanup(training);
 }
 
+
+// ============================================================================
+// STUB IMPLEMENTATIONS FOR BIGFIXED FUNCTIONS
+// These are temporary stubs to fix linker errors
+// TODO: Replace with proper BigFixed implementations
+// ============================================================================
+
+
+// ============================================================================
+// STUB IMPLEMENTATIONS FOR ATTENTION FUNCTIONS
+// These are temporary stubs to fix linker errors
+// ============================================================================
+
+void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
+                           float* key_cache, float* value_cache, int seq_len) {
+    (void)key_cache; (void)value_cache;
+    if (!layer || !input || !output || seq_len == 0) return;
+    
+    // STUB: Just copy input to output
+    uint32_t embed_dim = layer->num_heads * layer->head_dim;
+    memcpy(output, input, seq_len * embed_dim * sizeof(float));
+}
+
+void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, 
+                                   float* input, float* output,
+                                   uint32_t* token_ids, float* key_cache, 
+                                   float* value_cache, int seq_len) {
+    (void)model; (void)token_ids; (void)key_cache; (void)value_cache;
+    if (!layer || !input || !output || seq_len == 0) return;
+    
+    // STUB: Just copy input to output
+    uint32_t embed_dim = layer->num_heads * layer->head_dim;
+    memcpy(output, input, seq_len * embed_dim * sizeof(float));
+}
