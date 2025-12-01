@@ -123,6 +123,12 @@ void cllm_apply_temperature(float* logits, int vocab_size, float temperature);
 void cllm_softmax(float* logits, int vocab_size);
 uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k);
 uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p);
+
+// BigFixed versions
+void cllm_apply_temperature_bigfixed(BigFixed** logits, int vocab_size, float temperature);
+void cllm_softmax_bigfixed(BigFixed** logits, int vocab_size);
+uint32_t cllm_sample_top_k_bigfixed(BigFixed** probs, int vocab_size, int k);
+uint32_t cllm_sample_top_p_bigfixed(BigFixed** probs, int vocab_size, float p);
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length);
 
 /* Configuration */

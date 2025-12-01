@@ -350,6 +350,19 @@ void cllm_apply_temperature(float* logits, int vocab_size, float temperature) {
     }
 }
 
+// BigFixed version
+void cllm_apply_temperature_bigfixed(BigFixed** logits, int vocab_size, float temperature) {
+    if (temperature < TEMPERATURE_MIN) temperature = TEMPERATURE_MIN;
+    if (temperature > TEMPERATURE_MAX) temperature = TEMPERATURE_MAX;
+    
+    BigFixed temp_bf;
+    big_fixed_from_double(&temp_bf, (double)temperature);
+    
+    for (int i = 0; i < vocab_size; i++) {
+        big_fixed_div(logits[i], logits[i], &temp_bf);
+    }
+}
+
 // Softmax
 void cllm_softmax(float* logits, int vocab_size) {
     // Find max for numerical stability
@@ -371,6 +384,34 @@ void cllm_softmax(float* logits, int vocab_size) {
     }
 }
 
+// BigFixed version
+void cllm_softmax_bigfixed(BigFixed** logits, int vocab_size) {
+    // Find max for numerical stability
+    double max_logit = big_fixed_to_double(logits[0]);
+    for (int i = 1; i < vocab_size; i++) {
+        double val = big_fixed_to_double(logits[i]);
+        if (val > max_logit) max_logit = val;
+    }
+    
+    // Compute exp and sum
+    BigFixed max_bf, temp, sum_bf;
+    big_fixed_from_double(&max_bf, max_logit);
+    big_fixed_from_double(&sum_bf, 0.0);
+    
+    for (int i = 0; i < vocab_size; i++) {
+        // logits[i] = exp(logits[i] - max)
+        big_fixed_sub(&temp, logits[i], &max_bf);
+        double exp_val = prime_expf((float)big_fixed_to_double(&temp));
+        big_fixed_from_double(logits[i], exp_val);
+        big_fixed_add(&sum_bf, &sum_bf, logits[i]);
+    }
+    
+    // Normalize
+    for (int i = 0; i < vocab_size; i++) {
+        big_fixed_div(logits[i], logits[i], &sum_bf);
+    }
+}
+
 // Sample top-k
 uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
     if (k <= 0 || k > vocab_size) k = vocab_size;
@@ -387,6 +428,22 @@ uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
     return 0;
 }
 
+// BigFixed version
+uint32_t cllm_sample_top_k_bigfixed(BigFixed** probs, int vocab_size, int k) {
+    if (k <= 0 || k > vocab_size) k = vocab_size;
+    
+    // Simple sampling from top-k
+    float r = (float)rand() / RAND_MAX;
+    double cumsum = 0.0;
+    
+    for (int i = 0; i < k && i < vocab_size; i++) {
+        cumsum += big_fixed_to_double(probs[i]);
+        if (r < cumsum) return (uint32_t)i;
+    }
+    
+    return 0;
+}
+
 // Sample top-p (nucleus sampling)
 uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
     float r = (float)rand() / RAND_MAX;
@@ -395,6 +452,19 @@ uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
     for (int i = 0; i < vocab_size; i++) {
         cumsum += probs[i];
         if (cumsum >= p || r < cumsum) return i;
+    }
+    
+    return 0;
+}
+
+// BigFixed version
+uint32_t cllm_sample_top_p_bigfixed(BigFixed** probs, int vocab_size, float p) {
+    float r = (float)rand() / RAND_MAX;
+    double cumsum = 0.0;
+    
+    for (int i = 0; i < vocab_size; i++) {
+        cumsum += big_fixed_to_double(probs[i]);
+        if (cumsum >= p || r < cumsum) return (uint32_t)i;
     }
     
     return 0;
@@ -421,18 +491,18 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         // Forward pass
         cllm_forward(inference, tokens, num_tokens);
         
-        // Apply temperature
-        cllm_apply_temperature(inference->logits, inference->model->vocab_size, inference->temperature);
+        // Apply temperature (BigFixed version)
+        cllm_apply_temperature_bigfixed(inference->logits, inference->model->vocab_size, inference->temperature);
         
-        // Softmax
-        cllm_softmax(inference->logits, inference->model->vocab_size);
+        // Softmax (BigFixed version)
+        cllm_softmax_bigfixed(inference->logits, inference->model->vocab_size);
         
-        // Sample next token
+        // Sample next token (BigFixed versions)
         uint32_t next_token;
         if (inference->top_k > 0) {
-            next_token = cllm_sample_top_k(inference->logits, inference->model->vocab_size, inference->top_k);
+            next_token = cllm_sample_top_k_bigfixed(inference->logits, inference->model->vocab_size, inference->top_k);
         } else {
-            next_token = cllm_sample_top_p(inference->logits, inference->model->vocab_size, inference->top_p);
+            next_token = cllm_sample_top_p_bigfixed(inference->logits, inference->model->vocab_size, inference->top_p);
         }
         
         // Add to sequence

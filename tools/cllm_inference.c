@@ -92,21 +92,30 @@ static void generate_text_proper(CLLMInference* inference, const char* prompt,
             break;
         }
         
-        // Apply temperature
+        // Apply temperature (BigFixed version)
         if (temperature > 0.0f && temperature != 1.0f) {
-            cllm_apply_temperature(inference->logits, model->vocab_size, temperature);
+            cllm_apply_temperature_bigfixed(inference->logits, model->vocab_size, temperature);
         }
         
-        // Apply softmax
-        cllm_softmax(inference->logits, model->vocab_size);
+        // Apply softmax (BigFixed version)
+        cllm_softmax_bigfixed(inference->logits, model->vocab_size);
         
-        // Sample next token
+        // Sample next token (BigFixed versions)
         uint32_t next_token;
         if (top_k > 1 && temperature > 0.0f) {
-            next_token = cllm_sample_top_k(inference->logits, model->vocab_size, top_k);
+            next_token = cllm_sample_top_k_bigfixed(inference->logits, model->vocab_size, top_k);
         } else {
             // Greedy sampling - pick highest probability
-            next_token = (uint32_t)cllm_sample_token(inference, inference->logits);
+            // Convert BigFixed** to usable form for sampling
+            double max_prob = big_fixed_to_double(inference->logits[0]);
+            next_token = 0;
+            for (int i = 1; i < model->vocab_size; i++) {
+                double prob = big_fixed_to_double(inference->logits[i]);
+                if (prob > max_prob) {
+                    max_prob = prob;
+                    next_token = (uint32_t)i;
+                }
+            }
         }
         
         // Check validity
