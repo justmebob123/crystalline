@@ -4,8 +4,8 @@
 This file contains detailed implementation tasks for completing the Crystalline CLLM integration.
 Refer to MASTER_PLAN.md for high-level objectives and architectural requirements.
 
-**LAST UPDATED:** Current Session
-**BUILD STATUS:** ✅ Zero errors, Zero warnings
+**LAST UPDATED:** 2024-12-01 - Comprehensive Architecture Analysis Complete
+**BUILD STATUS:** ✅ Zero errors, 78 warnings (pre-existing from BigFixed migration)
 
 ---
 
@@ -89,17 +89,23 @@ Refer to MASTER_PLAN.md for high-level objectives and architectural requirements
 
 ---
 
-### OBJECTIVE 2C: Rename "Crystalline" to Default [MEDIUM PRIORITY]
+### OBJECTIVE 2C: Rename "Crystalline" to Default ✅ COMPLETE
 
 **Purpose:** Stop treating crystalline as special - it's the only design
 
-**Tasks:**
-- [ ] Rename `cllm_train_epoch_crystalline()` to `cllm_train_epoch()`
-- [ ] Rename `cllm_compute_loss_crystalline()` to `cllm_compute_loss()`
-- [ ] Remove the old `cllm_train_epoch()` (it's legacy)
-- [ ] Update all callers throughout codebase
-- [ ] Update documentation to reflect crystalline as default
-- [ ] Remove "_crystalline" suffix from all function names
+**Status:** ✅ FULLY IMPLEMENTED
+
+**What Was Done:**
+- ✅ Renamed `cllm_compute_crystalline_loss()` to `cllm_compute_loss()`
+- ✅ Renamed `cllm_compute_crystalline_loss_detailed()` to `cllm_compute_loss_detailed()`
+- ✅ Updated all 6 call sites across the codebase
+- ✅ Updated function declarations and definitions
+- ✅ Updated comments and documentation
+- ✅ Build verified: Zero errors, 78 warnings (no new warnings)
+
+**Result:**
+- The loss function is now simply `cllm_compute_loss()` - no special prefix
+- Crystalline is not treated as special - it IS the design
 
 ---
 
@@ -488,6 +494,197 @@ The next objectives focus on cleanup and optimization:
 5. **OBJECTIVE 18**: Cymatic frequency resonance (MEDIUM PRIORITY)
    - 20-40% smoother convergence
    - Frequencies already defined
+
+---
+
+## 🚨 NEW CRITICAL OBJECTIVES (From Architecture Analysis)
+
+### OBJECTIVE 21: Fix Backwards "Simple Loss" Naming [CRITICAL PRIORITY]
+
+**Purpose:** Fix the backwards naming where "simple_loss" is actually THE REAL implementation
+
+**Critical Understanding:**
+- `include/ai/cllm_simple_loss.h` contains THE REAL crystalline GCD-based loss
+- Name "simple" implies it's a stub/simplified version - THIS IS BACKWARDS
+- Meanwhile `include/ai/cllm_loss.h` contains unused Tensor API infrastructure
+- This violates "one codebase, one design" - implies there's a complex version
+
+**Tasks:**
+- [ ] Rename `include/ai/cllm_simple_loss.h` → `include/ai/cllm_loss.h`
+- [ ] Rename infrastructure `include/ai/cllm_loss.h` → `include/ai/cllm_tensor_loss.h`
+- [ ] Update all includes in `cllm_training.c`, `cllm_production.c`, `cllm_training_threaded.c`
+- [ ] Update Makefile if needed
+- [ ] Test build
+- [ ] Commit changes
+
+**Related Files:**
+- `include/ai/cllm_simple_loss.h` - THE REAL LOSS (badly named)
+- `include/ai/cllm_loss.h` - Infrastructure Tensor API (unused)
+- `src/ai/cllm_loss.c` - Utility functions (correctly named)
+
+---
+
+### OBJECTIVE 22: Delete Unused Infrastructure Files [HIGH PRIORITY]
+
+**Purpose:** Remove 83KB of dead code from infrastructure layer
+
+**Critical Understanding:**
+- Three infrastructure files are completely unused
+- `cllm_backprop.c` - No calls found anywhere
+- `cllm_loss.c` - Only used by unused backprop
+- `cllm_training_loop.c` - Defined but never called
+- These are legacy code that should be deleted
+
+**Tasks:**
+- [ ] Delete `src/ai/infrastructure/cllm_backprop.c` (22KB)
+- [ ] Delete `src/ai/infrastructure/cllm_loss.c` (30KB)
+- [ ] Delete `src/ai/infrastructure/cllm_training_loop.c` (31KB)
+- [ ] Delete `include/ai/cllm_backprop.h`
+- [ ] Delete `include/ai/cllm_training_loop.h`
+- [ ] Update Makefile to remove deleted files
+- [ ] Test build
+- [ ] Commit changes
+
+**Impact:**
+- Removes 83KB of unused code
+- Simplifies infrastructure layer
+- Reduces confusion about what's actually used
+
+---
+
+### OBJECTIVE 23: Remove Misleading File Name Qualifiers [MEDIUM PRIORITY]
+
+**Purpose:** Remove qualifiers that imply alternatives (violates "one design" principle)
+
+**Critical Understanding:**
+- Files with "crystalline", "simple", "pure", "advanced" qualifiers imply there are alternatives
+- This violates the core principle: "one codebase, one design, no alternatives"
+- These qualifiers should be removed - the crystalline design IS the design
+
+**Files to Rename:**
+
+**"Crystalline" Prefix (not special, it's the design):**
+- [ ] `cllm_crystalline_advanced.c` → `cllm_advanced.c` (or remove "advanced")
+- [ ] `cllm_crystalline_attention.c` → `cllm_attention.c`
+- [ ] `cllm_crystalline_sieve.c` → `cllm_sieve.c`
+
+**"Pure" Qualifier (implies there's impure):**
+- [ ] `cllm_pure_embeddings.c` → `cllm_embeddings.c` (or merge)
+- [ ] `cllm_pure_token.c` → `cllm_token.c` (or merge)
+
+**"Impl" Suffix (should be integrated):**
+- [ ] `cllm_training_bigfixed_impl.c` → merge into `cllm_training.c`
+
+**Tasks:**
+- [ ] Analyze each file to determine correct name
+- [ ] Rename files one by one
+- [ ] Update all includes
+- [ ] Update Makefile
+- [ ] Test build after each rename
+- [ ] Commit changes incrementally
+
+---
+
+### OBJECTIVE 24: Investigate and Consolidate Duplicates [MEDIUM PRIORITY]
+
+**Purpose:** Identify and merge duplicate functionality
+
+**Potential Duplicates to Investigate:**
+
+**Batch Processing:**
+- [ ] Compare `src/ai/cllm_batch.c` vs `src/ai/infrastructure/cllm_batch.c`
+- [ ] Determine if truly different or duplicates
+- [ ] Merge if duplicate, document if different
+
+**Optimizer:**
+- [ ] Compare `src/ai/cllm_optimizer.c` vs `src/ai/infrastructure/cllm_optimizer.c`
+- [ ] Determine if truly different or duplicates
+- [ ] Merge if duplicate, document if different
+
+**Multiple Embedding Files:**
+- [ ] `cllm_embedding.c`
+- [ ] `cllm_lattice_embeddings.c`
+- [ ] `cllm_clock_embeddings.c`
+- [ ] `cllm_pure_embeddings.c`
+- [ ] `cllm_lll_embeddings.c`
+- [ ] Determine which is canonical
+- [ ] Merge or document relationships
+
+**Multiple Attention Files:**
+- [ ] `cllm_angular_attention.c`
+- [ ] `cllm_crystalline_attention.c`
+- [ ] `cllm_ntt_attention.c`
+- [ ] Determine relationships
+- [ ] Document which is used when
+
+---
+
+### OBJECTIVE 25: Fix Remaining 78 Build Warnings [HIGH PRIORITY]
+
+**Purpose:** Achieve zero warnings build (currently 78 warnings from BigFixed migration)
+
+**Critical Understanding:**
+- Build currently has 78 warnings (all pre-existing from BigFixed migration)
+- These are mostly type mismatches between float* and BigFixed**
+- Need to fix all warnings to have clean build
+
+**Warning Categories:**
+
+**Type Mismatches (majority):**
+- [ ] `BigFixed**` vs `float*` in inference
+- [ ] `BigFixed**` vs `float*` in optimizer
+- [ ] `BigFixed**` vs `float*` in layernorm
+- [ ] Assignment warnings in various files
+
+**Unused Parameters:**
+- [ ] Fix or document unused parameters
+- [ ] Use `(void)param` to suppress if intentional
+
+**Implicit Declarations:**
+- [ ] Add missing function declarations
+- [ ] Fix include order issues
+
+**Tasks:**
+- [ ] Categorize all 78 warnings by type
+- [ ] Fix high-priority warnings first (type mismatches)
+- [ ] Fix medium-priority warnings (unused parameters)
+- [ ] Document any warnings that cannot be fixed
+- [ ] Achieve zero warnings build
+- [ ] Test thoroughly after fixes
+- [ ] Commit changes
+
+**Related Files:**
+- `src/ai/cllm_inference.c` - Multiple type mismatch warnings
+- `src/ai/cllm_optimizer.c` - Type mismatch warnings
+- `src/ai/cllm_layernorm.c` - Type mismatch warnings
+- `src/ai/cllm_feedforward_bigfixed.c` - Unused parameter warnings
+
+---
+
+## 📊 UPDATED PRIORITY ORDER
+
+**CRITICAL (Do Immediately):**
+1. ✅ OBJECTIVE 2B - Remove legacy loss functions (COMPLETE)
+2. ✅ OBJECTIVE 2C - Rename crystalline to default (COMPLETE)
+3. **OBJECTIVE 21** - Fix backwards "simple_loss" naming
+4. **OBJECTIVE 22** - Delete unused infrastructure files (83KB)
+
+**HIGH (Do Next):**
+5. **OBJECTIVE 25** - Fix remaining 78 build warnings
+6. OBJECTIVE 2D - Remove legacy code files
+7. OBJECTIVE 14, 15, 16 - Mathematical integration (COMPLETE)
+
+**MEDIUM (After High Priority):**
+8. **OBJECTIVE 23** - Remove misleading file name qualifiers
+9. **OBJECTIVE 24** - Investigate and consolidate duplicates
+10. OBJECTIVE 5A - Kissing spheres as only threading
+11. OBJECTIVE 8A - Remove conditional compilation
+12. OBJECTIVE 17 - NTT attention (performance)
+13. OBJECTIVE 18 - Cymatic resonance (quality)
+
+**LOW (Future):**
+14. OBJECTIVE 19 - Analysis tools (validation)
+15. OBJECTIVE 20 - Comprehensive testing
 
 ---
 
