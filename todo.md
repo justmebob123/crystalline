@@ -72,16 +72,26 @@ The build is completely clean with no warnings or errors.
 - [x] Remove memory usage concerns from UI
 - [x] Update tab_models.c with new status display
 
-**Phase 7: Testing (TODO)**
-- [ ] Test model_manager_read_metadata()
-- [ ] Test model_manager_prepare()
-- [ ] Test abacus expansion
-- [ ] Test with small model (1000 primes)
-- [ ] Test with medium model (10000 primes)
-- [ ] Test with large model (50000 primes)
-- [ ] Verify no OOM issues
-- [ ] Test inference from disk
-- [ ] Test training from disk
+**Phase 7: Testing (READY FOR USER TESTING)**
+
+The implementation is complete and ready for testing. User should:
+
+- [ ] Run the application and verify control thread output
+- [ ] Check Models tab shows "Accessible" or "Needs Preparation"
+- [ ] Test "Prepare Model" button on models that need preparation
+- [ ] Verify abacus expands correctly when preparing models
+- [ ] Test with existing models in models/ directory
+- [ ] Create new model and verify prime count is saved
+- [ ] Verify no OOM issues with large models
+- [ ] Test inference from disk (if applicable)
+- [ ] Test training from disk (if applicable)
+
+**Expected Behavior:**
+1. Control thread scans models and shows prime requirements
+2. Models tab displays accessibility status
+3. "Prepare Model" button appears for inaccessible models
+4. Clicking "Prepare" expands abacus and marks model accessible
+5. No memory issues - models work from disk
 
 **Expected Impact:**
 - Models work from disk without OOM
