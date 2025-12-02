@@ -1,7 +1,4 @@
 /*
-
-// Forward declaration
-static void cllm_zero_all_gradients(CLLMTraining* training);
  * CLLM Training Pipeline - Core Training Operations
  * 
  * This file contains the core training operations:
@@ -15,116 +12,47 @@ static void cllm_zero_all_gradients(CLLMTraining* training);
  */
 
 #include <stdio.h>
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include <stdlib.h>
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include <string.h>
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include <stdbool.h>
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include <time.h>
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/prime_float_math.h"
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/cllm_format.h"
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/cllm_training.h"
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/cllm_inference.h"
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/prime_float_math.h"
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-}
 #include "../include/cllm_simd_utils.h"
+// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
+
 
 // Zero all gradients
 static void cllm_zero_all_gradients(CLLMTraining* training) {
     if (!training) return;
+    
+    // Zero main gradients
     if (training->gradients) {
         size_t size = training->model->vocab_size * training->model->embedding_dim;
         memset(training->gradients, 0, size * sizeof(double));
     }
+    
+    // Zero layer gradients if they exist
+    if (training->attention_grads) {
+        for (uint32_t i = 0; i < training->model->num_layers; i++) {
+            if (training->attention_grads[i].query_lattice) {
+                size_t size = training->model->embedding_dim * training->model->embedding_dim;
+                memset(training->attention_grads[i].query_lattice, 0, size * sizeof(float));
+            }
+            if (training->attention_grads[i].key_lattice) {
+                size_t size = training->model->embedding_dim * training->model->embedding_dim;
+                memset(training->attention_grads[i].key_lattice, 0, size * sizeof(float));
+            }
+            if (training->attention_grads[i].value_lattice) {
+                size_t size = training->model->embedding_dim * training->model->embedding_dim;
+                memset(training->attention_grads[i].value_lattice, 0, size * sizeof(float));
+            }
+        }
+    }
 }
-// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
 
 #define MAX_BATCH_SIZE 128
 #define MAX_SEQUENCE_LENGTH 2048
@@ -1329,36 +1257,6 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
     if (!training || !target_tokens) return;
     
     // Use provided gradient buffer if given, otherwise use training->gradients
-
-// Zero all gradients
-static void cllm_zero_all_gradients(CLLMTraining* training) {
-    if (!training) return;
-    
-    // Zero main gradients
-    if (training->gradients) {
-        size_t size = training->model->vocab_size * training->model->embedding_dim;
-        memset(training->gradients, 0, size * sizeof(double));
-    }
-    
-    // Zero layer gradients
-    if (training->attention_grads) {
-        for (uint32_t i = 0; i < training->model->num_layers; i++) {
-            if (training->attention_grads[i].query_lattice) {
-                size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].query_lattice, 0, size * sizeof(float));
-            }
-            if (training->attention_grads[i].key_lattice) {
-                size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].key_lattice, 0, size * sizeof(float));
-            }
-            if (training->attention_grads[i].value_lattice) {
-                size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].value_lattice, 0, size * sizeof(float));
-            }
-        }
-    }
-}
-
     float* gradients = gradient_buffer ? gradient_buffer : training->gradients;
     if (!gradients) return;
     
