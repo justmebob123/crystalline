@@ -10,76 +10,91 @@
 - **Rule 6**: MASTER_PLAN.md is READ-ONLY - do not edit without explicit approval
 - **Rule 7**: FIX ALL BUILD WARNINGS before proceeding
 
-## Current Status
-✅ Hierarchical infrastructure exists with proper locks
-✅ Locks restored in training system for kissing boundary synchronization
-✅ Build errors fixed (field name corrections, function conflicts)
-✅ Build completes successfully
-⚠️ 41 pointer type warnings remain (float* vs double*) - architectural issue
+## CRITICAL ISSUES IDENTIFIED
 
-## Analysis: Type System Issue
+### Issue 1: Locks NOT Being Used
+**Problem**: Code calls `accumulate_gradients_lockfree()` instead of `accumulate_gradients()`
+- The locked version was marked `__attribute__((unused))`
+- Lines 1586 and 2095 call the lock-free version
+- This means the restored locks are NEVER used
+- **Status**: FIXED - Now calling `accumulate_gradients()` with locks
 
-The codebase has a fundamental type mismatch:
-- Model structures use `double*` for embeddings, positions, etc.
-- Many functions expect `float*` parameters
-- This creates 41 warnings across multiple files
+### Issue 2: Segmentation Fault
+**Problem**: Segfault during training in `threaded_train_epoch_lockfree`
+- Occurs during batch processing
+- Related to work queue or batch management
+- Need to debug memory access patterns
+- **Status**: INVESTIGATING
 
-**Warning Categories:**
-1. Pointer initialization warnings (float* from double*): 20 warnings
-2. Function argument type warnings: 15 warnings
-3. Assignment type warnings: 6 warnings
+### Issue 3: Single Core Usage
+**Problem**: Only using 1 core instead of 12-fold symmetry
+- Workers report "processed 0 batches" or "processed 1 batch"
+- Not distributing work properly across 12 threads
+- Violates 12-fold symmetry architecture
+- **Status**: NOT YET ADDRESSED
 
-**Files Affected:**
-- src/ai/cllm_crystalline_advanced.c (1)
-- src/ai/cllm_embedding.c (4)
-- src/ai/cllm_inference.c (4)
-- src/ai/cllm_lattice_embed.c (1)
-- src/ai/cllm_lll_embeddings.c (4)
-- src/ai/cllm_positional.c (8)
-- src/ai/cllm_production.c (1)
-- src/ai/cllm_training.c (12)
-- src/ai/cllm_training_threaded.c (6)
+### Issue 4: 41 Type Warnings
+**Problem**: float* vs double* pointer type mismatches
+- Architectural inconsistency in type system
+- 41 warnings across multiple files
+- Safe but not ideal
+- **Status**: DOCUMENTED, will fix after functionality restored
 
-## Decision Point
+## Current Phase: Fix Critical Threading Issues
 
-Two approaches to fix warnings:
-1. **Change model structures to float*** - Simpler, faster, less memory
-2. **Change function signatures to double*** - More precision, larger memory footprint
+### Phase 1: Restore Proper Lock Usage [IN PROGRESS]
+- [x] Remove `__attribute__((unused))` from `accumulate_gradients()`
+- [x] Replace `accumulate_gradients_lockfree()` calls with `accumulate_gradients()`
+- [x] Verify locks are actually being used
+- [ ] Rebuild and test
+- [ ] Verify no segfaults with proper locking
 
-**Recommendation**: Proceed with testing despite warnings because:
-- Warnings are type mismatches, not logic errors
-- The code compiles and links successfully
-- Implicit conversions between float/double are safe (though not ideal)
-- We can fix the type system after verifying functionality
-- The critical issue was NaN gradients from missing locks, not type mismatches
+### Phase 2: Fix Segmentation Fault
+- [ ] Add debug logging to identify exact crash location
+- [ ] Check batch lifecycle and memory management
+- [ ] Verify work queue integrity
+- [ ] Check for race conditions in batch access
+- [ ] Test with single thread first, then scale up
 
-## Phase 1: Test Current Build [NEXT]
-- [ ] Create small test dataset
-- [ ] Run training with restored locks
-- [ ] Verify NO NaN gradients
+### Phase 3: Restore 12-Fold Symmetry
+- [ ] Verify work distribution across all 12 threads
+- [ ] Check why workers process 0 or 1 batches
+- [ ] Ensure proper load balancing
+- [ ] Verify kissing spheres geometry is maintained
+- [ ] Test with multiple batches per thread
+
+### Phase 4: Verify NaN Gradient Fix
+- [ ] Run training to completion
+- [ ] Check for NaN gradients
 - [ ] Verify gradient values are reasonable
 - [ ] Verify loss decreases over epochs
-- [ ] Document results
+- [ ] Compare with previous results
 
-## Phase 2: Multi-threaded Testing
-- [ ] Test with multiple threads (12 workers)
-- [ ] Monitor for race conditions
-- [ ] Verify thread-local operations still work
-- [ ] Test gradient accumulation at boundaries
-- [ ] Test weight updates at boundaries
-
-## Phase 3: Compare Results
-- [ ] Compare with previous results (before lock removal)
-- [ ] Document performance impact
-- [ ] Verify correctness of hierarchical synchronization
-
-## Phase 4: Type System Cleanup (If needed)
+### Phase 5: Type System Cleanup (If Needed)
 - [ ] Decide on float vs double for entire codebase
 - [ ] Systematically update all type declarations
 - [ ] Rebuild with zero warnings
 - [ ] Retest to ensure no regressions
 
-## Phase 5: Final Commit
-- [ ] Stage all changes
-- [ ] Commit with comprehensive message
-- [ ] Push to repository
+### Phase 6: Final Validation
+- [ ] Run full training session
+- [ ] Verify all 12 threads active
+- [ ] Monitor symmetry group distribution
+- [ ] Test convergence
+- [ ] Document results
+
+## Notes
+
+**User Feedback**: 
+- Build is NOT clean (41 warnings)
+- Testing showed segfaults (plural)
+- Only using single core (lost 12-fold symmetry)
+- Need to fix these critical issues before claiming success
+
+**Root Causes Identified**:
+1. Locks restored but NOT being called (lock-free version still in use)
+2. Memory management issues causing segfaults
+3. Work distribution broken (not using all 12 threads)
+4. Type system inconsistency (float vs double)
+
+**Priority**: Fix threading and segfaults FIRST, then address type warnings

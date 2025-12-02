@@ -1580,10 +1580,9 @@ static void* control_thread_func(void* arg) {
         // POINT B: Wait for batch completion
         pthread_barrier_wait(&system->batch_barrier);
         
-        // PHASE 4: After Point B, workers are waiting at barrier
-        // Safe to read their gradient segments and accumulate
-        // This is lock-free because workers are blocked at barrier
-        accumulate_gradients_lockfree(system);
+        // KISSING BOUNDARY: Accumulate gradients with proper synchronization
+        // Workers have completed their batches, now accumulate their gradients
+        accumulate_gradients(system);
     }
     
     printf("[Node Zero] Control thread stopping\n");
@@ -1906,7 +1905,6 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
  * Accumulate gradients from all spheres (using shared memory)
  * TODO: Implement gradient accumulation in future training enhancements
  */
-static void accumulate_gradients(ThreadedTrainingSystem* system) __attribute__((unused));
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return;
     
@@ -2092,7 +2090,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Accumulate gradients from all workers
     printf("Accumulating gradients...\n");
-    accumulate_gradients_lockfree(system);
+    accumulate_gradients(system);
     
     // KISSING BOUNDARY LOCK - Protect model weight updates
     // Control thread writes to model weights, workers read - this is a kissing boundary
