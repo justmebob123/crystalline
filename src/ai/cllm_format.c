@@ -377,7 +377,7 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     // Create header
     CLLMHeader header;
     memset(&header, 0, sizeof(CLLMHeader));
-    memcpy(header.magic, "CLLM", 4);  // Use memcpy instead of strncpy for non-null-terminated data
+    memcpy(header.magic, "CLLM\x01\x00\x00\x00", 8);  // Full 8-byte magic number
     header.version = 1;
     header.vocab_size = model->vocab_size;
     header.embedding_dim = model->embedding_dim;
