@@ -1,6 +1,10 @@
 # TODO - Crystalline CLLM UI Redesign
 
    ## 🔒 RULES (PASTED FROM MASTER_PLAN.MD - RULE 0)
+   
+   **CRITICAL ISSUE IDENTIFIED:** Kissing spheres visualization broken on Training Tab
+   - Worker threads running but visualization not updating
+   - Need bidirectional analysis of all UI elements and wiring
 
    ### ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
    **HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
@@ -379,9 +383,50 @@
 
    ---
 
-   ## Phase 6: Redesign All Tabs [READY TO START]
+   ## Phase 6: Redesign Training Tab [IN PROGRESS]
 
-   ### 6.1: Redesign Training Tab (HIGHEST PRIORITY)
+   ### 6.0: CRITICAL BUG ANALYSIS - Sphere Visualization Not Showing
+   
+   ROOT CAUSE IDENTIFIED:
+   - Line 370 in tab_training.c: if (state->training_in_progress || viz_data.loss_count > 0)
+   - Sphere visualization only renders DURING training
+   - Should render ALWAYS to show architecture even when idle
+   
+   BIDIRECTIONAL ANALYSIS:
+   
+   Forward Path (Rendering):
+   1. main.c:911 calls draw_training_tab(renderer, state)
+   2. tab_training.c:713 calls draw_training_visualization(renderer, state)
+   3. tab_training.c:370 CONDITIONAL CHECK (blocks rendering when idle)
+   4. tab_training.c:476 calls draw_sphere_visualization(renderer, state, sphere_bounds)
+   5. sphere_visualization.c:112 Renders spheres with stats
+   
+   Backward Path (Data Flow):
+   1. training_thread.c:343 calls update_sphere_stats(state, g_threaded_system)
+   2. training_thread.c:103-106 Updates state->sphere_stats.batches_processed[i]
+   3. sphere_visualization.c:154-156 Reads state->sphere_stats.batches_processed[i]
+   4. sphere_visualization.c:169 Colors spheres based on activity
+   
+   ISSUE:
+   - Data flow is correct
+   - Rendering function is correct
+   - Conditional check prevents rendering when idle
+   
+   FIX:
+   - Remove or modify conditional to always show sphere visualization
+   - Show IDLE state when not training
+   - Show architecture even with zero activity
+
+   ### 6.1: Fix Sphere Visualization Bug COMPLETE
+   - [x] Identified root cause: Conditional block preventing rendering when idle
+   - [x] Moved sphere visualization outside if/else block
+   - [x] Now renders ALWAYS (even when training is idle)
+   - [x] Commented out duplicate code inside conditional
+   - [x] Build verified - zero errors, zero warnings
+   - [ ] NEEDS TESTING: Verify visualization appears on tab open
+   - [ ] NEEDS TESTING: Verify visualization updates during training
+
+   ### 6.2: Redesign Training Tab with New Layout System
    - [ ] Backup current tab_training.c
    - [ ] Rewrite using layout_engine + scroll_panel
    - [ ] Create scrollable control panel
@@ -454,8 +499,11 @@
    - [x] Phase 2: Designed new architecture - COMPLETE
    - [x] Phase 3: Implemented loading screen - COMPLETE
    - [x] Phase 5: Implemented layout system - COMPLETE
+   - [x] Phase 6.0: Performed bidirectional analysis - COMPLETE
+   - [x] Phase 6.1: Fixed sphere visualization bug - COMPLETE
    - [x] Build verified - zero errors, zero warnings
-   - [ ] Starting Phase 6: Redesigning tabs
+   - [ ] Phase 6.1: Testing sphere visualization fix
+   - [ ] Phase 6.2: Redesigning Training Tab with new layout system
 
    ### Critical Bugs Fixed This Session:
    1. Models Tab black screen - init_models_tab() never called
