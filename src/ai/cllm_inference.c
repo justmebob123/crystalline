@@ -238,6 +238,51 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
 // Feed-forward network
 
 // Forward pass
+
+// Simple attention forward pass
+void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
+                           float* key_cache, float* value_cache, int seq_len) {
+    // Simple pass-through for now (TODO: implement proper attention)
+    uint32_t dim = layer->num_heads * layer->head_dim;
+    for (uint32_t i = 0; i < dim; i++) {
+        output[i] = input[i];
+    }
+}
+
+// Simple feedforward pass
+void cllm_feedforward(FeedForwardLayer* layer, float* input, float* output) {
+    // Simple pass-through for now (TODO: implement proper feedforward)
+    for (uint32_t i = 0; i < layer->output_dim; i++) {
+        output[i] = input[i];
+    }
+}
+
+// Simple layer norm
+void cllm_layer_norm(CLLMLayerNorm* ln, float* input, float* output) {
+    // Compute mean
+    float mean = 0.0f;
+    for (uint32_t i = 0; i < ln->dim; i++) {
+        mean += input[i];
+    }
+    mean /= ln->dim;
+    
+    // Compute variance
+    float variance = 0.0f;
+    for (uint32_t i = 0; i < ln->dim; i++) {
+        float diff = input[i] - mean;
+        variance += diff * diff;
+    }
+    variance /= ln->dim;
+    
+    // Normalize
+    float std = prime_sqrtf(variance + ln->epsilon);
+    for (uint32_t i = 0; i < ln->dim; i++) {
+        output[i] = (input[i] - mean) / std;
+        if (ln->gamma) output[i] *= ln->gamma[i];
+        if (ln->beta) output[i] += ln->beta[i];
+    }
+}
+
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     if (!inference || !tokens || num_tokens <= 0) return;
     

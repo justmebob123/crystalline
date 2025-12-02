@@ -846,8 +846,8 @@ bool model_manager_prepare(const char* name) {
         return false;
     }
     
-    //     // Get required primes (use vocab_size if num_primes_used is 0)
-    //     uint64_t required = header->num_primes_used;
+    // Get required primes (use vocab_size if num_primes_used is 0)
+    uint64_t required = header->vocab_size;
     if (required == 0) {
         // Fallback: estimate from vocab_size
         required = header->vocab_size;

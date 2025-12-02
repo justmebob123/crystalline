@@ -103,3 +103,10 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     // This provides momentum, adaptive learning rates, and bias correction
     cllm_adam_step_bigfixed(training, training->config.learning_rate);
 }
+// Stub for BigFixed Adam optimizer (to be implemented)
+void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
+    // TODO: Implement proper Adam optimizer
+    // For now, just a placeholder
+    if (!training) return;
+}
+

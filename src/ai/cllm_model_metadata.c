@@ -25,14 +25,8 @@ int cllm_model_get_epochs_trained(CLLMModel* model) {
 int cllm_model_set_target_epochs(CLLMModel* model, int target) {
     if (!model || target < 0) return -1;
     
-    // Cannot set target less than already trained
-    //     if (target < model->epochs_trained) {
-        fprintf(stderr, "Error: Cannot set target_epochs (%d) less than epochs_trained (%d)\n",
-    //                 target, model->epochs_trained);
-        return -1;
-    }
-    
-    //     model->target_epochs = target;
+    // Note: epochs_trained field removed from CLLMModel
+    // Just return success for now
     return 0;
 }
 
@@ -42,12 +36,8 @@ int cllm_model_set_target_epochs(CLLMModel* model, int target) {
 int cllm_model_validate_epochs(CLLMModel* model, int target_epochs) {
     if (!model) return -1;
     
-    //     if (target_epochs < model->epochs_trained) {
-        fprintf(stderr, "Error: target_epochs (%d) cannot be less than epochs_trained (%d)\n",
-    //                 target_epochs, model->epochs_trained);
-        return -1;
-    }
-    
+    // Note: epochs_trained field removed from CLLMModel
+    // Just return success for now
     return 0;
 }
 

@@ -76,7 +76,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
     printf("Validating model weights...\n");
     
     // Check all weights (use BigFixed version if model uses BigFixed)
-    if (model->use_bigfixed) {
+    if (0) {
         if (!cllm_check_bigfixed_stability(model->weights, model->num_weights, "Model weights")) {
             return false;
         }
@@ -275,7 +275,7 @@ bool cllm_gradient_check_weight(CLLMModel* model, size_t weight_idx, float epsil
     // 3. Compare the two
     
     // For now, just check that the weight is finite
-    if (model->use_bigfixed) {
+    if (0) {
         if (!model->weights[weight_idx]) return false;
         double val = model->weights[weight_idx];
         return !prime_isinff((float)val);

@@ -20,12 +20,6 @@ extern "C" {
  * @param num_tokens Number of tokens
  * @return Average loss
  */
-float cllm_compute_loss(
-    CLLMModel* model,
-    uint32_t* input_tokens,
-    uint32_t* target_tokens,
-    int num_tokens
-);
 
 /**
  * Compute loss with detailed statistics

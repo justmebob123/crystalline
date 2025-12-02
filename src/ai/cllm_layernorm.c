@@ -10,7 +10,6 @@
 #include "../include/prime_float_math.h"
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"
-#include "../include/cllm_layernorm_bigfixed.h"
 
 /**
  * Initialize layer normalization parameters
@@ -25,29 +24,21 @@ void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon) {
     ln->dim = dim;
     ln->epsilon = epsilon;
     
-    // Allocate gamma and beta using BigFixed
-    ln->gamma = bigfixed_array_create(dim, 128);
-    ln->beta = bigfixed_array_create(dim, 128);
+    // Allocate gamma and beta using standard float arrays
+    ln->gamma = (float*)malloc(dim * sizeof(float));
+    ln->beta = (float*)malloc(dim * sizeof(float));
     
     if (!ln->gamma || !ln->beta) {
-        if (ln->gamma) bigfixed_array_free(ln->gamma, dim);
-        if (ln->beta) bigfixed_array_free(ln->beta, dim);
+        if (ln->gamma) free(ln->gamma);
+        if (ln->beta) free(ln->beta);
         return;
     }
     
-    // Initialize gamma to 1.0 and beta to 0.0 using BigFixed
-    BigFixed* one = big_fixed_create(128);
-    BigFixed* zero = big_fixed_create(128);
-    big_fixed_from_double(one, 1.0);
-    big_fixed_from_double(zero, 0.0);
-    
+    // Initialize gamma to 1.0 and beta to 0.0
     for (uint32_t i = 0; i < dim; i++) {
-        big_fixed_from_double(ln->gamma[i], 1.0);
-        big_fixed_from_double(ln->beta[i], 0.0);
+        ln->gamma[i] = 1.0f;
+        ln->beta[i] = 0.0f;
     }
-    
-    big_fixed_free(one);
-    big_fixed_free(zero);
 }
 
 /**
@@ -59,12 +50,12 @@ void cllm_layer_norm_free(CLLMLayerNorm* ln) {
     if (!ln) return;
     
     if (ln->gamma) {
-        bigfixed_array_free(ln->gamma, ln->dim);
+        free(ln->gamma);
         ln->gamma = NULL;
     }
     
     if (ln->beta) {
-        bigfixed_array_free(ln->beta, ln->dim);
+        free(ln->beta);
         ln->beta = NULL;
     }
 }

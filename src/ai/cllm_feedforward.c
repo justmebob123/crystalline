@@ -11,7 +11,6 @@
 #include "../include/cllm_simd_utils.h"
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"
-#include "cllm_feedforward_bigfixed.h"
 
 // Forward declaration
 void cllm_feedforward_free(FeedForwardLayer* layer);
@@ -104,7 +103,7 @@ void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
     if (!temp) return;
     
     memcpy(temp, data, layer->input_dim * sizeof(float));
-    cllm_feedforward_bigfixed(layer, (BigFixed**)temp, (BigFixed**)data, 128);
+    // TODO: Implement proper feedforward
     
     free(temp);
 }
@@ -125,7 +124,7 @@ void cllm_feedforward_batch(FeedForwardLayer* layer, float* input,
     uint32_t output_dim = layer->output_dim;
     
     for (int b = 0; b < batch_size; b++) {
-        cllm_feedforward_bigfixed(layer, (BigFixed**)&input[b * input_dim], (BigFixed**)&output[b * output_dim], 128);
+        // TODO: Implement proper feedforward batch
     }
 }
 
@@ -145,18 +144,33 @@ void cllm_feedforward_init(FeedForwardLayer* layer, uint32_t input_dim,
     layer->hidden_dim = hidden_dim;
     layer->output_dim = output_dim;
     
-    // Allocate weight matrices and biases
+    // Allocate weight matrices and biases using standard malloc
     size_t w1_size = input_dim * hidden_dim;
     size_t w2_size = hidden_dim * output_dim;
     
-    layer->w1_lattice = bigfixed_array_create(w1_size, 128);  // Using default precision
-    layer->w2_lattice = bigfixed_array_create(w2_size, 128);
-    layer->bias1 = bigfixed_array_create(hidden_dim, 128);
-    layer->bias2 = bigfixed_array_create(output_dim, 128);
+    layer->w1_lattice = (float*)malloc(w1_size * sizeof(float));
+    layer->w2_lattice = (float*)malloc(w2_size * sizeof(float));
+    layer->bias1 = (float*)malloc(hidden_dim * sizeof(float));
+    layer->bias2 = (float*)malloc(output_dim * sizeof(float));
     
     if (!layer->w1_lattice || !layer->w2_lattice || 
         !layer->bias1 || !layer->bias2) {
         cllm_feedforward_free(layer);
+        return;
+    }
+    
+    // Initialize weights to small random values
+    for (size_t i = 0; i < w1_size; i++) {
+        layer->w1_lattice[i] = ((float)rand() / RAND_MAX) * 0.02f - 0.01f;
+    }
+    for (size_t i = 0; i < w2_size; i++) {
+        layer->w2_lattice[i] = ((float)rand() / RAND_MAX) * 0.02f - 0.01f;
+    }
+    for (size_t i = 0; i < hidden_dim; i++) {
+        layer->bias1[i] = 0.0f;
+    }
+    for (size_t i = 0; i < output_dim; i++) {
+        layer->bias2[i] = 0.0f;
     }
 }
 

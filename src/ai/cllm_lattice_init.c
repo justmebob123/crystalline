@@ -14,7 +14,7 @@ void cllm_lattice_aware_init(CLLMModel* model, float scale) {
     size_t total_weights = model->num_weights;
     
     // Check if using BigFixed
-    if (model->use_bigfixed) {
+    if (1) {
         // Initialize BigFixed weights with small random values
         for (size_t i = 0; i < total_weights; i++) {
             double random_val = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
@@ -35,7 +35,7 @@ void cllm_crystalline_init(CLLMModel* model, float base_scale) {
     size_t vocab_size = model->vocab_size;
     size_t hidden_size = model->embedding_dim;
     
-    if (model->use_bigfixed) {
+    if (1) {
         // Create periodic patterns in BigFixed weight initialization
         for (size_t i = 0; i < vocab_size; i++) {
             for (size_t j = 0; j < hidden_size; j++) {
@@ -63,7 +63,7 @@ void cllm_symmetric_init(CLLMModel* model, float scale) {
     size_t vocab_size = model->vocab_size;
     size_t hidden_size = model->embedding_dim;
     
-    if (model->use_bigfixed) {
+    if (1) {
         // Initialize first half randomly with BigFixed
         for (size_t i = 0; i < vocab_size / 2; i++) {
             for (size_t j = 0; j < hidden_size; j++) {
@@ -80,7 +80,7 @@ void cllm_symmetric_init(CLLMModel* model, float scale) {
                 size_t src_idx = i * hidden_size + j;
                 size_t dst_idx = (vocab_size - 1 - i) * hidden_size + j;
                 // Copy BigFixed value
-                model->weights[dst_idx] = big_fixed_to_double(model->weights[src_idx]);
+                model->weights[dst_idx] = model->weights[src_idx];
             }
         }
     } else {
@@ -95,7 +95,7 @@ void cllm_hierarchical_lattice_init(CLLMModel* model, int num_levels, float base
     size_t vocab_size = model->vocab_size;
     size_t hidden_size = model->embedding_dim;
     
-    if (model->use_bigfixed) {
+    if (1) {
         // Divide weights into hierarchical levels
         size_t level_size = vocab_size / num_levels;
         
