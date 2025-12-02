@@ -822,15 +822,15 @@ static void cllm_attention_forward_training(
  * grad_x[i] = y[i] * (grad_y[i] - sum_j(y[j] * grad_y[j]))
  */
 static void softmax_backward(
-    float* grad_input,           // Output: gradient w.r.t. softmax input [size]
-    const float* grad_output,    // Input: gradient w.r.t. softmax output [size]
-    const float* softmax_output, // Input: softmax output from forward pass [size]
+    double* grad_input,           // Output: gradient w.r.t. softmax input [size]
+    const double* grad_output,    // Input: gradient w.r.t. softmax output [size]
+    const double* softmax_output, // Input: softmax output from forward pass [size]
     int size
 ) {
     if (!grad_input || !grad_output || !softmax_output || size <= 0) return;
     
     // Compute sum of (softmax_output * grad_output)
-    float sum = 0.0f;
+    double sum = 0.0;
     for (int i = 0; i < size; i++) {
         sum += softmax_output[i] * grad_output[i];
     }
@@ -851,8 +851,8 @@ static void softmax_backward(
 static void attention_backward_full(
     CLLMTraining* training,
     int layer,
-    float* grad_output,      // Gradient w.r.t. attention output [seq_len * embed_dim]
-    float* grad_input,       // Output: gradient w.r.t. attention input [seq_len * embed_dim]
+    double* grad_output,      // Gradient w.r.t. attention output [seq_len * embed_dim]
+    double* grad_input,       // Output: gradient w.r.t. attention input [seq_len * embed_dim]
     int seq_len
 ) {
     if (!training || !grad_output || !grad_input || layer < 0 || seq_len <= 0) return;
@@ -876,11 +876,11 @@ static void attention_backward_full(
     }
     
     // Allocate temporary buffers
-    float* grad_V = (double*)calloc(seq_len * embed_dim, sizeof(double));
-    float* grad_weights = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
-    float* grad_scores = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
-    float* grad_Q = (double*)calloc(seq_len * embed_dim, sizeof(double));
-    float* grad_K = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* grad_V = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* grad_weights = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
+    double* grad_scores = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
+    double* grad_Q = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* grad_K = (double*)calloc(seq_len * embed_dim, sizeof(double));
     
     if (!grad_V || !grad_weights || !grad_scores || !grad_Q || !grad_K) {
         free(grad_V);
@@ -1006,7 +1006,7 @@ static void attention_backward_full(
 // Train for one epoch
 // Forward declarations
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
-void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer);
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer);
 
 float cllm_train_epoch(CLLMTraining* training) {
     if (!training) return 0.0f;
@@ -1253,11 +1253,11 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
 /**
  * Backward pass with cross-entropy gradients
  */
-void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer) {
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer) {
     if (!training || !target_tokens) return;
     
     // Use provided gradient buffer if given, otherwise use training->gradients
-    float* gradients = gradient_buffer ? gradient_buffer : training->gradients;
+    double* gradients = gradient_buffer ? gradient_buffer : training->gradients;
     if (!gradients) return;
     
     CLLMModel* model = training->model;
@@ -1268,9 +1268,9 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
     
     cllm_zero_all_gradients(training);
     
-    float* grad_logits = (double*)calloc(batch_size * seq_len * vocab_size, sizeof(double));
+    double* grad_logits = (double*)calloc(batch_size * seq_len * vocab_size, sizeof(double));
     double* grad_hidden = (double*)calloc(batch_size * seq_len * embed_dim, sizeof(double));
-    float* grad_layer = (double*)calloc(batch_size * seq_len * embed_dim, sizeof(double));
+    double* grad_layer = (double*)calloc(batch_size * seq_len * embed_dim, sizeof(double));
     
     if (!grad_logits || !grad_hidden || !grad_layer) {
         free(grad_logits); free(grad_hidden); free(grad_layer);
@@ -1284,8 +1284,8 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
             uint32_t target = target_tokens[idx];
             if (target >= vocab_size) continue;
             
-            float* logits = &training->logits[idx * vocab_size];
-            float* grad = &grad_logits[idx * vocab_size];
+            double* logits = &training->logits[idx * vocab_size];
+            double* grad = &grad_logits[idx * vocab_size];
             
             float max_logit = logits[0];
             for (uint32_t v = 1; v < vocab_size; v++) {
@@ -1310,9 +1310,9 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
-            float* grad_log = &grad_logits[idx * vocab_size];
-            float* grad_hid = &grad_hidden[idx * embed_dim];
-            float* hidden = &training->final_hidden[idx * embed_dim];
+            double* grad_log = &grad_logits[idx * vocab_size];
+            double* grad_hid = &grad_hidden[idx * embed_dim];
+            double* hidden = &training->final_hidden[idx * embed_dim];
             
             for (uint32_t d = 0; d < embed_dim; d++) {
                 float sum = 0.0f;
@@ -1323,7 +1323,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* grad_embed = &gradients[v * embed_dim];
+                double* grad_embed = &gradients[v * embed_dim];
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     grad_embed[d] += grad_log[v] * hidden[d];
                 }
@@ -1343,8 +1343,8 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, flo
         for (int b = 0; b < batch_size; b++) {
             for (int s = 0; s < seq_len; s++) {
                 int idx = b * seq_len + s;
-                float* grad = &grad_layer[idx * embed_dim];
-                float* input = &attn_output[idx * embed_dim];
+                double* grad = &grad_layer[idx * embed_dim];
+                double* input = &attn_output[idx * embed_dim];
                 float* hidden = &ff_hidden[idx * ff->hidden_dim];
                 
                 // LayerNorm backward

@@ -550,49 +550,58 @@ Remove BigFixed from:
 
 ---
 
-## PHASE 3: COMPLETE BACKWARD PASS (THE REAL FIX)
+## PHASE 3: COMPLETE BACKWARD PASS (THE REAL FIX) - IN PROGRESS
 
-### 3.1 Analyze Current Backward Pass
-- [ ] Review src/ai/cllm_training.c backward pass
-- [ ] Identify what's implemented (embeddings only)
-- [ ] Identify what's missing (layer gradients)
-- [ ] Document current gradient flow
+### 3.1 Analyze Current Backward Pass ✅
+- [x] Review src/ai/cllm_training.c backward pass
+- [x] Current implementation only computes embedding gradients (7.5%)
+- [x] Missing: All layer gradients (92.5% of total)
+- [x] Need to add: attention, feedforward, layer norm backward passes
 
 ### 3.2 Implement Feedforward Backward Pass
-- [ ] Create backward_feedforward() function
-- [ ] Compute W1 gradients
-- [ ] Compute W2 gradients
-- [ ] Compute bias1 gradients
-- [ ] Compute bias2 gradients
+- [ ] Analyze feedforward forward pass structure
+- [ ] Implement backward_feedforward() function
+- [ ] Compute W1 gradients (dL/dW1)
+- [ ] Compute W2 gradients (dL/dW2)
+- [ ] Compute bias1 gradients (dL/db1)
+- [ ] Compute bias2 gradients (dL/db2)
+- [ ] Compute input gradients (dL/dx) for backprop
 - [ ] Test with single layer
 
 ### 3.3 Implement Attention Backward Pass
-- [ ] Create backward_attention() function
-- [ ] Compute query gradients
-- [ ] Compute key gradients
-- [ ] Compute value gradients
+- [ ] Analyze attention forward pass structure
+- [ ] Implement backward_attention() function
+- [ ] Compute query gradients (dL/dQ)
+- [ ] Compute key gradients (dL/dK)
+- [ ] Compute value gradients (dL/dV)
 - [ ] Compute attention weight gradients
+- [ ] Compute input gradients for backprop
 - [ ] Test with single layer
 
 ### 3.4 Implement Layer Norm Backward Pass
-- [ ] Create backward_layernorm() function
-- [ ] Compute gamma gradients
-- [ ] Compute beta gradients
+- [ ] Analyze layer norm forward pass structure
+- [ ] Implement backward_layernorm() function
+- [ ] Compute gamma gradients (dL/dγ)
+- [ ] Compute beta gradients (dL/dβ)
+- [ ] Compute input gradients for backprop
 - [ ] Test with single layer
 
 ### 3.5 Integrate All Layers
-- [ ] Add loop through all 6 layers in backward pass
+- [ ] Find backward pass location in cllm_training.c
+- [ ] Add loop through all layers (top to bottom)
 - [ ] Call backward_feedforward for each layer
 - [ ] Call backward_attention for each layer
 - [ ] Call backward_layernorm for each layer
-- [ ] Verify gradient flow from top to bottom
+- [ ] Verify gradient flow from output to input
 
 ### 3.6 Test Gradient Computation
+- [ ] Build and verify compilation
 - [ ] Run training for 10 iterations
 - [ ] Check for NaN gradients (should be ZERO)
 - [ ] Verify loss decreases
 - [ ] Print gradient statistics
-- [ ] Verify all gradients non-zero
+- [ ] Verify all gradients are non-zero
+- [ ] Compare gradient magnitudes
 
 ---
 
