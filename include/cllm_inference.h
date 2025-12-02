@@ -2,16 +2,15 @@
 #define CLLM_INFERENCE_H
 
 /*
- * cllm_inference.h - Auto-generated header file
+ * cllm_inference.h - Inference engine header
  * Source: cllm_inference.c
- * OBJECTIVE 3A: BigFixed migration for arbitrary precision
+ * REVERTED: Uses double* for standard precision (BigFixed removed)
  */
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
-#include "bigfixed_core.h"
 
 /* Local includes */
 #include "cllm.h"
@@ -21,7 +20,7 @@ typedef struct { int idx; float prob; } IndexProb;
 
 /*
  * CLLM Inference Engine - Runtime inference state
- * OBJECTIVE 3A: Uses BigFixed for arbitrary precision arithmetic
+ * Uses double* for working buffers (64-bit precision)
  */
 typedef struct {
     CLLMModel* model;            // Pointer to the model
@@ -31,18 +30,15 @@ typedef struct {
     int max_tokens;              // Maximum tokens to generate
     float repetition_penalty;    // Repetition penalty factor
     
-    // KV cache for attention - BigFixed for arbitrary precision
+    // KV cache for attention - double precision
     int kv_cache_size;           // Size of KV cache
     int kv_cache_used;           // Number of cached positions
-    BigFixed** key_cache;        // Cached keys (BigFixed**)
-    BigFixed** value_cache;      // Cached values (BigFixed**)
+    double* key_cache;           // Cached keys (double*)
+    double* value_cache;         // Cached values (double*)
     
-    // Working buffers - BigFixed for arbitrary precision
-    BigFixed** hidden_states;    // Hidden state buffer (BigFixed**)
-    BigFixed** logits;           // Output logits buffer (BigFixed**)
-    
-    // Precision for BigFixed operations
-    int precision;               // BigFixed precision (default 128)
+    // Working buffers - double precision
+    double* hidden_states;       // Hidden state buffer (double*)
+    double* logits;              // Output logits buffer (double*)
        
 } CLLMInference;
 
@@ -124,11 +120,6 @@ void cllm_softmax(float* logits, int vocab_size);
 uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k);
 uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p);
 
-// BigFixed versions
-void cllm_apply_temperature_bigfixed(BigFixed** logits, int vocab_size, float temperature);
-void cllm_softmax_bigfixed(BigFixed** logits, int vocab_size);
-uint32_t cllm_sample_top_k_bigfixed(BigFixed** probs, int vocab_size, int k);
-uint32_t cllm_sample_top_p_bigfixed(BigFixed** probs, int vocab_size, float p);
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length);
 
 /* Configuration */
@@ -139,13 +130,3 @@ void cllm_set_max_tokens(CLLMInference* inference, int max_tokens);
 void cllm_inference_cleanup(CLLMInference* inference);
 
 #endif /* CLLM_INFERENCE_H */
-// BigFixed version of attention for inference
-void cllm_attention_forward_bigfixed(
-    AttentionLayer* layer,
-    BigFixed** input,
-    BigFixed** output,
-    BigFixed** key_cache,
-    BigFixed** value_cache,
-    int seq_len,
-    int precision
-);

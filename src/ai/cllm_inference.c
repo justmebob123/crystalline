@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/prime_float_math.h"
-#include "bigfixed_core.h"
-#include "bigfixed_array_utils.h"
-#include "cllm_layernorm_bigfixed.h"
-#include "cllm_feedforward_bigfixed.h"
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
@@ -33,23 +29,22 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
     inference->top_p = 0.9f;
     inference->top_k = 50;
     inference->max_tokens = 50;
-    inference->precision = 128;  // BigFixed precision
     
-    // Allocate working memory using BigFixed
+    // Allocate working memory using double*
     uint32_t embed_dim = model->embeddings.embedding_dim;
     uint32_t vocab_size = model->vocab_size;
     
-    // Use bigfixed_array_create instead of malloc
-    inference->hidden_states = bigfixed_array_create(embed_dim, inference->precision);
-    inference->logits = bigfixed_array_create(vocab_size, inference->precision);
+    // Use standard malloc for double* arrays
+    inference->hidden_states = (double*)calloc(embed_dim, sizeof(double));
+    inference->logits = (double*)calloc(vocab_size, sizeof(double));
     
     if (!inference->hidden_states || !inference->logits) {
-        fprintf(stderr, "Error: Failed to allocate BigFixed inference buffers\n");
+        fprintf(stderr, "Error: Failed to allocate inference buffers\n");
         cllm_inference_cleanup(inference);
         return NULL;
     }
     
-    printf("Inference context initialized successfully with BigFixed (precision=%d)\n", inference->precision);
+    printf("Inference context initialized successfully (double precision)\n");
     return inference;
 }
 
@@ -57,18 +52,18 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
 void cllm_inference_cleanup(CLLMInference* inference) {
     if (!inference) return;
     
-    // Use bigfixed_array_free instead of free
+    // Use standard free for double* arrays
     if (inference->hidden_states) {
-        bigfixed_array_free(inference->hidden_states, inference->model->embeddings.embedding_dim);
+        free(inference->hidden_states);
     }
     if (inference->logits) {
-        bigfixed_array_free(inference->logits, inference->model->vocab_size);
+        free(inference->logits);
     }
     if (inference->key_cache) {
-        bigfixed_array_free(inference->key_cache, inference->kv_cache_size);
+        free(inference->key_cache);
     }
     if (inference->value_cache) {
-        bigfixed_array_free(inference->value_cache, inference->kv_cache_size);
+        free(inference->value_cache);
     }
     
     free(inference);
@@ -253,7 +248,6 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     }
     
     uint32_t embed_dim = model->embeddings.embedding_dim;
-    int precision = inference->precision;
     
     // Check critical pointers
     if (!inference->hidden_states) {
@@ -276,69 +270,76 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         return;
     }
     
-    // Convert float embedding to BigFixed
+    // Copy float embedding to double hidden_states
     float* float_embedding = &model->embeddings.embeddings[last_token * embed_dim];
-    bigfixed_array_from_float(inference->hidden_states, float_embedding, embed_dim);
+    for (uint32_t i = 0; i < embed_dim; i++) {
+        inference->hidden_states[i] = (double)float_embedding[i];
+    }
     
-    // TODO: Apply positional encoding (needs BigFixed version)
-    // cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
+    // Apply positional encoding
+    cllm_apply_positional_encoding(inference, (float*)inference->hidden_states, num_tokens - 1);
     
-    // Pass through transformer layers using BigFixed
+    // Pass through transformer layers using standard operations
     if (model->attention_layers && model->ff_layers && model->layer_norms) {
-        // Allocate BigFixed attention output buffer
-        BigFixed** attn_output = bigfixed_array_create(embed_dim, precision);
+        // Allocate attention output buffer
+        double* attn_output = (double*)calloc(embed_dim, sizeof(double));
         if (!attn_output) {
-            fprintf(stderr, "Error: Failed to allocate BigFixed attention output buffer\n");
+            fprintf(stderr, "Error: Failed to allocate attention output buffer\n");
+            return;
+        }
+        
+        // Convert hidden_states to float for layer operations
+        float* hidden_float = (float*)malloc(embed_dim * sizeof(float));
+        if (!hidden_float) {
+            fprintf(stderr, "Error: Failed to allocate float buffer\n");
+            free(attn_output);
             return;
         }
         
         for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+            // Convert double to float for operations
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                hidden_float[i] = (float)inference->hidden_states[i];
+            }
+            
             // Layer norm (in-place)
-            cllm_layer_norm_bigfixed(&model->layer_norms[layer], inference->hidden_states, 
-                                    inference->hidden_states, precision);
+            cllm_layer_norm(&model->layer_norms[layer], hidden_float, hidden_float);
             
             // Attention
             AttentionLayer* attn_layer = &model->attention_layers[layer];
-            cllm_attention_forward_bigfixed(attn_layer, inference->hidden_states, attn_output, 
-                                           NULL, NULL, 1, precision);
-            
-            // Copy attention output back to hidden states
-            bigfixed_array_copy(inference->hidden_states, attn_output, embed_dim);
+            cllm_attention_forward(attn_layer, hidden_float, hidden_float, NULL, NULL, 1);
             
             // Feed-forward (in-place)
-            cllm_feedforward_bigfixed(&model->ff_layers[layer], inference->hidden_states, 
-                                     inference->hidden_states, precision);
+            cllm_feedforward(&model->ff_layers[layer], hidden_float, hidden_float);
+            
+            // Convert back to double
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                inference->hidden_states[i] = (double)hidden_float[i];
+            }
         }
-        
-        bigfixed_array_free(attn_output, embed_dim);
         
         // Final layer norm
-        cllm_layer_norm_bigfixed(&model->layer_norms[model->num_layers - 1], 
-                                inference->hidden_states, inference->hidden_states, precision);
+        for (uint32_t i = 0; i < embed_dim; i++) {
+            hidden_float[i] = (float)inference->hidden_states[i];
+        }
+        cllm_layer_norm(&model->layer_norms[model->num_layers - 1], hidden_float, hidden_float);
+        for (uint32_t i = 0; i < embed_dim; i++) {
+            inference->hidden_states[i] = (double)hidden_float[i];
+        }
+        
+        free(hidden_float);
+        free(attn_output);
     }
-
     
-    // Project to vocabulary using BigFixed
-    // Convert hidden_states to float for dot product with embeddings
-    float* hidden_float = (float*)malloc(embed_dim * sizeof(float));
-    if (!hidden_float) {
-        fprintf(stderr, "Error: Failed to allocate temporary float buffer\n");
-        return;
-    }
-    bigfixed_array_to_float(hidden_float, inference->hidden_states, embed_dim);
-    
-    // Compute logits
+    // Project to vocabulary - compute logits
     for (uint32_t i = 0; i < model->vocab_size; i++) {
-        float logit_value = 0.0f;
+        double logit_value = 0.0;
         float* token_embed = &model->embeddings.embeddings[i * embed_dim];
         for (uint32_t j = 0; j < embed_dim; j++) {
-            logit_value += hidden_float[j] * token_embed[j];
+            logit_value += inference->hidden_states[j] * (double)token_embed[j];
         }
-        // Convert logit to BigFixed
-        big_fixed_from_double(inference->logits[i], (double)logit_value);
+        inference->logits[i] = logit_value;
     }
-    
-    free(hidden_float);
 }
 
 // Apply temperature scaling
@@ -350,18 +351,7 @@ void cllm_apply_temperature(float* logits, int vocab_size, float temperature) {
     }
 }
 
-// BigFixed version
-void cllm_apply_temperature_bigfixed(BigFixed** logits, int vocab_size, float temperature) {
-    if (temperature < TEMPERATURE_MIN) temperature = TEMPERATURE_MIN;
-    if (temperature > TEMPERATURE_MAX) temperature = TEMPERATURE_MAX;
-    
-    BigFixed temp_bf;
-    big_fixed_from_double(&temp_bf, (double)temperature);
-    
-    for (int i = 0; i < vocab_size; i++) {
-        big_fixed_div(logits[i], logits[i], &temp_bf);
-    }
-}
+
 
 // Softmax
 void cllm_softmax(float* logits, int vocab_size) {
@@ -384,33 +374,7 @@ void cllm_softmax(float* logits, int vocab_size) {
     }
 }
 
-// BigFixed version
-void cllm_softmax_bigfixed(BigFixed** logits, int vocab_size) {
-    // Find max for numerical stability
-    double max_logit = big_fixed_to_double(logits[0]);
-    for (int i = 1; i < vocab_size; i++) {
-        double val = big_fixed_to_double(logits[i]);
-        if (val > max_logit) max_logit = val;
-    }
-    
-    // Compute exp and sum
-    BigFixed max_bf, temp, sum_bf;
-    big_fixed_from_double(&max_bf, max_logit);
-    big_fixed_from_double(&sum_bf, 0.0);
-    
-    for (int i = 0; i < vocab_size; i++) {
-        // logits[i] = exp(logits[i] - max)
-        big_fixed_sub(&temp, logits[i], &max_bf);
-        double exp_val = prime_expf((float)big_fixed_to_double(&temp));
-        big_fixed_from_double(logits[i], exp_val);
-        big_fixed_add(&sum_bf, &sum_bf, logits[i]);
-    }
-    
-    // Normalize
-    for (int i = 0; i < vocab_size; i++) {
-        big_fixed_div(logits[i], logits[i], &sum_bf);
-    }
-}
+
 
 // Sample top-k
 uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
@@ -428,21 +392,6 @@ uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
     return 0;
 }
 
-// BigFixed version
-uint32_t cllm_sample_top_k_bigfixed(BigFixed** probs, int vocab_size, int k) {
-    if (k <= 0 || k > vocab_size) k = vocab_size;
-    
-    // Simple sampling from top-k
-    float r = (float)rand() / RAND_MAX;
-    double cumsum = 0.0;
-    
-    for (int i = 0; i < k && i < vocab_size; i++) {
-        cumsum += big_fixed_to_double(probs[i]);
-        if (r < cumsum) return (uint32_t)i;
-    }
-    
-    return 0;
-}
 
 // Sample top-p (nucleus sampling)
 uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
@@ -457,18 +406,7 @@ uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
     return 0;
 }
 
-// BigFixed version
-uint32_t cllm_sample_top_p_bigfixed(BigFixed** probs, int vocab_size, float p) {
-    float r = (float)rand() / RAND_MAX;
-    double cumsum = 0.0;
-    
-    for (int i = 0; i < vocab_size; i++) {
-        cumsum += big_fixed_to_double(probs[i]);
-        if (cumsum >= p || r < cumsum) return (uint32_t)i;
-    }
-    
-    return 0;
-}
+
 
 // Generate text - MAIN FUNCTION
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length) {
@@ -491,18 +429,18 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         // Forward pass
         cllm_forward(inference, tokens, num_tokens);
         
-        // Apply temperature (BigFixed version)
-        cllm_apply_temperature_bigfixed(inference->logits, inference->model->vocab_size, inference->temperature);
+        // Apply temperature
+        cllm_apply_temperature((float*)inference->logits, inference->model->vocab_size, inference->temperature);
         
-        // Softmax (BigFixed version)
-        cllm_softmax_bigfixed(inference->logits, inference->model->vocab_size);
+        // Softmax
+        cllm_softmax((float*)inference->logits, inference->model->vocab_size);
         
-        // Sample next token (BigFixed versions)
+        // Sample next token
         uint32_t next_token;
         if (inference->top_k > 0) {
-            next_token = cllm_sample_top_k_bigfixed(inference->logits, inference->model->vocab_size, inference->top_k);
+            next_token = cllm_sample_top_k((float*)inference->logits, inference->model->vocab_size, inference->top_k);
         } else {
-            next_token = cllm_sample_top_p_bigfixed(inference->logits, inference->model->vocab_size, inference->top_p);
+            next_token = cllm_sample_top_p((float*)inference->logits, inference->model->vocab_size, inference->top_p);
         }
         
         // Add to sequence
