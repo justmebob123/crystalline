@@ -2062,9 +2062,6 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     printf("All %d batches pushed to work queue\n", batches_pushed);
     
-    // Signal epoch done
-    atomic_store(&system->work_queue->epoch_done, 1);
-    
     // Wait for all work to complete
     printf("Waiting for workers to complete...\n");
     int wait_iterations = 0;
@@ -2084,6 +2081,9 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     }
     
     printf("=== EPOCH %d COMPLETE: All %zu batches processed! ===\n", current_epoch, total_batches_in_epoch);
+    
+    // Signal epoch done (AFTER workers complete)
+    atomic_store(&system->work_queue->epoch_done, 1);
     
     // Stop pre-fetch thread
     batch_queue_stop_prefetch(system);
