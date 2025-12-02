@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <time.h>
 #include "../include/prime_float_math.h"
 #include "../include/cllm_format.h"
@@ -428,6 +429,8 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     long file_size = ftell(f);
     fseek(f, 0, SEEK_SET);
     
+    printf("Loading training data from: %s (%ld bytes)\n", filename, file_size);
+    
     // Read file content
     char* content = (char*)malloc(file_size + 1);
     if (!content) {
@@ -439,70 +442,139 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename) {
     content[bytes_read] = '\0';
     fclose(f);
     
-    // Tokenize content (simple whitespace tokenization)
-    // CRITICAL FIX: APPEND instead of OVERWRITE
+    printf("  File loaded: %zu bytes\n", bytes_read);
+    
+    // CRITICAL FIX: Build hash map for O(1) vocabulary lookup
+    // This prevents O(n²) complexity that causes hang on large files
+    
+    #define HASH_MAP_SIZE 65536
+    typedef struct VocabEntry {
+        char* token_str;
+        uint32_t token_id;
+        struct VocabEntry* next;  // For chaining
+    } VocabEntry;
+    
+    VocabEntry** hash_map = (VocabEntry**)calloc(HASH_MAP_SIZE, sizeof(VocabEntry*));
+    if (!hash_map) {
+        free(content);
+        return -1;
+    }
+    
+    printf("  Building vocabulary hash map...\n");
+    
+    // Build hash map from vocabulary (O(vocab_size))
+    if (training->model->tokens) {
+        for (uint32_t i = 0; i < training->model->vocab_size; i++) {
+            if (training->model->tokens[i].token_str[0] != '\0') {
+                // Simple hash function
+                uint32_t hash = 5381;
+                for (const char* p = training->model->tokens[i].token_str; *p; p++) {
+                    hash = ((hash << 5) + hash) + *p;
+                }
+                hash = hash % HASH_MAP_SIZE;
+                
+                // Create entry
+                VocabEntry* entry = (VocabEntry*)malloc(sizeof(VocabEntry));
+                entry->token_str = training->model->tokens[i].token_str;
+                entry->token_id = i;
+                entry->next = hash_map[hash];  // Chain for collisions
+                hash_map[hash] = entry;
+            }
+        }
+    }
+    
+    printf("  Hash map built (%lu tokens)\n", training->model->vocab_size);
+    
+    // Reallocate tokens array
     size_t old_num_tokens = training->num_tokens;
     size_t new_capacity = old_num_tokens + file_size;
     
-    // Reallocate to append new tokens
     uint32_t* new_tokens = (uint32_t*)realloc(training->tokens, new_capacity * sizeof(uint32_t));
     if (!new_tokens) {
         free(content);
+        // Free hash map
+        for (int i = 0; i < HASH_MAP_SIZE; i++) {
+            VocabEntry* entry = hash_map[i];
+            while (entry) {
+                VocabEntry* next = entry->next;
+                free(entry);
+                entry = next;
+            }
+        }
+        free(hash_map);
         return -1;
     }
     training->tokens = new_tokens;
     
-    // Start appending at old_num_tokens position
     size_t tokens_added = 0;
     
-    // Check if model has vocabulary
-    if (!training->model->tokens) {
-        fprintf(stderr, "Warning: Model has no vocabulary, using character-based tokenization\n");
-        // Fallback: character-based tokenization
-        for (size_t i = 0; i < bytes_read && tokens_added < (size_t)file_size; i++) {
-            if (content[i] != '\n' && content[i] != '\r') {
-                training->tokens[old_num_tokens + tokens_added] = (uint32_t)(content[i] % training->model->vocab_size);
-                tokens_added++;
-            }
+    printf("  Tokenizing with hash map (O(n) complexity)...\n");
+    
+    // Tokenize using hash map (O(1) lookup per token!)
+    char* token = strtok(content, " \t\n\r");
+    int token_count = 0;
+    
+    while (token != NULL && tokens_added < new_capacity) {
+        token_count++;
+        if (token_count % 100000 == 0) {
+            printf("    Processed %d tokens...\n", token_count);
         }
-    } else {
-        // Use vocabulary-based tokenization
-        char* token = strtok(content, " \n\t");
-        while (token != NULL && tokens_added < (size_t)file_size) {
-            // Find token in vocabulary
-            bool found = false;
-            for (uint32_t i = 0; i < training->model->vocab_size; i++) {
-                if (strcmp(training->model->tokens[i].token_str, token) == 0) {
-                    training->tokens[old_num_tokens + tokens_added] = i;
-                    tokens_added++;
-                    found = true;
-                    break;
-                }
-            }
-            // If token not in vocabulary, use hash or skip
-            if (!found) {
-                // Use simple hash to map unknown tokens
-                uint32_t hash = 0;
-                for (size_t i = 0; token[i]; i++) {
-                    hash = hash * 31 + (uint32_t)token[i];
-                }
-                training->tokens[old_num_tokens + tokens_added] = hash % training->model->vocab_size;
-                tokens_added++;
-            }
-            token = strtok(NULL, " \n\t");
+        
+        // Convert to lowercase
+        for (char* p = token; *p; p++) {
+            *p = tolower(*p);
         }
+        
+        // Hash map lookup (O(1)!)
+        uint32_t hash = 5381;
+        for (const char* p = token; *p; p++) {
+            hash = ((hash << 5) + hash) + *p;
+        }
+        hash = hash % HASH_MAP_SIZE;
+        
+        // Find in hash map
+        bool found = false;
+        VocabEntry* entry = hash_map[hash];
+        while (entry) {
+            if (strcmp(entry->token_str, token) == 0) {
+                training->tokens[old_num_tokens + tokens_added] = entry->token_id;
+                tokens_added++;
+                found = true;
+                break;
+            }
+            entry = entry->next;
+        }
+        
+        // If not found, use hash as token ID
+        if (!found) {
+            uint32_t hash_id = hash % training->model->vocab_size;
+            training->tokens[old_num_tokens + tokens_added] = hash_id;
+            tokens_added++;
+        }
+        
+        token = strtok(NULL, " \t\n\r");
     }
+    
+    printf("  Tokenization complete: %zu tokens added\n", tokens_added);
     
     // Update total token count
     training->num_tokens = old_num_tokens + tokens_added;
     
+    // Free hash map
+    for (int i = 0; i < HASH_MAP_SIZE; i++) {
+        VocabEntry* entry = hash_map[i];
+        while (entry) {
+            VocabEntry* next = entry->next;
+            free(entry);
+            entry = next;
+        }
+    }
+    free(hash_map);
     free(content);
     
-    // Calculate number of batches
-    int tokens_per_batch = training->config.batch_size * training->config.sequence_length;
-    training->total_batches = training->num_tokens / tokens_per_batch;
+    printf("  Total tokens in training: %zu\n", training->num_tokens);
     
-    return tokens_added;  // Return number of tokens added from this file
+    return 0;
 }
 
 // Get next training batch
