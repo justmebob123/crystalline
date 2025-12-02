@@ -37,6 +37,13 @@
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"  // CONSOLIDATED: Functions moved here
 #include "bigfixed_packed_array.h"  // CRITICAL: Memory-efficient packed arrays
+#include "bigfixed_mmap.h"  // CRITICAL: Disk-based memory-mapped storage
+
+// Forward declarations for mmap wrapper functions
+BigFixed** bigfixed_array_create_mmap(size_t size, int precision, const char* name_hint);
+void bigfixed_array_free_mmap(BigFixed** array, size_t size);
+int bigfixed_array_sync_mmap(BigFixed** array);
+void bigfixed_array_cleanup_all_mmap(void);
 
 #define MAX_BATCH_SIZE 128
 #define MAX_SEQUENCE_LENGTH 2048
@@ -243,9 +250,13 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (config->use_mixed_precision) {
         size_t total_params = model->header.total_params;
         if (total_params > 0 && total_params < 1000000000) {
-            // Allocate master_weights
-            // TODO: Convert to disk-based memory-mapped storage
-            training->master_weights = bigfixed_array_create(total_params, training->precision_bits);
+            // Allocate master_weights using memory-mapped disk storage
+            printf("Allocating master_weights (%zu parameters) using disk-backed storage...\n", total_params);
+            training->master_weights = bigfixed_array_create_mmap(
+                total_params, 
+                training->precision_bits,
+                "master_weights"
+            );
             // Only copy if both master_weights and model->weights are valid
             if (training->master_weights && model->weights) {
                 // Verify all BigFixed pointers are valid before copying
@@ -320,141 +331,87 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->optimizer_state = NULL;
     }
     
-    // Allocate attention gradient buffers
-    // TODO: Convert to disk-based memory-mapped storage
+    // Allocate attention gradient buffers using disk-backed storage
     uint32_t num_layers = model->num_layers;
     if (num_layers > 0 && num_layers < 100) {
         training->attention_grads = (typeof(training->attention_grads))calloc(num_layers, sizeof(*training->attention_grads));
         
         if (training->attention_grads && model->attention_layers) {
+            printf("Allocating attention gradients for %u layers using disk-backed storage...\n", num_layers);
             for (uint32_t i = 0; i < num_layers; i++) {
                 AttentionLayer* layer = &model->attention_layers[i];
                 uint32_t dim = layer->num_heads * layer->head_dim;
                 size_t weight_size = dim * dim;
                 
-                // Allocate BigFixed** arrays
-                training->attention_grads[i].query_lattice = (BigFixed**)calloc(weight_size, sizeof(BigFixed*));
-                training->attention_grads[i].key_lattice = (BigFixed**)calloc(weight_size, sizeof(BigFixed*));
-                training->attention_grads[i].value_lattice = (BigFixed**)calloc(weight_size, sizeof(BigFixed*));
+                // Allocate using memory-mapped disk storage
+                char name[64];
+                snprintf(name, sizeof(name), "attn_query_L%u", i);
+                training->attention_grads[i].query_lattice = bigfixed_array_create_mmap(weight_size, training->precision_bits, name);
                 
-                // Allocate individual BigFixed elements
-                if (training->attention_grads[i].query_lattice) {
-                    for (size_t j = 0; j < weight_size; j++) {
-                        training->attention_grads[i].query_lattice[j] = big_fixed_create(training->precision_bits);
-                        if (training->attention_grads[i].query_lattice[j]) {
-                            big_fixed_from_int(training->attention_grads[i].query_lattice[j], 0);
-                        }
-                    }
-                }
-                if (training->attention_grads[i].key_lattice) {
-                    for (size_t j = 0; j < weight_size; j++) {
-                        training->attention_grads[i].key_lattice[j] = big_fixed_create(training->precision_bits);
-                        if (training->attention_grads[i].key_lattice[j]) {
-                            big_fixed_from_int(training->attention_grads[i].key_lattice[j], 0);
-                        }
-                    }
-                }
-                if (training->attention_grads[i].value_lattice) {
-                    for (size_t j = 0; j < weight_size; j++) {
-                        training->attention_grads[i].value_lattice[j] = big_fixed_create(training->precision_bits);
-                        if (training->attention_grads[i].value_lattice[j]) {
-                            big_fixed_from_int(training->attention_grads[i].value_lattice[j], 0);
-                        }
-                    }
-                }
+                snprintf(name, sizeof(name), "attn_key_L%u", i);
+                training->attention_grads[i].key_lattice = bigfixed_array_create_mmap(weight_size, training->precision_bits, name);
+                
+                snprintf(name, sizeof(name), "attn_value_L%u", i);
+                training->attention_grads[i].value_lattice = bigfixed_array_create_mmap(weight_size, training->precision_bits, name);
+                
+                // Memory-mapped arrays are already initialized to zero by the OS
             }
         }
     } else {
         training->attention_grads = NULL;
     }
     
-    // Allocate feed-forward gradient buffers
-    // TODO: Convert to disk-based memory-mapped storage
+    // Allocate feed-forward gradient buffers using disk-backed storage
     if (num_layers > 0 && num_layers < 100) {
         training->ff_grads = (typeof(training->ff_grads))calloc(num_layers, sizeof(*training->ff_grads));
         
         if (training->ff_grads && model->ff_layers) {
+            printf("Allocating feedforward gradients for %u layers using disk-backed storage...\n", num_layers);
             for (uint32_t i = 0; i < num_layers; i++) {
                 FeedForwardLayer* layer = &model->ff_layers[i];
                 
                 size_t w1_size = layer->input_dim * layer->hidden_dim;
                 size_t w2_size = layer->hidden_dim * layer->output_dim;
                 
-                // Allocate BigFixed** arrays
-                training->ff_grads[i].w1_lattice = (BigFixed**)calloc(w1_size, sizeof(BigFixed*));
-                training->ff_grads[i].w2_lattice = (BigFixed**)calloc(w2_size, sizeof(BigFixed*));
-                training->ff_grads[i].bias1 = (BigFixed**)calloc(layer->hidden_dim, sizeof(BigFixed*));
-                training->ff_grads[i].bias2 = (BigFixed**)calloc(layer->output_dim, sizeof(BigFixed*));
+                // Allocate using memory-mapped disk storage
+                char name[64];
+                snprintf(name, sizeof(name), "ff_w1_L%u", i);
+                training->ff_grads[i].w1_lattice = bigfixed_array_create_mmap(w1_size, training->precision_bits, name);
                 
-                // Allocate individual BigFixed elements
-                if (training->ff_grads[i].w1_lattice) {
-                    for (size_t j = 0; j < w1_size; j++) {
-                        training->ff_grads[i].w1_lattice[j] = big_fixed_create(training->precision_bits);
-                        if (training->ff_grads[i].w1_lattice[j]) {
-                            big_fixed_from_int(training->ff_grads[i].w1_lattice[j], 0);
-                        }
-                    }
-                }
-                if (training->ff_grads[i].w2_lattice) {
-                    for (size_t j = 0; j < w2_size; j++) {
-                        training->ff_grads[i].w2_lattice[j] = big_fixed_create(training->precision_bits);
-                        if (training->ff_grads[i].w2_lattice[j]) {
-                            big_fixed_from_int(training->ff_grads[i].w2_lattice[j], 0);
-                        }
-                    }
-                }
-                if (training->ff_grads[i].bias1) {
-                    for (size_t j = 0; j < layer->hidden_dim; j++) {
-                        training->ff_grads[i].bias1[j] = big_fixed_create(training->precision_bits);
-                        if (training->ff_grads[i].bias1[j]) {
-                            big_fixed_from_int(training->ff_grads[i].bias1[j], 0);
-                        }
-                    }
-                }
-                if (training->ff_grads[i].bias2) {
-                    for (size_t j = 0; j < layer->output_dim; j++) {
-                        training->ff_grads[i].bias2[j] = big_fixed_create(training->precision_bits);
-                        if (training->ff_grads[i].bias2[j]) {
-                            big_fixed_from_int(training->ff_grads[i].bias2[j], 0);
-                        }
-                    }
-                }
+                snprintf(name, sizeof(name), "ff_w2_L%u", i);
+                training->ff_grads[i].w2_lattice = bigfixed_array_create_mmap(w2_size, training->precision_bits, name);
+                
+                snprintf(name, sizeof(name), "ff_bias1_L%u", i);
+                training->ff_grads[i].bias1 = bigfixed_array_create_mmap(layer->hidden_dim, training->precision_bits, name);
+                
+                snprintf(name, sizeof(name), "ff_bias2_L%u", i);
+                training->ff_grads[i].bias2 = bigfixed_array_create_mmap(layer->output_dim, training->precision_bits, name);
+                
+                // Memory-mapped arrays are already initialized to zero by the OS
             }
         }
     } else {
         training->ff_grads = NULL;
     }
     
-    // Allocate layer norm gradient buffers
-    // TODO: Convert to disk-based memory-mapped storage
+    // Allocate layer norm gradient buffers using disk-backed storage
     if (num_layers > 0 && num_layers < 100) {
         training->ln_grads = (typeof(training->ln_grads))calloc(num_layers, sizeof(*training->ln_grads));
         
         if (training->ln_grads && model->layer_norms) {
+            printf("Allocating layer norm gradients for %u layers using disk-backed storage...\n", num_layers);
             for (uint32_t i = 0; i < num_layers; i++) {
                 CLLMLayerNorm* layer = &model->layer_norms[i];
                 
-                // Allocate BigFixed** arrays
-                training->ln_grads[i].gamma = (BigFixed**)calloc(layer->dim, sizeof(BigFixed*));
-                training->ln_grads[i].beta = (BigFixed**)calloc(layer->dim, sizeof(BigFixed*));
+                // Allocate using memory-mapped disk storage
+                char name[64];
+                snprintf(name, sizeof(name), "ln_gamma_L%u", i);
+                training->ln_grads[i].gamma = bigfixed_array_create_mmap(layer->dim, training->precision_bits, name);
                 
-                // Allocate individual BigFixed elements
-                if (training->ln_grads[i].gamma) {
-                    for (size_t j = 0; j < layer->dim; j++) {
-                        training->ln_grads[i].gamma[j] = big_fixed_create(training->precision_bits);
-                        if (training->ln_grads[i].gamma[j]) {
-                            big_fixed_from_int(training->ln_grads[i].gamma[j], 0);
-                        }
-                    }
-                }
-                if (training->ln_grads[i].beta) {
-                    for (size_t j = 0; j < layer->dim; j++) {
-                        training->ln_grads[i].beta[j] = big_fixed_create(training->precision_bits);
-                        if (training->ln_grads[i].beta[j]) {
-                            big_fixed_from_int(training->ln_grads[i].beta[j], 0);
-                        }
-                    }
-                }
+                snprintf(name, sizeof(name), "ln_beta_L%u", i);
+                training->ln_grads[i].beta = bigfixed_array_create_mmap(layer->dim, training->precision_bits, name);
+                
+                // Memory-mapped arrays are already initialized to zero by the OS
             }
         }
     } else {
@@ -2953,21 +2910,17 @@ void cllm_training_cleanup(CLLMTraining* training) {
         training->optimizer_state = NULL;
     }
     
-    // Free BigFixed master weights
+    // Free memory-mapped master weights
     if (training->master_weights) {
-        for (size_t i = 0; i < embed_size; i++) {
-            if (training->master_weights[i]) {
-                big_fixed_free(training->master_weights[i]);
-            }
-        }
-        free(training->master_weights);
+        bigfixed_array_free_mmap(training->master_weights, embed_size);
+        training->master_weights = NULL;
     }
     
     // Free mixed precision buffers (still float)
     free(training->fp16_activations);
     free(training->fp16_gradients);
     
-    // Free BigFixed attention gradient buffers
+    // Free memory-mapped attention gradient buffers
     if (training->attention_grads && training->model) {
         for (uint32_t i = 0; i < num_layers; i++) {
             AttentionLayer* layer = &training->model->attention_layers[i];
@@ -2975,36 +2928,21 @@ void cllm_training_cleanup(CLLMTraining* training) {
             size_t weight_size = dim * dim;
             
             if (training->attention_grads[i].query_lattice) {
-                for (size_t j = 0; j < weight_size; j++) {
-                    if (training->attention_grads[i].query_lattice[j]) {
-                        big_fixed_free(training->attention_grads[i].query_lattice[j]);
-                    }
-                }
-                free(training->attention_grads[i].query_lattice);
+                bigfixed_array_free_mmap(training->attention_grads[i].query_lattice, weight_size);
             }
             
             if (training->attention_grads[i].key_lattice) {
-                for (size_t j = 0; j < weight_size; j++) {
-                    if (training->attention_grads[i].key_lattice[j]) {
-                        big_fixed_free(training->attention_grads[i].key_lattice[j]);
-                    }
-                }
-                free(training->attention_grads[i].key_lattice);
+                bigfixed_array_free_mmap(training->attention_grads[i].key_lattice, weight_size);
             }
             
             if (training->attention_grads[i].value_lattice) {
-                for (size_t j = 0; j < weight_size; j++) {
-                    if (training->attention_grads[i].value_lattice[j]) {
-                        big_fixed_free(training->attention_grads[i].value_lattice[j]);
-                    }
-                }
-                free(training->attention_grads[i].value_lattice);
+                bigfixed_array_free_mmap(training->attention_grads[i].value_lattice, weight_size);
             }
         }
         free(training->attention_grads);
     }
     
-    // Free BigFixed feed-forward gradient buffers
+    // Free memory-mapped feed-forward gradient buffers
     if (training->ff_grads && training->model) {
         for (uint32_t i = 0; i < num_layers; i++) {
             FeedForwardLayer* layer = &training->model->ff_layers[i];
@@ -3012,69 +2950,42 @@ void cllm_training_cleanup(CLLMTraining* training) {
             size_t w2_size = layer->hidden_dim * layer->output_dim;
             
             if (training->ff_grads[i].w1_lattice) {
-                for (size_t j = 0; j < w1_size; j++) {
-                    if (training->ff_grads[i].w1_lattice[j]) {
-                        big_fixed_free(training->ff_grads[i].w1_lattice[j]);
-                    }
-                }
-                free(training->ff_grads[i].w1_lattice);
+                bigfixed_array_free_mmap(training->ff_grads[i].w1_lattice, w1_size);
             }
             
             if (training->ff_grads[i].w2_lattice) {
-                for (size_t j = 0; j < w2_size; j++) {
-                    if (training->ff_grads[i].w2_lattice[j]) {
-                        big_fixed_free(training->ff_grads[i].w2_lattice[j]);
-                    }
-                }
-                free(training->ff_grads[i].w2_lattice);
+                bigfixed_array_free_mmap(training->ff_grads[i].w2_lattice, w2_size);
             }
             
             if (training->ff_grads[i].bias1) {
-                for (size_t j = 0; j < layer->hidden_dim; j++) {
-                    if (training->ff_grads[i].bias1[j]) {
-                        big_fixed_free(training->ff_grads[i].bias1[j]);
-                    }
-                }
-                free(training->ff_grads[i].bias1);
+                bigfixed_array_free_mmap(training->ff_grads[i].bias1, layer->hidden_dim);
             }
             
             if (training->ff_grads[i].bias2) {
-                for (size_t j = 0; j < layer->output_dim; j++) {
-                    if (training->ff_grads[i].bias2[j]) {
-                        big_fixed_free(training->ff_grads[i].bias2[j]);
-                    }
-                }
-                free(training->ff_grads[i].bias2);
+                bigfixed_array_free_mmap(training->ff_grads[i].bias2, layer->output_dim);
             }
         }
         free(training->ff_grads);
     }
     
-    // Free BigFixed layer norm gradient buffers
+    // Free memory-mapped layer norm gradient buffers
     if (training->ln_grads && training->model) {
         for (uint32_t i = 0; i < num_layers; i++) {
             CLLMLayerNorm* layer = &training->model->layer_norms[i];
             
             if (training->ln_grads[i].gamma) {
-                for (size_t j = 0; j < layer->dim; j++) {
-                    if (training->ln_grads[i].gamma[j]) {
-                        big_fixed_free(training->ln_grads[i].gamma[j]);
-                    }
-                }
-                free(training->ln_grads[i].gamma);
+                bigfixed_array_free_mmap(training->ln_grads[i].gamma, layer->dim);
             }
             
             if (training->ln_grads[i].beta) {
-                for (size_t j = 0; j < layer->dim; j++) {
-                    if (training->ln_grads[i].beta[j]) {
-                        big_fixed_free(training->ln_grads[i].beta[j]);
-                    }
-                }
-                free(training->ln_grads[i].beta);
+                bigfixed_array_free_mmap(training->ln_grads[i].beta, layer->dim);
             }
         }
         free(training->ln_grads);
     }
+    
+    // Cleanup all temporary gradient files
+    bigfixed_array_cleanup_all_mmap();
     
     // Free backward pass buffers (still float - not used in BigFixed training)
     free(training->backward_embeddings);
