@@ -36,6 +36,7 @@
 // #include "../include/cllm_crystalline_training.h"
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"  // CONSOLIDATED: Functions moved here
+#include "bigfixed_packed_array.h"  // CRITICAL: Memory-efficient packed arrays
 
 #define MAX_BATCH_SIZE 128
 #define MAX_SEQUENCE_LENGTH 2048
@@ -284,25 +285,35 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->gradients = NULL;  // Will use disk buffer
         training->optimizer_state = NULL;  // Will use disk buffer
     } else if (total_params > 0 && total_params < 100000000) {
-        // Standard mode: Allocate full gradient buffers using BigFixed arrays
-        // CRITICAL FIX: Use bigfixed_array_create() not individual BigFixed structures!
-        // bigfixed_array_create() creates ONE array, not millions of individual structures
-        printf("Allocating gradient buffers for %zu parameters (BigFixed arrays)\n", total_params);
+        // Standard mode: Allocate full gradient buffers using PACKED arrays
+        // CRITICAL FIX: Use packed arrays instead of BigFixed** arrays!
+        // Memory savings: 22M × 208 bytes → 22M × 16 bytes (13x reduction!)
+        printf("Allocating gradient buffers for %zu parameters (PACKED arrays)\n", total_params);
         
-        // Use BigFixed array utilities (efficient - single allocation)
-        training->gradients = bigfixed_array_create(total_params, training->precision_bits);
-        training->optimizer_state = bigfixed_array_create(total_params * 2, training->precision_bits);
+        // Calculate expected memory usage
+        size_t gradient_memory = total_params * 16;  // 16 bytes per element
+        size_t optimizer_memory = (total_params * 2) * 16;  // 2x for momentum+variance
+        size_t total_memory = gradient_memory + optimizer_memory;
+        
+        printf("  Expected memory: %.2f MB (gradients) + %.2f MB (optimizer) = %.2f MB total\n",
+               gradient_memory / (1024.0 * 1024.0),
+               optimizer_memory / (1024.0 * 1024.0),
+               total_memory / (1024.0 * 1024.0));
+        
+        // Use packed array utilities (13x more efficient than BigFixed**)
+        training->gradients = bigfixed_packed_array_create(total_params, training->precision_bits);
+        training->optimizer_state = bigfixed_packed_array_create(total_params * 2, training->precision_bits);
         
         if (!training->gradients || !training->optimizer_state) {
             fprintf(stderr, "Failed to allocate gradient buffers\n");
-            if (training->gradients) bigfixed_array_free(training->gradients, total_params);
-            if (training->optimizer_state) bigfixed_array_free(training->optimizer_state, total_params * 2);
+            if (training->gradients) bigfixed_packed_array_free((BigFixedPackedArray*)training->gradients);
+            if (training->optimizer_state) bigfixed_packed_array_free((BigFixedPackedArray*)training->optimizer_state);
             training->gradients = NULL;
             training->optimizer_state = NULL;
         } else {
             printf("✓ Gradient buffers allocated successfully\n");
         }
-    } else {
+
         training->gradients = NULL;
         training->optimizer_state = NULL;
     }
@@ -796,15 +807,10 @@ void cllm_optimizer_step(CLLMTraining* training) {
     // Update crystalline embeddings using BigFixed operations
     if (model->crystalline_embeddings && training->gradients) {
         // TODO: Implement proper lattice-based embedding optimization
-        // For now, just clear gradients
-        uint32_t embedding_dim = model->embedding_dim;
-        uint32_t vocab_size = model->vocab_size;
-        size_t embed_params = vocab_size * embedding_dim;
-        
-        for (size_t i = 0; i < embed_params; i++) {
-            if (training->gradients[i]) {
-                big_fixed_from_int(training->gradients[i], 0);
-            }
+        // For now, just clear gradients (using packed array)
+        if (training->gradients) {
+            BigFixedPackedArray* grad_array = (BigFixedPackedArray*)training->gradients;
+            bigfixed_packed_array_zero(grad_array);
         }
     }
     
@@ -932,11 +938,8 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
     
     // Zero embedding gradients
     if (training->gradients) {
-        for (uint32_t i = 0; i < vocab_size * embed_dim; i++) {
-            if (training->gradients[i]) {
-                big_fixed_from_int(training->gradients[i], 0);
-            }
-        }
+        BigFixedPackedArray* grad_array = (BigFixedPackedArray*)training->gradients;
+        bigfixed_packed_array_zero(grad_array);
     }
     
     // Zero layer-specific gradients
@@ -1586,12 +1589,15 @@ float cllm_train_epoch(CLLMTraining* training) {
             int nonzero_embed = 0;
             size_t embed_size = model->vocab_size * model->embedding_dim;
             
-            for (size_t i = 0; i < embed_size && i < 10000; i++) {
-                float g = prime_fabsf((float)big_fixed_to_double(training->gradients[i]));
-                if (g > 1e-10f) {
-                    nonzero_embed++;
-                    sum_embed_grad += g;
-                    if (g > max_embed_grad) max_embed_grad = g;
+            if (training->gradients) {
+                BigFixedPackedArray* grad_array = (BigFixedPackedArray*)training->gradients;
+                for (size_t i = 0; i < embed_size && i < 10000; i++) {
+                    float g = prime_fabsf((float)bigfixed_packed_array_get(grad_array, i));
+                    if (g > 1e-10f) {
+                        nonzero_embed++;
+                        sum_embed_grad += g;
+                        if (g > max_embed_grad) max_embed_grad = g;
+                    }
                 }
             }
             
@@ -1704,56 +1710,44 @@ void cllm_adam_step_bigfixed(
     big_fixed_sub(&one_minus_beta1, &one, &beta1);
     big_fixed_sub(&one_minus_beta2, &one, &beta2);
     
-    // Update embeddings (simplified - would need proper gradient accumulation)
+    // Update embeddings using packed arrays (CRITICAL: Memory efficient!)
+    if (!training->gradients || !training->optimizer_state) return;
+    
+    BigFixedPackedArray* grad_array = (BigFixedPackedArray*)training->gradients;
+    BigFixedPackedArray* opt_array = (BigFixedPackedArray*)training->optimizer_state;
+    
+    // Simplified Adam update using double precision for now
+    // TODO: Implement full BigFixed Adam when needed
     for (size_t i = 0; i < embed_size && i < 1000; i++) {  // Limit for now
-        if (!training->gradients[i]) continue;
+        double g = bigfixed_packed_array_get(grad_array, i);
+        if (fabs(g) < 1e-10) continue;  // Skip zero gradients
         
-        BigFixed* m = training->optimizer_state[i * 2];      // First moment
-        BigFixed* v = training->optimizer_state[i * 2 + 1];  // Second moment
-        BigFixed* g = training->gradients[i];                // Gradient
+        // Get moments
+        double m = bigfixed_packed_array_get(opt_array, i * 2);      // First moment
+        double v = bigfixed_packed_array_get(opt_array, i * 2 + 1);  // Second moment
         
-        // m = beta1 * m + (1 - beta1) * g
-        BigFixed temp1 = *big_fixed_create(precision);
-        BigFixed temp2 = *big_fixed_create(precision);
+        // Update moments
+        m = 0.9 * m + 0.1 * g;                    // m = beta1 * m + (1 - beta1) * g
+        v = 0.999 * v + 0.001 * g * g;            // v = beta2 * v + (1 - beta2) * g^2
         
-        big_fixed_mul(&temp1, &beta1, m);
-        big_fixed_mul(&temp2, &one_minus_beta1, g);
-        big_fixed_add(m, &temp1, &temp2);
+        // Store updated moments
+        bigfixed_packed_array_set(opt_array, i * 2, m);
+        bigfixed_packed_array_set(opt_array, i * 2 + 1, v);
         
-        // v = beta2 * v + (1 - beta2) * g^2
-        BigFixed g_squared = *big_fixed_create(precision);
-        big_fixed_mul(&g_squared, g, g);
-        
-        big_fixed_mul(&temp1, &beta2, v);
-        big_fixed_mul(&temp2, &one_minus_beta2, &g_squared);
-        big_fixed_add(v, &temp1, &temp2);
-        
-        // weight = weight - lr * m / (sqrt(v) + epsilon)
-        BigFixed sqrt_v = *big_fixed_create(precision);
-        BigFixed denom = *big_fixed_create(precision);
-        BigFixed update = *big_fixed_create(precision);
-        
-        bigfixed_sqrt(&sqrt_v, v, precision);
-        big_fixed_add(&denom, &sqrt_v, &epsilon);
-        big_fixed_div(&temp1, m, &denom);
-        big_fixed_mul(&update, &learning_rate, &temp1);
+        // Compute update: lr * m / (sqrt(v) + epsilon)
+        double update = learning_rate_float * m / (sqrt(v) + 1e-8);
         
         // Update weight (would need to map to actual model weights)
-        // For now, just update master_weights
+        // For now, just update master_weights if available
         if (training->master_weights && training->master_weights[i]) {
-            big_fixed_sub(training->master_weights[i], training->master_weights[i], &update);
+            BigFixed temp = *big_fixed_create(precision);
+            big_fixed_from_double(&temp, update);
+            big_fixed_sub(training->master_weights[i], training->master_weights[i], &temp);
+            big_fixed_free(&temp);
         }
         
-        // Cleanup
-        big_fixed_free(&temp1);
-        big_fixed_free(&temp2);
-        big_fixed_free(&g_squared);
-        big_fixed_free(&sqrt_v);
-        big_fixed_free(&denom);
-        big_fixed_free(&update);
-        
         // Zero out gradient for next iteration
-        big_fixed_from_int(g, 0);
+        bigfixed_packed_array_set(grad_array, i, 0.0);
     }
     
     // Update layer weights (attention, FF, layer norm)
@@ -2943,24 +2937,16 @@ void cllm_training_cleanup(CLLMTraining* training) {
     size_t embed_size = training->model ? training->model->vocab_size * training->model->embedding_dim : 0;
     uint32_t num_layers = training->model ? training->model->num_layers : 0;
     
-    // Free BigFixed gradient buffers
+    // Free packed array gradient buffers (CRITICAL: Use packed array free!)
     if (training->gradients) {
-        for (size_t i = 0; i < embed_size; i++) {
-            if (training->gradients[i]) {
-                big_fixed_free(training->gradients[i]);
-            }
-        }
-        free(training->gradients);
+        bigfixed_packed_array_free((BigFixedPackedArray*)training->gradients);
+        training->gradients = NULL;
     }
     
-    // Free BigFixed optimizer state
+    // Free packed array optimizer state
     if (training->optimizer_state) {
-        for (size_t i = 0; i < embed_size * 2; i++) {
-            if (training->optimizer_state[i]) {
-                big_fixed_free(training->optimizer_state[i]);
-            }
-        }
-        free(training->optimizer_state);
+        bigfixed_packed_array_free((BigFixedPackedArray*)training->optimizer_state);
+        training->optimizer_state = NULL;
     }
     
     // Free BigFixed master weights

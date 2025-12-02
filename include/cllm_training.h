@@ -93,9 +93,11 @@ typedef struct {
     int total_batches;           // Total number of batches
     int current_batch_offset;    // Current batch offset in tokens
     
-    // Optimizer state
-    BigFixed** gradients;        // BigFixed gradient buffer (arbitrary precision)
-    BigFixed** optimizer_state;  // BigFixed optimizer state (momentum, variance)
+    // Optimizer state (CRITICAL: Using packed arrays for memory efficiency)
+    // Old: BigFixed** = 22M × 208 bytes = 4.6 GB
+    // New: Packed array = 22M × 16 bytes = 352 MB (13x reduction!)
+    void* gradients;             // BigFixedPackedArray* (cast to avoid circular dependency)
+    void* optimizer_state;       // BigFixedPackedArray* (cast to avoid circular dependency)
     
     // Layer-specific gradient buffers
     struct {
