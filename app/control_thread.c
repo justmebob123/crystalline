@@ -43,50 +43,19 @@ void* control_thread_main(void* arg) {
     }
     state->abacus_initializing = false;
     
-    // PHASE 2: Load Default Model (if exists)
-    printf("\n=== Phase 2: Loading Default Model ===\n");
+    // PHASE 2: Check for Default Model (but don't auto-load)
+    printf("\n=== Phase 2: Checking for Models ===\n");
     const char* default_model_path = "models/saved_model.cllm";
     
     FILE* test_file = fopen(default_model_path, "rb");
     if (test_file) {
         fclose(test_file);
-        
-        state->model_loading = true;
-        state->model_ready = false;
-        
         printf("Found default model: %s\n", default_model_path);
-        printf("Loading model in background...\n");
-        
-        extern CLLMModel* cllm_read_model(const char* filepath);
-        state->cllm_model = cllm_read_model(default_model_path);
-        
-        if (state->cllm_model) {
-            printf("✓ Model loaded successfully!\n");
-            printf("  Vocabulary size: %lu\n", (unsigned long)state->cllm_model->vocab_size);
-            printf("  Embedding dimension: %lu\n", (unsigned long)state->cllm_model->embedding_dim);
-            printf("  Number of layers: %d\n", state->cllm_model->num_layers);
-            
-            // Create inference context
-            extern CLLMInference* cllm_inference_init(CLLMModel* model);
-            state->cllm_inference = cllm_inference_init(state->cllm_model);
-            
-            if (state->cllm_inference) {
-                printf("✓ Inference context created\n");
-                state->model_ready = true;
-                snprintf(state->llm_output_text, sizeof(state->llm_output_text),
-                        "Model loaded and ready. Type a message to chat!");
-            } else {
-                printf("✗ Failed to create inference context\n");
-                snprintf(state->llm_output_text, sizeof(state->llm_output_text),
-                        "Model loaded but inference failed. Try reloading.");
-            }
-        } else {
-            printf("✗ Failed to load model\n");
-            snprintf(state->llm_output_text, sizeof(state->llm_output_text),
-                    "Failed to load model. You can create a new one in the Training tab.");
-        }
-        
-        state->model_loading = false;
+        printf("NOTE: Model NOT auto-loaded to save memory (12GB+ for large models)\n");
+        printf("Use LLM tab 'Load Model' button to load when needed\n");
+        state->model_ready = false;
+        snprintf(state->llm_output_text, sizeof(state->llm_output_text),
+                "Model available. Click 'Load Model' in LLM tab to use it.");
     } else {
         printf("No default model found at %s\n", default_model_path);
         printf("Model can be created in Training tab or loaded in LLM tab\n");

@@ -83,12 +83,14 @@ bool model_manager_init(const char* models_dir) {
     g_manager_initialized = true;
     printf("Model manager initialized: %s\n", g_model_manager.models_dir);
     
-    // Load existing models from disk
-    printf("Loading existing models from disk...\n");
+    // CRITICAL FIX: Do NOT auto-load models during initialization
+    // Models can be very large (12GB+ for 50K vocab) and cause OOM
+    // Instead, scan directory and register model names only
+    printf("Scanning for available models (not loading yet)...\n");
     DIR* dir = opendir(g_model_manager.models_dir);
     if (dir) {
         struct dirent* entry;
-        int loaded_count = 0;
+        int found_count = 0;
         
         while ((entry = readdir(dir)) != NULL) {
             // Check if file ends with .cllm
@@ -100,30 +102,17 @@ bool model_manager_init(const char* models_dir) {
                 memcpy(model_name, entry->d_name, name_len);
                 model_name[name_len] = '\0';
                 
-                // Build full path
-                char model_path[MODEL_PATH_MAX];
-                int path_len = snprintf(model_path, sizeof(model_path), "%s/%s", 
-                        g_model_manager.models_dir, entry->d_name);
-                if (path_len >= (int)sizeof(model_path)) {
-                    fprintf(stderr, "Model path too long: %s/%s\n", 
-                            g_model_manager.models_dir, entry->d_name);
-                    continue;
-                }
+                // Just register the model name, don't load it yet
+                printf("  Found model: %s (will load on-demand)\n", model_name);
+                found_count++;
                 
-                // Load the model
-                printf("  Loading model: %s\n", model_name);
-                ManagedModel* managed = model_manager_load(model_name, model_path);
-                if (managed) {
-                    loaded_count++;
-                    printf("    ✓ Loaded successfully\n");
-                } else {
-                    printf("    ✗ Failed to load\n");
-                }
+                // NOTE: Model will be loaded on-demand when user explicitly requests it
+                // This prevents OOM during initialization
             }
         }
         closedir(dir);
         
-        printf("Loaded %d model(s) from disk\n", loaded_count);
+        printf("Found %d model(s) - will load on-demand to save memory\n", found_count);
     } else {
         printf("No existing models found (directory empty or inaccessible)\n");
     }
