@@ -1944,17 +1944,38 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
  * TODO: Implement gradient accumulation in future training enhancements
  */
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
-    if (!system || !system->accumulated_gradients) return;
+    printf("[DEBUG] accumulate_gradients: ENTRY - system=%p\n", (void*)system);
+    fflush(stdout);
     
-    printf("[DEBUG] accumulate_gradients: Starting (gradient_size=%zu)\n", system->gradient_size);
+    if (!system) {
+        fprintf(stderr, "[ERROR] accumulate_gradients: system is NULL\n");
+        return;
+    }
+    
+    printf("[DEBUG] accumulate_gradients: accumulated_gradients=%p, gradient_size=%zu\n", 
+           (void*)system->accumulated_gradients, system->gradient_size);
+    fflush(stdout);
+    
+    if (!system->accumulated_gradients) {
+        fprintf(stderr, "[ERROR] accumulate_gradients: accumulated_gradients is NULL!\n");
+        return;
+    }
+    
+    printf("[DEBUG] accumulate_gradients: About to acquire lock\n");
+    fflush(stdout);
     
     // KISSING BOUNDARY LOCK - Protect shared gradient accumulation
     // Multiple threads write to accumulated_gradients - this is a kissing boundary
     pthread_mutex_lock(&system->gradient_lock);
     
-    printf("[DEBUG] accumulate_gradients: Lock acquired, zeroing gradients\n");
+    printf("[DEBUG] accumulate_gradients: Lock acquired, about to memset\n");
+    fflush(stdout);
     
     // Zero accumulated gradients
+    printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
+           (void*)system->accumulated_gradients, system->gradient_size * sizeof(float));
+    fflush(stdout);
+    
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
     
     printf("[DEBUG] accumulate_gradients: Gradients zeroed\n");
@@ -2153,14 +2174,23 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         usleep(1000);  // 1ms
         
         wait_iterations++;
-        // Print progress every 10 seconds instead of every 1 second (reduced spam)
-        if (wait_iterations % 10000 == 0) {
+        // Print progress every 1 second for debugging
+        if (wait_iterations % 1000 == 0) {
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
-            if (pushed > 0) {
-                printf("  Epoch %d progress: %zu/%zu batches (%.1f%% complete)\n",
-                       current_epoch, popped, pushed, (popped * 100.0) / pushed);
-            }
+            int done = atomic_load(&system->work_queue->epoch_done);
+            printf("  [DEBUG] Wait iteration %d: pushed=%zu, popped=%zu, epoch_done=%d, pending=%zu\n",
+                   wait_iterations, pushed, popped, done, pending);
+            fflush(stdout);
+        }
+        
+        // Timeout after 10 seconds
+        if (wait_iterations > 10000) {
+            size_t pending, pushed, popped;
+            work_queue_stats(system->work_queue, &pending, &pushed, &popped);
+            fprintf(stderr, "[ERROR] Timeout waiting for workers! pushed=%zu, popped=%zu, pending=%zu\n",
+                    pushed, popped, pending);
+            break;
         }
     }
     
