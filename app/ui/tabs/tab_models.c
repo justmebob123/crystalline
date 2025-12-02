@@ -45,7 +45,8 @@ static void on_delete_button_click(void* user_data);
 static void on_create_confirm_click(void* user_data);
 static void on_create_cancel_click(void* user_data);
 static void on_delete_confirm(DialogResult result, void* user_data);
-static void on_model_state_changed(void* user_data);
+static void on_model_state_changed(const Event* event, void* user_data);
+static void on_model_state_changed_simple(void* user_data);
 
 // ============================================================================
 // INITIALIZATION
@@ -104,7 +105,7 @@ void init_models_tab(AppState* state) {
     
     // Register for model state changes
     StateManager* state_mgr = state_manager_get_instance();
-    state_register_model_callback(state_mgr, on_model_state_changed, state);
+    state_register_model_callback(state_mgr, on_model_state_changed_simple, state);
     
     // Register for model events
     EventSystem* event_sys = event_system_get_instance();
@@ -190,7 +191,11 @@ static void on_load_button_click(void* user_data) {
     
     // Update state manager
     StateManager* state_mgr = state_manager_get_instance();
-    state_set_current_model(state_mgr, model_name);
+    // Load the model through model manager (requires both name and path)
+    ManagedModel* managed = model_manager_load(model_name, "");
+    if (managed && managed->model) {
+        state_set_model(state_mgr, managed->model, model_name, "");
+    }
     state_update_model_config(state_mgr, 
                              managed_model->vocab_size,
                              managed_model->embedding_dim,
@@ -221,7 +226,7 @@ static void on_save_button_click(void* user_data) {
         return;
     }
     
-    const char* model_name = model_state->current_model_name;
+    const char* model_name = model_state->model_name;
     if (model_name[0] == '\0') {
         snprintf(status_message, sizeof(status_message), "No model selected");
         status_message_timer = 3.0f;
@@ -235,7 +240,7 @@ static void on_save_button_click(void* user_data) {
     
     if (!success) {
         snprintf(status_message, sizeof(status_message), 
-                 "Failed to save model '%s'", model_name);
+                 "Failed to save model '%.200s'", model_name);
         status_message_timer = 3.0f;
         return;
     }
@@ -245,7 +250,7 @@ static void on_save_button_click(void* user_data) {
     event_model_saved(event_sys, model_name);
     
     snprintf(status_message, sizeof(status_message), 
-             "Model '%s' saved successfully", model_name);
+             "Model '%.200s' saved successfully", model_name);
     status_message_timer = 3.0f;
     
     (void)state;
@@ -323,7 +328,8 @@ static void on_create_confirm_click(void* user_data) {
     // Update state manager
     StateManager* state_mgr = state_manager_get_instance();
     state_update_model_config(state_mgr, vocab_size, embedding_dim, hidden_dim, num_layers, num_heads);
-    state_set_current_model(state_mgr, name);
+    // Model will be set when actually created/loaded
+    state_set_model(state_mgr, NULL, name, "");
     
     // Dispatch MODEL_CREATED event for cross-tab synchronization
     EventSystem* event_sys = event_system_get_instance();
@@ -360,7 +366,7 @@ static void on_delete_confirm(DialogResult result, void* user_data) {
                 
                 if (!success) {
                     snprintf(status_message, sizeof(status_message), 
-                             "Failed to delete model '%s'", model_name);
+                             "Failed to delete model '%.200s'", model_name);
                     status_message_timer = 3.0f;
                     return;
                 }
@@ -368,8 +374,8 @@ static void on_delete_confirm(DialogResult result, void* user_data) {
                 // Update state manager
                 StateManager* state_mgr = state_manager_get_instance();
                 const ModelState* model_state = state_get_model(state_mgr);
-                if (model_state && strcmp(model_state->current_model_name, model_name) == 0) {
-                    state_set_current_model(state_mgr, "");
+                if (model_state && strcmp(model_state->model_name, model_name) == 0) {
+                    state_set_model(state_mgr, NULL, "", "");
                 }
                 
                 // Dispatch MODEL_DELETED event for cross-tab synchronization
@@ -377,7 +383,7 @@ static void on_delete_confirm(DialogResult result, void* user_data) {
                 event_model_deleted(event_sys, model_name);
                 
                 snprintf(status_message, sizeof(status_message), 
-                         "Model '%s' deleted successfully", model_name);
+                         "Model '%.200s' deleted successfully", model_name);
                 status_message_timer = 3.0f;
                 
                 selected_model_index = -1;
@@ -388,7 +394,8 @@ static void on_delete_confirm(DialogResult result, void* user_data) {
     }
 }
 
-static void on_model_state_changed(void* user_data) {
+static void on_model_state_changed(const Event* event, void* user_data) {
+    (void)event;
     (void)user_data;
     
     // Update button states based on model state
@@ -400,6 +407,11 @@ static void on_model_state_changed(void* user_data) {
     } else {
         ui_button_set_enabled(btn_save, false);
     }
+}
+
+// Simple wrapper for StateChangeCallback (no Event parameter)
+static void on_model_state_changed_simple(void* user_data) {
+    on_model_state_changed(NULL, user_data);
 }
 
 // ============================================================================

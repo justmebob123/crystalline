@@ -306,6 +306,11 @@ void event_model_saved(EventSystem* system, const char* model_path) {
                   model_path ? strlen(model_path) + 1 : 0, "model_manager");
 }
 
+void event_model_deleted(EventSystem* system, const char* model_name) {
+    event_dispatch(system, EVENT_MODEL_DELETED, (void*)model_name,
+                  model_name ? strlen(model_name) + 1 : 0, "model_manager");
+}
+
 void event_training_started(EventSystem* system) {
     event_dispatch(system, EVENT_TRAINING_STARTED, NULL, 0, "training_thread");
 }

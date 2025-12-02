@@ -186,6 +186,7 @@ void event_clear_queue(EventSystem* system);
 void event_model_loaded(EventSystem* system, const char* model_name);
 void event_model_created(EventSystem* system, const char* model_name);
 void event_model_saved(EventSystem* system, const char* model_path);
+void event_model_deleted(EventSystem* system, const char* model_name);
 
 /**
  * Dispatch training events
