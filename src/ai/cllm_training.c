@@ -872,7 +872,7 @@ static void attention_backward_full(
     double* queries = training->attention_cache[layer].queries;
     double* keys = training->attention_cache[layer].keys;
     double* values = training->attention_cache[layer].values;
-    float* attention_weights = training->attention_cache[layer].attention_weights;
+    double* attention_weights = training->attention_cache[layer].attention_weights;
     
     if (!queries || !keys || !values || !attention_weights) {
         // Fall back to simplified version if cache not available
@@ -1154,7 +1154,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
-            float* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            double* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
             double* embed_dst = &training->input_embeddings[idx * embed_dim];
             memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
         }
@@ -1237,7 +1237,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             double* logits = &training->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
                 float score = 0.0f;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];

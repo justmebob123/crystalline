@@ -33,6 +33,7 @@
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
+#include "prime_math.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
