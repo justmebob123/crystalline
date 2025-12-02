@@ -1002,7 +1002,15 @@ static int batch_queue_try_push(BatchQueue* queue, CLLMBatch* batch) {
  * Returns batch pointer on success, NULL if queue is empty
  */
 static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
-    if (!queue) return NULL;
+    if (!queue) {
+        fprintf(stderr, "[ERROR] batch_queue_try_pop: queue is NULL\n");
+        return NULL;
+    }
+    
+    if (!queue->batches) {
+        fprintf(stderr, "[ERROR] batch_queue_try_pop: queue->batches is NULL\n");
+        return NULL;
+    }
     
     size_t head = atomic_load(&queue->head);
     size_t tail = atomic_load(&queue->tail);
@@ -1013,6 +1021,12 @@ static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
     }
     
     size_t index = head % queue->capacity;
+    
+    if (index >= queue->capacity) {
+        fprintf(stderr, "[ERROR] batch_queue_try_pop: index %zu >= capacity %zu\n", index, queue->capacity);
+        return NULL;
+    }
+    
     CLLMBatch* batch = queue->batches[index];
     queue->batches[index] = NULL;
     
