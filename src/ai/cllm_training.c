@@ -284,31 +284,23 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->gradients = NULL;  // Will use disk buffer
         training->optimizer_state = NULL;  // Will use disk buffer
     } else if (total_params > 0 && total_params < 100000000) {
-        // Standard mode: Allocate full gradient buffers (FIXED: use total_params not embed_size)
-        printf("Allocating gradient buffers for %zu parameters\n", total_params);
+        // Standard mode: Allocate full gradient buffers using BigFixed arrays
+        // CRITICAL FIX: Use bigfixed_array_create() not individual BigFixed structures!
+        // bigfixed_array_create() creates ONE array, not millions of individual structures
+        printf("Allocating gradient buffers for %zu parameters (BigFixed arrays)\n", total_params);
         
-        // Allocate BigFixed** arrays
-        training->gradients = (BigFixed**)calloc(total_params, sizeof(BigFixed*));
-        training->optimizer_state = (BigFixed**)calloc(total_params * 2, sizeof(BigFixed*));
+        // Use BigFixed array utilities (efficient - single allocation)
+        training->gradients = bigfixed_array_create(total_params, training->precision_bits);
+        training->optimizer_state = bigfixed_array_create(total_params * 2, training->precision_bits);
         
-        // Allocate individual BigFixed elements for gradients
-        if (training->gradients) {
-            for (size_t i = 0; i < total_params; i++) {
-                training->gradients[i] = big_fixed_create(training->precision_bits);
-                if (training->gradients[i]) {
-                    big_fixed_from_int(training->gradients[i], 0);  // Initialize to zero
-                }
-            }
-        }
-        
-        // Allocate individual BigFixed elements for optimizer state (Adam: m and v)
-        if (training->optimizer_state) {
-            for (size_t i = 0; i < total_params * 2; i++) {
-                training->optimizer_state[i] = big_fixed_create(training->precision_bits);
-                if (training->optimizer_state[i]) {
-                    big_fixed_from_int(training->optimizer_state[i], 0);  // Initialize to zero
-                }
-            }
+        if (!training->gradients || !training->optimizer_state) {
+            fprintf(stderr, "Failed to allocate gradient buffers\n");
+            if (training->gradients) bigfixed_array_free(training->gradients, total_params);
+            if (training->optimizer_state) bigfixed_array_free(training->optimizer_state, total_params * 2);
+            training->gradients = NULL;
+            training->optimizer_state = NULL;
+        } else {
+            printf("✓ Gradient buffers allocated successfully\n");
         }
     } else {
         training->gradients = NULL;
