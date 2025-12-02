@@ -92,6 +92,7 @@ static ModelSelector* model_selector = NULL;
 static SDL_Rect batch_slider_rect = {0};
 static SDL_Rect seq_slider_rect = {0};
 static SDL_Rect epochs_slider_rect = {0};
+static SDL_Rect lr_slider_rect = {0};
 
 // Model selector callback
 static void on_model_selected(const char* model_name, void* user_data) {
@@ -746,7 +747,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 18);
     draw_text(renderer, "CONFIGURATION", config_label.x, config_label.y, text_color);
     
-    // Batch Size slider
+    // Batch Size slider (EXPANDED: 1-256 instead of 1-16)
     char batch_label[64];
     snprintf(batch_label, sizeof(batch_label), "Batch Size: %d", state->training_batch_size);
     SDL_Rect batch_label_rect = layout_add_label(&layout, batch_label, 16);
@@ -756,8 +757,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
     SDL_RenderFillRect(renderer, &batch_slider_rect);
     
-    // Slider handle (batch_size range: 1-16)
-    int batch_handle_x = batch_slider_rect.x + ((state->training_batch_size - 1) * batch_slider_rect.w) / 15;
+    // Slider handle (batch_size range: 1-256)
+    int batch_handle_x = batch_slider_rect.x + ((state->training_batch_size - 1) * batch_slider_rect.w) / 255;
     SDL_Rect batch_handle = {batch_handle_x - 5, batch_slider_rect.y - 2, 10, 24};
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &batch_handle);
@@ -793,6 +794,26 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect epochs_handle = {epochs_handle_x - 5, epochs_slider_rect.y - 2, 10, 24};
     SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
     SDL_RenderFillRect(renderer, &epochs_handle);
+    
+    // Learning Rate slider (NEW - logarithmic scale: 0.0001 to 0.1)
+    char lr_label[64];
+    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
+    SDL_Rect lr_label_rect = layout_add_label(&layout, lr_label, 16);
+    draw_text(renderer, lr_label, lr_label_rect.x, lr_label_rect.y, text_color);
+    
+    lr_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &lr_slider_rect);
+    
+    // Slider handle (learning rate: logarithmic scale 0.0001 to 0.1)
+    // Map 0.0001 to 0.1 logarithmically: log10(0.0001) = -4, log10(0.1) = -1
+    float log_lr = log10f(state->training_learning_rate);
+    float log_min = -4.0f;  // log10(0.0001)
+    float log_max = -1.0f;  // log10(0.1)
+    int lr_handle_x = lr_slider_rect.x + ((log_lr - log_min) * lr_slider_rect.w) / (log_max - log_min);
+    SDL_Rect lr_handle = {lr_handle_x - 5, lr_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &lr_handle);
     
     layout_add_spacing(&layout, 5);
     
@@ -1055,11 +1076,11 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Check slider clicks
     if (rect_contains_point(batch_slider_rect, x, y)) {
-        // Calculate new batch size (1-16)
+        // Calculate new batch size (1-256)
         int offset = x - batch_slider_rect.x;
-        int new_value = 1 + (offset * 15) / batch_slider_rect.w;
+        int new_value = 1 + (offset * 255) / batch_slider_rect.w;
         if (new_value < 1) new_value = 1;
-        if (new_value > 16) new_value = 16;
+        if (new_value > 256) new_value = 256;
         state->training_batch_size = new_value;
         printf("Batch size set to: %d\n", new_value);
         return;
@@ -1084,6 +1105,28 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         if (new_value > 100) new_value = 100;
         state->training_epochs = new_value;
         printf("Epochs set to: %d\n", new_value);
+        return;
+    }
+    
+    if (rect_contains_point(lr_slider_rect, x, y)) {
+        // Calculate new learning rate (logarithmic scale: 0.0001 to 0.1)
+        int offset = x - lr_slider_rect.x;
+        float normalized = (float)offset / lr_slider_rect.w;
+        if (normalized < 0.0f) normalized = 0.0f;
+        if (normalized > 1.0f) normalized = 1.0f;
+        
+        // Map to logarithmic scale: log10(0.0001) = -4, log10(0.1) = -1
+        float log_min = -4.0f;
+        float log_max = -1.0f;
+        float log_lr = log_min + normalized * (log_max - log_min);
+        float new_lr = powf(10.0f, log_lr);
+        
+        // Clamp to valid range
+        if (new_lr < 0.0001f) new_lr = 0.0001f;
+        if (new_lr > 0.1f) new_lr = 0.1f;
+        
+        state->training_learning_rate = new_lr;
+        printf("Learning rate set to: %.4f\n", new_lr);
         return;
     }
     
