@@ -816,7 +816,20 @@ static void work_queue_free(WorkQueue* queue) {
  * Returns 1 on success, 0 if queue is full
  */
 static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
-    if (!queue || !batch) return 0;
+    if (!queue) {
+        fprintf(stderr, "[ERROR] work_queue_push: queue is NULL\n");
+        return 0;
+    }
+    
+    if (!batch) {
+        fprintf(stderr, "[ERROR] work_queue_push: batch is NULL\n");
+        return 0;
+    }
+    
+    if (!queue->batches) {
+        fprintf(stderr, "[ERROR] work_queue_push: queue->batches is NULL\n");
+        return 0;
+    }
     
     size_t tail = atomic_load(&queue->tail);
     size_t head = atomic_load(&queue->head);
@@ -827,6 +840,10 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
     }
     
     size_t index = tail % MAX_WORK_ITEMS;
+    
+    printf("[DEBUG] work_queue_push: index=%zu, batch=%p\n", index, (void*)batch);
+    fflush(stdout);
+    
     atomic_store(&queue->batches[index], batch);
     atomic_store(&queue->tail, tail + 1);
     atomic_fetch_add(&queue->total_pushed, 1);
@@ -1994,7 +2011,16 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
  * Main thread pushes batches and waits for completion
  */
 float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch) {
-    if (!system) return 0.0f;
+    printf("[DEBUG] threaded_train_epoch_lockfree: ENTRY - system=%p, epoch=%d\n", (void*)system, current_epoch);
+    fflush(stdout);
+    
+    if (!system) {
+        fprintf(stderr, "[ERROR] threaded_train_epoch_lockfree: system is NULL\n");
+        return 0.0f;
+    }
+    
+    printf("[DEBUG] threaded_train_epoch_lockfree: system validated\n");
+    fflush(stdout);
     
     printf("\n=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===\n");
     printf("Epoch %d - Using %d worker threads (lock-free work queue)\n", current_epoch + 1, system->num_worker_spheres);
@@ -2036,6 +2062,20 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Push all batches to work queue
     printf("Pushing batches to work queue...\n");
+    printf("[DEBUG] system=%p, work_queue=%p, batch_queue=%p\n", 
+           (void*)system, (void*)system->work_queue, (void*)system->batch_queue);
+    fflush(stdout);
+    
+    if (!system->work_queue) {
+        fprintf(stderr, "[ERROR] work_queue is NULL!\n");
+        return 0.0f;
+    }
+    
+    if (!system->batch_queue) {
+        fprintf(stderr, "[ERROR] batch_queue is NULL!\n");
+        return 0.0f;
+    }
+    
     while (1) {
         // Get batch from pre-fetch queue
         CLLMBatch* batch = batch_queue_try_pop(system->batch_queue);
