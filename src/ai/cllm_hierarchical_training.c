@@ -801,6 +801,11 @@ static void* root_control_thread(void* arg) {
     CLLMModel* model = system->training->model;
     
     printf("[Node Zero] Root control thread started\n");
+    fflush(stdout);
+    printf("[Node Zero] System pointer: %p\n", (void*)system);
+    printf("[Node Zero] Root pointer: %p\n", (void*)root);
+    printf("[Node Zero] Model pointer: %p\n", (void*)model);
+    fflush(stdout);
     printf("[Node Zero] Managing %d Level-1 children\n", root->num_children);
     printf("[Node Zero] Entering epoch loop (will run until shutdown)\n");
     fflush(stdout);

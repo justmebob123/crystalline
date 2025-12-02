@@ -27,7 +27,6 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_utils.h"
 #include "../include/cllm_format.h"
-#include "../include/cllm_model_manager.h"
 
 void print_banner() {
     printf("\n");
@@ -129,28 +128,17 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
                 const char* checkpoint_dir, int num_threads) {
     printf("\n=== Starting Training ===\n\n");
     
-    // Thread count handling:
-    // - If num_threads == 0: auto-detect CPU count
-    // - If num_threads > 0: use specified count
-    // - Threads rotate through 12 symmetry positions (not fixed assignment)
+    // Auto-detect CPU count if not specified
     if (num_threads == 0) {
         num_threads = sysconf(_SC_NPROCESSORS_ONLN);
         if (num_threads > 1) {
-            num_threads--;  // Reserve 1 core for main thread
+            num_threads--;  // Reserve 1 core for main thread (CPU-1)
+            printf("Auto-detected %d CPU cores, using %d worker threads (CPU-1)\n", 
+                   num_threads + 1, num_threads);
         }
         if (num_threads < 1) num_threads = 1;
-        printf("Auto-detected %d CPU cores, using %d worker threads\n", 
-               num_threads + 1, num_threads);
-    } else {
-        printf("Using %d worker threads (user-specified)\n", num_threads);
     }
-    
-    printf("\nTraining configuration:\n");
-    printf("  Batch size:       %d\n", config->batch_size);
-    printf("  Sequence length:  %d\n", config->sequence_length);
-    printf("  Worker threads:   %d\n", num_threads);
-    printf("  12-fold symmetry: Threads rotate through all positions\n");
-    printf("\n");
+    printf("Using %d threads for training\n\n", num_threads);
     
     // Create training state
     CLLMTraining* training = cllm_training_init(model, config);
@@ -186,16 +174,16 @@ int train_model(CLLMModel* model, TokenDataset* dataset, CLLMTrainingConfig* con
         goto cleanup;
     }
     
-ThreadedTrainingSystem* threaded_system = threaded_training_create(
-           training, batch_iterator, num_threads);
-       if (!threaded_system) {
+HierarchicalTrainingSystem* hierarchical_system = hierarchical_training_create(
+           training, num_threads, batch_iterator);
+       if (!hierarchical_system) {
            cllm_batch_iterator_free(batch_iterator);
-           fprintf(stderr, "Failed to create threaded training system\n");
+           fprintf(stderr, "Failed to create hierarchical training system\n");
            goto cleanup;
        }
-       printf("✓ Lock-free threaded training system with %d threads\n", num_threads);
-       printf("  Workers pull batches from shared queue (any worker can process any batch)\n");
-       printf("  Threads rotate through 12 symmetry positions in data structure\n\n");    
+       printf("✓ Hierarchical training system with %d threads\n", num_threads);
+       printf("  Architecture: 1 root + 12 Level-1 controls + %d workers\n", num_threads - 13);
+       printf("  Using model's 12-fold symmetry structure\n\n");    
     for (int epoch = 0; epoch < config->num_epochs; epoch++) {
         training->current_epoch = epoch;
         
@@ -207,12 +195,16 @@ ThreadedTrainingSystem* threaded_system = threaded_training_create(
         // Reset batch iterator for new epoch
         cllm_batch_iterator_reset(batch_iterator);
         
-           // Train one epoch (lock-free work queue)
-           float epoch_loss = threaded_train_epoch_lockfree(threaded_system, epoch);
+           // Train one epoch (reusing hierarchical system)
+           float epoch_loss = hierarchical_train_epoch(hierarchical_system);
         
         printf("\nEpoch %d complete: Avg Loss = %.4f, Best Loss = %.4f\n", 
                epoch + 1, epoch_loss, training->best_loss);
         
+        // Generate sample
+        if ((epoch + 1) % 5 == 0 || epoch == 0) {
+            generate_sample(model, "the quick brown");
+        }
         
         // Save checkpoint
         if ((epoch + 1) % 10 == 0 || epoch == config->num_epochs - 1) {
@@ -227,15 +219,9 @@ ThreadedTrainingSystem* threaded_system = threaded_training_create(
     }
     
        // Cleanup hierarchical system after all epochs
-       threaded_training_free(threaded_system);
+       hierarchical_training_free(hierarchical_system);
        cllm_batch_iterator_free(batch_iterator);
     
-    // Generate samples after training is complete and threads are stopped
-    printf("\n=== Generating Samples ===\n");
-    generate_sample(model, "the quick brown");
-    generate_sample(model, "artificial intelligence");
-    generate_sample(model, "machine learning");
-
     
     time_t end_time = time(NULL);
     double elapsed = difftime(end_time, start_time);
@@ -269,7 +255,6 @@ int main(int argc, char** argv) {
     if (argc < 2) {
         printf("Usage: %s <data_dir> [options]\n", argv[0]);
         printf("\nOptions:\n");
-        printf("  --model-name <name>   Model name in model manager (default: training_model)\n");
         printf("  --vocab-size <n>      Vocabulary size (default: 10000)\n");
         printf("  --embed-dim <n>       Embedding dimension (default: 256)\n");
         printf("  --num-layers <n>      Number of layers (default: 6)\n");
@@ -281,7 +266,7 @@ int main(int argc, char** argv) {
         printf("  --threads <n>         Number of threads (default: auto-detect)\n");
         printf("  --checkpoint-dir <d>  Checkpoint directory (default: ./checkpoints)\n");
         printf("\nExample:\n");
-        printf("  %s ./data/raw --model-name my_model --vocab-size 5000 --epochs 50 --threads 4\n", argv[0]);
+        printf("  %s ./data/raw --vocab-size 5000 --epochs 50 --threads 4\n", argv[0]);
         return 1;
     }
     
@@ -299,7 +284,6 @@ int main(int argc, char** argv) {
     int num_threads = 0;  // 0 = auto-detect CPU count
     int recursive_depth = 0;  // 0 = flat hierarchy, >0 = recursive spheres
     const char* checkpoint_dir = "./checkpoints";
-    const char* model_name = "training_model";  // Default model name
     
     for (int i = 2; i < argc - 1; i++) {
         if (strcmp(argv[i], "--vocab-size") == 0) {
@@ -324,8 +308,6 @@ int main(int argc, char** argv) {
             recursive_depth = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--checkpoint-dir") == 0) {
             checkpoint_dir = argv[++i];
-        } else if (strcmp(argv[i], "--model-name") == 0) {
-            model_name = argv[++i];
         }
     }
     
@@ -409,34 +391,13 @@ int main(int argc, char** argv) {
         .dropout = 0.1f
     };
     
-    // Try to acquire existing model from model manager
-    CLLMModel* model = model_manager_acquire_write(model_name);
-    
+    CLLMModel* model = cllm_create_model(&model_config);
     if (!model) {
-        // Model doesn't exist, create it
-        printf("Creating new model '%s' via model manager...\n", model_name);
-        
-        if (model_manager_create(model_name, &model_config) != 0) {
-            printf("Failed to create model via model manager\n");
-            cllm_token_dataset_free(dataset);
-            cllm_data_loader_free(loader);
-            cllm_free_tokenizer(tokenizer);
-            return 1;
-        }
-        
-        // Now acquire it for training
-        model = model_manager_acquire_write(model_name);
-        if (!model) {
-            printf("Failed to acquire newly created model\n");
-            cllm_token_dataset_free(dataset);
-            cllm_data_loader_free(loader);
-            cllm_free_tokenizer(tokenizer);
-            return 1;
-        }
-        
-        printf("Model '%s' created and acquired for training\n", model_name);
-    } else {
-        printf("Using existing model '%s' from model manager\n", model_name);
+        printf("Failed to create model\n");
+        cllm_token_dataset_free(dataset);
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        return 1;
     }
     
     print_model_config(model);
@@ -482,10 +443,7 @@ int main(int argc, char** argv) {
     }
     
     // Cleanup
-    // Release model back to model manager (don't free it)
-    model_manager_release_write(model_name);
-    printf("Model '%s' released back to model manager\n", model_name);
-    
+    cllm_free_model(model);
     cllm_token_dataset_free(dataset);
     cllm_data_loader_free(loader);
     cllm_free_tokenizer(tokenizer);

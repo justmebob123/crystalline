@@ -440,7 +440,7 @@ float cllm_forward_training_threaded(
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
             float* hidden = &local_ctx->final_hidden[idx * embed_dim];
-            double* logits = &local_ctx->logits[idx * vocab_size];
+            float* logits = &local_ctx->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
@@ -494,7 +494,7 @@ void cllm_backward_training_threaded(
             uint32_t target = target_tokens[idx];
             if (target >= vocab_size) continue;
             
-            double* logits = &local_ctx->logits[idx * vocab_size];
+            float* logits = &local_ctx->logits[idx * vocab_size];
             float* grad = &grad_logits[idx * vocab_size];
             
             float max_logit = logits[0];
@@ -1657,9 +1657,14 @@ static void* sphere_worker_thread_lockfree(void* arg) {
         CLLMBatch* batch = work_queue_pop(system->work_queue);
         
         if (!batch) {
-            // No work available - check if epoch done
+            // No work available - check if epoch done AND queue is truly empty
             if (atomic_load(&system->work_queue->epoch_done)) {
-                break;  // Epoch complete
+                // Double-check queue is actually empty
+                size_t head = atomic_load(&system->work_queue->head);
+                size_t tail = atomic_load(&system->work_queue->tail);
+                if (head >= tail) {
+                    break;  // Epoch complete and queue empty
+                }
             }
             
             // UI Integration: Update thread state to IDLE
@@ -2166,6 +2171,17 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     }
     
     printf("All %d batches pushed to work queue\n", batches_pushed);
+    fflush(stdout);
+    
+    fprintf(stderr, "[DEBUG] About to set epoch_done\n");
+    fflush(stderr);
+    
+    // Signal epoch done - no more batches will be pushed
+    // Workers can now exit when queue is empty
+    atomic_store(&system->work_queue->epoch_done, 1);
+    
+    fprintf(stderr, "[DEBUG] Set epoch_done=1, workers will exit when queue empty\n");
+    fflush(stderr);
     
     // Wait for all work to complete
     printf("Waiting for workers to complete...\n");
@@ -2195,9 +2211,6 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     }
     
     printf("=== EPOCH %d COMPLETE: All %zu batches processed! ===\n", current_epoch, total_batches_in_epoch);
-    
-    // Signal epoch done (AFTER workers complete)
-    atomic_store(&system->work_queue->epoch_done, 1);
     
     // Stop pre-fetch thread
     batch_queue_stop_prefetch(system);
