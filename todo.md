@@ -61,13 +61,16 @@ The build is completely clean with no warnings or errors.
 - [x] Update `model_manager_get_status()` signature
 - [x] Build successfully with zero errors/warnings
 
-**Phase 4-6: UI and Control Thread Updates (TODO)**
-- [ ] Update control thread to use new architecture
-- [ ] Update UI to show "Model Accessible" not "Model Loaded"
-- [ ] Show required vs available prime count in UI
-- [ ] Add "Prepare Model" button in UI
-- [ ] Remove memory usage concerns from UI
-- [ ] Update tab_models.c with new status display
+**Phase 4-6: UI and Control Thread Updates ✅ COMPLETE**
+- [x] Update control thread to use new architecture
+- [x] Control thread now scans models and reads metadata only
+- [x] Displays found models with prime requirements
+- [x] Shows accessibility status for each model
+- [x] Update UI to show "Model Accessible" not "Model Loaded"
+- [x] Show required vs available prime count in UI
+- [x] Add "Prepare Model" button in UI
+- [x] Remove memory usage concerns from UI
+- [x] Update tab_models.c with new status display
 
 **Phase 7: Testing (TODO)**
 - [ ] Test model_manager_read_metadata()

@@ -4,6 +4,9 @@
 #include "app_common.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <string.h>
+#include "../include/cllm_model_manager.h"
 
 // Control thread handle
 static pthread_t g_control_thread = 0;
@@ -43,25 +46,68 @@ void* control_thread_main(void* arg) {
     }
     state->abacus_initializing = false;
     
-    // PHASE 2: Check for Default Model (but don't auto-load)
-    printf("\n=== Phase 2: Checking for Models ===\n");
-    const char* default_model_path = "models/saved_model.cllm";
+    // PHASE 2: Scan for Models (OBJECTIVE 26 - read metadata only)
+    printf("\n=== Phase 2: Scanning for Models ===\n");
     
-    FILE* test_file = fopen(default_model_path, "rb");
-    if (test_file) {
-        fclose(test_file);
-        printf("Found default model: %s\n", default_model_path);
-        printf("NOTE: Model NOT auto-loaded to save memory (12GB+ for large models)\n");
-        printf("Use LLM tab 'Load Model' button to load when needed\n");
-        state->model_ready = false;
-        snprintf(state->llm_output_text, sizeof(state->llm_output_text),
-                "Model available. Click 'Load Model' in LLM tab to use it.");
+    // Scan models directory for .cllm files
+    DIR* models_dir = opendir("models");
+    if (models_dir) {
+        struct dirent* entry;
+        int found_count = 0;
+        
+        while ((entry = readdir(models_dir)) != NULL) {
+            // Check if file ends with .cllm
+            size_t len = strlen(entry->d_name);
+            if (len > 5 && strcmp(entry->d_name + len - 5, ".cllm") == 0) {
+                char model_path[512];
+                snprintf(model_path, sizeof(model_path), "models/%s", entry->d_name);
+                
+                // Read metadata only (fast - just header)
+                CLLMHeader* header = model_manager_read_metadata(model_path);
+                if (header) {
+                    uint64_t required_primes = header->num_primes_used > 0 ? 
+                                               header->num_primes_used : header->vocab_size;
+                    
+                    printf("  Found: %s\n", entry->d_name);
+                    printf("    Vocab: %lu | Layers: %lu | Primes needed: %lu\n",
+                           (unsigned long)header->vocab_size,
+                           (unsigned long)header->num_layers,
+                           (unsigned long)required_primes);
+                    
+                    // Check if abacus has enough primes
+                    extern int rainbow_table_get_count(void);
+                    int available_primes = rainbow_table_get_count();
+                    
+                    if ((uint64_t)available_primes >= required_primes) {
+                        printf("    Status: ✓ Accessible (abacus has %d primes)\n", available_primes);
+                    } else {
+                        printf("    Status: ⚠ Needs Preparation (abacus has %d primes, needs %lu)\n",
+                               available_primes, (unsigned long)required_primes);
+                    }
+                    
+                    model_manager_free_metadata(header);
+                    found_count++;
+                }
+            }
+        }
+        closedir(models_dir);
+        
+        if (found_count > 0) {
+            printf("\nFound %d model(s) - use Models tab to prepare/access them\n", found_count);
+            state->model_ready = false;  // Models exist but not prepared yet
+            snprintf(state->llm_output_text, sizeof(state->llm_output_text),
+                    "Found %d model(s). Use Models tab to prepare and access them.", found_count);
+        } else {
+            printf("No models found in models/ directory\n");
+            state->model_ready = false;
+            snprintf(state->llm_output_text, sizeof(state->llm_output_text),
+                    "No models found. Create a new model in Training tab.");
+        }
     } else {
-        printf("No default model found at %s\n", default_model_path);
-        printf("Model can be created in Training tab or loaded in LLM tab\n");
+        printf("Models directory not found - will be created when needed\n");
         state->model_ready = false;
         snprintf(state->llm_output_text, sizeof(state->llm_output_text),
-                "No model loaded. Start training to create a new model, or load an existing one.");
+                "No models directory. Create a new model in Training tab.");
     }
     
     // PHASE 3: System Ready
