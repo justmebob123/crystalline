@@ -12,60 +12,116 @@
 #include "ui/tabs/tab_downloaded_files.h"
 #include "ui/layout_manager.h"
 #include "ui/left_sidebar.h"
+#include "ui/loading_screen.h"
 
 // Global pointer for lattice cache access from helper functions
 AppState* app_state_global = NULL;
+
+// Global loading screen state
+static LoadingScreenState g_loading_screen;
 
 AppState* init_app(void) {
     AppState* state = calloc(1, sizeof(AppState));
     if (!state) return NULL;
     
+    // Initialize loading screen state
+    loading_screen_init(&g_loading_screen);
+    
+    // Stage 1: Initialize SDL
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_SDL, 0.0f);
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL init failed: %s\n", SDL_GetError());
+        loading_screen_set_error(&g_loading_screen, "SDL initialization failed");
         return NULL;
     }
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_SDL, 1.0f);
     
-    if (!init_font_system()) {
-        printf("Font system init failed\n");
-        SDL_Quit();
-        return NULL;
-    }
-    
-    state->window = SDL_CreateWindow("Hyper Prime Spiral",
+    // Stage 2: Create window
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_WINDOW, 0.0f);
+    state->window = SDL_CreateWindow("Crystalline CLLM",
                                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                     WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     if (!state->window) {
+        loading_screen_set_error(&g_loading_screen, "Window creation failed");
         SDL_Quit();
         return NULL;
     }
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_WINDOW, 1.0f);
     
+    // Stage 3: Create renderer
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_RENDERER, 0.0f);
     state->renderer = SDL_CreateRenderer(state->window, -1, 
                                         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!state->renderer) {
+        loading_screen_set_error(&g_loading_screen, "Renderer creation failed");
         SDL_DestroyWindow(state->window);
         SDL_Quit();
         return NULL;
     }
+    
+    // Render initial loading screen
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_RENDERER, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
+    // Stage 4: Load fonts
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_FONTS, 0.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    if (!init_font_system()) {
+        printf("Font system init failed\n");
+        loading_screen_set_error(&g_loading_screen, "Font system initialization failed");
+        loading_screen_render(state->renderer, &g_loading_screen, 255);
+        SDL_Delay(2000); // Show error for 2 seconds
+        SDL_DestroyRenderer(state->renderer);
+        SDL_DestroyWindow(state->window);
+        SDL_Quit();
+        return NULL;
+    }
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_FONTS, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
 
-    // Initialize global input manager
+    // Stage 5: Initialize input system
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_INPUT, 0.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
     g_input_manager = input_manager_create();
     if (!g_input_manager) {
         printf("Failed to create input manager\n");
+        loading_screen_set_error(&g_loading_screen, "Input manager creation failed");
+        loading_screen_render(state->renderer, &g_loading_screen, 255);
+        SDL_Delay(2000);
         SDL_DestroyRenderer(state->renderer);
         SDL_DestroyWindow(state->window);
         SDL_Quit();
         return NULL;
     }
     
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_INPUT, 0.5f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
     // CRITICAL: Register ALL tab inputs at startup
     // This ensures inputs are available immediately, regardless of which tab is visited first
     extern void init_all_inputs(InputManager* manager, void* state);
     init_all_inputs(g_input_manager, state);
     
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_INPUT, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
+    // Stage 6: Initialize tabs
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_TABS, 0.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
     // CRITICAL: Initialize ALL tab UI components
     // This ensures panels, buttons, and other UI elements are created
     extern void init_all_tabs(AppState* state);
     init_all_tabs(state);
+    
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_TABS, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
+    // Stage 7: Start background services
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_SERVICES, 0.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
     
     // Initialize global model manager
     printf("\n=== Initializing Model Manager ===\n");
@@ -75,6 +131,9 @@ AppState* init_app(void) {
         printf("Model manager initialized successfully\n");
     }
     printf("=== Model Manager Ready ===\n\n");
+    
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_SERVICES, 0.5f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
     
     // Initialize state
     state->mode = MODE_ULAM_SPIRAL;
@@ -178,6 +237,13 @@ AppState* init_app(void) {
     
     // Initialize training panel states (all expanded by default)
     state->training_panels.framework_expanded = true;
+    
+    // Complete loading
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_SERVICES, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
+    
+    loading_screen_update(&g_loading_screen, LOAD_STAGE_COMPLETE, 1.0f);
+    loading_screen_render(state->renderer, &g_loading_screen, 255);
     state->training_panels.performance_expanded = true;
     state->training_panels.legend_expanded = true;
     state->training_panels.stats_table_expanded = true;
@@ -933,6 +999,13 @@ int main(int argc, char* argv[]) {
     if (!state) {
         fprintf(stderr, "Failed to initialize\n");
         return 1;
+    }
+    
+    // Smooth fade-out transition from loading screen to main UI
+    printf("Loading complete - transitioning to main UI...\n");
+    for (int alpha = 255; alpha >= 0; alpha -= 8) {
+        loading_screen_render(state->renderer, &g_loading_screen, (uint8_t)alpha);
+        SDL_Delay(16); // ~60fps
     }
     
     // Set global pointer for lattice cache access

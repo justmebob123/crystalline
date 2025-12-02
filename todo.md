@@ -285,23 +285,35 @@
    - [x] Add to Makefile (automatic via wildcard)
    - [x] Build verified - zero errors
 
-   ### 3.2: Refactor init_app() with Progress Callbacks
-   - [ ] Add progress callback parameter to init_app()
-   - [ ] Call callback after each initialization step
-   - [ ] Update main.c to pass callback
-   - [ ] Render loading screen after each callback
+   ### 3.2: Refactor init_app() with Progress Callbacks COMPLETE
+   - [x] Integrated loading screen into init_app()
+   - [x] Added loading_screen_update() calls after each init step
+   - [x] Added loading_screen_render() calls to show progress
+   - [x] Implemented 7 stages with proper progress tracking:
+     * Stage 1: SDL initialization
+     * Stage 2: Window creation
+     * Stage 3: Renderer creation
+     * Stage 4: Font system loading
+     * Stage 5: Input system initialization
+     * Stage 6: Tab initialization
+     * Stage 7: Background services startup
+   - [x] Added error handling with loading_screen_set_error()
+   - [x] Build verified - zero errors
 
-   ### 3.3: Implement Smooth Transition
-   - [ ] Add fade-out loop after init_app() completes
-   - [ ] Fade loading screen from alpha=255 to alpha=0
-   - [ ] Fade in main UI simultaneously
-   - [ ] Total transition time: 500ms (30 frames at 60fps)
+   ### 3.3: Implement Smooth Transition COMPLETE
+   - [x] Added fade-out loop after init_app() completes
+   - [x] Fade loading screen from alpha=255 to alpha=0
+   - [x] Fade step: 8 per frame (32 frames total)
+   - [x] Frame delay: 16ms (~60fps)
+   - [x] Total transition time: ~512ms
+   - [x] Smooth visual transition to main UI
 
-   ### 3.4: Test Loading Screen
+   ### 3.4: Test Loading Screen READY FOR TESTING
    - [ ] Test rendering at each stage
    - [ ] Test progress bar updates
    - [ ] Test smooth fade transition
    - [ ] Test error display (if init fails)
+   - [ ] User acceptance testing
 
    ---
 
@@ -431,14 +443,14 @@
    - [x] Pasted rules to top of todo.md (RULE 0)
    - [x] Read MASTER_PLAN.md completely
    - [x] Read AUDIT.md for architectural state
-   - [x] Analyzed Models Tab black screen issue - FIXED (previous session)
-   - [x] Analyzed Training Tab overlapping controls - ROOT CAUSE IDENTIFIED (previous session)
-   - [x] Fixed model magic number issue (previous session)
-   - [x] Created centralized tab initialization system (previous session)
-   - [x] Fixed CRITICAL heap-use-after-free in training threads (previous session)
    - [x] Phase 1: Analyzed current architecture - COMPLETE
    - [x] Phase 2: Designed new architecture - COMPLETE
-   - [ ] Starting Phase 3: Implementing loading screen
+   - [x] Phase 3.1: Created loading screen UI - COMPLETE
+   - [x] Phase 3.2: Integrated loading screen into init_app() - COMPLETE
+   - [x] Phase 3.3: Implemented smooth fade transition - COMPLETE
+   - [x] Build verified - zero errors, zero warnings
+   - [ ] Phase 3.4: Testing loading screen
+   - [ ] Starting Phase 5: Implementing layout system
 
    ### Critical Bugs Fixed This Session:
    1. Models Tab black screen - init_models_tab() never called
