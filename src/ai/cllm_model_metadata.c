@@ -16,7 +16,7 @@
  */
 int cllm_model_get_epochs_trained(CLLMModel* model) {
     if (!model) return -1;
-    return model->epochs_trained;
+    //     return model->epochs_trained;
 }
 
 /**
@@ -26,13 +26,13 @@ int cllm_model_set_target_epochs(CLLMModel* model, int target) {
     if (!model || target < 0) return -1;
     
     // Cannot set target less than already trained
-    if (target < model->epochs_trained) {
+    //     if (target < model->epochs_trained) {
         fprintf(stderr, "Error: Cannot set target_epochs (%d) less than epochs_trained (%d)\n",
-                target, model->epochs_trained);
+    //                 target, model->epochs_trained);
         return -1;
     }
     
-    model->target_epochs = target;
+    //     model->target_epochs = target;
     return 0;
 }
 
@@ -42,9 +42,9 @@ int cllm_model_set_target_epochs(CLLMModel* model, int target) {
 int cllm_model_validate_epochs(CLLMModel* model, int target_epochs) {
     if (!model) return -1;
     
-    if (target_epochs < model->epochs_trained) {
+    //     if (target_epochs < model->epochs_trained) {
         fprintf(stderr, "Error: target_epochs (%d) cannot be less than epochs_trained (%d)\n",
-                target_epochs, model->epochs_trained);
+    //                 target_epochs, model->epochs_trained);
         return -1;
     }
     
@@ -56,7 +56,7 @@ int cllm_model_validate_epochs(CLLMModel* model, int target_epochs) {
  */
 const char* cllm_model_get_name(CLLMModel* model) {
     if (!model) return NULL;
-    return model->model_name;
+    //     return model->model_name;
 }
 
 /**
@@ -79,11 +79,11 @@ int cllm_model_set_name(CLLMModel* model, const char* name) {
         }
     }
     
-    strncpy(model->model_name, name, 255);
-    model->model_name[255] = '\0';
+    //     strncpy(model->model_name, name, 255);
+    //     model->model_name[255] = '\0';
     
     // Update queue directory
-    snprintf(model->queue_directory, 512, "models/%s_queue", name);
+    //     snprintf(model->queue_directory, 512, "models/%s_queue", name);
     
     return 0;
 }
@@ -140,16 +140,16 @@ int cllm_model_init_metadata(CLLMModel* model, const char* name) {
     }
     
     // Initialize epochs
-    model->epochs_trained = 0;
-    model->target_epochs = 10; // Default target
+    //     model->epochs_trained = 0;
+    //     model->target_epochs = 10; // Default target
     
     // Initialize training config with defaults
-    model->training_config.learning_rate = 0.001f;
-    model->training_config.batch_size = 4;
-    model->training_config.sequence_length = 64;
-    model->training_config.num_epochs = 10;
-    model->training_config.weight_decay = 0.01f;
-    model->training_config.gradient_clip = 1.0f;
+    //     model->training_config.learning_rate = 0.001f;
+    //     model->training_config.batch_size = 4;
+    //     model->training_config.sequence_length = 64;
+    //     model->training_config.num_epochs = 10;
+    //     model->training_config.weight_decay = 0.01f;
+    //     model->training_config.gradient_clip = 1.0f;
     
     // NOTE: Training history is now stored in separate files
     // in models/<name>_history/ directory (see model_history_manager.h)

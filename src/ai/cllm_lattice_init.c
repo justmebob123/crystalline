@@ -19,7 +19,7 @@ void cllm_lattice_aware_init(CLLMModel* model, float scale) {
         for (size_t i = 0; i < total_weights; i++) {
             double random_val = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             double scaled_val = random_val * scale;
-            big_fixed_from_double(model->weights[i], scaled_val);
+            model->weights[i] = scaled_val;
         }
     } else {
         // Legacy float initialization (deprecated)
@@ -48,7 +48,7 @@ void cllm_crystalline_init(CLLMModel* model, float base_scale) {
                 double random_val = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double final_val = (pattern * 0.3 + random_val * 0.7) * base_scale;
                 
-                big_fixed_from_double(model->weights[idx], final_val);
+                model->weights[idx] = final_val;
             }
         }
     } else {
@@ -70,7 +70,7 @@ void cllm_symmetric_init(CLLMModel* model, float scale) {
                 size_t idx = i * hidden_size + j;
                 double random_val = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double scaled_val = random_val * scale;
-                big_fixed_from_double(model->weights[idx], scaled_val);
+                model->weights[idx] = scaled_val;
             }
         }
         
@@ -80,7 +80,7 @@ void cllm_symmetric_init(CLLMModel* model, float scale) {
                 size_t src_idx = i * hidden_size + j;
                 size_t dst_idx = (vocab_size - 1 - i) * hidden_size + j;
                 // Copy BigFixed value
-                big_fixed_assign(model->weights[dst_idx], model->weights[src_idx]);
+                model->weights[dst_idx] = big_fixed_to_double(model->weights[src_idx]);
             }
         }
     } else {
@@ -111,7 +111,7 @@ void cllm_hierarchical_lattice_init(CLLMModel* model, int num_levels, float base
                     size_t idx = i * hidden_size + j;
                     double random_val = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                     double scaled_val = random_val * level_scale;
-                    big_fixed_from_double(model->weights[idx], scaled_val);
+                    model->weights[idx] = scaled_val;
                 }
             }
         }

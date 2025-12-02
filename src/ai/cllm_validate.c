@@ -277,7 +277,7 @@ bool cllm_gradient_check_weight(CLLMModel* model, size_t weight_idx, float epsil
     // For now, just check that the weight is finite
     if (model->use_bigfixed) {
         if (!model->weights[weight_idx]) return false;
-        double val = big_fixed_to_double(model->weights[weight_idx]);
+        double val = model->weights[weight_idx];
         return !prime_isinff((float)val);
     } else {
         // Legacy float path (deprecated)

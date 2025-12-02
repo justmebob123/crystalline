@@ -408,17 +408,26 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
                           
                           // Q: q_sum += input[i] * weight_q[i,d]
                           uint32_t q_idx = (h * head_dim + i) * head_dim + d;
-                          big_fixed_mul(temp, input_bf, layer->query_lattice[q_idx]);
+                          BigFixed* q_weight = big_fixed_create(128);
+                            big_fixed_from_double(q_weight, layer->query_lattice[q_idx]);
+                            big_fixed_mul(temp, input_bf, q_weight);
+                            big_fixed_free(q_weight);
                           big_fixed_add(q_sum, q_sum, temp);
                           
                           // K: k_sum += input[i] * weight_k[i,d]
                           uint32_t k_idx = (h * head_dim + i) * head_dim + d;
-                          big_fixed_mul(temp, input_bf, layer->key_lattice[k_idx]);
+                          BigFixed* k_weight = big_fixed_create(128);
+                            big_fixed_from_double(k_weight, layer->key_lattice[k_idx]);
+                            big_fixed_mul(temp, input_bf, k_weight);
+                            big_fixed_free(k_weight);
                           big_fixed_add(k_sum, k_sum, temp);
                           
                           // V: v_sum += input[i] * weight_v[i,d]
                           uint32_t v_idx = (h * head_dim + i) * head_dim + d;
-                          big_fixed_mul(temp, input_bf, layer->value_lattice[v_idx]);
+                          BigFixed* v_weight = big_fixed_create(128);
+                            big_fixed_from_double(v_weight, layer->value_lattice[v_idx]);
+                            big_fixed_mul(temp, input_bf, v_weight);
+                            big_fixed_free(v_weight);
                           big_fixed_add(v_sum, v_sum, temp);
                       }
                       

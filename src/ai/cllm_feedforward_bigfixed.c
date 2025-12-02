@@ -245,7 +245,10 @@ void cllm_feedforward_backward_bigfixed(
         big_fixed_from_int(grad_hidden[i], 0);
         for (uint32_t j = 0; j < output_dim; j++) {
             BigFixed* temp = big_fixed_create(precision);
-            big_fixed_mul(temp, layer->w2_lattice[j * hidden_dim + i], grad_output[j]);
+            BigFixed* w2_bf = big_fixed_create(precision);
+                big_fixed_from_double(w2_bf, layer->w2_lattice[j * hidden_dim + i]);
+                big_fixed_mul(temp, w2_bf, grad_output[j]);
+                big_fixed_free(w2_bf);
             big_fixed_add(grad_hidden[i], grad_hidden[i], temp);
             big_fixed_free(temp);
         }

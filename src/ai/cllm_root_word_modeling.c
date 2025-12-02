@@ -24,6 +24,8 @@
 #include "../include/cllm_crystalline_attention.h"
 #include "../include/prime_float_math.h"
 
+#define PI 3.14159265358979323846
+#define PHI 1.618033988749895
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000
 static uint64_t prime_cache[PRIME_CACHE_SIZE];

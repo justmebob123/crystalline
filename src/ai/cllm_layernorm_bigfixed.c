@@ -316,7 +316,10 @@ void cllm_layer_norm_backward_bigfixed(
             if (grad_output[i] && ln->gamma[i] && grad_input[i]) {
                 // Simplified: grad_input[i] = grad_output[i] * gamma[i] / std
                 BigFixed* temp = big_fixed_create(precision);
-                big_fixed_mul(temp, grad_output[i], ln->gamma[i]);
+                BigFixed* gamma_bf = big_fixed_create(precision);
+                big_fixed_from_double(gamma_bf, ln->gamma[i]);
+                big_fixed_mul(temp, grad_output[i], gamma_bf);
+                big_fixed_free(gamma_bf);
                 big_fixed_div(grad_input[i], temp, std);
                 big_fixed_free(temp);
             }

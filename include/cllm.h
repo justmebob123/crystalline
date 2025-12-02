@@ -4,14 +4,10 @@
  */
 
 #ifndef CLLM_H
-#include "cllm_pure_crystalline.h"
-#include "bigfixed_core.h"
 #define CLLM_H
 
 #include <stdint.h>
 #include <stdbool.h>
-
-// Forward declarations
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +43,7 @@ typedef struct {
     double golden_ratio;         // Golden ratio constant
     uint64_t timestamp;          // General timestamp
     uint64_t total_params;       // Total number of parameters
-    uint64_t num_primes_used;    // Number of primes used by this model (for abacus)
-    uint8_t reserved[184];       // Reserved for future use (reduced by 8 bytes)
+    uint8_t reserved[192];       // Reserved for future use
 } CLLMHeader;
 
 /*
@@ -89,15 +84,14 @@ typedef struct {
 } CLLMLatticePoint;
 
 /*
- * Embeddings - DEPRECATED - Use CrystallineEmbeddings instead
- * This structure is kept only for backward compatibility during migration
+ * Embeddings - Token embeddings with lattice transformations
  */
 typedef struct {
     uint32_t vocab_size;         // Vocabulary size
     uint32_t embedding_dim;      // Embedding dimension
-    float* embeddings;           // DEPRECATED: Use CrystallineEmbeddings
-    float* lattice_transform;    // DEPRECATED: Use CrystallineEmbeddings
-    float* inverse_transform;    // DEPRECATED: Use CrystallineEmbeddings
+    float* embeddings;           // Embedding matrix [vocab_size x embedding_dim]
+    float* lattice_transform;    // Lattice transformation matrix
+    float* inverse_transform;    // Inverse transformation matrix
 } Embeddings;
 
 /*
@@ -107,9 +101,9 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t num_heads;          // Number of attention heads
     uint32_t head_dim;           // Dimension per head
-    BigFixed** query_lattice;    // Query weight lattice (arbitrary precision)
-    BigFixed** key_lattice;      // Key weight lattice (arbitrary precision)
-    BigFixed** value_lattice;    // Value weight lattice (arbitrary precision)
+    float* query_lattice;        // Query weight lattice
+    float* key_lattice;          // Key weight lattice
+    float* value_lattice;        // Value weight lattice
 } AttentionLayer;
 
 /*
@@ -120,10 +114,10 @@ typedef struct {
     uint32_t input_dim;          // Input dimension
     uint32_t hidden_dim;         // Hidden layer dimension
     uint32_t output_dim;         // Output dimension
-    BigFixed** w1_lattice;       // First weight matrix (arbitrary precision)
-    BigFixed** w2_lattice;       // Second weight matrix (arbitrary precision)
-    BigFixed** bias1;            // First bias vector (arbitrary precision)
-    BigFixed** bias2;            // Second bias vector (arbitrary precision)
+    float* w1_lattice;           // First weight matrix
+    float* w2_lattice;           // Second weight matrix
+    float* bias1;                // First bias vector
+    float* bias2;                // Second bias vector
 } FeedForwardLayer;
 
 /*
@@ -133,8 +127,8 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t dim;                // Dimension to normalize
     float epsilon;               // Small constant for numerical stability
-    BigFixed** gamma;            // Scale parameters (arbitrary precision)
-    BigFixed** beta;             // Shift parameters (arbitrary precision)
+    float* gamma;                // Scale parameters
+    float* beta;                 // Shift parameters
 } CLLMLayerNorm;
 
 /*
@@ -203,7 +197,7 @@ typedef struct {
 } TrainingMetadata;
 
 /*
- * CLLM Model - Complete model structure with BigFixed arbitrary precision
+ * CLLM Model - Complete model structure
  */
 typedef struct {
     CLLMHeader header;           // Model header
@@ -212,18 +206,11 @@ typedef struct {
     uint64_t vocab_size;         // Vocabulary size
     uint64_t num_lattice_points; // Number of lattice points
     uint64_t embedding_dim;      // Embedding dimension
-    
-    // BIGFIXED WEIGHTS - Arbitrary precision
-    BigFixed** weights;          // Model weights (arbitrary precision)
+    double* weights;              // Model weights
     uint64_t num_weights;        // Number of weights
     
     // Embeddings
-    
-    // CRYSTALLINE EMBEDDINGS - Arbitrary precision BigFixed-based
-    CrystallineEmbeddings* crystalline_embeddings;  // Pure lattice-based embeddings
-    
-    // DEPRECATED: Legacy float embeddings (for backward compatibility only)
-    Embeddings embeddings;       // DEPRECATED: Use crystalline_embeddings instead
+    Embeddings embeddings;       // Token embeddings with transformations
     
     // Transformer layers
     uint32_t num_layers;         // Number of transformer layers
@@ -236,37 +223,14 @@ typedef struct {
     
     // Training metadata
     TrainingMetadata training_meta;    // Training information
-       
-       // NEW: Dynamic training system metadata
-       char model_name[256];        // User-defined model name
-       int epochs_trained;          // Total epochs trained so far
-       int target_epochs;           // Target epochs for next training session
-       char queue_directory[512];   // Path to model-specific queue
-       
-       // NEW: Training configuration (per-model)
-       struct {
-           float learning_rate;
-           int batch_size;
-           int sequence_length;
-           int num_epochs;
-           float weight_decay;
-           float gradient_clip;
-       } training_config;
-       
-       // NOTE: Training history (loss, metrics) is stored in separate files
-       // in models/<name>_history/ directory to keep model files compact
-       
-       // NEW: Arbitrary precision configuration
-       int precision_bits;          // Precision for BigFixed operations (default: 256)
-       bool use_bigfixed;           // Always true - for migration tracking only
-   } CLLMModel;
+} CLLMModel;
 
 /*
  * Layer Normalization
  */
 typedef struct {
-    BigFixed** gamma;                // Scale parameters (arbitrary precision)
-    BigFixed** beta;                 // Shift parameters (arbitrary precision)
+    float* gamma;                // Scale parameters
+    float* beta;                 // Shift parameters
     float epsilon;               // Small constant for stability
     uint32_t size;               // Layer size
 } LayerNorm;
@@ -275,10 +239,10 @@ typedef struct {
  * Attention Head
  */
 typedef struct {
-    BigFixed** query_weights;    // Query projection weights (arbitrary precision)
-    BigFixed** key_weights;      // Key projection weights (arbitrary precision)
-    BigFixed** value_weights;    // Value projection weights (arbitrary precision)
-    BigFixed** output_weights;   // Output projection weights (arbitrary precision)
+    float* query_weights;        // Query projection weights
+    float* key_weights;          // Key projection weights
+    float* value_weights;        // Value projection weights
+    float* output_weights;       // Output projection weights
     uint32_t head_dim;           // Dimension per head
 } AttentionHead;
 
@@ -290,27 +254,10 @@ typedef struct {
     uint32_t num_heads;          // Number of attention heads
     LayerNorm* ln1;              // Layer norm 1
     LayerNorm* ln2;              // Layer norm 2
-    BigFixed** ffn_weights1;     // Feed-forward network weights 1 (arbitrary precision)
-    BigFixed** ffn_weights2;     // Feed-forward network weights 2 (arbitrary precision)
+    float* ffn_weights1;         // Feed-forward network weights 1
+    float* ffn_weights2;         // Feed-forward network weights 2
     uint32_t ffn_dim;            // Feed-forward dimension
 } CLLMLayer;
-
-// Forward declarations
-
-// Lattice initialization functions (cllm_lattice_init.c)
-void cllm_lattice_aware_init(CLLMModel* model, float scale);
-void cllm_crystalline_init(CLLMModel* model, float base_scale);
-void cllm_symmetric_init(CLLMModel* model, float scale);
-void cllm_hierarchical_lattice_init(CLLMModel* model, int num_levels, float base_scale);
-
-// OBJECTIVE 16: Kissing sphere neighbor initialization
-// Note: Declaration in include/ai/cllm_kissing_spheres.h takes precedence
-void cllm_process_lattice_point_with_neighbors(
-    CLLMModel* model,
-    uint32_t point_id,
-    BigFixed** gradients,
-    uint32_t embedding_dim
-);
 
 #ifdef __cplusplus
 }

@@ -51,11 +51,6 @@ typedef struct {
     float loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
     int loss_scale_window;            // Steps before increasing loss scale (default: 2000)
     
-    // OBJECTIVE 27: Memory optimization options
-    int use_sparse_gradients;         // Only allocate gradients for active batch tokens (default: 0)
-    int use_disk_based_training;      // Stream gradients to disk instead of keeping in RAM (default: 0)
-    int flush_gradients_every_n_steps; // Flush gradients to disk every N steps (default: 10)
-    
 } CLLMTrainingConfig;
 
 /*
@@ -79,11 +74,8 @@ typedef struct {
     // Gradient accumulation state
     int accumulation_step;       // Current accumulation step (0 to gradient_accumulation_steps-1)
     
-    // BIGFIXED PRECISION CONFIGURATION
-    int precision_bits;          // Precision for all BigFixed operations (from model)
-    
     // Mixed precision training state
-    BigFixed** master_weights;   // BigFixed master copy of weights (arbitrary precision)
+    double* master_weights;       // FP32 master copy of weights (for mixed precision)
     uint16_t* fp16_activations;  // FP16 activation buffer
     uint16_t* fp16_gradients;    // FP16 gradient buffer
     float current_loss_scale;    // Current dynamic loss scale
@@ -93,29 +85,27 @@ typedef struct {
     int total_batches;           // Total number of batches
     int current_batch_offset;    // Current batch offset in tokens
     
-    // Optimizer state (CRITICAL: Using packed arrays for memory efficiency)
-    // Old: BigFixed** = 22M × 208 bytes = 4.6 GB
-    // New: Packed array = 22M × 16 bytes = 352 MB (13x reduction!)
-    void* gradients;             // BigFixedPackedArray* (cast to avoid circular dependency)
-    void* optimizer_state;       // BigFixedPackedArray* (cast to avoid circular dependency)
+    // Optimizer state
+    double* gradients;            // Gradient buffer for embeddings
+    double* optimizer_state;      // Optimizer state (e.g., momentum, variance)
     
     // Layer-specific gradient buffers
     struct {
-        BigFixed** query_lattice;    // Gradients for query weights (arbitrary precision)
-        BigFixed** key_lattice;      // Gradients for key weights (arbitrary precision)
-        BigFixed** value_lattice;    // Gradients for value weights (arbitrary precision)
+        float* query_lattice;    // Gradients for query weights
+        float* key_lattice;      // Gradients for key weights
+        float* value_lattice;    // Gradients for value weights
     }* attention_grads;          // Array of num_layers
     
     struct {
-        BigFixed** w1_lattice;       // Gradients for W1 (arbitrary precision)
-        BigFixed** w2_lattice;       // Gradients for W2 (arbitrary precision)
-        BigFixed** bias1;            // Gradients for bias1 (arbitrary precision)
-        BigFixed** bias2;            // Gradients for bias2 (arbitrary precision)
+        float* w1_lattice;       // Gradients for W1
+        float* w2_lattice;       // Gradients for W2
+        float* bias1;            // Gradients for bias1
+        float* bias2;            // Gradients for bias2
     }* ff_grads;                 // Array of num_layers
     
     struct {
-        BigFixed** gamma;            // Gradients for gamma (arbitrary precision)
-        BigFixed** beta;             // Gradients for beta (arbitrary precision)
+        float* gamma;            // Gradients for gamma
+        float* beta;             // Gradients for beta
     }* ln_grads;                 // Array of num_layers
     
     // Pre-allocated backward pass buffers (OPTIMIZATION)
@@ -132,22 +122,22 @@ typedef struct {
     int cached_batch_size;           // Size of embedding cache
     
     // Forward pass activation storage
-    BigFixed** input_embeddings;     // Input embeddings [batch * seq * embed] (arbitrary precision)
-    BigFixed*** layer_inputs;        // Per-layer inputs [num_layers][batch * seq * embed]
-    BigFixed*** attention_outputs;   // Per-layer attention outputs
-    BigFixed*** ff_outputs;          // Per-layer FF outputs
-    BigFixed*** layer_outputs;       // Per-layer final outputs
-    BigFixed*** ff_hidden;           // Per-layer FF hidden states
-    BigFixed** final_hidden;         // Final hidden state
-    BigFixed** logits;               // Output logits [batch * seq * vocab]
+    double* input_embeddings;         // Input embeddings [batch * seq * embed]
+    double** layer_inputs;            // Per-layer inputs [num_layers][batch * seq * embed]
+    double** attention_outputs;       // Per-layer attention outputs
+    double** ff_outputs;              // Per-layer FF outputs
+    double** layer_outputs;           // Per-layer final outputs
+    double** ff_hidden;               // Per-layer FF hidden states
+    double* final_hidden;             // Final hidden state
+    double* logits;                   // Output logits [batch * seq * vocab]
     
     // Attention backward pass storage (for full gradient computation)
     struct {
-        BigFixed** attention_weights;    // [num_heads * seq_len * seq_len]
-        BigFixed** queries;              // [seq_len * embedding_dim]
-        BigFixed** keys;                 // [seq_len * embedding_dim]
-        BigFixed** values;               // [seq_len * embedding_dim]
-        BigFixed** scores;               // [num_heads * seq_len * seq_len]
+        float* attention_weights;    // [num_heads * seq_len * seq_len]
+        float* queries;              // [seq_len * embedding_dim]
+        float* keys;                 // [seq_len * embedding_dim]
+        float* values;               // [seq_len * embedding_dim]
+        float* scores;               // [num_heads * seq_len * seq_len]
     }* attention_cache;              // Array of num_layers
     
     int cached_seq_len;              // Cached sequence length
@@ -156,8 +146,7 @@ typedef struct {
 
 /* Loss computation functions */
 // OBJECTIVE 2B: Only crystalline loss remains - standard loss functions removed
-// REMOVED: float cllm_compute_loss() - Legacy function that used token IDs instead of prime encodings
-// Use cllm_compute_crystalline_loss() from cllm_simple_loss.h instead
+float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
 float cllm_compute_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size);
 float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
 
@@ -170,7 +159,6 @@ void cllm_training_free(CLLMTraining* training);
 void cllm_training_cleanup(CLLMTraining* training);
 
 void cllm_adam_step(CLLMTraining* training, float learning_rate);
-void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate);
 void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum);
 void cllm_update_learning_rate(CLLMTraining* training);
 float cllm_get_learning_rate(CLLMTraining* training);
@@ -214,62 +202,4 @@ void cllm_training_cleanup(CLLMTraining* training);
 float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, float* gradient_buffer);
 
-/* Model initialization functions */
-void cllm_init_model(CLLMModel* model);  // Legacy random initialization
-void cllm_init_model_lattice(CLLMModel* model);  // Lattice formula initialization (RECOMMENDED)
-
 #endif /* CLLM_TRAINING_H */
-// BigFixed implementations of feedforward and layer normalization
-void cllm_feedforward_bigfixed(
-    FeedForwardLayer* layer,
-    BigFixed** input,
-    BigFixed** output,
-    int precision
-);
-
-void cllm_feedforward_backward_bigfixed(
-    FeedForwardLayer* layer,
-    BigFixed** input,
-    BigFixed** hidden,
-    BigFixed** grad_output,
-    BigFixed** grad_input,
-    BigFixed** grad_w1,
-    BigFixed** grad_b1,
-    BigFixed** grad_w2,
-    BigFixed** grad_b2,
-    int precision
-);
-
-void cllm_layer_norm_bigfixed(
-    CLLMLayerNorm* ln,
-    BigFixed** input,
-    BigFixed** output,
-    int precision
-);
-
-void cllm_layer_norm_batch_bigfixed(
-    CLLMLayerNorm* ln,
-    BigFixed** input,
-    BigFixed** output,
-    int batch_size,
-    int precision
-);
-
-void cllm_layer_norm_init_bigfixed(
-    CLLMLayerNorm* ln,
-    uint32_t dim,
-    float epsilon,
-    int precision
-);
-
-void cllm_layer_norm_free_bigfixed(CLLMLayerNorm* ln);
-
-void cllm_layer_norm_backward_bigfixed(
-    CLLMLayerNorm* ln,
-    BigFixed** input,
-    BigFixed** grad_output,
-    BigFixed** grad_input,
-    BigFixed** grad_gamma,
-    BigFixed** grad_beta,
-    int precision
-);

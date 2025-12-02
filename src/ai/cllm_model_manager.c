@@ -312,8 +312,8 @@ ManagedModel* model_manager_load(const char* name, const char* path) {
     managed->embedding_dim = (uint32_t)model->embedding_dim;
     managed->num_layers = model->num_layers;
     managed->num_heads = model->header.num_heads;
-    managed->required_primes = model->header.num_primes_used > 0 ? 
-                               model->header.num_primes_used : model->vocab_size;
+    //     managed->required_primes = model->header.num_primes_used > 0 ? 
+    //                                model->header.num_primes_used : model->vocab_size;
     managed->created_time = (uint64_t)time(NULL);
     managed->modified_time = managed->created_time;
     
@@ -846,8 +846,8 @@ bool model_manager_prepare(const char* name) {
         return false;
     }
     
-    // Get required primes (use vocab_size if num_primes_used is 0)
-    uint64_t required = header->num_primes_used;
+    //     // Get required primes (use vocab_size if num_primes_used is 0)
+    //     uint64_t required = header->num_primes_used;
     if (required == 0) {
         // Fallback: estimate from vocab_size
         required = header->vocab_size;

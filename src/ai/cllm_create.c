@@ -1,228 +1,10 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
-#include "../include/cllm_pure_crystalline.h"
-#include "lattice_embeddings.h"
-#include "../include/ai/cllm_kissing_spheres.h"
-#include "../include/cllm_lattice_cache.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "../include/prime_float_math.h"
-
-
-/*
- * Create BigFixed-based model with CrystallineEmbeddings
- * This is the NEW implementation using arbitrary precision
- */
-CLLMModel* cllm_create_model_bigfixed(const CLLMConfig* config) {
-    if (!config) return NULL;
-    
-    // Validate configuration
-    if (config->vocab_size == 0 || config->embedding_dim == 0 || 
-        config->num_layers == 0 || config->num_heads == 0) {
-        fprintf(stderr, "Invalid model configuration\n");
-        return NULL;
-    }
-    
-    // Check that embedding_dim is divisible by num_heads
-    if (config->embedding_dim % config->num_heads != 0) {
-        fprintf(stderr, "embedding_dim must be divisible by num_heads\n");
-        return NULL;
-    }
-    
-    // Allocate model
-    CLLMModel* model = (CLLMModel*)calloc(1, sizeof(CLLMModel));
-    if (!model) {
-        fprintf(stderr, "Failed to allocate model\n");
-        return NULL;
-    }
-    
-    // Set basic parameters
-    model->vocab_size = config->vocab_size;
-    model->embedding_dim = config->embedding_dim;
-    model->num_layers = config->num_layers;
-    
-    // NEW: Set precision configuration
-    model->precision_bits = 256;  // Default: 256-bit precision
-    model->use_bigfixed = true;   // Always true
-    
-    printf("Creating model with BigFixed arbitrary precision (%d bits)\n", model->precision_bits);
-    
-    // Initialize header
-    memcpy(model->header.magic, "CLLM", 4);
-    model->header.version = 1;
-    model->header.vocab_size = config->vocab_size;
-    model->header.embedding_dim = config->embedding_dim;
-    model->header.num_layers = config->num_layers;
-    model->header.num_heads = config->num_heads;
-    model->header.context_length = config->max_seq_len;
-    
-    // Allocate tokens array
-    model->tokens = (CLLMToken*)calloc(config->vocab_size, sizeof(CLLMToken));
-    if (!model->tokens) {
-        fprintf(stderr, "Failed to allocate tokens\n");
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize tokens with crystalline lattice structure
-    // Uses on-demand rainbow table expansion - table grows as needed
-    printf("Initializing %u tokens with crystalline lattice structure...\n", config->vocab_size);
-    
-    for (uint32_t i = 0; i < config->vocab_size; i++) {
-        model->tokens[i].token_id = i;
-        model->tokens[i].frequency = 0;
-        snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
-        
-        // EFFICIENT PRIME ENCODING using on-demand rainbow table expansion
-        // crystalline_get_nth_prime() will expand the table if needed
-        // Expansion happens once and benefits all future models
-        if (i < 100000) {
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
-        } else {
-            uint32_t lattice_layer = i / 12;
-            uint32_t symmetry_group = i % 12;
-            uint32_t mapped_index = (lattice_layer % 8333) * 12 + symmetry_group;
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(mapped_index + 1);
-        }
-        
-        // Distribute tokens across 12 symmetry groups
-        model->tokens[i].symmetry_group = i % 12;
-        
-        // Initialize lattice coordinates (will be computed by CrystallineEmbeddings)
-        model->tokens[i].lattice_coords[0] = 0.0f;
-        model->tokens[i].lattice_coords[1] = 0.0f;
-        model->tokens[i].lattice_coords[2] = 0.0f;
-        model->tokens[i].angle = 0.0f;
-        model->tokens[i].radius = 0.0f;
-        model->tokens[i].spiral_angle = 0.0f;
-        model->tokens[i].radial_distance = 0.0f;
-    }
-    
-    printf("✓ Token initialization complete\n");
-    
-    // NEW: Create CrystallineEmbeddings (BigFixed-based)
-    printf("Creating CrystallineEmbeddings with BigFixed (lattice_dim=3)...\n");
-    model->crystalline_embeddings = crystalline_embeddings_create(config->vocab_size, 3);
-    if (!model->crystalline_embeddings) {
-        fprintf(stderr, "Failed to create CrystallineEmbeddings\n");
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize crystalline embeddings with tokens
-    printf("Adding tokens to CrystallineEmbeddings...\n");
-    for (uint32_t i = 0; i < config->vocab_size; i++) {
-        CrystallineToken* cryst_token = crystalline_token_create(
-            model->tokens[i].token_id,
-            model->tokens[i].token_str,
-            model->tokens[i].prime_encoding
-        );
-        
-        if (cryst_token) {
-            crystalline_embeddings_add_token(model->crystalline_embeddings, cryst_token);
-        }
-    }
-    
-    // Initialize lattice basis
-    printf("Initializing lattice basis...\n");
-    if (!crystalline_initialize_basis(model->crystalline_embeddings)) {
-        fprintf(stderr, "Failed to initialize lattice basis\n");
-        crystalline_embeddings_free(model->crystalline_embeddings);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    printf("✓ CrystallineEmbeddings initialized\n");
-    
-    // NEW: Allocate BigFixed weights
-    printf("Allocating BigFixed weights...\n");
-    
-    // Calculate total weights needed
-    uint64_t embedding_weights = config->vocab_size * config->embedding_dim;
-    uint64_t per_layer_weights = 
-        3 * config->embedding_dim * config->embedding_dim +
-        2 * config->embedding_dim * config->ff_dim +
-        config->embedding_dim + config->ff_dim +
-        4 * config->embedding_dim;
-    
-    model->num_weights = embedding_weights + config->num_layers * per_layer_weights;
-    model->header.total_params = model->num_weights;
-    
-    // Allocate BigFixed weight matrix
-    model->weights = (BigFixed**)malloc(model->num_weights * sizeof(BigFixed*));
-    if (!model->weights) {
-        fprintf(stderr, "Failed to allocate BigFixed weight array\n");
-        crystalline_embeddings_free(model->crystalline_embeddings);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Allocate each BigFixed weight
-    for (uint64_t i = 0; i < model->num_weights; i++) {
-        model->weights[i] = big_fixed_create(128);  // 128-bit precision
-        if (!model->weights[i]) {
-            fprintf(stderr, "Failed to allocate BigFixed weight %lu\n", i);
-            // Free previously allocated weights
-            for (uint64_t j = 0; j < i; j++) {
-                big_fixed_free(model->weights[j]);
-            }
-            free(model->weights);
-            crystalline_embeddings_free(model->crystalline_embeddings);
-            free(model->tokens);
-            free(model);
-            return NULL;
-        }
-    }
-    
-    // OBJECTIVE 14: Initialize embeddings using L(n,d,k,λ) lattice formula
-    // Use the proper lattice_embeddings_init_geometric_bigfixed function
-    printf("Initializing embeddings with L(n,d,k,λ) lattice formula (BigFixed)...\n");
-    lattice_embeddings_init_geometric_bigfixed(
-        model->weights,  // First vocab_size * embedding_dim weights are embeddings
-        config->vocab_size,
-        config->embedding_dim,
-        128  // precision
-    );
-    
-    // Initialize remaining weights (attention, feedforward) with small random values
-    printf("Initializing attention and feedforward weights...\n");
-    for (uint64_t i = embedding_weights; i < model->num_weights; i++) {
-        double rand_val = ((double)rand() / RAND_MAX - 0.5) * 0.1;
-        big_fixed_from_double(model->weights[i], rand_val);
-    }
-    
-    printf("✓ BigFixed weights allocated and initialized\n");
-    
-    // DEPRECATED: Initialize legacy float embeddings for backward compatibility
-    // These will be removed in Phase 6
-    model->embeddings.vocab_size = config->vocab_size;
-    model->embeddings.embedding_dim = config->embedding_dim;
-    model->embeddings.embeddings = NULL;  // Not allocated - use crystalline_embeddings instead
-    
-    // TODO: Allocate and initialize attention layers with BigFixed
-    // TODO: Allocate and initialize feed-forward layers with BigFixed
-    // TODO: Allocate and initialize layer norms with BigFixed
-    
-    printf("✓ Model creation complete (BigFixed mode)\n");
-    printf("  - Vocab size: %u\n", config->vocab_size);
-    printf("  - Embedding dim: %u\n", config->embedding_dim);
-    printf("  - Num layers: %u\n", config->num_layers);
-    printf("  - Precision: %d bits\n", model->precision_bits);
-    printf("  - Total weights: %lu (BigFixed)\n", model->num_weights);
-    
-    // OBJECTIVE 26: Track number of primes used by this model
-    model->header.num_primes_used = model->vocab_size;
-    printf("  - Primes used: %lu (based on vocab_size)\n", 
-           (unsigned long)model->header.num_primes_used);
-    
-    return model;
-}
-
 
 // Create a model from configuration
 CLLMModel* cllm_create_model(const CLLMConfig* config) {
@@ -270,44 +52,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         return NULL;
     }
     
-    // Initialize tokens with crystalline lattice structure
-    // Use hierarchical abacus design with 12-fold symmetry
-    printf("Initializing %u tokens with crystalline lattice structure...\n", config->vocab_size);
-    
+    // Initialize tokens with default values
     for (uint32_t i = 0; i < config->vocab_size; i++) {
-        model->tokens[i].token_id = i;
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
-        
-        // EFFICIENT PRIME ENCODING using on-demand rainbow table expansion
-        // For tokens within cache range, use direct lookup
-        // For tokens beyond cache, use modular mapping to lattice
-        if (i < 100000) {
-            // Direct lookup from rainbow table (expands on-demand if needed)
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
-        } else {
-            // Use lattice mapping for large vocab (clock sudoku structure)
-            // Map to one of the first 100,000 primes using 12-fold symmetry
-            uint32_t lattice_layer = i / 12;
-            uint32_t symmetry_group = i % 12;
-            uint32_t mapped_index = (lattice_layer % 8333) * 12 + symmetry_group;  // 8333*12 ≈ 100k
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(mapped_index + 1);
-        }
-        
-        // Distribute tokens across 12 symmetry groups (kissing spheres)
-        model->tokens[i].symmetry_group = i % 12;
-        
-        // Initialize lattice coordinates (will be computed during training)
-        model->tokens[i].lattice_coords[0] = 0.0f;
-        model->tokens[i].lattice_coords[1] = 0.0f;
-        model->tokens[i].lattice_coords[2] = 0.0f;
-        model->tokens[i].angle = 0.0f;
-        model->tokens[i].radius = 0.0f;
-        model->tokens[i].spiral_angle = 0.0f;
-        model->tokens[i].radial_distance = 0.0f;
+        model->tokens[i].symmetry_group = 0;
     }
-    
-    printf("✓ Token initialization complete\n");
     
     // Calculate total weights needed
     // Embedding weights: vocab_size * embedding_dim
@@ -327,56 +77,23 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.total_params = model->num_weights;
     
     // Allocate weights
-       // Allocate BigFixed** weights array
-       model->weights = (BigFixed**)calloc(model->num_weights, sizeof(BigFixed*));
-       if (!model->weights) {
-           fprintf(stderr, "Failed to allocate weights array\n");
-           free(model->tokens);
-           free(model);
-           return NULL;
-       }
-       
-       // Allocate individual BigFixed weights
-       for (uint64_t i = 0; i < model->num_weights; i++) {
-           model->weights[i] = big_fixed_create(model->precision_bits);
-           if (!model->weights[i]) {
-               fprintf(stderr, "Failed to allocate BigFixed weight %lu\n", i);
-               // Cleanup already allocated weights
-               for (uint64_t j = 0; j < i; j++) {
-                   big_fixed_free(model->weights[j]);
-               }
-               free(model->weights);
-               free(model->tokens);
-               free(model);
-               return NULL;
-           }
-       }
-    
-    // Initialize PURE CRYSTALLINE EMBEDDINGS (BigFixed-based, NO floats)
-    // This replaces the deprecated float-based embeddings
-    model->crystalline_embeddings = crystalline_embeddings_create(
-        config->vocab_size,
-        3  // 3D lattice for now
-    );
-    
-    if (!model->crystalline_embeddings) {
-        fprintf(stderr, "Failed to create crystalline embeddings\n");
-        for (uint64_t j = 0; j < model->num_weights; j++) {
-            big_fixed_free(model->weights[j]);
-        }
-        free(model->weights);
+    model->weights = (double*)calloc(model->num_weights, sizeof(double));
+    if (!model->weights) {
+        fprintf(stderr, "Failed to allocate weights\n");
         free(model->tokens);
         free(model);
         return NULL;
     }
     
-    // DEPRECATED: Keep old embeddings structure for backward compatibility
-    // but mark it as invalid (NULL pointers)
+    // Initialize embeddings
     model->embeddings.vocab_size = config->vocab_size;
     model->embeddings.embedding_dim = config->embedding_dim;
-    model->embeddings.embeddings = NULL;  // DO NOT USE - use crystalline_embeddings instead
-    model->embeddings.lattice_transform = NULL;
-    model->embeddings.inverse_transform = NULL;
+    model->embeddings.embeddings = model->weights;
+    
+    // Initialize with small random values
+    for (uint64_t i = 0; i < embedding_weights; i++) {
+        model->embeddings.embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+    }
     
     // Allocate attention layers
     model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));
@@ -420,12 +137,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         // Initialize attention weights with Xavier initialization
         float xavier_std = prime_sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
         for (size_t j = 0; j < qkv_size; j++) {
-               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-               big_fixed_from_double(model->attention_layers[i].query_lattice[j], rand_val);
-               double rand_val_k = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-               big_fixed_from_double(model->attention_layers[i].key_lattice[j], rand_val_k);
-               double rand_val_v = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-               big_fixed_from_double(model->attention_layers[i].value_lattice[j], rand_val_v);
+            model->attention_layers[i].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+            model->attention_layers[i].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+            model->attention_layers[i].value_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
         }
     }
     
@@ -477,18 +191,16 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         
         
         for (size_t j = 0; j < w1_size; j++) {
-               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w1;
-               big_fixed_from_double(model->ff_layers[i].w1_lattice[j], rand_val);
+            model->ff_layers[i].w1_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w1;
         }
         for (size_t j = 0; j < config->ff_dim; j++) {
-               big_fixed_from_double(model->ff_layers[i].bias1[j], 0.0);
+            model->ff_layers[i].bias1[j] = 0.0f;  // Biases initialized to zero
         }
         for (size_t j = 0; j < w2_size; j++) {
-               double rand_val = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w2;
-               big_fixed_from_double(model->ff_layers[i].w2_lattice[j], rand_val);
+            model->ff_layers[i].w2_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w2;
         }
         for (size_t j = 0; j < config->embedding_dim; j++) {
-               big_fixed_from_double(model->ff_layers[i].bias2[j], 0.0);
+            model->ff_layers[i].bias2[j] = 0.0f;  // Biases initialized to zero
         }
     }
     
@@ -517,8 +229,8 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         
         // Initialize gamma to 1.0 and beta to 0.0
         for (uint32_t j = 0; j < config->embedding_dim; j++) {
-               big_fixed_from_double(model->layer_norms[i].gamma[j], 1.0);
-               big_fixed_from_double(model->layer_norms[i].beta[j], 0.0);
+            model->layer_norms[i].gamma[j] = 1.0f;
+            model->layer_norms[i].beta[j] = 0.0f;
         }
     }
     
@@ -527,11 +239,11 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->pos_encoding.embedding_dim = config->embedding_dim;
     
     // Allocate positional encoding buffers
-    // size_t pos_size = config->max_seq_len * config->embedding_dim * sizeof(float);  // Unused
-    model->pos_encoding.spiral_positions = (float*)calloc(config->max_seq_len * config->embedding_dim, sizeof(float));
-    model->pos_encoding.clock_positions = (float*)calloc(config->max_seq_len * config->embedding_dim, sizeof(float));
-    model->pos_encoding.prime_positions = (float*)calloc(config->max_seq_len * config->embedding_dim, sizeof(float));
-    model->pos_encoding.learned_positions = (float*)calloc(config->max_seq_len * config->embedding_dim, sizeof(float));
+    // size_t pos_size = config->max_seq_len * config->embedding_dim * sizeof(double);  // Unused
+    model->pos_encoding.spiral_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
+    model->pos_encoding.clock_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
+    model->pos_encoding.prime_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
+    model->pos_encoding.learned_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
     
     if (!model->pos_encoding.spiral_positions || !model->pos_encoding.clock_positions ||
         !model->pos_encoding.prime_positions || !model->pos_encoding.learned_positions) {
@@ -549,93 +261,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         return NULL;
     }
     
-       // PHASE 1: Initialize Crystalline Prime Encodings (ASI Design)
-       if (model->tokens && model->crystalline_embeddings) {
-           printf("\n=== Initializing Crystalline Structure ===\n");
-           printf("Generating prime encodings for %u tokens...\n", config->vocab_size);
-           
-           // OBJECTIVE 14: Use L(n,d,k,λ) lattice formula for embeddings
-           // PURE BIGFIXED IMPLEMENTATION - NO FLOATS
-           // Initialize tokens with prime-based representation
-           for (uint32_t token_id = 0; token_id < config->vocab_size; token_id++) {
-               // Get nth prime for this token
-               uint64_t prime = crystalline_get_nth_prime(token_id);
-               
-               // Create token with prime encoding
-               char token_str[64];
-               snprintf(token_str, sizeof(token_str), "token_%u", token_id);
-               CrystallineToken* token = crystalline_token_create(token_id, token_str, prime);
-               
-               if (token) {
-                   // Add token to embeddings (computes Ulam spiral position automatically)
-                   crystalline_embeddings_add_token(model->crystalline_embeddings, token);
-               }
-           }
-           
-           // Initialize lattice basis
-           crystalline_initialize_basis(model->crystalline_embeddings);
-           
-           printf("✓ %u tokens initialized with prime encodings (BigFixed)\n", config->vocab_size);
-           printf("✓ Ulam spiral positions computed (NO FLOATS)\n");
-           printf("✓ Lattice basis initialized\n");
-           printf("==========================================\n\n");
-       }
-    
-    // OBJECTIVE 16: Initialize lattice points for kissing spheres
-    // Allocate lattice points (one per token)
-    model->num_lattice_points = config->vocab_size;
-    model->lattice_points = (CLLMLatticePoint*)calloc(model->num_lattice_points, sizeof(CLLMLatticePoint));
-    if (!model->lattice_points) {
-        fprintf(stderr, "Failed to allocate lattice points\n");
-        // Continue without lattice points - not critical for basic operation
-        model->num_lattice_points = 0;
-    } else {
-        // Initialize lattice points with token symmetry groups
-        for (uint32_t i = 0; i < model->num_lattice_points; i++) {
-            model->lattice_points[i].symmetry_group = model->tokens[i].symmetry_group;
-            model->lattice_points[i].num_neighbors = 0;
-            model->lattice_points[i].neighbor_count = 0;
-        }
-        
-        // OBJECTIVE 16: Initialize 12 kissing sphere neighbors
-        printf("\n");
-        cllm_initialize_kissing_spheres(model);
-    }
-    
-    // OBJECTIVE 26: Track number of primes used by this model
-    // The maximum prime index used is vocab_size (for token encoding)
-    // We use vocab_size as a conservative estimate
-    model->header.num_primes_used = model->vocab_size;
-    printf("Model uses %lu primes (based on vocab_size)\n", 
-           (unsigned long)model->header.num_primes_used);
-    
     return model;
-}  // End of cllm_create_model
+}
 
 // Free model and all associated memory
 void cllm_free_model(CLLMModel* model) {
     if (!model) return;
-    
-    // Free BigFixed weights if using arbitrary precision
-    if (model->use_bigfixed && model->weights) {
-        for (size_t i = 0; i < model->num_weights; i++) {
-            if (model->weights[i]) {
-                big_fixed_free(model->weights[i]);
-            }
-        }
-        free(model->weights);
-        model->weights = NULL;
-    } else if (model->weights) {
-        // Legacy float path (deprecated)
-        free(model->weights);
-        model->weights = NULL;
-    }
-    
-    // Free CrystallineEmbeddings if present
-    if (model->crystalline_embeddings) {
-        crystalline_embeddings_free(model->crystalline_embeddings);
-        model->crystalline_embeddings = NULL;
-    }
     
     if (model->pos_encoding.spiral_positions) {
         free(model->pos_encoding.spiral_positions);
@@ -660,6 +291,10 @@ void cllm_free_model(CLLMModel* model) {
     
     if (model->attention_layers) {
         free(model->attention_layers);
+    }
+    
+    if (model->weights) {
+        free(model->weights);
     }
     
     if (model->tokens) {
@@ -693,7 +328,7 @@ size_t cllm_estimate_memory(const CLLMConfig* config) {
         config->embedding_dim + config->ff_dim +
         4 * config->embedding_dim;
     uint64_t total_weights = embedding_weights + config->num_layers * per_layer_weights;
-    total += total_weights * sizeof(float);
+    total += total_weights * sizeof(double);
     
     // Attention layers
     total += config->num_layers * sizeof(AttentionLayer);
@@ -705,7 +340,7 @@ size_t cllm_estimate_memory(const CLLMConfig* config) {
     total += config->num_layers * 2 * sizeof(CLLMLayerNorm);
     
     // Positional encodings (4 types)
-    total += 4 * config->max_seq_len * config->embedding_dim * sizeof(float);
+    total += 4 * config->max_seq_len * config->embedding_dim * sizeof(double);
     
     return total;
 }
@@ -741,7 +376,7 @@ void cllm_print_model_info(const CLLMModel* model) {
     // Calculate memory usage
     size_t memory = sizeof(CLLMModel);
     memory += model->vocab_size * sizeof(CLLMToken);
-    memory += model->num_weights * sizeof(float);
+    memory += model->num_weights * sizeof(double);
     memory += model->num_layers * sizeof(AttentionLayer);
     memory += model->num_layers * sizeof(FeedForwardLayer);
     memory += model->num_layers * 2 * sizeof(CLLMLayerNorm);
