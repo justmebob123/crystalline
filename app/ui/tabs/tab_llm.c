@@ -75,21 +75,26 @@ static int chat_message_count = 0;
 // Model selector
 static ModelSelector* llm_model_selector = NULL;
 
+// Selected model name (NOT loaded until inference starts)
+static char llm_selected_model_name[256] = {0};
+
 // Model selector callback for LLM
 static void on_llm_model_selected(const char* model_name, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !model_name) return;
     
-    printf("LLM tab: Loading model '%s'\n", model_name);
+    // CRITICAL FIX: Do NOT load model here - only store the name
+    // Models should only be loaded when inference actually starts
+    // This prevents massive memory consumption when just browsing models
     
-    // Acquire new model for inference (read access)
-    state->cllm_model = model_manager_acquire_read(model_name);
+    printf("LLM tab: Model '%s' selected (not loaded yet)\n", model_name);
     
-    if (state->cllm_model) {
-        printf("LLM: Model '%s' loaded successfully\n", model_name);
-    } else {
-        printf("LLM: Failed to load model '%s'\n", model_name);
-    }
+    // Store selected model name
+    strncpy(llm_selected_model_name, model_name, sizeof(llm_selected_model_name) - 1);
+    llm_selected_model_name[sizeof(llm_selected_model_name) - 1] = '\0';
+    
+    // Do NOT call model_manager_acquire_read() here
+    // Model will be loaded on-demand when "Send" button is clicked
 }
 static int chat_scroll_offset = 0;
 
@@ -1338,7 +1343,26 @@ void llm_input_on_change(const char* text, void* user_data) {
 void llm_input_on_submit(const char* text, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !text || strlen(text) == 0) return;
-    if (!state->cllm_inference || state->llm_generating) return;
+    if (state->llm_generating) return;
+    
+    // CRITICAL FIX: Load model on-demand if not already loaded
+    if (!state->cllm_inference && llm_selected_model_name[0]) {
+        printf("Loading model '%s' for inference...\n", llm_selected_model_name);
+        
+        // Use default model size for now (TODO: get from model metadata)
+        if (!acquire_model_for_inference(state, llm_selected_model_name, 
+                                        10000, 512, 6, 8, 2048)) {
+            add_chat_message("Error: Failed to load model. Please select a model first.", false);
+            return;
+        }
+        
+        printf("Model loaded successfully\n");
+    }
+    
+    if (!state->cllm_inference) {
+        add_chat_message("Error: No model loaded. Please select a model first.", false);
+        return;
+    }
     
     // Add user message to chat
     add_chat_message(text, true);

@@ -39,10 +39,16 @@ Need to investigate what's consuming memory.
 - [ ] Commit fix
 
 ### Phase 2: Investigate OOM Kill
-- [ ] Add memory usage logging
-- [ ] Check if models are being loaded
-- [ ] Verify lazy loading is working
-- [ ] Test with smaller models
+- [x] Found root cause: Multiple tabs loading models in callbacks
+- [x] LLM tab: model_manager_acquire_read() in on_model_selected (line 86)
+- [x] Research tab: model_manager_acquire_read() in on_model_selected (line 50)
+- [x] Models tab: model_manager_acquire_read() on double-click (line 628) - INTENTIONAL
+- [x] Crawler tab: model_manager_acquire_write() in callback (line 93)
+- [x] Fixed LLM tab to use lazy loading (load on Send)
+- [x] Fixed Research tab to use lazy loading (load on analysis)
+- [x] Fixed Crawler tab to use lazy loading (load on crawl start)
+- [x] Rebuild successful - zero warnings
+- [ ] Commit and test
 
 ### Phase 3: Complete UI Layout Rewrite (AFTER FIXES)
 - [ ] Design new layout system for all tabs

@@ -39,21 +39,26 @@ static int selected_file = -1;
 // Model selector
 static ModelSelector* research_model_selector = NULL;
 
+// Selected model name (NOT loaded until analysis starts)
+static char research_selected_model_name[256] = {0};
+
 // Model selector callback for research
 static void on_research_model_selected(const char* model_name, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !model_name) return;
     
-    printf("Research tab: Loading model '%s'\n", model_name);
+    // CRITICAL FIX: Do NOT load model here - only store the name
+    // Models should only be loaded when analysis actually starts
+    // This prevents massive memory consumption when just browsing models
     
-    // Acquire new model for research (read access)
-    state->cllm_model = model_manager_acquire_read(model_name);
+    printf("Research tab: Model '%s' selected (not loaded yet)\n", model_name);
     
-    if (state->cllm_model) {
-        printf("Research: Model '%s' loaded successfully\n", model_name);
-    } else {
-        printf("Research: Failed to load model '%s'\n", model_name);
-    }
+    // Store selected model name
+    strncpy(research_selected_model_name, model_name, sizeof(research_selected_model_name) - 1);
+    research_selected_model_name[sizeof(research_selected_model_name) - 1] = '\0';
+    
+    // Do NOT call model_manager_acquire_read() here
+    // Model will be loaded on-demand when analysis is requested
 }
 static char file_content[MAX_CONTENT_LENGTH];
 static int content_scroll = 0;

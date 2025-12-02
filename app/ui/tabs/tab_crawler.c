@@ -82,21 +82,26 @@ static UIButton btn_load_config;
 // Model selector
 static ModelSelector* crawler_model_selector = NULL;
 
+// Selected model name (NOT loaded until crawling starts)
+static char crawler_selected_model_name[256] = {0};
+
 // Model selector callback for crawler
 static void on_crawler_model_selected(const char* model_name, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !model_name) return;
     
-    printf("Crawler tab: Loading model '%s'\n", model_name);
+    // CRITICAL FIX: Do NOT load model here - only store the name
+    // Models should only be loaded when crawling actually starts
+    // This prevents massive memory consumption when just browsing models
     
-    // Acquire new model for crawler (write access for training)
-    state->cllm_model = model_manager_acquire_write(model_name);
+    printf("Crawler tab: Model '%s' selected (not loaded yet)\n", model_name);
     
-    if (state->cllm_model) {
-        printf("Crawler: Model '%s' loaded successfully\n", model_name);
-    } else {
-        printf("Crawler: Failed to load model '%s'\n", model_name);
-    }
+    // Store selected model name
+    strncpy(crawler_selected_model_name, model_name, sizeof(crawler_selected_model_name) - 1);
+    crawler_selected_model_name[sizeof(crawler_selected_model_name) - 1] = '\0';
+    
+    // Do NOT call model_manager_acquire_write() here
+    // Model will be loaded on-demand when crawling starts
 }
 
 // ============================================================================
