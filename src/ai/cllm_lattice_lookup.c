@@ -128,7 +128,7 @@ void cllm_embeddings_init_from_patterns(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     // Fill embeddings using direct lookup
     for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {

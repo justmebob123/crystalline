@@ -268,10 +268,10 @@ void cllm_apply_positional_encoding_complete(CLLMInference* inf, float* embeddin
     }
     
     // Combine all positional encoding schemes
-    float* spiral = &pos_enc->spiral_positions[position * embedding_dim];
-    float* clock = &pos_enc->clock_positions[position * embedding_dim];
-    float* prime = &pos_enc->prime_positions[position * embedding_dim];
-    float* learned = &pos_enc->learned_positions[position * embedding_dim];
+    double* spiral = &pos_enc->spiral_positions[position * embedding_dim];
+    double* clock = &pos_enc->clock_positions[position * embedding_dim];
+    double* prime = &pos_enc->prime_positions[position * embedding_dim];
+    double* learned = &pos_enc->learned_positions[position * embedding_dim];
     
     // Weighted combination
     float w_spiral = 0.25f;

@@ -194,7 +194,7 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
     // Mark all embeddings as uninitialized (NaN)
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     // Mark all embeddings as uninitialized using NaN (0.0/0.0)
     float nan_value = 0.0f / 0.0f;
@@ -215,7 +215,7 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
     
     CLLMToken* token = &model->tokens[token_id];
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     uint32_t offset = token_id * embedding_dim;
     
     // Check if already computed

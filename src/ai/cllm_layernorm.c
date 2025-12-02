@@ -24,9 +24,9 @@ void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon) {
     ln->dim = dim;
     ln->epsilon = epsilon;
     
-    // Allocate gamma and beta using standard float arrays
-    ln->gamma = (float*)malloc(dim * sizeof(float));
-    ln->beta = (float*)malloc(dim * sizeof(float));
+    // Allocate gamma and beta using double arrays
+    ln->gamma = (double*)malloc(dim * sizeof(double));
+    ln->beta = (double*)malloc(dim * sizeof(double));
     
     if (!ln->gamma || !ln->beta) {
         if (ln->gamma) free(ln->gamma);

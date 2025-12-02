@@ -149,10 +149,10 @@ void cllm_feedforward_init(FeedForwardLayer* layer, uint32_t input_dim,
     size_t w1_size = input_dim * hidden_dim;
     size_t w2_size = hidden_dim * output_dim;
     
-    layer->w1_lattice = (float*)malloc(w1_size * sizeof(float));
-    layer->w2_lattice = (float*)malloc(w2_size * sizeof(float));
-    layer->bias1 = (float*)malloc(hidden_dim * sizeof(float));
-    layer->bias2 = (float*)malloc(output_dim * sizeof(float));
+    layer->w1_lattice = (double*)malloc(w1_size * sizeof(double));
+    layer->w2_lattice = (double*)malloc(w2_size * sizeof(double));
+    layer->bias1 = (double*)malloc(hidden_dim * sizeof(double));
+    layer->bias2 = (double*)malloc(output_dim * sizeof(double));
     
     if (!layer->w1_lattice || !layer->w2_lattice || 
         !layer->bias1 || !layer->bias2) {

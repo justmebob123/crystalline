@@ -73,7 +73,7 @@ void cllm_embeddings_init_clock(CLLMModel* model) {
     
     uint32_t vocab_size = model->embeddings.vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     printf("\n=== Initializing Embeddings with Clock Geometry ===\n");
     printf("Vocabulary size: %u\n", vocab_size);

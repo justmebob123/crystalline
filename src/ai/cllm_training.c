@@ -345,11 +345,11 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->final_hidden = (double*)calloc(seq_size, sizeof(double));
     training->logits = (double*)calloc(logits_size, sizeof(double));
     
-    training->layer_inputs = (float**)calloc(num_layers, sizeof(float*));
-    training->attention_outputs = (float**)calloc(num_layers, sizeof(float*));
-    training->ff_outputs = (float**)calloc(num_layers, sizeof(float*));
-    training->layer_outputs = (float**)calloc(num_layers, sizeof(float*));
-    training->ff_hidden = (float**)calloc(num_layers, sizeof(float*));
+    training->layer_inputs = (double**)calloc(num_layers, sizeof(double*));
+    training->attention_outputs = (double**)calloc(num_layers, sizeof(double*));
+    training->ff_outputs = (double**)calloc(num_layers, sizeof(double*));
+    training->layer_outputs = (double**)calloc(num_layers, sizeof(double*));
+    training->ff_hidden = (double**)calloc(num_layers, sizeof(double*));
     
     if (training->layer_inputs && training->attention_outputs && training->ff_outputs &&
         training->layer_outputs && training->ff_hidden && model->ff_layers) {
@@ -553,11 +553,11 @@ int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* tar
 /**
  * Get cached embedding for token at index (OPTIMIZATION)
  */
-static inline float* get_cached_input_embedding(CLLMTraining* training, int index) {
+static inline double* get_cached_input_embedding(CLLMTraining* training, int index) {
     return &training->cached_input_embeddings[index * training->model->embedding_dim];
 }
 
-static inline float* get_cached_target_embedding(CLLMTraining* training, int index) {
+static inline double* get_cached_target_embedding(CLLMTraining* training, int index) {
     return &training->cached_target_embeddings[index * training->model->embedding_dim];
 }
 
@@ -709,9 +709,9 @@ static void cllm_attention_forward_training(
         uint32_t embed_dim = num_heads * head_dim;
         
         // Allocate temporary buffers for Q, K, V
-        float* queries = (double*)malloc(seq_len * embed_dim * sizeof(double));
-        float* keys = (double*)malloc(seq_len * embed_dim * sizeof(double));
-        float* values = (double*)malloc(seq_len * embed_dim * sizeof(double));
+        double* queries = (double*)malloc(seq_len * embed_dim * sizeof(double));
+        double* keys = (double*)malloc(seq_len * embed_dim * sizeof(double));
+        double* values = (double*)malloc(seq_len * embed_dim * sizeof(double));
         
         if (!queries || !keys || !values) {
             free(queries);
@@ -865,9 +865,9 @@ static void attention_backward_full(
     uint32_t embed_dim = num_heads * head_dim;
     
     // Get cached values from forward pass
-    float* queries = training->attention_cache[layer].queries;
-    float* keys = training->attention_cache[layer].keys;
-    float* values = training->attention_cache[layer].values;
+    double* queries = training->attention_cache[layer].queries;
+    double* keys = training->attention_cache[layer].keys;
+    double* values = training->attention_cache[layer].values;
     float* attention_weights = training->attention_cache[layer].attention_weights;
     
     if (!queries || !keys || !values || !attention_weights) {
@@ -1151,13 +1151,13 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             if (token_id >= vocab_size) continue;
             
             float* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
-            float* embed_dst = &training->input_embeddings[idx * embed_dim];
+            double* embed_dst = &training->input_embeddings[idx * embed_dim];
             memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
         }
     }
     
     // Process through layers
-    float* layer_input = training->input_embeddings;
+    double* layer_input = training->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
         memcpy(training->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(double));
         
@@ -1165,8 +1165,8 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         AttentionLayer* attn_layer = &model->attention_layers[layer];
         for (int b = 0; b < batch_size; b++) {
             int start_idx = b * seq_len;
-            float* batch_input = &layer_input[start_idx * embed_dim];
-            float* batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
+            double* batch_input = &layer_input[start_idx * embed_dim];
+            double* batch_output = &training->attention_outputs[layer][start_idx * embed_dim];
             
             // Use training-specific attention that caches Q, K, V, and attention weights
             cllm_attention_forward_training(training, layer, attn_layer, 
@@ -1177,13 +1177,13 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         for (int b = 0; b < batch_size; b++) {
             for (int s = 0; s < seq_len; s++) {
                 int idx = b * seq_len + s;
-                float* attn_out = &training->attention_outputs[layer][idx * embed_dim];
-                float* ff_out = &training->ff_outputs[layer][idx * embed_dim];
-                float* layer_out = &training->layer_outputs[layer][idx * embed_dim];
+                double* attn_out = &training->attention_outputs[layer][idx * embed_dim];
+                double* ff_out = &training->ff_outputs[layer][idx * embed_dim];
+                double* layer_out = &training->layer_outputs[layer][idx * embed_dim];
                 
                 // FeedForward
                 FeedForwardLayer* ff = &model->ff_layers[layer];
-                float* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
+                double* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
                     float sum = ff->bias1[h];
@@ -1229,8 +1229,8 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
-            float* hidden = &training->final_hidden[idx * embed_dim];
-            float* logits = &training->logits[idx * vocab_size];
+            double* hidden = &training->final_hidden[idx * embed_dim];
+            double* logits = &training->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
@@ -1335,7 +1335,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     memcpy(grad_layer, grad_hidden, batch_size * seq_len * embed_dim * sizeof(double));
     
     for (int layer = model->num_layers - 1; layer >= 0; layer--) {
-        float* attn_output = training->attention_outputs[layer];
+        double* attn_output = training->attention_outputs[layer];
         double* ff_hidden = training->ff_hidden[layer];
         FeedForwardLayer* ff = &model->ff_layers[layer];
         CLLMLayerNorm* ln = &model->layer_norms[layer];
@@ -1345,7 +1345,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
                 int idx = b * seq_len + s;
                 double* grad = &grad_layer[idx * embed_dim];
                 double* input = &attn_output[idx * embed_dim];
-                float* hidden = &ff_hidden[idx * ff->hidden_dim];
+                double* hidden = &ff_hidden[idx * ff->hidden_dim];
                 
                 // LayerNorm backward
                 float mean = 0.0f, var = 0.0f;
@@ -1384,7 +1384,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
                 
                 // Get layer input (input to attention)
                 double* layer_input = training->layer_inputs[layer];
-                float* attn_input = &layer_input[idx * embed_dim];
+                double* attn_input = &layer_input[idx * embed_dim];
                 
                 // Use full attention backward if cache is available, otherwise use simplified version
                 if (training->store_attention_weights && training->attention_cache) {

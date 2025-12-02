@@ -51,7 +51,7 @@ CLLMModel* cllm_create_large_model(void);
  */
 
 // Check for NaN or Inf values in array
-bool cllm_check_numerical_stability(const float* array, size_t size, const char* name);
+bool cllm_check_numerical_stability(const double* array, size_t size, const char* name);
 
 // Validate model weights for numerical stability
 bool cllm_validate_weights(const CLLMModel* model);
@@ -69,7 +69,7 @@ bool cllm_comprehensive_validation(const CLLMModel* model);
 bool cllm_gradient_check_weight(CLLMModel* model, size_t weight_idx, float epsilon);
 
 // Check gradient computation correctness
-bool cllm_validate_gradients(CLLMModel* model, const float* gradients, size_t num_gradients);
+bool cllm_validate_gradients(CLLMModel* model, const double* gradients, size_t num_gradients);
 
 // Validate inference output
 bool cllm_validate_inference_output(const float* logits, size_t vocab_size);

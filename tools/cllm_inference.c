@@ -107,11 +107,10 @@ static void generate_text_proper(CLLMInference* inference, const char* prompt,
             next_token = cllm_sample_top_k((float*)inference->logits, model->vocab_size, top_k);
         } else {
             // Greedy sampling - pick highest probability
-            // Convert BigFixed** to usable form for sampling
-            double max_prob = big_fixed_to_double(inference->logits[0]);
+            double max_prob = inference->logits[0];
             next_token = 0;
             for (int i = 1; i < (int)model->vocab_size; i++) {
-                double prob = big_fixed_to_double(inference->logits[i]);
+                double prob = inference->logits[i];
                 if (prob > max_prob) {
                     max_prob = prob;
                     next_token = (uint32_t)i;

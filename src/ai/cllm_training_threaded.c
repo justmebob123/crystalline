@@ -440,7 +440,7 @@ float cllm_forward_training_threaded(
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
             float* hidden = &local_ctx->final_hidden[idx * embed_dim];
-            float* logits = &local_ctx->logits[idx * vocab_size];
+            double* logits = &local_ctx->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
@@ -494,7 +494,7 @@ void cllm_backward_training_threaded(
             uint32_t target = target_tokens[idx];
             if (target >= vocab_size) continue;
             
-            float* logits = &local_ctx->logits[idx * vocab_size];
+            double* logits = &local_ctx->logits[idx * vocab_size];
             float* grad = &grad_logits[idx * vocab_size];
             
             float max_logit = logits[0];

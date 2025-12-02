@@ -8,7 +8,7 @@
 #include "../include/prime_float_math.h"
 
 // Check for NaN or Inf values in BigFixed array
-bool cllm_check_bigfixed_stability(BigFixed** array, size_t size, const char* name) {
+bool cllm_check_numerical_stability(BigFixed** array, size_t size, const char* name) {
     if (!array) {
         fprintf(stderr, "%s: Array is NULL\n", name);
         return false;
@@ -40,8 +40,8 @@ bool cllm_check_bigfixed_stability(BigFixed** array, size_t size, const char* na
     return true;
 }
 
-// Legacy float version (deprecated)
-bool cllm_check_numerical_stability(const float* array, size_t size, const char* name) {
+// Double array version
+bool cllm_check_numerical_stability_double(const double* array, size_t size, const char* name) {
     if (!array) {
         fprintf(stderr, "%s: Array is NULL\n", name);
         return false;
@@ -66,6 +66,32 @@ bool cllm_check_numerical_stability(const float* array, size_t size, const char*
     return true;
 }
 
+// Float array version
+bool cllm_check_numerical_stability_float(const float* array, size_t size, const char* name) {
+    if (!array) {
+        fprintf(stderr, "%s: Array is NULL\n", name);
+        return false;
+    }
+    
+    size_t nan_count = 0;
+    size_t inf_count = 0;
+    
+    for (size_t i = 0; i < size; i++) {
+        if (prime_isnanf(array[i])) {
+            nan_count++;
+        } else if (prime_isinff(array[i])) {
+            inf_count++;
+        }
+    }
+    
+    if (nan_count > 0 || inf_count > 0) {
+        fprintf(stderr, "%s: Found %zu NaN and %zu Inf values\n", name, nan_count, inf_count);
+        return false;
+    }
+    
+    return true;
+}
+
 // Validate model weights for numerical stability
 bool cllm_validate_weights(const CLLMModel* model) {
     if (!model || !model->weights) {
@@ -77,7 +103,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
     
     // Check all weights (use BigFixed version if model uses BigFixed)
     if (0) {
-        if (!cllm_check_bigfixed_stability(model->weights, model->num_weights, "Model weights")) {
+        if (!cllm_check_numerical_stability(model->weights, model->num_weights, "Model weights")) {
             return false;
         }
     } else {
@@ -88,7 +114,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
     // Check embeddings
     if (model->embeddings.embeddings) {
         size_t emb_size = model->embeddings.vocab_size * model->embeddings.embedding_dim;
-        if (!cllm_check_numerical_stability(model->embeddings.embeddings, emb_size, "Embeddings")) {
+        if (!cllm_check_numerical_stability_double(model->embeddings.embeddings, emb_size, "Embeddings")) {
             return false;
         }
     }
@@ -100,21 +126,21 @@ bool cllm_validate_weights(const CLLMModel* model) {
         
         snprintf(name, sizeof(name), "Attention layer %u query", i);
         if (model->attention_layers[i].query_lattice) {
-            if (!cllm_check_bigfixed_stability(model->attention_layers[i].query_lattice, layer_size, name)) {
+            if (!cllm_check_numerical_stability_double(model->attention_layers[i].query_lattice, layer_size, name)) {
                 return false;
             }
         }
         
         snprintf(name, sizeof(name), "Attention layer %u key", i);
         if (model->attention_layers[i].key_lattice) {
-            if (!cllm_check_bigfixed_stability(model->attention_layers[i].key_lattice, layer_size, name)) {
+            if (!cllm_check_numerical_stability_double(model->attention_layers[i].key_lattice, layer_size, name)) {
                 return false;
             }
         }
         
         snprintf(name, sizeof(name), "Attention layer %u value", i);
         if (model->attention_layers[i].value_lattice) {
-            if (!cllm_check_bigfixed_stability(model->attention_layers[i].value_lattice, layer_size, name)) {
+            if (!cllm_check_numerical_stability_double(model->attention_layers[i].value_lattice, layer_size, name)) {
                 return false;
             }
         }
@@ -127,7 +153,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
         snprintf(name, sizeof(name), "FF layer %u W1", i);
         if (model->ff_layers[i].w1_lattice) {
             size_t w1_size = model->ff_layers[i].input_dim * model->ff_layers[i].hidden_dim;
-            if (!cllm_check_bigfixed_stability(model->ff_layers[i].w1_lattice, w1_size, name)) {
+            if (!cllm_check_numerical_stability_double(model->ff_layers[i].w1_lattice, w1_size, name)) {
                 return false;
             }
         }
@@ -135,7 +161,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
         snprintf(name, sizeof(name), "FF layer %u W2", i);
         if (model->ff_layers[i].w2_lattice) {
             size_t w2_size = model->ff_layers[i].hidden_dim * model->ff_layers[i].output_dim;
-            if (!cllm_check_bigfixed_stability(model->ff_layers[i].w2_lattice, w2_size, name)) {
+            if (!cllm_check_numerical_stability_double(model->ff_layers[i].w2_lattice, w2_size, name)) {
                 return false;
             }
         }
@@ -158,12 +184,12 @@ bool cllm_validate_layer_norms(const CLLMModel* model) {
         char name[64];
         
         snprintf(name, sizeof(name), "LayerNorm %u gamma", i);
-        if (!cllm_check_bigfixed_stability(model->layer_norms[i].gamma, model->layer_norms[i].dim, name)) {
+        if (!cllm_check_numerical_stability_double(model->layer_norms[i].gamma, model->layer_norms[i].dim, name)) {
             return false;
         }
         
         snprintf(name, sizeof(name), "LayerNorm %u beta", i);
-        if (!cllm_check_bigfixed_stability(model->layer_norms[i].beta, model->layer_norms[i].dim, name)) {
+        if (!cllm_check_numerical_stability_double(model->layer_norms[i].beta, model->layer_norms[i].dim, name)) {
             return false;
         }
         
@@ -190,25 +216,25 @@ bool cllm_validate_positional_encodings(const CLLMModel* model) {
     size_t pos_size = model->pos_encoding.max_length * model->pos_encoding.embedding_dim;
     
     if (model->pos_encoding.spiral_positions) {
-        if (!cllm_check_numerical_stability(model->pos_encoding.spiral_positions, pos_size, "Spiral positions")) {
+        if (!cllm_check_numerical_stability_double(model->pos_encoding.spiral_positions, pos_size, "Spiral positions")) {
             return false;
         }
     }
     
     if (model->pos_encoding.clock_positions) {
-        if (!cllm_check_numerical_stability(model->pos_encoding.clock_positions, pos_size, "Clock positions")) {
+        if (!cllm_check_numerical_stability_double(model->pos_encoding.clock_positions, pos_size, "Clock positions")) {
             return false;
         }
     }
     
     if (model->pos_encoding.prime_positions) {
-        if (!cllm_check_numerical_stability(model->pos_encoding.prime_positions, pos_size, "Prime positions")) {
+        if (!cllm_check_numerical_stability_double(model->pos_encoding.prime_positions, pos_size, "Prime positions")) {
             return false;
         }
     }
     
     if (model->pos_encoding.learned_positions) {
-        if (!cllm_check_numerical_stability(model->pos_encoding.learned_positions, pos_size, "Learned positions")) {
+        if (!cllm_check_numerical_stability_double(model->pos_encoding.learned_positions, pos_size, "Learned positions")) {
             return false;
         }
     }
@@ -286,7 +312,7 @@ bool cllm_gradient_check_weight(CLLMModel* model, size_t weight_idx, float epsil
 }
 
 // Check gradient computation correctness
-bool cllm_validate_gradients(CLLMModel* model, const float* gradients, size_t num_gradients) {
+bool cllm_validate_gradients(CLLMModel* model, const double* gradients, size_t num_gradients) {
     if (!model || !gradients) {
         fprintf(stderr, "Model or gradients are NULL\n");
         return false;
@@ -295,7 +321,7 @@ bool cllm_validate_gradients(CLLMModel* model, const float* gradients, size_t nu
     printf("Validating gradients...\n");
     
     // Check for numerical stability
-    if (!cllm_check_numerical_stability(gradients, num_gradients, "Gradients")) {
+    if (!cllm_check_numerical_stability_double(gradients, num_gradients, "Gradients")) {
         return false;
     }
     
@@ -344,7 +370,7 @@ bool cllm_validate_inference_output(const float* logits, size_t vocab_size) {
     printf("Validating inference output...\n");
     
     // Check for numerical stability
-    if (!cllm_check_numerical_stability(logits, vocab_size, "Logits")) {
+    if (!cllm_check_numerical_stability_float(logits, vocab_size, "Logits")) {
         return false;
     }
     

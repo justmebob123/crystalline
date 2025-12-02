@@ -268,7 +268,7 @@ uint32_t cvp_find_closest_token(CLLMModel* model, const float* query_embedding) 
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     uint32_t closest_token = 0;
     float min_distance = INFINITY;
@@ -301,7 +301,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     float* shortest = (float*)malloc(embed_dim * sizeof(float));
     float min_length = INFINITY;

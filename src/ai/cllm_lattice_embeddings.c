@@ -43,7 +43,7 @@ void cllm_embeddings_init_lattice(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     // Statistics for verification
     double sum = 0.0;
@@ -145,7 +145,7 @@ void cllm_verify_embedding_symmetry(CLLMModel* model) {
     printf("\n=== Verifying Embedding Symmetry ===\n");
     
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     // For each symmetry group, compute average intra-group similarity
     double group_similarities[12] = {0};
