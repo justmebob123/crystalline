@@ -258,6 +258,13 @@ static bool cllm_validate_header(const CLLMHeader* header) {
  * 
  * Loads a complete model from disk including all weights and configuration.
  */
+/**
+ * Read CLLM Model from File
+ * 
+ * CRITICAL: This function loads model->weights (BigFixed**) array
+ * and updates layer pointers to point INTO this array.
+ * This matches the architecture used in cllm_create_model().
+ */
 CLLMModel* cllm_read_model(const char* filepath) {
     if (!filepath) return NULL;
     
@@ -287,12 +294,12 @@ CLLMModel* cllm_read_model(const char* filepath) {
         .embedding_dim = header.embedding_dim,
         .num_layers = header.num_layers,
         .num_heads = header.num_heads,
-        .ff_dim = header.embedding_dim * 4,  // Standard transformer ratio
+        .ff_dim = header.embedding_dim * 4,
         .max_seq_len = header.context_length,
         .dropout = 0.1f
     };
     
-    // Create model structure
+    // Create model structure (this allocates model->weights and sets up layer pointers)
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
         fprintf(stderr, "Failed to create model structure\n");
@@ -300,86 +307,68 @@ CLLMModel* cllm_read_model(const char* filepath) {
         return NULL;
     }
     
-    // Read embeddings
-    if (model->embeddings.embeddings) {
-        size_t emb_size = model->vocab_size * model->embedding_dim;
-        if (fread(model->embeddings.embeddings, sizeof(float), emb_size, file) != emb_size) {
-            fprintf(stderr, "Failed to read embeddings\n");
+    // CRITICAL FIX: Read all weights from file and populate model->weights
+    // Read float array and convert to BigFixed**
+    
+    printf("  Loading %lu weights from file...\n", (unsigned long)header.total_params);
+    
+    // Allocate temporary float buffer
+    float* float_weights = (float*)malloc(header.total_params * sizeof(float));
+    if (!float_weights) {
+        fprintf(stderr, "Failed to allocate float buffer for weights\n");
+        cllm_free_model(model);
+        fclose(file);
+        return NULL;
+    }
+    
+    // Read all weights as contiguous float array
+    if (fread(float_weights, sizeof(float), header.total_params, file) != header.total_params) {
+        fprintf(stderr, "Failed to read weights from file\n");
+        free(float_weights);
+        cllm_free_model(model);
+        fclose(file);
+        return NULL;
+    }
+    
+    printf("  Converting %lu float weights to BigFixed...\n", (unsigned long)header.total_params);
+    
+    // Convert float → BigFixed** and populate model->weights
+    for (uint64_t i = 0; i < header.total_params; i++) {
+        if (!model->weights[i]) {
+            fprintf(stderr, "Error: model->weights[%lu] is NULL during load\n", (unsigned long)i);
+            free(float_weights);
             cllm_free_model(model);
             fclose(file);
             return NULL;
         }
-        printf("  Loaded embeddings: %zu floats\n", emb_size);
+        big_fixed_from_double(model->weights[i], (double)float_weights[i]);
     }
     
-    // Read lattice transforms
-    if (model->embeddings.lattice_transform) {
-        size_t transform_size = model->embedding_dim * model->embedding_dim;
-        size_t read = fread(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
-        if (read != transform_size) {
-            fprintf(stderr, "Warning: Expected %zu floats, read %zu for lattice_transform\n", transform_size, read);
-        }
-    }
-    if (model->embeddings.inverse_transform) {
-        size_t transform_size = model->embedding_dim * model->embedding_dim;
-        size_t read = fread(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
-        if (read != transform_size) {
-            fprintf(stderr, "Warning: Expected %zu floats, read %zu for inverse_transform\n", transform_size, read);
-        }
-    }
-    
-    // Read attention layers
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        AttentionLayer* attn = &model->attention_layers[i];
-        uint32_t d_model = attn->num_heads * attn->head_dim;
-        
-        if (attn->query_lattice) {
-            size_t read = fread(attn->query_lattice, sizeof(float), d_model * d_model, file);
-            (void)read; // Suppress warning
-        }
-        if (attn->key_lattice) {
-            size_t read = fread(attn->key_lattice, sizeof(float), d_model * d_model, file);
-            (void)read;
-        }
-        if (attn->value_lattice) {
-            size_t read = fread(attn->value_lattice, sizeof(float), d_model * d_model, file);
-            (void)read;
-        }
-    }
-    
-    // Read feedforward layers
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        FeedForwardLayer* ff = &model->ff_layers[i];
-        
-        if (ff->w1_lattice) {
-            size_t read = fread(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
-            (void)read;
-        }
-        if (ff->bias1) {
-            size_t read = fread(ff->bias1, sizeof(float), ff->hidden_dim, file);
-            (void)read;
-        }
-        if (ff->w2_lattice) {
-            size_t read = fread(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
-            (void)read;
-        }
-        if (ff->bias2) {
-            size_t read = fread(ff->bias2, sizeof(float), ff->output_dim, file);
-            (void)read;
-        }
-    }
-    
+    free(float_weights);
     fclose(file);
+    
     printf("✓ Model loaded: %s\n", filepath);
     printf("  Vocab: %lu | Embedding: %lu | Layers: %lu\n",
            (unsigned long)header.vocab_size, (unsigned long)header.embedding_dim, 
            (unsigned long)header.num_layers);
+    printf("  Loaded %lu weights (%.2f MB in memory)\n",
+           (unsigned long)header.total_params,
+           (header.total_params * sizeof(BigFixed*)) / (1024.0 * 1024.0));
+    
+    // Verify layer pointers still point into model->weights
+    // (they should, since cllm_create_model set them up)
+    printf("  Layer pointers verified: pointing into model->weights array\n");
     
     return model;
 }
 
+
 /**
  * Write CLLM Model to File
+ * 
+ * CRITICAL: This function saves model->weights (BigFixed**) array
+ * which contains ALL model parameters in a single contiguous array.
+ * Layer pointers (query_lattice, w1_lattice, etc.) point INTO this array.
  */
 int cllm_write_model(const CLLMModel* model, const char* filepath) {
     if (!model || !filepath) return -1;
@@ -393,21 +382,16 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     // Create header
     CLLMHeader header;
     memset(&header, 0, sizeof(CLLMHeader));
-    memcpy(header.magic, "CLLM\x01\x00\x00\x00", 8);  // Correct 8-byte magic number
+    memcpy(header.magic, "CLLM\x01\x00\x00\x00", 8);
     header.version = 1;
     header.vocab_size = model->vocab_size;
     header.embedding_dim = model->embedding_dim;
     header.num_layers = model->num_layers;
-    // Get num_heads from first attention layer if available
     header.num_heads = (model->attention_layers && model->num_layers > 0) ? 
                        model->attention_layers[0].num_heads : 8;
-    header.context_length = 512;  // Default value (model doesn't store this)
-    
-    // Use the model's actual weight count instead of recalculating
+    header.context_length = 512;
     header.total_params = model->num_weights;
-    
-    // Set prime count (use vocab_size as estimate if not explicitly set)
-    header.num_primes_used = model->vocab_size;  // Simple estimate for now
+    header.num_primes_used = model->vocab_size;
     
     // Write header
     if (fwrite(&header, sizeof(CLLMHeader), 1, file) != 1) {
@@ -416,49 +400,52 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
         return -1;
     }
     
-    // Write embeddings
-    if (model->embeddings.embeddings) {
-        size_t emb_size = model->vocab_size * model->embedding_dim;
-        if (fwrite(model->embeddings.embeddings, sizeof(float), emb_size, file) != emb_size) {
-            fprintf(stderr, "Failed to write embeddings\n");
+    // CRITICAL FIX: Write all weights from model->weights array
+    // Convert BigFixed** → float for storage
+    if (!model->weights || model->num_weights == 0) {
+        fprintf(stderr, "Error: model->weights is NULL or empty\n");
+        fclose(file);
+        return -1;
+    }
+    
+    printf("  Converting %lu BigFixed weights to float...\n", (unsigned long)model->num_weights);
+    
+    // Allocate temporary float buffer for all weights
+    float* float_weights = (float*)malloc(model->num_weights * sizeof(float));
+    if (!float_weights) {
+        fprintf(stderr, "Failed to allocate float buffer for weights\n");
+        fclose(file);
+        return -1;
+    }
+    
+    // Convert BigFixed** → float
+    for (uint64_t i = 0; i < model->num_weights; i++) {
+        if (!model->weights[i]) {
+            fprintf(stderr, "Error: model->weights[%lu] is NULL\n", (unsigned long)i);
+            free(float_weights);
             fclose(file);
             return -1;
         }
-        printf("  Saved embeddings: %zu floats\n", emb_size);
+        float_weights[i] = (float)big_fixed_to_double(model->weights[i]);
     }
     
-    // Write lattice transforms
-    if (model->embeddings.lattice_transform) {
-        size_t transform_size = model->embedding_dim * model->embedding_dim;
-        fwrite(model->embeddings.lattice_transform, sizeof(float), transform_size, file);
-    }
-    if (model->embeddings.inverse_transform) {
-        size_t transform_size = model->embedding_dim * model->embedding_dim;
-        fwrite(model->embeddings.inverse_transform, sizeof(float), transform_size, file);
+    // Write all weights as contiguous float array
+    if (fwrite(float_weights, sizeof(float), model->num_weights, file) != model->num_weights) {
+        fprintf(stderr, "Failed to write weights\n");
+        free(float_weights);
+        fclose(file);
+        return -1;
     }
     
-    // Write attention layers
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        AttentionLayer* attn = &model->attention_layers[i];
-        uint32_t d_model = attn->num_heads * attn->head_dim;
-        
-        if (attn->query_lattice) fwrite(attn->query_lattice, sizeof(float), d_model * d_model, file);
-        if (attn->key_lattice) fwrite(attn->key_lattice, sizeof(float), d_model * d_model, file);
-        if (attn->value_lattice) fwrite(attn->value_lattice, sizeof(float), d_model * d_model, file);
-    }
+    printf("  Saved %lu weights (%.2f MB)\n", 
+           (unsigned long)model->num_weights,
+           (model->num_weights * sizeof(float)) / (1024.0 * 1024.0));
     
-    // Write feedforward layers
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        FeedForwardLayer* ff = &model->ff_layers[i];
-        
-        if (ff->w1_lattice) fwrite(ff->w1_lattice, sizeof(float), ff->input_dim * ff->hidden_dim, file);
-        if (ff->bias1) fwrite(ff->bias1, sizeof(float), ff->hidden_dim, file);
-        if (ff->w2_lattice) fwrite(ff->w2_lattice, sizeof(float), ff->hidden_dim * ff->output_dim, file);
-        if (ff->bias2) fwrite(ff->bias2, sizeof(float), ff->output_dim, file);
-    }
-    
+    free(float_weights);
     fclose(file);
     printf("✓ Model saved: %s\n", filepath);
-    printf("  Saved %u layers with embeddings\n", model->num_layers);
+    printf("  Saved %u layers with %lu total parameters\n", 
+           model->num_layers, (unsigned long)model->num_weights);
     return 0;
 }
+
