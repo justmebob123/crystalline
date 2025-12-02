@@ -62,6 +62,11 @@ AppState* init_app(void) {
     extern void init_all_inputs(InputManager* manager, void* state);
     init_all_inputs(g_input_manager, state);
     
+    // CRITICAL: Initialize ALL tab UI components
+    // This ensures panels, buttons, and other UI elements are created
+    extern void init_all_tabs(AppState* state);
+    init_all_tabs(state);
+    
     // Initialize global model manager
     printf("\n=== Initializing Model Manager ===\n");
     if (!model_manager_init("./models")) {
@@ -226,6 +231,10 @@ AppState* init_app(void) {
 
 void cleanup(AppState* state) {
     if (!state) return;
+    
+    // Cleanup all tab UI components
+    extern void cleanup_all_tabs(AppState* state);
+    cleanup_all_tabs(state);
     if (state->is_recording) stop_recording(state);
     
     // CRITICAL: Stop control thread before cleanup

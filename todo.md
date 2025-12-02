@@ -1,109 +1,157 @@
-# TODO - Crystalline CLLM Project
+# TODO - Crystalline CLLM UI Redesign
 
-**CRITICAL RULES (from MASTER_PLAN.md) - MUST FOLLOW:**
-- **Rule 0**: ALWAYS paste rules to top of todo.md with EVERY response, read MASTER_PLAN.md, AUDIT.md, SECONDARY_OBJECTIVES.md
-- **Rule 1**: ALWAYS reread MASTER_PLAN.md before ANY action
-- **Rule 2**: Reference AUDIT.md for architectural state
-- **Rule 3**: Reference SECONDARY_OBJECTIVES.md for detailed tasks
-- **Rule 4**: Do NOT create new .md files OR standalone .c files - integrate into existing codebase
-- **Rule 4b**: NO FILES WITH SUFFIXES LIKE "_new", "_impl", "_v2" - use proper naming conventions
-- **Rule 5**: ALWAYS commit using: `git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main`
-- **Rule 6**: MASTER_PLAN.md is READ-ONLY - do not edit without explicit approval
-- **Rule 7**: FIX ALL BUILD WARNINGS before proceeding ✅ **CURRENT: 0 warnings - COMPLETE**
-- **Rule 8**: NO math.h usage - ONLY crystalline math functions (prime_*)
-- **Rule 9**: CONTINUOUS BIDIRECTIONAL ANALYSIS - verify all changes across all tabs for relationships and wiring
+## 🔒 RULES (PASTED FROM MASTER_PLAN.MD - RULE 0)
 
-## 🎯 ALL BUILD WARNINGS FIXED - ZERO WARNINGS ACHIEVED
+### ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
+**HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
 
-**User Directive:** "I need you to make clean and reevaluate the entire build, I'm having extensive warnings across multiple subsystems and files. Find every single build warning and FIX THEM."
+At the beginning of EVERY response, you MUST:
+1. Paste these rules to the top of todo.md
+2. Read the MASTER_PLAN.md completely
+3. Read the AUDIT.md for current architectural state
+4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
 
-**Status:** ✅ **ALL 20 WARNINGS FIXED - BUILD CLEAN**
+This creates a permanent loop ensuring rules are never forgotten.
 
----
+### RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+**SECOND HIGHEST PRIORITY RULE**
 
-## ✅ BUILD WARNING FIX SUMMARY
+Before taking ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Understand the current objectives
+3. Verify your action aligns with the master plan
+4. Check for any blocking priorities
 
-**Initial State:** 20 warnings
-**Final State:** 0 warnings
-**Build Status:** ✅ Clean build with zero warnings, zero errors
+This ensures all work follows the architectural design.
 
-### Warnings Fixed by Category:
+### RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+**CRITICAL REFERENCE DOCUMENT**
 
-**Category 1: Embedding Type Mismatches (13 warnings) - ✅ FIXED**
-- Fixed `cllm_crystalline_advanced.c:408` - Changed float* to double*
-- Fixed `cllm_embedding.c:30` - Changed float* to double*
-- Fixed `cllm_embedding.c:139` - Changed float* to double*
-- Fixed `cllm_inference.c:84` - Changed float* to double*
-- Fixed `cllm_inference.c:229` - Changed float* to double*
-- Fixed `cllm_inference.c:324` - Changed float* to double*
-- Fixed `cllm_inference.c:387` - Changed float* to double*
-- Fixed `cllm_lattice_embed.c:189` - Changed float* to double*
-- Fixed `cllm_lll_embeddings.c:35` - Changed float* to double*
-- Fixed `cllm_lll_embeddings.c:253` - Changed float* to double*
-- Fixed `cllm_positional.c:86` - Changed float* to double*
+The AUDIT.md contains:
+- Current architectural violations
+- Required fixes with priorities
+- Implementation phases
+- Testing requirements
+- Success criteria
 
-**Category 2: Function Signature Mismatches (5 warnings) - ✅ FIXED**
-- Fixed `cllm_embedding.c:84` - Updated function signature (float* → double*)
-- Fixed `cllm_embedding.c:149` - Updated function signature (float* → double*)
-- Fixed `cllm_training.c:1249` - Updated function signature (float* → double*)
-- Fixed `cllm_inference.c:360` - Added double conversion wrapper
-- Fixed `cllm_validate.c:106` - Changed to use _double variant
+Always consult AUDIT.md before starting work to understand:
+- What is broken
+- What needs fixing
+- What is blocking other work
+- What the correct architecture should be
 
-**Category 3: BigFixed Type Mismatches (3 warnings) - ✅ FIXED**
-- Fixed `cllm_lll_embeddings.c:281` - Proper float to double conversion
-- Fixed `cllm_lll_embeddings.c:286` - Fixed gradient buffer handling
-- Fixed `cllm_lll_embeddings.c:288` - Fixed gradient buffer allocation
+### RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+**DETAILED IMPLEMENTATION GUIDE**
 
-**Category 4: Wrong Function Signature (1 warning) - ✅ FIXED**
-- Fixed `cllm_production.c:155` - Pass CLLMTraining* instead of CLLMModel*
+The SECONDARY_OBJECTIVES.md contains:
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+- Validation steps
 
----
+Use this for step-by-step implementation guidance.
 
-## 📋 FILES MODIFIED
+### RULE 4: DO NOT CREATE NEW MD FILES
+All documentation goes in existing files or this master plan only.
 
-1. `src/ai/cllm_crystalline_advanced.c` - 1 type fix
-2. `src/ai/cllm_embedding.c` - 2 type fixes + 2 function signatures
-3. `src/ai/cllm_inference.c` - 5 type fixes + conversion wrapper
-4. `src/ai/cllm_lattice_embed.c` - 1 type fix + 1 function signature
-5. `src/ai/cllm_lll_embeddings.c` - 4 type fixes + proper conversions
-6. `src/ai/cllm_positional.c` - 1 type fix
-7. `src/ai/cllm_production.c` - 1 function call fix
-8. `src/ai/cllm_training.c` - 2 function signature fixes
-9. `src/ai/cllm_validate.c` - 1 function call fix
-10. `include/cllm_inference.h` - 3 function signature updates
+### RULE 5: ALWAYS COMMIT ALL CHANGES USING CORRECT AUTHENTICATION
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
 
-**Total:** 10 files modified, 20 warnings eliminated
+### RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
+All code must compile with zero warnings before moving to the next objective.
 
 ---
 
-## 🔍 BIDIRECTIONAL ANALYSIS PERFORMED
+## 🎯 CURRENT OBJECTIVE: Complete UI Redesign
 
-**Type Consistency Verification:**
-- ✅ All embeddings now consistently use double*
-- ✅ All function signatures match their implementations
-- ✅ All callers updated to match new signatures
-- ✅ Proper type conversions where needed (float ↔ double)
-- ✅ BigFixed handling corrected
+### Critical Issues Identified:
+1. **Models Tab**: Black screen - completely broken
+2. **Training Tab**: Controls bunched up and overlapping
+3. **All Tabs**: Text and UI elements overlapping
+4. **Layout System**: Not working properly - needs complete rethink
 
-**Impact Analysis:**
-- ✅ No breaking changes to external APIs
-- ✅ All internal consistency maintained
-- ✅ Training pipeline unaffected
-- ✅ Inference pipeline unaffected
-- ✅ Model manager unaffected
+### Phase 1: Analyze Current UI State [IN PROGRESS]
+
+#### 1.1: Examine Models Tab (Black Screen Issue)
+- [ ] Check tab_models.c rendering function
+- [ ] Verify draw_models_tab() is being called
+- [ ] Check for SDL rendering errors
+- [ ] Verify button initialization
+- [ ] Check for coordinate/bounds issues
+- [ ] Identify why screen is black
+
+#### 1.2: Examine Training Tab (Overlapping Controls)
+- [ ] Analyze tab_training.c layout
+- [ ] Document all UI element positions
+- [ ] Identify overlapping elements
+- [ ] Check hardcoded positions vs dynamic layout
+- [ ] Verify proper spacing and margins
+
+#### 1.3: Examine All Tabs for Text Overlap
+- [ ] Check text rendering in each tab
+- [ ] Verify font sizes and line heights
+- [ ] Check text bounds calculations
+- [ ] Identify clipping issues
+
+### Phase 2: Design New Layout System
+
+#### 2.1: Layout Principles
+- [ ] Define consistent spacing (padding, margins)
+- [ ] Define grid system for alignment
+- [ ] Define responsive behavior
+- [ ] Define z-ordering for overlays
+
+#### 2.2: Component Sizing
+- [ ] Define button sizes (small, medium, large)
+- [ ] Define input field sizes
+- [ ] Define label sizes
+- [ ] Define panel sizes
+
+#### 2.3: Tab-Specific Layouts
+- [ ] Design Models Tab layout
+- [ ] Design Training Tab layout
+- [ ] Design LLM Tab layout
+- [ ] Design Research Tab layout
+- [ ] Design Benchmark Tab layout
+
+### Phase 3: Implement New Layout System
+
+#### 3.1: Fix Models Tab
+- [ ] Implement proper rendering
+- [ ] Fix black screen issue
+- [ ] Position all elements correctly
+- [ ] Test visibility and interaction
+
+#### 3.2: Fix Training Tab
+- [ ] Reorganize controls
+- [ ] Fix overlapping elements
+- [ ] Implement proper spacing
+- [ ] Test all controls
+
+#### 3.3: Fix All Tabs
+- [ ] Apply consistent layout
+- [ ] Fix text rendering
+- [ ] Fix overlapping issues
+- [ ] Test each tab thoroughly
+
+### Phase 4: Testing and Validation
+- [ ] Test Models Tab functionality
+- [ ] Test Training Tab functionality
+- [ ] Test all tabs for visual issues
+- [ ] Test window resizing
+- [ ] Test all interactions
 
 ---
 
-## 📊 CURRENT STATUS
+## 📋 EXECUTION LOG
 
-**Build Status:** ✅ **ZERO WARNINGS, ZERO ERRORS**
-**All Objectives Complete:**
-- ✅ Option A: Model backend wiring
-- ✅ Option B: Training tab controls
-- ✅ Option C: Cross-tab synchronization architecture
-- ✅ All 20 build warnings fixed
-
-**Ready for:**
-- Runtime testing
-- User acceptance testing
-- Next objectives from MASTER_PLAN
+### Current Session:
+- [x] Pasted rules to top of todo.md (RULE 0)
+- [ ] Analyzing Models Tab black screen issue
+- [ ] Analyzing Training Tab overlapping controls
+- [ ] Designing new layout system
