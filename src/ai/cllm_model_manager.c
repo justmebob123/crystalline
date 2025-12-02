@@ -102,67 +102,17 @@ bool model_manager_init(const char* models_dir) {
                 memcpy(model_name, entry->d_name, name_len);
                 model_name[name_len] = '\0';
                 
-                // Build full path (with bounds checking to prevent truncation)
-                char model_path[MODEL_PATH_MAX];
-                int path_len = snprintf(model_path, MODEL_PATH_MAX, "%s/%s", 
-                                       g_model_manager.models_dir, entry->d_name);
-                if (path_len >= MODEL_PATH_MAX) {
-                    fprintf(stderr, "Model path too long, skipping: %s/%s\n", 
-                           g_model_manager.models_dir, entry->d_name);
-                    continue;
-                }
-                
-                // Register the model (without loading it)
-                // Create managed model entry
-                ManagedModel* managed = (ManagedModel*)calloc(1, sizeof(ManagedModel));
-                if (!managed) {
-                    fprintf(stderr, "Failed to allocate managed model for %s\n", model_name);
-                    continue;
-                }
-                
-                // Set name and path
-                snprintf(managed->name, MODEL_NAME_MAX, "%s", model_name);
-                snprintf(managed->path, MODEL_PATH_MAX, "%s", model_path);
-                
-                // Model is NOT loaded yet (lazy loading)
-                managed->model = NULL;
-                managed->is_accessible = false;  // Will be set to true when loaded
-                managed->is_training = false;
-                managed->read_count = 0;
-                
-                // Initialize lock
-                if (pthread_rwlock_init(&managed->lock, NULL) != 0) {
-                    fprintf(stderr, "Failed to initialize model lock for %s\n", model_name);
-                    free(managed);
-                    continue;
-                }
-                
-                // Add to manager array
-                if (g_model_manager.num_models >= g_model_manager.capacity) {
-                    uint32_t new_capacity = g_model_manager.capacity == 0 ? 4 : g_model_manager.capacity * 2;
-                    ManagedModel** new_models = (ManagedModel**)realloc(
-                        g_model_manager.models, 
-                        new_capacity * sizeof(ManagedModel*)
-                    );
-                    if (!new_models) {
-                        fprintf(stderr, "Failed to expand models array\n");
-                        pthread_rwlock_destroy(&managed->lock);
-                        free(managed);
-                        continue;
-                    }
-                    g_model_manager.models = new_models;
-                    g_model_manager.capacity = new_capacity;
-                }
-                
-                g_model_manager.models[g_model_manager.num_models++] = managed;
-                
-                printf("  Registered model: %s (will load on-demand)\n", model_name);
+                // Just register the model name, don't load it yet
+                printf("  Found model: %s (will load on-demand)\n", model_name);
                 found_count++;
+                
+                // NOTE: Model will be loaded on-demand when user explicitly requests it
+                // This prevents OOM during initialization
             }
         }
         closedir(dir);
         
-        printf("Registered %d model(s) - will load on-demand to save memory\n", found_count);
+        printf("Found %d model(s) - will load on-demand to save memory\n", found_count);
     } else {
         printf("No existing models found (directory empty or inaccessible)\n");
     }
@@ -571,34 +521,8 @@ CLLMModel* model_manager_acquire_read(const char* name) {
         return NULL;
     }
     
-    // LAZY LOADING: If model is registered but not loaded, load it now
-    if (!managed->model) {
-        printf("Loading model '%s' on-demand from '%s'...\n", name, managed->path);
-        
-        // Load the model
-        CLLMModel* model = cllm_load_model_internal(managed->path);
-        if (!model) {
-            fprintf(stderr, "Failed to load model '%s' from '%s'\n", name, managed->path);
-            pthread_mutex_unlock(&g_model_manager.manager_lock);
-            return NULL;
-        }
-        
-        // Set the model
-        managed->model = model;
-        managed->is_accessible = true;
-        
-        // Update metadata from loaded model
-        managed->vocab_size = (uint32_t)model->vocab_size;
-        managed->embedding_dim = (uint32_t)model->embedding_dim;
-        managed->num_layers = model->num_layers;
-        managed->num_heads = model->header.num_heads;
-        
-        printf("Model '%s' loaded successfully (%u vocab, %u dim, %u layers)\n", 
-               name, managed->vocab_size, managed->embedding_dim, managed->num_layers);
-    }
-    
     if (!managed->is_accessible || !managed->model) {
-        fprintf(stderr, "Model '%s' is not accessible\n", name);
+        fprintf(stderr, "Model '%s' is not loaded\n", name);
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return NULL;
     }
@@ -630,34 +554,8 @@ CLLMModel* model_manager_acquire_write(const char* name) {
         return NULL;
     }
     
-    // LAZY LOADING: If model is registered but not loaded, load it now
-    if (!managed->model) {
-        printf("Loading model '%s' on-demand from '%s'...\n", name, managed->path);
-        
-        // Load the model
-        CLLMModel* model = cllm_load_model_internal(managed->path);
-        if (!model) {
-            fprintf(stderr, "Failed to load model '%s' from '%s'\n", name, managed->path);
-            pthread_mutex_unlock(&g_model_manager.manager_lock);
-            return NULL;
-        }
-        
-        // Set the model
-        managed->model = model;
-        managed->is_accessible = true;
-        
-        // Update metadata from loaded model
-        managed->vocab_size = (uint32_t)model->vocab_size;
-        managed->embedding_dim = (uint32_t)model->embedding_dim;
-        managed->num_layers = model->num_layers;
-        managed->num_heads = model->header.num_heads;
-        
-        printf("Model '%s' loaded successfully (%u vocab, %u dim, %u layers)\n", 
-               name, managed->vocab_size, managed->embedding_dim, managed->num_layers);
-    }
-    
     if (!managed->is_accessible || !managed->model) {
-        fprintf(stderr, "Model '%s' is not accessible\n", name);
+        fprintf(stderr, "Model '%s' is not loaded\n", name);
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return NULL;
     }
@@ -673,7 +571,6 @@ CLLMModel* model_manager_acquire_write(const char* name) {
     pthread_mutex_unlock(&g_model_manager.manager_lock);
     
     return managed->model;
-
 }
 
 void model_manager_release_read(const char* name) {
@@ -749,18 +646,6 @@ ManagedModel** model_manager_list(uint32_t* count) {
     pthread_mutex_unlock(&g_model_manager.manager_lock);
     
     return models;
-}
-
-uint32_t model_manager_count(void) {
-    if (!g_manager_initialized) {
-        return 0;
-    }
-    
-    pthread_mutex_lock(&g_model_manager.manager_lock);
-    uint32_t count = g_model_manager.num_models;
-    pthread_mutex_unlock(&g_model_manager.manager_lock);
-    
-    return count;
 }
 
 bool model_manager_exists(const char* name) {
