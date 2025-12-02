@@ -934,7 +934,6 @@ void cllm_zero_all_gradients(CLLMTraining* training) {
     if (!model) return;
     
     uint32_t embed_dim = model->embedding_dim;
-    uint32_t vocab_size = model->vocab_size;
     
     // Zero embedding gradients
     if (training->gradients) {
@@ -1720,7 +1719,7 @@ void cllm_adam_step_bigfixed(
     // TODO: Implement full BigFixed Adam when needed
     for (size_t i = 0; i < embed_size && i < 1000; i++) {  // Limit for now
         double g = bigfixed_packed_array_get(grad_array, i);
-        if (fabs(g) < 1e-10) continue;  // Skip zero gradients
+        if (prime_fabsf((float)g) < 1e-10f) continue;  // Skip zero gradients
         
         // Get moments
         double m = bigfixed_packed_array_get(opt_array, i * 2);      // First moment
@@ -1735,7 +1734,7 @@ void cllm_adam_step_bigfixed(
         bigfixed_packed_array_set(opt_array, i * 2 + 1, v);
         
         // Compute update: lr * m / (sqrt(v) + epsilon)
-        double update = learning_rate_float * m / (sqrt(v) + 1e-8);
+        double update = learning_rate_float * m / (prime_sqrtf((float)v) + 1e-8f);
         
         // Update weight (would need to map to actual model weights)
         // For now, just update master_weights if available

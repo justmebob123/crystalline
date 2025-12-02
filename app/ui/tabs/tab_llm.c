@@ -94,7 +94,7 @@ static void on_llm_model_selected(const char* model_name, void* user_data) {
 static int chat_scroll_offset = 0;
 
 // UI state
-static bool input_active = false;
+// Removed unused variable: input_active
 // Removed unused variable - input_cursor (now managed by InputManager)
 
 // Model browser state
