@@ -421,11 +421,11 @@ float cllm_forward_training_threaded(
                 
                 CLLMLayerNorm* ln = &model->layer_norms[layer];
                 (void)ln;  // Reserved for future use
-                float mean = 0.0f, var = 0.0f;
+                double mean = 0.0, var = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
                 mean /= embed_dim;
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float diff = layer_out[d] - mean;
+                    double diff = layer_out[d] - mean;
                     var += diff * diff;
                 }
                 var /= embed_dim;
@@ -453,7 +453,7 @@ float cllm_forward_training_threaded(
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
-                float score = 0.0f;
+                double score = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];
                 }
@@ -512,25 +512,25 @@ void cllm_backward_training_threaded(
             }
             
             // Clamp max_logit to prevent overflow in exp
-            if (max_logit > 50.0f) max_logit = 50.0f;
-            if (max_logit < -50.0f) max_logit = -50.0f;
+            if (max_logit > 50.0) max_logit = 50.0;
+            if (max_logit < -50.0) max_logit = -50.0;
             
-            float sum_exp = 0.0f;
+            double sum_exp = 0.0;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float x = logits[v] - max_logit;
+                double x = logits[v] - max_logit;
                 // Clamp to safe range for exp
-                if (x > 50.0f) x = 50.0f;
-                if (x < -50.0f) x = -50.0f;
-                sum_exp += prime_expf(x);
+                if (x > 50.0) x = 50.0;
+                if (x < -50.0) x = -50.0;
+                sum_exp += prime_exp(x);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float x = logits[v] - max_logit;
+                double x = logits[v] - max_logit;
                 // Clamp to safe range for exp
-                if (x > 50.0f) x = 50.0f;
-                if (x < -50.0f) x = -50.0f;
-                float prob = prime_expf(x) / sum_exp;
-                grad[v] = prob - (v == target ? 1.0f : 0.0f);
+                if (x > 50.0) x = 50.0;
+                if (x < -50.0) x = -50.0;
+                double prob = prime_exp(x) / sum_exp;
+                grad[v] = prob - (v == target ? 1.0 : 0.0);
             }
         }
     }
@@ -1962,7 +1962,7 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         printf("[DEBUG] accumulate_gradients: Sphere %d gradients validated\n", i);
         
         // Clip gradients to prevent overflow
-        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
+        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0);
         
         for (size_t j = 0; j < system->gradient_size; j++) {
             system->accumulated_gradients[j] += ctx->local_gradients[j];
@@ -2267,16 +2267,16 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
 /**
  * Get total gradient norm
  */
-float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
-    if (!system || !system->accumulated_gradients) return 0.0f;
+double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
+    if (!system || !system->accumulated_gradients) return 0.0;
     
        // PHASE 4: Lock-free - safe to read after barrier synchronization
-    float norm = 0.0f;
+    double norm = 0.0;
     for (size_t i = 0; i < system->gradient_size; i++) {
-        float val = system->accumulated_gradients[i];
+        double val = system->accumulated_gradients[i];
         norm += val * val;
     }
-    norm = prime_sqrtf(norm);
+    norm = prime_sqrt(norm);
     
     return norm;
 }

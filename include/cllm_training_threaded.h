@@ -166,7 +166,7 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
  * @param system Threaded training system
  * @return Total gradient norm
  */
-float threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
+double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
 
 /**
  * Get number of worker spheres
