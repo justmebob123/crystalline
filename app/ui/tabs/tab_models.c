@@ -164,17 +164,17 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
                 draw_text(state->renderer, models[i]->name, 
                          model_rect.x + 10, model_rect.y + 10, name_color);
                 
-                // Model status
-                const char* status = models[i]->read_count > 0 ? "In Use" : "Idle";
-                SDL_Color status_color = models[i]->read_count > 0 ? 
-                    (SDL_Color){100, 255, 100, 255} : (SDL_Color){150, 150, 150, 255};
+                // Model accessibility status (OBJECTIVE 26)
+                const char* status = models[i]->is_accessible ? "Accessible" : "Needs Preparation";
+                SDL_Color status_color = (models[i]->is_accessible) ? 
+                    (SDL_Color){100, 255, 100, 255} : (SDL_Color){255, 200, 100, 255};
                 draw_text(state->renderer, status, 
                          model_rect.x + 10, model_rect.y + 30, status_color);
                 
                 // Model size info
                 char size_info[128];
-                snprintf(size_info, sizeof(size_info), "Vocab: %u | Layers: %u",
-                        models[i]->vocab_size, models[i]->num_layers);
+                snprintf(size_info, sizeof(size_info), "Vocab: %u | Layers: %u | Primes: %lu",
+                        models[i]->vocab_size, models[i]->num_layers, (unsigned long)models[i]->required_primes);
                 draw_text(state->renderer, size_info,
                          model_rect.x + 10, model_rect.y + 45, info_color);
             }
@@ -194,7 +194,7 @@ static void draw_model_list(AppState* state, int x, int y, int width, int height
 
 // Draw action buttons
 static void draw_action_buttons(AppState* state, int x, int y, int width) {
-    int button_width = (width - 4 * BUTTON_SPACING) / 3;
+    int button_width = (width - 5 * BUTTON_SPACING) / 4;
     int current_x = x;
     
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
@@ -221,6 +221,24 @@ static void draw_action_buttons(AppState* state, int x, int y, int width) {
     current_x += button_width + BUTTON_SPACING;
     
     // Delete button (only if model selected)
+       // Prepare button (OBJECTIVE 26 - only if model selected and not accessible)
+       if (g_models_state.selected_model_index >= 0) {
+           uint32_t model_count = 0;
+           ManagedModel** models = model_manager_list(&model_count);
+           if (g_models_state.selected_model_index < (int)model_count && models[g_models_state.selected_model_index]) {
+               if (!models[g_models_state.selected_model_index]->is_accessible) {
+                   SDL_Rect prepare_button = {current_x, y, button_width, BUTTON_HEIGHT};
+                   SDL_SetRenderDrawColor(state->renderer, 200, 150, 0, 255);
+                   SDL_RenderFillRect(state->renderer, &prepare_button);
+                   SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
+                   SDL_RenderDrawRect(state->renderer, &prepare_button);
+                   draw_text(state->renderer, "Prepare", 
+                            prepare_button.x + (button_width - 50) / 2, prepare_button.y + 8, btn_text);
+               }
+           }
+           current_x += button_width + BUTTON_SPACING;
+       }
+       
     if (g_models_state.selected_model_index >= 0) {
         SDL_Rect delete_button = {current_x, y, button_width, BUTTON_HEIGHT};
         SDL_SetRenderDrawColor(state->renderer, 120, 0, 0, 255);

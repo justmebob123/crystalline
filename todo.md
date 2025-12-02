@@ -48,16 +48,35 @@ The build is completely clean with no warnings or errors.
 ### OBJECTIVE 26: Fix Model Manager Architecture [CRITICAL - IN PROGRESS]
 **Purpose:** Remove "loading into memory" concept, models are accessible from disk
 
-**Tasks:**
-- [ ] Add `model_manager_read_metadata()` - read just header without loading weights
-- [ ] Add `model_manager_estimate_primes()` - calculate required primes from metadata
-- [ ] Add `model_manager_check_abacus()` - verify abacus has enough primes
-- [ ] Add `model_manager_prepare()` - expand abacus if needed
-- [ ] Remove `is_loaded` flag - replace with `is_accessible`
+**Phase 1-3: Core Implementation ✅ COMPLETE**
+- [x] Add `num_primes_used` field to CLLMHeader
+- [x] Add `model_manager_read_metadata()` - read just header without loading weights
+- [x] Add `model_manager_free_metadata()` - free metadata structure
+- [x] Add `model_manager_check_abacus()` - verify abacus has enough primes
+- [x] Add `model_manager_expand_abacus()` - generate additional primes on-demand
+- [x] Add `model_manager_prepare()` - expand abacus if needed
+- [x] Remove `is_loaded` flag - replace with `is_accessible`
+- [x] Add `required_primes` field to ManagedModel
+- [x] Update `cllm_write_model()` to save prime count
+- [x] Update `model_manager_get_status()` signature
+- [x] Build successfully with zero errors/warnings
+
+**Phase 4-6: UI and Control Thread Updates (TODO)**
+- [ ] Update control thread to use new architecture
 - [ ] Update UI to show "Model Accessible" not "Model Loaded"
-- [ ] Show required vs available prime count
+- [ ] Show required vs available prime count in UI
 - [ ] Add "Prepare Model" button in UI
 - [ ] Remove memory usage concerns from UI
+- [ ] Update tab_models.c with new status display
+
+**Phase 7: Testing (TODO)**
+- [ ] Test model_manager_read_metadata()
+- [ ] Test model_manager_prepare()
+- [ ] Test abacus expansion
+- [ ] Test with small model (1000 primes)
+- [ ] Test with medium model (10000 primes)
+- [ ] Test with large model (50000 primes)
+- [ ] Verify no OOM issues
 - [ ] Test inference from disk
 - [ ] Test training from disk
 

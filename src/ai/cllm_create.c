@@ -215,6 +215,11 @@ CLLMModel* cllm_create_model_bigfixed(const CLLMConfig* config) {
     printf("  - Precision: %d bits\n", model->precision_bits);
     printf("  - Total weights: %lu (BigFixed)\n", model->num_weights);
     
+    // OBJECTIVE 26: Track number of primes used by this model
+    model->header.num_primes_used = model->vocab_size;
+    printf("  - Primes used: %lu (based on vocab_size)\n", 
+           (unsigned long)model->header.num_primes_used);
+    
     return model;
 }
 
@@ -596,6 +601,13 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         printf("\n");
         cllm_initialize_kissing_spheres(model);
     }
+    
+    // OBJECTIVE 26: Track number of primes used by this model
+    // The maximum prime index used is vocab_size (for token encoding)
+    // We use vocab_size as a conservative estimate
+    model->header.num_primes_used = model->vocab_size;
+    printf("Model uses %lu primes (based on vocab_size)\n", 
+           (unsigned long)model->header.num_primes_used);
     
     return model;
 }  // End of cllm_create_model
