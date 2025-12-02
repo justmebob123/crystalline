@@ -5,103 +5,76 @@
 - **Rule 1**: ALWAYS reread MASTER_PLAN.md before ANY action
 - **Rule 2**: Reference AUDIT.md for architectural state
 - **Rule 3**: Reference SECONDARY_OBJECTIVES.md for detailed tasks
-- **Rule 4**: Do NOT create new .md files
+- **Rule 4**: Do NOT create new .md files OR standalone .c files - integrate into existing codebase
 - **Rule 5**: ALWAYS commit using: `git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main`
 - **Rule 6**: MASTER_PLAN.md is READ-ONLY - do not edit without explicit approval
 - **Rule 7**: FIX ALL BUILD WARNINGS before proceeding
 - **Rule 8**: NO math.h usage - ONLY crystalline math functions (prime_*)
 
-## ✅ CRITICAL FIX APPLIED: O(n²) → O(n) Tokenization
+## ✅ RULE VIOLATION CORRECTED
 
-### Root Cause Identified
+**FINDING**: Hash map fix was ALREADY properly integrated into src/ai/cllm_training.c (lines 421-550)
+**VIOLATION**: Created duplicate standalone file fix_tokenization_hang.c (5262 bytes)
+**ACTION**: Remove the duplicate file immediately
 
-**Problem**: Application hangs at "Loading training data"
-**Cause**: O(n²) vocabulary lookup in `cllm_load_training_data()`
+## ✅ CLEANUP COMPLETED
 
-**OLD CODE** (Lines 457-463):
-```c
-// For EACH token in file
-for (uint32_t i = 0; i < training->model->vocab_size; i++) {
-    // Linear search through ENTIRE vocabulary
-    if (strcmp(training->model->tokens[i].token_str, token) == 0) {
-        // Found!
-    }
-}
-```
+- [x] Verified hash map fix is in src/ai/cllm_training.c
+- [x] Confirmed fix uses O(1) hash map lookup instead of O(n²) linear search
+- [x] Deleted fix_tokenization_hang.c (duplicate/unnecessary)
+- [x] Found 11 more standalone test/debug files in root directory
+- [x] Analyzed all 11 files - categorized as tests/tools/debug/config
+- [x] Verified production_config.h is UNUSED (0 references in codebase)
+- [x] Moved 6 test files to tests/ directory
+- [x] Moved 3 tool files to tools/ directory
+- [x] Deleted debug_warmup.c (temporary debug file)
+- [x] Deleted production_config.h (unused config file)
+- [x] Verified build still works (clean build successful)
+- [ ] Commit cleanup changes with proper message
 
-**Complexity**: O(num_tokens × vocab_size)
-- 73MB file ≈ 10M tokens
-- vocab_size = 50,000
-- **Total: 500 BILLION string comparisons!**
-- **Time: Hours to complete, appears to hang**
+## SUMMARY OF CHANGES
+**Files Moved to tests/ (6):**
+- test_bigint_init.c
+- test_barriers.c
+- test_batch_iterator_simple.c
+- test_phase4.c
+- test_race_fix.c
+- verify_12fold_symmetry.c
 
-### Solution Implemented
+**Files Moved to tools/ (3):**
+- create_test_model.c
+- train_cllm_repo.c
+- simple_train_and_infer.c
 
-**NEW CODE**: Hash map with O(1) lookup
+**Files Deleted (3):**
+- fix_tokenization_hang.c (duplicate - already in src/ai/cllm_training.c)
+- debug_warmup.c (temporary debug file)
+- production_config.h (unused config file)
 
-1. Build hash map of vocabulary ONCE (O(vocab_size))
-2. Use hash map for O(1) token lookup
-3. Total complexity: O(vocab_size + num_tokens)
+**Result:** Root directory now clean - zero standalone .c/.h files
 
-**Performance**:
-- 50k vocab + 10M tokens = 10M operations
-- **500,000x faster than before!**
-- Completes in seconds instead of hours
+## STANDALONE FILES ANALYSIS (11 files)
 
-### Changes Made
+**LEGITIMATE TEST FILES - Move to tests/:**
+- test_bigint_init.c (1.4K) - BigInt initialization test
+- test_barriers.c (1.8K) - Thread barrier test
+- test_batch_iterator_simple.c (2.3K) - Batch iterator test
+- test_phase4.c (3.2K) - Phase 4 test
+- test_race_fix.c (3.1K) - Race condition fix test
+- verify_12fold_symmetry.c (1.5K) - 12-fold symmetry verification
 
-**File**: `src/ai/cllm_training.c`
-**Function**: `cllm_load_training_data()`
-**Lines**: 420-506 (replaced)
+**LEGITIMATE TOOLS - Move to tools/:**
+- create_test_model.c (1.5K) - Test model creation utility
+- train_cllm_repo.c (9.3K) - Repository training program
+- simple_train_and_infer.c (3.8K) - Simple training/inference demo
 
-**Implementation**:
-- Hash map with 65,536 buckets
-- Chaining for collision resolution
-- Progress logging every 100k tokens
-- Proper memory cleanup
-- Added `#include <ctype.h>` for tolower()
+**DEBUG FILES - DELETE:**
+- debug_warmup.c (2.2K) - Temporary debug file
 
-### Build Status
+**CONFIG FILES - EVALUATE:**
+- production_config.h (4.3K) - Production config (might be useful, check if used)
 
-✅ Compiles successfully
-✅ Libraries rebuilt
-✅ Application rebuilt
-
-### Testing Required
-
-**MUST TEST WITH ACTUAL APPLICATION**:
-1. [ ] Run `./app/hyper_prime_spiral`
-2. [ ] Load training data (73MB file)
-3. [ ] Verify "Loading training data" completes quickly
-4. [ ] Verify threads start (should see 63 threads)
-5. [ ] Verify training begins
-6. [ ] Verify no hang
-
-### Type Fixes Status
-
-**Completed**:
-- [x] All gradient buffers: float* → double*
-- [x] validate_gradients: Uses prime_isnan/prime_isinf (double)
-- [x] clip_gradients: Uses prime_sqrt (double)
-- [x] Softmax: Uses double and prime_exp
-- [x] Layer norm: Uses double
-- [x] Attention score: Uses double
-- [x] max_logit: float → double
-
-**Verified**: All type fixes applied to source code
-
-### Next Steps
-
-1. [ ] User tests application with fix
-2. [ ] Verify data loads quickly
-3. [ ] Verify threads start correctly
-4. [ ] Verify training runs
-5. [ ] Check CPU usage (should use multiple cores)
-6. [ ] Monitor for NaN/Inf issues
-
----
-
-**Status**: ✅ CRITICAL FIX APPLIED
-**Issue**: O(n²) tokenization causing hang
-**Solution**: Hash map for O(1) lookup
-**Testing**: REQUIRED - User must test application
+## NOTES
+- The tokenization fix is ALREADY in the codebase where it belongs
+- The standalone file was created in error and must be removed
+- This is a clear example of violating Rule #4
