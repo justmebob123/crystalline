@@ -640,11 +640,13 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                         status_message_timer = 3.0f;
                         
                         // Dispatch event
-                        Event event = {
-                            .type = EVENT_MODEL_LOADED,
-                            .data = models[clicked_index]->name
-                        };
-                        event_system_dispatch(&event);
+                        EventSystem* evt_sys = event_system_get_instance();
+                        if (evt_sys) {
+                            event_dispatch(evt_sys, EVENT_MODEL_LOADED, 
+                                         (void*)models[clicked_index]->name, 
+                                         strlen(models[clicked_index]->name) + 1, 
+                                         "tab_models");
+                        }
                     } else {
                         snprintf(status_message, sizeof(status_message), 
                                 "Failed to load model '%s'", models[clicked_index]->name);
