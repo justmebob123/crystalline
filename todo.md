@@ -1,208 +1,56 @@
-# RULES (MUST FOLLOW WITH EVERY RESPONSE)
+# TODO - Fix Model Loading Issue
 
-## RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD ⭐
-1. Paste these rules to the top of todo.md
-2. Read the MASTER_PLAN.md completely
-3. Read the AUDIT.md for current architectural state
-4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
+## RULES (PASTED FROM MASTER_PLAN)
+- RULE 0: Always paste rules to top of todo.md
+- RULE 1: Always reread MASTER_PLAN.md before any action
+- RULE 2: Reference AUDIT.md for architectural state
+- RULE 3: Reference SECONDARY_OBJECTIVES.md for detailed tasks
+- RULE 4: Do not create new MD files
+- RULE 5: Always commit all changes using correct authentication
+- RULE 6: MASTER_PLAN.md is READ-ONLY
+- RULE 7: Fix all build warnings before proceeding
 
-## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
-1. Read MASTER_PLAN.md completely
-2. Understand the current objectives
-3. Verify your action aligns with the master plan
-4. Check for any blocking priorities
+## CRITICAL ISSUE: Model Loading on Tab Open
 
-## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
-- Current architectural violations
-- Required fixes with priorities
-- Implementation phases
-- Testing requirements
-- Success criteria
+### Problem
+When the Training Tab opens, it automatically loads the first model into memory via the model selector callback. This causes:
+- Massive memory consumption (12GB+ for 50K vocab models)
+- Application hang during load
+- Out of memory errors
+- Undesirable behavior (models should load on-demand when training starts)
 
-## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
-- Detailed implementation tasks
-- Code examples
-- File-by-file changes
-- Testing procedures
-- Validation steps
+### Root Cause
+The `on_model_selected()` callback in `tab_training.c` calls `model_manager_acquire_write()` which triggers lazy loading. This callback is invoked when the model selector initializes and sets the first model as selected.
 
-## RULE 4: DO NOT CREATE NEW MD FILES
-## RULE 5: ALWAYS COMMIT ALL CHANGES USING CORRECT AUTHENTICATION
-## RULE 6: THIS FILE IS READ-ONLY - DO NOT EDIT WITHOUT EXPLICIT APPROVAL
-## RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
+### Correct Architecture (from MASTER_PLAN)
+- Models should be REGISTERED during initialization (name + path only)
+- Models should be LOADED on-demand when actually needed (training start)
+- Model selector should show available models WITHOUT loading them
+- Only load model when user explicitly starts training
 
----
+### Fix Plan
+- [x] Identify root cause (on_model_selected callback)
+- [x] Remove model loading from on_model_selected callback
+- [x] Store selected model NAME only (not pointer)
+- [x] Load model only when "Start Training" button is clicked
+- [x] Update model status display to show "Available" vs "Loaded"
+- [x] Build succeeds with zero warnings
+- [ ] Test that models are not loaded until training starts
+- [ ] Verify memory usage stays low on tab open
 
-# CRITICAL ISSUES IN TRAINING TAB - COMPLETE REDESIGN REQUIRED
+### Implementation Steps
+1. Modify `on_model_selected()` to store model name only
+2. Add `selected_model_name` field to training tab state
+3. Modify "Start Training" button to load model on-demand
+4. Update model status display logic
+5. Test and verify
 
-## User-Reported Issues (CRITICAL)
-
-### Issue 1: Duplicate Sphere Visualizations ❌
-**Problem**: Two sphere visualizations exist, one overlaying the other
-- The TOP visualization shows NO activity (static/frozen)
-- The BOTTOM visualization (hidden behind) shows CORRECT activity
-- When training stops, top visualization disappears revealing the working one
-- This suggests a duplicate visualization was created (possibly for 2D/3D toggle)
-
-**Root Cause**: Likely created duplicate sphere rendering code instead of toggling existing one
-
-### Issue 2: Training Threads Not Stopping ❌
-**Problem**: When training stops, threads continue accessing model causing memory errors
-- Same heap-use-after-free issue as before
-- Threads still running after stop button clicked
-- Model being freed while threads still accessing it
-
-**Root Cause**: Thread shutdown sequence broken again
-
-### Issue 3: Model Status Confusion ❌
-**Problem**: UI shows contradictory model status
-- Says "model is ready"
-- Also says "model isn't loaded"
-- Confusing to user
-
-### Issue 4: Model Dropdown Visibility ❌
-**Problem**: Model dropdown difficult to see
-- Overlapping UI elements
-- Poor visibility/contrast
-
-### Issue 5: Models Tab Selection Broken ❌
-**Problem**: Cannot select model from Models tab
-- Only shows off-center list
-- No clear buttons to select/load model
-- Should be able to click model to load it
-
-## Deep Analysis Required
-
-### Phase 1: Analyze Training Tab Structure
-- [ ] Read complete tab_training.c file
-- [ ] Identify ALL sphere visualization code
-- [ ] Map all rendering functions
-- [ ] Find duplicate visualization code
-- [ ] Identify which is original, which is duplicate
-
-### Phase 2: Analyze Thread Management
-- [ ] Review training_thread.c
-- [ ] Check stop_training_thread() implementation
-- [ ] Verify pthread_join() is called
-- [ ] Check cleanup sequence
-- [ ] Ensure model not freed before threads stop
-
-### Phase 3: Analyze Model Status Display
-- [ ] Find all model status text rendering
-- [ ] Identify contradictory status messages
-- [ ] Determine correct status logic
-
-### Phase 4: Analyze Models Tab
-- [ ] Read complete tab_models.c
-- [ ] Find model list rendering
-- [ ] Identify selection mechanism
-- [ ] Check button visibility
-- [ ] Verify click handlers
-
-### Phase 5: Complete Redesign
-- [ ] Remove duplicate sphere visualization
-- [ ] Fix thread shutdown sequence
-- [ ] Unify model status display
-- [ ] Fix model dropdown visibility
-- [ ] Add proper model selection in Models tab
-- [ ] Test all fixes together
-
-## Files to Analyze
-- app/ui/tabs/tab_training.c
-- app/ui/tabs/tab_models.c
-- app/training_thread.c
-- app/ui/sphere_visualization.c
-- app/main.c (cleanup sequence)
-
-## Implementation Plan - ALL PHASES
-
-### Phase 1: Fix Duplicate Sphere Visualization ✅ COMPLETE
-- [x] Remove line 650 sphere visualization call
-- [x] Uncomment line 486 sphere visualization call
-- [x] Remove conditional at line 380 (always show spheres)
-- [x] Build successful - zero errors
-- [x] Commit Phase 1
-
-### Phase 2: Investigate and Fix Thread Stopping ✅ COMPLETE
-- [x] Verified training loop checks stop flag at each epoch
-- [x] Verified threaded_training_free() properly stops all worker threads
-- [x] Verified cleanup sequence is correct (stop threads before model cleanup)
-- [x] Added pthread_mutex_t sphere_stats_mutex to AppState
-- [x] Protected all sphere_stats writes with mutex in training_thread.c
-- [x] Protected all sphere_stats reads with mutex in sphere_visualization.c
-- [x] Build successful - zero errors
-- [x] Commit Phase 2
-
-### Phase 3: Fix Model Status Display ✅ COMPLETE
-- [x] Added model_manager_count() function to check registered models
-- [x] Updated status logic with 3 states (loaded/available/none)
-- [x] Unified status messages - no more contradictions
-- [x] Color coding: Green=loaded, Orange=available, Red=none
-- [x] Build successful - zero errors, 1 pre-existing warning
-- [x] Commit Phase 3
-
-### Phase 4: Fix Model Selector Visibility ✅ COMPLETE
-- [x] Increased model selector height from 30 to 50 pixels
-- [x] Increased spacing below selector from 30 to 50 pixels
-- [x] Improved color contrast (brighter text, borders, hover)
-- [x] Better background color for visibility
-- [x] Build successful - zero errors
-- [x] Commit Phase 4
-
-### Phase 5: Improve Models Tab Selection ✅ COMPLETE
-- [x] Made selection highlight brighter (60,60,100 -> 80,120,180)
-- [x] Added double-click detection (500ms window)
-- [x] Double-click now loads model automatically
-- [x] Added visual feedback (status message on load)
-- [x] Dispatches MODEL_LOADED event for cross-tab sync
-- [x] Build successful - zero errors
-- [x] Commit Phase 5
-
-### Final Steps ✅ ALL COMPLETE
-- [x] Build and test all changes together - SUCCESS
-- [x] Push all commits to GitHub - 5 commits pushed
-- [ ] User acceptance testing - READY FOR USER
-
-## Summary of All Fixes
-
-### Phase 1: Duplicate Sphere Visualization ✅
-- Removed duplicate visualization overlay
-- Uncommented original visualization
-- Spheres now show real-time activity correctly
-
-### Phase 2: Thread Stopping & Race Conditions ✅
-- Added mutex protection for sphere_stats
-- Verified thread shutdown sequence correct
-- Eliminated race conditions
-
-### Phase 3: Model Status Display ✅
-- 3-state status system (loaded/available/none)
-- Color-coded for clarity
-- No more contradictory messages
-
-### Phase 4: Model Selector Visibility ✅
-- Increased height 30px -> 50px
-- Improved color contrast
-- Better spacing and borders
-
-### Phase 5: Models Tab Selection ✅
-- Brighter selection highlight
-- Double-click to load
-- Visual feedback on load
-
-## Commits Pushed to GitHub
-1. bf26551 - Phase 1: Fix duplicate sphere visualization
-2. 2b8b02f - Phase 2: Fix thread stopping and add mutex protection
-3. 50e00aa - Phase 3: Fix model status display
-4. e0e93c4 - Phase 4: Fix model selector visibility
-5. 41b15cc - Phase 5: Improve Models tab selection
-6. e4b3d6c - Fix build error: correct event dispatch function call
-
-## Build Status - RULE 7 COMPLIANCE ✅
-- ✅ **ZERO ERRORS**
-- ✅ **ZERO WARNINGS** (all 3 warnings fixed)
-- ✅ All libraries built successfully
-- ✅ All phases tested individually
-- ✅ Complete redesign successful
-- ✅ Application ready for testing
-- ✅ MASTER_PLAN RULE 7 satisfied
+## Phase 2: Complete UI Layout Rewrite (After Fix)
+- [ ] Design new layout system for all tabs
+- [ ] Implement responsive layout engine
+- [ ] Apply to Training Tab
+- [ ] Apply to Models Tab
+- [ ] Apply to LLM Tab
+- [ ] Apply to Research Tab
+- [ ] Apply to Benchmark Tab
+- [ ] Apply to Adapters Tab

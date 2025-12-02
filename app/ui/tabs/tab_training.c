@@ -88,6 +88,9 @@ static bool inputs_initialized = false;
 // Model selector
 static ModelSelector* model_selector = NULL;
 
+// Selected model name (NOT loaded until training starts)
+static char selected_model_name[256] = {0};
+
 // Control panel scrolling
 static int control_panel_scroll_offset = 0;
 static int control_panel_content_height = 0;
@@ -106,28 +109,18 @@ static void on_model_selected(const char* model_name, void* user_data) {
     AppState* state = (AppState*)user_data;
     if (!state || !model_name) return;
     
-    printf("Training tab: Loading model '%s'\n", model_name);
+    // CRITICAL FIX: Do NOT load model here - only store the name
+    // Models should only be loaded when training actually starts
+    // This prevents massive memory consumption when just browsing models
     
-    // Note: We don't release the old model here because we don't track
-    // whether it was acquired with read or write access.
-    // The model manager handles concurrent access internally.
+    printf("Training tab: Model '%s' selected (not loaded yet)\n", model_name);
     
-    // Acquire new model for training (write access)
-    state->cllm_model = model_manager_acquire_write(model_name);
+    // Store selected model name
+    strncpy(selected_model_name, model_name, sizeof(selected_model_name) - 1);
+    selected_model_name[sizeof(selected_model_name) - 1] = '\0';
     
-    if (state->cllm_model) {
-        printf("Model '%s' loaded successfully\n", model_name);
-        
-        // Update training config from model metadata or use defaults
-        state->training_batch_size = 32;  // Default batch size
-        state->training_sequence_length = state->cllm_model->header.context_length > 0 ? 
-                                          state->cllm_model->header.context_length : 512;
-        state->training_epochs = 10;  // Default epochs
-        state->training_learning_rate = state->cllm_model->training_meta.learning_rate > 0 ?
-                                        state->cllm_model->training_meta.learning_rate : 0.001f;
-    } else {
-        printf("Failed to load model '%s'\n", model_name);
-    }
+    // Do NOT call model_manager_acquire_write() here
+    // Model will be loaded on-demand when "Start Training" is clicked
 }
 
 // Crawler state
@@ -878,12 +871,18 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
     
     // Check model status: registered vs loaded
+    char model_status_buf[256];
     const char* model_status;
     SDL_Color model_color;
     
     if (state->cllm_model) {
         // Model is loaded in memory
-        model_status = "Model: Loaded & Ready";
+        if (selected_model_name[0]) {
+            snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Loaded)", selected_model_name);
+            model_status = model_status_buf;
+        } else {
+            model_status = "Model: Loaded & Ready";
+        }
         model_color = (SDL_Color){100, 255, 100, 255};  // Green
     } else {
         // Check if any models are registered (available to load)
@@ -891,7 +890,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         uint32_t model_count = model_manager_count();
         
         if (model_count > 0) {
-            model_status = "Model: Available (select to load)";
+            if (selected_model_name[0]) {
+                snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Not Loaded)", selected_model_name);
+                model_status = model_status_buf;
+            } else {
+                model_status = "Model: Available (select to load)";
+            }
             model_color = (SDL_Color){255, 200, 100, 255};  // Orange
         } else {
             model_status = "Model: None Available";
@@ -1278,12 +1282,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 return;
             }
             
-            // Acquire model for training (write access)
+            // CRITICAL FIX: Load model on-demand when training starts
             if (!state->cllm_model) {
-                // TODO: Get model name from model selector widget
-                const char* model_name = "default_model";
+                // Use selected model name from model selector
+                const char* model_name = selected_model_name[0] ? selected_model_name : "default_model";
                 
-                printf("Acquiring model for training: %s\n", model_name);
+                printf("Loading model for training: %s\n", model_name);
                 state->cllm_model = model_manager_acquire_write(model_name);
                 
                 if (!state->cllm_model) {
@@ -1316,9 +1320,9 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                         printf("ERROR: Failed to acquire newly created model\n");
                         return;
                     }
-                    printf("✓ Model created and acquired\n");
+                    printf("✓ Model created and loaded into memory\n");
                 } else {
-                    printf("✓ Model acquired for training\n");
+                    printf("✓ Model loaded into memory for training\n");
                 }
             }
             
