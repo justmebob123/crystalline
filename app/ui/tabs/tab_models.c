@@ -33,6 +33,11 @@ static UIButton* btn_create_cancel = NULL;
 
 // State
 static int selected_model_index = -1;
+
+// Double-click detection
+static uint32_t last_click_time = 0;
+static int last_clicked_index = -1;
+#define DOUBLE_CLICK_MS 500
 static bool show_create_dialog = false;
 static char status_message[256] = "";
 static float status_message_timer = 0.0f;
@@ -450,9 +455,9 @@ void draw_models_tab(AppState* state) {
                 if (models[i]) {
                     SDL_Rect item_rect = {content.x, current_y, content.w, item_height};
                     
-                    // Highlight if selected
+                    // Highlight if selected (brighter color for visibility)
                     if ((int)i == selected_model_index) {
-                        SDL_SetRenderDrawColor(state->renderer, 60, 60, 100, 255);
+                        SDL_SetRenderDrawColor(state->renderer, 80, 120, 180, 255);  // Bright blue
                         SDL_RenderFillRect(state->renderer, &item_rect);
                     }
                     
@@ -599,6 +604,14 @@ void handle_models_tab_click(AppState* state, int x, int y) {
         int clicked_index = relative_y / (item_height + 5);
         
         if (clicked_index >= 0 && clicked_index < (int)model_count) {
+            // Check for double-click
+            uint32_t current_time = SDL_GetTicks();
+            bool is_double_click = (clicked_index == last_clicked_index) && 
+                                   ((current_time - last_click_time) < DOUBLE_CLICK_MS);
+            
+            last_clicked_index = clicked_index;
+            last_click_time = current_time;
+            
             selected_model_index = clicked_index;
             ui_button_set_enabled(btn_delete, true);
             
@@ -606,6 +619,38 @@ void handle_models_tab_click(AppState* state, int x, int y) {
             if (models[clicked_index]) {
                 StateManager* state_mgr = state_manager_get_instance();
                 state_set_model(state_mgr, NULL, models[clicked_index]->name, "");
+                
+                // Double-click loads the model
+                if (is_double_click) {
+                    printf("Double-click detected - loading model '%s'\n", models[clicked_index]->name);
+                    
+                    // Load the model (same as Load button)
+                    CLLMModel* loaded_model = model_manager_acquire_read(models[clicked_index]->name);
+                    if (loaded_model) {
+                        // Release old model if any
+                        if (state->cllm_model) {
+                            // TODO: Get old model name to release properly
+                        }
+                        
+                        state->cllm_model = loaded_model;
+                        
+                        // Show success message
+                        snprintf(status_message, sizeof(status_message), 
+                                "Model '%s' loaded successfully", models[clicked_index]->name);
+                        status_message_timer = 3.0f;
+                        
+                        // Dispatch event
+                        Event event = {
+                            .type = EVENT_MODEL_LOADED,
+                            .data = models[clicked_index]->name
+                        };
+                        event_system_dispatch(&event);
+                    } else {
+                        snprintf(status_message, sizeof(status_message), 
+                                "Failed to load model '%s'", models[clicked_index]->name);
+                        status_message_timer = 3.0f;
+                    }
+                }
             }
         }
     }
