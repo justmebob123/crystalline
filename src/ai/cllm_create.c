@@ -67,27 +67,23 @@ CLLMModel* cllm_create_model_bigfixed(const CLLMConfig* config) {
     }
     
     // Initialize tokens with crystalline lattice structure
-    printf("Initializing %u tokens with crystalline lattice structure...\n", config->vocab_size);
+    // NOTE: Tokens are lightweight - just IDs and symmetry groups
+    // Prime encodings and lattice coords computed on-demand from the abacus
+    printf("Initializing %u tokens (lightweight - using abacus for primes)...\n", config->vocab_size);
     
     for (uint32_t i = 0; i < config->vocab_size; i++) {
         model->tokens[i].token_id = i;
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
         
-        // EFFICIENT PRIME ENCODING using cached primes
-        if (i < 100000) {
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
-        } else {
-            uint32_t lattice_layer = i / 12;
-            uint32_t symmetry_group = i % 12;
-            uint32_t mapped_index = (lattice_layer % 8333) * 12 + symmetry_group;
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(mapped_index + 1);
-        }
+        // LIGHTWEIGHT: Just store the index, not the actual prime
+        // Prime will be looked up from abacus when needed
+        model->tokens[i].prime_encoding = i + 1;  // Just the index into abacus
         
         // Distribute tokens across 12 symmetry groups
         model->tokens[i].symmetry_group = i % 12;
         
-        // Initialize lattice coordinates (will be computed by CrystallineEmbeddings)
+        // Lattice coordinates computed on-demand from abacus
         model->tokens[i].lattice_coords[0] = 0.0f;
         model->tokens[i].lattice_coords[1] = 0.0f;
         model->tokens[i].lattice_coords[2] = 0.0f;
@@ -271,25 +267,14 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
         
-        // EFFICIENT PRIME ENCODING using cached primes
-        // For tokens within cache range, use direct lookup
-        // For tokens beyond cache, use modular mapping to lattice
-        if (i < 100000) {
-            // Direct lookup from pre-computed cache (fast)
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(i + 1);
-        } else {
-            // Use lattice mapping for large vocab (clock sudoku structure)
-            // Map to one of the first 100,000 primes using 12-fold symmetry
-            uint32_t lattice_layer = i / 12;
-            uint32_t symmetry_group = i % 12;
-            uint32_t mapped_index = (lattice_layer % 8333) * 12 + symmetry_group;  // 8333*12 ≈ 100k
-            model->tokens[i].prime_encoding = crystalline_get_nth_prime(mapped_index + 1);
-        }
+        // LIGHTWEIGHT: Just store index into abacus, not the actual prime
+        // The abacus is the calculator - models just reference it
+        model->tokens[i].prime_encoding = i + 1;  // Index into abacus
         
         // Distribute tokens across 12 symmetry groups (kissing spheres)
         model->tokens[i].symmetry_group = i % 12;
         
-        // Initialize lattice coordinates (will be computed during training)
+        // Lattice coordinates computed on-demand from abacus when needed
         model->tokens[i].lattice_coords[0] = 0.0f;
         model->tokens[i].lattice_coords[1] = 0.0f;
         model->tokens[i].lattice_coords[2] = 0.0f;
