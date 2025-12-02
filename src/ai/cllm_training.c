@@ -243,7 +243,9 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (config->use_mixed_precision) {
         size_t total_params = model->header.total_params;
         if (total_params > 0 && total_params < 1000000000) {
-            training->master_weights = bigfixed_array_create(total_params, training->precision_bits);
+            // CRITICAL: Disable master_weights to prevent 4.6 GB allocation
+            // The main gradient buffer is sufficient for training
+            training->master_weights = NULL;  // DISABLED to prevent OOM
             // Only copy if both master_weights and model->weights are valid
             if (training->master_weights && model->weights) {
                 // Verify all BigFixed pointers are valid before copying
@@ -318,9 +320,11 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->optimizer_state = NULL;
     }
     
-    // Allocate attention gradient buffers
+    // CRITICAL: Disable layer-specific gradients to prevent OOM
+    // These allocate 3.6 GB of BigFixed** arrays (broken allocation)
+    // The main gradient buffer (packed arrays) is sufficient for now
     uint32_t num_layers = model->num_layers;
-    if (num_layers > 0 && num_layers < 100) {
+    if (false && num_layers > 0 && num_layers < 100) {  // DISABLED
         training->attention_grads = (typeof(training->attention_grads))calloc(num_layers, sizeof(*training->attention_grads));
         
         if (training->attention_grads && model->attention_layers) {
@@ -365,8 +369,8 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->attention_grads = NULL;
     }
     
-    // Allocate feed-forward gradient buffers
-    if (num_layers > 0 && num_layers < 100) {
+    // CRITICAL: Disable feedforward gradients to prevent OOM
+    if (false && num_layers > 0 && num_layers < 100) {  // DISABLED
         training->ff_grads = (typeof(training->ff_grads))calloc(num_layers, sizeof(*training->ff_grads));
         
         if (training->ff_grads && model->ff_layers) {
@@ -421,8 +425,8 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         training->ff_grads = NULL;
     }
     
-    // Allocate layer norm gradient buffers
-    if (num_layers > 0 && num_layers < 100) {
+    // CRITICAL: Disable layer norm gradients to prevent OOM
+    if (false && num_layers > 0 && num_layers < 100) {  // DISABLED
         training->ln_grads = (typeof(training->ln_grads))calloc(num_layers, sizeof(*training->ln_grads));
         
         if (training->ln_grads && model->layer_norms) {
