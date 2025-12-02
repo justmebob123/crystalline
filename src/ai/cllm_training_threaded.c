@@ -1908,27 +1908,42 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return;
     
+    printf("[DEBUG] accumulate_gradients: Starting (gradient_size=%zu)\n", system->gradient_size);
+    
     // KISSING BOUNDARY LOCK - Protect shared gradient accumulation
     // Multiple threads write to accumulated_gradients - this is a kissing boundary
     pthread_mutex_lock(&system->gradient_lock);
     
+    printf("[DEBUG] accumulate_gradients: Lock acquired, zeroing gradients\n");
+    
     // Zero accumulated gradients
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
+    
+    printf("[DEBUG] accumulate_gradients: Gradients zeroed\n");
     
     int valid_spheres = 0;
     
     // Sum gradients from all spheres
     for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
-        if (!ctx || !ctx->local_gradients) continue;
+        printf("[DEBUG] accumulate_gradients: Processing sphere %d (ctx=%p)\n", i, (void*)ctx);
+        
+        if (!ctx || !ctx->local_gradients) {
+            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no ctx or gradients)\n", i);
+            continue;
+        }
+        
+        printf("[DEBUG] accumulate_gradients: Sphere %d has gradient_size=%zu\n", i, ctx->gradient_size);
         
         // Validate gradients before accumulation
         char source[64];
         snprintf(source, sizeof(source), "Sphere %d", i);
+        printf("[DEBUG] accumulate_gradients: Validating sphere %d gradients\n", i);
         if (!validate_gradients(ctx->local_gradients, ctx->gradient_size, source)) {
             fprintf(stderr, "WARNING: Skipping sphere %d due to invalid gradients\n", i);
             continue;
         }
+        printf("[DEBUG] accumulate_gradients: Sphere %d gradients validated\n", i);
         
         // Clip gradients to prevent overflow
         clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
@@ -2090,6 +2105,12 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Accumulate gradients from all workers
     printf("Accumulating gradients...\n");
+    fflush(stdout);  // Force output
+    
+    printf("[DEBUG] Before accumulate: system=%p, accumulated_gradients=%p, gradient_size=%zu\n",
+           (void*)system, (void*)system->accumulated_gradients, system->gradient_size);
+    fflush(stdout);
+    
     accumulate_gradients(system);
     
     // KISSING BOUNDARY LOCK - Protect model weight updates
