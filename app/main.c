@@ -753,11 +753,20 @@ void handle_input(AppState* state, SDL_Event* event) {
             
         case SDL_MOUSEBUTTONUP:
             state->dragging_slider = false;
+            if (state->current_tab == TAB_TRAINING) {
+                extern void handle_training_tab_mouse_up(AppState* state);
+                handle_training_tab_mouse_up(state);
+            }
             break;
             
         case SDL_MOUSEMOTION:
             state->mouse_x = event->motion.x;
             state->mouse_y = event->motion.y;
+            
+            if (state->current_tab == TAB_TRAINING) {
+                extern void handle_training_tab_mouse_motion(AppState* state, int x, int y);
+                handle_training_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            }
             
             if (event->motion.state & SDL_BUTTON_LMASK) {
                 if (!state->dragging_slider) {
@@ -773,6 +782,9 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_MOUSEWHEEL:
             if (state->current_tab == TAB_RESEARCH) {
                 handle_research_tab_scroll(state, event->wheel.y);
+            } else if (state->current_tab == TAB_TRAINING) {
+                extern void handle_training_tab_scroll(AppState* state, int wheel_y);
+                handle_training_tab_scroll(state, event->wheel.y);
             } else {
                 if (event->wheel.y > 0) {
                     state->zoom = prime_fmin(state->zoom * 1.2, MAX_ZOOM);

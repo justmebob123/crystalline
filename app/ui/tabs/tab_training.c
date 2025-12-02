@@ -88,6 +88,13 @@ static bool inputs_initialized = false;
 // Model selector
 static ModelSelector* model_selector = NULL;
 
+// Control panel scrolling
+static int control_panel_scroll_offset = 0;
+static int control_panel_content_height = 0;
+static bool control_panel_scrollbar_dragging = false;
+static int control_panel_drag_start_y = 0;
+static int control_panel_drag_start_offset = 0;
+
 // Slider bounds (set during rendering)
 static SDL_Rect batch_slider_rect = {0};
 static SDL_Rect seq_slider_rect = {0};
@@ -733,12 +740,16 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Draw panel background
     SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    SDL_Rect panel_rect = {panel_x, panel_y, panel_width, panel_height};
+    SDL_Rect panel_rect = {panel_x, panel_y, panel_width - 20, panel_height};  // Leave space for scrollbar
     SDL_RenderFillRect(renderer, &panel_rect);
     
-    // Initialize layout system
+    // Set clipping rect for scrollable content
+    SDL_RenderSetClipRect(renderer, &panel_rect);
+    
+    // Initialize layout system with scroll offset
     LayoutContainer layout;
-    layout_init(&layout, panel_rect, LAYOUT_VERTICAL, 10, 8);
+    SDL_Rect scrolled_panel = {panel_x, panel_y - control_panel_scroll_offset, panel_width - 20, panel_height + 2000};
+    layout_init(&layout, scrolled_panel, LAYOUT_VERTICAL, 10, 8);
     
     // === SECTION 0: MODEL SELECTOR ===
     SDL_Rect model_label = layout_add_label(&layout, "MODEL", 18);
@@ -1025,6 +1036,46 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_input_manager) {
         input_manager_render(g_input_manager, renderer, get_global_font(), TAB_TRAINING);
     }
+    
+    // Clear clipping rect
+    SDL_RenderSetClipRect(renderer, NULL);
+    
+    // Calculate content height (approximate based on layout)
+    control_panel_content_height = layout.current_y - (panel_y - control_panel_scroll_offset);
+    
+    // Draw scrollbar if content exceeds panel height
+    if (control_panel_content_height > panel_height) {
+        int scrollbar_x = panel_x + panel_width - 20;
+        int scrollbar_y = panel_y;
+        int scrollbar_w = 15;
+        int scrollbar_h = panel_height;
+        
+        // Draw scrollbar background
+        SDL_Rect scrollbar_bg = {scrollbar_x, scrollbar_y, scrollbar_w, scrollbar_h};
+        SDL_SetRenderDrawColor(renderer, 40, 45, 50, 255);
+        SDL_RenderFillRect(renderer, &scrollbar_bg);
+        
+        // Draw scrollbar border
+        SDL_SetRenderDrawColor(renderer, 60, 65, 70, 255);
+        SDL_RenderDrawRect(renderer, &scrollbar_bg);
+        
+        // Calculate handle size and position
+        float content_ratio = (float)panel_height / (float)control_panel_content_height;
+        int handle_height = (int)(scrollbar_h * content_ratio);
+        if (handle_height < 20) handle_height = 20;  // Minimum handle size
+        
+        float scroll_ratio = (float)control_panel_scroll_offset / 
+                            (float)(control_panel_content_height - panel_height);
+        int handle_y = scrollbar_y + (int)((scrollbar_h - handle_height) * scroll_ratio);
+        
+        // Draw scrollbar handle
+        SDL_Rect handle = {scrollbar_x + 2, handle_y, scrollbar_w - 4, handle_height};
+        SDL_SetRenderDrawColor(renderer, 100, 120, 140, 255);
+        SDL_RenderFillRect(renderer, &handle);
+        
+        SDL_SetRenderDrawColor(renderer, 120, 140, 160, 255);
+        SDL_RenderDrawRect(renderer, &handle);
+    }
 }
 
 /**
@@ -1073,6 +1124,28 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
     // Silent click handling
+    
+    // Check scrollbar click first
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    int panel_y = RENDER_OFFSET_Y;
+    int panel_width = CONTROL_PANEL_WIDTH;
+    int panel_height = WINDOW_HEIGHT - panel_y;
+    
+    if (control_panel_content_height > panel_height) {
+        int scrollbar_x = panel_x + panel_width - 20;
+        int scrollbar_y = panel_y;
+        int scrollbar_w = 15;
+        int scrollbar_h = panel_height;
+        
+        // Check if clicking on scrollbar
+        if (x >= scrollbar_x && x < scrollbar_x + scrollbar_w &&
+            y >= scrollbar_y && y < scrollbar_y + scrollbar_h) {
+            control_panel_scrollbar_dragging = true;
+            control_panel_drag_start_y = y;
+            control_panel_drag_start_offset = control_panel_scroll_offset;
+            return;
+        }
+    }
     
     // Update visualization
     update_training_visualization(state);
@@ -1486,6 +1559,66 @@ void draw_terminal_output(SDL_Renderer* renderer, AppState* state, SDL_Rect boun
                 state->terminal_buffer->scroll_offset);
         draw_text(renderer, scroll_info, bounds.x + bounds.w / 2 - 80, bounds.y + bounds.h - 15,
                  (SDL_Color){255, 200, 100, 255});
+    }
+}
+
+/**
+ * Handle mouse wheel scrolling
+ */
+void handle_training_tab_scroll(AppState* state, int wheel_y) {
+    if (!state) return;
+    
+    int panel_y = RENDER_OFFSET_Y;
+    int panel_height = WINDOW_HEIGHT - panel_y;
+    
+    // Only scroll if content exceeds panel height
+    if (control_panel_content_height > panel_height) {
+        int scroll_speed = 20;
+        int delta = -wheel_y * scroll_speed;
+        
+        control_panel_scroll_offset += delta;
+        
+        // Clamp scroll offset
+        int max_offset = control_panel_content_height - panel_height;
+        if (control_panel_scroll_offset < 0) control_panel_scroll_offset = 0;
+        if (control_panel_scroll_offset > max_offset) control_panel_scroll_offset = max_offset;
+    }
+}
+
+/**
+ * Handle mouse button release
+ */
+void handle_training_tab_mouse_up(AppState* state) {
+    if (!state) return;
+    control_panel_scrollbar_dragging = false;
+}
+
+/**
+ * Handle mouse motion (for scrollbar dragging)
+ */
+void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state) return;
+    (void)x;  // Unused - only y coordinate needed for scrollbar
+    
+    if (control_panel_scrollbar_dragging) {
+        int panel_y = RENDER_OFFSET_Y;
+        int panel_height = WINDOW_HEIGHT - panel_y;
+        
+        int delta_y = y - control_panel_drag_start_y;
+        
+        // Convert pixel delta to content delta
+        float scrollbar_h = panel_height - 20;  // Minus handle min size
+        float content_h = control_panel_content_height - panel_height;
+        float ratio = content_h / scrollbar_h;
+        
+        int new_offset = control_panel_drag_start_offset + (int)(delta_y * ratio);
+        
+        // Clamp offset
+        int max_offset = control_panel_content_height - panel_height;
+        if (new_offset < 0) new_offset = 0;
+        if (new_offset > max_offset) new_offset = max_offset;
+        
+        control_panel_scroll_offset = new_offset;
     }
 }
 
