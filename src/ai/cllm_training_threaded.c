@@ -157,8 +157,11 @@ struct ThreadedTrainingSystem {
     
     // Gradient accumulation (temporary until shared memory fully integrated)
     float* accumulated_gradients;              // Accumulated gradients from all spheres
-    // pthread_mutex_t gradient_lock;             // PHASE 4: Removed - using lock-free accumulation
-    // pthread_mutex_t model_lock;                // PHASE 8: Removed - using thread-local contexts
+    
+    // KISSING BOUNDARY LOCKS - RESTORED for proper synchronization
+    // These locks protect shared memory at kissing boundaries between threads
+    pthread_mutex_t gradient_lock;             // Protects gradient accumulation at boundaries
+    pthread_mutex_t model_lock;                // Protects model weight updates at boundaries
     
     // Synchronization (MASTER PLAN - use barriers!)
     pthread_barrier_t epoch_barrier;
@@ -1205,9 +1208,9 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         return NULL;
     }
     
-    // Initialize gradient lock
-    // pthread_mutex_init(&system->gradient_lock, NULL);  // PHASE 4: Removed
-    // pthread_mutex_init(&system->model_lock, NULL);     // PHASE 8: Removed
+    // Initialize kissing boundary locks - RESTORED for proper synchronization
+    pthread_mutex_init(&system->gradient_lock, NULL);
+    pthread_mutex_init(&system->model_lock, NULL);
     
     // Initialize barriers for N worker threads + 1 control thread + 1 main thread
     // Total participants: num_threads (workers) + 1 (control) + 1 (main)
@@ -1503,9 +1506,9 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         printf("  ✓ Work queue freed\n");
     }
     
-    // Destroy gradient lock
-    // pthread_mutex_destroy(&system->gradient_lock);  // PHASE 4: Removed
-    // pthread_mutex_destroy(&system->model_lock);     // PHASE 8: Removed
+    // Destroy kissing boundary locks - RESTORED
+    pthread_mutex_destroy(&system->gradient_lock);
+    pthread_mutex_destroy(&system->model_lock);
     
     pthread_barrier_destroy(&system->epoch_barrier);
     pthread_barrier_destroy(&system->batch_barrier);
@@ -1907,6 +1910,10 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) __attribute__((
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return;
     
+    // KISSING BOUNDARY LOCK - Protect shared gradient accumulation
+    // Multiple threads write to accumulated_gradients - this is a kissing boundary
+    pthread_mutex_lock(&system->gradient_lock);
+    
     // Zero accumulated gradients
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
     
@@ -1946,6 +1953,8 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     if (!validate_gradients(system->accumulated_gradients, system->gradient_size, "Accumulated")) {
         fprintf(stderr, "CRITICAL: Accumulated gradients are invalid!\n");
     }
+    
+    pthread_mutex_unlock(&system->gradient_lock);
 }
 
 /**
@@ -2085,6 +2094,10 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     printf("Accumulating gradients...\n");
     accumulate_gradients_lockfree(system);
     
+    // KISSING BOUNDARY LOCK - Protect model weight updates
+    // Control thread writes to model weights, workers read - this is a kissing boundary
+    pthread_mutex_lock(&system->model_lock);
+    
     // Copy accumulated gradients to training object
     memcpy(system->training->gradients, system->accumulated_gradients, 
            system->gradient_size * sizeof(float));
@@ -2092,6 +2105,8 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     // Apply gradients using Adam optimizer
     printf("Applying optimizer step...\n");
     cllm_optimizer_step_adam(system->training);
+    
+    pthread_mutex_unlock(&system->model_lock);
     
     // Calculate average loss
     float epoch_loss = 0.0f;
