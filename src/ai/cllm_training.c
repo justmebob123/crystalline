@@ -766,11 +766,11 @@ static void cllm_attention_forward_training(
         
         for (uint32_t h = 0; h < num_heads; h++) {
             for (int i = 0; i < seq_len; i++) {
-                float* query = &queries[i * embed_dim + h * head_dim];
+                double* query = &queries[i * embed_dim + h * head_dim];
                 
                 // Compute attention scores
                 for (int j = 0; j < seq_len; j++) {
-                    float* key = &keys[j * embed_dim + h * head_dim];
+                    double* key = &keys[j * embed_dim + h * head_dim];
                     float score = 0.0f;
                     for (uint32_t d = 0; d < head_dim; d++) {
                         score += query[d] * key[d];
@@ -780,19 +780,23 @@ static void cllm_attention_forward_training(
                 }
                 
                 // Apply softmax to get attention weights
-                float* scores_row = &training->attention_cache[layer].scores[h * seq_len * seq_len + i * seq_len];
-                float* weights_row = &training->attention_cache[layer].attention_weights[h * seq_len * seq_len + i * seq_len];
+                double* scores_row = &training->attention_cache[layer].scores[h * seq_len * seq_len + i * seq_len];
+                double* weights_row = &training->attention_cache[layer].attention_weights[h * seq_len * seq_len + i * seq_len];
                 
                 // Find max for numerical stability
-                float max_score = scores_row[0];
+                double max_score = scores_row[0];
                 for (int j = 1; j < seq_len; j++) {
                     if (scores_row[j] > max_score) max_score = scores_row[j];
                 }
                 
                 // Compute exp and sum
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (int j = 0; j < seq_len; j++) {
-                    weights_row[j] = prime_expf(scores_row[j] - max_score);
+                    double x = scores_row[j] - max_score;
+                    // Clamp to safe range
+                    if (x > 50.0) x = 50.0;
+                    if (x < -50.0) x = -50.0;
+                    weights_row[j] = prime_exp(x);
                     sum += weights_row[j];
                 }
                 

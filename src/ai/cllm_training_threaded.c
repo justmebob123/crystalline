@@ -42,6 +42,14 @@
 #include <unistd.h>
 #include <time.h>  // For timing metrics
 
+// Forward declarations
+static void* sphere_worker_thread(void* arg);
+static void* sphere_worker_thread_lockfree(void* arg);
+static void* control_thread_func(void* arg);
+static void accumulate_gradients(ThreadedTrainingSystem* system);
+static int validate_gradients(double* gradients, size_t size, const char* source);
+static void clip_gradients(double* gradients, size_t size, double max_norm);
+
 /**
  * Thread-local training context for each sphere
  */
@@ -65,7 +73,7 @@ struct SphereTrainingContext {
     ThreadLocalTrainingContext* thread_local_training;
     
     // Legacy fields (for compatibility during transition)
-    float* local_gradients;  // TODO: Remove after shared memory integration
+    double* local_gradients;  // TODO: Remove after shared memory integration
     size_t gradient_size;
     
     // Batch processing
@@ -156,7 +164,7 @@ struct ThreadedTrainingSystem {
     size_t gradient_size;
     
     // Gradient accumulation (temporary until shared memory fully integrated)
-    float* accumulated_gradients;              // Accumulated gradients from all spheres
+    double* accumulated_gradients;              // Accumulated gradients from all spheres
     
     // KISSING BOUNDARY LOCKS - RESTORED for proper synchronization
     // These locks protect shared memory at kissing boundaries between threads
@@ -223,25 +231,25 @@ ThreadLocalTrainingContext* thread_local_training_create(
     size_t ff_size = batch_size * seq_len * ff_hidden_dim;
     
     // Allocate forward pass buffers
-    ctx->input_embeddings = (float*)calloc(seq_size, sizeof(float));
-    ctx->final_hidden = (float*)calloc(seq_size, sizeof(float));
-    ctx->logits = (float*)calloc(logits_size, sizeof(float));
+    ctx->input_embeddings = (double*)calloc(seq_size, sizeof(double));
+    ctx->final_hidden = (double*)calloc(seq_size, sizeof(double));
+    ctx->logits = (double*)calloc(logits_size, sizeof(double));
     
     // Allocate per-layer buffers
-    ctx->layer_inputs = (float**)calloc(num_layers, sizeof(float*));
-    ctx->attention_outputs = (float**)calloc(num_layers, sizeof(float*));
-    ctx->ff_outputs = (float**)calloc(num_layers, sizeof(float*));
-    ctx->layer_outputs = (float**)calloc(num_layers, sizeof(float*));
-    ctx->ff_hidden = (float**)calloc(num_layers, sizeof(float*));
+    ctx->layer_inputs = (double**)calloc(num_layers, sizeof(double*));
+    ctx->attention_outputs = (double**)calloc(num_layers, sizeof(double*));
+    ctx->ff_outputs = (double**)calloc(num_layers, sizeof(double*));
+    ctx->layer_outputs = (double**)calloc(num_layers, sizeof(double*));
+    ctx->ff_hidden = (double**)calloc(num_layers, sizeof(double*));
     
     if (ctx->layer_inputs && ctx->attention_outputs && ctx->ff_outputs &&
         ctx->layer_outputs && ctx->ff_hidden) {
         for (int i = 0; i < num_layers; i++) {
-            ctx->layer_inputs[i] = (float*)calloc(seq_size, sizeof(float));
-            ctx->attention_outputs[i] = (float*)calloc(seq_size, sizeof(float));
-            ctx->ff_outputs[i] = (float*)calloc(seq_size, sizeof(float));
-            ctx->layer_outputs[i] = (float*)calloc(seq_size, sizeof(float));
-            ctx->ff_hidden[i] = (float*)calloc(ff_size, sizeof(float));
+            ctx->layer_inputs[i] = (double*)calloc(seq_size, sizeof(double));
+            ctx->attention_outputs[i] = (double*)calloc(seq_size, sizeof(double));
+            ctx->ff_outputs[i] = (double*)calloc(seq_size, sizeof(double));
+            ctx->layer_outputs[i] = (double*)calloc(seq_size, sizeof(double));
+            ctx->ff_hidden[i] = (double*)calloc(ff_size, sizeof(double));
         }
     }
     
@@ -249,18 +257,18 @@ ThreadLocalTrainingContext* thread_local_training_create(
     ctx->attention_cache = (typeof(ctx->attention_cache))calloc(num_layers, sizeof(*ctx->attention_cache));
     if (ctx->attention_cache) {
         for (int i = 0; i < num_layers; i++) {
-            ctx->attention_cache[i].queries = (float*)calloc(seq_len * embed_dim, sizeof(float));
-            ctx->attention_cache[i].keys = (float*)calloc(seq_len * embed_dim, sizeof(float));
-            ctx->attention_cache[i].values = (float*)calloc(seq_len * embed_dim, sizeof(float));
-            ctx->attention_cache[i].attention_weights = (float*)calloc(num_heads * seq_len * seq_len, sizeof(float));
-            ctx->attention_cache[i].scores = (float*)calloc(num_heads * seq_len * seq_len, sizeof(float));
+            ctx->attention_cache[i].queries = (double*)calloc(seq_len * embed_dim, sizeof(double));
+            ctx->attention_cache[i].keys = (double*)calloc(seq_len * embed_dim, sizeof(double));
+            ctx->attention_cache[i].values = (double*)calloc(seq_len * embed_dim, sizeof(double));
+            ctx->attention_cache[i].attention_weights = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
+            ctx->attention_cache[i].scores = (double*)calloc(num_heads * seq_len * seq_len, sizeof(double));
         }
     }
     
     // Allocate backward pass temporary buffers
-    ctx->grad_logits = (float*)calloc(logits_size, sizeof(float));
-    ctx->grad_hidden = (float*)calloc(seq_size, sizeof(float));
-    ctx->grad_layer = (float*)calloc(seq_size, sizeof(float));
+    ctx->grad_logits = (double*)calloc(logits_size, sizeof(double));
+    ctx->grad_hidden = (double*)calloc(seq_size, sizeof(double));
+    ctx->grad_layer = (double*)calloc(seq_size, sizeof(double));
     
     return ctx;
 }
@@ -357,16 +365,16 @@ float cllm_forward_training_threaded(
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
-            float* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
-            float* embed_dst = &local_ctx->input_embeddings[idx * embed_dim];
-            memcpy(embed_dst, embed_src, embed_dim * sizeof(float));
+            double* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            double* embed_dst = &local_ctx->input_embeddings[idx * embed_dim];
+            memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
         }
     }
     
     // Process through layers (all writes go to thread-local buffers)
     printf("    [DEBUG] Embeddings copied, starting layer processing (num_layers=%d)\n", model->num_layers);
     fflush(stdout);
-    float* layer_input = local_ctx->input_embeddings;
+    double* layer_input = local_ctx->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
         printf("    [DEBUG] Processing layer %d\n", layer);
         fflush(stdout);
@@ -382,13 +390,13 @@ float cllm_forward_training_threaded(
         for (int b = 0; b < batch_size; b++) {
             for (int s = 0; s < seq_len; s++) {
                 int idx = b * seq_len + s;
-                float* attn_out = &local_ctx->attention_outputs[layer][idx * embed_dim];
-                float* ff_out = &local_ctx->ff_outputs[layer][idx * embed_dim];
-                float* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
+                double* attn_out = &local_ctx->attention_outputs[layer][idx * embed_dim];
+                double* ff_out = &local_ctx->ff_outputs[layer][idx * embed_dim];
+                double* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
                 
                 // FeedForward
                 FeedForwardLayer* ff = &model->ff_layers[layer];
-                float* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
+                double* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
                 (void)ff_hidden;  // Reserved for future use
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
@@ -439,11 +447,11 @@ float cllm_forward_training_threaded(
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
-            float* hidden = &local_ctx->final_hidden[idx * embed_dim];
-            float* logits = &local_ctx->logits[idx * vocab_size];
+            double* hidden = &local_ctx->final_hidden[idx * embed_dim];
+            double* logits = &local_ctx->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
                 float score = 0.0f;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];
@@ -466,7 +474,7 @@ void cllm_backward_training_threaded(
     CLLMTraining* training,
     ThreadLocalTrainingContext* local_ctx,
     uint32_t* target_tokens,
-    float* gradient_buffer
+    double* gradient_buffer
 ) {
     if (!training || !local_ctx || !target_tokens) return;
     if (!gradient_buffer) return;
@@ -478,9 +486,9 @@ void cllm_backward_training_threaded(
     uint32_t vocab_size = model->vocab_size;
     
     // Use thread-local temporary buffers
-    float* grad_logits = local_ctx->grad_logits;
-    float* grad_hidden = local_ctx->grad_hidden;
-    float* grad_layer = local_ctx->grad_layer;
+    double* grad_logits = local_ctx->grad_logits;
+    double* grad_hidden = local_ctx->grad_hidden;
+    double* grad_layer = local_ctx->grad_layer;
     
     // Zero the buffers
     memset(grad_logits, 0, batch_size * seq_len * vocab_size * sizeof(float));
@@ -494,8 +502,8 @@ void cllm_backward_training_threaded(
             uint32_t target = target_tokens[idx];
             if (target >= vocab_size) continue;
             
-            float* logits = &local_ctx->logits[idx * vocab_size];
-            float* grad = &grad_logits[idx * vocab_size];
+            double* logits = &local_ctx->logits[idx * vocab_size];
+            double* grad = &grad_logits[idx * vocab_size];
             
             float max_logit = logits[0];
             for (uint32_t v = 1; v < vocab_size; v++) {
@@ -530,12 +538,12 @@ void cllm_backward_training_threaded(
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
-            float* grad_logit = &grad_logits[idx * vocab_size];
-            float* hidden = &local_ctx->final_hidden[idx * embed_dim];
-            float* grad_h = &grad_hidden[idx * embed_dim];
+            double* grad_logit = &grad_logits[idx * vocab_size];
+            double* hidden = &local_ctx->final_hidden[idx * embed_dim];
+            double* grad_h = &grad_hidden[idx * embed_dim];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
                 float grad_v = grad_logit[v];
                 
                 // Accumulate to gradient_buffer (lock-free segment)
@@ -563,8 +571,8 @@ void cllm_backward_training_threaded(
                 int idx = b * seq_len + s;
                 
                 // Get gradients from next layer (or from output)
-                float* grad_in = &grad_hidden[idx * embed_dim];
-                float* grad_out = &grad_layer[idx * embed_dim];
+                double* grad_in = &grad_hidden[idx * embed_dim];
+                double* grad_out = &grad_layer[idx * embed_dim];
                 
                 // Simplified backward through layer norm
                 // grad_out = grad_in (skip layer norm for now to avoid complexity)
@@ -611,7 +619,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->gradient_segment_end = (sphere_id + 1) * segment_size;
     
     // Keep local_gradients for now (compatibility during transition)
-    ctx->local_gradients = (float*)calloc(gradient_size, sizeof(float));
+    ctx->local_gradients = (double*)calloc(gradient_size, sizeof(double));
     if (!ctx->local_gradients) {
         free(ctx);
         return NULL;
@@ -681,15 +689,6 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
 }
 
 // Forward declarations
-static void* sphere_worker_thread(void* arg);
-static void* sphere_worker_thread_lockfree(void* arg);
-static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
-static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* training);
-static void accumulate_gradients(ThreadedTrainingSystem* system);
-static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system);  // PHASE 4
-static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);  // PHASE 6
-static int validate_gradients(float* gradients, size_t size, const char* source);
-static void clip_gradients(float* gradients, size_t size, float max_norm);
 
 /**
  * Process batch on a sphere (worker thread function)
@@ -700,7 +699,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     CLLMBatch* batch = ctx->current_batch;
     
     // Zero local gradients
-    memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(float));
+    memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
     
     // Process each sequence in the batch
     float total_loss = 0.0f;
@@ -734,7 +733,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // Uses learned prime encodings and lattice positions
         // This is deterministic GCD-based loss, not standard cross-entropy
         float seq_loss = cllm_compute_loss(
-            training->model,
+            training,
             &batch->input_ids[offset],
             &batch->target_ids[offset],
             batch->seq_len
@@ -838,10 +837,6 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
         return 0;
     }
     
-    if (!queue->batches) {
-        fprintf(stderr, "[ERROR] work_queue_push: queue->batches is NULL\n");
-        return 0;
-    }
     
     size_t tail = atomic_load(&queue->tail);
     size_t head = atomic_load(&queue->head);
@@ -857,12 +852,7 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
            index, (void*)batch, (void*)&queue->batches[index]);
     fflush(stdout);
     
-    // Check if we're about to write to NULL
-    if (&queue->batches[index] == NULL) {
-        fprintf(stderr, "[ERROR] work_queue_push: &batches[index] is NULL!\n");
-        return 0;
-    }
-    
+    // Store the batch and update tail
     atomic_store(&queue->batches[index], batch);
     atomic_store(&queue->tail, tail + 1);
     atomic_fetch_add(&queue->total_pushed, 1);
@@ -1237,7 +1227,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // Create shared gradient buffer (kissing spheres architecture)
     system->shared_gradients = shared_memory_create(
-        system->gradient_size * sizeof(float),
+        system->gradient_size * sizeof(double),
         SHARED_LOCKED_WRITE  // Multiple writers allowed
     );
     if (!system->shared_gradients) {
@@ -1247,10 +1237,10 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     }
     
     printf("  ✓ Created shared gradient buffer: %.2f MB\n", 
-           (system->gradient_size * sizeof(float)) / (1024.0f * 1024.0f));
+           (system->gradient_size * sizeof(double)) / (1024.0f * 1024.0f));
     
     // Allocate accumulated gradients buffer (temporary until shared memory fully integrated)
-    system->accumulated_gradients = (float*)calloc(system->gradient_size, sizeof(float));
+    system->accumulated_gradients = (double*)calloc(system->gradient_size, sizeof(double));
     if (!system->accumulated_gradients) {
         fprintf(stderr, "Failed to allocate accumulated gradients buffer\n");
         shared_memory_free(system->shared_gradients);
@@ -1780,68 +1770,17 @@ static void* sphere_worker_thread(void* arg) {
  * PHASE 4: Lock-free gradient accumulation
  * Control thread reads all worker segments at barrier (safe - workers are waiting)
  */
-static void accumulate_gradients_lockfree(ThreadedTrainingSystem* system) {
-    if (!system || !system->accumulated_gradients) return;
-    
-    // Workers are waiting at barrier - safe to read their segments
-    // Zero the accumulated gradients first
-    memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
-    
-    int valid_workers = 0;
-    
-    // Sum gradients from all worker segments
-    for (int i = 0; i < system->num_worker_spheres; i++) {
-        SphereTrainingContext* ctx = system->sphere_contexts[i];
-        if (!ctx || !ctx->local_gradients) continue;
-        
-        // Validate gradients before accumulation
-        char source[64];
-        snprintf(source, sizeof(source), "Worker %d", i);
-        if (!validate_gradients(ctx->local_gradients, ctx->gradient_size, source)) {
-            fprintf(stderr, "WARNING: Skipping invalid gradients from worker %d\n", i);
-            continue;
-        }
-        
-        // Clip gradients to prevent overflow
-        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0f);
-        
-        // OBJECTIVE 6: Use SIMD-optimized gradient accumulation
-        // Accumulate from this worker's segment
-        cllm_simd_accumulate_gradients(
-            system->accumulated_gradients,
-            ctx->local_gradients,
-            system->gradient_size
-        );
-        
-        valid_workers++;
-    }
-    
-    // OBJECTIVE 6: Use SIMD-optimized gradient scaling
-    // Average the gradients
-    if (valid_workers > 0) {
-        float scale = 1.0f / valid_workers;
-        cllm_simd_scale_gradients(
-            system->accumulated_gradients,
-            scale,
-            system->gradient_size
-        );
-    }
-}
-
-/**
- * Validate gradients for NaN/Inf values
- */
-static int validate_gradients(float* gradients, size_t size, const char* source) {
+static int validate_gradients(double* gradients, size_t size, const char* source) {
     int nan_count = 0;
     int inf_count = 0;
     
     for (size_t i = 0; i < size; i++) {
-        if (prime_isnanf(gradients[i])) {
+        if (prime_isnan(gradients[i])) {
             nan_count++;
             if (nan_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: NaN gradient in %s at index %zu\n", source, i);
             }
-        } else if (prime_isinff(gradients[i])) {
+        } else if (prime_isinf(gradients[i])) {
             inf_count++;
             if (inf_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: Inf gradient in %s at index %zu: %f\n", source, i, gradients[i]);
@@ -1861,15 +1800,15 @@ static int validate_gradients(float* gradients, size_t size, const char* source)
 /**
  * Clip gradients to prevent overflow
  */
-static void clip_gradients(float* gradients, size_t size, float max_norm) {
-    float norm = 0.0f;
+static void clip_gradients(double* gradients, size_t size, double max_norm) {
+    double norm = 0.0;
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    norm = prime_sqrtf(norm);
+    norm = prime_sqrt(norm);
     
     if (norm > max_norm) {
-        float scale = max_norm / norm;
+        double scale = max_norm / norm;
         for (size_t i = 0; i < size; i++) {
             gradients[i] *= scale;
         }
@@ -1990,10 +1929,10 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     
     // Zero accumulated gradients
     printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
-           (void*)system->accumulated_gradients, system->gradient_size * sizeof(float));
+           (void*)system->accumulated_gradients, system->gradient_size * sizeof(double));
     fflush(stdout);
     
-    memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(float));
+    memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(double));
     
     printf("[DEBUG] accumulate_gradients: Gradients zeroed\n");
     
@@ -2243,7 +2182,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Copy accumulated gradients to training object
     memcpy(system->training->gradients, system->accumulated_gradients, 
-           system->gradient_size * sizeof(float));
+           system->gradient_size * sizeof(double));
     
     // Apply gradients using Adam optimizer
     printf("Applying optimizer step...\n");

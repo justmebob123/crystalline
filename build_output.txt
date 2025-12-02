@@ -1,102 +1,182 @@
-Compiling [CORE]: src/core/bigfixed_constants.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigfixed_constants.c -o src/core/bigfixed_constants.o
-In file included from ./include/prime_bigint_transcendental.h:20,
-                 from src/core/bigfixed_constants.c:14:
-./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-Compiling [CORE]: src/core/bigfixed_core.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigfixed_core.c -o src/core/bigfixed_core.o
-Compiling [CORE]: src/core/bigint_conversions.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_conversions.c -o src/core/bigint_conversions.o
-Compiling [CORE]: src/core/bigint_core.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_core.c -o src/core/bigint_core.o
-Compiling [CORE]: src/core/bigint_ntt.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/bigint_ntt.c -o src/core/bigint_ntt.o
-Compiling [CORE]: src/core/cllm_angular_position.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/cllm_angular_position.c -o src/core/cllm_angular_position.o
-Compiling [CORE]: src/core/cllm_mathematical_constants.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/cllm_mathematical_constants.c -o src/core/cllm_mathematical_constants.o
-Compiling [CORE]: src/core/crystal_abacus.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/crystal_abacus.c -o src/core/crystal_abacus.o
-Compiling [CORE]: src/core/prime_lowlevel.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/core/prime_lowlevel.c -o src/core/prime_lowlevel.o
-Compiling [TRANS]: src/transcendental/prime_basic.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_basic.c -o src/transcendental/prime_basic.o
-Compiling [TRANS]: src/transcendental/prime_bigint_transcendental.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_bigint_transcendental.c -o src/transcendental/prime_bigint_transcendental.o
-In file included from ./include/prime_bigint_transcendental.h:20,
-                 from src/transcendental/prime_bigint_transcendental.c:14:
-./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-./include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-Compiling [TRANS]: src/transcendental/prime_float_math.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_float_math.c -o src/transcendental/prime_float_math.o
-Compiling [TRANS]: src/transcendental/prime_math.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_math.c -o src/transcendental/prime_math.o
-Compiling [TRANS]: src/transcendental/prime_math_custom.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/transcendental/prime_math_custom.c -o src/transcendental/prime_math_custom.o
-Compiling [GEOM]: src/geometry/clock_lattice.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/clock_lattice.c -o src/geometry/clock_lattice.o
-Compiling [GEOM]: src/geometry/lattice_algorithms.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/lattice_algorithms.c -o src/geometry/lattice_algorithms.o
-Compiling [GEOM]: src/geometry/prime_coords.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_coords.c -o src/geometry/prime_coords.o
-Compiling [GEOM]: src/geometry/prime_hyperdim.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_hyperdim.c -o src/geometry/prime_hyperdim.o
-Compiling [GEOM]: src/geometry/prime_lattice.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice.c -o src/geometry/prime_lattice.o
-Compiling [GEOM]: src/geometry/prime_lattice_core.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice_core.c -o src/geometry/prime_lattice_core.o
-In file included from ./include/../include/prime_bigint_transcendental.h:20,
-                 from src/geometry/prime_lattice_core.c:12:
-./include/../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-./include/../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
-Compiling [GEOM]: src/geometry/prime_lattice_geometry.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_lattice_geometry.c -o src/geometry/prime_lattice_geometry.o
-Compiling [GEOM]: src/geometry/prime_matrix.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_matrix.c -o src/geometry/prime_matrix.o
-Compiling [GEOM]: src/geometry/prime_rainbow.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/geometry/prime_rainbow.c -o src/geometry/prime_rainbow.o
-Creating crystalline shared library: libcrystalline.so
-gcc -shared -o libcrystalline.so src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_mathematical_constants.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/clock_lattice.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
-✓ Crystalline shared library created
-Creating crystalline static library: libcrystalline.a
-ar rcs libcrystalline.a src/core/bigfixed_constants.o src/core/bigfixed_core.o src/core/bigint_conversions.o src/core/bigint_core.o src/core/bigint_ntt.o src/core/cllm_angular_position.o src/core/cllm_mathematical_constants.o src/core/crystal_abacus.o src/core/prime_lowlevel.o src/transcendental/prime_basic.o src/transcendental/prime_bigint_transcendental.o src/transcendental/prime_float_math.o src/transcendental/prime_math.o src/transcendental/prime_math_custom.o src/geometry/clock_lattice.o src/geometry/lattice_algorithms.o src/geometry/prime_coords.o src/geometry/prime_hyperdim.o src/geometry/prime_lattice.o src/geometry/prime_lattice_core.o src/geometry/prime_lattice_geometry.o src/geometry/prime_matrix.o src/geometry/prime_rainbow.o
-✓ Crystalline static library created
-Building algorithms shared library...
-make[1]: Entering directory '/workspace/algorithms'
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/numerical.c -o src/numerical.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/loss_functions.c -o src/loss_functions.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/optimizers.c -o src/optimizers.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/backprop.c -o src/backprop.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/statistics.c -o src/statistics.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/threading.c -o src/threading.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/shared_memory.c -o src/shared_memory.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lock_free_queue.c -o src/lock_free_queue.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/sphere_packing.c -o src/sphere_packing.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/batch_processing.c -o src/batch_processing.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/hierarchical_prime_partitions.c -o src/hierarchical_prime_partitions.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_sphere_positions.c -o src/lattice_sphere_positions.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/angular_attention.c -o src/angular_attention.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/cymatic_modulation.c -o src/cymatic_modulation.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/ntt_attention.c -o src/ntt_attention.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_embeddings.c -o src/lattice_embeddings.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I../include -c src/lattice_embeddings_bigfixed.c -o src/lattice_embeddings_bigfixed.o
-In file included from ../include/prime_bigint_transcendental.h:20,
-                 from src/lattice_embeddings_bigfixed.c:12:
-../include/prime_bigint_transcendental.h:49:43: warning: extra tokens at end of #endif directive [-Wendif-labels]
-   49 | #endif /* PRIME_BIGINT_TRANSCENDENTAL_H */void big_tanh(BigFixed *result, const BigFixed *x, int precision_bits);
-      |                                           ^~~~
+Compiling [AI]: src/ai/cllm_training_threaded.c
+gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -mavx2 -mfma -c src/ai/cllm_training_threaded.c -o src/ai/cllm_training_threaded.o
+src/ai/cllm_training_threaded.c: In function ‘cllm_forward_training_threaded’:
+src/ai/cllm_training_threaded.c:369:26: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  369 |     float* layer_input = local_ctx->input_embeddings;
+      |                          ^~~~~~~~~
+src/ai/cllm_training_threaded.c:385:35: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  385 |                 float* attn_out = &local_ctx->attention_outputs[layer][idx * embed_dim];
+      |                                   ^
+src/ai/cllm_training_threaded.c:386:33: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  386 |                 float* ff_out = &local_ctx->ff_outputs[layer][idx * embed_dim];
+      |                                 ^
+src/ai/cllm_training_threaded.c:387:36: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  387 |                 float* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
+      |                                    ^
+src/ai/cllm_training_threaded.c:391:36: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  391 |                 float* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
+      |                                    ^
+src/ai/cllm_training_threaded.c:430:21: warning: assignment to ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  430 |         layer_input = local_ctx->layer_outputs[layer];
+      |                     ^
+src/ai/cllm_training_threaded.c:442:29: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  442 |             float* hidden = &local_ctx->final_hidden[idx * embed_dim];
+      |                             ^
+src/ai/cllm_training_threaded.c:443:29: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  443 |             float* logits = &local_ctx->logits[idx * vocab_size];
+      |                             ^
+src/ai/cllm_training_threaded.c:446:38: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  446 |                 float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+      |                                      ^
+src/ai/cllm_training_threaded.c: In function ‘cllm_backward_training_threaded’:
+src/ai/cllm_training_threaded.c:481:26: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  481 |     float* grad_logits = local_ctx->grad_logits;
+      |                          ^~~~~~~~~
+src/ai/cllm_training_threaded.c:482:26: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  482 |     float* grad_hidden = local_ctx->grad_hidden;
+      |                          ^~~~~~~~~
+src/ai/cllm_training_threaded.c:483:25: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  483 |     float* grad_layer = local_ctx->grad_layer;
+      |                         ^~~~~~~~~
+src/ai/cllm_training_threaded.c:497:29: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  497 |             float* logits = &local_ctx->logits[idx * vocab_size];
+      |                             ^
+src/ai/cllm_training_threaded.c:534:29: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  534 |             float* hidden = &local_ctx->final_hidden[idx * embed_dim];
+      |                             ^
+src/ai/cllm_training_threaded.c:538:38: warning: initialization of ‘float *’ from incompatible pointer type ‘double *’ [-Wincompatible-pointer-types]
+  538 |                 float* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+      |                                      ^
+src/ai/cllm_training_threaded.c: In function ‘sphere_process_batch’:
+src/ai/cllm_training_threaded.c:736:21: warning: passing argument 1 of ‘cllm_compute_loss’ from incompatible pointer type [-Wincompatible-pointer-types]
+  736 |             training->model,
+      |             ~~~~~~~~^~~~~~~
+      |                     |
+      |                     CLLMModel *
+In file included from src/ai/cllm_training_threaded.c:23:
+./include/cllm_training.h:149:39: note: expected ‘CLLMTraining *’ but argument is of type ‘CLLMModel *’
+  149 | float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
+      |                         ~~~~~~~~~~~~~~^~~~~~~~
+src/ai/cllm_training_threaded.c: In function ‘work_queue_push’:
+src/ai/cllm_training_threaded.c:840:9: warning: the comparison will always evaluate as ‘true’ for the address of ‘batches’ will never be NULL [-Waddress]
+  840 |     if (!queue->batches) {
+      |         ^
+src/ai/cllm_training_threaded.c:119:25: note: ‘batches’ declared here
+  119 |     _Atomic(CLLMBatch*) batches[MAX_WORK_ITEMS];  // Work items (batches)
+      |                         ^~~~~~~
+src/ai/cllm_training_threaded.c:860:32: warning: the comparison will always evaluate as ‘false’ for the address of ‘batches’ will never be NULL [-Waddress]
+  860 |     if (&queue->batches[index] == NULL) {
+      |                                ^~
+src/ai/cllm_training_threaded.c:119:25: note: ‘batches’ declared here
+  119 |     _Atomic(CLLMBatch*) batches[MAX_WORK_ITEMS];  // Work items (batches)
+      |                         ^~~~~~~
+src/ai/cllm_training_threaded.c:872:19: error: invalid storage class for function ‘work_queue_pop’
+  872 | static CLLMBatch* work_queue_pop(WorkQueue* queue) {
+      |                   ^~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:917:13: error: invalid storage class for function ‘work_queue_reset’
+  917 | static void work_queue_reset(WorkQueue* queue) {
+      |             ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:935:12: error: invalid storage class for function ‘work_queue_is_complete’
+  935 | static int work_queue_is_complete(WorkQueue* queue) {
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:948:13: error: invalid storage class for function ‘work_queue_stats’
+  948 | static void work_queue_stats(WorkQueue* queue, size_t* pending, size_t* pushed, size_t* popped) {
+      |             ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:966:20: error: invalid storage class for function ‘batch_queue_create’
+  966 | static BatchQueue* batch_queue_create(size_t capacity) {
+      |                    ^~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:988:13: error: invalid storage class for function ‘batch_queue_free’
+  988 | static void batch_queue_free(BatchQueue* queue) {
+      |             ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1011:12: error: invalid storage class for function ‘batch_queue_try_push’
+ 1011 | static int batch_queue_try_push(BatchQueue* queue, CLLMBatch* batch) {
+      |            ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1035:19: error: invalid storage class for function ‘batch_queue_try_pop’
+ 1035 | static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
+      |                   ^~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1074:12: error: invalid storage class for function ‘batch_queue_is_empty’
+ 1074 | static int batch_queue_is_empty(BatchQueue* queue) {
+      |            ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1086:15: error: invalid storage class for function ‘batch_queue_size’
+ 1086 | static size_t batch_queue_size(BatchQueue* queue) {
+      |               ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1099:14: error: invalid storage class for function ‘batch_prefetch_thread_func’
+ 1099 | static void* batch_prefetch_thread_func(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1152:12: error: invalid storage class for function ‘batch_queue_start_prefetch’
+ 1152 | static int batch_queue_start_prefetch(ThreadedTrainingSystem* system) {
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1178:13: error: invalid storage class for function ‘batch_queue_stop_prefetch’
+ 1178 | static void batch_queue_stop_prefetch(ThreadedTrainingSystem* system) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1604:14: error: invalid storage class for function ‘control_thread_func’
+ 1604 | static void* control_thread_func(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1648:14: error: invalid storage class for function ‘sphere_worker_thread_lockfree’
+ 1648 | static void* sphere_worker_thread_lockfree(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1728:14: error: invalid storage class for function ‘sphere_worker_thread’
+ 1728 | static void* sphere_worker_thread(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1778:3: error: expected expression before ‘/’ token
+ 1778 |  */
+      |   ^
+src/ai/cllm_training_threaded.c:2323:1: error: expected declaration or statement at end of input
+ 2323 | }
+      | ^
+src/ai/cllm_training_threaded.c: At top level:
+src/ai/cllm_training_threaded.c:684:14: warning: ‘sphere_worker_thread’ declared ‘static’ but never defined [-Wunused-function]
+  684 | static void* sphere_worker_thread(void* arg);
+      |              ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:685:14: warning: ‘sphere_worker_thread_lockfree’ used but never defined
+  685 | static void* sphere_worker_thread_lockfree(void* arg);
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:686:14: warning: ‘control_thread_func’ used but never defined
+  686 | static void* control_thread_func(void* arg);  // Node Zero - NEVER processes batches
+      |              ^~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:688:13: warning: ‘accumulate_gradients’ used but never defined
+  688 | static void accumulate_gradients(ThreadedTrainingSystem* system);
+      |             ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:689:12: warning: ‘sphere_spawn_children’ declared ‘static’ but never defined [-Wunused-function]
+  689 | static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);  // PHASE 6
+      |            ^~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:690:12: warning: ‘validate_gradients’ declared ‘static’ but never defined [-Wunused-function]
+  690 | static int validate_gradients(float* gradients, size_t size, const char* source);
+      |            ^~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:691:13: warning: ‘clip_gradients’ declared ‘static’ but never defined [-Wunused-function]
+  691 | static void clip_gradients(float* gradients, size_t size, float max_norm);
+      |             ^~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1728:14: warning: ‘sphere_worker_thread’ defined but not used [-Wunused-function]
+ 1728 | static void* sphere_worker_thread(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1648:14: warning: ‘sphere_worker_thread_lockfree’ defined but not used [-Wunused-function]
+ 1648 | static void* sphere_worker_thread_lockfree(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1604:14: warning: ‘control_thread_func’ defined but not used [-Wunused-function]
+ 1604 | static void* control_thread_func(void* arg) {
+      |              ^~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1494:6: warning: ‘threaded_training_free’ defined but not used [-Wunused-function]
+ 1494 | void threaded_training_free(ThreadedTrainingSystem* system) {
+      |      ^~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1193:25: warning: ‘threaded_training_create’ defined but not used [-Wunused-function]
+ 1193 | ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1152:12: warning: ‘batch_queue_start_prefetch’ defined but not used [-Wunused-function]
+ 1152 | static int batch_queue_start_prefetch(ThreadedTrainingSystem* system) {
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:1035:19: warning: ‘batch_queue_try_pop’ defined but not used [-Wunused-function]
+ 1035 | static CLLMBatch* batch_queue_try_pop(BatchQueue* queue) {
+      |                   ^~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:948:13: warning: ‘work_queue_stats’ defined but not used [-Wunused-function]
+  948 | static void work_queue_stats(WorkQueue* queue, size_t* pending, size_t* pushed, size_t* popped) {
+      |             ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:935:12: warning: ‘work_queue_is_complete’ defined but not used [-Wunused-function]
+  935 | static int work_queue_is_complete(WorkQueue* queue) {
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:917:13: warning: ‘work_queue_reset’ defined but not used [-Wunused-function]
+  917 | static void work_queue_reset(WorkQueue* queue) {
+      |             ^~~~~~~~~~~~~~~~
+src/ai/cllm_training_threaded.c:829:12: warning: ‘work_queue_push’ defined but not used [-Wunused-function]
+  829 | static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
+      |            ^~~~~~~~~~~~~~~
+make: *** [Makefile:152: src/ai/cllm_training_threaded.o] Error 1

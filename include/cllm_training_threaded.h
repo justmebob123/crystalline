@@ -22,28 +22,28 @@
  */
 typedef struct {
     // Forward pass activation storage (thread-local)
-    float* input_embeddings;         // [batch * seq * embed]
-    float** layer_inputs;            // [num_layers][batch * seq * embed]
-    float** attention_outputs;       // [num_layers][batch * seq * embed]
-    float** ff_outputs;              // [num_layers][batch * seq * embed]
-    float** layer_outputs;           // [num_layers][batch * seq * embed]
-    float** ff_hidden;               // [num_layers][batch * seq * ff_hidden]
-    float* final_hidden;             // [batch * seq * embed]
-    float* logits;                   // [batch * seq * vocab]
+    double* input_embeddings;        // [batch * seq * embed]
+    double** layer_inputs;           // [num_layers][batch * seq * embed]
+    double** attention_outputs;      // [num_layers][batch * seq * embed]
+    double** ff_outputs;             // [num_layers][batch * seq * embed]
+    double** layer_outputs;          // [num_layers][batch * seq * embed]
+    double** ff_hidden;              // [num_layers][batch * seq * ff_hidden]
+    double* final_hidden;            // [batch * seq * embed]
+    double* logits;                  // [batch * seq * vocab]
     
     // Attention cache (thread-local)
     struct {
-        float* attention_weights;    // [num_heads * seq * seq]
-        float* queries;              // [seq * embed]
-        float* keys;                 // [seq * embed]
-        float* values;               // [seq * embed]
-        float* scores;               // [num_heads * seq * seq]
+        double* attention_weights;   // [num_heads * seq * seq]
+        double* queries;             // [seq * embed]
+        double* keys;                // [seq * embed]
+        double* values;              // [seq * embed]
+        double* scores;              // [num_heads * seq * seq]
     }* attention_cache;              // [num_layers]
     
     // Backward pass temporary buffers (thread-local)
-    float* grad_logits;              // [batch * seq * vocab]
-    float* grad_hidden;              // [batch * seq * embed]
-    float* grad_layer;               // [batch * seq * embed]
+    double* grad_logits;             // [batch * seq * vocab]
+    double* grad_hidden;             // [batch * seq * embed]
+    double* grad_layer;              // [batch * seq * embed]
     
     // Configuration (copied from main training)
     int batch_size;
@@ -114,7 +114,7 @@ void cllm_backward_training_threaded(
     CLLMTraining* training,
     ThreadLocalTrainingContext* local_ctx,
     uint32_t* target_tokens,
-    float* gradient_buffer
+    double* gradient_buffer
 );
 
 /**

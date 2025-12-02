@@ -32,7 +32,7 @@ void cllm_generate_spiral_encoding(PositionalEncoding* pos_enc) {
     float golden_angle = 2.0f * PI / (PHI * PHI);
     
     for (uint32_t pos = 0; pos < max_length; pos++) {
-        float* encoding = &pos_enc->spiral_positions[pos * embedding_dim];
+        double* encoding = &pos_enc->spiral_positions[pos * embedding_dim];
         
         // Spiral parameters
         float angle = golden_angle * (float)pos;
@@ -174,7 +174,7 @@ void cllm_generate_prime_encoding(PositionalEncoding* pos_enc) {
     
     // Generate encodings based on primes
     for (uint32_t pos = 0; pos < max_length; pos++) {
-        float* encoding = &pos_enc->prime_positions[pos * embedding_dim];
+        double* encoding = &pos_enc->prime_positions[pos * embedding_dim];
         uint64_t prime = primes[pos];
         
         // Use prime factorization structure
@@ -233,7 +233,7 @@ void cllm_initialize_learned_encoding(PositionalEncoding* pos_enc) {
     
     // Initialize with standard sinusoidal encoding (Vaswani et al., 2017)
     for (uint32_t pos = 0; pos < max_length; pos++) {
-        float* encoding = &pos_enc->learned_positions[pos * embedding_dim];
+        double* encoding = &pos_enc->learned_positions[pos * embedding_dim];
         
         for (uint32_t i = 0; i < embedding_dim; i++) {
             float freq = 1.0f / prime_pow(10000.0f, (float)(i / 2 * 2) / (float)embedding_dim);
@@ -307,16 +307,16 @@ void cllm_generate_all_positional_encodings(CLLMModel* model) {
     // size_t encoding_size = pos_enc->max_length * pos_enc->embedding_dim * sizeof(float);  // Unused
     
     if (!pos_enc->spiral_positions) {
-        pos_enc->spiral_positions = (float*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(float));
+        pos_enc->spiral_positions = (double*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(double));
     }
     if (!pos_enc->clock_positions) {
-        pos_enc->clock_positions = (float*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(float));
+        pos_enc->clock_positions = (double*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(double));
     }
     if (!pos_enc->prime_positions) {
-        pos_enc->prime_positions = (float*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(float));
+        pos_enc->prime_positions = (double*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(double));
     }
     if (!pos_enc->learned_positions) {
-        pos_enc->learned_positions = (float*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(float));
+        pos_enc->learned_positions = (double*)calloc(pos_enc->max_length * pos_enc->embedding_dim, sizeof(double));
     }
     
     // Generate each encoding scheme
