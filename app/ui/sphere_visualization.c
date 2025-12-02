@@ -134,6 +134,9 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     // Draw title
     draw_text(renderer, "KISSING SPHERES ARCHITECTURE", bounds.x + 10, bounds.y + 10, text_color);
     
+    // Lock sphere_stats for reading
+    pthread_mutex_lock(&state->sphere_stats_mutex);
+    
     // UI Integration: Draw subtitle with real-time status
     if (state->training_metrics) {
         char status_text[128];

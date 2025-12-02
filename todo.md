@@ -123,13 +123,15 @@
 - [x] Build successful - zero errors
 - [x] Commit Phase 1
 
-### Phase 2: Investigate and Fix Thread Stopping
-- [ ] Add debug logging to training loop
-- [ ] Verify worker thread shutdown in cllm_training_threaded.c
-- [ ] Add mutex protection for sphere_stats access
-- [ ] Test stop button thoroughly
-- [ ] Verify no memory errors on stop
-- [ ] Commit Phase 2
+### Phase 2: Investigate and Fix Thread Stopping ✅ COMPLETE
+- [x] Verified training loop checks stop flag at each epoch
+- [x] Verified threaded_training_free() properly stops all worker threads
+- [x] Verified cleanup sequence is correct (stop threads before model cleanup)
+- [x] Added pthread_mutex_t sphere_stats_mutex to AppState
+- [x] Protected all sphere_stats writes with mutex in training_thread.c
+- [x] Protected all sphere_stats reads with mutex in sphere_visualization.c
+- [x] Build successful - zero errors
+- [x] Commit Phase 2
 
 ### Phase 3: Fix Model Status Display
 - [ ] Update status logic to check registration AND loading

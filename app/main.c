@@ -24,6 +24,9 @@ AppState* init_app(void) {
     AppState* state = calloc(1, sizeof(AppState));
     if (!state) return NULL;
     
+    // Initialize sphere_stats mutex
+    pthread_mutex_init(&state->sphere_stats_mutex, NULL);
+    
     // Initialize loading screen state
     loading_screen_init(&g_loading_screen);
     
@@ -340,6 +343,10 @@ void cleanup(AppState* state) {
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);
     cleanup_font_system();
+    
+    // Destroy sphere_stats mutex
+    pthread_mutex_destroy(&state->sphere_stats_mutex);
+    
     free(state);
     SDL_Quit();
 }

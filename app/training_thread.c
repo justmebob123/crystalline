@@ -54,7 +54,9 @@ static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
     }
 
     
-    // Update sphere statistics from metrics
+    // Update sphere statistics from metrics (with mutex protection)
+    pthread_mutex_lock(&state->sphere_stats_mutex);
+    
     state->sphere_stats.active_spheres = 0;
     state->sphere_stats.total_batches = 0;
     
@@ -81,6 +83,8 @@ static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
     
     // Store gradient norm (use performance metric as proxy)
     state->sphere_stats.total_gradient_norm = metrics->performance.cache_hit_rate;
+    
+    pthread_mutex_unlock(&state->sphere_stats_mutex);
 }
 
 /**
@@ -89,7 +93,9 @@ static void metrics_callback(const CLLMMetrics* metrics, void* user_data) {
 static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system) {
     if (!state || !system) return;
     
-    // Get number of worker spheres
+    // Get number of worker spheres (with mutex protection)
+    pthread_mutex_lock(&state->sphere_stats_mutex);
+    
     int num_workers = threaded_training_get_num_workers(system);
     state->sphere_stats.active_spheres = num_workers;
     state->sphere_stats.total_batches = 0;
@@ -109,6 +115,8 @@ static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system)
     
     // Get total gradient norm
     state->sphere_stats.total_gradient_norm = threaded_training_get_gradient_norm(system);
+    
+    pthread_mutex_unlock(&state->sphere_stats_mutex);
 }
 
 /**

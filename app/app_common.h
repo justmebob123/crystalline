@@ -363,6 +363,7 @@ typedef struct {
         float total_gradient_norm;    // Total gradient magnitude
         int total_batches;            // Total batches across all spheres
     } sphere_stats;
+    pthread_mutex_t sphere_stats_mutex;  // Protects sphere_stats from race conditions
     
     // UI Integration: Real-time metrics from training system
     CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h
