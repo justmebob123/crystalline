@@ -102,9 +102,15 @@ bool model_manager_init(const char* models_dir) {
                 memcpy(model_name, entry->d_name, name_len);
                 model_name[name_len] = '\0';
                 
-                // Build full path
+                // Build full path (with bounds checking to prevent truncation)
                 char model_path[MODEL_PATH_MAX];
-                snprintf(model_path, MODEL_PATH_MAX, "%s/%s", g_model_manager.models_dir, entry->d_name);
+                int path_len = snprintf(model_path, MODEL_PATH_MAX, "%s/%s", 
+                                       g_model_manager.models_dir, entry->d_name);
+                if (path_len >= MODEL_PATH_MAX) {
+                    fprintf(stderr, "Model path too long, skipping: %s/%s\n", 
+                           g_model_manager.models_dir, entry->d_name);
+                    continue;
+                }
                 
                 // Register the model (without loading it)
                 // Create managed model entry

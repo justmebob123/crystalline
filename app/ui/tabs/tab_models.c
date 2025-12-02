@@ -634,9 +634,11 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                         
                         state->cllm_model = loaded_model;
                         
-                        // Show success message
+                        // Show success message (truncate model name if needed)
+                        char safe_name[200];
+                        snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
                         snprintf(status_message, sizeof(status_message), 
-                                "Model '%s' loaded successfully", models[clicked_index]->name);
+                                "Model '%s' loaded successfully", safe_name);
                         status_message_timer = 3.0f;
                         
                         // Dispatch event
@@ -648,8 +650,11 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                                          "tab_models");
                         }
                     } else {
+                        // Show error message (truncate model name if needed)
+                        char safe_name[200];
+                        snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
                         snprintf(status_message, sizeof(status_message), 
-                                "Failed to load model '%s'", models[clicked_index]->name);
+                                "Failed to load model '%s'", safe_name);
                         status_message_timer = 3.0f;
                     }
                 }
