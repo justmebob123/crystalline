@@ -245,6 +245,10 @@ void cleanup(AppState* state) {
     extern void stop_crawler_thread(void);
     stop_crawler_thread();
     
+    // CRITICAL: Stop training thread before cleanup (prevents use-after-free)
+    extern void stop_training_thread(AppState* state);
+    stop_training_thread(state);
+    
     if (state->primes) free(state->primes);
     if (state->clock_map) free(state->clock_map);
     if (state->spheres) free(state->spheres);

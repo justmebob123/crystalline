@@ -489,19 +489,37 @@ int start_training_thread(AppState* state) {
 void stop_training_thread(AppState* state) {
     if (!state) return;
     
+    // Signal training to stop
     pthread_mutex_lock(&training_mutex);
     state->training_in_progress = false;
     pthread_mutex_unlock(&training_mutex);
     
-    // Release model write lock
+    printf("Training stop requested, waiting for thread to finish...\n");
+    
+    // CRITICAL: Wait for training thread to actually stop
+    // This ensures all worker threads are stopped before we return
+    pthread_t thread_copy;
+    bool has_thread = false;
+    
+    pthread_mutex_lock(&training_mutex);
+    if (training_thread_active) {
+        thread_copy = training_thread;
+        has_thread = true;
+    }
+    pthread_mutex_unlock(&training_mutex);
+    
+    if (has_thread) {
+        pthread_join(thread_copy, NULL);
+        printf("✓ Training thread stopped completely\n");
+    }
+    
+    // Release model write lock AFTER thread is stopped
     if (state->cllm_model) {
         const char* model_name = "default_model"; // TODO: Get from model selector
         model_manager_release_write(model_name);
         state->cllm_model = NULL;
         printf("✓ Model released\n");
     }
-    
-    printf("Training stop requested\n");
 }
 
 /**
