@@ -772,3 +772,515 @@ SDL_Rect ui_panel_get_content_bounds(const UIPanel* panel) {
         panel->bounds.h - 40
     };
 }
+
+// ============================================================================
+// DROPDOWN COMPONENT
+// ============================================================================
+
+UIDropdown* ui_dropdown_create(int x, int y, int w, int h) {
+    UIDropdown* dropdown = calloc(1, sizeof(UIDropdown));
+    if (!dropdown) return NULL;
+    
+    dropdown->bounds = (SDL_Rect){x, y, w, h};
+    dropdown->items = NULL;
+    dropdown->num_items = 0;
+    dropdown->selected_index = -1;
+    dropdown->open = false;
+    dropdown->visible = true;
+    dropdown->state = UI_STATE_NORMAL;
+    dropdown->scroll_offset = 0;
+    dropdown->hover_index = -1;
+    
+    // Default colors
+    dropdown->bg_color = (SDL_Color){40, 40, 40, 255};
+    dropdown->text_color = (SDL_Color){220, 220, 220, 255};
+    dropdown->hover_color = (SDL_Color){60, 60, 80, 255};
+    dropdown->border_color = (SDL_Color){100, 100, 100, 255};
+    
+    return dropdown;
+}
+
+void ui_dropdown_destroy(UIDropdown* dropdown) {
+    if (!dropdown) return;
+    
+    // Free all items
+    for (int i = 0; i < dropdown->num_items; i++) {
+        free(dropdown->items[i]);
+    }
+    free(dropdown->items);
+    free(dropdown);
+}
+
+void ui_dropdown_render(UIDropdown* dropdown, SDL_Renderer* renderer) {
+    if (!dropdown || !dropdown->visible || !renderer) return;
+    
+    // Draw main button
+    SDL_Color bg = (dropdown->state == UI_STATE_HOVER) ? dropdown->hover_color : dropdown->bg_color;
+    SDL_SetRenderDrawColor(renderer, bg.r, bg.g, bg.b, bg.a);
+    SDL_RenderFillRect(renderer, &dropdown->bounds);
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer, 
+                          dropdown->border_color.r,
+                          dropdown->border_color.g,
+                          dropdown->border_color.b,
+                          dropdown->border_color.a);
+    SDL_RenderDrawRect(renderer, &dropdown->bounds);
+    
+    // Draw selected item text
+    if (dropdown->selected_index >= 0 && dropdown->selected_index < dropdown->num_items) {
+        draw_text(renderer, dropdown->items[dropdown->selected_index],
+                 dropdown->bounds.x + 5, dropdown->bounds.y + 8, dropdown->text_color);
+    } else {
+        SDL_Color placeholder = {150, 150, 150, 255};
+        draw_text(renderer, "Select...", dropdown->bounds.x + 5, dropdown->bounds.y + 8, placeholder);
+    }
+    
+    // Draw arrow
+    const char* arrow = dropdown->open ? "▲" : "▼";
+    draw_text(renderer, arrow, dropdown->bounds.x + dropdown->bounds.w - 20, 
+             dropdown->bounds.y + 8, dropdown->text_color);
+    
+    // Draw dropdown list if open
+    if (dropdown->open && dropdown->num_items > 0) {
+        int item_height = 25;
+        int max_visible = 10;
+        int visible_items = (dropdown->num_items < max_visible) ? dropdown->num_items : max_visible;
+        int list_height = visible_items * item_height;
+        
+        SDL_Rect list_rect = {
+            dropdown->bounds.x,
+            dropdown->bounds.y + dropdown->bounds.h,
+            dropdown->bounds.w,
+            list_height
+        };
+        
+        // Draw list background
+        SDL_SetRenderDrawColor(renderer, 
+                              dropdown->bg_color.r,
+                              dropdown->bg_color.g,
+                              dropdown->bg_color.b,
+                              dropdown->bg_color.a);
+        SDL_RenderFillRect(renderer, &list_rect);
+        
+        // Draw list border
+        SDL_SetRenderDrawColor(renderer,
+                              dropdown->border_color.r,
+                              dropdown->border_color.g,
+                              dropdown->border_color.b,
+                              dropdown->border_color.a);
+        SDL_RenderDrawRect(renderer, &list_rect);
+        
+        // Draw items
+        for (int i = 0; i < visible_items; i++) {
+            int item_index = i + dropdown->scroll_offset;
+            if (item_index >= dropdown->num_items) break;
+            
+            SDL_Rect item_rect = {
+                list_rect.x,
+                list_rect.y + i * item_height,
+                list_rect.w,
+                item_height
+            };
+            
+            // Highlight hovered item
+            if (item_index == dropdown->hover_index) {
+                SDL_SetRenderDrawColor(renderer,
+                                      dropdown->hover_color.r,
+                                      dropdown->hover_color.g,
+                                      dropdown->hover_color.b,
+                                      dropdown->hover_color.a);
+                SDL_RenderFillRect(renderer, &item_rect);
+            }
+            
+            // Draw item text
+            draw_text(renderer, dropdown->items[item_index],
+                     item_rect.x + 5, item_rect.y + 5, dropdown->text_color);
+        }
+    }
+}
+
+bool ui_dropdown_handle_event(UIDropdown* dropdown, SDL_Event* event) {
+    if (!dropdown || !dropdown->visible) return false;
+    
+    switch (event->type) {
+        case SDL_MOUSEMOTION: {
+            // Check if hovering over main button
+            bool over_button = ui_point_in_rect(event->motion.x, event->motion.y, &dropdown->bounds);
+            dropdown->state = over_button ? UI_STATE_HOVER : UI_STATE_NORMAL;
+            
+            // Check if hovering over list items
+            if (dropdown->open) {
+                int item_height = 25;
+                int max_visible = 10;
+                int visible_items = (dropdown->num_items < max_visible) ? dropdown->num_items : max_visible;
+                
+                SDL_Rect list_rect = {
+                    dropdown->bounds.x,
+                    dropdown->bounds.y + dropdown->bounds.h,
+                    dropdown->bounds.w,
+                    visible_items * item_height
+                };
+                
+                if (ui_point_in_rect(event->motion.x, event->motion.y, &list_rect)) {
+                    int relative_y = event->motion.y - list_rect.y;
+                    int item_index = (relative_y / item_height) + dropdown->scroll_offset;
+                    dropdown->hover_index = item_index;
+                    return true;
+                } else {
+                    dropdown->hover_index = -1;
+                }
+            }
+            break;
+        }
+        
+        case SDL_MOUSEBUTTONDOWN: {
+            if (event->button.button == SDL_BUTTON_LEFT) {
+                // Check if clicking main button
+                if (ui_point_in_rect(event->button.x, event->button.y, &dropdown->bounds)) {
+                    dropdown->open = !dropdown->open;
+                    return true;
+                }
+                
+                // Check if clicking list item
+                if (dropdown->open) {
+                    int item_height = 25;
+                    int max_visible = 10;
+                    int visible_items = (dropdown->num_items < max_visible) ? dropdown->num_items : max_visible;
+                    
+                    SDL_Rect list_rect = {
+                        dropdown->bounds.x,
+                        dropdown->bounds.y + dropdown->bounds.h,
+                        dropdown->bounds.w,
+                        visible_items * item_height
+                    };
+                    
+                    if (ui_point_in_rect(event->button.x, event->button.y, &list_rect)) {
+                        int relative_y = event->button.y - list_rect.y;
+                        int item_index = (relative_y / item_height) + dropdown->scroll_offset;
+                        
+                        if (item_index >= 0 && item_index < dropdown->num_items) {
+                            dropdown->selected_index = item_index;
+                            dropdown->open = false;
+                            
+                            if (dropdown->on_select) {
+                                dropdown->on_select(item_index, dropdown->items[item_index], 
+                                                   dropdown->user_data);
+                            }
+                            return true;
+                        }
+                    } else {
+                        // Clicked outside - close dropdown
+                        dropdown->open = false;
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        
+        case SDL_MOUSEWHEEL: {
+            if (dropdown->open) {
+                dropdown->scroll_offset -= event->wheel.y;
+                if (dropdown->scroll_offset < 0) dropdown->scroll_offset = 0;
+                
+                int max_visible = 10;
+                int max_scroll = dropdown->num_items - max_visible;
+                if (max_scroll < 0) max_scroll = 0;
+                if (dropdown->scroll_offset > max_scroll) dropdown->scroll_offset = max_scroll;
+                
+                return true;
+            }
+            break;
+        }
+    }
+    
+    return false;
+}
+
+void ui_dropdown_add_item(UIDropdown* dropdown, const char* item) {
+    if (!dropdown || !item) return;
+    
+    // Resize items array
+    dropdown->items = realloc(dropdown->items, (dropdown->num_items + 1) * sizeof(char*));
+    dropdown->items[dropdown->num_items] = strdup(item);
+    dropdown->num_items++;
+}
+
+void ui_dropdown_clear_items(UIDropdown* dropdown) {
+    if (!dropdown) return;
+    
+    for (int i = 0; i < dropdown->num_items; i++) {
+        free(dropdown->items[i]);
+    }
+    free(dropdown->items);
+    
+    dropdown->items = NULL;
+    dropdown->num_items = 0;
+    dropdown->selected_index = -1;
+}
+
+void ui_dropdown_set_selected(UIDropdown* dropdown, int index) {
+    if (!dropdown) return;
+    if (index >= -1 && index < dropdown->num_items) {
+        dropdown->selected_index = index;
+    }
+}
+
+int ui_dropdown_get_selected(const UIDropdown* dropdown) {
+    return dropdown ? dropdown->selected_index : -1;
+}
+
+const char* ui_dropdown_get_selected_text(const UIDropdown* dropdown) {
+    if (!dropdown || dropdown->selected_index < 0 || dropdown->selected_index >= dropdown->num_items) {
+        return NULL;
+    }
+    return dropdown->items[dropdown->selected_index];
+}
+
+void ui_dropdown_set_callback(UIDropdown* dropdown, DropdownCallback callback, void* user_data) {
+    if (!dropdown) return;
+    dropdown->on_select = callback;
+    dropdown->user_data = user_data;
+}
+
+// ============================================================================
+// DIALOG COMPONENT
+// ============================================================================
+
+static void dialog_button_callback(void* user_data);
+
+UIDialog* ui_dialog_create(int x, int y, int w, int h, const char* title,
+                           const char* message, DialogType type) {
+    UIDialog* dialog = calloc(1, sizeof(UIDialog));
+    if (!dialog) return NULL;
+    
+    dialog->bounds = (SDL_Rect){x, y, w, h};
+    if (title) {
+        strncpy(dialog->title, title, sizeof(dialog->title) - 1);
+    }
+    if (message) {
+        strncpy(dialog->message, message, sizeof(dialog->message) - 1);
+    }
+    
+    dialog->type = type;
+    dialog->result = DIALOG_RESULT_NONE;
+    dialog->visible = false;
+    dialog->modal = true;
+    dialog->num_buttons = 0;
+    
+    // Default colors
+    dialog->bg_color = (SDL_Color){40, 40, 40, 255};
+    dialog->title_bg_color = (SDL_Color){60, 60, 80, 255};
+    dialog->title_text_color = (SDL_Color){220, 220, 220, 255};
+    dialog->text_color = (SDL_Color){200, 200, 200, 255};
+    dialog->border_color = (SDL_Color){100, 100, 100, 255};
+    
+    // Create buttons based on type
+    int button_width = 100;
+    int button_height = 30;
+    int button_spacing = 10;
+    int button_y = y + h - button_height - 20;
+    
+    switch (type) {
+        case DIALOG_OK: {
+            int button_x = x + (w - button_width) / 2;
+            dialog->buttons[0] = ui_button_create(button_x, button_y, button_width, button_height, "OK");
+            dialog->num_buttons = 1;
+            break;
+        }
+        
+        case DIALOG_OK_CANCEL: {
+            int total_width = 2 * button_width + button_spacing;
+            int start_x = x + (w - total_width) / 2;
+            dialog->buttons[0] = ui_button_create(start_x, button_y, button_width, button_height, "OK");
+            dialog->buttons[1] = ui_button_create(start_x + button_width + button_spacing, button_y, 
+                                                  button_width, button_height, "Cancel");
+            dialog->num_buttons = 2;
+            break;
+        }
+        
+        case DIALOG_YES_NO: {
+            int total_width = 2 * button_width + button_spacing;
+            int start_x = x + (w - total_width) / 2;
+            dialog->buttons[0] = ui_button_create(start_x, button_y, button_width, button_height, "Yes");
+            dialog->buttons[1] = ui_button_create(start_x + button_width + button_spacing, button_y,
+                                                  button_width, button_height, "No");
+            dialog->num_buttons = 2;
+            break;
+        }
+        
+        case DIALOG_YES_NO_CANCEL: {
+            int total_width = 3 * button_width + 2 * button_spacing;
+            int start_x = x + (w - total_width) / 2;
+            dialog->buttons[0] = ui_button_create(start_x, button_y, button_width, button_height, "Yes");
+            dialog->buttons[1] = ui_button_create(start_x + button_width + button_spacing, button_y,
+                                                  button_width, button_height, "No");
+            dialog->buttons[2] = ui_button_create(start_x + 2 * (button_width + button_spacing), button_y,
+                                                  button_width, button_height, "Cancel");
+            dialog->num_buttons = 3;
+            break;
+        }
+    }
+    
+    // Set button callbacks
+    for (int i = 0; i < dialog->num_buttons; i++) {
+        ui_button_set_callback(dialog->buttons[i], dialog_button_callback, dialog);
+    }
+    
+    return dialog;
+}
+
+void ui_dialog_destroy(UIDialog* dialog) {
+    if (!dialog) return;
+    
+    for (int i = 0; i < dialog->num_buttons; i++) {
+        ui_button_destroy(dialog->buttons[i]);
+    }
+    
+    free(dialog);
+}
+
+void ui_dialog_render(UIDialog* dialog, SDL_Renderer* renderer) {
+    if (!dialog || !dialog->visible || !renderer) return;
+    
+    // Draw semi-transparent overlay if modal
+    if (dialog->modal) {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
+        SDL_Rect screen = {0, 0, 1920, 1080}; // TODO: Get actual screen size
+        SDL_RenderFillRect(renderer, &screen);
+    }
+    
+    // Draw dialog background
+    SDL_SetRenderDrawColor(renderer,
+                          dialog->bg_color.r,
+                          dialog->bg_color.g,
+                          dialog->bg_color.b,
+                          dialog->bg_color.a);
+    SDL_RenderFillRect(renderer, &dialog->bounds);
+    
+    // Draw title bar
+    SDL_Rect title_rect = {dialog->bounds.x, dialog->bounds.y, dialog->bounds.w, 40};
+    SDL_SetRenderDrawColor(renderer,
+                          dialog->title_bg_color.r,
+                          dialog->title_bg_color.g,
+                          dialog->title_bg_color.b,
+                          dialog->title_bg_color.a);
+    SDL_RenderFillRect(renderer, &title_rect);
+    
+    // Draw title text
+    if (dialog->title[0] != '\0') {
+        draw_text(renderer, dialog->title, dialog->bounds.x + 10, dialog->bounds.y + 12,
+                 dialog->title_text_color);
+    }
+    
+    // Draw message
+    if (dialog->message[0] != '\0') {
+        // Simple word wrapping (basic implementation)
+        int text_x = dialog->bounds.x + 20;
+        int text_y = dialog->bounds.y + 60;
+        int line_height = 20;
+        
+        char* message_copy = strdup(dialog->message);
+        char* line = strtok(message_copy, "\n");
+        
+        while (line) {
+            draw_text(renderer, line, text_x, text_y, dialog->text_color);
+            text_y += line_height;
+            line = strtok(NULL, "\n");
+        }
+        
+        free(message_copy);
+    }
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer,
+                          dialog->border_color.r,
+                          dialog->border_color.g,
+                          dialog->border_color.b,
+                          dialog->border_color.a);
+    SDL_RenderDrawRect(renderer, &dialog->bounds);
+    
+    // Draw buttons
+    for (int i = 0; i < dialog->num_buttons; i++) {
+        ui_button_render(dialog->buttons[i], renderer);
+    }
+}
+
+bool ui_dialog_handle_event(UIDialog* dialog, SDL_Event* event) {
+    if (!dialog || !dialog->visible) return false;
+    
+    // Handle button events
+    for (int i = 0; i < dialog->num_buttons; i++) {
+        if (ui_button_handle_event(dialog->buttons[i], event)) {
+            return true;
+        }
+    }
+    
+    // Block events from reaching underlying UI if modal
+    if (dialog->modal) {
+        return true;
+    }
+    
+    return false;
+}
+
+static void dialog_button_callback(void* user_data) {
+    UIDialog* dialog = (UIDialog*)user_data;
+    if (!dialog) return;
+    
+    // Determine which button was clicked
+    for (int i = 0; i < dialog->num_buttons; i++) {
+        if (dialog->buttons[i]->state == UI_STATE_ACTIVE) {
+            // Map button to result
+            const char* label = dialog->buttons[i]->label;
+            
+            if (strcmp(label, "OK") == 0) {
+                dialog->result = DIALOG_RESULT_OK;
+            } else if (strcmp(label, "Cancel") == 0) {
+                dialog->result = DIALOG_RESULT_CANCEL;
+            } else if (strcmp(label, "Yes") == 0) {
+                dialog->result = DIALOG_RESULT_YES;
+            } else if (strcmp(label, "No") == 0) {
+                dialog->result = DIALOG_RESULT_NO;
+            }
+            
+            // Hide dialog
+            dialog->visible = false;
+            
+            // Call user callback
+            if (dialog->on_close) {
+                dialog->on_close(dialog->result, dialog->user_data);
+            }
+            
+            break;
+        }
+    }
+}
+
+void ui_dialog_show(UIDialog* dialog) {
+    if (!dialog) return;
+    dialog->visible = true;
+    dialog->result = DIALOG_RESULT_NONE;
+}
+
+void ui_dialog_hide(UIDialog* dialog) {
+    if (!dialog) return;
+    dialog->visible = false;
+}
+
+bool ui_dialog_is_visible(const UIDialog* dialog) {
+    return dialog ? dialog->visible : false;
+}
+
+DialogResult ui_dialog_get_result(const UIDialog* dialog) {
+    return dialog ? dialog->result : DIALOG_RESULT_NONE;
+}
+
+void ui_dialog_set_callback(UIDialog* dialog,
+                            void (*on_close)(DialogResult, void*), void* user_data) {
+    if (!dialog) return;
+    dialog->on_close = on_close;
+    dialog->user_data = user_data;
+}
