@@ -841,8 +841,15 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
     
     size_t index = tail % MAX_WORK_ITEMS;
     
-    printf("[DEBUG] work_queue_push: index=%zu, batch=%p\n", index, (void*)batch);
+    printf("[DEBUG] work_queue_push: index=%zu, batch=%p, &batches[index]=%p\n", 
+           index, (void*)batch, (void*)&queue->batches[index]);
     fflush(stdout);
+    
+    // Check if we're about to write to NULL
+    if (&queue->batches[index] == NULL) {
+        fprintf(stderr, "[ERROR] work_queue_push: &batches[index] is NULL!\n");
+        return 0;
+    }
     
     atomic_store(&queue->batches[index], batch);
     atomic_store(&queue->tail, tail + 1);
@@ -2034,6 +2041,14 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     work_queue_reset(system->work_queue);
     
     // PHASE 2A: Reset batch iterator and start pre-fetching
+    printf("[DEBUG] Before batch_iterator_reset: batch_iterator=%p\n", (void*)system->batch_iterator);
+    fflush(stdout);
+    
+    if (!system->batch_iterator) {
+        fprintf(stderr, "[ERROR] batch_iterator is NULL!\n");
+        return 0.0f;
+    }
+    
     cllm_batch_iterator_reset(system->batch_iterator);
     
     if (!batch_queue_start_prefetch(system)) {
