@@ -51,6 +51,11 @@ typedef struct {
     float loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
     int loss_scale_window;            // Steps before increasing loss scale (default: 2000)
     
+    // OBJECTIVE 27: Memory optimization options
+    int use_sparse_gradients;         // Only allocate gradients for active batch tokens (default: 0)
+    int use_disk_based_training;      // Stream gradients to disk instead of keeping in RAM (default: 0)
+    int flush_gradients_every_n_steps; // Flush gradients to disk every N steps (default: 10)
+    
 } CLLMTrainingConfig;
 
 /*

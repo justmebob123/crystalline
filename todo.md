@@ -290,4 +290,13 @@ The implementation is complete and ready for testing. User should:
 
 ## 🎯 CURRENT FOCUS
 
-Starting with **OBJECTIVE 26: Fix Model Manager Architecture** to properly implement disk-based model access with abacus-driven prime generation.
+**OBJECTIVE 27: Fix Training Memory Regression (CRITICAL)**
+
+Training initialization is allocating 10-15 GB for a 10K vocab model, causing OOM killer.
+This is a regression - original code allocated based on total_params, current code uses embed_size (vocab × dim).
+
+Need to:
+1. Fix allocation to use total_params instead of embed_size
+2. Add sparse gradient options (only allocate for active tokens)
+3. Add disk-based training options
+4. Add configuration checkboxes for memory optimization

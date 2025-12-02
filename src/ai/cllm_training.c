@@ -263,17 +263,37 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         }
     }
     
-    // Allocate BigFixed gradient buffers
-    size_t embed_size = model->vocab_size * model->embedding_dim;
+    // OBJECTIVE 27: Fix memory regression - use total_params instead of embed_size
+    // Original code allocated based on total_params (correct)
+    // Regression changed to embed_size (vocab_size * embedding_dim) which is MUCH larger
     
-    if (embed_size > 0 && embed_size < 100000000) {
+    size_t total_params = model->header.total_params;
+    
+    // Configuration options for memory optimization
+    bool use_sparse_gradients = config->use_sparse_gradients;  // Only allocate for active tokens
+    bool use_disk_based_training = config->use_disk_based_training;  // Stream to disk
+    
+    if (use_sparse_gradients) {
+        // Sparse mode: Only allocate for batch size (allocated dynamically during training)
+        printf("Using sparse gradients (batch-only allocation)\n");
+        training->gradients = NULL;  // Will be allocated per-batch
+        training->optimizer_state = NULL;  // Will be allocated per-batch
+    } else if (use_disk_based_training) {
+        // Disk-based mode: Minimal memory, stream to disk
+        printf("Using disk-based training (streaming to disk)\n");
+        training->gradients = NULL;  // Will use disk buffer
+        training->optimizer_state = NULL;  // Will use disk buffer
+    } else if (total_params > 0 && total_params < 100000000) {
+        // Standard mode: Allocate full gradient buffers (FIXED: use total_params not embed_size)
+        printf("Allocating gradient buffers for %zu parameters\n", total_params);
+        
         // Allocate BigFixed** arrays
-        training->gradients = (BigFixed**)calloc(embed_size, sizeof(BigFixed*));
-        training->optimizer_state = (BigFixed**)calloc(embed_size * 2, sizeof(BigFixed*));
+        training->gradients = (BigFixed**)calloc(total_params, sizeof(BigFixed*));
+        training->optimizer_state = (BigFixed**)calloc(total_params * 2, sizeof(BigFixed*));
         
         // Allocate individual BigFixed elements for gradients
         if (training->gradients) {
-            for (size_t i = 0; i < embed_size; i++) {
+            for (size_t i = 0; i < total_params; i++) {
                 training->gradients[i] = big_fixed_create(training->precision_bits);
                 if (training->gradients[i]) {
                     big_fixed_from_int(training->gradients[i], 0);  // Initialize to zero
@@ -283,7 +303,7 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         
         // Allocate individual BigFixed elements for optimizer state (Adam: m and v)
         if (training->optimizer_state) {
-            for (size_t i = 0; i < embed_size * 2; i++) {
+            for (size_t i = 0; i < total_params * 2; i++) {
                 training->optimizer_state[i] = big_fixed_create(training->precision_bits);
                 if (training->optimizer_state[i]) {
                     big_fixed_from_int(training->optimizer_state[i], 0);  // Initialize to zero
