@@ -74,18 +74,31 @@ I INCORRECTLY disabled layer gradients instead of implementing proper disk-based
 - [x] Added access pattern hints (MADV_SEQUENTIAL/RANDOM)
 - [x] Added memory statistics (mincore)
 
-### Phase 3: Convert Gradients to Disk-Based
+### Phase 3: Convert Gradients to Disk-Based (NEXT)
+This will replace BigFixed** allocations with mmap-backed storage:
+- [ ] Update bigfixed_array_create() to use mmap backend
+- [ ] Create temporary files in /tmp/cllm_gradients/
 - [ ] Convert main gradients to disk-backed
 - [ ] Convert attention gradients to disk-backed
 - [ ] Convert feedforward gradients to disk-backed
 - [ ] Convert layer norm gradients to disk-backed
 - [ ] Convert master_weights to disk-backed
+- [ ] Add cleanup on training completion
 
-### Phase 4: Optimize Access Patterns
+### Phase 4: Optimize Access Patterns (FUTURE)
 - [ ] Implement chunk-based access (64-bit operations)
-- [ ] Add spatial locality optimization
+- [ ] Add spatial locality optimization (Ulam spiral)
 - [ ] Implement read-ahead for sequential access
-- [ ] Add write coalescing
+- [ ] Add write coalescing for batch updates
+- [ ] Profile memory usage with mincore
+- [ ] Tune madvise hints based on access patterns
+
+### Expected Results After Phase 3:
+- **Disk usage:** ~10 GB (all gradients on disk)
+- **RAM usage:** ~10-50 MB (only active working set)
+- **Memory reduction:** 99.5% (14 GB → 50 MB)
+- **No OOM killer:** System can handle any model size
+- **Performance:** Crystalline math fast enough for disk I/O
 
 ---
 
