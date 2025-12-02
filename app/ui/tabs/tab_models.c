@@ -163,12 +163,49 @@ static void on_create_button_click(void* user_data) {
 static void on_load_button_click(void* user_data) {
     AppState* state = (AppState*)user_data;
     
-    // TODO: Implement file picker dialog
-    // For now, just show status message
-    snprintf(status_message, sizeof(status_message), "Load model: File picker not yet implemented");
+    // TODO: Implement proper file picker dialog
+    // For now, use a simple hardcoded path for testing
+    const char* test_path = "models/test_model.cllm";
+    const char* model_name = "test_model";
+    
+    printf("Loading model from: %s\n", test_path);
+    
+    // Check if model already exists in manager
+    if (model_manager_exists(model_name)) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Model '%s' already loaded", model_name);
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    // Load model using model_manager
+    ManagedModel* managed_model = model_manager_load(model_name, test_path);
+    
+    if (managed_model == NULL) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Failed to load model from '%s'", test_path);
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    // Update state manager
+    StateManager* state_mgr = state_manager_get_instance();
+    state_set_current_model(state_mgr, model_name);
+    state_update_model_config(state_mgr, 
+                             managed_model->vocab_size,
+                             managed_model->embedding_dim,
+                             0,  // ff_dim not in metadata
+                             managed_model->num_layers,
+                             managed_model->num_heads);
+    
+    // Dispatch MODEL_LOADED event for cross-tab synchronization
+    EventSystem* event_sys = event_system_get_instance();
+    event_model_loaded(event_sys, model_name);
+    
+    snprintf(status_message, sizeof(status_message), 
+             "Model '%s' loaded successfully", model_name);
     status_message_timer = 3.0f;
     
-    printf("Load model button clicked\n");
     (void)state;
 }
 
@@ -184,12 +221,33 @@ static void on_save_button_click(void* user_data) {
         return;
     }
     
-    // TODO: Implement file picker dialog
-    // For now, just show status message
-    snprintf(status_message, sizeof(status_message), "Save model: File picker not yet implemented");
+    const char* model_name = model_state->current_model_name;
+    if (model_name[0] == '\0') {
+        snprintf(status_message, sizeof(status_message), "No model selected");
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    printf("Saving model: %s\n", model_name);
+    
+    // Save model using model_manager
+    bool success = model_manager_save(model_name);
+    
+    if (!success) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Failed to save model '%s'", model_name);
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    // Dispatch MODEL_SAVED event for cross-tab synchronization
+    EventSystem* event_sys = event_system_get_instance();
+    event_model_saved(event_sys, model_name);
+    
+    snprintf(status_message, sizeof(status_message), 
+             "Model '%s' saved successfully", model_name);
     status_message_timer = 3.0f;
     
-    printf("Save model button clicked\n");
     (void)state;
 }
 
@@ -216,6 +274,13 @@ static void on_create_confirm_click(void* user_data) {
         return;
     }
     
+    // Check if model already exists
+    if (model_manager_exists(name)) {
+        snprintf(status_message, sizeof(status_message), "Model '%s' already exists", name);
+        status_message_timer = 3.0f;
+        return;
+    }
+    
     // Get configuration from sliders
     uint32_t vocab_size = ui_slider_get_value_int(slider_vocab_size);
     uint32_t embedding_dim = ui_slider_get_value_int(slider_embedding_dim);
@@ -223,18 +288,49 @@ static void on_create_confirm_click(void* user_data) {
     uint32_t num_heads = ui_slider_get_value_int(slider_num_heads);
     uint32_t hidden_dim = ui_slider_get_value_int(slider_hidden_dim);
     
+    // Validate configuration
+    if (embedding_dim % num_heads != 0) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Embedding dimension must be divisible by number of heads");
+        status_message_timer = 3.0f;
+        return;
+    }
+    
     printf("Creating model: %s (vocab=%u, emb=%u, layers=%u, heads=%u, hidden=%u)\n",
            name, vocab_size, embedding_dim, num_layers, num_heads, hidden_dim);
     
-    // TODO: Actually create the model using model_manager
-    // For now, just update state and fire event
+    // Create CLLMConfig structure
+    CLLMConfig config = {
+        .vocab_size = vocab_size,
+        .embedding_dim = embedding_dim,
+        .num_layers = num_layers,
+        .num_heads = num_heads,
+        .ff_dim = hidden_dim,
+        .max_seq_len = 512,  // Default sequence length
+        .dropout = 0.1f      // Default dropout rate
+    };
+    
+    // Create model using model_manager
+    ManagedModel* managed_model = model_manager_create(name, &config);
+    
+    if (managed_model == NULL) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Failed to create model '%s'", name);
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    // Update state manager
     StateManager* state_mgr = state_manager_get_instance();
     state_update_model_config(state_mgr, vocab_size, embedding_dim, hidden_dim, num_layers, num_heads);
+    state_set_current_model(state_mgr, name);
     
+    // Dispatch MODEL_CREATED event for cross-tab synchronization
     EventSystem* event_sys = event_system_get_instance();
     event_model_created(event_sys, name);
     
-    snprintf(status_message, sizeof(status_message), "Model '%s' created successfully", name);
+    snprintf(status_message, sizeof(status_message), 
+             "Model '%s' created successfully", name);
     status_message_timer = 3.0f;
     
     show_create_dialog = false;
@@ -257,14 +353,31 @@ static void on_delete_confirm(DialogResult result, void* user_data) {
             if (selected_model_index < (int)model_count && models[selected_model_index]) {
                 const char* model_name = models[selected_model_index]->name;
                 
-                // TODO: Actually delete the model
                 printf("Deleting model: %s\n", model_name);
                 
-                EventSystem* event_sys = event_system_get_instance();
-                event_dispatch(event_sys, EVENT_MODEL_DELETED, (void*)model_name, 
-                             strlen(model_name) + 1, "models_tab");
+                // Delete model using model_manager (delete file too)
+                bool success = model_manager_delete(model_name, true);
                 
-                snprintf(status_message, sizeof(status_message), "Model '%s' deleted", model_name);
+                if (!success) {
+                    snprintf(status_message, sizeof(status_message), 
+                             "Failed to delete model '%s'", model_name);
+                    status_message_timer = 3.0f;
+                    return;
+                }
+                
+                // Update state manager
+                StateManager* state_mgr = state_manager_get_instance();
+                const ModelState* model_state = state_get_model(state_mgr);
+                if (model_state && strcmp(model_state->current_model_name, model_name) == 0) {
+                    state_set_current_model(state_mgr, "");
+                }
+                
+                // Dispatch MODEL_DELETED event for cross-tab synchronization
+                EventSystem* event_sys = event_system_get_instance();
+                event_model_deleted(event_sys, model_name);
+                
+                snprintf(status_message, sizeof(status_message), 
+                         "Model '%s' deleted successfully", model_name);
                 status_message_timer = 3.0f;
                 
                 selected_model_index = -1;
