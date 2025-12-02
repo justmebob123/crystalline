@@ -871,14 +871,19 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
     
     // Check model status: registered vs loaded
-    char model_status_buf[256];
+    char model_status_buf[512];  // Increased from 256 to 512 to prevent truncation
     const char* model_status;
     SDL_Color model_color;
     
     if (state->cllm_model) {
         // Model is loaded in memory
         if (selected_model_name[0]) {
-            snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Loaded)", selected_model_name);
+            // Truncate model name if too long to ensure it fits
+            char truncated_name[200];
+            strncpy(truncated_name, selected_model_name, sizeof(truncated_name) - 1);
+            truncated_name[sizeof(truncated_name) - 1] = '\0';
+            
+            snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Loaded)", truncated_name);
             model_status = model_status_buf;
         } else {
             model_status = "Model: Loaded & Ready";
@@ -891,7 +896,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         
         if (model_count > 0) {
             if (selected_model_name[0]) {
-                snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Not Loaded)", selected_model_name);
+                // Truncate model name if too long to ensure it fits
+                char truncated_name[200];
+                strncpy(truncated_name, selected_model_name, sizeof(truncated_name) - 1);
+                truncated_name[sizeof(truncated_name) - 1] = '\0';
+                
+                snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Not Loaded)", truncated_name);
                 model_status = model_status_buf;
             } else {
                 model_status = "Model: Available (select to load)";

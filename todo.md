@@ -1,4 +1,4 @@
-# TODO - Fix Model Loading Issue
+# TODO - Fix Build Warnings and Complete UI Rewrite
 
 ## RULES (PASTED FROM MASTER_PLAN)
 - RULE 0: Always paste rules to top of todo.md
@@ -10,42 +10,41 @@
 - RULE 6: MASTER_PLAN.md is READ-ONLY
 - RULE 7: Fix all build warnings before proceeding
 
-## CRITICAL ISSUE: Model Loading on Tab Open
+## CRITICAL ISSUES
 
-### Problem
-When the Training Tab opens, it automatically loads the first model into memory via the model selector callback. This causes:
-- Massive memory consumption (12GB+ for 50K vocab models)
-- Application hang during load
-- Out of memory errors
-- Undesirable behavior (models should load on-demand when training starts)
+### Issue 1: Build Warnings (MASTER_PLAN RULE 7)
+Two format truncation warnings in tab_training.c:
+- Line 894: snprintf may truncate "Model: %s (Not Loaded)" 
+- Line 881: snprintf may truncate "Model: %s (Loaded)"
 
-### Root Cause
-The `on_model_selected()` callback in `tab_training.c` calls `model_manager_acquire_write()` which triggers lazy loading. This callback is invoked when the model selector initializes and sets the first model as selected.
+Buffer is 256 bytes, but model name can be 255 bytes, leaving insufficient space for format string.
 
-### Correct Architecture (from MASTER_PLAN)
-- Models should be REGISTERED during initialization (name + path only)
-- Models should be LOADED on-demand when actually needed (training start)
-- Model selector should show available models WITHOUT loading them
-- Only load model when user explicitly starts training
+**Fix**: Increase buffer size or truncate model name before formatting.
 
-### Fix Plan
-- [x] Identify root cause (on_model_selected callback)
-- [x] Remove model loading from on_model_selected callback
-- [x] Store selected model NAME only (not pointer)
-- [x] Load model only when "Start Training" button is clicked
-- [x] Update model status display to show "Available" vs "Loaded"
-- [x] Build succeeds with zero warnings
-- [ ] Test that models are not loaded until training starts
-- [ ] Verify memory usage stays low on tab open
+### Issue 2: Application OOM Kill
+Application is being killed by system (Out of Memory).
+Need to investigate what's consuming memory.
 
-### Implementation Steps
-1. Modify `on_model_selected()` to store model name only
-2. Add `selected_model_name` field to training tab state
-3. Modify "Start Training" button to load model on-demand
-4. Update model status display logic
-5. Test and verify
+**Possible causes**:
+- Model loading still happening somewhere
+- Memory leak in initialization
+- Large allocations during startup
 
-## Phase 2: Complete UI Layout Rewrite (After Fix)
+## Fix Plan
+
+### Phase 1: Fix Build Warnings (IMMEDIATE)
+- [x] Identify warnings (lines 881, 894)
+- [x] Fix buffer size issue (increased to 512 bytes, truncate names to 200 chars)
+- [x] Rebuild and verify zero warnings
+- [ ] Commit fix
+
+### Phase 2: Investigate OOM Kill
+- [ ] Add memory usage logging
+- [ ] Check if models are being loaded
+- [ ] Verify lazy loading is working
+- [ ] Test with smaller models
+
+### Phase 3: Complete UI Layout Rewrite (AFTER FIXES)
 - [ ] Design new layout system for all tabs
 - [ ] Implement responsive layout engine
 - [ ] Apply to Training Tab
