@@ -334,7 +334,7 @@ void state_set_dialog_open(StateManager* manager, bool open, void* dialog) {
     }
 }
 
-const UIState* state_get_ui(const StateManager* manager) {
+const AppUIState* state_get_ui(const StateManager* manager) {
     return manager ? &manager->ui : NULL;
 }
 

@@ -16,7 +16,7 @@
 typedef struct StateManager StateManager;
 typedef struct ModelState ModelState;
 typedef struct TrainingState TrainingState;
-typedef struct UIState UIState;
+typedef struct AppUIState AppUIState;
 
 // State change callback
 typedef void (*StateChangeCallback)(void* user_data);
@@ -107,7 +107,7 @@ struct TrainingState {
 // UI STATE
 // ============================================================================
 
-struct UIState {
+struct AppUIState {
     // Active tab
     int active_tab;
     
@@ -135,7 +135,7 @@ struct UIState {
 struct StateManager {
     ModelState model;
     TrainingState training;
-    UIState ui;
+    AppUIState ui;
     
     // Global callbacks
     StateChangeCallback on_any_change;
@@ -267,7 +267,7 @@ void state_set_dialog_open(StateManager* manager, bool open, void* dialog);
 /**
  * Get UI state
  */
-const UIState* state_get_ui(const StateManager* manager);
+const AppUIState* state_get_ui(const StateManager* manager);
 
 /**
  * Register UI state change callback
