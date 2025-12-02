@@ -374,10 +374,10 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         }
     }
     
-       // Always show sphere visualization (even when idle)
+       // Always show sphere visualization and training metrics (even when idle)
        // This allows users to see the kissing spheres architecture at all times
        
-       if (state->training_in_progress || viz_data.loss_count > 0) {
+       if (true) {  // Always show - removed conditional
            // Training metrics - Epoch and Loss
            char metrics[256];
            snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
@@ -477,14 +477,14 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            content_y += 45;
               
            
-// MOVED:            // Sphere Visualization - Show kissing spheres architecture
-// MOVED:            // EXPANDED: Use 70% of width and 60% of height for better visibility
+             // Sphere Visualization - Show kissing spheres architecture
+             // EXPANDED: Use 70% of width and 60% of height for better visibility
               int sphere_viz_width = (content_w * 7) / 10;
               int sphere_viz_height = (content_h * 6) / 10;
               if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
 // MOVED:            SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
-// MOVED:            draw_sphere_visualization(renderer, state, sphere_bounds);
-           
+             SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
+             draw_sphere_visualization(renderer, state, sphere_bounds);
            // UI Integration: Framework Status & Performance Metrics Panel
            SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
                                         content_w - sphere_viz_width - 20, sphere_viz_height};
@@ -640,14 +640,6 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
         draw_text(renderer, "3. Click START TRAINING", content_x, content_y, text_color);
         content_y += 30;
     }
-    
-    // CRITICAL FIX: Always show sphere visualization (even when idle)
-    // This displays the kissing spheres architecture at all times
-    int sphere_viz_width = (content_w * 7) / 10;
-    int sphere_viz_height = (content_h * 6) / 10;
-    if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
-    SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
-    draw_sphere_visualization(renderer, state, sphere_bounds);
     
     // Crawler status (if running)
     if (crawler_running || state->crawler_running) {

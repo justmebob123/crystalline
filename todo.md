@@ -1,52 +1,158 @@
-# RULES (MUST FOLLOW)
-1. ALWAYS reread MASTER_PLAN.md before any action
-2. Reference AUDIT.md for architectural state
-3. Reference SECONDARY_OBJECTIVES.md for detailed tasks
-4. NO standalone files - integrate into existing architecture
-5. ALWAYS commit changes with correct authentication
-6. This file is READ-ONLY - NO status updates without approval
-7. Fix HTML entities immediately when they occur
-8. Fix ALL build warnings before proceeding
+# RULES (MUST FOLLOW WITH EVERY RESPONSE)
 
-# CURRENT ISSUE: Model Loading Broken
+## RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD ⭐
+1. Paste these rules to the top of todo.md
+2. Read the MASTER_PLAN.md completely
+3. Read the AUDIT.md for current architectural state
+4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
 
-## Problem Analysis
-User reports: "something you changed broke model loading again. it appears to be looking for a default model in multiple paths but can't find it and no longer loads my other models under other names. my models are under the models/ directory."
+## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+1. Read MASTER_PLAN.md completely
+2. Understand the current objectives
+3. Verify your action aligns with the master plan
+4. Check for any blocking priorities
 
-## Root Cause Identified
-In `src/ai/cllm_model_manager.c`, the `model_manager_init()` function:
-1. Scans the models directory for .cllm files ✅
-2. Prints each found model ✅
-3. **BUT NEVER REGISTERS THEM** ❌
+## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+- Current architectural violations
+- Required fixes with priorities
+- Implementation phases
+- Testing requirements
+- Success criteria
 
-The code at lines 88-120 finds models but only prints them:
-```c
-printf("  Found model: %s (will load on-demand)\n", model_name);
-found_count++;
-// NOTE: Model will be loaded on-demand when user explicitly requests it
-```
+## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+- Validation steps
 
-But there's NO code to actually add the model to `g_model_manager.models[]` array!
+## RULE 4: DO NOT CREATE NEW MD FILES
+## RULE 5: ALWAYS COMMIT ALL CHANGES USING CORRECT AUTHENTICATION
+## RULE 6: THIS FILE IS READ-ONLY - DO NOT EDIT WITHOUT EXPLICIT APPROVAL
+## RULE 7: FIX ALL BUILD WARNINGS BEFORE PROCEEDING
 
-Later, when `model_manager_acquire_read()` is called:
-- It calls `find_model_by_name()` which searches `g_model_manager.models[]`
-- Since the models were never added to the array, it returns NULL
-- User gets "Model 'xxx' not found" error
+---
 
-## Solution
-Add model registration during directory scan. The model should be registered with:
-- Model name extracted from filename
-- File path stored
-- Model NOT loaded yet (lazy loading)
-- Mark as `is_accessible = false` until explicitly loaded
+# CRITICAL ISSUES IN TRAINING TAB - COMPLETE REDESIGN REQUIRED
 
-## Tasks
-- [x] Fix model_manager_init() to register scanned models
-- [x] Add lazy loading to model_manager_acquire_read()
-- [x] Add lazy loading to model_manager_acquire_write()
-- [x] Build successful with zero errors
-- [ ] Test with user's models in models/ directory
-- [ ] Commit fix with clear message
+## User-Reported Issues (CRITICAL)
 
-## Files to Modify
-- `src/ai/cllm_model_manager.c` - Add model registration during scan
+### Issue 1: Duplicate Sphere Visualizations ❌
+**Problem**: Two sphere visualizations exist, one overlaying the other
+- The TOP visualization shows NO activity (static/frozen)
+- The BOTTOM visualization (hidden behind) shows CORRECT activity
+- When training stops, top visualization disappears revealing the working one
+- This suggests a duplicate visualization was created (possibly for 2D/3D toggle)
+
+**Root Cause**: Likely created duplicate sphere rendering code instead of toggling existing one
+
+### Issue 2: Training Threads Not Stopping ❌
+**Problem**: When training stops, threads continue accessing model causing memory errors
+- Same heap-use-after-free issue as before
+- Threads still running after stop button clicked
+- Model being freed while threads still accessing it
+
+**Root Cause**: Thread shutdown sequence broken again
+
+### Issue 3: Model Status Confusion ❌
+**Problem**: UI shows contradictory model status
+- Says "model is ready"
+- Also says "model isn't loaded"
+- Confusing to user
+
+### Issue 4: Model Dropdown Visibility ❌
+**Problem**: Model dropdown difficult to see
+- Overlapping UI elements
+- Poor visibility/contrast
+
+### Issue 5: Models Tab Selection Broken ❌
+**Problem**: Cannot select model from Models tab
+- Only shows off-center list
+- No clear buttons to select/load model
+- Should be able to click model to load it
+
+## Deep Analysis Required
+
+### Phase 1: Analyze Training Tab Structure
+- [ ] Read complete tab_training.c file
+- [ ] Identify ALL sphere visualization code
+- [ ] Map all rendering functions
+- [ ] Find duplicate visualization code
+- [ ] Identify which is original, which is duplicate
+
+### Phase 2: Analyze Thread Management
+- [ ] Review training_thread.c
+- [ ] Check stop_training_thread() implementation
+- [ ] Verify pthread_join() is called
+- [ ] Check cleanup sequence
+- [ ] Ensure model not freed before threads stop
+
+### Phase 3: Analyze Model Status Display
+- [ ] Find all model status text rendering
+- [ ] Identify contradictory status messages
+- [ ] Determine correct status logic
+
+### Phase 4: Analyze Models Tab
+- [ ] Read complete tab_models.c
+- [ ] Find model list rendering
+- [ ] Identify selection mechanism
+- [ ] Check button visibility
+- [ ] Verify click handlers
+
+### Phase 5: Complete Redesign
+- [ ] Remove duplicate sphere visualization
+- [ ] Fix thread shutdown sequence
+- [ ] Unify model status display
+- [ ] Fix model dropdown visibility
+- [ ] Add proper model selection in Models tab
+- [ ] Test all fixes together
+
+## Files to Analyze
+- app/ui/tabs/tab_training.c
+- app/ui/tabs/tab_models.c
+- app/training_thread.c
+- app/ui/sphere_visualization.c
+- app/main.c (cleanup sequence)
+
+## Implementation Plan - ALL PHASES
+
+### Phase 1: Fix Duplicate Sphere Visualization ✅ COMPLETE
+- [x] Remove line 650 sphere visualization call
+- [x] Uncomment line 486 sphere visualization call
+- [x] Remove conditional at line 380 (always show spheres)
+- [x] Build successful - zero errors
+- [x] Commit Phase 1
+
+### Phase 2: Investigate and Fix Thread Stopping
+- [ ] Add debug logging to training loop
+- [ ] Verify worker thread shutdown in cllm_training_threaded.c
+- [ ] Add mutex protection for sphere_stats access
+- [ ] Test stop button thoroughly
+- [ ] Verify no memory errors on stop
+- [ ] Commit Phase 2
+
+### Phase 3: Fix Model Status Display
+- [ ] Update status logic to check registration AND loading
+- [ ] Unify contradictory status messages
+- [ ] Test with loaded/unloaded/registered models
+- [ ] Commit Phase 3
+
+### Phase 4: Fix Model Selector Visibility
+- [ ] Increase model selector height
+- [ ] Improve positioning to avoid overlaps
+- [ ] Add better contrast/borders
+- [ ] Test visibility with multiple models
+- [ ] Commit Phase 4
+
+### Phase 5: Improve Models Tab Selection
+- [ ] Make selection highlight brighter
+- [ ] Add double-click to load model
+- [ ] Add visual feedback when model loads
+- [ ] Verify button positions visible
+- [ ] Test selection and loading flow
+- [ ] Commit Phase 5
+
+### Final Steps
+- [ ] Build and test all changes together
+- [ ] Push all commits to GitHub
+- [ ] User acceptance testing
