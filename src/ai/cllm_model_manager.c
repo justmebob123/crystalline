@@ -211,7 +211,7 @@ ManagedModel* model_manager_create(const char* name, const CLLMConfig* config) {
     }
     
     // Set metadata
-    managed->is_loaded = true;
+    managed->is_accessible = true;
     managed->is_training = false;
     managed->read_count = 0;
     managed->vocab_size = config->vocab_size;
@@ -305,13 +305,15 @@ ManagedModel* model_manager_load(const char* name, const char* path) {
     }
     
     // Set metadata from model
-    managed->is_loaded = true;
+    managed->is_accessible = true;  // Changed from is_loaded
     managed->is_training = false;
     managed->read_count = 0;
     managed->vocab_size = (uint32_t)model->vocab_size;
     managed->embedding_dim = (uint32_t)model->embedding_dim;
     managed->num_layers = model->num_layers;
     managed->num_heads = model->header.num_heads;
+    managed->required_primes = model->header.num_primes_used > 0 ? 
+                               model->header.num_primes_used : model->vocab_size;
     managed->created_time = (uint64_t)time(NULL);
     managed->modified_time = managed->created_time;
     
@@ -357,7 +359,7 @@ bool model_manager_save(const char* name) {
         return false;
     }
     
-    if (!managed->is_loaded || !managed->model) {
+    if (!managed->is_accessible || !managed->model) {
         fprintf(stderr, "Model '%s' is not loaded\n", name);
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return false;
@@ -393,7 +395,7 @@ bool model_manager_unload(const char* name) {
         return false;
     }
     
-    if (!managed->is_loaded) {
+    if (!managed->is_accessible) {
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return true;  // Already unloaded
     }
@@ -404,7 +406,7 @@ bool model_manager_unload(const char* name) {
         managed->model = NULL;
     }
     
-    managed->is_loaded = false;
+    managed->is_accessible = false;
     
     pthread_mutex_unlock(&g_model_manager.manager_lock);
     
@@ -426,7 +428,7 @@ bool model_manager_reload(const char* name) {
         return false;
     }
     
-    if (managed->is_loaded) {
+    if (managed->is_accessible) {
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return true;  // Already loaded
     }
@@ -439,7 +441,7 @@ bool model_manager_reload(const char* name) {
         return false;
     }
     
-    managed->is_loaded = true;
+    managed->is_accessible = true;
     
     pthread_mutex_unlock(&g_model_manager.manager_lock);
     
@@ -519,7 +521,7 @@ CLLMModel* model_manager_acquire_read(const char* name) {
         return NULL;
     }
     
-    if (!managed->is_loaded || !managed->model) {
+    if (!managed->is_accessible || !managed->model) {
         fprintf(stderr, "Model '%s' is not loaded\n", name);
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return NULL;
@@ -552,7 +554,7 @@ CLLMModel* model_manager_acquire_write(const char* name) {
         return NULL;
     }
     
-    if (!managed->is_loaded || !managed->model) {
+    if (!managed->is_accessible || !managed->model) {
         fprintf(stderr, "Model '%s' is not loaded\n", name);
         pthread_mutex_unlock(&g_model_manager.manager_lock);
         return NULL;
@@ -658,7 +660,7 @@ bool model_manager_exists(const char* name) {
     return exists;
 }
 
-bool model_manager_get_status(const char* name, bool* is_loaded, 
+bool model_manager_get_status(const char* name, bool* is_accessible, 
                               bool* is_training, uint32_t* read_count) {
     if (!g_manager_initialized || !name) {
         return false;
@@ -672,7 +674,7 @@ bool model_manager_get_status(const char* name, bool* is_loaded,
         return false;
     }
     
-    if (is_loaded) *is_loaded = managed->is_loaded;
+    if (is_accessible) *is_accessible = managed->is_accessible;
     if (is_training) *is_training = managed->is_training;
     if (read_count) *read_count = managed->read_count;
     
@@ -731,4 +733,156 @@ static CLLMModel* cllm_load_model_internal(const char* path) {
     }
     
     return model;
+}
+
+// ============================================================================
+// DISK-BASED MODEL ACCESS IMPLEMENTATION (OBJECTIVE 26)
+// ============================================================================
+
+CLLMHeader* model_manager_read_metadata(const char* path) {
+    if (!path) {
+        fprintf(stderr, "model_manager_read_metadata: NULL path\n");
+        return NULL;
+    }
+    
+    FILE* file = fopen(path, "rb");
+    if (!file) {
+        fprintf(stderr, "Failed to open model file for metadata: %s\n", path);
+        return NULL;
+    }
+    
+    // Allocate header
+    CLLMHeader* header = (CLLMHeader*)malloc(sizeof(CLLMHeader));
+    if (!header) {
+        fprintf(stderr, "Failed to allocate memory for header\n");
+        fclose(file);
+        return NULL;
+    }
+    
+    // Read header only (fast - just ~2KB)
+    if (fread(header, sizeof(CLLMHeader), 1, file) != 1) {
+        fprintf(stderr, "Failed to read model header from: %s\n", path);
+        free(header);
+        fclose(file);
+        return NULL;
+    }
+    
+    fclose(file);
+    
+    // Validate magic number
+    if (memcmp(header->magic, "CLLM\x01\x00\x00\x00", 8) != 0) {
+        fprintf(stderr, "Invalid model file (bad magic number): %s\n", path);
+        free(header);
+        return NULL;
+    }
+    
+    return header;
+}
+
+void model_manager_free_metadata(CLLMHeader* header) {
+    if (header) {
+        free(header);
+    }
+}
+
+bool model_manager_check_abacus(uint64_t required_primes) {
+    // Get current prime count from rainbow table
+    extern int rainbow_table_get_count(void);
+    int available = rainbow_table_get_count();
+    
+    return (uint64_t)available >= required_primes;
+}
+
+bool model_manager_expand_abacus(uint64_t required_primes) {
+    // Get current prime count
+    extern int rainbow_table_get_count(void);
+    extern int rainbow_table_generate_primes(int target_count);
+    
+    int available = rainbow_table_get_count();
+    
+    if ((uint64_t)available >= required_primes) {
+        // Already have enough primes
+        return true;
+    }
+    
+    printf("Expanding abacus: %d -> %lu primes\n", 
+           available, (unsigned long)required_primes);
+    
+    // Generate additional primes
+    int result = rainbow_table_generate_primes((int)required_primes);
+    
+    if (result < 0) {
+        fprintf(stderr, "Failed to expand abacus to %lu primes\n", 
+                (unsigned long)required_primes);
+        return false;
+    }
+    
+    printf("✓ Abacus expanded successfully to %d primes\n", result);
+    
+    return true;
+}
+
+bool model_manager_prepare(const char* name) {
+    if (!g_manager_initialized || !name) {
+        fprintf(stderr, "model_manager_prepare: Invalid parameters\n");
+        return false;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    // Find the managed model
+    ManagedModel* managed = find_model_by_name(name);
+    if (!managed) {
+        fprintf(stderr, "Model not found: %s\n", name);
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Read metadata to get required prime count
+    CLLMHeader* header = model_manager_read_metadata(managed->path);
+    if (!header) {
+        fprintf(stderr, "Failed to read metadata for model: %s\n", name);
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Get required primes (use vocab_size if num_primes_used is 0)
+    uint64_t required = header->num_primes_used;
+    if (required == 0) {
+        // Fallback: estimate from vocab_size
+        required = header->vocab_size;
+        printf("Note: Model doesn't specify prime count, estimating from vocab_size: %lu\n",
+               (unsigned long)required);
+    }
+    
+    // Cache metadata
+    managed->required_primes = required;
+    managed->vocab_size = (uint32_t)header->vocab_size;
+    managed->embedding_dim = (uint32_t)header->embedding_dim;
+    managed->num_layers = (uint32_t)header->num_layers;
+    managed->num_heads = header->num_heads;
+    
+    model_manager_free_metadata(header);
+    
+    // Check if abacus has enough primes
+    if (!model_manager_check_abacus(required)) {
+        printf("Model '%s' requires %lu primes, expanding abacus...\n",
+               name, (unsigned long)required);
+        
+        if (!model_manager_expand_abacus(required)) {
+            fprintf(stderr, "Failed to expand abacus for model: %s\n", name);
+            pthread_mutex_unlock(&g_model_manager.manager_lock);
+            return false;
+        }
+    }
+    
+    // Mark model as accessible
+    managed->is_accessible = true;
+    
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    printf("✓ Model '%s' is now accessible (requires %lu primes)\n",
+           name, (unsigned long)required);
+    
+    return true;
 }

@@ -42,17 +42,18 @@ extern "C" {
 typedef struct {
     char name[MODEL_NAME_MAX];          // Model name (unique identifier)
     char path[MODEL_PATH_MAX];          // Path to model file
-    CLLMModel* model;                   // The actual model
-    bool is_loaded;                     // Is model loaded in memory?
+    CLLMModel* model;                   // The actual model (may be NULL if not in memory)
+    bool is_accessible;                 // Is model accessible (abacus has enough primes)?
     bool is_training;                   // Is model currently being trained?
     uint32_t read_count;                // Number of active readers
     pthread_rwlock_t lock;              // Read-write lock for concurrent access
     
-    // Metadata
+    // Metadata (cached from file header)
     uint32_t vocab_size;
     uint32_t embedding_dim;
     uint32_t num_layers;
     uint32_t num_heads;
+    uint64_t required_primes;           // Number of primes this model needs
     uint64_t created_time;              // Unix timestamp
     uint64_t modified_time;             // Unix timestamp
 } ManagedModel;
@@ -247,12 +248,12 @@ bool model_manager_exists(const char* name);
  * Get model status
  * 
  * @param name Name of the model
- * @param is_loaded Output: Is model loaded in memory?
+ * @param is_accessible Output: Is model accessible (abacus has enough primes)?
  * @param is_training Output: Is model currently being trained?
  * @param read_count Output: Number of active readers
  * @return true on success, false if model not found
  */
-bool model_manager_get_status(const char* name, bool* is_loaded, 
+bool model_manager_get_status(const char* name, bool* is_accessible, 
                               bool* is_training, uint32_t* read_count);
 
 /**
@@ -264,6 +265,64 @@ bool model_manager_get_status(const char* name, bool* is_loaded,
  * @return Pointer to first model on success, NULL if no models exist
  */
 CLLMModel* model_manager_get_first(void);
+
+// ============================================================================
+// DISK-BASED MODEL ACCESS (NEW - OBJECTIVE 26)
+// ============================================================================
+
+/**
+ * Read model metadata without loading full model
+ * 
+ * Reads only the CLLMHeader from the model file.
+ * This is fast (~2KB read) and doesn't load weights into memory.
+ * Use this to check model properties before preparing/accessing.
+ * 
+ * @param path Path to model file
+ * @return Pointer to CLLMHeader on success, NULL on failure (caller must free)
+ */
+CLLMHeader* model_manager_read_metadata(const char* path);
+
+/**
+ * Free metadata structure
+ * 
+ * @param header Metadata to free
+ */
+void model_manager_free_metadata(CLLMHeader* header);
+
+/**
+ * Check if abacus has enough primes for model
+ * 
+ * @param required_primes Number of primes needed
+ * @return true if abacus has enough primes, false otherwise
+ */
+bool model_manager_check_abacus(uint64_t required_primes);
+
+/**
+ * Expand abacus to required prime count
+ * 
+ * Generates additional primes if needed.
+ * This may take time for large prime counts.
+ * 
+ * @param required_primes Number of primes needed
+ * @return true on success, false on failure
+ */
+bool model_manager_expand_abacus(uint64_t required_primes);
+
+/**
+ * Prepare model for use (ensure abacus has enough primes)
+ * 
+ * This function:
+ * 1. Reads model metadata
+ * 2. Checks num_primes_used
+ * 3. Expands abacus if needed
+ * 4. Marks model as "accessible"
+ * 
+ * After this, the model can be used for inference/training from disk.
+ * 
+ * @param name Name of the model
+ * @return true on success, false on failure
+ */
+bool model_manager_prepare(const char* name);
 
 #ifdef __cplusplus
 }

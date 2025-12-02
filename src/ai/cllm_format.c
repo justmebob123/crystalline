@@ -406,6 +406,9 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     // Use the model's actual weight count instead of recalculating
     header.total_params = model->num_weights;
     
+    // Set prime count (use vocab_size as estimate if not explicitly set)
+    header.num_primes_used = model->vocab_size;  // Simple estimate for now
+    
     // Write header
     if (fwrite(&header, sizeof(CLLMHeader), 1, file) != 1) {
         fprintf(stderr, "Failed to write header\n");

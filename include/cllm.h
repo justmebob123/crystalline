@@ -47,7 +47,8 @@ typedef struct {
     double golden_ratio;         // Golden ratio constant
     uint64_t timestamp;          // General timestamp
     uint64_t total_params;       // Total number of parameters
-    uint8_t reserved[192];       // Reserved for future use
+    uint64_t num_primes_used;    // Number of primes used by this model (for abacus)
+    uint8_t reserved[184];       // Reserved for future use (reduced by 8 bytes)
 } CLLMHeader;
 
 /*
