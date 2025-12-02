@@ -16,7 +16,8 @@
  */
 int cllm_model_get_epochs_trained(CLLMModel* model) {
     if (!model) return -1;
-    //     return model->epochs_trained;
+    // Return training steps from metadata (epochs_trained field doesn't exist)
+    return (int)(model->training_meta.training_steps / 1000);  // Approximate epochs
 }
 
 /**
@@ -34,6 +35,9 @@ int cllm_model_set_target_epochs(CLLMModel* model, int target) {
  * Validate epoch configuration
  */
 int cllm_model_validate_epochs(CLLMModel* model, int target_epochs) {
+    // Suppress unused parameter warning
+    (void)target_epochs;
+    
     if (!model) return -1;
     
     // Note: epochs_trained field removed from CLLMModel
@@ -46,7 +50,7 @@ int cllm_model_validate_epochs(CLLMModel* model, int target_epochs) {
  */
 const char* cllm_model_get_name(CLLMModel* model) {
     if (!model) return NULL;
-    //     return model->model_name;
+    return model->header.model_name;
 }
 
 /**

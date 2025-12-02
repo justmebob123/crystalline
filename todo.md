@@ -101,14 +101,27 @@
 - Fixed HTML entities with fix_html_entities.py
 - Build completed successfully with zero errors
 
-### Phase 7: Fix ALL Build Warnings (RULE 7 - HIGHEST PRIORITY)
+### Phase 7: Fix ALL Build Warnings (RULE 7 - MANDATORY BEFORE TESTING)
+**USER DIRECTIVE: Fix ALL warnings, THEN testing**
+
 1. [x] Fix control_thread.c error (num_primes_used -> num_lattice_points)
-2. [ ] Fix all pointer type incompatibility warnings (float* vs double*)
-3. [ ] Fix all unused parameter warnings
-4. [ ] Fix all implicit function declaration warnings
-5. [ ] Fix all control reaches end of non-void function warnings
-6. [ ] Rebuild with zero warnings
-7. [ ] Commit all fixes with proper authentication
+2. [x] Fix tab_training.c errors (training_config -> training_meta)
+3. [x] Commit build error fixes with proper authentication
+4. [ ] Systematically fix ALL pointer type incompatibility warnings (float* vs double*)
+5. [ ] Fix ALL unused parameter warnings
+6. [ ] Fix ALL implicit function declaration warnings  
+7. [ ] Fix ALL control reaches end of non-void function warnings
+8. [ ] Rebuild and verify ZERO warnings
+9. [ ] Final commit with proper authentication
+
+**Approach:**
+- Create comprehensive list of all warnings from build log
+- Fix warnings file by file systematically
+- Verify each fix doesn't break functionality
+- Commit after each major group of fixes
+- Final verification: make clean &amp;&amp; make with ZERO warnings
+
+**ONLY AFTER ZERO WARNINGS:** Proceed to Phase 8 (Testing)
 
 ### Phase 8: Testing (AFTER warnings fixed)
 1. [ ] Run training with small dataset

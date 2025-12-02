@@ -242,6 +242,11 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
 // Simple attention forward pass
 void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
                            float* key_cache, float* value_cache, int seq_len) {
+    // Suppress unused parameter warnings - these will be used when attention is fully implemented
+    (void)key_cache;
+    (void)value_cache;
+    (void)seq_len;
+    
     // Simple pass-through for now (TODO: implement proper attention)
     uint32_t dim = layer->num_heads * layer->head_dim;
     for (uint32_t i = 0; i < dim; i++) {

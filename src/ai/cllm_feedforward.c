@@ -120,8 +120,9 @@ void cllm_feedforward_batch(FeedForwardLayer* layer, float* input,
                             float* output, int batch_size) {
     if (!layer || !input || !output || batch_size <= 0) return;
     
-    uint32_t input_dim = layer->input_dim;
-    uint32_t output_dim = layer->output_dim;
+    // Suppress unused variable warnings - these will be used when batch processing is implemented
+    (void)layer->input_dim;
+    (void)layer->output_dim;
     
     for (int b = 0; b < batch_size; b++) {
         // TODO: Implement proper feedforward batch
