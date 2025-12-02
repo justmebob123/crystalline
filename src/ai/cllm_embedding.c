@@ -27,7 +27,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
     
     // Copy embedding from embedding matrix
     // Embeddings are stored as [vocab_size x embedding_dim]
-    float* embedding_matrix = model->embeddings.embeddings;
+    double* embedding_matrix = model->embeddings.embeddings;
     size_t offset = token_id * embedding_dim;
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
@@ -42,7 +42,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
  * @param transform Transformation matrix [dim x dim]
  * @param dim Embedding dimension
  */
-void cllm_apply_lattice_transform(float* embedding, float* transform, int dim) {
+void cllm_apply_lattice_transform(float* embedding, double* transform, int dim) {
     if (!embedding || !transform || dim <= 0) {
         return;
     }
@@ -115,7 +115,7 @@ void cllm_embed_tokens_batch(CLLMInference* inf, uint32_t* token_ids,
  * @param inverse_transform Inverse transformation matrix [dim x dim]
  * @param dim Embedding dimension
  */
-void cllm_apply_inverse_lattice_transform(float* embedding, float* inverse_transform, int dim) {
+void cllm_apply_inverse_lattice_transform(float* embedding, double* inverse_transform, int dim) {
     if (!embedding || !inverse_transform || dim <= 0) {
         return;
     }
@@ -136,7 +136,7 @@ void cllm_project_to_vocab(CLLMInference* inf, float* hidden_state, float* logit
     CLLMModel* model = inf->model;
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    float* embedding_matrix = model->embeddings.embeddings;
+    double* embedding_matrix = model->embeddings.embeddings;
     
     // Apply inverse transform if available
     float* transformed = (float*)malloc(embedding_dim * sizeof(float));

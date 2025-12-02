@@ -81,7 +81,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
         return;
     }
     
-    float* embedding = &model->embeddings.embeddings[token_id * embed_dim];
+    double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
     
     // Lazy initialization: compute embedding on first access
     if (prime_isnanf(embedding[0])) {
@@ -226,7 +226,7 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
     
     // Add positional encoding if available
     if (model->pos_encoding.spiral_positions) {
-        float* pos_enc = &model->pos_encoding.spiral_positions[position * embed_dim];
+        double* pos_enc = &model->pos_encoding.spiral_positions[position * embed_dim];
         for (uint32_t i = 0; i < embed_dim; i++) {
             hidden_states[i] += pos_enc[i];
         }
@@ -240,7 +240,7 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
 // Forward pass
 
 // Simple attention forward pass
-void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
+void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len) {
     // Suppress unused parameter warnings - these will be used when attention is fully implemented
     (void)key_cache;
@@ -320,10 +320,10 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         return;
     }
     
-    // Copy float embedding to double hidden_states
-    float* float_embedding = &model->embeddings.embeddings[last_token * embed_dim];
+    // Copy double embedding to double hidden_states
+    double* double_embedding = &model->embeddings.embeddings[last_token * embed_dim];
     for (uint32_t i = 0; i < embed_dim; i++) {
-        inference->hidden_states[i] = (double)float_embedding[i];
+        inference->hidden_states[i] = double_embedding[i];
     }
     
     // Apply positional encoding
@@ -355,9 +355,17 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
             // Layer norm (in-place)
             cllm_layer_norm(&model->layer_norms[layer], hidden_float, hidden_float);
             
-            // Attention
+            // Attention - convert to double temporarily
+            double* hidden_double = (double*)malloc(embed_dim * sizeof(double));
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                hidden_double[i] = (double)hidden_float[i];
+            }
             AttentionLayer* attn_layer = &model->attention_layers[layer];
-            cllm_attention_forward(attn_layer, hidden_float, hidden_float, NULL, NULL, 1);
+            cllm_attention_forward(attn_layer, hidden_double, hidden_double, NULL, NULL, 1);
+            for (uint32_t i = 0; i < embed_dim; i++) {
+                hidden_float[i] = (float)hidden_double[i];
+            }
+            free(hidden_double);
             
             // Feed-forward (in-place)
             cllm_feedforward(&model->ff_layers[layer], hidden_float, hidden_float);
@@ -384,7 +392,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Project to vocabulary - compute logits
     for (uint32_t i = 0; i < model->vocab_size; i++) {
         double logit_value = 0.0;
-        float* token_embed = &model->embeddings.embeddings[i * embed_dim];
+        double* token_embed = &model->embeddings.embeddings[i * embed_dim];
         for (uint32_t j = 0; j < embed_dim; j++) {
             logit_value += inference->hidden_states[j] * (double)token_embed[j];
         }

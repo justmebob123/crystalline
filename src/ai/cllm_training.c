@@ -764,8 +764,8 @@ static void cllm_attention_forward_training(
     CLLMTraining* training,
     int layer,
     AttentionLayer* attn_layer,
-    float* input,
-    float* output,
+    double* input,
+    double* output,
     int seq_len
 ) {
     if (!training || !attn_layer || !input || !output || layer < 0 || seq_len <= 0) return;
@@ -794,7 +794,7 @@ static void cllm_attention_forward_training(
         
         // Compute Q, K, V projections (same as in cllm_attention_forward)
         for (int pos = 0; pos < seq_len; pos++) {
-            float* input_vec = &input[pos * embed_dim];
+            double* input_vec = &input[pos * embed_dim];
             
             // Query projection
             for (uint32_t h = 0; h < num_heads; h++) {

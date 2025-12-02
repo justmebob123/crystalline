@@ -127,7 +127,7 @@ static uint32_t cllm_compute_symmetry_group_internal(uint64_t prime) {
  * @param output Output embedding vector [embedding_dim]
  */
 void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
-                                     uint32_t embedding_dim, float* output) {
+                                     uint32_t embedding_dim, double* output) {
     if (!output || embedding_dim == 0) return;
     
     // Get lattice coordinates
@@ -186,7 +186,7 @@ void cllm_generate_lattice_embeddings(CLLMModel* model) {
         uint64_t prime = get_nth_prime(token_id);
         
         // Generate lattice-based embedding
-        float* embedding = &model->embeddings.embeddings[token_id * embedding_dim];
+        double* embedding = &model->embeddings.embeddings[token_id * embedding_dim];
         cllm_generate_lattice_embedding(token_id, prime, embedding_dim, embedding);
         
         // Store prime encoding in token metadata if available

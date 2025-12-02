@@ -83,7 +83,7 @@ void cllm_generate_clock_encoding(PositionalEncoding* pos_enc) {
     printf("Generating clock positional encoding...\n");
     
     for (uint32_t pos = 0; pos < max_length; pos++) {
-        float* encoding = &pos_enc->clock_positions[pos * embedding_dim];
+        double* encoding = &pos_enc->clock_positions[pos * embedding_dim];
         
         // Map position to clock position (0-11)
         uint32_t clock_pos = pos % SYMMETRY_ORDER;

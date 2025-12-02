@@ -103,7 +103,7 @@ bool cllm_validate_weights(const CLLMModel* model) {
     
     // Check all weights (use BigFixed version if model uses BigFixed)
     if (0) {
-        if (!cllm_check_numerical_stability(model->weights, model->num_weights, "Model weights")) {
+        if (!cllm_check_numerical_stability_double(model->weights, model->num_weights, "Model weights")) {
             return false;
         }
     } else {

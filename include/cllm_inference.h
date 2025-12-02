@@ -51,7 +51,7 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* embedding, 
 
 /* Embedding layer functions */
 void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output);
-void cllm_apply_lattice_transform(float* embedding, float* transform, int dim);
+void cllm_apply_lattice_transform(float* embedding, double* transform, int dim);
 void cllm_get_embedding_transformed(CLLMInference* inf, uint32_t token_id, float* output);
 void cllm_embed_tokens_batch(CLLMInference* inf, uint32_t* token_ids, int num_tokens, float* output);
 void cllm_project_to_vocab(CLLMInference* inf, float* hidden_state, float* logits);
@@ -59,7 +59,7 @@ float cllm_embedding_norm(float* embedding, int dim);
 void cllm_normalize_embedding(float* embedding, int dim);
 
 /* Attention functions */
-void cllm_attention_forward(AttentionLayer* layer, float* input, float* output,
+void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len);
 void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, float* input, float* output,
                                    uint32_t* token_ids, float* key_cache, float* value_cache, int seq_len);
@@ -87,7 +87,7 @@ void cllm_layer_norm_stats(float* input, uint32_t dim, float* mean, float* varia
 /* Lattice embedding functions */
 void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius);
 void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, float* coords);
-void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime, uint32_t embedding_dim, float* output);
+void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime, uint32_t embedding_dim, double* output);
 void cllm_generate_lattice_embeddings(CLLMModel* model);
 void cllm_generate_lattice_transform(float* transform, int dim);
 float cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1, uint32_t token2_id, uint64_t prime2);

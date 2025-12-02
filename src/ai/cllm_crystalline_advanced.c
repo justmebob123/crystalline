@@ -405,7 +405,7 @@ void crystalline_prefetch_nearby(CrystallineAdvancedState* state,
     for (int i = 0; i < k; i++) {
         uint32_t nearby_token = nearby[i];
         if (nearby_token < model->vocab_size) {
-            float* embedding = &model->embeddings.embeddings[nearby_token * model->embedding_dim];
+            double* embedding = &model->embeddings.embeddings[nearby_token * model->embedding_dim];
             __builtin_prefetch(embedding, 0, 3);  // Prefetch for read, high temporal locality
         }
     }

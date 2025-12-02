@@ -32,7 +32,7 @@ typedef struct {
 static float** compute_embedding_covariance(CLLMModel* model) {
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    float* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings.embeddings;
     
     // Allocate covariance matrix
     float** cov = (float**)malloc(embed_dim * sizeof(float*));
@@ -213,7 +213,7 @@ void lll_reducer_free(LLLEmbeddingReducer* reducer) {
 /**
  * Project embedding to reduced space
  */
-void lll_project_embedding(LLLEmbeddingReducer* reducer, const float* embedding, float* reduced) {
+void lll_project_embedding(LLLEmbeddingReducer* reducer, const double* embedding, float* reduced) {
     if (!reducer || !embedding || !reduced) return;
     
     // reduced = basis * embedding
@@ -250,7 +250,7 @@ float* lll_project_all_embeddings(LLLEmbeddingReducer* reducer, CLLMModel* model
     float* reduced_embeddings = (float*)malloc(vocab_size * reducer->reduced_dim * sizeof(float));
     
     for (uint32_t v = 0; v < vocab_size; v++) {
-        float* original = &model->embeddings.embeddings[v * reducer->original_dim];
+        double* original = &model->embeddings.embeddings[v * reducer->original_dim];
         float* reduced = &reduced_embeddings[v * reducer->reduced_dim];
         lll_project_embedding(reducer, original, reduced);
     }
@@ -277,15 +277,22 @@ void lll_integrate_training(CLLMTraining* training, int target_dim) {
     float* reduced_embeddings = lll_project_all_embeddings(reducer, training->model);
     
     // Replace model embeddings with reduced version
+    // Note: reduced_embeddings is float*, but model expects double*
+    // We need to convert or change the approach
+    double* double_embeddings = (double*)malloc(training->model->vocab_size * target_dim * sizeof(double));
+    for (size_t i = 0; i < training->model->vocab_size * target_dim; i++) {
+        double_embeddings[i] = (double)reduced_embeddings[i];
+    }
+    free(reduced_embeddings);
     free(training->model->embeddings.embeddings);
-    training->model->embeddings.embeddings = reduced_embeddings;
+    training->model->embeddings.embeddings = double_embeddings;
     training->model->embedding_dim = target_dim;
     
-    // Update gradient buffers - use BigFixed
+    // Update gradient buffers - use double*
     if (training->gradients) {
-        bigfixed_array_free(training->gradients, training->model->vocab_size * training->model->embedding_dim);
+        free(training->gradients);
     }
-    training->gradients = bigfixed_array_create(training->model->vocab_size * target_dim, 128);
+    training->gradients = (double*)calloc(training->model->vocab_size * target_dim, sizeof(double));
     
     printf("LLL reduction integrated: %d → %d dimensions\n", 
            reducer->original_dim, reducer->reduced_dim);
