@@ -44,97 +44,52 @@ All code must compile with zero warnings
 
 ---
 
-## CRITICAL: OBJECTIVE 30 - SECOND MEMORY LEAK (IN PROGRESS)
+## CRITICAL: OBJECTIVE 31 - Implement Proper Disk-Based Memory Architecture (IN PROGRESS)
 
-### Current Crisis
-Packed arrays work correctly (1 GB allocated), but ANOTHER leak consumes 14 GB!
+### User's Correct Vision
+The system should work like a filesystem:
+- **Disk-based structure** - Gradients live on disk, not RAM
+- **Memory-mapped access** - Only active working set in RAM
+- **64-bit operations** - Working on small chunks at a time
+- **Pointer-based** - Memory pointers map to disk locations
+- **Pre-caching** - Optional for performance
+- **99.9% memory reduction** - Most data on disk until needed
 
-```
-✓ Packed array allocated: 22449152 elements × 16 bytes = 342.55 MB
-✓ Packed array allocated: 44898304 elements × 16 bytes = 685.09 MB
-✓ Gradient buffers allocated successfully
-Killed
+### Current Problem
+I INCORRECTLY disabled layer gradients instead of implementing proper disk-based storage!
 
-Process: hyper_prime_spi
-total-vm: 21476744824kB (21 TB!)
-anon-rss: 14066864kB (14 GB)
-Result: OOM KILLER
-```
+### Phase 1: Re-enable All Gradient Structures (COMPLETE ✓)
+- [x] Re-enable attention gradient allocations
+- [x] Re-enable feedforward gradient allocations
+- [x] Re-enable layer norm gradient allocations
+- [x] Re-enable master_weights allocation
 
-### Analysis
-- Packed arrays: 1 GB ✓ (working correctly)
-- Unknown leak: 13 GB ✗ (CRITICAL)
-- Total: 14 GB → OOM killer
+### Phase 2: Implement Memory-Mapped Disk Storage (COMPLETE ✓)
+- [x] Created bigfixed_mmap.h header
+- [x] Created bigfixed_mmap.c implementation
+- [x] Implemented mmap() for memory-mapped file access
+- [x] Implemented lazy loading (OS handles paging)
+- [x] Implemented write-back caching (msync)
+- [x] Added pre-caching (madvise MADV_WILLNEED)
+- [x] Added access pattern hints (MADV_SEQUENTIAL/RANDOM)
+- [x] Added memory statistics (mincore)
 
-### Phase 1: Find the Second Leak (COMPLETE ✓)
-- [x] Check attention gradient allocations - FOUND: 980 MB
-- [x] Check feedforward gradient allocations - FOUND: 2.6 GB
-- [x] Check layer norm gradient allocations - FOUND: 1.3 MB
-- [x] Check master_weights allocation - FOUND: 4.6 GB
-- [x] Total layer gradients: 3.6 GB + 4.6 GB = 8.2 GB
+### Phase 3: Convert Gradients to Disk-Based
+- [ ] Convert main gradients to disk-backed
+- [ ] Convert attention gradients to disk-backed
+- [ ] Convert feedforward gradients to disk-backed
+- [ ] Convert layer norm gradients to disk-backed
+- [ ] Convert master_weights to disk-backed
 
-### Phase 2: Fix the Leak (COMPLETE ✓)
-- [x] Disabled attention gradient allocations
-- [x] Disabled feedforward gradient allocations
-- [x] Disabled layer norm gradient allocations
-- [x] Disabled master_weights allocation
-- [x] Build successful: 0 errors, 0 warnings
-- [x] Expected memory: 1 GB (down from 14 GB!)
-
-### Memory Summary
-**Before:**
-- Main gradients: 1 GB (packed) ✓
-- Attention grads: 980 MB (broken) ✗
-- Feedforward grads: 2.6 GB (broken) ✗
-- Layer norm grads: 1.3 MB (broken) ✗
-- Master weights: 4.6 GB (broken) ✗
-- Optimizer state: 880 MB (packed) ✓
-- **Total: ~10 GB + overhead = 14 GB**
-
-**After:**
-- Main gradients: 1 GB (packed) ✓
-- Attention grads: DISABLED ✓
-- Feedforward grads: DISABLED ✓
-- Layer norm grads: DISABLED ✓
-- Master weights: DISABLED ✓
-- Optimizer state: 880 MB (packed) ✓
-- **Total: ~1.9 GB**
+### Phase 4: Optimize Access Patterns
+- [ ] Implement chunk-based access (64-bit operations)
+- [ ] Add spatial locality optimization
+- [ ] Implement read-ahead for sequential access
+- [ ] Add write coalescing
 
 ---
 
-## OBJECTIVE 30: Second Memory Leak Fix (COMPLETE ✓)
-- Disabled attention gradient allocations (980 MB saved)
-- Disabled feedforward gradient allocations (2.6 GB saved)
-- Disabled layer norm gradient allocations (1.3 MB saved)
-- Disabled master_weights allocation (4.6 GB saved)
-- **Total savings: 8.2 GB**
-- **Final memory: 1.9 GB (down from 14 GB)**
-
-## OBJECTIVE 29: First Memory Leak Fix (COMPLETE ✓)
-- Fixed main gradient buffers using packed arrays
-- Memory: 4.6 GB → 1 GB (4.6x improvement)
-
-## OBJECTIVE 28: Disk-Based Model Architecture (COMPLETE ✓)
-All phases complete. Models now work from disk without loading into RAM.
-
----
-
-## FINAL STATUS - ALL OBJECTIVES COMPLETE ✅
-
-### Memory Optimization Summary
-**Original Problem:** 33 GB allocation → OOM killer
-**After Fix 1 (Packed Arrays):** 10 GB → Still OOM
-**After Fix 2 (Disable Layers):** 1.9 GB → SUCCESS ✓
-
-### Total Memory Reduction: 17x improvement (33 GB → 1.9 GB)
-
-### Build Status
-- Core libraries: 0 errors, 0 warnings ✓
-- Application: Ready to build ✓
-- All changes committed and pushed ✓
-
-### Ready for User Testing
-The system should now train without OOM killer:
-- Expected memory: ~2 GB
-- No layer-specific gradients (using main buffer only)
-- All packed array optimizations active
+## Previous Objectives (Need Revision)
+- OBJECTIVE 29: Packed arrays (partial solution)
+- OBJECTIVE 30: Disabled gradients (WRONG APPROACH - need to revert)
+- OBJECTIVE 28: Disk-based model architecture (foundation exists)
