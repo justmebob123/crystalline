@@ -502,13 +502,25 @@ void cllm_backward_training_threaded(
                 if (logits[v] > max_logit) max_logit = logits[v];
             }
             
+            // Clamp max_logit to prevent overflow in exp
+            if (max_logit > 50.0f) max_logit = 50.0f;
+            if (max_logit < -50.0f) max_logit = -50.0f;
+            
             float sum_exp = 0.0f;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                sum_exp += prime_expf(logits[v] - max_logit);
+                float x = logits[v] - max_logit;
+                // Clamp to safe range for exp
+                if (x > 50.0f) x = 50.0f;
+                if (x < -50.0f) x = -50.0f;
+                sum_exp += prime_expf(x);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float prob = prime_expf(logits[v] - max_logit) / sum_exp;
+                float x = logits[v] - max_logit;
+                // Clamp to safe range for exp
+                if (x > 50.0f) x = 50.0f;
+                if (x < -50.0f) x = -50.0f;
+                float prob = prime_expf(x) / sum_exp;
                 grad[v] = prob - (v == target ? 1.0f : 0.0f);
             }
         }
