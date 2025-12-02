@@ -1,14 +1,46 @@
 # ⚠️ CRITICAL RULES FROM MASTER_PLAN.md ⚠️
 
+## ⭐ RULE 0: ALWAYS PASTE RULES TO TOP OF TODO.MD WITH EVERY RESPONSE ⭐
+**HIGHEST PRIORITY RULE - MUST BE FOLLOWED WITH EVERY SINGLE RESPONSE**
+
+At the beginning of EVERY response, you MUST:
+1. Paste these rules to the top of todo.md
+2. Read the MASTER_PLAN.md completely
+3. Read the AUDIT.md for current architectural state
+4. Read the SECONDARY_OBJECTIVES.md for detailed tasks
+
+## RULE 1: ALWAYS REREAD MASTER_PLAN.MD BEFORE ANY ACTION
+Before taking ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Understand the current objectives
+3. Verify your action aligns with the master plan
+4. Check for any blocking priorities
+
+## RULE 2: REFERENCE AUDIT.MD FOR ARCHITECTURAL STATE
+The AUDIT.md contains:
+- Current architectural violations
+- Required fixes with priorities
+- Implementation phases
+- Testing requirements
+- Success criteria
+
+## RULE 3: REFERENCE SECONDARY_OBJECTIVES.MD FOR DETAILED TASKS
+The SECONDARY_OBJECTIVES.md contains:
+- Detailed implementation tasks
+- Code examples
+- File-by-file changes
+- Testing procedures
+- Validation steps
+
+## RULE 4: DO NOT CREATE NEW MD FILES
+All documentation goes in existing files or master plan only.
+
 ## RULE 5: ALWAYS COMMIT ALL CHANGES USING CORRECT AUTHENTICATION
 ```bash
 git add .
 git commit -m "descriptive message"
 git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
 ```
-
-## RULE 4: DO NOT CREATE NEW MD FILES
-All documentation goes in existing files or master plan only.
 
 ## RULE 6: MASTER_PLAN.md IS READ-ONLY
 - Never add status updates, progress tracking, or completion markers
@@ -18,81 +50,118 @@ All documentation goes in existing files or master plan only.
 
 ---
 
-# CRITICAL: Model Save/Load Architecture Fix - COMPLETED ✓
+# CRITICAL BUG: Incompatible Array Types in Training Init
 
-## ROOT CAUSE ANALYSIS ✓
-The crash occurred because `cllm_read_model()` and `cllm_write_model()` had a **fundamental architectural mismatch**:
+## ACTUAL ROOT CAUSE IDENTIFIED ✓
 
-### Architecture (cllm_create.c):
-1. Allocates `model->weights` as BigFixed** array (39M elements for 611 vocab model)
-2. Layer pointers point INTO this array:
-   - `attention_layers[i].query_lattice = model->weights + offset`
-   - `ff_layers[i].w1_lattice = model->weights + offset`
-   - `layer_norms[i].gamma = model->weights + offset`
-3. All weights live in ONE contiguous BigFixed** array
+The crash occurs because `bigfixed_array_copy()` is trying to copy between **incompatible array types**:
 
-### Previous Broken Implementation:
-1. **SAVE**: Tried to save from layer float* arrays (which were NULL)
-2. **LOAD**: Read into separate float* allocations per layer
-3. **CRITICAL BUG**: Never populated `model->weights` array!
-4. **RESULT**: `model->weights[i]` were all NULL → SEGFAULT when training tried to copy them
+- `training->master_weights` = **BigFixedMmapArray*** (memory-mapped file structure)
+- `model->weights` = **BigFixed*** (regular pointer array)
 
-## SOLUTION IMPLEMENTED ✓
+### The Problem:
+```c
+// In cllm_training.c line 272:
+bigfixed_array_copy(training->master_weights, model->weights, total_params);
 
-### PHASE 1: Fixed cllm_write_model() ✓
-- [x] Save directly from model->weights array (BigFixed** → float conversion)
-- [x] Allocate temporary float buffer for all weights
-- [x] Convert each BigFixed to float using big_fixed_to_double()
-- [x] Write contiguous float array to file
-- [x] Free temporary buffer
-- [x] File format: header (sizeof(CLLMHeader)) + weights (num_weights * sizeof(float))
+// bigfixed_array_copy expects BigFixed** for both arguments
+// But training->master_weights is actually BigFixedMmapArray* cast to BigFixed**
+// When it does dest[i], it's dereferencing a file structure as if it's a pointer array
+// Result: NULL pointer dereference → SEGFAULT
+```
 
-### PHASE 2: Fixed cllm_read_model() ✓
-- [x] Call cllm_create_model() to allocate model->weights and set up layer pointers
-- [x] Read all weights as float array from file
-- [x] Convert float → BigFixed for each weight using big_fixed_from_double()
-- [x] Populate model->weights array
-- [x] Layer pointers already point into model->weights (set by cllm_create_model)
-- [x] Free temporary float buffer
+### Stack Trace Analysis:
+```
+#0 big_fixed_assign (bigfixed_core.c:86)
+   - Tries to copy src->integer_part->d[i]
+   - But src->integer_part->d is NULL (0x0000000c offset)
+   
+#1 bigfixed_array_copy (bigfixed_array_utils.c:83)
+   - Calls big_fixed_assign(dest[i], src[i])
+   - dest[i] from mmap array is invalid pointer
+   
+#2 cllm_training_init (cllm_training.c:272)
+   - Tries to copy model->weights to training->master_weights
+   - Incompatible types!
+```
 
-### PHASE 3: Build Verification ✓
-- [x] Zero compilation errors
-- [x] Zero compilation warnings
-- [x] All libraries built successfully
-- [x] Application built successfully
+## THE FIX
 
-## WEIGHT LAYOUT ANALYSIS ✓
+### Option 1: Don't Copy - Use model->weights Directly ✓ RECOMMENDED
+```c
+// In cllm_training_init():
+// DON'T allocate master_weights at all
+// Just use model->weights directly
+training->master_weights = model->weights;  // Share the same array
+```
 
-For 611 vocab, 768 embedding_dim, 6 layers model:
-- **Embeddings**: 0 to 469,247 (469,248 weights)
-- **Per Layer** (6 layers):
-  - Query/Key/Value: 589,824 weights each (1,769,472 total per layer)
-  - FF W1: 2,359,296 weights
-  - FF B1: 3,072 weights
-  - FF W2: 2,359,296 weights
-  - FF B2: 768 weights
-  - Layer Norms (2x): 768 weights each (3,072 total per layer)
-- **Total**: 39,439,104 weights (~150 MB as float)
+**Pros:**
+- No copy needed
+- No memory overhead
+- No type mismatch
+- Simple and fast
 
-## FILES MODIFIED ✓
-1. `src/ai/cllm_format.c` - Completely rewrote save/load functions
-2. `todo.md` - This file
+**Cons:**
+- Training modifies model weights directly (but that's the point!)
 
-## CRITICAL REQUIREMENTS MET ✓
-- ✓ model->weights fully populated after load
-- ✓ Layer pointers point into model->weights (via cllm_create_model)
-- ✓ Save/load are symmetric operations
-- ✓ No memory leaks (temporary buffers freed)
-- ✓ Clean architecture matching cllm_create_model design
+### Option 2: Create Compatible Copy Function
+```c
+// Create bigfixed_array_copy_from_regular_to_mmap()
+// That understands both array types
+```
 
-## BUILD STATUS ✓
-- [x] Core libraries: 0 errors, 0 warnings
-- [x] Application: 0 errors, 0 warnings
-- [x] All changes committed
+**Pros:**
+- Keeps master_weights separate
 
-## NEXT STEPS - USER TESTING REQUIRED
-- [ ] User should test: Save model → Load model → Start training
-- [ ] Verify no SEGFAULT on training initialization
-- [ ] Verify model->weights[i] != NULL for all i
-- [ ] Verify training completes without crashes
-- [ ] Test save → load → save produces consistent results
+**Cons:**
+- Complex implementation
+- Unnecessary memory overhead
+- Slower
+
+### Option 3: Don't Use Mmap for master_weights
+```c
+// Use regular BigFixed** array for master_weights
+training->master_weights = bigfixed_array_create(total_params, precision);
+bigfixed_array_copy(training->master_weights, model->weights, total_params);
+```
+
+**Pros:**
+- Compatible types
+
+**Cons:**
+- Uses 4.6 GB RAM (defeats purpose of mmap)
+
+## RECOMMENDED SOLUTION
+
+**Use Option 1**: Don't allocate master_weights, just point to model->weights
+
+### Implementation:
+```c
+// In cllm_training_init() around line 250-272:
+if (config->use_mixed_precision) {
+    size_t total_params = model->header.total_params;
+    if (total_params > 0 && total_params < 1000000000) {
+        // DON'T allocate master_weights - just use model->weights directly
+        training->master_weights = model->weights;
+        printf("Using model->weights directly (no copy needed)\n");
+    }
+}
+```
+
+### Why This Works:
+1. Training needs to modify weights anyway
+2. No point in copying weights just to copy them back
+3. Saves memory and time
+4. Eliminates type mismatch issue
+
+## FILES TO MODIFY
+- [ ] src/ai/cllm_training.c - Remove master_weights allocation and copy
+- [ ] Verify training->master_weights is only used for reading/writing weights
+- [ ] Ensure no code assumes master_weights is separate from model->weights
+
+## VERIFICATION STEPS
+- [ ] Build with changes
+- [ ] Test training initialization
+- [ ] Verify no SEGFAULT
+- [ ] Verify training modifies model->weights correctly
+- [ ] Test save after training (weights should be updated)

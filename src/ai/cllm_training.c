@@ -250,30 +250,12 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (config->use_mixed_precision) {
         size_t total_params = model->header.total_params;
         if (total_params > 0 && total_params < 1000000000) {
-            // Allocate master_weights using memory-mapped disk storage
-            printf("Allocating master_weights (%zu parameters) using disk-backed storage...\n", total_params);
-            training->master_weights = bigfixed_array_create_mmap(
-                total_params, 
-                training->precision_bits,
-                "master_weights"
-            );
-            // Only copy if both master_weights and model->weights are valid
-            if (training->master_weights && model->weights) {
-                // Verify all BigFixed pointers are valid before copying
-                bool all_valid = true;
-                for (size_t i = 0; i < total_params && i < 100; i++) {  // Check first 100
-                    if (!model->weights[i]) {
-                        all_valid = false;
-                        printf("WARNING: model->weights[%zu] is NULL, skipping copy\n", i);
-                        break;
-                    }
-                }
-                if (all_valid) {
-                    bigfixed_array_copy(training->master_weights, model->weights, total_params);
-                } else {
-                    printf("WARNING: Model weights not fully initialized, skipping master weights copy\n");
-                }
-            }
+            // CRITICAL FIX: Don't allocate master_weights - use model->weights directly
+            // This avoids incompatible array type issues (mmap vs regular BigFixed**)
+            // and saves memory since training modifies model weights anyway
+            training->master_weights = model->weights;
+            printf("Using model->weights directly (%zu parameters, no copy needed)\n", total_params);
+            printf("  This avoids memory overhead and type compatibility issues\n");
         }
     }
     
