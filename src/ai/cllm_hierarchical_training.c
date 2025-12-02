@@ -907,9 +907,21 @@ static void* root_control_thread(void* arg) {
         
         printf("[Node Zero] Waiting for all workers to complete...\n");
         
-        // Wait for all Level-1 controls to send their accumulated gradients
+        // Count how many children actually received work
+        int children_with_work = 0;
+        for (int i = 0; i < root->num_children; i++) {
+            int group = root->children[i]->primary_symmetry_group;
+            if (group_distribution[group] > 0) {
+                children_with_work++;
+            }
+        }
+        
+        printf("[Node Zero] Expecting gradients from %d children (out of %d total)\n", 
+               children_with_work, root->num_children);
+        
+        // Wait for Level-1 controls that received work to send their accumulated gradients
         int gradients_received = 0;
-        int expected_gradients = root->num_children;
+        int expected_gradients = children_with_work;
         
         // Create gradient accumulator for root
         size_t gradient_size = model->vocab_size * model->embedding_dim;
