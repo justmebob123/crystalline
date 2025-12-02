@@ -1,10 +1,14 @@
 # TODO - Crystalline CLLM Project
 
-**CRITICAL RULES (from MASTER_PLAN.md):**
-- **Rule 0**: Paste rules to top of todo.md with every response, read MASTER_PLAN.md, AUDIT.md, SECONDARY_OBJECTIVES.md
-- **Rule 4**: Do not create new .md files
-- **Rule 5**: Always commit using correct auth: `git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main`
-- **Rule 6**: MASTER_PLAN.md is read-only
+**CRITICAL RULES (from MASTER_PLAN.md) - MUST FOLLOW:**
+- **Rule 0**: ALWAYS paste rules to top of todo.md with EVERY response, read MASTER_PLAN.md, AUDIT.md, SECONDARY_OBJECTIVES.md
+- **Rule 1**: ALWAYS reread MASTER_PLAN.md before ANY action
+- **Rule 2**: Reference AUDIT.md for architectural state
+- **Rule 3**: Reference SECONDARY_OBJECTIVES.md for detailed tasks
+- **Rule 4**: Do NOT create new .md files
+- **Rule 5**: ALWAYS commit using: `git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main`
+- **Rule 6**: MASTER_PLAN.md is READ-ONLY - do not edit without explicit approval
+- **Rule 7**: FIX ALL BUILD WARNINGS before proceeding
 
 ## CRITICAL UNDERSTANDING: Hierarchical Threading Architecture
 
@@ -97,7 +101,16 @@
 - Fixed HTML entities with fix_html_entities.py
 - Build completed successfully with zero errors
 
-### Phase 7: Testing (HIGHEST PRIORITY) - READY TO START
+### Phase 7: Fix ALL Build Warnings (RULE 7 - HIGHEST PRIORITY)
+1. [x] Fix control_thread.c error (num_primes_used -> num_lattice_points)
+2. [ ] Fix all pointer type incompatibility warnings (float* vs double*)
+3. [ ] Fix all unused parameter warnings
+4. [ ] Fix all implicit function declaration warnings
+5. [ ] Fix all control reaches end of non-void function warnings
+6. [ ] Rebuild with zero warnings
+7. [ ] Commit all fixes with proper authentication
+
+### Phase 8: Testing (AFTER warnings fixed)
 1. [ ] Run training with small dataset
 2. [ ] Verify NO NaN gradients
 3. [ ] Verify gradient values are reasonable

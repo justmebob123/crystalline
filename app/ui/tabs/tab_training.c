@@ -110,11 +110,13 @@ static void on_model_selected(const char* model_name, void* user_data) {
     if (state->cllm_model) {
         printf("Model '%s' loaded successfully\n", model_name);
         
-        // Update training config from model
-        state->training_batch_size = state->cllm_model->training_config.batch_size;
-        state->training_sequence_length = state->cllm_model->training_config.sequence_length;
-        state->training_epochs = state->cllm_model->training_config.num_epochs;
-        state->training_learning_rate = state->cllm_model->training_config.learning_rate;
+        // Update training config from model metadata or use defaults
+        state->training_batch_size = 32;  // Default batch size
+        state->training_sequence_length = state->cllm_model->header.context_length > 0 ? 
+                                          state->cllm_model->header.context_length : 512;
+        state->training_epochs = 10;  // Default epochs
+        state->training_learning_rate = state->cllm_model->training_meta.learning_rate > 0 ?
+                                        state->cllm_model->training_meta.learning_rate : 0.001f;
     } else {
         printf("Failed to load model '%s'\n", model_name);
     }
@@ -799,20 +801,20 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 18);
         draw_text(renderer, "MODEL INFO", info_label.x, info_label.y, text_color);
         
-        // Epochs trained
-        int epochs_trained = state->cllm_model->epochs_trained;
-        char epochs_info[64];
-        snprintf(epochs_info, sizeof(epochs_info), "Epochs Trained: %d", epochs_trained);
-        SDL_Rect epochs_info_rect = layout_add_label(&layout, epochs_info, 16);
-        draw_text(renderer, epochs_info, epochs_info_rect.x, epochs_info_rect.y, text_color);
+        // Training steps (from metadata)
+        uint64_t training_steps = state->cllm_model->training_meta.training_steps;
+        char steps_info[64];
+        snprintf(steps_info, sizeof(steps_info), "Training Steps: %lu", (unsigned long)training_steps);
+        SDL_Rect steps_info_rect = layout_add_label(&layout, steps_info, 16);
+        draw_text(renderer, steps_info, steps_info_rect.x, steps_info_rect.y, text_color);
         
-        // Queue size (if model has queue directory)
-        if (state->cllm_model->queue_directory[0] != '\0') {
-            // TODO: Implement get_queue_size() function
-            char queue_info[256];  // Increased buffer size to avoid truncation
-            snprintf(queue_info, sizeof(queue_info), "Queue: %.200s", state->cllm_model->queue_directory);
-            SDL_Rect queue_info_rect = layout_add_label(&layout, queue_info, 16);
-            draw_text(renderer, queue_info, queue_info_rect.x, queue_info_rect.y, text_color);
+        // Learning rate (from metadata)
+        float lr = state->cllm_model->training_meta.learning_rate;
+        if (lr > 0) {
+            char lr_info[64];
+            snprintf(lr_info, sizeof(lr_info), "Learning Rate: %.6f", lr);
+            SDL_Rect lr_info_rect = layout_add_label(&layout, lr_info, 16);
+            draw_text(renderer, lr_info, lr_info_rect.x, lr_info_rect.y, text_color);
         }
         
         // Model architecture
@@ -1209,15 +1211,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 };
                 strcpy(config.optimizer, "adam");
                 
-                // Save configuration to model for future use
+                // Save configuration to model metadata for future use
                 if (state->cllm_model) {
-                    state->cllm_model->training_config.learning_rate = config.learning_rate;
-                    state->cllm_model->training_config.batch_size = config.batch_size;
-                    state->cllm_model->training_config.sequence_length = config.sequence_length;
-                    state->cllm_model->training_config.num_epochs = config.num_epochs;
-                    state->cllm_model->training_config.weight_decay = config.weight_decay;
-                    state->cllm_model->training_config.gradient_clip = config.gradient_clip;
-                    printf("Saved training configuration to model\n");
+                    state->cllm_model->training_meta.learning_rate = config.learning_rate;
+                    strncpy(state->cllm_model->training_meta.optimizer, config.optimizer, 
+                            sizeof(state->cllm_model->training_meta.optimizer) - 1);
+                    printf("Saved training configuration to model metadata\n");
                 }
                 
                 // Build vocabulary

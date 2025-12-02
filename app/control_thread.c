@@ -65,8 +65,8 @@ void* control_thread_main(void* arg) {
                 // Read metadata only (fast - just header)
                 CLLMHeader* header = model_manager_read_metadata(model_path);
                 if (header) {
-                    uint64_t required_primes = header->num_primes_used > 0 ? 
-                                               header->num_primes_used : header->vocab_size;
+                    uint64_t required_primes = header->num_lattice_points > 0 ? 
+                                               header->num_lattice_points : header->vocab_size;
                     
                     printf("  Found: %s\n", entry->d_name);
                     printf("    Vocab: %lu | Layers: %lu | Primes needed: %lu\n",
