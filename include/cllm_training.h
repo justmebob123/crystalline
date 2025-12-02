@@ -91,35 +91,35 @@ typedef struct {
     
     // Layer-specific gradient buffers
     struct {
-        float* query_lattice;    // Gradients for query weights
-        float* key_lattice;      // Gradients for key weights
-        float* value_lattice;    // Gradients for value weights
+        double* query_lattice;   // Gradients for query weights
+        double* key_lattice;     // Gradients for key weights
+        double* value_lattice;   // Gradients for value weights
     }* attention_grads;          // Array of num_layers
     
     struct {
-        float* w1_lattice;       // Gradients for W1
-        float* w2_lattice;       // Gradients for W2
-        float* bias1;            // Gradients for bias1
-        float* bias2;            // Gradients for bias2
+        double* w1_lattice;      // Gradients for W1
+        double* w2_lattice;      // Gradients for W2
+        double* bias1;           // Gradients for bias1
+        double* bias2;           // Gradients for bias2
     }* ff_grads;                 // Array of num_layers
     
     struct {
-        float* gamma;            // Gradients for gamma
-        float* beta;             // Gradients for beta
+        double* gamma;           // Gradients for gamma
+        double* beta;            // Gradients for beta
     }* ln_grads;                 // Array of num_layers
     
     // Pre-allocated backward pass buffers (OPTIMIZATION)
-    float* backward_embeddings;      // Reusable embedding buffer
-    float* backward_grad_output;     // Reusable gradient output buffer
-    float* backward_layer_input;     // Reusable layer input buffer
-    float* backward_layer_grad;      // Reusable layer gradient buffer
-    float* backward_temp_grad;       // Reusable temporary gradient buffer
+    double* backward_embeddings;     // Reusable embedding buffer
+    double* backward_grad_output;    // Reusable gradient output buffer
+    double* backward_layer_input;    // Reusable layer input buffer
+    double* backward_layer_grad;     // Reusable layer gradient buffer
+    double* backward_temp_grad;      // Reusable temporary gradient buffer
     size_t backward_buffer_size;     // Size of activation buffers
     
     // Embedding cache for batch processing (OPTIMIZATION)
-    float* cached_input_embeddings;  // Cached input embeddings
-    float* cached_target_embeddings; // Cached target embeddings
-    int cached_batch_size;           // Size of embedding cache
+    double* cached_input_embeddings;  // Cached input embeddings
+    double* cached_target_embeddings; // Cached target embeddings
+    int cached_batch_size;            // Size of embedding cache
     
     // Forward pass activation storage
     double* input_embeddings;         // Input embeddings [batch * seq * embed]
@@ -133,11 +133,11 @@ typedef struct {
     
     // Attention backward pass storage (for full gradient computation)
     struct {
-        float* attention_weights;    // [num_heads * seq_len * seq_len]
-        float* queries;              // [seq_len * embedding_dim]
-        float* keys;                 // [seq_len * embedding_dim]
-        float* values;               // [seq_len * embedding_dim]
-        float* scores;               // [num_heads * seq_len * seq_len]
+        double* attention_weights;   // [num_heads * seq_len * seq_len]
+        double* queries;             // [seq_len * embedding_dim]
+        double* keys;                // [seq_len * embedding_dim]
+        double* values;              // [seq_len * embedding_dim]
+        double* scores;              // [num_heads * seq_len * seq_len]
     }* attention_cache;              // Array of num_layers
     
     int cached_seq_len;              // Cached sequence length

@@ -89,9 +89,9 @@ typedef struct {
 typedef struct {
     uint32_t vocab_size;         // Vocabulary size
     uint32_t embedding_dim;      // Embedding dimension
-    float* embeddings;           // Embedding matrix [vocab_size x embedding_dim]
-    float* lattice_transform;    // Lattice transformation matrix
-    float* inverse_transform;    // Inverse transformation matrix
+    double* embeddings;          // Embedding matrix [vocab_size x embedding_dim]
+    double* lattice_transform;   // Lattice transformation matrix
+    double* inverse_transform;   // Inverse transformation matrix
 } Embeddings;
 
 /*
@@ -101,9 +101,9 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t num_heads;          // Number of attention heads
     uint32_t head_dim;           // Dimension per head
-    float* query_lattice;        // Query weight lattice
-    float* key_lattice;          // Key weight lattice
-    float* value_lattice;        // Value weight lattice
+    double* query_lattice;       // Query weight lattice
+    double* key_lattice;         // Key weight lattice
+    double* value_lattice;       // Value weight lattice
 } AttentionLayer;
 
 /*
@@ -114,10 +114,10 @@ typedef struct {
     uint32_t input_dim;          // Input dimension
     uint32_t hidden_dim;         // Hidden layer dimension
     uint32_t output_dim;         // Output dimension
-    float* w1_lattice;           // First weight matrix
-    float* w2_lattice;           // Second weight matrix
-    float* bias1;                // First bias vector
-    float* bias2;                // Second bias vector
+    double* w1_lattice;          // First weight matrix
+    double* w2_lattice;          // Second weight matrix
+    double* bias1;               // First bias vector
+    double* bias2;               // Second bias vector
 } FeedForwardLayer;
 
 /*
@@ -127,8 +127,8 @@ typedef struct {
     uint32_t layer_id;           // Layer identifier
     uint32_t dim;                // Dimension to normalize
     float epsilon;               // Small constant for numerical stability
-    float* gamma;                // Scale parameters
-    float* beta;                 // Shift parameters
+    double* gamma;               // Scale parameters
+    double* beta;                // Shift parameters
 } CLLMLayerNorm;
 
 /*
@@ -137,10 +137,10 @@ typedef struct {
 typedef struct {
     uint32_t max_length;         // Maximum sequence length
     uint32_t embedding_dim;      // Embedding dimension
-    float* spiral_positions;     // Spiral-based positions
-    float* clock_positions;      // Clock-based positions
-    float* prime_positions;      // Prime-based positions
-    float* learned_positions;    // Learned positions
+    double* spiral_positions;    // Spiral-based positions
+    double* clock_positions;     // Clock-based positions
+    double* prime_positions;     // Prime-based positions
+    double* learned_positions;   // Learned positions
 } PositionalEncoding;
 
 /*
