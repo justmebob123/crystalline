@@ -1,3 +1,23 @@
+# ⚠️ CRITICAL RULES FROM MASTER_PLAN.md ⚠️
+
+## RULE 5: ALWAYS COMMIT ALL CHANGES USING CORRECT AUTHENTICATION
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+## RULE 4: DO NOT CREATE NEW MD FILES
+All documentation goes in existing files or master plan only.
+
+## RULE 6: MASTER_PLAN.md IS READ-ONLY
+- Never add status updates, progress tracking, or completion markers
+- Only contains STATIC STRUCTURAL DESIGN
+- Status tracking happens in todo.md ONLY
+- Ask user before adding ANY new objectives
+
+---
+
 # CRITICAL: Model Save/Load Architecture Fix - COMPLETED ✓
 
 ## ROOT CAUSE ANALYSIS ✓
