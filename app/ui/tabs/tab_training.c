@@ -876,9 +876,28 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Rect status_rect = layout_add_label(&layout, status_text, 18);
     draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
     
-    const char* model_status = state->cllm_model ? "Model: Loaded" : "Model: Not Loaded";
-    SDL_Color model_color = state->cllm_model ? 
-        (SDL_Color){100, 255, 100, 255} : (SDL_Color){255, 100, 100, 255};
+    // Check model status: registered vs loaded
+    const char* model_status;
+    SDL_Color model_color;
+    
+    if (state->cllm_model) {
+        // Model is loaded in memory
+        model_status = "Model: Loaded & Ready";
+        model_color = (SDL_Color){100, 255, 100, 255};  // Green
+    } else {
+        // Check if any models are registered (available to load)
+        extern uint32_t model_manager_count(void);
+        uint32_t model_count = model_manager_count();
+        
+        if (model_count > 0) {
+            model_status = "Model: Available (select to load)";
+            model_color = (SDL_Color){255, 200, 100, 255};  // Orange
+        } else {
+            model_status = "Model: None Available";
+            model_color = (SDL_Color){255, 100, 100, 255};  // Red
+        }
+    }
+    
     SDL_Rect model_rect = layout_add_label(&layout, model_status, 18);
     draw_text(renderer, model_status, model_rect.x, model_rect.y, model_color);
     

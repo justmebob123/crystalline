@@ -237,6 +237,13 @@ ManagedModel* model_manager_get(const char* name);
 ManagedModel** model_manager_list(uint32_t* count);
 
 /**
+ * Get count of registered models
+ * 
+ * @return Number of models registered in the manager
+ */
+uint32_t model_manager_count(void);
+
+/**
  * Check if a model exists
  * 
  * @param name Name of the model

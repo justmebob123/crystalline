@@ -745,6 +745,18 @@ ManagedModel** model_manager_list(uint32_t* count) {
     return models;
 }
 
+uint32_t model_manager_count(void) {
+    if (!g_manager_initialized) {
+        return 0;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    uint32_t count = g_model_manager.num_models;
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    return count;
+}
+
 bool model_manager_exists(const char* name) {
     if (!g_manager_initialized || !name) {
         return false;
