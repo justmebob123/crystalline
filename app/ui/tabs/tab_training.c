@@ -706,7 +706,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize model selector on first draw
     if (!model_selector) {
         int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
-        model_selector = model_selector_create(panel_x + 10, RENDER_OFFSET_Y + 50, CONTROL_PANEL_WIDTH - 20, 30);
+        // Increased height from 30 to 50 for better visibility
+        model_selector = model_selector_create(panel_x + 10, RENDER_OFFSET_Y + 50, CONTROL_PANEL_WIDTH - 20, 50);
         model_selector_update_list(model_selector);
         
         // Set callback to load model when selected
@@ -751,8 +752,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (model_selector) {
         model_selector_render(model_selector, renderer);
     }
-    layout_add_spacing(&layout, 30); // Space for model selector
-    layout_add_spacing(&layout, 5);
+    layout_add_spacing(&layout, 50); // Space for model selector (increased from 30)
+    layout_add_spacing(&layout, 10); // Extra spacing for clarity
     
     // === SECTION 0.5: TRAINING CONFIGURATION ===
     SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 18);

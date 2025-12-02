@@ -49,11 +49,11 @@ ModelSelector* model_selector_create(int x, int y, int width, int height) {
     selector->scroll_offset = 0;
     selector->hover_index = -1;
     
-    // Default colors
-    selector->bg_color = (SDL_Color){40, 40, 40, 255};
-    selector->text_color = (SDL_Color){220, 220, 220, 255};
-    selector->hover_color = (SDL_Color){60, 60, 60, 255};
-    selector->border_color = (SDL_Color){100, 100, 100, 255};
+    // Default colors (improved contrast and visibility)
+    selector->bg_color = (SDL_Color){50, 50, 60, 255};  // Slightly lighter background
+    selector->text_color = (SDL_Color){240, 240, 240, 255};  // Brighter text
+    selector->hover_color = (SDL_Color){70, 80, 100, 255};  // More visible hover
+    selector->border_color = (SDL_Color){120, 140, 160, 255};  // Brighter border
     
     // Allocate model list
     selector->model_list = calloc(MAX_MODELS, sizeof(char*));

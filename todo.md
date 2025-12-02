@@ -141,12 +141,13 @@
 - [x] Build successful - zero errors, 1 pre-existing warning
 - [x] Commit Phase 3
 
-### Phase 4: Fix Model Selector Visibility
-- [ ] Increase model selector height
-- [ ] Improve positioning to avoid overlaps
-- [ ] Add better contrast/borders
-- [ ] Test visibility with multiple models
-- [ ] Commit Phase 4
+### Phase 4: Fix Model Selector Visibility ✅ COMPLETE
+- [x] Increased model selector height from 30 to 50 pixels
+- [x] Increased spacing below selector from 30 to 50 pixels
+- [x] Improved color contrast (brighter text, borders, hover)
+- [x] Better background color for visibility
+- [x] Build successful - zero errors
+- [x] Commit Phase 4
 
 ### Phase 5: Improve Models Tab Selection
 - [ ] Make selection highlight brighter
