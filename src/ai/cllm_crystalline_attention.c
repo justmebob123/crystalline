@@ -21,6 +21,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/prime_lattice_core.h"
+#include "../include/bigfixed_core.h"
 
 // Constants for crystalline attention
 #define PI 3.14159265358979323846

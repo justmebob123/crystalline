@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <time.h>
 #include "../include/prime_float_math.h"
+#include "../include/bigfixed_core.h"
 
 // Forward declarations from cllm_inference.c
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);
