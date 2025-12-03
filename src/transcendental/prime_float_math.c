@@ -506,3 +506,7 @@ double prime_log2(double x) {
     if (x <= 0.0) return -1e308;  // Return large negative for invalid input
     return prime_log(x) / 0.6931471805599453;  // divide by ln(2)
 }
+// Float version of prime_atan2
+float prime_atan2f(float y, float x) {
+    return (float)prime_atan2((double)y, (double)x);
+}

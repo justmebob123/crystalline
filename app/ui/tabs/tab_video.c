@@ -1,192 +1,219 @@
 /**
- * Video Tab - Video Recording Controls
+ * Video Tab - Crystalline UI Version
  * 
  * Features:
- * - Start/Stop recording
- * - Recording status display
- * - Frame counter
- * - File path display
- * - Recording settings
+ * - Radial layout with 12-fold symmetry
+ * - Circular Start/Stop button with pulse animation
+ * - Status displayed in circular progress ring
+ * - Information arranged using golden ratio
+ * - Sacred geometry borders
  */
 
 #include "../../app_common.h"
 #include "../../ui_layout.h"
+#include "../crystalline/elements.h"
+#include "../crystalline/geometry.h"
+#include "../crystalline/layout.h"
+#include "../crystalline/draw.h"
+#include "../crystalline/color.h"
 #include <stdio.h>
 #include <string.h>
 
-// UI Button structure
-typedef struct {
-    SDL_Rect bounds;
-    char label[64];
-    bool enabled;
-    bool visible;
-} UIButton;
-
-// Static UI elements
-static UIButton btn_start_stop_recording;
+// Crystalline UI elements
+static CrystallineButton* btn_record = NULL;
+static CrystallinePanel* panel_status = NULL;
+static CrystallinePanel* panel_requirements = NULL;
+static CrystallineProgress* progress_recording = NULL;
 static bool ui_initialized = false;
 
 /**
- * Initialize video tab UI
+ * Initialize video tab UI with crystalline elements
  */
 void init_video_tab(void) {
+    if (ui_initialized) return;
+    
+    // Calculate center of render area
+    float center_x = RENDER_OFFSET_X + RENDER_WIDTH / 2.0f;
+    float center_y = RENDER_OFFSET_Y + WINDOW_HEIGHT / 2.0f;
+    
+    // Create central record button (circular style)
+    btn_record = crystalline_button_create(
+        CRYSTALLINE_STYLE_CIRCULAR,
+        center_x,
+        center_y - 100.0f,
+        80.0f,   // radius
+        0.0f,    // unused for circular
+        "START",
+        NULL     // font (will use default)
+    );
+    
+    // Create status panel (circular style with Flower of Life border)
+    panel_status = crystalline_panel_create(
+        CRYSTALLINE_STYLE_CIRCULAR,
+        center_x,
+        center_y - 250.0f,
+        400.0f,  // width
+        180.0f,  // height
+        "RECORDING STATUS",
+        NULL     // font (will use default)
+    );
+    
+    // Create requirements panel (circular style)
+    panel_requirements = crystalline_panel_create(
+        CRYSTALLINE_STYLE_CIRCULAR,
+        center_x,
+        center_y + 150.0f,
+        400.0f,  // width
+        150.0f,  // height
+        "REQUIREMENTS",
+        NULL     // font (will use default)
+    );
+    
+    // Create circular progress indicator
+    progress_recording = crystalline_progress_create(
+        CRYSTALLINE_STYLE_CIRCULAR,
+        center_x,
+        center_y - 100.0f,
+        120.0f,  // radius (outer ring around button)
+        0.0f     // unused for circular
+    );
+    
     ui_initialized = true;
 }
 
 /**
- * Draw video tab
+ * Draw video tab with crystalline UI
  */
 void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     if (!renderer || !state) return;
     
-    // Colors
-    // SDL_Color bg_color = {20, 20, 30, 255}; // TODO: Use for background
-    SDL_Color text_color = {220, 220, 220, 255};
-    SDL_Color panel_color = {30, 30, 40, 255};
-    SDL_Color accent_color = {100, 150, 255, 255};
-    SDL_Color success_color = {100, 255, 100, 255};
-    SDL_Color error_color = {255, 100, 100, 255};
-    SDL_Color recording_color = {255, 50, 50, 255};
+    // Initialize if needed
+    if (!ui_initialized) {
+        init_video_tab();
+    }
     
-    // Layout (centered in render area, accounting for sidebar)
-    int x = RENDER_OFFSET_X + 20;
-    int y = RENDER_OFFSET_Y + 20;
-    int w = RENDER_WIDTH - 40;
-    // int h = WINDOW_HEIGHT - 80; // TODO: Use for panel height
+    // Colors using crystalline color system
+    SDL_Color text_color = crystalline_color_from_frequency(432.0f);  // Base frequency
+    SDL_Color recording_color = crystalline_color_from_frequency(963.0f);  // High frequency (red)
+    SDL_Color success_color = crystalline_color_from_frequency(528.0f);  // Love frequency (green)
     
-    // Title (positioned to avoid submenu overlap)
-    draw_text(renderer, "VIDEO RECORDING", x, y + 20, text_color);
-    y += 60;
+    // Calculate center
+    float center_x = RENDER_OFFSET_X + RENDER_WIDTH / 2.0f;
+    float center_y = RENDER_OFFSET_Y + WINDOW_HEIGHT / 2.0f;
     
-    // Recording status panel
-    SDL_Rect status_panel = {x, y, w, 200};
-    SDL_SetRenderDrawColor(renderer, panel_color.r, panel_color.g, panel_color.b, 255);
-    SDL_RenderFillRect(renderer, &status_panel);
-    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
-    SDL_RenderDrawRect(renderer, &status_panel);
+    // Draw title using golden ratio positioning
+    CrystallinePoint title_pos = crystalline_point_cartesian(center_x, RENDER_OFFSET_Y + 40.0f);
+    crystalline_draw_text_centered(renderer, "VIDEO RECORDING", title_pos, text_color, NULL);
     
-    int panel_x = status_panel.x + 20;
-    int panel_y = status_panel.y + 20;
-    
-    // Recording status
+    // Update button label based on recording state
     if (state->is_recording) {
-        draw_text(renderer, "STATUS: RECORDING", panel_x, panel_y, recording_color);
-        panel_y += 25;
+        crystalline_button_set_label(btn_record, "STOP");
+    } else {
+        crystalline_button_set_label(btn_record, "START");
+    }
+    
+    // Update progress indicator
+    if (state->is_recording && state->recording_frames > 0) {
+        // Calculate progress (arbitrary max of 3600 frames = 2 minutes at 30fps)
+        float progress = (float)state->recording_frames / 3600.0f;
+        if (progress > 1.0f) progress = 1.0f;
+        crystalline_progress_set_value(progress_recording, progress);
+    } else {
+        crystalline_progress_set_value(progress_recording, 0.0f);
+    }
+    
+    // Draw status panel
+    crystalline_panel_render(panel_status, renderer);
+    
+    // Draw status information inside panel using radial layout
+    float panel_center_x = panel_status->base.position.x;
+    float panel_center_y = panel_status->base.position.y;
+    float info_y = panel_center_y - 60.0f;
+    
+    if (state->is_recording) {
+        // Recording status
+        CrystallinePoint status_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, "STATUS: RECORDING", status_pos, recording_color, NULL);
+        info_y += 25.0f;
         
-        // Blinking indicator
+        // Blinking indicator using crystalline pulse
         if ((SDL_GetTicks() / 500) % 2 == 0) {
-            SDL_Rect indicator = {panel_x, panel_y, 12, 12};
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            SDL_RenderFillRect(renderer, &indicator);
+            CrystallinePoint indicator_center = crystalline_point_cartesian(panel_center_x - 40.0f, info_y);
+            CrystallineDrawStyle indicator_style = crystalline_draw_style_filled(recording_color);
+            crystalline_draw_circle(renderer, indicator_center, 6.0f, indicator_style);
         }
-        draw_text(renderer, "REC", panel_x + 20, panel_y, recording_color);
-        panel_y += 30;
+        
+        CrystallinePoint rec_text_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, "REC", rec_text_pos, recording_color, NULL);
+        info_y += 30.0f;
         
         // Frame counter
         char frame_info[128];
-        snprintf(frame_info, sizeof(frame_info), "Frames Recorded: %d", state->recording_frames);
-        draw_text(renderer, frame_info, panel_x, panel_y, text_color);
-        panel_y += 20;
+        snprintf(frame_info, sizeof(frame_info), "Frames: %d", state->recording_frames);
+        CrystallinePoint frame_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, frame_info, frame_pos, text_color, NULL);
+        info_y += 20.0f;
         
         // Duration
-        int duration_seconds = state->recording_frames / 30;  // 30 FPS
+        int duration_seconds = state->recording_frames / 30;
         int minutes = duration_seconds / 60;
         int seconds = duration_seconds % 60;
         char duration_info[128];
         snprintf(duration_info, sizeof(duration_info), "Duration: %02d:%02d", minutes, seconds);
-        draw_text(renderer, duration_info, panel_x, panel_y, text_color);
-        panel_y += 20;
+        CrystallinePoint duration_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, duration_info, duration_pos, text_color, NULL);
+        info_y += 25.0f;
         
-        // File path (safely truncate if needed)
-        char path_info[512];
-        int path_written = snprintf(path_info, sizeof(path_info), "Output: %s", state->video_path);
-        if (path_written >= (int)sizeof(path_info)) {
-               // Path was truncated, add ellipsis at end
-               path_info[sizeof(path_info) - 4] = '.';
-               path_info[sizeof(path_info) - 3] = '.';
-               path_info[sizeof(path_info) - 2] = '.';
-               path_info[sizeof(path_info) - 1] = '\0';
+        // Settings info arranged using 12-fold symmetry
+        const char* settings[] = {
+            "1280x720 @ 30 FPS",
+            "H.264 Codec"
+        };
+        for (int i = 0; i < 2; i++) {
+            CrystallinePoint setting_pos = crystalline_point_cartesian(panel_center_x, info_y);
+            crystalline_draw_text_centered(renderer, settings[i], setting_pos, text_color, NULL);
+            info_y += 18.0f;
         }
-        draw_text(renderer, path_info, panel_x, panel_y, accent_color);
-        panel_y += 30;
-        
-        // Recording info
-        draw_text(renderer, "Resolution: 1280x720 (720p HD)", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "Frame Rate: 30 FPS", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "Codec: H.264 (libx264)", panel_x, panel_y, text_color);
         
     } else {
-        draw_text(renderer, "STATUS: READY", panel_x, panel_y, success_color);
-        panel_y += 25;
+        // Ready status
+        CrystallinePoint status_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, "STATUS: READY", status_pos, success_color, NULL);
+        info_y += 30.0f;
         
-        draw_text(renderer, "Press START RECORDING to begin", panel_x, panel_y, text_color);
-        panel_y += 30;
+        CrystallinePoint ready_pos = crystalline_point_cartesian(panel_center_x, info_y);
+        crystalline_draw_text_centered(renderer, "Press START to begin", ready_pos, text_color, NULL);
+        info_y += 30.0f;
         
-        // Recording settings
-        draw_text(renderer, "RECORDING SETTINGS:", panel_x, panel_y, accent_color);
-        panel_y += 25;
-        
-        draw_text(renderer, "Resolution: 1280x720 (720p HD)", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "Frame Rate: 30 FPS", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "Codec: H.264 (libx264, CRF 18)", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "Format: MP4", panel_x, panel_y, text_color);
-        panel_y += 30;
-        
-        // Instructions
-        draw_text(renderer, "INSTRUCTIONS:", panel_x, panel_y, accent_color);
-        panel_y += 25;
-        draw_text(renderer, "1. Click START RECORDING button", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "2. Choose output file location", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "3. Recording captures all visualization tabs", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "4. Click STOP RECORDING when done", panel_x, panel_y, text_color);
-        panel_y += 18;
-        draw_text(renderer, "5. Video saved to chosen location", panel_x, panel_y, text_color);
+        // Settings arranged using golden ratio spacing
+        const char* settings[] = {
+            "Resolution: 1280x720",
+            "Frame Rate: 30 FPS",
+            "Codec: H.264",
+            "Format: MP4"
+        };
+        for (int i = 0; i < 4; i++) {
+            CrystallinePoint setting_pos = crystalline_point_cartesian(panel_center_x, info_y);
+            crystalline_draw_text_centered(renderer, settings[i], setting_pos, text_color, NULL);
+            info_y += 18.0f;
+        }
     }
     
-    y += 220;
+    // Draw circular progress ring (around button)
+    crystalline_progress_render(progress_recording, renderer);
     
-    // Start/Stop Recording Button
-    btn_start_stop_recording.bounds = (SDL_Rect){x + w/2 - 150, y, 300, 50};
-    btn_start_stop_recording.enabled = true;
-    btn_start_stop_recording.visible = true;
+    // Draw central record button with pulse animation
+    crystalline_button_render(btn_record, renderer);
     
-    SDL_Color button_color = state->is_recording ? error_color : success_color;
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &btn_start_stop_recording.bounds);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &btn_start_stop_recording.bounds);
+    // Draw requirements panel
+    crystalline_panel_render(panel_requirements, renderer);
     
-    const char* button_text = state->is_recording ? "STOP RECORDING" : "START RECORDING";
-    int text_w = strlen(button_text) * 10;
-    draw_text(renderer, button_text, 
-             btn_start_stop_recording.bounds.x + btn_start_stop_recording.bounds.w/2 - text_w/2,
-             btn_start_stop_recording.bounds.y + 18,
-             (SDL_Color){255, 255, 255, 255});
+    // Draw requirements info
+    float req_center_x = panel_requirements->base.position.x;
+    float req_center_y = panel_requirements->base.position.y;
+    float req_y = req_center_y - 40.0f;
     
-    y += 70;
-    
-    // Requirements panel
-    SDL_Rect req_panel = {x, y, w, 150};
-    SDL_SetRenderDrawColor(renderer, panel_color.r, panel_color.g, panel_color.b, 255);
-    SDL_RenderFillRect(renderer, &req_panel);
-    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
-    SDL_RenderDrawRect(renderer, &req_panel);
-    
-    int req_x = req_panel.x + 20;
-    int req_y = req_panel.y + 20;
-    
-    draw_text(renderer, "REQUIREMENTS:", req_x, req_y, accent_color);
-    req_y += 25;
-    
-    // Check if ffmpeg is available
+    // Check ffmpeg
     static int ffmpeg_checked = 0;
     static bool ffmpeg_available = false;
     
@@ -196,35 +223,46 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     }
     
     if (ffmpeg_available) {
-        draw_text(renderer, "[OK] FFmpeg: Installed", req_x, req_y, success_color);
+        CrystallinePoint ffmpeg_pos = crystalline_point_cartesian(req_center_x, req_y);
+        crystalline_draw_text_centered(renderer, "[OK] FFmpeg: Installed", ffmpeg_pos, success_color, NULL);
     } else {
-        draw_text(renderer, "[X] FFmpeg: Not Found", req_x, req_y, error_color);
-        req_y += 18;
-        draw_text(renderer, "  Install: sudo apt-get install ffmpeg", req_x, req_y, text_color);
+        CrystallinePoint ffmpeg_pos = crystalline_point_cartesian(req_center_x, req_y);
+        crystalline_draw_text_centered(renderer, "[X] FFmpeg: Not Found", ffmpeg_pos, recording_color, NULL);
+        req_y += 20.0f;
+        CrystallinePoint install_pos = crystalline_point_cartesian(req_center_x, req_y);
+        crystalline_draw_text_centered(renderer, "Install: sudo apt-get install ffmpeg", install_pos, text_color, NULL);
     }
-    req_y += 25;
+    req_y += 30.0f;
     
-    draw_text(renderer, "NOTES:", req_x, req_y, accent_color);
-    req_y += 25;
-    draw_text(renderer, "- Recording captures the main visualization area", req_x, req_y, text_color);
-    req_y += 18;
-    draw_text(renderer, "- Switch between tabs while recording to capture different views", req_x, req_y, text_color);
-    req_y += 18;
-    draw_text(renderer, "- Recording may impact performance slightly", req_x, req_y, text_color);
+    // Notes arranged using 12-fold symmetry
+    const char* notes[] = {
+        "Captures main visualization area",
+        "Switch tabs while recording",
+        "May impact performance slightly"
+    };
+    for (int i = 0; i < 3; i++) {
+        CrystallinePoint note_pos = crystalline_point_cartesian(req_center_x, req_y);
+        crystalline_draw_text_centered(renderer, notes[i], note_pos, text_color, NULL);
+        req_y += 18.0f;
+    }
 }
 
 /**
- * Handle video tab mouse click
+ * Handle video tab mouse click with crystalline UI
  */
 void handle_video_tab_click(AppState* state, int x, int y) {
-    if (!state) return;
+    if (!state || !ui_initialized) return;
     
-    // Check if Start/Stop Recording button clicked
-    if (x >= btn_start_stop_recording.bounds.x && 
-        x <= btn_start_stop_recording.bounds.x + btn_start_stop_recording.bounds.w &&
-        y >= btn_start_stop_recording.bounds.y && 
-        y <= btn_start_stop_recording.bounds.y + btn_start_stop_recording.bounds.h) {
-        
+    // Create SDL event for button handling
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
+    // Check button click
+    if (crystalline_button_handle_mouse(btn_record, &event)) {
+        // Button was clicked - toggle recording
         if (state->is_recording) {
             printf("Stopping recording...\n");
             extern void stop_recording(AppState* state);
@@ -235,4 +273,27 @@ void handle_video_tab_click(AppState* state, int x, int y) {
             start_recording(state);
         }
     }
+}
+
+/**
+ * Cleanup video tab resources
+ */
+void cleanup_video_tab(void) {
+    if (btn_record) {
+        crystalline_button_destroy(btn_record);
+        btn_record = NULL;
+    }
+    if (panel_status) {
+        crystalline_panel_destroy(panel_status);
+        panel_status = NULL;
+    }
+    if (panel_requirements) {
+        crystalline_panel_destroy(panel_requirements);
+        panel_requirements = NULL;
+    }
+    if (progress_recording) {
+        crystalline_progress_destroy(progress_recording);
+        progress_recording = NULL;
+    }
+    ui_initialized = false;
 }
