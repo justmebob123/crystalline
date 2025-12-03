@@ -68,17 +68,12 @@ Before making ANY code changes, ALWAYS check these critical implementation files
    - Mouse drag rotation, keyboard controls, auto-rotation
    - Activity visualization (brightness, pulsing, wireframe density)
 
-2. **app/ui/tabs/tab_training.c** - Training tab with rotation controls
-   - Handles mouse drag for 3D rotation
-   - Keyboard arrow keys for rotation
-   - Integrates with sphere visualization
-
-3. **src/geometry/clock_lattice.c** - Babylonian clock structure
+2. **src/geometry/clock_lattice.c** - Babylonian clock structure
    - Ring structure: 12, 60, 60, 100
    - Prime position mapping
    - Clock-to-sphere folding
 
-4. **src/ai/cllm_kissing_spheres.c** - Kissing spheres implementation
+3. **src/ai/cllm_kissing_spheres.c** - Kissing spheres implementation
    - 12 neighbors per point
    - Shared memory structure
    - Icosahedral placement
