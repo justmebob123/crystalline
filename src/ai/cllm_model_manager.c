@@ -1007,3 +1007,57 @@ bool model_manager_prepare(const char* name) {
     
     return true;
 }
+
+bool model_manager_rename(const char* old_name, const char* new_name) {
+    if (!g_manager_initialized || !old_name || !new_name) {
+        fprintf(stderr, "model_manager_rename: Invalid parameters\n");
+        return false;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    // Find the model to rename
+    ManagedModel* managed = find_model_by_name(old_name);
+    if (!managed) {
+        fprintf(stderr, "Model not found: %s\n", old_name);
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Check if new name already exists
+    if (find_model_by_name(new_name)) {
+        fprintf(stderr, "Model '%s' already exists\n", new_name);
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Check if model is currently in use
+    if (managed->read_count > 0 || managed->is_training) {
+        fprintf(stderr, "Cannot rename model '%s' - currently in use\n", old_name);
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Construct new path
+    char new_path[1024];
+    snprintf(new_path, sizeof(new_path), "%s/%s.cllm", 
+             g_model_manager.models_dir, new_name);
+    
+    // Rename file on disk
+    if (rename(managed->path, new_path) != 0) {
+        perror("Failed to rename model file");
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
+    
+    // Update managed model structure
+    strncpy(managed->name, new_name, sizeof(managed->name) - 1);
+    managed->name[sizeof(managed->name) - 1] = '\0';
+    strncpy(managed->path, new_path, sizeof(managed->path) - 1);
+    managed->path[sizeof(managed->path) - 1] = '\0';
+    
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    printf("✓ Model renamed: %s → %s\n", old_name, new_name);
+    return true;
+}

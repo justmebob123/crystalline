@@ -344,6 +344,16 @@ bool model_manager_expand_abacus(uint64_t required_primes);
  */
 bool model_manager_prepare(const char* name);
 
+/**
+ * Rename a model
+ * @param old_name Current model name
+ * @param new_name New model name
+ * @return true on success, false on failure
+ * 
+ * Note: Model must not be in use (read_count == 0 and not training)
+ */
+bool model_manager_rename(const char* old_name, const char* new_name);
+
 #ifdef __cplusplus
 }
 #endif
