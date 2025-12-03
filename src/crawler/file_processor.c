@@ -288,7 +288,8 @@ int process_archive(const char* filepath, char* output_text, size_t output_size)
     int status = system(cmd);
     if (status != 0) {
         snprintf(cmd, sizeof(cmd), "rm -rf '%s'", temp_dir);
-        system(cmd);
+        int cleanup_ret = system(cmd);
+        (void)cleanup_ret; // Ignore cleanup result
         return -1;
     }
     
@@ -304,7 +305,8 @@ int process_archive(const char* filepath, char* output_text, size_t output_size)
     
     // Cleanup
     snprintf(cmd, sizeof(cmd), "rm -rf '%s'", temp_dir);
-    system(cmd);
+    int cleanup_ret = system(cmd);
+    (void)cleanup_ret; // Suppress unused result warning
     
     return strlen(output_text);
 }

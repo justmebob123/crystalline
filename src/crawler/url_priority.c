@@ -7,6 +7,7 @@
 
 #include "url_priority.h"
 #include "../../include/prime_math_custom.h"
+#include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

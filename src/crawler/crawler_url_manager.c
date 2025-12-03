@@ -175,7 +175,10 @@ int crawler_url_manager_add(CrawlerURLManager* manager, const char* url, const c
     if (entry) {
         // Calculate and update priority
         int total_domains = url_priority_get_domain_count(manager->priority);
-        int priority = url_priority_calculate(manager->priority, entry, total_domains);
+        int priority __attribute__((unused)) = url_priority_calculate(manager->priority, entry, total_domains);
+        (void)priority; // Suppress unused variable warning
+        (void)priority; // Suppress unused variable warning
+        (void)priority; // Suppress unused variable warning
         
         // Update priority in database (we'll need to add this function)
         // For now, the priority is calculated on-the-fly during get_next

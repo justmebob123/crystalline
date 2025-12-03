@@ -94,7 +94,7 @@ static void write_url(FILE* fp, const char* url) {
 /**
  * Extract standard href URLs
  */
-static int extract_href_urls(const char* html, const char* base_url, FILE* output) {
+static int extract_href_urls(const char* html, const char* base_url __attribute__((unused)), FILE* output) {
     int count = 0;
     const char* p = html;
     
@@ -152,7 +152,7 @@ static int extract_href_urls(const char* html, const char* base_url, FILE* outpu
 /**
  * Extract onclick URLs
  */
-static int extract_onclick_urls(const char* html, const char* base_url, FILE* output) {
+static int extract_onclick_urls(const char* html, const char* base_url __attribute__((unused)), FILE* output) {
     int count = 0;
     const char* p = html;
     
@@ -196,7 +196,7 @@ static int extract_onclick_urls(const char* html, const char* base_url, FILE* ou
 /**
  * Extract data attribute URLs
  */
-static int extract_data_attr_urls(const char* html, const char* base_url, FILE* output) {
+static int extract_data_attr_urls(const char* html, const char* base_url __attribute__((unused)), FILE* output) {
     int count = 0;
     const char* patterns[] = {"data-href=", "data-url=", "data-link=", NULL};
     
@@ -249,7 +249,7 @@ static int extract_data_attr_urls(const char* html, const char* base_url, FILE* 
 /**
  * Extract meta refresh URLs
  */
-static int extract_meta_refresh_urls(const char* html, const char* base_url, FILE* output) {
+static int extract_meta_refresh_urls(const char* html, const char* base_url __attribute__((unused)), FILE* output) {
     int count = 0;
     const char* p = html;
     

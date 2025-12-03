@@ -42,7 +42,43 @@ int process_image_file(const char* input_path, const char* output_path) {
     
     // Tesseract adds .txt extension
     char temp_txt[2048];
-    snprintf(temp_txt, sizeof(temp_txt), "%s.txt", temp_base);
+    // Truncate temp_base to prevent buffer overflow (max 2043 chars for ".txt")
+    size_t base_len = strlen(temp_base);
+    if (base_len > 2043) {
+        char truncated[2044];
+        strncpy(truncated, temp_base, 2043);
+        truncated[2043] = '\0';
+        snprintf(temp_txt, sizeof(temp_txt), "%s.txt", truncated);
+    } else {
+        // Truncate temp_base to prevent buffer overflow (max 2043 chars for ".txt")
+    size_t base_len = strlen(temp_base);
+    if (base_len > 2043) {
+        char truncated[2044];
+        strncpy(truncated, temp_base, 2043);
+        truncated[2043] = '\0';
+        snprintf(temp_txt, sizeof(temp_txt), "%s.txt", truncated);
+    } else {
+        // Truncate temp_base to prevent buffer overflow (max 2043 chars for ".txt")
+    size_t base_len = strlen(temp_base);
+    if (base_len > 2043) {
+        char truncated[2044];
+        strncpy(truncated, temp_base, 2043);
+        truncated[2043] = '\0';
+        snprintf(temp_txt, sizeof(temp_txt), "%s.txt", truncated);
+    } else {
+        // Truncate temp_base to prevent buffer overflow (max 2043 chars for ".txt")
+    size_t base_len = strlen(temp_base);
+    if (base_len > 2043) {
+        char truncated[2044];
+        strncpy(truncated, temp_base, 2043);
+        truncated[2043] = '\0';
+        snprintf(temp_txt, sizeof(temp_txt), "%s.txt", truncated);
+    } else {
+        snprintf(temp_txt, sizeof(temp_txt), "%s.txt", temp_base);
+    }
+    }
+    }
+    }
     
     // Check if output file was created
     FILE* f = fopen(temp_txt, "r");

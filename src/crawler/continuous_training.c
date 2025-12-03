@@ -47,7 +47,16 @@ typedef struct {
  */
 static int is_file_locked(const char* filepath) {
     char lockpath[2048];
-    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    // Truncate filepath to prevent buffer overflow (max 2042 chars for ".lock")
+    size_t len = strlen(filepath);
+    if (len > 2042) {
+        char truncated[2043];
+        strncpy(truncated, filepath, 2042);
+        truncated[2042] = '\0';
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", truncated);
+    } else {
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    }
     return access(lockpath, F_OK) == 0;
 }
 
@@ -56,7 +65,16 @@ static int is_file_locked(const char* filepath) {
  */
 static int create_lock(const char* filepath) {
     char lockpath[2048];
-    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    // Truncate filepath to prevent buffer overflow (max 2042 chars for ".lock")
+    size_t len = strlen(filepath);
+    if (len > 2042) {
+        char truncated[2043];
+        strncpy(truncated, filepath, 2042);
+        truncated[2042] = '\0';
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", truncated);
+    } else {
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    }
     
     FILE* f = fopen(lockpath, "w");
     if (!f) return -1;
@@ -71,7 +89,16 @@ static int create_lock(const char* filepath) {
  */
 static void remove_lock(const char* filepath) {
     char lockpath[2048];
-    snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    // Truncate filepath to prevent buffer overflow (max 2042 chars for ".lock")
+    size_t len = strlen(filepath);
+    if (len > 2042) {
+        char truncated[2043];
+        strncpy(truncated, filepath, 2042);
+        truncated[2042] = '\0';
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", truncated);
+    } else {
+        snprintf(lockpath, sizeof(lockpath), "%s.lock", filepath);
+    }
     unlink(lockpath);
 }
 
@@ -281,7 +308,12 @@ static void* training_worker_thread(void* arg) {
             if (strstr(entry->d_name, ".tok") == NULL) continue;
             
             char filepath[2048];
-            snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, entry->d_name);
+            // Truncate filename to prevent buffer overflow (max 255 chars)
+            char safe_name[256];
+            strncpy(safe_name, entry->d_name, sizeof(safe_name) - 1);
+            safe_name[sizeof(safe_name) - 1] = '\0';
+            
+            snprintf(filepath, sizeof(filepath), "%s/%s", queue_dir, safe_name);
             
             // Check if locked
             if (is_file_locked(filepath)) {

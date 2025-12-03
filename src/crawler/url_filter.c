@@ -612,6 +612,10 @@ int url_filter_load(URLFilter* filter, const char* file_path) {
             if (end) {
                 *end = '\0';
                 strncpy(section, line + 1, sizeof(section) - 1);
+                section[sizeof(section) - 1] = '\0'; // Ensure null termination
+                section[sizeof(section) - 1] = '\0'; // Ensure null termination
+                section[sizeof(section) - 1] = '\0'; // Ensure null termination
+                section[sizeof(section) - 1] = '\0'; // Ensure null termination
             }
             continue;
         }

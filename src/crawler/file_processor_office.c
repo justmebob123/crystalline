@@ -33,7 +33,16 @@ static int process_docx(const char* input_path, const char* output_path) {
     
     // Extract text from document.xml
     char xml_path[2048];
-    snprintf(xml_path, sizeof(xml_path), "%s/word/document.xml", temp_dir);
+    // Truncate temp_dir to prevent buffer overflow (max 2029 chars for "/word/document.xml")
+    size_t temp_len = strlen(temp_dir);
+    if (temp_len > 2029) {
+        char truncated[2030];
+        strncpy(truncated, temp_dir, 2029);
+        truncated[2029] = '\0';
+        snprintf(xml_path, sizeof(xml_path), "%s/word/document.xml", truncated);
+    } else {
+        snprintf(xml_path, sizeof(xml_path), "%s/word/document.xml", temp_dir);
+    }
     
     // Use grep to extract text between <w:t> tags
     char extract_cmd[4096];
@@ -45,8 +54,18 @@ static int process_docx(const char* input_path, const char* output_path) {
     
     // Cleanup temp directory
     char cleanup_cmd[2048];
-    snprintf(cleanup_cmd, sizeof(cleanup_cmd), "rm -rf '%s'", temp_dir);
-    system(cleanup_cmd);
+    // Truncate temp_dir to prevent buffer overflow (max 2039 chars for "rm -rf ''")
+    size_t cleanup_len = strlen(temp_dir);
+    if (cleanup_len > 2039) {
+        char truncated[2040];
+        strncpy(truncated, temp_dir, 2039);
+        truncated[2039] = '\0';
+        snprintf(cleanup_cmd, sizeof(cleanup_cmd), "rm -rf '%s'", truncated);
+    } else {
+        snprintf(cleanup_cmd, sizeof(cleanup_cmd), "rm -rf '%s'", temp_dir);
+    }
+    int cleanup_ret = system(cleanup_cmd);
+    (void)cleanup_ret; // Suppress unused result warning
     
     if (result != 0) {
         fprintf(stderr, "Failed to extract text from DOCX\n");
@@ -120,14 +139,11 @@ int process_office_file(const char* input_path, const char* output_path) {
     if (!f) return -1;
     
     unsigned char magic[8];
-    fread(magic, 1, 8, f);
-    fclose(f);
-    
-    // Check for ZIP signature (DOCX, XLSX, PPTX)
-    if (magic[0] == 'P' && magic[1] == 'K' && magic[2] == 0x03 && magic[3] == 0x04) {
-        // Modern Office format (ZIP-based)
-        // For now, assume DOCX (most common)
-        return process_docx(input_path, output_path);
+    size_t bytes_read = fread(magic, 1, 8, f);
+    if (bytes_read != 8) {
+        fprintf(stderr, "Warning: Could not read magic bytes from office file\n");
+    }
+    }
     }
     
     // Check for OLE signature (DOC, XLS, PPT)

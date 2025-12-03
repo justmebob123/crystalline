@@ -80,7 +80,11 @@ static int tokenize_file(const char* input_path, const char* output_path) {
         return -1;
     }
     
-    fread(text, 1, size, f);
+    size_t bytes_read = fread(text, 1, size, f);
+    if (bytes_read != (size_t)size) {
+        fprintf(stderr, "Warning: Only read %zu of %ld bytes from %s\n", 
+                bytes_read, size, input_path);
+    }
     text[size] = '\0';
     fclose(f);
     
@@ -169,6 +173,11 @@ void* tokenizer_thread_func(void* arg) {
             char* dot = strrchr(base, '.');
             if (dot) *dot = '\0';
             
+            // Truncate base name to prevent buffer overflow (max 1000 chars)
+            if (strlen(base) > 1000) {
+                base[1000] = '\0';
+            }
+            
             snprintf(output_path, sizeof(output_path), 
                     "%s/%s.tok", queue_dir, base);
             
@@ -180,7 +189,12 @@ void* tokenizer_thread_func(void* arg) {
             
             // Tokenize file
             char input_path[2048];
-            snprintf(input_path, sizeof(input_path), "%s/%s", preprocessed_dir, entry->d_name);
+            // Truncate filename to prevent buffer overflow (max 255 chars)
+            char safe_name[256];
+            strncpy(safe_name, entry->d_name, sizeof(safe_name) - 1);
+            safe_name[sizeof(safe_name) - 1] = '\0';
+            
+            snprintf(input_path, sizeof(input_path), "%s/%s", preprocessed_dir, safe_name);
             
             get_timestamp(timestamp, sizeof(timestamp));
             printf("%s Tokenizing: %s\n", timestamp, entry->d_name);
