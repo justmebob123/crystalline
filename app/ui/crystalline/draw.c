@@ -605,7 +605,8 @@ void crystalline_draw_clock_marker(SDL_Renderer* renderer,
                                   int position, 
                                   float marker_size, 
                                   CrystallineDrawStyle style) {
-    CrystallinePoint pos = crystalline_layout_clock_position(center, base_radius, ring, position);
+    CrystallinePoint pos = crystalline_point_clock(ring, position, base_radius);
+    pos = crystalline_point_add(pos, center);
     crystalline_draw_circle(renderer, pos, marker_size, style);
 }
 
