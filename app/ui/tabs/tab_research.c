@@ -1,18 +1,30 @@
-// app/ui/tabs/tab_research.c - COMPLETE Research Data Browser Tab
+// app/ui/tabs/tab_research_crystalline.c - Research Data Browser Tab (Crystalline UI)
 #include "../../app_common.h"
+#include "../crystalline/elements.h"
+#include "../crystalline/geometry.h"
+#include "../crystalline/layout.h"
+#include "../crystalline/draw.h"
+#include "../crystalline/color.h"
 #include "../../input_manager.h"
-#include "../../text_input.h"
-#include "../../ui_layout.h"
 #include "../model_selector.h"
 #include "../../../include/cllm_model_manager.h"
+#include <SDL2/SDL_ttf.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
+
+extern TTF_Font* get_global_font(void);
+extern InputManager* g_input_manager;
 
 #ifndef DT_REG
 #define DT_REG 8
 #endif
 
+#define SIDEBAR_WIDTH 200
+#define SUBMENU_HEIGHT 40
+#define PADDING 10
+#define WINDOW_WIDTH 1600
+#define WINDOW_HEIGHT 900
 #define MAX_FILES 200
 #define MAX_FILENAME_LENGTH 256
 #define MAX_CONTENT_LENGTH 100000
@@ -32,46 +44,51 @@ typedef struct {
     char file_type[32];
 } ResearchFile;
 
-static ResearchFile research_files[MAX_FILES];
-static int file_count = 0;
-static int selected_file = -1;
+// Research state
+typedef struct {
+    ResearchFile files[MAX_FILES];
+    int file_count;
+    int selected_file;
+    int file_list_scroll;
+    int content_scroll;
+    SortMode sort_mode;
+    bool sort_ascending;
+    char current_directory[512];
+    char search_query[128];
+    char file_content[MAX_CONTENT_LENGTH];
+    ModelSelector* model_selector;
+    char selected_model_name[256];
+} ResearchState;
 
-// Model selector
-static ModelSelector* research_model_selector = NULL;
+static ResearchState research_state = {
+    .file_count = 0,
+    .selected_file = -1,
+    .file_list_scroll = 0,
+    .content_scroll = 0,
+    .sort_mode = SORT_NAME,
+    .sort_ascending = true,
+    .current_directory = "docs/research",
+    .search_query = "",
+    .model_selector = NULL,
+    .selected_model_name = ""
+};
 
-// Selected model name (NOT loaded until analysis starts)
-static char research_selected_model_name[256] = {0};
+// Crystalline UI elements
+static CrystallinePanel* panel_files = NULL;
+static CrystallinePanel* panel_viewer = NULL;
+static CrystallinePanel* panel_controls = NULL;
+static CrystallineList* list_files = NULL;
+static CrystallineInput* input_search = NULL;
+static CrystallineButton* btn_scan = NULL;
+static CrystallineButton* btn_refresh = NULL;
+static CrystallineButton* btn_up = NULL;
+static CrystallineButton* btn_sort_name = NULL;
+static CrystallineButton* btn_sort_size = NULL;
+static CrystallineButton* btn_sort_date = NULL;
+static CrystallineButton* btn_sort_type = NULL;
+static bool ui_initialized = false;
 
-// Model selector callback for research
-static void on_research_model_selected(const char* model_name, void* user_data) {
-    AppState* state = (AppState*)user_data;
-    if (!state || !model_name) return;
-    
-    // CRITICAL FIX: Do NOT load model here - only store the name
-    // Models should only be loaded when analysis actually starts
-    // This prevents massive memory consumption when just browsing models
-    
-    printf("Research tab: Model '%s' selected (not loaded yet)\n", model_name);
-    
-    // Store selected model name
-    strncpy(research_selected_model_name, model_name, sizeof(research_selected_model_name) - 1);
-    research_selected_model_name[sizeof(research_selected_model_name) - 1] = '\0';
-    
-    // Do NOT call model_manager_acquire_read() here
-    // Model will be loaded on-demand when analysis is requested
-}
-static char file_content[MAX_CONTENT_LENGTH];
-static int content_scroll = 0;
-static int file_list_scroll = 0;
-static SortMode sort_mode = SORT_NAME;
-static bool sort_ascending = true;
-static char current_directory[512] = "docs/research";
-static char search_query[128] = "";
-
-// Text input for search
-static TextInput search_input;
-static bool search_input_initialized = false;
-
+// Helper functions
 static const char* get_file_type(const char* filename) {
     const char* ext = strrchr(filename, '.');
     if (!ext) return "Unknown";
@@ -93,7 +110,7 @@ static int compare_files(const void* a, const void* b) {
     ResearchFile* f2 = (ResearchFile*)b;
     
     int result = 0;
-    switch (sort_mode) {
+    switch (research_state.sort_mode) {
         case SORT_NAME:
             result = strcmp(f1->filename, f2->filename);
             break;
@@ -108,11 +125,11 @@ static int compare_files(const void* a, const void* b) {
             break;
     }
     
-    return sort_ascending ? result : -result;
+    return research_state.sort_ascending ? result : -result;
 }
 
 static void scan_research_directory(const char* dir_path) {
-    file_count = 0;
+    research_state.file_count = 0;
     DIR* dir = opendir(dir_path);
     if (!dir) {
         printf("Could not open directory: %s\n", dir_path);
@@ -120,7 +137,7 @@ static void scan_research_directory(const char* dir_path) {
     }
     
     struct dirent* entry;
-    while ((entry = readdir(dir)) != NULL && file_count < MAX_FILES) {
+    while ((entry = readdir(dir)) != NULL && research_state.file_count < MAX_FILES) {
         if (entry->d_name[0] == '.') continue;
         
         char full_path[1024];
@@ -129,38 +146,39 @@ static void scan_research_directory(const char* dir_path) {
         struct stat st;
         if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode)) {
             // Apply search filter
-            if (strlen(search_query) > 0) {
-                if (strstr(entry->d_name, search_query) == NULL) continue;
+            if (strlen(research_state.search_query) > 0) {
+                if (strstr(entry->d_name, research_state.search_query) == NULL) continue;
             }
             
-            ResearchFile* file = &research_files[file_count];
+            ResearchFile* file = &research_state.files[research_state.file_count];
             snprintf(file->filename, MAX_FILENAME_LENGTH, "%s", entry->d_name);
             snprintf(file->full_path, sizeof(file->full_path), "%s", full_path);
             file->file_size = st.st_size;
             file->modified_time = st.st_mtime;
             snprintf(file->file_type, sizeof(file->file_type), "%s", get_file_type(entry->d_name));
-            file_count++;
+            research_state.file_count++;
         }
     }
     closedir(dir);
     
     // Sort files
-    qsort(research_files, file_count, sizeof(ResearchFile), compare_files);
+    qsort(research_state.files, research_state.file_count, sizeof(ResearchFile), compare_files);
     
-    printf("Found %d research files in %s\n", file_count, dir_path);
+    printf("Found %d research files in %s\n", research_state.file_count, dir_path);
 }
 
 static void load_file_content(const char* filepath) {
     FILE* f = fopen(filepath, "r");
     if (!f) {
-        snprintf(file_content, sizeof(file_content), "Error: Could not open file\n%s", filepath);
+        snprintf(research_state.file_content, sizeof(research_state.file_content), 
+                "Error: Could not open file\n%s", filepath);
         return;
     }
     
-    size_t bytes_read = fread(file_content, 1, MAX_CONTENT_LENGTH - 1, f);
-    file_content[bytes_read] = '\0';
+    size_t bytes_read = fread(research_state.file_content, 1, MAX_CONTENT_LENGTH - 1, f);
+    research_state.file_content[bytes_read] = '\0';
     fclose(f);
-    content_scroll = 0;
+    research_state.content_scroll = 0;
     
     printf("Loaded file: %s (%zu bytes)\n", filepath, bytes_read);
 }
@@ -184,201 +202,232 @@ static const char* format_time(time_t time) {
     return buffer;
 }
 
+// Model selector callback
+static void on_research_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    printf("Research tab: Model '%s' selected (not loaded yet)\n", model_name);
+    
+    strncpy(research_state.selected_model_name, model_name, sizeof(research_state.selected_model_name) - 1);
+    research_state.selected_model_name[sizeof(research_state.selected_model_name) - 1] = '\0';
+}
+
 void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
-    if (!renderer || !state) return;
+    (void)state;
     
-    // Calculate panel position (RENDER_OFFSET_X + RENDER_WIDTH)
-    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
-    int panel_y = RENDER_OFFSET_Y;
+    int content_x = SIDEBAR_WIDTH;
+    int content_y = SUBMENU_HEIGHT;
+    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
+    int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
     
-    // Initialize search input once (using correct panel_x position)
-    if (!search_input_initialized) {
-        text_input_init(&search_input, "Search:", panel_x + 10, 150, 260, 25);
-        text_input_set_text(&search_input, search_query);
-        search_input_initialized = true;
-    }
-    int panel_width = CONTROL_PANEL_WIDTH;
-    
-    // Initialize model selector on first draw
-    if (!research_model_selector) {
-        research_model_selector = model_selector_create(panel_x + 10, panel_y + 10, panel_width - 20, 30);
-        model_selector_update_list(research_model_selector);
+    // Initialize UI elements if needed
+    if (!ui_initialized) {
+        // Golden ratio division: 61.8% viewer, 38.2% controls
+        float golden_ratio = 1.618f;
+        int viewer_width = (int)(content_width / golden_ratio);
+        int controls_width = content_width - viewer_width - PADDING;
         
-        // Set callback to load model when selected
-        model_selector_set_callback(research_model_selector, on_research_model_selected, state);
-    }
-    
-    SDL_Color text_color = {220, 220, 220, 255};
-    SDL_Color bg_color = {40, 40, 50, 255};
-    SDL_Color button_color = {60, 60, 80, 255};
-    SDL_Color active_color = {100, 150, 200, 255};
-    SDL_Color header_color = {180, 180, 200, 255};
-    
-    // Draw panel background
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    SDL_Rect panel_rect = {panel_x, panel_y, panel_width, WINDOW_HEIGHT - panel_y};
-    SDL_RenderFillRect(renderer, &panel_rect);
-    
-    int y = panel_y + 10;
-    
-    // === SECTION 0: MODEL SELECTOR ===
-    draw_text(renderer, "MODEL", panel_x + 10, y, text_color);
-    y += 20;
-    
-    // Render model selector
-    if (research_model_selector) {
-        model_selector_render(research_model_selector, renderer);
-    }
-    y += 40; // Space for model selector
-    
-    // === SECTION 1: HEADER ===
-    draw_text(renderer, "RESEARCH BROWSER", panel_x + 10, y, text_color);
-    y += 20;
-    
-    // Current directory (truncated)
-    char dir_display[40];
-    snprintf(dir_display, sizeof(dir_display), "%.35s", current_directory);
-    draw_text(renderer, dir_display, panel_x + 10, y, (SDL_Color){150, 150, 150, 255});
-    y += 20;
-    
-    // === SECTION 2: CONTROLS ===
-    // Scan Button
-    SDL_Rect scan_btn = {panel_x + 10, y, 80, 22};
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &scan_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &scan_btn);
-    draw_text(renderer, "Scan", scan_btn.x + 24, scan_btn.y + 5, text_color);
-    
-    // Refresh Button
-    SDL_Rect refresh_btn = {panel_x + 100, y, 80, 22};
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &refresh_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &refresh_btn);
-    draw_text(renderer, "Refresh", refresh_btn.x + 16, refresh_btn.y + 5, text_color);
-    
-    // Up Directory Button
-    SDL_Rect up_btn = {panel_x + 190, y, 80, 22};
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &up_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &up_btn);
-    draw_text(renderer, "Up", up_btn.x + 28, up_btn.y + 5, text_color);
-    y += 28;
-    
-    // Search input (using text_input component)
-    text_input_render(&search_input, renderer, get_global_font());
-    y += 50;  // Skip past the search input
-    
-    // === SECTION 3: SORT CONTROLS ===
-    draw_text(renderer, "Sort by:", panel_x + 10, y, text_color);
-    y += 16;
-    
-    const char* sort_labels[] = {"Name", "Size", "Date", "Type"};
-    int btn_width = (panel_width - 30) / 4;
-    for (int i = 0; i < 4; i++) {
-        SDL_Rect sort_btn = {panel_x + 10 + i * (btn_width + 3), y, btn_width, 20};
-        SDL_Color btn_color = (sort_mode == (SortMode)i) ? active_color : button_color;
-        SDL_SetRenderDrawColor(renderer, btn_color.r, btn_color.g, btn_color.b, 255);
-        SDL_RenderFillRect(renderer, &sort_btn);
-        SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-        SDL_RenderDrawRect(renderer, &sort_btn);
-        draw_text(renderer, sort_labels[i], sort_btn.x + 12, sort_btn.y + 4, text_color);
-    }
-    y += 26;
-    
-    // File count
-    char count_text[64];
-    snprintf(count_text, sizeof(count_text), "Files: %d", file_count);
-    draw_text(renderer, count_text, panel_x + 10, y, text_color);
-    y += 20;
-    
-    // === SECTION 4: FILE LIST ===
-    int list_height = WINDOW_HEIGHT - y - 20;
-    SDL_Rect list_rect = {panel_x + 10, y, panel_width - 20, list_height};
-    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
-    SDL_RenderFillRect(renderer, &list_rect);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &list_rect);
-    
-    // Column headers
-    int header_y = list_rect.y + 3;
-    draw_text(renderer, "Name", list_rect.x + 5, header_y, header_color);
-    draw_text(renderer, "Size", list_rect.x + 180, header_y, header_color);
-    draw_text(renderer, "Type", list_rect.x + 230, header_y, header_color);
-    
-    // Draw files
-    int file_y = list_rect.y + 20;
-    int max_visible = (list_height - 25) / 14;
-    for (int i = file_list_scroll; i < file_count && i < file_list_scroll + max_visible; i++) {
-        SDL_Color file_color = (i == selected_file) ? 
-            (SDL_Color){100, 200, 255, 255} : text_color;
+        // Create viewer panel (left, golden ratio)
+        panel_viewer = crystalline_panel_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            content_x + viewer_width / 2.0f,
+            content_y + content_height / 2.0f,
+            (float)viewer_width - 20.0f,
+            (float)content_height - 40.0f,
+            "FILE VIEWER",
+            NULL
+        );
         
-        // Filename (truncated)
-        char display_name[28];
-        snprintf(display_name, sizeof(display_name), "%.24s", research_files[i].filename);
-        draw_text(renderer, display_name, list_rect.x + 5, file_y, file_color);
+        // Create controls panel (right)
+        int controls_x = content_x + viewer_width + PADDING;
+        panel_controls = crystalline_panel_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            controls_x + controls_width / 2.0f,
+            content_y + content_height / 2.0f,
+            (float)controls_width - 20.0f,
+            (float)content_height - 40.0f,
+            "CONTROLS",
+            NULL
+        );
         
-        // Size
-        draw_text(renderer, format_file_size(research_files[i].file_size), 
-                 list_rect.x + 180, file_y, file_color);
+        // Create file list panel within controls
+        int list_y_start = content_y + 200;
+        int list_height = content_height - 220;
+        panel_files = crystalline_panel_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            controls_x + controls_width / 2.0f,
+            list_y_start + list_height / 2.0f,
+            (float)controls_width - 40.0f,
+            (float)list_height - 20.0f,
+            "FILES",
+            NULL
+        );
         
-        // Type
-        draw_text(renderer, research_files[i].file_type, list_rect.x + 230, file_y, file_color);
+        // Create file list
+        list_files = crystalline_list_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            controls_x + 20.0f,
+            list_y_start + 40.0f,
+            (float)controls_width - 60.0f,
+            (float)list_height - 60.0f,
+            NULL
+        );
         
-        file_y += 14;
+        // Create search input
+        input_search = crystalline_input_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            controls_x + controls_width / 2.0f,
+            content_y + 60.0f,
+            (float)controls_width - 60.0f,
+            30.0f,
+            "Search files...",
+            get_global_font()
+        );
+        
+        // Create control buttons (3 in a row)
+        float btn_y = content_y + 110.0f;
+        float btn_spacing = (controls_width - 60.0f) / 3.0f;
+        float btn_start_x = controls_x + 30.0f;
+        
+        btn_scan = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing * 0.5f, btn_y,
+            35.0f, 0.0f, "SCAN", NULL
+        );
+        
+        btn_refresh = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing * 1.5f, btn_y,
+            35.0f, 0.0f, "REFRESH", NULL
+        );
+        
+        btn_up = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing * 2.5f, btn_y,
+            35.0f, 0.0f, "UP", NULL
+        );
+        
+        // Create sort buttons (4 in a row)
+        float sort_y = content_y + 160.0f;
+        float sort_spacing = (controls_width - 60.0f) / 4.0f;
+        
+        btn_sort_name = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + sort_spacing * 0.5f, sort_y,
+            30.0f, 0.0f, "NAME", NULL
+        );
+        
+        btn_sort_size = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + sort_spacing * 1.5f, sort_y,
+            30.0f, 0.0f, "SIZE", NULL
+        );
+        
+        btn_sort_date = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + sort_spacing * 2.5f, sort_y,
+            30.0f, 0.0f, "DATE", NULL
+        );
+        
+        btn_sort_type = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + sort_spacing * 3.5f, sort_y,
+            30.0f, 0.0f, "TYPE", NULL
+        );
+        
+        // Initialize model selector
+        research_state.model_selector = model_selector_create(
+            controls_x + 20, content_y + 10, controls_width - 40, 30
+        );
+        model_selector_update_list(research_state.model_selector);
+        model_selector_set_callback(research_state.model_selector, on_research_model_selected, state);
+        
+        // Initial scan
+        scan_research_directory(research_state.current_directory);
+        
+        ui_initialized = true;
     }
     
-    // Scroll indicator
-    if (file_count > max_visible) {
-        int scroll_h = (max_visible * list_height) / file_count;
-        int scroll_y = list_rect.y + 20 + (file_list_scroll * (list_height - 20)) / file_count;
-        SDL_Rect scroll_bar = {list_rect.x + list_rect.w - 8, scroll_y, 6, scroll_h};
-        SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 200);
-        SDL_RenderFillRect(renderer, &scroll_bar);
+    // Colors
+    SDL_Color text_color = crystalline_color_from_frequency(432.0f);
+    SDL_Color accent_color = crystalline_color_from_frequency(639.0f);
+    SDL_Color content_color = crystalline_color_from_frequency(528.0f);
+    
+    // Draw panels
+    crystalline_panel_render(panel_viewer, renderer);
+    crystalline_panel_render(panel_controls, renderer);
+    crystalline_panel_render(panel_files, renderer);
+    
+    // Update file list
+    crystalline_list_clear(list_files);
+    for (int i = 0; i < research_state.file_count; i++) {
+        char display[256];
+        snprintf(display, sizeof(display), "%.30s | %s | %s",
+                research_state.files[i].filename,
+                format_file_size(research_state.files[i].file_size),
+                research_state.files[i].file_type);
+        crystalline_list_add_item(list_files, display);
     }
     
-    // === VISUALIZATION AREA (FILE VIEWER) ===
-    SDL_SetRenderDrawColor(renderer, 20, 20, 30, 255);
-    SDL_Rect viz_rect = {0, 60, RENDER_WIDTH, WINDOW_HEIGHT - 60};
-    SDL_RenderFillRect(renderer, &viz_rect);
+    // Set selected item
+    if (research_state.selected_file >= 0 && research_state.selected_file < research_state.file_count) {
+        crystalline_list_set_selected(list_files, research_state.selected_file);
+    }
     
-    if (selected_file >= 0 && selected_file < file_count) {
+    // Draw file list
+    crystalline_list_render(list_files, renderer);
+    
+    // Draw search input
+    crystalline_input_render(input_search, renderer);
+    
+    // Draw buttons
+    crystalline_button_render(btn_scan, renderer);
+    crystalline_button_render(btn_refresh, renderer);
+    crystalline_button_render(btn_up, renderer);
+    crystalline_button_render(btn_sort_name, renderer);
+    crystalline_button_render(btn_sort_size, renderer);
+    crystalline_button_render(btn_sort_date, renderer);
+    crystalline_button_render(btn_sort_type, renderer);
+    
+    // Draw model selector
+    if (research_state.model_selector) {
+        model_selector_render(research_state.model_selector, renderer);
+    }
+    
+    // Draw file viewer content
+    if (research_state.selected_file >= 0 && research_state.selected_file < research_state.file_count) {
+        int viewer_x = content_x + 20;
+        int viewer_y = content_y + 60;
+        int viewer_width = (int)(content_width / 1.618f) - 40;
+        
         // File header
-        draw_text(renderer, research_files[selected_file].filename, 20, 80, text_color);
+        ResearchFile* file = &research_state.files[research_state.selected_file];
+        CrystallinePoint header_pos = crystalline_point_cartesian(viewer_x + 10.0f, viewer_y);
+        crystalline_draw_text(renderer, file->filename, header_pos, text_color, NULL);
         
-        char info[128];
-        snprintf(info, sizeof(info), "%s | %s | Modified: %s", 
-                research_files[selected_file].file_type,
-                format_file_size(research_files[selected_file].file_size),
-                format_time(research_files[selected_file].modified_time));
-        draw_text(renderer, info, 20, 100, (SDL_Color){150, 150, 150, 255});
-        
-        // Separator line
-        SDL_SetRenderDrawColor(renderer, 80, 80, 100, 255);
-        SDL_RenderDrawLine(renderer, 20, 120, RENDER_WIDTH - 20, 120);
+        // File info
+        char info[256];
+        snprintf(info, sizeof(info), "%s | %s | %s",
+                file->file_type,
+                format_file_size(file->file_size),
+                format_time(file->modified_time));
+        CrystallinePoint info_pos = crystalline_point_cartesian(viewer_x + 10.0f, viewer_y + 20.0f);
+        crystalline_draw_text(renderer, info, info_pos, accent_color, NULL);
         
         // File content
-        if (strlen(file_content) > 0) {
-            int content_y = 130;
+        if (strlen(research_state.file_content) > 0) {
+            int line_y = viewer_y + 50;
             int line_height = 14;
-            int max_lines = (WINDOW_HEIGHT - 150) / line_height;
+            int max_lines = (content_height - 110) / line_height;
             
-            // Count total lines
-            int total_lines = 1;
-            for (size_t i = 0; i < strlen(file_content); i++) {
-                if (file_content[i] == '\n') total_lines++;
-            }
-            
-            // Draw visible lines
-            const char* ptr = file_content;
+            const char* ptr = research_state.file_content;
             int current_line = 0;
             int lines_drawn = 0;
             
             while (*ptr && lines_drawn < max_lines) {
                 // Skip lines before scroll offset
-                if (current_line < content_scroll) {
+                if (current_line < research_state.content_scroll) {
                     while (*ptr && *ptr != '\n') ptr++;
                     if (*ptr == '\n') ptr++;
                     current_line++;
@@ -394,62 +443,140 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
                 if (*ptr == '\n') ptr++;
                 line[len] = '\0';
                 
-                // Line number
-                char line_num[16];
-                snprintf(line_num, sizeof(line_num), "%3d", current_line + 1);
-                draw_text(renderer, line_num, 20, content_y, (SDL_Color){100, 100, 120, 255});
+                CrystallinePoint line_pos = crystalline_point_cartesian(viewer_x + 10.0f, line_y);
+                crystalline_draw_text(renderer, line, line_pos, content_color, NULL);
                 
-                // Line content
-                draw_text(renderer, line, 50, content_y, text_color);
-                
-                content_y += line_height;
+                line_y += line_height;
                 current_line++;
                 lines_drawn++;
             }
-            
-            // Scroll indicator
-            if (total_lines > max_lines) {
-                char scroll_info[64];
-                snprintf(scroll_info, sizeof(scroll_info), "Lines %d-%d of %d", 
-                        content_scroll + 1, 
-                        content_scroll + lines_drawn, 
-                        total_lines);
-                draw_text(renderer, scroll_info, RENDER_WIDTH - 150, WINDOW_HEIGHT - 30, 
-                         (SDL_Color){150, 150, 150, 255});
-            }
-        } else {
-            draw_text(renderer, "Empty file or loading...", 50, 150, 
-                     (SDL_Color){150, 150, 150, 255});
         }
     } else {
-        // No file selected
-        draw_text(renderer, "Select a file to view its contents", 
-                 RENDER_WIDTH / 2 - 140, WINDOW_HEIGHT / 2, text_color);
-        draw_text(renderer, "Use the file list on the right ->", 
-                 RENDER_WIDTH / 2 - 120, WINDOW_HEIGHT / 2 + 30, 
-                 (SDL_Color){150, 150, 150, 255});
+        // No file selected message
+        int viewer_x = content_x + 20;
+        int viewer_y = content_y + content_height / 2;
+        CrystallinePoint msg_pos = crystalline_point_cartesian(viewer_x + 100.0f, viewer_y);
+        crystalline_draw_text(renderer, "Select a file to view", msg_pos, text_color, NULL);
     }
     
-    // Render all inputs through InputManager
-    extern InputManager* g_input_manager;
+    // Draw file count
+    char count_text[64];
+    snprintf(count_text, sizeof(count_text), "Files: %d", research_state.file_count);
+    int controls_x = content_x + (int)(content_width / 1.618f) + PADDING;
+    CrystallinePoint count_pos = crystalline_point_cartesian(controls_x + 20.0f, content_y + content_height - 20.0f);
+    crystalline_draw_text(renderer, count_text, count_pos, accent_color, NULL);
+    
+    // Render inputs through InputManager
     if (g_input_manager) {
         input_manager_render(g_input_manager, renderer, get_global_font(), TAB_RESEARCH);
     }
 }
 
-// Handle SDL events for search input
+void handle_research_tab_click(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
+    // Check model selector
+    if (research_state.model_selector && model_selector_handle_click(research_state.model_selector, x, y)) {
+        return;
+    }
+    
+    // Check file list
+    if (crystalline_list_handle_mouse(list_files, &event)) {
+        int selected = crystalline_list_get_selected(list_files);
+        if (selected >= 0 && selected < research_state.file_count) {
+            research_state.selected_file = selected;
+            load_file_content(research_state.files[selected].full_path);
+        }
+        return;
+    }
+    
+    // Check search input
+    if (crystalline_input_handle_mouse(input_search, &event)) {
+        return;
+    }
+    
+    // Check buttons
+    if (crystalline_button_handle_mouse(btn_scan, &event)) {
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+    
+    if (crystalline_button_handle_mouse(btn_refresh, &event)) {
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+    
+    if (crystalline_button_handle_mouse(btn_up, &event)) {
+        char* last_slash = strrchr(research_state.current_directory, '/');
+        if (last_slash && last_slash != research_state.current_directory) {
+            *last_slash = '\0';
+            scan_research_directory(research_state.current_directory);
+        }
+        return;
+    }
+    
+    // Check sort buttons
+    if (crystalline_button_handle_mouse(btn_sort_name, &event)) {
+        if (research_state.sort_mode == SORT_NAME) {
+            research_state.sort_ascending = !research_state.sort_ascending;
+        } else {
+            research_state.sort_mode = SORT_NAME;
+            research_state.sort_ascending = true;
+        }
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+    
+    if (crystalline_button_handle_mouse(btn_sort_size, &event)) {
+        if (research_state.sort_mode == SORT_SIZE) {
+            research_state.sort_ascending = !research_state.sort_ascending;
+        } else {
+            research_state.sort_mode = SORT_SIZE;
+            research_state.sort_ascending = true;
+        }
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+    
+    if (crystalline_button_handle_mouse(btn_sort_date, &event)) {
+        if (research_state.sort_mode == SORT_DATE) {
+            research_state.sort_ascending = !research_state.sort_ascending;
+        } else {
+            research_state.sort_mode = SORT_DATE;
+            research_state.sort_ascending = true;
+        }
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+    
+    if (crystalline_button_handle_mouse(btn_sort_type, &event)) {
+        if (research_state.sort_mode == SORT_TYPE) {
+            research_state.sort_ascending = !research_state.sort_ascending;
+        } else {
+            research_state.sort_mode = SORT_TYPE;
+            research_state.sort_ascending = true;
+        }
+        scan_research_directory(research_state.current_directory);
+        return;
+    }
+}
+
 bool handle_research_tab_event(AppState* state, SDL_Event* event) {
-    if (!state || !event) return false;
+    if (!state || !event || !ui_initialized) return false;
     
     // Handle search input events
-    if (text_input_handle_event(&search_input, event)) {
-        // Update search query when input changes
-        if (!text_input_is_active(&search_input)) {
-            const char* query = text_input_get_text(&search_input);
-            strncpy(search_query, query, sizeof(search_query) - 1);
-            search_query[sizeof(search_query) - 1] = '\0';
-            // Rescan directory with new search query
-            scan_research_directory(current_directory);
+    if (crystalline_input_handle_keyboard(input_search, event)) {
+        const char* query = crystalline_input_get_text(input_search);
+        if (query) {
+            strncpy(research_state.search_query, query, sizeof(research_state.search_query) - 1);
+            research_state.search_query[sizeof(research_state.search_query) - 1] = '\0';
+            scan_research_directory(research_state.current_directory);
         }
         return true;
     }
@@ -457,144 +584,65 @@ bool handle_research_tab_event(AppState* state, SDL_Event* event) {
     return false;
 }
 
-void handle_research_tab_click(AppState* state, int x, int y) {
-    if (!state) return;
-    
-    // Check model selector click first
-    if (research_model_selector && model_selector_handle_click(research_model_selector, x, y)) {
-        return;
-    }
-    
-    int panel_x = RENDER_WIDTH;
-    
-    // Calculate Y positions to match draw function layout
-    // Draw function: panel_y = RENDER_OFFSET_Y, y = panel_y + 10
-    // Then: +20 (MODEL text) +40 (selector) +20 (RESEARCH BROWSER) +20 (directory) = 150
-    int buttons_y = RENDER_OFFSET_Y + 10 + 20 + 40 + 20 + 20;  // = 150
-    
-    // Scan button
-    SDL_Rect scan_btn = {panel_x + 10, buttons_y, 80, 22};
-    if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
-        y >= scan_btn.y && y <= scan_btn.y + scan_btn.h) {
-        scan_research_directory(current_directory);
-        return;
-    }
-    
-    // Refresh button
-    SDL_Rect refresh_btn = {panel_x + 100, buttons_y, 80, 22};
-    if (x >= refresh_btn.x && x <= refresh_btn.x + refresh_btn.w &&
-        y >= refresh_btn.y && y <= refresh_btn.y + refresh_btn.h) {
-        scan_research_directory(current_directory);
-        return;
-    }
-    
-    // Up directory button
-    SDL_Rect up_btn = {panel_x + 190, buttons_y, 80, 22};
-    if (x >= up_btn.x && x <= up_btn.x + up_btn.w &&
-        y >= up_btn.y && y <= up_btn.y + up_btn.h) {
-        // Go up one directory
-        char* last_slash = strrchr(current_directory, '/');
-        if (last_slash && last_slash != current_directory) {
-            *last_slash = '\0';
-            scan_research_directory(current_directory);
-        }
-        return;
-    }
-    
-    // Sort buttons
-    // After buttons: +28, then +50 (search input), +16, +26 = 270
-    int sort_y = buttons_y + 28 + 50 + 16 + 26;  // = 270
-    int btn_width = (CONTROL_PANEL_WIDTH - 30) / 4;
-    for (int i = 0; i < 4; i++) {
-        SDL_Rect sort_btn = {panel_x + 10 + i * (btn_width + 3), sort_y, btn_width, 20};
-        if (x >= sort_btn.x && x <= sort_btn.x + sort_btn.w &&
-            y >= sort_btn.y && y <= sort_btn.y + sort_btn.h) {
-            if (sort_mode == (SortMode)i) {
-                sort_ascending = !sort_ascending;
-            } else {
-                sort_mode = (SortMode)i;
-                sort_ascending = true;
-            }
-            scan_research_directory(current_directory);
-            return;
-        }
-    }
-    
-    // File list clicks
-    // After sort buttons: +20 = 290
-    int list_y = sort_y + 20;  // = 290
-    int list_height = WINDOW_HEIGHT - list_y - 20;
-    SDL_Rect list_rect = {panel_x + 10, list_y, CONTROL_PANEL_WIDTH - 20, list_height};
-    
-    if (x >= list_rect.x && x <= list_rect.x + list_rect.w &&
-        y >= list_rect.y + 20 && y <= list_rect.y + list_rect.h) {
-        int file_index = file_list_scroll + (y - list_rect.y - 20) / 14;
-        if (file_index >= 0 && file_index < file_count) {
-            selected_file = file_index;
-            load_file_content(research_files[file_index].full_path);
-        }
-        return;
-    }
-}
-
 void handle_research_tab_scroll(AppState* state, int scroll_y) {
     (void)state;
     
-    if (selected_file >= 0) {
+    if (!ui_initialized) return;
+    
+    if (research_state.selected_file >= 0) {
         // Scroll file content
-        content_scroll -= scroll_y;
-        if (content_scroll < 0) content_scroll = 0;
+        research_state.content_scroll -= scroll_y;
+        if (research_state.content_scroll < 0) research_state.content_scroll = 0;
         
         // Count total lines
         int total_lines = 1;
-        for (size_t i = 0; i < strlen(file_content); i++) {
-            if (file_content[i] == '\n') total_lines++;
+        for (size_t i = 0; i < strlen(research_state.file_content); i++) {
+            if (research_state.file_content[i] == '\n') total_lines++;
         }
         
         int max_lines = (WINDOW_HEIGHT - 150) / 14;
         int max_scroll = total_lines - max_lines;
         if (max_scroll < 0) max_scroll = 0;
-        if (content_scroll > max_scroll) content_scroll = max_scroll;
-    } else {
-        // Scroll file list
-        file_list_scroll -= scroll_y;
-        if (file_list_scroll < 0) file_list_scroll = 0;
-        
-        int list_height = WINDOW_HEIGHT - 196 - 20;
-        int max_visible = (list_height - 25) / 14;
-        int max_scroll = file_count - max_visible;
-        if (max_scroll < 0) max_scroll = 0;
-        if (file_list_scroll > max_scroll) file_list_scroll = max_scroll;
+        if (research_state.content_scroll > max_scroll) research_state.content_scroll = max_scroll;
     }
 }
 
 void handle_research_tab_text_input(AppState* state, const char* text) {
-    if (!state || !text || !search_input_initialized) return;
-    
-    if (search_input.active) {
-        size_t len = strlen(search_input.text);
-        if (len < MAX_INPUT_LENGTH - 1) {
-            strncat(search_input.text, text, MAX_INPUT_LENGTH - len - 1);
-            search_input.cursor_pos = strlen(search_input.text);
-            strncpy(search_query, search_input.text, sizeof(search_query) - 1);
-            search_query[sizeof(search_query) - 1] = '\0';
-        }
-    }
+    (void)state;
+    (void)text;
+    // Handled by crystalline input
 }
 
 void handle_research_tab_keydown(AppState* state, SDL_Keycode key) {
-    if (!state || !search_input_initialized) return;
-    
-    if (search_input.active) {
-        if (key == SDLK_BACKSPACE && search_input.cursor_pos > 0) {
-            search_input.text[--search_input.cursor_pos] = '\0';
-            strncpy(search_query, search_input.text, sizeof(search_query) - 1);
-            search_query[sizeof(search_query) - 1] = '\0';
-        } else if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
-            text_input_deactivate(&search_input);
-            SDL_StopTextInput();
-            // Trigger search
-            scan_research_directory(current_directory);
-        }
+    (void)state;
+    (void)key;
+    // Handled by crystalline input
+}
+
+void cleanup_research_tab(void) {
+    if (research_state.model_selector) {
+        model_selector_destroy(research_state.model_selector);
+        research_state.model_selector = NULL;
     }
+    
+    if (panel_viewer) crystalline_panel_destroy(panel_viewer);
+    if (panel_controls) crystalline_panel_destroy(panel_controls);
+    if (panel_files) crystalline_panel_destroy(panel_files);
+    if (list_files) crystalline_list_destroy(list_files);
+    if (input_search) crystalline_input_destroy(input_search);
+    if (btn_scan) crystalline_button_destroy(btn_scan);
+    if (btn_refresh) crystalline_button_destroy(btn_refresh);
+    if (btn_up) crystalline_button_destroy(btn_up);
+    if (btn_sort_name) crystalline_button_destroy(btn_sort_name);
+    if (btn_sort_size) crystalline_button_destroy(btn_sort_size);
+    if (btn_sort_date) crystalline_button_destroy(btn_sort_date);
+    if (btn_sort_type) crystalline_button_destroy(btn_sort_type);
+    
+    panel_viewer = panel_controls = panel_files = NULL;
+    list_files = NULL;
+    input_search = NULL;
+    btn_scan = btn_refresh = btn_up = NULL;
+    btn_sort_name = btn_sort_size = btn_sort_date = btn_sort_type = NULL;
+    
+    ui_initialized = false;
 }
