@@ -276,6 +276,13 @@ int crawler_start(CrawlerState* state) {
         if (model_manager_prepare(state->model_name)) {
             printf("✓ Model prepared successfully\n");
             
+            // Load the model into memory
+            if (model_manager_reload(state->model_name)) {
+                printf("✓ Model loaded into memory\n");
+            } else {
+                fprintf(stderr, "⚠ Warning: Failed to load model into memory\n");
+            }
+            
             // Now acquire it for training
             existing_model = model_manager_acquire_read(state->model_name);
             
@@ -302,6 +309,12 @@ int crawler_start(CrawlerState* state) {
         if (first_name) {
             printf("Preparing first available model: %s\n", first_name);
             if (model_manager_prepare(first_name)) {
+                   // Load the model into memory
+                   if (model_manager_reload(first_name)) {
+                       printf("✓ Model loaded into memory\n");
+                   } else {
+                       fprintf(stderr, "⚠ Warning: Failed to load model into memory\n");
+                   }
                 existing_model = model_manager_get_first();
                 if (existing_model) {
                     printf("✓ Using first available model from model manager\n");
