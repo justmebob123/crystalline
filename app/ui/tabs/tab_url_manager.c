@@ -119,11 +119,11 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         // Create URL list panel (left, 50%)
         int col1_width = (content_width * 50) / 100;
         panel_urls = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            content_x + col1_width / 2.0f,
-            content_y + content_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            content_x + 10.0f,
+            content_y + 10.0f,
             (float)col1_width - 20.0f,
-            (float)content_height - 40.0f,
+            (float)content_height - 20.0f,
             "URL LIST",
             get_global_font()
         );
@@ -132,11 +132,11 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         int col2_width = (content_width * 25) / 100;
         int col2_x = content_x + col1_width + PADDING;
         panel_actions = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            col2_x + col2_width / 2.0f,
-            content_y + content_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            col2_x,
+            content_y + 10.0f,
             (float)col2_width - 20.0f,
-            (float)content_height - 40.0f,
+            (float)content_height - 20.0f,
             "ACTIONS",
             get_global_font()
         );
@@ -145,9 +145,9 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         int col3_width = (content_width * 25) / 100;
         int col3_x = col2_x + col2_width + PADDING;
         panel_filters = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            col3_x + col3_width / 2.0f,
-            content_y + content_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            col3_x,
+            content_y + 10.0f,
             (float)col3_width - 20.0f,
             (float)content_height - 40.0f,
             "FILTERS",

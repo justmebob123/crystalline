@@ -1,37 +1,42 @@
-# TODO: Fix Crystalline UI Display Issues - Lists and Panels Not Rendering
+# TODO: Fix Crystalline UI Layout Issues
 
-## Status: CRITICAL ISSUE - Affects ALL 5 Converted Tabs
+## Status: NEW CRITICAL ISSUES - Layout and Positioning Problems
 
-## User Report
-- Buttons now detect clicks ✅
-- Research Tab (and all converted tabs) have rendering issues:
-  * File lists NOT VISIBLE
-  * Panels/boxes NOT VISIBLE  
-  * Text input has no label
-  * Only see: buttons, unlabeled input, model dropdown, random "file viewer" and "files" text
+## User Report (Research Tab - affects all converted tabs)
+1. ✅ Buttons detect clicks (fixed)
+2. ✅ Lists have fonts (fixed)
+3. ❌ UI draws OVER the left sidebar menu
+4. ❌ Still don't see actual file viewer or list
+5. ❌ Debug says "Found 2 documents" but nothing visible
+6. ❌ Layout doesn't make sense
 
 ## Completed Tasks
 - [x] Read MASTER_PLAN.md
-- [x] Read AUDIT.md
-- [x] Confirmed issue affects all 5 converted tabs globally
+- [x] Fixed button interactions
+- [x] Fixed list fonts
 
-## Investigation Tasks
-- [x] Check if crystalline_list_render() is being called - YES
-- [x] Check if crystalline_panel_render() is being called - YES
-- [x] Verify lists and panels are being created properly - FOUND ISSUE!
-- [x] Check if lists/panels have visible flag set - YES
-- [x] Examine draw functions for all 5 tabs
-- [x] Identify root cause of rendering failure - FOUND!
+## Investigation Complete
+- [x] Check sidebar width constant (SIDEBAR_WIDTH) - Correct (200)
+- [x] Verify content_x calculation respects sidebar - Correct
+- [x] Check if panels are positioned correctly - FOUND ISSUE!
+- [x] Examine coordinate system and positioning logic
 
-## Root Cause
-Lists created with NULL font in 3 tabs:
-- Research Tab: list_files created with NULL font
-- URL Manager Tab: list_urls created with NULL font
-- Downloaded Files Tab: list_files created with NULL font
+## Root Cause #3: Wrong Panel Style
+Panels used CRYSTALLINE_STYLE_CIRCULAR with width/height values:
+- Circular style expects: center point + radius
+- Tabs were passing: center point + width + height
+- Result: Massive circles (radius ~1000px) overlapping sidebar
 
-crystalline_list_render() returns immediately if font is NULL!
+Example:
+- viewer_width = 1063, passed as radius
+- Circle centered at x=531 with radius=1043
+- Circle extends from x=-512 to x=1574 (overlaps sidebar at x=0-200!)
 
 ## Fix Applied
-- [x] Changed NULL to get_global_font() in all 3 tabs
+Changed all panels from CIRCULAR to RECTANGULAR style:
+- Research Tab: 3 panels fixed
+- URL Manager Tab: 3 panels fixed  
+- Downloaded Files Tab: 2 panels fixed
+
 - [ ] Build and test
-- [ ] Verify lists now render correctly
+- [ ] Verify panels now render correctly within bounds

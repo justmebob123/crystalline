@@ -230,11 +230,11 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Create viewer panel (left, golden ratio)
         panel_viewer = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            content_x + viewer_width / 2.0f,
-            content_y + content_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            content_x + 10.0f,
+            content_y + 10.0f,
             (float)viewer_width - 20.0f,
-            (float)content_height - 40.0f,
+            (float)content_height - 20.0f,
             "FILE VIEWER",
             get_global_font()
         );
@@ -242,11 +242,11 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         // Create controls panel (right)
         int controls_x = content_x + viewer_width + PADDING;
         panel_controls = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            controls_x + controls_width / 2.0f,
-            content_y + content_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            controls_x,
+            content_y + 10.0f,
             (float)controls_width - 20.0f,
-            (float)content_height - 40.0f,
+            (float)content_height - 20.0f,
             "CONTROLS",
             get_global_font()
         );
@@ -255,11 +255,11 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         int list_y_start = content_y + 200;
         int list_height = content_height - 220;
         panel_files = crystalline_panel_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            controls_x + controls_width / 2.0f,
-            list_y_start + list_height / 2.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            controls_x + 10.0f,
+            list_y_start,
             (float)controls_width - 40.0f,
-            (float)list_height - 20.0f,
+            (float)list_height,
             "FILES",
             get_global_font()
         );
