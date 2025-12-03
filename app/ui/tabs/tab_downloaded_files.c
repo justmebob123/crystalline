@@ -245,7 +245,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             50.0f,   // radius
             0.0f,
             "OPEN",
-            NULL
+            get_global_font()
         );
         
         btn_delete = crystalline_button_create(
@@ -255,7 +255,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             50.0f,   // radius
             0.0f,
             "DELETE",
-            NULL
+            get_global_font()
         );
         
         btn_recrawl = crystalline_button_create(
@@ -265,7 +265,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             50.0f,   // radius
             0.0f,
             "RECRAWL",
-            NULL
+            get_global_font()
         );
         
         ui_initialized = true;

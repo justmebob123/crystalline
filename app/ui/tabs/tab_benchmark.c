@@ -22,6 +22,8 @@
 #include "../crystalline/draw.h"
 #include "../crystalline/color.h"
 
+extern TTF_Font* get_global_font(void);
+
 #define MAX_BENCHMARK_HISTORY 100
 #define MAX_BENCHMARK_TESTS 20
 
@@ -204,7 +206,7 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
             70.0f,   // radius
             0.0f,
             "RUN",
-            NULL
+            get_global_font()
         );
         
         btn_clear = crystalline_button_create(
@@ -214,7 +216,7 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
             70.0f,   // radius
             0.0f,
             "CLEAR",
-            NULL
+            get_global_font()
         );
         
         ui_initialized = true;

@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+extern TTF_Font* get_global_font(void);
+
 // Crystalline UI elements
 static CrystallineButton* btn_record = NULL;
 static CrystallinePanel* panel_status = NULL;
@@ -44,7 +46,7 @@ void init_video_tab(void) {
         80.0f,   // radius
         0.0f,    // unused for circular
         "START",
-        NULL     // font (will use default)
+        get_global_font()
     );
     
     // Create status panel (circular style with Flower of Life border)

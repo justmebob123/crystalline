@@ -183,31 +183,31 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         btn_add = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             button_x, button_start_y,
-            50.0f, 0.0f, "ADD", NULL
+            50.0f, 0.0f, "ADD", get_global_font()
         );
         
         btn_remove = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             button_x, button_start_y + button_spacing,
-            50.0f, 0.0f, "REMOVE", NULL
+            50.0f, 0.0f, "REMOVE", get_global_font()
         );
         
         btn_block = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             button_x, button_start_y + button_spacing * 2,
-            50.0f, 0.0f, "BLOCK", NULL
+            50.0f, 0.0f, "BLOCK", get_global_font()
         );
         
         btn_export = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             button_x, button_start_y + button_spacing * 3,
-            50.0f, 0.0f, "EXPORT", NULL
+            50.0f, 0.0f, "EXPORT", get_global_font()
         );
         
         btn_import = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             button_x, button_start_y + button_spacing * 4,
-            50.0f, 0.0f, "IMPORT", NULL
+            50.0f, 0.0f, "IMPORT", get_global_font()
         );
         
         ui_initialized = true;
