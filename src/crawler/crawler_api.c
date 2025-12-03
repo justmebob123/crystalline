@@ -274,11 +274,11 @@ int crawler_start(CrawlerState* state) {
         
         if (existing_model) {
             printf("✓ Successfully loaded model: %s\n", state->model_name);
-            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
         } else {
             fprintf(stderr, "⚠ Warning: Could not load model '%s', will create new one\n", state->model_name);
             snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
-            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
         }
     } else {
         // No model name specified - try to use first available
@@ -287,12 +287,12 @@ int crawler_start(CrawlerState* state) {
         
         if (existing_model) {
             printf("✓ Using first available model from model manager\n");
-            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
         } else {
             // No existing model, create new one
             snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
             printf("⚠ No existing model found, will create new one\n");
-            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
         }
     }
     

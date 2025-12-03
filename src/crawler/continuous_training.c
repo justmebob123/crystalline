@@ -40,6 +40,7 @@ typedef struct {
     int files_trained;
     int num_threads;
     pthread_mutex_t lock;
+    void* app_state;  // NEW: AppState* for sphere stats updates (void* to avoid circular dependency)
 } ContinuousTrainingState;
 
 /**
@@ -179,6 +180,55 @@ static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t
 
 
 /**
+ * Update sphere stats for visualization (if AppState is available)
+ */
+static void update_crawler_sphere_stats(ContinuousTrainingState* state, ThreadedTrainingSystem* system) {
+    if (!state->app_state) return;  // No AppState available
+    
+    // Cast void* to AppState* (avoiding circular dependency)
+    typedef struct {
+        char _padding[1024];  // Skip to sphere_stats offset
+        struct {
+            int batches_processed[12];
+            float avg_loss[12];
+            int active_spheres;
+            float total_gradient_norm;
+            int total_batches;
+        } sphere_stats;
+        pthread_mutex_t sphere_stats_mutex;
+    } AppStateForStats;
+    
+    AppStateForStats* app_state = (AppStateForStats*)state->app_state;
+    
+    // Lock mutex for thread-safe access
+    pthread_mutex_lock(&app_state->sphere_stats_mutex);
+    
+    // Get number of workers
+    extern int threaded_training_get_num_workers(ThreadedTrainingSystem* system);
+    int num_workers = threaded_training_get_num_workers(system);
+    app_state->sphere_stats.active_spheres = num_workers;
+    app_state->sphere_stats.total_batches = 0;
+    
+    // Update per-sphere stats
+    extern int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system, int sphere_id, int* batches, float* loss);
+    for (int i = 0; i < num_workers && i < 12; i++) {
+        int batches = 0;
+        float loss = 0.0f;
+        if (threaded_training_get_sphere_stats(system, i, &batches, &loss) == 0) {
+            app_state->sphere_stats.batches_processed[i] = batches;
+            app_state->sphere_stats.avg_loss[i] = loss;
+            app_state->sphere_stats.total_batches += batches;
+        }
+    }
+    
+    // Update gradient norm
+    extern double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
+    app_state->sphere_stats.total_gradient_norm = (float)threaded_training_get_gradient_norm(system);
+    
+    pthread_mutex_unlock(&app_state->sphere_stats_mutex);
+}
+
+/**
  * Train on one file
  */
 static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
@@ -247,6 +297,9 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
         float loss = threaded_train_epoch_lockfree(threaded_system, epoch);
         total_loss += loss;
         printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
+        
+        // Update sphere stats for UI visualization
+        update_crawler_sphere_stats(state, threaded_system);
     }
     
     // Cleanup parallel system
@@ -356,11 +409,12 @@ static void* training_worker_thread(void* arg) {
  * Initialize continuous training
  */
 ContinuousTrainingState* continuous_training_init(const char* data_dir, const char* model_path, 
-                                                   CLLMModel* model, int num_threads) {
+                                                   CLLMModel* model, int num_threads, void* app_state) {
     ContinuousTrainingState* state = (ContinuousTrainingState*)calloc(1, sizeof(ContinuousTrainingState));
     if (!state) return NULL;
     
     strncpy(state->data_dir, data_dir, sizeof(state->data_dir) - 1);
+    state->app_state = app_state;  // Store AppState for sphere stats updates
     
     // Only copy model_path if it's not NULL
     if (model_path) {

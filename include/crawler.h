@@ -193,7 +193,7 @@ void tokenizer_cleanup(TokenizerState* state);
 void* tokenizer_thread_func(void* arg);
 
 ContinuousTrainingState* continuous_training_init(const char* data_dir, const char* model_path, 
-                                                   void* model, int num_threads);
+                                                   void* model, int num_threads, void* app_state);
 int continuous_training_start(ContinuousTrainingState* state, pthread_t* threads);
 void continuous_training_stop(ContinuousTrainingState* state, pthread_t* threads);
 void continuous_training_cleanup(ContinuousTrainingState* state);
