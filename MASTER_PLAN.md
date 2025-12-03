@@ -54,6 +54,38 @@ The SECONDARY_OBJECTIVES.md contains:
 
 Use this for step-by-step implementation guidance.
 
+
+### RULE 3A: CRITICAL REFERENCE FILES - ALWAYS CHECK BEFORE CHANGES
+**MANDATORY REFERENCE FILES**
+
+Before making ANY code changes, ALWAYS check these critical implementation files:
+
+1. **app/ui/sphere_visualization.c** - 3D kissing spheres visualization
+   - PURE crystalline mathematics ONLY (NO math.h)
+   - Uses ONLY prime_* functions from crystalline library
+   - Implements icosahedral geometry with golden ratio
+   - 13 spheres: 1 control + 12 workers
+   - Mouse drag rotation, keyboard controls, auto-rotation
+   - Activity visualization (brightness, pulsing, wireframe density)
+
+2. **app/ui/tabs/tab_training.c** - Training tab with rotation controls
+   - Handles mouse drag for 3D rotation
+   - Keyboard arrow keys for rotation
+   - Integrates with sphere visualization
+
+3. **src/geometry/clock_lattice.c** - Babylonian clock structure
+   - Ring structure: 12, 60, 60, 100
+   - Prime position mapping
+   - Clock-to-sphere folding
+
+4. **src/ai/cllm_kissing_spheres.c** - Kissing spheres implementation
+   - 12 neighbors per point
+   - Shared memory structure
+   - Icosahedral placement
+
+**CRITICAL**: These files implement the PURE crystalline mathematics. 
+Never use math.h or standard library functions. Only use prime_* functions.
+
 ### RULE 4: DO NOT CREATE NEW MD FILES
 All documentation goes in existing files or this master plan only.
 

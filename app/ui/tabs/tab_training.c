@@ -99,6 +99,13 @@ static bool control_panel_scrollbar_dragging = false;
 static int control_panel_drag_start_y = 0;
 static int control_panel_drag_start_offset = 0;
 
+// Mouse drag state for 3D rotation
+static bool sphere_rotation_dragging = false;
+static int rotation_drag_start_x = 0;
+static int rotation_drag_start_y = 0;
+static double rotation_drag_start_rot_x = 0.0;
+static double rotation_drag_start_rot_y = 0.0;
+
 // Slider bounds (set during rendering)
 static SDL_Rect batch_slider_rect = {0};
 static SDL_Rect seq_slider_rect = {0};
@@ -1729,13 +1736,6 @@ void handle_training_tab_mouse_up(AppState* state) {
 /**
  * Handle mouse motion (for scrollbar dragging)
  */
-// Mouse drag state for 3D rotation
-static bool sphere_rotation_dragging = false;
-static int rotation_drag_start_x = 0;
-static int rotation_drag_start_y = 0;
-static double rotation_drag_start_rot_x = 0.0;
-static double rotation_drag_start_rot_y = 0.0;
-
 void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
     if (!state) return;
     
