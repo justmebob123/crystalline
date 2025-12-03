@@ -280,7 +280,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             controls_x + controls_width / 2.0f,
             content_y + 60.0f,
             (float)controls_width - 60.0f,
-            30.0f,
+            40.0f,  // Increased from 30 to 40 for better usability
             "Search files...",
             get_global_font()
         );
@@ -293,19 +293,19 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         btn_scan = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 0.5f, btn_y,
-            35.0f, 0.0f, "SCAN", NULL
+            45.0f, 0.0f, "SCAN", NULL
         );
         
         btn_refresh = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 1.5f, btn_y,
-            35.0f, 0.0f, "REFRESH", NULL
+            45.0f, 0.0f, "REFRESH", NULL
         );
         
         btn_up = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 2.5f, btn_y,
-            35.0f, 0.0f, "UP", NULL
+            45.0f, 0.0f, "UP", NULL
         );
         
         // Create sort buttons (4 in a row)
@@ -315,25 +315,25 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         btn_sort_name = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + sort_spacing * 0.5f, sort_y,
-            30.0f, 0.0f, "NAME", NULL
+            40.0f, 0.0f, "NAME", NULL
         );
         
         btn_sort_size = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + sort_spacing * 1.5f, sort_y,
-            30.0f, 0.0f, "SIZE", NULL
+            40.0f, 0.0f, "SIZE", NULL
         );
         
         btn_sort_date = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + sort_spacing * 2.5f, sort_y,
-            30.0f, 0.0f, "DATE", NULL
+            40.0f, 0.0f, "DATE", NULL
         );
         
         btn_sort_type = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + sort_spacing * 3.5f, sort_y,
-            30.0f, 0.0f, "TYPE", NULL
+            40.0f, 0.0f, "TYPE", NULL
         );
         
         // Initialize model selector
