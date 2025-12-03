@@ -980,45 +980,68 @@ typedef struct {
 **END OF SECONDARY OBJECTIVES**
 ### OBJECTIVE 28: Crystalline UI System - Full Tab Conversion [CRITICAL PRIORITY]
 
-**Purpose:** Convert all 9 tabs to use Crystalline UI with sacred geometry
+**Purpose:** Convert all 9 tabs to use Crystalline UI with sacred geometry and proper usability
 
 **Status:** 🔄 IN PROGRESS (5 of 9 tabs complete - 56%)
 
-**Current Issue:** Buttons don't respond to hover or click events
+**Core Principle Established:** "Usability First, Sacred Geometry Second"
 
 **Completed Tabs (5/9):**
-- ✅ Video Tab - Radial layout with circular START button
-- ✅ Benchmark Tab - Radial layout with RUN/CLEAR buttons
-- ✅ Downloaded Files Tab - Flower of Life pattern
-- ✅ URL Manager Tab - Metatron's Cube layout
-- ✅ Research Tab - Golden ratio grid layout
+- ✅ Video Tab - Radial layout with circular START button (80px radius)
+- ✅ Benchmark Tab - Radial layout with RUN/CLEAR buttons (70px radius)
+- ✅ Downloaded Files Tab - Flower of Life pattern (50px radius buttons)
+- ✅ URL Manager Tab - Metatron's Cube layout (50px radius buttons)
+- ✅ Research Tab - Golden ratio grid layout (32px/28px radius buttons)
 
 **Critical Bugs Fixed:**
 - ✅ Text rendering (NULL font → get_global_font())
-- ✅ Button sizes (increased to 40-50px radius minimum)
+- ✅ Button interaction (separate BUTTONDOWN/BUTTONUP events)
+- ✅ List rendering (NULL font issue)
+- ✅ Panel positioning (center vs top-left coordinates)
+- ✅ Panel overlap (CIRCULAR vs RECTANGULAR style)
+- ✅ Button sizes (40px minimum radius)
 - ✅ Visual affordance (glows, borders, colors)
+- ✅ Button clickability (stronger colors, thicker borders, outer glow)
 
-**Current Critical Issue:**
-- ❌ Buttons don't hover or click - no interaction at all
-- User reports: "they just don't seem to do anything"
-- Need to investigate event handling in crystalline buttons
+**Global UX Fixes Applied:**
+- ✅ Research Tab: Dodecagon input → Rectangle
+- ✅ Research Tab: Added directory path display
+- ✅ Research Tab: Visual hierarchy for nested panels
+- ✅ Research Tab: Model dropdown event handling
+- ✅ URL Manager Tab: Dodecagon input → Rectangle
+- ✅ All Tabs: Context displays verified/added
+- ✅ All Tabs: Button sizes meet standards
+
+**Usability Standards Established:**
+- ✅ Button sizes: Primary 60-80px, Secondary 50px, Tertiary 40-45px, NEVER below 40px
+- ✅ Input fields: ALWAYS rectangular, NEVER dodecagon/circular
+- ✅ Context displays: ALWAYS show user where they are
+- ✅ Visual hierarchy: Outer 3px/lighter, Inner 2px/darker
+- ✅ Event handling: ALWAYS separate BUTTONDOWN from BUTTONUP
+- ✅ Panel labels: ALWAYS clear and contextual
 
 **Remaining Tabs (4/9):**
-- [ ] Training Tab (~1,806 lines) - Most complex
+- [ ] Training Tab (~1,806 lines) - Most complex, highest priority
 - [ ] LLM Tab (~800 lines) - Chat interface
 - [ ] Models Tab (~600 lines) - Medium complexity
 - [ ] Crawler Tab (~700 lines) - Medium complexity
 
-**Implementation Tasks:**
-- [ ] Investigate button event handling
-- [ ] Check if crystalline buttons register click handlers
-- [ ] Verify hover state detection
-- [ ] Test button callbacks
-- [ ] Fix interaction issues
-- [ ] Document event handling requirements
+**Next Steps:**
+- [ ] Apply all lessons learned to Training Tab
+- [ ] Design Training Tab with usability FIRST
+- [ ] Get user approval before coding
+- [ ] Apply same standards to remaining 3 tabs
+
+**Documentation:**
+- ✅ CRYSTALLINE_UI_STANDARDS.md - Comprehensive usability standards
+- ✅ RESEARCH_TAB_UX_ISSUES.md - Detailed issue analysis
+- ✅ RESEARCH_TAB_FIXES_APPLIED.md - Implementation details
+- ✅ GLOBAL_UI_FIXES_REQUIRED.md - Global fixes needed
+- ✅ Multiple session summaries and bug fix documentation
 
 **Related Files:**
-- `src/ui/crystalline_button.c` - Button implementation
+- `app/ui/crystalline/elements.c` - Core UI elements
 - `app/ui/tabs/tab_*.c` - All converted tabs
-- `include/ui/crystalline_button.h` - Button API
+- `app/ui/model_selector.c` - Dropdown event handling
+- `CRYSTALLINE_UI_STANDARDS.md` - Usability standards
 

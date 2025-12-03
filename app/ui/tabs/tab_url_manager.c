@@ -175,9 +175,9 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Create input field for adding URLs
         input_add_url = crystalline_input_create(
-            CRYSTALLINE_STYLE_CIRCULAR,  // Dodecagon border
-            col2_x + col2_width / 2.0f,
-            content_y + 80.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,  // Standard rectangle
+            col2_x + ((float)col2_width - 40.0f) / 2.0f + 20.0f,
+            content_y + 80.0f + 20.0f,
             (float)col2_width - 40.0f,
             40.0f,  // Increased from 30 to 40 for better usability
             "Enter URL...",

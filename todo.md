@@ -1,139 +1,178 @@
-# TODO: Fix Critical Research Tab UX Issues
+# TODO: Global Crystalline UI Fixes & Training Tab Conversion
 
 ## Current Status
-✅ **ALL 8 CRITICAL UX ISSUES FIXED**
-- Code changes complete and compiled successfully
-- Committed locally (commit 90ee326)
-- Awaiting user testing to verify fixes work as expected
-- See `RESEARCH_TAB_FIXES_APPLIED.md` for details
+⚠️ **CRITICAL REALIZATION**: Research tab fixes were EXAMPLE ONLY
+- Must apply ALL fixes GLOBALLY to entire Crystalline UI system
+- Must fix ALL 5 converted tabs (Video, Benchmark, Downloaded Files, URL Manager, Research)
+- Must establish proper standards BEFORE continuing to Training tab
+- User will be "far more critical" of Training tab - must get it right
 
 ---
 
-## Phase 1: Critical Fixes (IMMEDIATE)
+## Phase 1: GLOBAL Fixes to All Converted Tabs (CRITICAL)
 
-### 1. Fix Model Dropdown Mouse Handling
-- [x] Analyze current event handling in `app/ui/model_selector.c`
-- [x] Separate BUTTONDOWN (hover) from BUTTONUP (click) logic
-- [x] Track click origin to prevent immediate closure
-- [ ] Test dropdown stays open until item selected
-- [ ] Verify dropdown closes only on outside BUTTONUP
+### 1.1 Fix ALL Input Fields (CRITICAL)
+- [ ] URL Manager: Change input from CIRCULAR to RECTANGULAR
+- [ ] Downloaded Files: Check for any inputs
+- [ ] Video Tab: Check for any inputs
+- [ ] Benchmark Tab: Check for any inputs
+- [ ] Research Tab: ✅ Already fixed
+- [ ] **RULE**: ALL text inputs MUST be RECTANGULAR, never dodecagon
 
-### 2. Change Search Input to Rectangular
-- [x] Change `input_search` from CIRCULAR to RECTANGULAR style
-- [x] Recalculate position for center-based coordinates
-- [ ] Test input looks like standard text box
-- [ ] Verify placeholder text displays correctly
-- [ ] Test typing and text display
+### 1.2 Fix ALL Button Sizes (CRITICAL)
+- [ ] Video Tab: Review button sizes (currently has START button)
+- [ ] Benchmark Tab: Review button sizes (RUN/CLEAR buttons)
+- [ ] Downloaded Files: Review button sizes (OPEN/DELETE/RECRAWL)
+- [ ] URL Manager: Review button sizes (5 action buttons)
+- [ ] Research Tab: ✅ Already fixed (32px/28px)
+- [ ] **STANDARD**: Primary 60-80px, Secondary 50px, Tertiary 40-45px, NEVER below 40px
 
-### 3. Fix File List Positioning
-- [x] Increase padding between panel border and list (40px -> 50px)
-- [ ] Verify first item doesn't overlap panel border
-- [ ] Test with different numbers of files
-- [ ] Check scroll behavior
+### 1.3 Add Context Displays (HIGH)
+- [ ] Video Tab: Add current video status/info
+- [ ] Benchmark Tab: Add current benchmark info
+- [ ] Downloaded Files: Add current directory/file count
+- [ ] URL Manager: Add current URL count/status
+- [ ] Research Tab: ✅ Already has directory display
+- [ ] **RULE**: Always show user where they are and what they're doing
 
-### 4. Display Current Directory Path
-- [x] Add directory path display above file list
-- [x] Show format: "Directory: docs/research"
-- [x] Update on directory navigation
-- [x] Make it prominent and clear
+### 1.4 Fix ALL Visual Hierarchy (HIGH)
+- [ ] Video Tab: Check panel nesting and colors
+- [ ] Benchmark Tab: Check panel nesting and colors
+- [ ] Downloaded Files: Check panel nesting and colors
+- [ ] URL Manager: Check panel nesting and colors
+- [ ] Research Tab: ✅ Already fixed (3px/2px borders, different colors)
+- [ ] **STANDARD**: Outer 3px/lighter, Inner 2px/darker
 
----
+### 1.5 Fix ALL Model Dropdowns (CRITICAL)
+- [ ] Check which tabs have model selectors
+- [ ] Update ALL to use button_down/button_up pattern
+- [ ] Research Tab: ✅ Already fixed
+- [ ] **RULE**: Separate BUTTONDOWN from BUTTONUP for all dropdowns
 
-## Phase 2: High Priority Fixes
-
-### 5. Reduce Button Sizes and Fix Overlapping
-- [x] Reduce button radius from 40-45px to 32px (control) and 28px (sort)
-- [x] Recalculate spacing to prevent overlap (increased vertical spacing)
-- [x] Changed "UP" to "UP DIR" for clarity
-- [ ] Verify button labels fit within bounds
-- [ ] Test all 7 buttons (SCAN, REFRESH, UP DIR, NAME, SIZE, DATE, TYPE)
-- [ ] Consider vertical stacking if needed
-
-### 6. Create Visual Hierarchy for Nested Panels
-- [x] Outer panels (viewer, controls): Thicker border (3px), lighter color (100,120,140)
-- [x] Inner panel (files): Medium border (2px), medium color (80,100,120)
-- [ ] Test visual distinction is clear
-- [ ] Verify nested panels are clearly distinguishable
-
-### 7. Improve Panel Labels
-- [x] Changed "FILE VIEWER" to "CONTENT"
-- [ ] Consider showing actual filename when file selected
-- [ ] Show "No file selected" when nothing selected
-- [ ] Test label positioning and clarity
-
-### 8. Remove Confusing Decorative Geometry
-- [x] No decorative geometry found in Research tab
-- [x] Input changed from dodecagon to rectangle
-- [ ] Verify no other confusing geometry elements
-- [ ] Test interface is cleaner and clearer
+### 1.6 Review ALL Panel Labels (MEDIUM)
+- [ ] Video Tab: Check panel labels are clear
+- [ ] Benchmark Tab: Check panel labels are clear
+- [ ] Downloaded Files: Check panel labels are clear
+- [ ] URL Manager: Check panel labels are clear
+- [ ] Research Tab: ✅ Changed to "CONTENT"
+- [ ] **RULE**: Labels must be contextual and helpful, not generic
 
 ---
 
-## Phase 3: Testing and Verification
+## Phase 2: Update Crystalline UI System Standards
 
-### Build Status
-- [x] Code compiled successfully
-- [x] Zero errors
-- [x] Only minor warnings (non-critical)
-- [x] Changes committed locally (commit 90ee326)
-- [ ] Push to remote (network timeout - retry later)
+### 2.1 Update Core Elements
+- [ ] Update crystalline_input_create() documentation
+- [ ] Add warnings about CIRCULAR style for inputs
+- [ ] Update button creation guidelines
+- [ ] Add size validation/warnings
+- [ ] Update panel creation guidelines
 
-### Comprehensive Testing (USER MUST VERIFY)
-- [ ] Test all button interactions
-- [ ] Test dropdown behavior (stays open until selection)
-- [ ] Test file selection and viewing
-- [ ] Test directory navigation (UP DIR button)
-- [ ] Test search functionality (rectangular input)
-- [ ] Test with empty directories
-- [ ] Test with many files
-- [ ] Verify no overlapping elements
-- [ ] Verify clear visual hierarchy (nested panels)
-- [ ] Verify current directory always visible
-- [ ] Get user feedback on all fixes
+### 2.2 Update CRYSTALLINE_UI_STANDARDS.md
+- [ ] Add "NEVER use CIRCULAR for text inputs" rule
+- [ ] Add "ALWAYS show context" rule
+- [ ] Add "ALWAYS separate BUTTONDOWN/BUTTONUP" rule
+- [ ] Add visual hierarchy requirements
+- [ ] Add examples of good vs bad designs
+
+### 2.3 Create Design Checklist
+- [ ] Create pre-conversion checklist
+- [ ] Create post-conversion verification checklist
+- [ ] Add to standards document
+- [ ] Use for Training tab and remaining tabs
 
 ---
 
-## Phase 4: Documentation
+## Phase 3: Training Tab Conversion (NEXT MAJOR TASK)
 
-### Update Documentation
-- [x] Document all changes made (RESEARCH_TAB_FIXES_APPLIED.md)
-- [x] Document all issues (RESEARCH_TAB_UX_ISSUES.md)
-- [x] Create detailed fix summary
-- [x] Document lessons learned
-- [ ] Update usability standards if needed
-- [ ] Create before/after comparison (after user testing)
-- [ ] Update master plan if principles changed
+### 3.1 Pre-Conversion Analysis
+- [ ] Read entire tab_training.c (~1,806 lines)
+- [ ] Identify all UI elements (buttons, inputs, panels, lists)
+- [ ] Map current layout and interactions
+- [ ] Identify complexity areas
+- [ ] Plan Crystalline UI design
+
+### 3.2 Design Planning
+- [ ] Apply ALL lessons learned from previous tabs
+- [ ] Design with usability FIRST
+- [ ] Plan visual hierarchy
+- [ ] Plan context displays
+- [ ] Plan button sizes and spacing
+- [ ] Get user approval BEFORE coding
+
+### 3.3 Implementation
+- [ ] Convert to Crystalline UI
+- [ ] Apply ALL global standards
+- [ ] Test thoroughly
+- [ ] Document conversion
+- [ ] Get user approval
+
+---
+
+## Phase 4: Update SECONDARY_OBJECTIVES.md
+
+### 4.1 Add Crystalline UI Conversion Objective
+- [ ] Document Phase 3B progress (5/9 tabs complete)
+- [ ] Document global fixes required
+- [ ] Document standards established
+- [ ] Document remaining work (4 tabs)
+- [ ] Add to SECONDARY_OBJECTIVES.md
+
+### 4.2 Update Status
+- [ ] Mark completed objectives
+- [ ] Add new sub-objectives for UI work
+- [ ] Update priority levels
+- [ ] Document lessons learned
 
 ---
 
 ## Success Criteria
 
-✅ **All issues resolved:**
-1. Input field looks like standard text box (no dodecagon)
-2. No confusing decorative geometry
-3. UP button shows current directory clearly
-4. Files don't "disappear" - navigation is clear
-5. Panel labels are helpful and contextual
-6. File list doesn't overlap panel border
-7. Buttons don't overlap each other or text
-8. Nested panels have clear visual distinction
-9. Dropdown stays open until item selected
-10. All interactions feel natural and expected
+### Global Fixes Complete:
+- [ ] ALL text inputs are RECTANGULAR (no dodecagons)
+- [ ] ALL buttons meet size standards (40px minimum)
+- [ ] ALL tabs show context (where user is, what they're doing)
+- [ ] ALL nested panels have clear visual hierarchy
+- [ ] ALL dropdowns use proper event handling
+- [ ] ALL panel labels are clear and contextual
+- [ ] Build successful with zero errors
+- [ ] User approves all fixes
 
-✅ **User confirms:**
-- Interface is clear and understandable
-- All elements are obviously clickable
-- Navigation makes sense
-- No confusion about purpose of elements
+### Training Tab Ready:
+- [ ] All global fixes applied and tested
+- [ ] Standards document updated
+- [ ] Design checklist created
+- [ ] Pre-conversion analysis complete
+- [ ] Design plan approved by user
+
+### SECONDARY_OBJECTIVES.md Updated:
+- [ ] Phase 3B documented
+- [ ] Progress tracked
+- [ ] Standards documented
+- [ ] Remaining work clear
 
 ---
 
 ## Notes
 
-**Core Principle:**
-> "Usability First, Sacred Geometry Second"
-> Sacred geometry should ENHANCE usability, not HARM it.
-> When in doubt, choose clarity over aesthetics.
+**Critical Understanding:**
+- Research tab was EXAMPLE, not complete solution
+- Must fix ALL tabs, not just one
+- User will be "far more critical" of Training tab
+- Must establish proper standards FIRST
+- Must apply lessons learned GLOBALLY
 
-**Master Plan Alignment:**
-While the Master Plan emphasizes crystalline mathematics and sacred geometry, it should NOT come at the expense of usability. The UI must be functional, clear, and easy to use FIRST, then we can add aesthetic enhancements that don't interfere.
+**Core Principles:**
+1. Usability First, Sacred Geometry Second
+2. ALL text inputs MUST be rectangular
+3. ALWAYS show context to user
+4. ALWAYS meet minimum size standards
+5. ALWAYS create clear visual hierarchy
+6. ALWAYS separate BUTTONDOWN from BUTTONUP
+
+**Workflow:**
+1. Fix all existing tabs FIRST
+2. Update standards SECOND
+3. Plan Training tab THIRD
+4. Get user approval FOURTH
+5. Implement Training tab FIFTH
