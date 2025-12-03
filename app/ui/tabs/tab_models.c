@@ -169,52 +169,69 @@ static void on_create_button_click(void* user_data) {
 static void on_load_button_click(void* user_data) {
     AppState* state = (AppState*)user_data;
     
-    // TODO: Implement proper file picker dialog
-    // For now, use a simple hardcoded path for testing
-    const char* test_path = "models/test_model.cllm";
-    const char* model_name = "test_model";
-    
-    printf("Loading model from: %s\n", test_path);
-    
-    // Check if model already exists in manager
-    if (model_manager_exists(model_name)) {
+    // Check if a model is selected
+    if (selected_model_index < 0) {
         snprintf(status_message, sizeof(status_message), 
-                 "Model '%s' already loaded", model_name);
+                 "Please select a model from the list");
         status_message_timer = 3.0f;
         return;
     }
     
-    // Load model using model_manager
-    ManagedModel* managed_model = model_manager_load(model_name, test_path);
+    // Get selected model name
+    ManagedModel** models = NULL;
+    uint32_t model_count = 0;
+    models = model_manager_list(&model_count);
     
-    if (managed_model == NULL) {
+    if (selected_model_index >= (int)model_count || !models[selected_model_index]) {
+        snprintf(status_message, sizeof(status_message), "Invalid model selection");
+        status_message_timer = 3.0f;
+        return;
+    }
+    
+    const char* model_name = models[selected_model_index]->name;
+    printf("Loading selected model: %s\n", model_name);
+    
+    // CRITICAL: Prepare model before loading (expands abacus if needed)
+    printf("Preparing model '%s'...\n", model_name);
+    if (!model_manager_prepare(model_name)) {
         snprintf(status_message, sizeof(status_message), 
-                 "Failed to load model from '%s'", test_path);
+                 "Failed to prepare model '%.200s'", model_name);
+        status_message_timer = 3.0f;
+        return;
+    }
+    printf("✓ Model prepared successfully\n");
+    
+    // Now acquire the model for use
+    CLLMModel* model = model_manager_acquire_read(model_name);
+    if (!model) {
+        snprintf(status_message, sizeof(status_message), 
+                 "Failed to load model '%.200s'", model_name);
         status_message_timer = 3.0f;
         return;
     }
     
     // Update state manager
     StateManager* state_mgr = state_manager_get_instance();
-    // Load the model through model manager (requires both name and path)
-    ManagedModel* managed = model_manager_load(model_name, "");
-    if (managed && managed->model) {
-        state_set_model(state_mgr, managed->model, model_name, "");
-    }
+    state_set_model(state_mgr, model, model_name, models[selected_model_index]->path);
+    
+    // Update model config
+    ManagedModel* managed = models[selected_model_index];
     state_update_model_config(state_mgr, 
-                             managed_model->vocab_size,
-                             managed_model->embedding_dim,
-                             0,  // ff_dim not in metadata
-                             managed_model->num_layers,
-                             managed_model->num_heads);
+                            managed->vocab_size,
+                            managed->embedding_dim,
+                            0,  // ff_dim not in metadata
+                            managed->num_layers,
+                            managed->num_heads);
     
     // Dispatch MODEL_LOADED event for cross-tab synchronization
     EventSystem* event_sys = event_system_get_instance();
     event_model_loaded(event_sys, model_name);
     
     snprintf(status_message, sizeof(status_message), 
-             "Model '%s' loaded successfully", model_name);
+             "Model '%.200s' loaded successfully", model_name);
     status_message_timer = 3.0f;
+    
+    printf("✓ Model '%s' loaded and ready for use\n", model_name);
     
     (void)state;
 }
@@ -641,7 +658,7 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                         char safe_name[200];
                         snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
                         snprintf(status_message, sizeof(status_message), 
-                                "Model '%s' loaded successfully", safe_name);
+                                "Model '%.200s' loaded successfully", safe_name);
                         status_message_timer = 3.0f;
                         
                         // Dispatch event
@@ -657,7 +674,7 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                         char safe_name[200];
                         snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
                         snprintf(status_message, sizeof(status_message), 
-                                "Failed to load model '%s'", safe_name);
+                                "Failed to load model '%.200s'", safe_name);
                         status_message_timer = 3.0f;
                     }
                 }
