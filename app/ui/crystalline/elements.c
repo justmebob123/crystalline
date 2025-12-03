@@ -50,9 +50,10 @@ CrystallineButton* crystalline_button_create(CrystallineElementStyle style,
     button->base.visible = true;
     button->base.enabled = true;
     
-    // Set default colors
-    button->base.color = crystalline_color_rgb(100, 150, 200);
-    button->base.hover_color = crystalline_color_rgb(120, 170, 220);
+    // Set default colors (stronger contrast for visibility)
+    button->base.color = crystalline_color_rgb(60, 100, 180);
+    button->base.hover_color = crystalline_color_rgb(100, 150, 230);
+    button->base.active_color = crystalline_color_rgb(40, 80, 160);
     button->base.active_color = crystalline_color_rgb(80, 130, 180);
     button->base.disabled_color = crystalline_color_rgb(100, 100, 100);
     
@@ -100,18 +101,33 @@ void crystalline_button_render(CrystallineButton* button, SDL_Renderer* renderer
         // Circular button rendering
         float radius = button->radius * pulse_scale;
         
-        // Draw button circle
+        // Draw outer glow for all buttons (makes them stand out)
+        float glow_radius = radius + 4.0f;
+        int glow_alpha = 100;
+        
+        if (button->base.state == CRYSTALLINE_STATE_HOVER) {
+            glow_radius = radius + 6.0f;
+            glow_alpha = 200;
+        }
+        
+        CrystallineDrawStyle glow_style = crystalline_draw_style_stroked(
+            crystalline_color_rgba(255, 255, 255, glow_alpha),
+            2.0f
+        );
+        crystalline_draw_circle(renderer, button->base.position, glow_radius, glow_style);
+        
+        // Draw button circle with white border for visibility
         CrystallineDrawStyle style = crystalline_draw_style_both(
             color,
-            crystalline_color_brightness(color, 0.8f),
-            2.0f
+            crystalline_color_rgb(255, 255, 255),  // White border
+            3.0f  // Thicker border
         );
         crystalline_draw_circle(renderer, button->base.position, radius, style);
         
-        // Draw glow effect on hover
+        // Draw additional glow effect on hover
         if (button->base.state == CRYSTALLINE_STATE_HOVER) {
             crystalline_draw_glow(renderer, button->base.position, radius, 
-                                 button->base.hover_color, 0.3f);
+                                 button->base.hover_color, 0.5f);  // Stronger glow
         }
         
         // Draw label
@@ -958,10 +974,10 @@ void crystalline_panel_render(CrystallinePanel* panel, SDL_Renderer* renderer) {
     if (!panel || !panel->base.visible) return;
     
     SDL_Color color = crystalline_color_rgb(40, 40, 50);
-    SDL_Color border_color = crystalline_color_rgb(100, 100, 120);
+    SDL_Color border_color = crystalline_color_rgb(150, 150, 180);  // Brighter border
     
     if (panel->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
-        CrystallineDrawStyle style = crystalline_draw_style_both(color, border_color, 2.0f);
+        CrystallineDrawStyle style = crystalline_draw_style_both(color, border_color, 3.0f);  // Thicker border
         crystalline_draw_circle(renderer, panel->base.position, panel->radius, style);
         
         if (panel->show_flower_border) {
