@@ -12,6 +12,7 @@
  */
 
 #include "app_common.h"
+#include <time.h>  // for nanosleep
 #include "cllm_integration.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_training_threaded.h"
@@ -30,6 +31,10 @@ static bool training_thread_active = false;
 // Kissing spheres training system
 static ThreadedTrainingSystem* g_threaded_system = NULL;
 static CLLMBatchIterator* g_batch_iterator = NULL;
+
+// Real-time stats update thread
+static pthread_t stats_update_thread;
+static volatile bool stats_thread_running = false;
 
 /**
  * UI Integration: Metrics callback function
@@ -117,6 +122,28 @@ static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system)
     state->sphere_stats.total_gradient_norm = threaded_training_get_gradient_norm(system);
     
     pthread_mutex_unlock(&state->sphere_stats_mutex);
+}
+
+/**
+ * Real-time stats update thread - continuously polls sphere stats during training
+ */
+static void* stats_update_thread_func(void* arg) {
+   AppState* state = (AppState*)arg;
+   
+   printf("✓ Real-time stats update thread started\n");
+   
+   while (stats_thread_running && state->training_in_progress) {
+       // Update sphere stats every 100ms for smooth visualization
+       update_sphere_stats(state, g_threaded_system);
+       
+       // Sleep for 100ms (interruptible)
+       for (int i = 0; i < 10 && stats_thread_running; i++) {
+           struct timespec ts = {0, 10000000}; nanosleep(&ts, NULL);  // 10ms chunks for quick termination
+       }
+   }
+   
+   printf("✓ Real-time stats update thread stopped\n");
+   return NULL;
 }
 
 /**
@@ -324,6 +351,12 @@ void* training_thread_func(void* arg) {
     
     printf("\n");
     
+   
+   // Start real-time stats update thread
+   stats_thread_running = true;
+   if (pthread_create(&stats_update_thread, NULL, stats_update_thread_func, state) != 0) {
+       printf("WARNING: Failed to create stats update thread\n");
+   }
     // Training loop with kissing spheres
     while (state->training_in_progress && 
            state->training_current_epoch < state->training_epochs) {
@@ -430,6 +463,10 @@ void* training_thread_func(void* arg) {
     
     printf("=== TRAINING THREAD STOPPED ===\n");
     
+   
+   // Stop real-time stats update thread
+   stats_thread_running = false;
+   pthread_join(stats_update_thread, NULL);
     // Cleanup
     if (g_threaded_system) {
         threaded_training_free(g_threaded_system);

@@ -22,6 +22,10 @@
 
 #define MAX_TOKENS_PER_FILE 100000
 
+// Real-time stats update thread for crawler
+static pthread_t crawler_stats_update_thread;
+static volatile int crawler_stats_thread_running = 0;
+
 /**
  * Get current timestamp string
  */
@@ -226,6 +230,34 @@ static void update_crawler_sphere_stats(ContinuousTrainingState* state, Threaded
     app_state->sphere_stats.total_gradient_norm = (float)threaded_training_get_gradient_norm(system);
     
     pthread_mutex_unlock(&app_state->sphere_stats_mutex);
+}
+
+/**
+ * Real-time stats update thread for crawler - continuously polls sphere stats during training
+ */
+static void* crawler_stats_update_thread_func(void* arg) {
+   ContinuousTrainingState* state = (ContinuousTrainingState*)arg;
+   
+   printf("✓ Crawler real-time stats update thread started\n");
+   
+   // Get the threaded system from the training context
+   ThreadedTrainingSystem* system = NULL;
+   
+   while (crawler_stats_thread_running && state->running) {
+       // Get current threaded system (it's created per training session)
+       // We'll update stats when system is available
+       if (system) {
+           update_crawler_sphere_stats(state, system);
+       }
+       
+       // Sleep for 100ms (interruptible)
+       for (int i = 0; i < 10 && crawler_stats_thread_running; i++) {
+           usleep(10000);  // 10ms chunks for quick termination
+       }
+   }
+   
+   printf("✓ Crawler real-time stats update thread stopped\n");
+   return NULL;
 }
 
 /**
