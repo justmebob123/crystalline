@@ -1296,11 +1296,14 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             if (!state->cllm_model) {
                 // Use selected model name from model selector
                 const char* model_name = selected_model_name[0] ? selected_model_name : "default_model";
+                   printf("DEBUG: selected_model_name = '%s'\n", selected_model_name);
                 
                 printf("Loading model for training: %s\n", model_name);
                    // Reload model if it exists but is not loaded yet
                    if (model_manager_exists(model_name)) {
+                      printf("DEBUG: Model exists check for '%s'\n", model_name);
                        model_manager_reload(model_name);
+                          printf("DEBUG: Calling model_manager_reload...\n");
                    }
 
                 state->cllm_model = model_manager_acquire_write(model_name);
