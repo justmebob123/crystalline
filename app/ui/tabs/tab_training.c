@@ -18,6 +18,7 @@
 #include "../model_selector.h"
    #include "../sphere_visualization.h"
 #include "../../time_format.h"
+#include <errno.h>
 #include "cllm_format.h"
 #include "cllm_training.h"
 #include "cllm_vocab_builder.h"
@@ -238,9 +239,11 @@ static void add_url_to_queue(AppState* state, const char* url) {
  * Scan training directory for files
  */
 void scan_training_directory(const char* dir_path) {
+    printf("DEBUG: Scanning directory: %s\n", dir_path);
     DIR* dir = opendir(dir_path);
     if (!dir) {
-        printf("Could not open directory: %s\n", dir_path);
+        printf("ERROR: Could not open directory: %s (errno=%d)\n", dir_path, errno);
+        perror("opendir");
         return;
     }
     
@@ -1195,6 +1198,9 @@ void handle_training_tab_click(AppState* state, int x, int y) {
        
        // Account for title
        content_y += 30;
+       
+       // Account for metrics line (ALWAYS shown, even when not training)
+       content_y += 25;
        
        // Account for status message if shown
        if (state->training_in_progress && state->training_status_message[0] != '\0') {
