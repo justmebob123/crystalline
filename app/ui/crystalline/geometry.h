@@ -76,7 +76,7 @@ typedef struct {
     int position;       // Position on ring (1-based)
     float angle;        // Calculated angle (radians)
     float radius;       // Calculated radius (normalized 0-1)
-} ClockPosition;
+} CrystallineClockPosition;
 
 /*
  * Point Creation Functions
@@ -152,10 +152,10 @@ CrystallinePoint crystalline_point_spiral_lerp(CrystallinePoint a, CrystallinePo
  */
 
 // Create clock position
-ClockPosition crystalline_clock_position(int ring, int position);
+CrystallineClockPosition crystalline_clock_position(int ring, int position);
 
 // Convert clock position to point (uses Babylonian clock mathematics)
-CrystallinePoint crystalline_clock_to_point(ClockPosition clock_pos, float base_radius);
+CrystallinePoint crystalline_clock_to_point(CrystallineClockPosition clock_pos, float base_radius);
 
 // Get number of positions in a ring (12, 60, 60, 100)
 int crystalline_clock_ring_positions(int ring);

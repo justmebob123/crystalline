@@ -1,6 +1,12 @@
 /*
- * Benchmark Tab
- * Comprehensive performance benchmarking and analysis
+ * Benchmark Tab - Crystalline UI Version
+ * 
+ * Features:
+ * - Radial layout with 12-fold symmetry
+ * - Circular progress indicator
+ * - Spiral layout for benchmark results
+ * - Sacred geometry panels
+ * - Frequency-based colors
  */
 
 #include <SDL2/SDL.h>
@@ -10,6 +16,11 @@
 #include <string.h>
 #include <time.h>
 #include "../../app_common.h"
+#include "../crystalline/elements.h"
+#include "../crystalline/geometry.h"
+#include "../crystalline/layout.h"
+#include "../crystalline/draw.h"
+#include "../crystalline/color.h"
 
 #define MAX_BENCHMARK_HISTORY 100
 #define MAX_BENCHMARK_TESTS 20
@@ -61,6 +72,14 @@ static BenchmarkTabState benchmark_state = {
     .selected_result = -1,
     .show_details = false
 };
+
+// Crystalline UI elements
+static CrystallineButton* btn_run = NULL;
+static CrystallineButton* btn_clear = NULL;
+static CrystallinePanel* panel_metrics = NULL;
+static CrystallinePanel* panel_results = NULL;
+static CrystallineProgress* progress_benchmark = NULL;
+static bool ui_initialized = false;
 
 void benchmark_tab_init(void) {
     memset(&benchmark_state, 0, sizeof(BenchmarkTabState));
@@ -139,64 +158,105 @@ void benchmark_tab_run_tests(void) {
 }
 
 void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, int w, int h) {
-    SDL_Color bg_color = {20, 20, 30, 255};
-    SDL_Color text_color = {220, 220, 220, 255};
-    SDL_Color panel_color = {30, 30, 40, 255};
-    SDL_Color accent_color = {100, 150, 255, 255};
-    SDL_Color success_color = {100, 255, 100, 255};
-    SDL_Color warning_color = {255, 200, 100, 255};
+    (void)font; // Unused in crystalline version
     
-    // Background
-    SDL_Rect bg_rect = {x, y, w, h};
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
-    SDL_RenderFillRect(renderer, &bg_rect);
-    
-    // Title
-    SDL_Surface* title_surface = TTF_RenderText_Blended(font, "Performance Benchmarks", text_color);
-    if (title_surface) {
-        SDL_Texture* title_texture = SDL_CreateTextureFromSurface(renderer, title_surface);
-        SDL_Rect title_rect = {x + 20, y + 10, title_surface->w, title_surface->h};
-        SDL_RenderCopy(renderer, title_texture, NULL, &title_rect);
-        SDL_DestroyTexture(title_texture);
-        SDL_FreeSurface(title_surface);
+    // Initialize UI elements if needed
+    if (!ui_initialized) {
+        float center_x = x + w / 2.0f;
+        float center_y = y + h / 2.0f;
+        
+        // Create metrics panel (top)
+        panel_metrics = crystalline_panel_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            center_x,
+            y + 100.0f,
+            (float)(w - 40),
+            140.0f,
+            "PERFORMANCE METRICS",
+            NULL
+        );
+        
+        // Create results panel (bottom)
+        panel_results = crystalline_panel_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            center_x,
+            center_y + 150.0f,
+            (float)(w - 40),
+            (float)(h - 400),
+            "BENCHMARK RESULTS",
+            NULL
+        );
+        
+        // Create circular progress indicator
+        progress_benchmark = crystalline_progress_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            center_x,
+            center_y - 50.0f,
+            100.0f,  // radius
+            0.0f
+        );
+        
+        // Create buttons in radial layout
+        btn_run = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            center_x - 120.0f,
+            center_y - 50.0f,
+            70.0f,   // radius
+            0.0f,
+            "RUN",
+            NULL
+        );
+        
+        btn_clear = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            center_x + 120.0f,
+            center_y - 50.0f,
+            70.0f,   // radius
+            0.0f,
+            "CLEAR",
+            NULL
+        );
+        
+        ui_initialized = true;
     }
     
-    // Summary metrics panel
-    SDL_Rect metrics_panel = {x + 20, y + 50, w - 40, 120};
-    SDL_SetRenderDrawColor(renderer, panel_color.r, panel_color.g, panel_color.b, panel_color.a);
-    SDL_RenderFillRect(renderer, &metrics_panel);
+    // Colors using crystalline color system
+    SDL_Color text_color = crystalline_color_from_frequency(432.0f);  // Base frequency
+    SDL_Color accent_color = crystalline_color_from_frequency(639.0f);  // Connection frequency
+    SDL_Color success_color = crystalline_color_from_frequency(528.0f);  // Love frequency
+    SDL_Color warning_color = crystalline_color_from_frequency(741.0f);  // Awakening frequency
+    
+    float center_x = x + w / 2.0f;
+    
+    // Draw title
+    CrystallinePoint title_pos = crystalline_point_cartesian(center_x, y + 30.0f);
+    crystalline_draw_text_centered(renderer, "PERFORMANCE BENCHMARKS", title_pos, text_color, NULL);
+    
+    // Draw metrics panel
+    crystalline_panel_render(panel_metrics, renderer);
+    
+    // Draw metrics inside panel
+    float metrics_y = y + 70.0f;
     
     char metrics_text[512];
     snprintf(metrics_text, sizeof(metrics_text),
-             "Avg Inference Time: %.2f ms | Avg Tokens/sec: %.1f | Peak: %.1f tokens/sec",
+             "Avg Inference: %.2f ms | Avg Tokens/sec: %.1f | Peak: %.1f tokens/sec",
              benchmark_state.avg_inference_time,
              benchmark_state.avg_tokens_per_second,
              benchmark_state.peak_tokens_per_second);
     
-    SDL_Surface* metrics_surface = TTF_RenderText_Blended(font, metrics_text, text_color);
-    if (metrics_surface) {
-        SDL_Texture* metrics_texture = SDL_CreateTextureFromSurface(renderer, metrics_surface);
-        SDL_Rect metrics_rect = {x + 30, y + 65, metrics_surface->w, metrics_surface->h};
-        SDL_RenderCopy(renderer, metrics_texture, NULL, &metrics_rect);
-        SDL_DestroyTexture(metrics_texture);
-        SDL_FreeSurface(metrics_surface);
-    }
+    CrystallinePoint metrics_pos = crystalline_point_cartesian(center_x, metrics_y);
+    crystalline_draw_text_centered(renderer, metrics_text, metrics_pos, text_color, NULL);
     
     char totals_text[256];
     snprintf(totals_text, sizeof(totals_text),
-             "Total Tokens: %.0f | Total Time: %.1f sec | Tests Run: %d",
+             "Total Tokens: %.0f | Total Time: %.1f sec | Tests: %d",
              benchmark_state.total_tokens_generated,
              benchmark_state.total_time_spent,
              benchmark_state.result_count);
     
-    SDL_Surface* totals_surface = TTF_RenderText_Blended(font, totals_text, accent_color);
-    if (totals_surface) {
-        SDL_Texture* totals_texture = SDL_CreateTextureFromSurface(renderer, totals_surface);
-        SDL_Rect totals_rect = {x + 30, y + 95, totals_surface->w, totals_surface->h};
-        SDL_RenderCopy(renderer, totals_texture, NULL, &totals_rect);
-        SDL_DestroyTexture(totals_texture);
-        SDL_FreeSurface(totals_surface);
-    }
+    CrystallinePoint totals_pos = crystalline_point_cartesian(center_x, metrics_y + 25.0f);
+    crystalline_draw_text_centered(renderer, totals_text, totals_pos, accent_color, NULL);
     
     char system_text[256];
     snprintf(system_text, sizeof(system_text),
@@ -205,176 +265,85 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
              benchmark_state.memory_usage_mb,
              benchmark_state.gpu_usage);
     
-    SDL_Surface* system_surface = TTF_RenderText_Blended(font, system_text, warning_color);
-    if (system_surface) {
-        SDL_Texture* system_texture = SDL_CreateTextureFromSurface(renderer, system_surface);
-        SDL_Rect system_rect = {x + 30, y + 125, system_surface->w, system_surface->h};
-        SDL_RenderCopy(renderer, system_texture, NULL, &system_rect);
-        SDL_DestroyTexture(system_texture);
-        SDL_FreeSurface(system_surface);
-    }
+    CrystallinePoint system_pos = crystalline_point_cartesian(center_x, metrics_y + 50.0f);
+    crystalline_draw_text_centered(renderer, system_text, system_pos, warning_color, NULL);
     
-    // Progress bar (if running)
+    // Update and draw progress
     if (benchmark_state.is_running) {
-        SDL_Rect progress_panel = {x + 20, y + 190, w - 40, 80};
-        SDL_SetRenderDrawColor(renderer, panel_color.r, panel_color.g, panel_color.b, panel_color.a);
-        SDL_RenderFillRect(renderer, &progress_panel);
+        crystalline_progress_set_value(progress_benchmark, benchmark_state.progress / 100.0f);
         
         char progress_text[256];
         snprintf(progress_text, sizeof(progress_text),
-                 "Running Test %d/%d: %.1f%% Complete",
+                 "Test %d/%d: %.1f%%",
                  benchmark_state.current_test + 1,
                  benchmark_state.total_tests,
                  benchmark_state.progress);
         
-        SDL_Surface* progress_surface = TTF_RenderText_Blended(font, progress_text, text_color);
-        if (progress_surface) {
-            SDL_Texture* progress_texture = SDL_CreateTextureFromSurface(renderer, progress_surface);
-            SDL_Rect progress_rect = {x + 30, y + 205, progress_surface->w, progress_surface->h};
-            SDL_RenderCopy(renderer, progress_texture, NULL, &progress_rect);
-            SDL_DestroyTexture(progress_texture);
-            SDL_FreeSurface(progress_surface);
-        }
-        
-        // Progress bar
-        SDL_Rect progress_bg = {x + 30, y + 235, w - 80, 20};
-        SDL_SetRenderDrawColor(renderer, 50, 50, 60, 255);
-        SDL_RenderFillRect(renderer, &progress_bg);
-        
-        SDL_Rect progress_fill = {x + 30, y + 235, 
-                                  (int)((w - 80) * benchmark_state.progress / 100.0f), 20};
-        SDL_SetRenderDrawColor(renderer, success_color.r, success_color.g, success_color.b, success_color.a);
-        SDL_RenderFillRect(renderer, &progress_fill);
+        CrystallinePoint progress_pos = crystalline_point_cartesian(center_x, y + h / 2.0f - 100.0f);
+        crystalline_draw_text_centered(renderer, progress_text, progress_pos, text_color, NULL);
+    } else {
+        crystalline_progress_set_value(progress_benchmark, 0.0f);
     }
     
-    // Results list
-    int list_y = benchmark_state.is_running ? y + 290 : y + 190;
-    int list_h = h - (list_y - y) - 20;
-    SDL_Rect list_panel = {x + 20, list_y, w - 40, list_h};
-    SDL_SetRenderDrawColor(renderer, panel_color.r, panel_color.g, panel_color.b, panel_color.a);
-    SDL_RenderFillRect(renderer, &list_panel);
+    crystalline_progress_render(progress_benchmark, renderer);
     
-    // Render results
-    int result_y = list_y + 10 - benchmark_state.scroll_offset;
-    for (int i = benchmark_state.result_count - 1; i >= 0; i--) {
+    // Draw buttons
+    crystalline_button_render(btn_run, renderer);
+    crystalline_button_render(btn_clear, renderer);
+    
+    // Draw results panel
+    crystalline_panel_render(panel_results, renderer);
+    
+    // Draw results in spiral layout
+    float results_center_x = center_x;
+    float results_center_y = y + h / 2.0f + 150.0f;
+    float spiral_start_radius = 30.0f;
+    float spiral_growth = 5.0f;
+    
+    for (int i = benchmark_state.result_count - 1; i >= 0 && i >= benchmark_state.result_count - 10; i--) {
         BenchmarkResult* result = &benchmark_state.results[i];
         
-        char result_text[512];
+        // Calculate spiral position
+        int idx = benchmark_state.result_count - 1 - i;
+        float angle = idx * 0.5f;  // Spiral angle
+        float radius = spiral_start_radius + idx * spiral_growth;
+        
+        float result_x = results_center_x + radius * prime_cosf(angle);
+        float result_y = results_center_y + radius * prime_sinf(angle);
+        
+        char result_text[256];
         snprintf(result_text, sizeof(result_text),
-                 "%s: %.2f ms | %d ops | %.1f ops/sec | %s",
+                 "%s: %.1f ms | %.0f ops/s",
                  result->name,
                  result->duration_ms,
-                 result->operations,
-                 result->ops_per_second,
-                 result->success ? "✓" : "✗");
+                 result->ops_per_second);
         
-        SDL_Color result_color = (i == benchmark_state.selected_result) ? accent_color : 
-                                (result->success ? success_color : warning_color);
-        
-        SDL_Surface* result_surface = TTF_RenderText_Blended(font, result_text, result_color);
-        if (result_surface) {
-            SDL_Texture* result_texture = SDL_CreateTextureFromSurface(renderer, result_surface);
-            SDL_Rect result_rect = {x + 30, result_y, result_surface->w, result_surface->h};
-            
-            if (result_y + result_surface->h > list_y && result_y < list_y + list_h) {
-                SDL_RenderCopy(renderer, result_texture, NULL, &result_rect);
-            }
-            
-            result_y += result_surface->h + 5;
-            SDL_DestroyTexture(result_texture);
-            SDL_FreeSurface(result_surface);
-        }
+        SDL_Color result_color = result->success ? success_color : warning_color;
+        CrystallinePoint result_pos = crystalline_point_cartesian(result_x, result_y);
+        crystalline_draw_text_centered(renderer, result_text, result_pos, result_color, NULL);
     }
     
     // Instructions
     const char* instructions = benchmark_state.is_running ? 
         "Benchmark in progress..." : 
-        "Press 'B' to run benchmarks, 'C' to clear results";
+        "Click RUN to start benchmarks, CLEAR to reset";
     
-    SDL_Surface* inst_surface = TTF_RenderText_Blended(font, instructions, accent_color);
-    if (inst_surface) {
-        SDL_Texture* inst_texture = SDL_CreateTextureFromSurface(renderer, inst_surface);
-        SDL_Rect inst_rect = {x + 30, y + h - 30, inst_surface->w, inst_surface->h};
-        SDL_RenderCopy(renderer, inst_texture, NULL, &inst_rect);
-        SDL_DestroyTexture(inst_texture);
-        SDL_FreeSurface(inst_surface);
-    }
+    CrystallinePoint inst_pos = crystalline_point_cartesian(center_x, y + h - 30.0f);
+    crystalline_draw_text_centered(renderer, instructions, inst_pos, accent_color, NULL);
 }
 
-void benchmark_tab_handle_input(SDL_Event* event) {
-    if (event->type == SDL_KEYDOWN) {
-        switch (event->key.keysym.sym) {
-            case SDLK_b:
-                if (!benchmark_state.is_running) {
-                    benchmark_tab_run_tests();
-                }
-                break;
-            case SDLK_c:
-                benchmark_state.result_count = 0;
-                benchmark_state.total_tokens_generated = 0;
-                benchmark_state.total_time_spent = 0;
-                benchmark_state.avg_inference_time = 0;
-                benchmark_state.avg_tokens_per_second = 0;
-                benchmark_state.peak_tokens_per_second = 0;
-                break;
-            case SDLK_UP:
-                benchmark_state.scroll_offset += 20;
-                if (benchmark_state.scroll_offset < 0) benchmark_state.scroll_offset = 0;
-                break;
-            case SDLK_DOWN:
-                benchmark_state.scroll_offset -= 20;
-                if (benchmark_state.scroll_offset < 0) benchmark_state.scroll_offset = 0;
-                break;
-        }
-    } else if (event->type == SDL_MOUSEWHEEL) {
-        benchmark_state.scroll_offset -= event->wheel.y * 30;
-        if (benchmark_state.scroll_offset < 0) benchmark_state.scroll_offset = 0;
-    }
-}
-
-void benchmark_tab_update(void) {
-    // Update system metrics (simulated)
-    benchmark_state.cpu_usage = 20.0 + (rand() % 30);
-    benchmark_state.memory_usage_mb = 150.0 + (rand() % 50);
-    benchmark_state.gpu_usage = 10.0 + (rand() % 20);
-}
-
-void benchmark_tab_cleanup(void) {
-    // Cleanup resources
-}
 void handle_benchmark_tab_click(AppState* state, int x, int y) {
-    if (!state) return;
+    if (!state || !ui_initialized) return;
     
-    // Calculate layout (must match render function)
-    int content_x = RENDER_OFFSET_X + 20;
-    int content_y = RENDER_OFFSET_Y + 20;
-    int content_w = RENDER_WIDTH - 40;
+    // Create SDL event for button handling
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
     
-    // Button positions (after summary metrics panel at y + 190)
-    int button_y = content_y + 190;
-    int button_width = 180;
-    int button_height = 40;
-    int button_spacing = 20;
-    
-    // Run Benchmark button (left)
-    SDL_Rect run_btn = {
-        content_x + content_w/2 - button_width - button_spacing/2,
-        button_y,
-        button_width,
-        button_height
-    };
-    
-    // Clear Results button (right)
-    SDL_Rect clear_btn = {
-        content_x + content_w/2 + button_spacing/2,
-        button_y,
-        button_width,
-        button_height
-    };
-    
-    // Check Run Benchmark button
-    if (x >= run_btn.x && x < run_btn.x + run_btn.w &&
-        y >= run_btn.y && y < run_btn.y + run_btn.h) {
+    // Check Run button
+    if (crystalline_button_handle_mouse(btn_run, &event)) {
         if (!benchmark_state.is_running) {
             printf("Running benchmark tests...\n");
             benchmark_tab_run_tests();
@@ -384,9 +353,8 @@ void handle_benchmark_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Check Clear Results button
-    if (x >= clear_btn.x && x < clear_btn.x + clear_btn.w &&
-        y >= clear_btn.y && y < clear_btn.y + clear_btn.h) {
+    // Check Clear button
+    if (crystalline_button_handle_mouse(btn_clear, &event)) {
         printf("Clearing benchmark results\n");
         benchmark_state.result_count = 0;
         benchmark_state.total_tokens_generated = 0;
@@ -396,4 +364,28 @@ void handle_benchmark_tab_click(AppState* state, int x, int y) {
         benchmark_state.peak_tokens_per_second = 0;
         return;
     }
+}
+
+void benchmark_tab_cleanup(void) {
+    if (btn_run) {
+        crystalline_button_destroy(btn_run);
+        btn_run = NULL;
+    }
+    if (btn_clear) {
+        crystalline_button_destroy(btn_clear);
+        btn_clear = NULL;
+    }
+    if (panel_metrics) {
+        crystalline_panel_destroy(panel_metrics);
+        panel_metrics = NULL;
+    }
+    if (panel_results) {
+        crystalline_panel_destroy(panel_results);
+        panel_results = NULL;
+    }
+    if (progress_benchmark) {
+        crystalline_progress_destroy(progress_benchmark);
+        progress_benchmark = NULL;
+    }
+    ui_initialized = false;
 }

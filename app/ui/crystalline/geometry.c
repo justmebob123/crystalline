@@ -39,7 +39,7 @@ CrystallinePoint crystalline_point_polar(float angle, float radius) {
 }
 
 CrystallinePoint crystalline_point_clock(int ring, int position, float base_radius) {
-    ClockPosition clock_pos = crystalline_clock_position(ring, position);
+    CrystallineClockPosition clock_pos = crystalline_clock_position(ring, position);
     return crystalline_clock_to_point(clock_pos, base_radius);
 }
 
@@ -178,8 +178,8 @@ CrystallinePoint crystalline_point_spiral_lerp(CrystallinePoint a, CrystallinePo
  * Clock Lattice Functions
  */
 
-ClockPosition crystalline_clock_position(int ring, int position) {
-    ClockPosition clock_pos;
+CrystallineClockPosition crystalline_clock_position(int ring, int position) {
+    CrystallineClockPosition clock_pos;
     clock_pos.ring = ring;
     clock_pos.position = position;
     clock_pos.angle = crystalline_clock_position_angle(ring, position);
@@ -187,7 +187,7 @@ ClockPosition crystalline_clock_position(int ring, int position) {
     return clock_pos;
 }
 
-CrystallinePoint crystalline_clock_to_point(ClockPosition clock_pos, float base_radius) {
+CrystallinePoint crystalline_clock_to_point(CrystallineClockPosition clock_pos, float base_radius) {
     float radius = clock_pos.radius * base_radius;
     return crystalline_point_polar(clock_pos.angle, radius);
 }
