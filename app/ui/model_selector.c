@@ -80,9 +80,15 @@ void model_selector_update_list(ModelSelector* selector) {
     }
     selector->num_models = 0;
     
+    printf("DEBUG: Calling model_manager_list...\n");
+    fflush(stdout);
+    
     // Get models from model manager
     uint32_t count = 0;
     ManagedModel** models = model_manager_list(&count);
+    
+    printf("DEBUG: model_manager_list returned, count=%u\n", count);
+    fflush(stdout);
     
     if (models && count > 0) {
         for (uint32_t i = 0; i < count && i < MAX_MODELS; i++) {
@@ -231,7 +237,11 @@ int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_
         
         // Update list when opening
         if (selector->dropdown_open) {
+            printf("DEBUG: Updating model list...\n");
+            fflush(stdout);
             model_selector_update_list(selector);
+            printf("DEBUG: Model list updated, count=%d\n", selector->num_models);
+            fflush(stdout);
         }
         
         return 1;

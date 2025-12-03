@@ -683,14 +683,30 @@ ManagedModel* model_manager_get(const char* name) {
 }
 
 ManagedModel** model_manager_list(uint32_t* count) {
+    printf("DEBUG: model_manager_list called\n");
+    fflush(stdout);
+    
     if (!g_manager_initialized || !count) {
+        printf("DEBUG: model_manager_list: not initialized or null count\n");
+        fflush(stdout);
         return NULL;
     }
     
+    printf("DEBUG: model_manager_list: acquiring lock...\n");
+    fflush(stdout);
+    
     pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    printf("DEBUG: model_manager_list: lock acquired, num_models=%u\n", g_model_manager.num_models);
+    fflush(stdout);
+    
     *count = g_model_manager.num_models;
     ManagedModel** models = g_model_manager.models;
+    
     pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    printf("DEBUG: model_manager_list: returning\n");
+    fflush(stdout);
     
     return models;
 }
