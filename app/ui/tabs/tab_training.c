@@ -1215,6 +1215,18 @@ void handle_training_tab_click(AppState* state, int x, int y) {
         return;
     }
     
+    // Start rotation dragging if clicking in sphere viz area (3D mode only)
+    if (x >= content_x && x <= content_x + sphere_viz_width &&
+        y >= content_y && y <= content_y + sphere_viz_height &&
+        state->sphere_viz_mode == SPHERE_VIZ_3D) {
+        sphere_rotation_dragging = true;
+        rotation_drag_start_x = x;
+        rotation_drag_start_y = y;
+        rotation_drag_start_rot_x = state->rotation_x;
+        rotation_drag_start_rot_y = state->rotation_y;
+        return;
+    }
+    
     // Check scrollbar click first
     int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
     int panel_y = RENDER_OFFSET_Y;
@@ -1572,9 +1584,38 @@ void handle_training_tab_click(AppState* state, int x, int y) {
 void handle_training_tab_keydown(AppState* state, int key) {
     if (!state) return;
     
-    // Input handling is now done by InputManager in main event loop
-    // This function is kept for compatibility but does nothing
-    (void)key;  // Suppress unused parameter warning
+    // Handle 3D rotation with arrow keys (when in 3D mode)
+    if (state->sphere_viz_mode == SPHERE_VIZ_3D) {
+        const double rotation_speed = 0.1;
+        
+        switch (key) {
+            case SDLK_LEFT:
+                state->rotation_y -= rotation_speed;
+                return;
+            case SDLK_RIGHT:
+                state->rotation_y += rotation_speed;
+                return;
+            case SDLK_UP:
+                state->rotation_x -= rotation_speed;
+                // Clamp to prevent flipping
+                if (state->rotation_x < -PRIME_PI / 2.0) 
+                    state->rotation_x = -PRIME_PI / 2.0;
+                return;
+            case SDLK_DOWN:
+                state->rotation_x += rotation_speed;
+                // Clamp to prevent flipping
+                if (state->rotation_x > PRIME_PI / 2.0) 
+                    state->rotation_x = PRIME_PI / 2.0;
+                return;
+            case SDLK_r:
+                // Reset rotation
+                state->rotation_x = 0.0;
+                state->rotation_y = 0.0;
+                state->rotation_z = 0.0;
+                printf("✓ Reset 3D rotation\n");
+                return;
+        }
+    }
 }
 
 /**
@@ -1682,14 +1723,37 @@ void handle_training_tab_scroll(AppState* state, int wheel_y) {
 void handle_training_tab_mouse_up(AppState* state) {
     if (!state) return;
     control_panel_scrollbar_dragging = false;
+    sphere_rotation_dragging = false;
 }
 
 /**
  * Handle mouse motion (for scrollbar dragging)
  */
+// Mouse drag state for 3D rotation
+static bool sphere_rotation_dragging = false;
+static int rotation_drag_start_x = 0;
+static int rotation_drag_start_y = 0;
+static double rotation_drag_start_rot_x = 0.0;
+static double rotation_drag_start_rot_y = 0.0;
+
 void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
     if (!state) return;
-    (void)x;  // Unused - only y coordinate needed for scrollbar
+    
+    // Handle 3D sphere rotation dragging
+    if (sphere_rotation_dragging) {
+        int delta_x = x - rotation_drag_start_x;
+        int delta_y = y - rotation_drag_start_y;
+        
+        // Update rotation based on mouse movement
+        state->rotation_y = rotation_drag_start_rot_y + delta_x * 0.01;
+        state->rotation_x = rotation_drag_start_rot_x + delta_y * 0.01;
+        
+        // Clamp rotation_x to prevent flipping
+        if (state->rotation_x > PRIME_PI / 2.0) state->rotation_x = PRIME_PI / 2.0;
+        if (state->rotation_x < -PRIME_PI / 2.0) state->rotation_x = -PRIME_PI / 2.0;
+        
+        return;
+    }
     
     if (control_panel_scrollbar_dragging) {
         int panel_y = RENDER_OFFSET_Y;
