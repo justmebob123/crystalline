@@ -1187,13 +1187,28 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     
     // Check for 2D/3D toggle button click
     // Calculate sphere visualization bounds (same as in draw function)
-    int content_x = RENDER_OFFSET_X + 20;
-    int content_y = RENDER_OFFSET_Y + 20;
-    int content_w = RENDER_WIDTH - 40;
-    int content_h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 40;
+       int content_x = viz_area_rect.x + 20;
+       int content_y = viz_area_rect.y + 20;
+       int content_w = viz_area_rect.w - 40;
+       int content_h = viz_area_rect.h - 40;
     
-    // CRITICAL FIX: Add the same 45 pixel offset that's in the draw function!
-    content_y += 45;  // Account for progress bar height
+       
+       // Account for title
+       content_y += 30;
+       
+       // Account for status message if shown
+       if (state->training_in_progress && state->training_status_message[0] != '\0') {
+           content_y += 25;
+           
+           // Account for preprocessing progress bar if shown
+           if (state->training_preprocessing_progress > 0.0f && 
+               state->training_preprocessing_progress < 1.0f) {
+               content_y += 35;
+           }
+       }
+       
+       // Account for progress bar
+       content_y += 45;
     
     int sphere_viz_width = (content_w * 6) / 10;
     int sphere_viz_height = (content_h * 7) / 10;
