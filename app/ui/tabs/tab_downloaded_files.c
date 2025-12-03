@@ -231,7 +231,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             content_y + 100.0f,
             (float)col1_width - 40.0f,
             (float)content_height - 200.0f,
-            NULL  // font
+            get_global_font()
         );
         
         // Create buttons in radial layout (3 buttons, 120° apart)

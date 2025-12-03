@@ -1,35 +1,37 @@
-# TODO: Fix Crystalline UI Button Interactions
+# TODO: Fix Crystalline UI Display Issues - Lists and Panels Not Rendering
 
-## Current Status
-ROOT CAUSE IDENTIFIED! Buttons need 3 event types but only get 1.
+## Status: CRITICAL ISSUE - Affects ALL 5 Converted Tabs
+
+## User Report
+- Buttons now detect clicks ✅
+- Research Tab (and all converted tabs) have rendering issues:
+  * File lists NOT VISIBLE
+  * Panels/boxes NOT VISIBLE  
+  * Text input has no label
+  * Only see: buttons, unlabeled input, model dropdown, random "file viewer" and "files" text
 
 ## Completed Tasks
-- [x] Read master plan
-- [x] Updated SECONDARY_OBJECTIVES.md with OBJECTIVE 28
-- [x] Investigated button event handling in crystalline_button.c
-- [x] Identified root cause of interaction failure
+- [x] Read MASTER_PLAN.md
+- [x] Read AUDIT.md
+- [x] Confirmed issue affects all 5 converted tabs globally
 
-## Root Cause Analysis
-Crystalline buttons need THREE event types to work:
-1. SDL_MOUSEMOTION - for hover states (NOT being sent to tabs)
-2. SDL_MOUSEBUTTONDOWN - for press states (WORKING - being sent)
-3. SDL_MOUSEBUTTONUP - for click callbacks (NOT being sent to tabs)
+## Investigation Tasks
+- [x] Check if crystalline_list_render() is being called - YES
+- [x] Check if crystalline_panel_render() is being called - YES
+- [x] Verify lists and panels are being created properly - FOUND ISSUE!
+- [x] Check if lists/panels have visible flag set - YES
+- [x] Examine draw functions for all 5 tabs
+- [x] Identify root cause of rendering failure - FOUND!
 
-Current main.c event handling:
-- MOUSEMOTION: Only sent to Training tab
-- MOUSEBUTTONDOWN: Sent to all tabs via handle_*_tab_click()
-- MOUSEBUTTONUP: Only sent to Training tab
+## Root Cause
+Lists created with NULL font in 3 tabs:
+- Research Tab: list_files created with NULL font
+- URL Manager Tab: list_urls created with NULL font
+- Downloaded Files Tab: list_files created with NULL font
 
-Result: Buttons see press but never see release or hover!
+crystalline_list_render() returns immediately if font is NULL!
 
-## Fix Tasks
-- [x] Add mouse motion handlers for all converted tabs
-- [x] Add mouse up handlers for all converted tabs
-- [x] Update main.c to dispatch motion events to all tabs
-- [x] Update main.c to dispatch up events to all tabs
-- [x] Add handlers to URL Manager tab
-- [x] Add handlers to Downloaded Files tab
-- [x] Build and test - SUCCESS!
-- [ ] Create summary document
-- [ ] Commit changes
-- [ ] User testing required to verify fix works
+## Fix Applied
+- [x] Changed NULL to get_global_font() in all 3 tabs
+- [ ] Build and test
+- [ ] Verify lists now render correctly

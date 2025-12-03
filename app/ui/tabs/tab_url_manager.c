@@ -161,7 +161,7 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
             content_y + 80.0f,
             (float)col1_width - 40.0f,
             (float)content_height - 120.0f,
-            NULL
+            get_global_font()
         );
         
         // Create input field for adding URLs

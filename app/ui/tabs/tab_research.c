@@ -271,7 +271,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             list_y_start + 40.0f,
             (float)controls_width - 60.0f,
             (float)list_height - 60.0f,
-            NULL
+            get_global_font()
         );
         
         // Create search input
