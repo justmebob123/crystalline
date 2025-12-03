@@ -238,7 +238,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             content_y + viewer_panel_height / 2.0f + 10.0f,
             viewer_panel_width,
             viewer_panel_height,
-            "FILE VIEWER",
+            "CONTENT",
             get_global_font()
         );
         
@@ -257,8 +257,8 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         );
         
         // Create file list panel within controls
-        int list_y_start = content_y + 200;
-        int list_height = content_height - 220;
+        int list_y_start = content_y + 230;
+        int list_height = content_height - 250;
         float files_panel_width = (float)controls_width - 40.0f;
         float files_panel_height = (float)list_height;
         panel_files = crystalline_panel_create(
@@ -270,6 +270,20 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             "FILES",
             get_global_font()
         );
+           
+           // Visual hierarchy: Set different border widths and colors for nested panels
+           if (panel_viewer) {
+               panel_viewer->border_width = 3.0f;
+               panel_viewer->base.color = crystalline_color_rgb(100, 120, 140);
+           }
+           if (panel_controls) {
+               panel_controls->border_width = 3.0f;
+               panel_controls->base.color = crystalline_color_rgb(100, 120, 140);
+           }
+           if (panel_files) {
+               panel_files->border_width = 2.0f;
+               panel_files->base.color = crystalline_color_rgb(80, 100, 120);
+           }
         
         // Create file list
         // For RECTANGULAR: x,y is CENTER, not top-left
@@ -278,7 +292,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         list_files = crystalline_list_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
             controls_x + list_width / 2.0f + 20.0f,
-            list_y_start + list_display_height / 2.0f + 40.0f,
+            list_y_start + list_display_height / 2.0f + 50.0f,
             list_width,
             30.0f,  // item_height
             get_global_font()
@@ -286,9 +300,9 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Create search input
         input_search = crystalline_input_create(
-            CRYSTALLINE_STYLE_CIRCULAR,
-            controls_x + controls_width / 2.0f,
-            content_y + 60.0f,
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            controls_x + ((float)controls_width - 60.0f) / 2.0f + 30.0f,
+            content_y + 60.0f + 20.0f,
             (float)controls_width - 60.0f,
             40.0f,  // Increased from 30 to 40 for better usability
             "Search files...",
@@ -296,30 +310,30 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         );
         
         // Create control buttons (3 in a row)
-        float btn_y = content_y + 110.0f;
+        float btn_y = content_y + 120.0f;
         float btn_spacing = (controls_width - 60.0f) / 3.0f;
         float btn_start_x = controls_x + 30.0f;
         
         btn_scan = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 0.5f, btn_y,
-            45.0f, 0.0f, "SCAN", get_global_font()
+            32.0f, 0.0f, "SCAN", get_global_font()
         );
         
         btn_refresh = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 1.5f, btn_y,
-            45.0f, 0.0f, "REFRESH", get_global_font()
+            32.0f, 0.0f, "REFRESH", get_global_font()
         );
         
         btn_up = crystalline_button_create(
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 2.5f, btn_y,
-            45.0f, 0.0f, "UP", get_global_font()
+            32.0f, 0.0f, "UP DIR", get_global_font()
         );
         
         // Create sort buttons (4 in a row)
-        float sort_y = content_y + 160.0f;
+        float sort_y = content_y + 175.0f;
         float sort_spacing = (controls_width - 60.0f) / 4.0f;
         
         btn_sort_name = crystalline_button_create(
@@ -469,12 +483,20 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_draw_text(renderer, "Select a file to view", msg_pos, text_color, NULL);
     }
     
-    // Draw file count
-    char count_text[64];
-    snprintf(count_text, sizeof(count_text), "Files: %d", research_state.file_count);
-    int controls_x = content_x + (int)(content_width / 1.618f) + PADDING;
-    CrystallinePoint count_pos = crystalline_point_cartesian(controls_x + 20.0f, content_y + content_height - 20.0f);
-    crystalline_draw_text(renderer, count_text, count_pos, accent_color, NULL);
+       // Draw current directory and file count
+       int controls_x = content_x + (int)(content_width / 1.618f) + PADDING;
+       
+       // Current directory path
+       char dir_text[256];
+       snprintf(dir_text, sizeof(dir_text), "Directory: %s", research_state.current_directory);
+       CrystallinePoint dir_pos = crystalline_point_cartesian(controls_x + 20.0f, content_y + 225.0f);
+       crystalline_draw_text(renderer, dir_text, dir_pos, text_color, NULL);
+       
+       // File count
+       char count_text[64];
+       snprintf(count_text, sizeof(count_text), "Files: %d", research_state.file_count);
+       CrystallinePoint count_pos = crystalline_point_cartesian(controls_x + 20.0f, content_y + content_height - 20.0f);
+       crystalline_draw_text(renderer, count_text, count_pos, accent_color, NULL);
     
     // Render inputs through InputManager
     if (g_input_manager) {
@@ -493,7 +515,7 @@ void handle_research_tab_click(AppState* state, int x, int y) {
     
     // Pass BUTTONDOWN event to all interactive elements
     // Actions will be triggered on BUTTONUP
-    if (research_state.model_selector) model_selector_handle_click(research_state.model_selector, x, y);
+    if (research_state.model_selector) model_selector_handle_button_down(research_state.model_selector, x, y);
     if (list_files) crystalline_list_handle_mouse(list_files, &event);
     if (input_search) crystalline_input_handle_mouse(input_search, &event);
     if (btn_scan) crystalline_button_handle_mouse(btn_scan, &event);
@@ -593,7 +615,7 @@ void handle_research_tab_mouse_up(AppState* state, int x, int y) {
     event.button.button = SDL_BUTTON_LEFT;
     
     // Check model selector
-    if (research_state.model_selector && model_selector_handle_click(research_state.model_selector, x, y)) {
+    if (research_state.model_selector && model_selector_handle_button_up(research_state.model_selector, x, y)) {
         return;
     }
     

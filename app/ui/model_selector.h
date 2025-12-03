@@ -25,10 +25,22 @@ void model_selector_update_list(ModelSelector* selector);
 void model_selector_render(ModelSelector* selector, SDL_Renderer* renderer);
 
 /**
- * Handle click
+ * Handle click (legacy - delegates to button_down)
  * Returns 1 if click was handled, 0 otherwise
  */
 int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_y);
+
+/**
+ * Handle mouse button down (for opening dropdown)
+ * Returns 1 if handled, 0 otherwise
+ */
+int model_selector_handle_button_down(ModelSelector* selector, int mouse_x, int mouse_y);
+
+/**
+ * Handle mouse button up (for selecting items)
+ * Returns 1 if handled, 0 otherwise
+ */
+int model_selector_handle_button_up(ModelSelector* selector, int mouse_x, int mouse_y);
 
 /**
  * Handle mouse motion (for hover effects)

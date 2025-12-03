@@ -220,7 +220,10 @@ void model_selector_render(ModelSelector* selector, SDL_Renderer* renderer) {
 /**
  * Handle click
  */
-int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_y) {
+/**
+ * Handle mouse button down (for opening dropdown)
+ */
+int model_selector_handle_button_down(ModelSelector* selector, int mouse_x, int mouse_y) {
     if (!selector) return 0;
     
     // Check if clicked on main button
@@ -241,6 +244,15 @@ int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_
         
         return 1;
     }
+    
+    return 0;
+}
+
+/**
+ * Handle mouse button up (for selecting items)
+ */
+int model_selector_handle_button_up(ModelSelector* selector, int mouse_x, int mouse_y) {
+    if (!selector) return 0;
     
     // Check if clicked on dropdown item
     if (selector->dropdown_open && selector->num_models > 0) {
@@ -273,15 +285,21 @@ int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_
                 return 1;
             }
         }
-    }
-    
-    // Click outside - close dropdown
-    if (selector->dropdown_open) {
+        
+        // Click outside dropdown area - close it
         selector->dropdown_open = 0;
         return 1;
     }
     
     return 0;
+}
+
+/**
+ * Legacy function for backward compatibility
+ * Now delegates to button_down for opening dropdown
+ */
+int model_selector_handle_click(ModelSelector* selector, int mouse_x, int mouse_y) {
+    return model_selector_handle_button_down(selector, mouse_x, mouse_y);
 }
 
 /**
