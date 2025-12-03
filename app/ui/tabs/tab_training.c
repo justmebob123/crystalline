@@ -1184,6 +1184,10 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     int content_y = RENDER_OFFSET_Y + 20;
     int content_w = RENDER_WIDTH - 40;
     int content_h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 40;
+    
+    // CRITICAL FIX: Add the same 45 pixel offset that's in the draw function!
+    content_y += 45;  // Account for progress bar height
+    
     int sphere_viz_width = (content_w * 6) / 10;
     int sphere_viz_height = (content_h * 7) / 10;
     if (sphere_viz_height < 500) sphere_viz_height = 500;
