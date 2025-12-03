@@ -228,6 +228,9 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
              state->sphere_stats.total_gradient_norm);
     draw_text(renderer, stats_text, stats_panel.x + 10, text_y, text_color);
     
+       // Unlock sphere_stats after reading all data
+       pthread_mutex_unlock(&state->sphere_stats_mutex);
+
     // Draw legend
     int legend_x = stats_panel.x + stats_panel.w - 200;
     int legend_y = stats_panel.y + 8;
