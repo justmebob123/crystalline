@@ -1,4 +1,4 @@
-# TODO - CRYSTALLINE CLLM - BUG FIXES IN PROGRESS
+# TODO - CRYSTALLINE CLLM - CRITICAL OBJECTIVES
 
 ## RULES (PASTED FROM MASTER_PLAN.MD)
 
@@ -21,90 +21,116 @@ At the beginning of EVERY response, you MUST:
 
 ## ✅ COMPLETED SECTIONS
 
-### ✅ Phase 1: Build System Fixes
+### ✅ Phase 1: Build System Fixes (Previous Work)
 - [x] Fix syntax errors in file_processor_office.c
-- [x] Add missing fclose() call
-- [x] Test build to verify compilation
-- [x] Commit fixes with proper authentication
-- [x] Update RULE 7 in MASTER_PLAN.md for mandatory build testing
-- [x] Fix format-truncation warnings in tokenizer.c
-- [x] Fix format-truncation warnings in continuous_training.c
-- [x] Fix unused function warning in file_processor_office.c
 - [x] Achieve zero-warning build
-- [x] Commit all warning fixes
+- [x] Fix type mismatch in continuous_training.c
 
-### ✅ Phase 2: System Analysis
-- [x] Perform comprehensive system analysis
-- [x] Identify critical bugs in crawler-training integration
-- [x] Document findings in todo.md
-- [x] Create detailed implementation plan
+### ✅ Phase 2: Bug Analysis (Just Completed)
+- [x] Analyzed reported bugs - all already fixed
+- [x] Verified crawler model selection works correctly
+- [x] Verified sphere visualization updates work correctly
+- [x] Verified event dispatching works correctly
+- [x] Identified missing feature: 2D/3D toggle
+
+### ✅ Objectives Already Complete
+- [x] OBJECTIVE 2B - Remove legacy loss functions
+- [x] OBJECTIVE 2C - Rename crystalline to default
+- [x] OBJECTIVE 14 - Integrate L(n,d,k,λ) lattice formula
+- [x] OBJECTIVE 15 - Integrate angular position attention
+- [x] OBJECTIVE 16 - Initialize kissing sphere neighbors
 
 ---
 
-## 🔄 CURRENT WORK: Phase 3 - Analysis Complete
+## 🔄 CURRENT WORK: CRITICAL OBJECTIVES
 
-### ✅ Bug 1: Crawler Model Selection - ALREADY FIXED
-**Status:** Code analysis shows this is already implemented correctly
+### OBJECTIVE 21: Fix Backwards "Simple Loss" Naming ✅ IN PROGRESS
+**Priority:** CRITICAL (Do Immediately)
+**Purpose:** Fix backwards naming where "simple_loss" is actually THE REAL implementation
 
-**Implementation:**
-- ✅ UI stores model name in `crawler_selected_model_name`
-- ✅ UI passes model name to `start_crawler_thread()`
-- ✅ `start_crawler_thread()` calls `crawler_set_model_name()`
-- ✅ Crawler stores model name in `CrawlerState.model_name`
-- ✅ `crawler_start()` uses `model_manager_acquire_read(model_name)` when model name is set
-- ✅ Falls back to `model_manager_get_first()` only when no model is selected
+**Problem:**
+- `include/ai/cllm_simple_loss.h` contains THE REAL crystalline GCD-based loss
+- Name "simple" implies it's a stub - THIS IS BACKWARDS
+- `include/ai/cllm_loss.h` contains unused Tensor API infrastructure
+- Violates "one codebase, one design" principle
 
-**Conclusion:** This bug was already fixed in previous work.
+**Tasks:**
+- [ ] Check if cllm_simple_loss.h exists and what it contains
+- [ ] Check if cllm_loss.h exists and what it contains
+- [ ] Rename cllm_simple_loss.h → cllm_loss.h (backup old one first)
+- [ ] Rename old cllm_loss.h → cllm_tensor_loss.h
+- [ ] Update all includes in source files
+- [ ] Update Makefile if needed
+- [ ] Test build (make clean && make)
+- [ ] Commit changes
 
-### ✅ Bug 2: Sphere Visualization Updates - ALREADY FIXED
-**Status:** Code analysis shows this is already implemented correctly
+### OBJECTIVE 22: Delete Unused Infrastructure Files
+**Priority:** CRITICAL (Do After 21)
+**Purpose:** Remove 83KB of dead code
 
-**Implementation:**
-- ✅ `update_crawler_sphere_stats()` function exists in `continuous_training.c`
-- ✅ AppState is passed via `continuous_training_init()` as `app_state` parameter
-- ✅ AppState is passed from crawler via `state->callback_user_data`
-- ✅ Function is called in training loop (line 302)
-- ✅ Proper mutex locking implemented
-- ✅ Updates all sphere stats: active_spheres, batches_processed, avg_loss, gradient_norm
-
-**Conclusion:** This bug was already fixed in previous work.
-
-### ✅ Bug 3: Event Dispatching - ALREADY FIXED
-**Status:** Code analysis shows this is already implemented correctly
-
-**Implementation:**
-- ✅ Monitor thread in `crawler_api.c` tracks file counts
-- ✅ Dispatches CRAWLER_EVENT_PAGE_TRAINED when trained count increases (line 158)
-- ✅ Callback mechanism properly set up via `crawler_set_callback()`
-- ✅ Events flow to UI through `crawler_event_callback()` in `app/crawler_thread.c`
-
-**Conclusion:** This bug was already fixed in previous work.
-
-### ⚠️ Feature: 2D/3D Toggle - NOT IMPLEMENTED
-**Status:** This feature does not exist yet
-
-**Current State:**
-- Sphere visualization only has one mode (circular 2D arrangement)
-- No toggle button in UI
-- No mode switching capability
-
-**Implementation Needed:**
-- [ ] Add `sphere_visualization_mode` enum to AppState (MODE_2D, MODE_3D)
-- [ ] Add toggle button to Training Tab control panel
-- [ ] Implement 3D rendering mode with depth/perspective
-- [ ] Add click handler for toggle button
-- [ ] Test both visualization modes
+**Files to Delete:**
+- [ ] src/ai/infrastructure/cllm_backprop.c (22KB)
+- [ ] src/ai/infrastructure/cllm_loss.c (30KB)
+- [ ] src/ai/infrastructure/cllm_training_loop.c (31KB)
+- [ ] include/ai/cllm_backprop.h
+- [ ] include/ai/cllm_training_loop.h
+- [ ] Update Makefile
+- [ ] Test build
 - [ ] Commit changes
 
 ---
 
-## 📋 NEXT STEPS
+## 📋 NEXT PRIORITIES
 
-**Current Focus:** Implementing Bug 1 - Fix crawler model selection
+### HIGH Priority (After Critical)
+- OBJECTIVE 25: Fix remaining build warnings (if any)
+- OBJECTIVE 2D: Remove legacy code files
 
-**After Bug Fixes:**
-1. Test all fixes together
-2. Verify sphere visualization updates correctly
-3. Verify events flow properly
-4. Commit all changes with proper authentication
-5. Mark phase complete
+### MEDIUM Priority
+- OBJECTIVE 23: Remove misleading file name qualifiers
+- OBJECTIVE 24: Investigate and consolidate duplicates
+- OBJECTIVE 5A: Kissing spheres as only threading
+- OBJECTIVE 8A: Remove conditional compilation
+
+### Feature Request (User Asked)
+- Add 2D/3D toggle for sphere visualization
+
+---
+
+## 📝 CURRENT ACTION
+
+**Status Update:**
+- ✅ OBJECTIVE 21: Already complete (no cllm_simple_loss.h exists)
+- ✅ OBJECTIVE 22: Already complete (unused files already deleted)
+- ✅ OBJECTIVE 25: Already complete (zero warnings in build)
+
+**Now Implementing:** 2D/3D Toggle for Sphere Visualization
+
+### Implementation Plan:
+
+**Phase 1: Add Data Structures**
+- [ ] Add visualization mode enum to AppState
+- [ ] Add mode field to sphere_stats or AppState
+- [ ] Initialize to default mode (2D)
+
+**Phase 2: Add UI Toggle Button**
+- [ ] Add toggle button to Training Tab control panel
+- [ ] Position near sphere visualization area
+- [ ] Add click handler
+
+**Phase 3: Implement 3D Rendering Mode**
+- [ ] Create 3D sphere positioning with depth
+- [ ] Add perspective projection
+- [ ] Scale spheres based on depth
+- [ ] Add rotation controls (optional)
+
+**Phase 4: Update Rendering Logic**
+- [ ] Modify draw_sphere_visualization to check mode
+- [ ] Implement mode switching
+- [ ] Test both modes
+
+**Phase 5: Testing &amp; Polish**
+- [ ] Test mode switching
+- [ ] Verify sphere stats update in both modes
+- [ ] Add visual indicators for current mode
+- [ ] Commit changes

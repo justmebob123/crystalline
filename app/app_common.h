@@ -140,6 +140,12 @@ typedef enum {
     FOLD_COUNT
 } FoldingMode;
 
+// Sphere visualization modes (for Training Tab)
+typedef enum {
+    SPHERE_VIZ_2D,  // Flat circular arrangement (default)
+    SPHERE_VIZ_3D   // 3D arrangement with depth and perspective
+} SphereVisualizationMode;
+
 // Sphere structure for 3D visualization
 typedef struct {
     double x, y, z;
@@ -364,6 +370,9 @@ typedef struct {
         int total_batches;            // Total batches across all spheres
     } sphere_stats;
     pthread_mutex_t sphere_stats_mutex;  // Protects sphere_stats from race conditions
+    
+    // Sphere visualization mode (2D or 3D)
+    SphereVisualizationMode sphere_viz_mode;
     
     // UI Integration: Real-time metrics from training system
     CLLMMetrics* training_metrics;  // Forward declaration, defined in cllm_metrics.h

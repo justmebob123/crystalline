@@ -475,6 +475,36 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
               int sphere_viz_width = (content_w * 7) / 10;
               int sphere_viz_height = (content_h * 6) / 10;
               if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
+            // 2D/3D Toggle Button
+            SDL_Rect toggle_button = {content_x, content_y, 100, 30};
+            SDL_Color toggle_bg = state->sphere_viz_mode == SPHERE_VIZ_3D ? 
+                                  (SDL_Color){80, 120, 180, 255} : (SDL_Color){60, 60, 70, 255};
+            SDL_SetRenderDrawColor(renderer, toggle_bg.r, toggle_bg.g, toggle_bg.b, 255);
+            SDL_RenderFillRect(renderer, &toggle_button);
+            SDL_SetRenderDrawColor(renderer, 100, 100, 110, 255);
+            SDL_RenderDrawRect(renderer, &toggle_button);
+            
+            const char* toggle_text = state->sphere_viz_mode == SPHERE_VIZ_3D ? "3D Mode" : "2D Mode";
+            draw_text(renderer, toggle_text, toggle_button.x + 20, toggle_button.y + 8, 
+                     (SDL_Color){220, 220, 220, 255});
+            
+            // Adjust sphere visualization position to be below the button
+            content_y += 40;
+            
+            // 2D/3D Toggle Button
+            SDL_Rect toggle_button = {content_x, content_y - 35, 120, 30};
+            SDL_Color toggle_bg = state->sphere_viz_mode == SPHERE_VIZ_3D ? 
+                                 (SDL_Color){60, 120, 180, 255} : (SDL_Color){50, 50, 60, 255};
+            SDL_Color toggle_text = {220, 220, 220, 255};
+            
+            SDL_SetRenderDrawColor(renderer, toggle_bg.r, toggle_bg.g, toggle_bg.b, 255);
+            SDL_RenderFillRect(renderer, &toggle_button);
+            SDL_SetRenderDrawColor(renderer, 100, 100, 120, 255);
+            SDL_RenderDrawRect(renderer, &toggle_button);
+            
+            const char* mode_text = state->sphere_viz_mode == SPHERE_VIZ_3D ? "3D Mode" : "2D Mode";
+            draw_text(renderer, mode_text, toggle_button.x + 25, toggle_button.y + 8, toggle_text);
+            
 // MOVED:            SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
              SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
              draw_sphere_visualization(renderer, state, sphere_bounds);
@@ -1148,6 +1178,25 @@ bool handle_training_tab_event(AppState* state, SDL_Event* event) {
  */
 void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
+
+    // Check for 2D/3D toggle button click
+    // Button is positioned above sphere visualization in the content area
+    int content_x = RENDER_OFFSET_X + 20;
+    int content_y = RENDER_OFFSET_Y + 50;
+    SDL_Rect toggle_button = {content_x, content_y - 35, 120, 30};
+    
+    if (x >= toggle_button.x && x < toggle_button.x + toggle_button.w &&
+        y >= toggle_button.y && y < toggle_button.y + toggle_button.h) {
+        // Toggle between 2D and 3D modes
+        if (state->sphere_viz_mode == SPHERE_VIZ_2D) {
+            state->sphere_viz_mode = SPHERE_VIZ_3D;
+            printf("Switched to 3D sphere visualization mode\n");
+        } else {
+            state->sphere_viz_mode = SPHERE_VIZ_2D;
+            printf("Switched to 2D sphere visualization mode\n");
+        }
+        return;
+    }
     
     // Silent click handling
     
@@ -1179,6 +1228,25 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     // Check model selector click first
     if (model_selector && model_selector_handle_click(model_selector, x, y)) {
         return;
+    
+    // Check 2D/3D toggle button click
+    // Calculate button position (same as in draw function)
+    int content_x = RENDER_OFFSET_X + 20;
+    int content_y = RENDER_OFFSET_Y + 60;
+    SDL_Rect toggle_button = {content_x, content_y - 35, 120, 30};
+    
+    if (x >= toggle_button.x && x < toggle_button.x + toggle_button.w &&
+        y >= toggle_button.y && y < toggle_button.y + toggle_button.h) {
+        // Toggle between 2D and 3D modes
+        if (state->sphere_viz_mode == SPHERE_VIZ_2D) {
+            state->sphere_viz_mode = SPHERE_VIZ_3D;
+            printf("Switched to 3D sphere visualization mode\n");
+        } else {
+            state->sphere_viz_mode = SPHERE_VIZ_2D;
+            printf("Switched to 2D sphere visualization mode\n");
+        }
+        return;
+    }
     }
     
     // Check slider clicks

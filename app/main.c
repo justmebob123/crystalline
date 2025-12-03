@@ -27,6 +27,9 @@ AppState* init_app(void) {
     // Initialize sphere_stats mutex
     pthread_mutex_init(&state->sphere_stats_mutex, NULL);
     
+    // Initialize sphere visualization mode to 2D (default)
+    state->sphere_viz_mode = SPHERE_VIZ_2D;
+    
     // Initialize loading screen state
     loading_screen_init(&g_loading_screen);
     
