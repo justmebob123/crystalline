@@ -18,6 +18,10 @@ TAB_OBJECTS = $(TAB_SOURCES:.c=.o)
    # UI source files in ui/ subdirectory
    UI_SOURCES = $(wildcard ui/*.c)
    UI_OBJECTS = $(UI_SOURCES:.c=.o)
+   
+   # Crystalline UI source files in ui/crystalline/ subdirectory
+   CRYSTALLINE_UI_SOURCES = $(wildcard ui/crystalline/*.c)
+   CRYSTALLINE_UI_OBJECTS = $(CRYSTALLINE_UI_SOURCES:.c=.o)
 
 # Crystalline UI source files
 CRYSTALLINE_SOURCES = $(wildcard ui/crystalline/*.c)
@@ -66,8 +70,8 @@ debug: clean all
 # Clean
 clean:
 	@echo "Cleaning application..."
-	rm -f $(APP_OBJECTS) $(UI_OBJECTS) $(TAB_OBJECTS) $(TARGET)
-	rm -f ui/*.o ui/tabs/*.o
+	rm -f $(APP_OBJECTS) $(UI_OBJECTS) $(CRYSTALLINE_UI_OBJECTS) $(TAB_OBJECTS) $(TARGET)
+	rm -f ui/*.o ui/tabs/*.o ui/crystalline/*.o
 	@echo "✓ Application cleaned"
 
 # Info

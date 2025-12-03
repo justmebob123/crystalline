@@ -526,7 +526,113 @@ void handle_downloaded_files_click(AppState* state, int x, int y) {
         return;
     }
     
-    // TODO: Add button click handlers (Open, Delete, Re-crawl)
+    // Check if click is in preview panel buttons
+       int col2_width = (content_width * 60) / 100;
+       int col2_x = col1_x + col1_width + PADDING;
+       int preview_height = WINDOW_HEIGHT - SUBMENU_HEIGHT - PADDING * 2;
+       int button_y = content_y + PADDING + preview_height - 60;
+       int button_width = (col2_width - PADDING * 4) / 3;
+       
+       // Open button
+       SDL_Rect open_btn = {col2_x + PADDING, button_y, button_width, BUTTON_HEIGHT};
+       if (x >= open_btn.x && x < open_btn.x + open_btn.w &&
+           y >= open_btn.y && y < open_btn.y + open_btn.h) {
+           
+           if (files_state.selected_file_idx >= 0 && 
+               files_state.selected_file_idx < files_state.file_count) {
+               FileInfo* file = &files_state.file_list[files_state.selected_file_idx];
+               
+               // Build file path
+               char filepath[1024];
+               snprintf(filepath, sizeof(filepath), "%s/%s", DOWNLOADS_DIR, file->filename);
+               
+               // Try to open file with system default application
+               #ifdef __linux__
+               char cmd[2048];
+               snprintf(cmd, sizeof(cmd), "xdg-open '%s' 2>/dev/null &", filepath);
+               int result = system(cmd);
+               if (result == 0) {
+                   printf("Opened file: %s\n", filepath);
+               } else {
+                   printf("Failed to open file: %s\n", filepath);
+               }
+               #else
+               printf("Open file not implemented for this platform: %s\n", filepath);
+               #endif
+           } else {
+               printf("No file selected\n");
+           }
+           return;
+       }
+       
+       // Delete button
+       SDL_Rect del_btn = {col2_x + PADDING * 2 + button_width, button_y, button_width, BUTTON_HEIGHT};
+       if (x >= del_btn.x && x < del_btn.x + del_btn.w &&
+           y >= del_btn.y && y < del_btn.y + del_btn.h) {
+           
+           if (files_state.selected_file_idx >= 0 && 
+               files_state.selected_file_idx < files_state.file_count) {
+               FileInfo* file = &files_state.file_list[files_state.selected_file_idx];
+               
+               // Build file path
+               char filepath[1024];
+               snprintf(filepath, sizeof(filepath), "%s/%s", DOWNLOADS_DIR, file->filename);
+               
+               // Delete the file
+               if (remove(filepath) == 0) {
+                   printf("Deleted file: %s\n", filepath);
+                   
+                   // Note: We don't change URL status - file is deleted but URL record remains
+                   // User can use Re-crawl button to download again
+                   
+                   // Refresh file list
+                   files_state.file_list_dirty = true;
+                   files_state.selected_file_idx = -1;
+                   files_state.preview_loaded = false;
+               } else {
+                   printf("Failed to delete file: %s\n", filepath);
+               }
+           } else {
+               printf("No file selected\n");
+           }
+           return;
+       }
+       
+       // Re-crawl button
+       SDL_Rect recrawl_btn = {col2_x + PADDING * 3 + button_width * 2, button_y, button_width, BUTTON_HEIGHT};
+       if (x >= recrawl_btn.x && x < recrawl_btn.x + recrawl_btn.w &&
+           y >= recrawl_btn.y && y < recrawl_btn.y + recrawl_btn.h) {
+           
+           if (files_state.selected_file_idx >= 0 && 
+               files_state.selected_file_idx < files_state.file_count) {
+               FileInfo* file = &files_state.file_list[files_state.selected_file_idx];
+               
+               // Re-crawl: First unblock if blocked, then mark as pending
+               URLDatabase* db = crawler_url_manager_get_database(files_state.url_manager);
+               if (db) {
+                   // Unblock first (in case it was blocked)
+                   url_db_unblock(db, file->url_id);
+                   
+                   // Remove the URL and re-add it to mark as pending
+                   // This is a workaround since there's no direct "mark as pending" function
+                   char url_copy[512];
+                   strncpy(url_copy, file->url, sizeof(url_copy) - 1);
+                   url_copy[sizeof(url_copy) - 1] = '\0';
+                   
+                   url_db_remove(db, file->url_id);
+                   crawler_url_manager_add(files_state.url_manager, url_copy, "recrawl");
+                   
+                   printf("Marked URL for re-crawl: %s\n", file->url);
+                   
+                   // Refresh file list
+                   files_state.file_list_dirty = true;
+                   files_state.selected_file_idx = -1;
+               }
+           } else {
+               printf("No file selected\n");
+           }
+           return;
+       }
 }
 
 // Cleanup function

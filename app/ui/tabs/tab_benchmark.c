@@ -342,3 +342,58 @@ void benchmark_tab_update(void) {
 void benchmark_tab_cleanup(void) {
     // Cleanup resources
 }
+void handle_benchmark_tab_click(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    // Calculate layout (must match render function)
+    int content_x = RENDER_OFFSET_X + 20;
+    int content_y = RENDER_OFFSET_Y + 20;
+    int content_w = RENDER_WIDTH - 40;
+    
+    // Button positions (after summary metrics panel at y + 190)
+    int button_y = content_y + 190;
+    int button_width = 180;
+    int button_height = 40;
+    int button_spacing = 20;
+    
+    // Run Benchmark button (left)
+    SDL_Rect run_btn = {
+        content_x + content_w/2 - button_width - button_spacing/2,
+        button_y,
+        button_width,
+        button_height
+    };
+    
+    // Clear Results button (right)
+    SDL_Rect clear_btn = {
+        content_x + content_w/2 + button_spacing/2,
+        button_y,
+        button_width,
+        button_height
+    };
+    
+    // Check Run Benchmark button
+    if (x >= run_btn.x && x < run_btn.x + run_btn.w &&
+        y >= run_btn.y && y < run_btn.y + run_btn.h) {
+        if (!benchmark_state.is_running) {
+            printf("Running benchmark tests...\n");
+            benchmark_tab_run_tests();
+        } else {
+            printf("Benchmark already running\n");
+        }
+        return;
+    }
+    
+    // Check Clear Results button
+    if (x >= clear_btn.x && x < clear_btn.x + clear_btn.w &&
+        y >= clear_btn.y && y < clear_btn.y + clear_btn.h) {
+        printf("Clearing benchmark results\n");
+        benchmark_state.result_count = 0;
+        benchmark_state.total_tokens_generated = 0;
+        benchmark_state.total_time_spent = 0;
+        benchmark_state.avg_inference_time = 0;
+        benchmark_state.avg_tokens_per_second = 0;
+        benchmark_state.peak_tokens_per_second = 0;
+        return;
+    }
+}
