@@ -1295,10 +1295,12 @@ void handle_training_tab_click(AppState* state, int x, int y) {
             // CRITICAL FIX: Load model on-demand when training starts
             if (!state->cllm_model) {
                 // Use selected model name from model selector
-                const char* model_name = selected_model_name[0] ? selected_model_name : "default_model";
-                   printf("DEBUG: selected_model_name = '%s'\n", selected_model_name);
-                
+                   const char* model_name = selected_model_name[0] ? selected_model_name : model_manager_get_name_at_index(0);
                 printf("Loading model for training: %s\n", model_name);
+                   if (!model_name) {
+                       printf("ERROR: No models available\n");
+                       return;
+                   }
                    // Reload model if it exists but is not loaded yet
                    if (model_manager_exists(model_name)) {
                       printf("DEBUG: Model exists check for '%s'\n", model_name);
