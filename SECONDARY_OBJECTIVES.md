@@ -978,3 +978,47 @@ typedef struct {
 ---
 
 **END OF SECONDARY OBJECTIVES**
+### OBJECTIVE 28: Crystalline UI System - Full Tab Conversion [CRITICAL PRIORITY]
+
+**Purpose:** Convert all 9 tabs to use Crystalline UI with sacred geometry
+
+**Status:** 🔄 IN PROGRESS (5 of 9 tabs complete - 56%)
+
+**Current Issue:** Buttons don't respond to hover or click events
+
+**Completed Tabs (5/9):**
+- ✅ Video Tab - Radial layout with circular START button
+- ✅ Benchmark Tab - Radial layout with RUN/CLEAR buttons
+- ✅ Downloaded Files Tab - Flower of Life pattern
+- ✅ URL Manager Tab - Metatron's Cube layout
+- ✅ Research Tab - Golden ratio grid layout
+
+**Critical Bugs Fixed:**
+- ✅ Text rendering (NULL font → get_global_font())
+- ✅ Button sizes (increased to 40-50px radius minimum)
+- ✅ Visual affordance (glows, borders, colors)
+
+**Current Critical Issue:**
+- ❌ Buttons don't hover or click - no interaction at all
+- User reports: "they just don't seem to do anything"
+- Need to investigate event handling in crystalline buttons
+
+**Remaining Tabs (4/9):**
+- [ ] Training Tab (~1,806 lines) - Most complex
+- [ ] LLM Tab (~800 lines) - Chat interface
+- [ ] Models Tab (~600 lines) - Medium complexity
+- [ ] Crawler Tab (~700 lines) - Medium complexity
+
+**Implementation Tasks:**
+- [ ] Investigate button event handling
+- [ ] Check if crystalline buttons register click handlers
+- [ ] Verify hover state detection
+- [ ] Test button callbacks
+- [ ] Fix interaction issues
+- [ ] Document event handling requirements
+
+**Related Files:**
+- `src/ui/crystalline_button.c` - Button implementation
+- `app/ui/tabs/tab_*.c` - All converted tabs
+- `include/ui/crystalline_button.h` - Button API
+

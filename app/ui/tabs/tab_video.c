@@ -263,6 +263,39 @@ void handle_video_tab_click(AppState* state, int x, int y) {
     event.button.button = SDL_BUTTON_LEFT;
     
     // Check button click
+    crystalline_button_handle_mouse(btn_record, &event);
+}
+
+/**
+ * Handle video tab mouse motion for hover states
+ */
+void handle_video_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    // Create SDL event for hover handling
+    SDL_Event event;
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = x;
+    event.motion.y = y;
+    
+    // Update button hover state
+    crystalline_button_handle_mouse(btn_record, &event);
+}
+
+/**
+ * Handle video tab mouse up for click callbacks
+ */
+void handle_video_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    // Create SDL event for button release
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
+    // Check button release and trigger callback
     if (crystalline_button_handle_mouse(btn_record, &event)) {
         // Button was clicked - toggle recording
         if (state->is_recording) {

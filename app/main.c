@@ -501,6 +501,18 @@ void handle_mouse_click(AppState* state, int x, int y) {
         return;
     }
     
+    if (state->current_tab == TAB_URL_MANAGER) {
+        extern void handle_url_manager_tab_click(AppState* state, int x, int y);
+        handle_url_manager_tab_click(state, x, y);
+        return;
+    }
+    
+    if (state->current_tab == TAB_DOWNLOADED_FILES) {
+        extern void handle_downloaded_files_tab_click(AppState* state, int x, int y);
+        handle_downloaded_files_tab_click(state, x, y);
+        return;
+    }
+    
     if (state->current_tab == TAB_CALCULATOR) {
               // Check mini-map clicks first (top area, 50-350 pixels from top)
               int minimap_x = 50;
@@ -763,9 +775,23 @@ void handle_input(AppState* state, SDL_Event* event) {
             
         case SDL_MOUSEBUTTONUP:
             state->dragging_slider = false;
+            
+            // Route mouse up events to crystalline UI tabs for click callbacks
             if (state->current_tab == TAB_TRAINING) {
                 extern void handle_training_tab_mouse_up(AppState* state);
                 handle_training_tab_mouse_up(state);
+            } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
+                extern void handle_video_tab_mouse_up(AppState* state, int x, int y);
+                handle_video_tab_mouse_up(state, event->button.x, event->button.y);
+            } else if (state->current_tab == TAB_RESEARCH) {
+                extern void handle_research_tab_mouse_up(AppState* state, int x, int y);
+                handle_research_tab_mouse_up(state, event->button.x, event->button.y);
+            } else if (state->current_tab == TAB_URL_MANAGER) {
+                extern void handle_url_manager_tab_mouse_up(AppState* state, int x, int y);
+                handle_url_manager_tab_mouse_up(state, event->button.x, event->button.y);
+            } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
+                extern void handle_downloaded_files_tab_mouse_up(AppState* state, int x, int y);
+                handle_downloaded_files_tab_mouse_up(state, event->button.x, event->button.y);
             }
             break;
             
@@ -773,9 +799,22 @@ void handle_input(AppState* state, SDL_Event* event) {
             state->mouse_x = event->motion.x;
             state->mouse_y = event->motion.y;
             
+            // Route motion events to crystalline UI tabs for hover states
             if (state->current_tab == TAB_TRAINING) {
                 extern void handle_training_tab_mouse_motion(AppState* state, int x, int y);
                 handle_training_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
+                extern void handle_video_tab_mouse_motion(AppState* state, int x, int y);
+                handle_video_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            } else if (state->current_tab == TAB_RESEARCH) {
+                extern void handle_research_tab_mouse_motion(AppState* state, int x, int y);
+                handle_research_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            } else if (state->current_tab == TAB_URL_MANAGER) {
+                extern void handle_url_manager_tab_mouse_motion(AppState* state, int x, int y);
+                handle_url_manager_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
+                extern void handle_downloaded_files_tab_mouse_motion(AppState* state, int x, int y);
+                handle_downloaded_files_tab_mouse_motion(state, event->motion.x, event->motion.y);
             }
             
             if (event->motion.state & SDL_BUTTON_LMASK) {

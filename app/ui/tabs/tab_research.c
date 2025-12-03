@@ -481,6 +481,107 @@ void handle_research_tab_click(AppState* state, int x, int y) {
     event.button.y = y;
     event.button.button = SDL_BUTTON_LEFT;
     
+    // Pass BUTTONDOWN event to all interactive elements
+    // Actions will be triggered on BUTTONUP
+    if (research_state.model_selector) model_selector_handle_click(research_state.model_selector, x, y);
+    if (list_files) crystalline_list_handle_mouse(list_files, &event);
+    if (input_search) crystalline_input_handle_mouse(input_search, &event);
+    if (btn_scan) crystalline_button_handle_mouse(btn_scan, &event);
+    if (btn_refresh) crystalline_button_handle_mouse(btn_refresh, &event);
+    if (btn_up) crystalline_button_handle_mouse(btn_up, &event);
+    if (btn_sort_name) crystalline_button_handle_mouse(btn_sort_name, &event);
+    if (btn_sort_size) crystalline_button_handle_mouse(btn_sort_size, &event);
+    if (btn_sort_date) crystalline_button_handle_mouse(btn_sort_date, &event);
+    if (btn_sort_type) crystalline_button_handle_mouse(btn_sort_type, &event);
+}
+
+bool handle_research_tab_event(AppState* state, SDL_Event* event) {
+    if (!state || !event || !ui_initialized) return false;
+    
+    // Handle search input events
+    if (crystalline_input_handle_keyboard(input_search, event)) {
+        const char* query = crystalline_input_get_text(input_search);
+        if (query) {
+            strncpy(research_state.search_query, query, sizeof(research_state.search_query) - 1);
+            research_state.search_query[sizeof(research_state.search_query) - 1] = '\0';
+            scan_research_directory(research_state.current_directory);
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+void handle_research_tab_scroll(AppState* state, int scroll_y) {
+    (void)state;
+    
+    if (!ui_initialized) return;
+    
+    if (research_state.selected_file >= 0) {
+        // Scroll file content
+        research_state.content_scroll -= scroll_y;
+        if (research_state.content_scroll < 0) research_state.content_scroll = 0;
+        
+        // Count total lines
+        int total_lines = 1;
+        for (size_t i = 0; i < strlen(research_state.file_content); i++) {
+            if (research_state.file_content[i] == '\n') total_lines++;
+        }
+        
+        int max_lines = (WINDOW_HEIGHT - 150) / 14;
+        int max_scroll = total_lines - max_lines;
+        if (max_scroll < 0) max_scroll = 0;
+        if (research_state.content_scroll > max_scroll) research_state.content_scroll = max_scroll;
+    }
+}
+
+void handle_research_tab_text_input(AppState* state, const char* text) {
+    (void)state;
+    (void)text;
+    // Handled by crystalline input
+}
+
+void handle_research_tab_keydown(AppState* state, SDL_Keycode key) {
+    (void)state;
+    (void)key;
+    // Handled by crystalline input
+}
+
+/**
+ * Handle research tab mouse motion for hover states
+ */
+void handle_research_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = x;
+    event.motion.y = y;
+    
+    // Update hover states for all interactive elements
+    if (list_files) crystalline_list_handle_mouse(list_files, &event);
+    if (input_search) crystalline_input_handle_mouse(input_search, &event);
+    if (btn_scan) crystalline_button_handle_mouse(btn_scan, &event);
+    if (btn_refresh) crystalline_button_handle_mouse(btn_refresh, &event);
+    if (btn_up) crystalline_button_handle_mouse(btn_up, &event);
+    if (btn_sort_name) crystalline_button_handle_mouse(btn_sort_name, &event);
+    if (btn_sort_size) crystalline_button_handle_mouse(btn_sort_size, &event);
+    if (btn_sort_date) crystalline_button_handle_mouse(btn_sort_date, &event);
+    if (btn_sort_type) crystalline_button_handle_mouse(btn_sort_type, &event);
+}
+
+/**
+ * Handle research tab mouse up for click callbacks
+ */
+void handle_research_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
     // Check model selector
     if (research_state.model_selector && model_selector_handle_click(research_state.model_selector, x, y)) {
         return;
@@ -565,58 +666,6 @@ void handle_research_tab_click(AppState* state, int x, int y) {
         scan_research_directory(research_state.current_directory);
         return;
     }
-}
-
-bool handle_research_tab_event(AppState* state, SDL_Event* event) {
-    if (!state || !event || !ui_initialized) return false;
-    
-    // Handle search input events
-    if (crystalline_input_handle_keyboard(input_search, event)) {
-        const char* query = crystalline_input_get_text(input_search);
-        if (query) {
-            strncpy(research_state.search_query, query, sizeof(research_state.search_query) - 1);
-            research_state.search_query[sizeof(research_state.search_query) - 1] = '\0';
-            scan_research_directory(research_state.current_directory);
-        }
-        return true;
-    }
-    
-    return false;
-}
-
-void handle_research_tab_scroll(AppState* state, int scroll_y) {
-    (void)state;
-    
-    if (!ui_initialized) return;
-    
-    if (research_state.selected_file >= 0) {
-        // Scroll file content
-        research_state.content_scroll -= scroll_y;
-        if (research_state.content_scroll < 0) research_state.content_scroll = 0;
-        
-        // Count total lines
-        int total_lines = 1;
-        for (size_t i = 0; i < strlen(research_state.file_content); i++) {
-            if (research_state.file_content[i] == '\n') total_lines++;
-        }
-        
-        int max_lines = (WINDOW_HEIGHT - 150) / 14;
-        int max_scroll = total_lines - max_lines;
-        if (max_scroll < 0) max_scroll = 0;
-        if (research_state.content_scroll > max_scroll) research_state.content_scroll = max_scroll;
-    }
-}
-
-void handle_research_tab_text_input(AppState* state, const char* text) {
-    (void)state;
-    (void)text;
-    // Handled by crystalline input
-}
-
-void handle_research_tab_keydown(AppState* state, SDL_Keycode key) {
-    (void)state;
-    (void)key;
-    // Handled by crystalline input
 }
 
 void cleanup_research_tab(void) {

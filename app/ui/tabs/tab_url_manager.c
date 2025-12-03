@@ -286,6 +286,61 @@ void handle_url_manager_click(AppState* state, int x, int y) {
     event.button.y = y;
     event.button.button = SDL_BUTTON_LEFT;
     
+    // Pass BUTTONDOWN event to all interactive elements
+    // Actions will be triggered on BUTTONUP
+    if (list_urls) crystalline_list_handle_mouse(list_urls, &event);
+    if (input_add_url) crystalline_input_handle_mouse(input_add_url, &event);
+    if (btn_add) crystalline_button_handle_mouse(btn_add, &event);
+    if (btn_remove) crystalline_button_handle_mouse(btn_remove, &event);
+    if (btn_block) crystalline_button_handle_mouse(btn_block, &event);
+    if (btn_export) crystalline_button_handle_mouse(btn_export, &event);
+    if (btn_import) crystalline_button_handle_mouse(btn_import, &event);
+}
+
+// Alias for main.c compatibility
+void handle_url_manager_tab_click(AppState* state, int x, int y) {
+    handle_url_manager_click(state, x, y);
+}
+
+/**
+ * Handle URL manager tab mouse motion for hover states
+ */
+void handle_url_manager_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    init_url_manager_state();
+    if (!url_state.url_manager || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = x;
+    event.motion.y = y;
+    
+    // Update hover states
+    if (list_urls) crystalline_list_handle_mouse(list_urls, &event);
+    if (input_add_url) crystalline_input_handle_mouse(input_add_url, &event);
+    if (btn_add) crystalline_button_handle_mouse(btn_add, &event);
+    if (btn_remove) crystalline_button_handle_mouse(btn_remove, &event);
+    if (btn_block) crystalline_button_handle_mouse(btn_block, &event);
+    if (btn_export) crystalline_button_handle_mouse(btn_export, &event);
+    if (btn_import) crystalline_button_handle_mouse(btn_import, &event);
+}
+
+/**
+ * Handle URL manager tab mouse up for click callbacks
+ */
+void handle_url_manager_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    init_url_manager_state();
+    if (!url_state.url_manager || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
     // Check URL list click
     if (crystalline_list_handle_mouse(list_urls, &event)) {
         int selected = crystalline_list_get_selected(list_urls);

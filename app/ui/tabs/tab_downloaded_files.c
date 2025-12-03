@@ -385,6 +385,55 @@ void handle_downloaded_files_click(AppState* state, int x, int y) {
     event.button.y = y;
     event.button.button = SDL_BUTTON_LEFT;
     
+    // Pass BUTTONDOWN event to all interactive elements
+    // Actions will be triggered on BUTTONUP
+    if (list_files) crystalline_list_handle_mouse(list_files, &event);
+    if (btn_open) crystalline_button_handle_mouse(btn_open, &event);
+    if (btn_delete) crystalline_button_handle_mouse(btn_delete, &event);
+    if (btn_recrawl) crystalline_button_handle_mouse(btn_recrawl, &event);
+}
+
+// Alias for main.c compatibility
+void handle_downloaded_files_tab_click(AppState* state, int x, int y) {
+    handle_downloaded_files_click(state, x, y);
+}
+
+/**
+ * Handle downloaded files tab mouse motion for hover states
+ */
+void handle_downloaded_files_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    init_downloaded_files_state();
+    if (!files_state.url_manager || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = x;
+    event.motion.y = y;
+    
+    // Update hover states
+    if (list_files) crystalline_list_handle_mouse(list_files, &event);
+    if (btn_open) crystalline_button_handle_mouse(btn_open, &event);
+    if (btn_delete) crystalline_button_handle_mouse(btn_delete, &event);
+    if (btn_recrawl) crystalline_button_handle_mouse(btn_recrawl, &event);
+}
+
+/**
+ * Handle downloaded files tab mouse up for click callbacks
+ */
+void handle_downloaded_files_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    init_downloaded_files_state();
+    if (!files_state.url_manager || !ui_initialized) return;
+    
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
     // Check file list click
     if (crystalline_list_handle_mouse(list_files, &event)) {
         int selected = crystalline_list_get_selected(list_files);

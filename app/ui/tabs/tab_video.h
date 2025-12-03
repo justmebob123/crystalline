@@ -18,4 +18,14 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state);
  */
 void handle_video_tab_click(AppState* state, int x, int y);
 
+/**
+ * Handle video tab mouse motion
+ */
+void handle_video_tab_mouse_motion(AppState* state, int x, int y);
+
+/**
+ * Handle video tab mouse up
+ */
+void handle_video_tab_mouse_up(AppState* state, int x, int y);
+
 #endif // TAB_VIDEO_H

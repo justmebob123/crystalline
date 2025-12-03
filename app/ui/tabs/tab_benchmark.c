@@ -344,6 +344,41 @@ void handle_benchmark_tab_click(AppState* state, int x, int y) {
     event.button.y = y;
     event.button.button = SDL_BUTTON_LEFT;
     
+    // Check buttons
+    crystalline_button_handle_mouse(btn_run, &event);
+    crystalline_button_handle_mouse(btn_clear, &event);
+}
+
+/**
+ * Handle benchmark tab mouse motion for hover states
+ */
+void handle_benchmark_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    // Create SDL event for hover handling
+    SDL_Event event;
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = x;
+    event.motion.y = y;
+    
+    // Update button hover states
+    crystalline_button_handle_mouse(btn_run, &event);
+    crystalline_button_handle_mouse(btn_clear, &event);
+}
+
+/**
+ * Handle benchmark tab mouse up for click callbacks
+ */
+void handle_benchmark_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state || !ui_initialized) return;
+    
+    // Create SDL event for button release
+    SDL_Event event;
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
     // Check Run button
     if (crystalline_button_handle_mouse(btn_run, &event)) {
         if (!benchmark_state.is_running) {
