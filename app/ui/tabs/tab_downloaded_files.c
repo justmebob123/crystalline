@@ -208,7 +208,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             (float)col1_width - 20.0f,
             (float)content_height - 40.0f,
             "DOWNLOADED FILES",
-            NULL
+            get_global_font()
         );
         
         // Create preview panel (right)
@@ -221,7 +221,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
             (float)col2_width - 40.0f,
             (float)content_height - 40.0f,
             "FILE PREVIEW",
-            NULL
+            get_global_font()
         );
         
         // Create file list (clock lattice - 60 positions)

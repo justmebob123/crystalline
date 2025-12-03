@@ -175,7 +175,7 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
             (float)(w - 40),
             140.0f,
             "PERFORMANCE METRICS",
-            NULL
+            get_global_font()
         );
         
         // Create results panel (bottom)
@@ -186,7 +186,7 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
             (float)(w - 40),
             (float)(h - 400),
             "BENCHMARK RESULTS",
-            NULL
+            get_global_font()
         );
         
         // Create circular progress indicator

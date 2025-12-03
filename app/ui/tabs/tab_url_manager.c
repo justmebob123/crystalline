@@ -125,7 +125,7 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
             (float)col1_width - 20.0f,
             (float)content_height - 40.0f,
             "URL LIST",
-            NULL
+            get_global_font()
         );
         
         // Create actions panel (middle, 25%)
@@ -138,7 +138,7 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
             (float)col2_width - 20.0f,
             (float)content_height - 40.0f,
             "ACTIONS",
-            NULL
+            get_global_font()
         );
         
         // Create filters panel (right, 25%)
@@ -151,7 +151,7 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
             (float)col3_width - 20.0f,
             (float)content_height - 40.0f,
             "FILTERS",
-            NULL
+            get_global_font()
         );
         
         // Create URL list

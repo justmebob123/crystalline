@@ -57,7 +57,7 @@ void init_video_tab(void) {
         400.0f,  // width
         180.0f,  // height
         "RECORDING STATUS",
-        NULL     // font (will use default)
+        get_global_font()
     );
     
     // Create requirements panel (circular style)
@@ -68,7 +68,7 @@ void init_video_tab(void) {
         400.0f,  // width
         150.0f,  // height
         "REQUIREMENTS",
-        NULL     // font (will use default)
+        get_global_font()
     );
     
     // Create circular progress indicator

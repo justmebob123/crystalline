@@ -236,7 +236,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             (float)viewer_width - 20.0f,
             (float)content_height - 40.0f,
             "FILE VIEWER",
-            NULL
+            get_global_font()
         );
         
         // Create controls panel (right)
@@ -248,7 +248,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             (float)controls_width - 20.0f,
             (float)content_height - 40.0f,
             "CONTROLS",
-            NULL
+            get_global_font()
         );
         
         // Create file list panel within controls
@@ -261,7 +261,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
             (float)controls_width - 40.0f,
             (float)list_height - 20.0f,
             "FILES",
-            NULL
+            get_global_font()
         );
         
         // Create file list
