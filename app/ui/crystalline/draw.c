@@ -6,6 +6,7 @@
  */
 
 #include "draw.h"
+#include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -655,4 +656,82 @@ void crystalline_draw_glow(SDL_Renderer* renderer,
         CrystallineDrawStyle style = crystalline_draw_style_stroked(glow_color, 2.0f);
         crystalline_draw_circle(renderer, center, r, style);
     }
+}
+// Text drawing functions
+void crystalline_draw_text(SDL_Renderer* renderer, 
+                          const char* text,
+                          CrystallinePoint position,
+                          SDL_Color color,
+                          void* font) {
+    if (!renderer || !font || !text) return;
+    
+    TTF_Font* ttf_font = (TTF_Font*)font;
+    SDL_Surface* surface = TTF_RenderText_Blended(ttf_font, text, color);
+    if (!surface) return;
+    
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (!texture) {
+        SDL_FreeSurface(surface);
+        return;
+    }
+    
+    SDL_Rect dest = {
+        (int)position.x,
+        (int)position.y,
+        surface->w,
+        surface->h
+    };
+    
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+    
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+}
+
+void crystalline_draw_text_centered(SDL_Renderer* renderer,
+                                    const char* text,
+                                    CrystallinePoint center,
+                                    SDL_Color color,
+                                    void* font) {
+    if (!renderer || !font || !text) return;
+    
+    TTF_Font* ttf_font = (TTF_Font*)font;
+    SDL_Surface* surface = TTF_RenderText_Blended(ttf_font, text, color);
+    if (!surface) return;
+    
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (!texture) {
+        SDL_FreeSurface(surface);
+        return;
+    }
+    
+    SDL_Rect dest = {
+        (int)(center.x - surface->w / 2),
+        (int)(center.y - surface->h / 2),
+        surface->w,
+        surface->h
+    };
+    
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+    
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+}
+
+void crystalline_draw_text_arc(SDL_Renderer* renderer,
+                               const char* text,
+                               CrystallinePoint center,
+                               float radius,
+                               float start_angle,
+                               SDL_Color color,
+                               void* font) {
+    // For now, just draw text at the start angle position
+    // Full arc text would require character-by-character rotation
+    if (!renderer || !font || !text) return;
+    
+    float x = center.x + radius * prime_cosf(start_angle);
+    float y = center.y + radius * prime_sinf(start_angle);
+    
+    CrystallinePoint pos = crystalline_point_cartesian(x, y);
+    crystalline_draw_text_centered(renderer, text, pos, color, font);
 }
