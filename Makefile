@@ -293,7 +293,7 @@ clean:
 	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/validate_kissing_spheres \
-                tools/analyze_cymatic_resonance tools/visualize_angular_positions
+                tools/analyze_cymatic_resonance tools/visualize_angular_positions tools/fix_html_entities
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
@@ -548,3 +548,10 @@ tools/diagnose_inference: $(CLLM_LIB)
 	$(CC) $(CFLAGS) -o tools/diagnose_inference tools/diagnose_inference.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference diagnostic tool built: tools/diagnose_inference"
+
+tools/fix_html_entities:
+	@echo "Building HTML entity fixer..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/fix_html_entities tools/fix_html_entities.c
+	@echo "✓ HTML entity fixer built: tools/fix_html_entities"
+

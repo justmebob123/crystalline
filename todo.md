@@ -1,4 +1,4 @@
-# TODO - CRYSTALLINE CLLM - FIXING BUILD ERRORS
+# TODO - CRYSTALLINE CLLM - REPOSITORY DEEP AUDIT
 
 ## RULES (PASTED FROM MASTER_PLAN.MD)
 
@@ -19,68 +19,70 @@ At the beginning of EVERY response, you MUST:
 
 ---
 
-## 🚨 CRITICAL: BUILD ERRORS TO FIX
+## ✅ COMPLETED TASKS
 
-### Error 1: Duplicate toggle_button definitions in tab_training.c
-**Location:** ui/tabs/tab_training.c lines 479 and 495
-**Problem:** Variable redefinition - toggle button code was added twice
-**Fix:** Remove duplicate code, keep only one toggle button implementation
+### Build Errors Fixed
+- [x] Fixed duplicate toggle_button definitions in tab_training.c
+- [x] Verified unused variables in draw_spheres_2d() are actually used
+- [x] Removed extraneous files in tmp/
+- [x] Verified build is clean (zero errors, zero warnings)
+- [x] Built application successfully
 
-### Error 2: Unused variables in draw_spheres_2d()
-**Location:** app/ui/sphere_visualization.c line 186-190
-**Problem:** Unused variables: text_color, grid_color, sphere_radius
-**Fix:** Remove unused variable declarations
-
-### Error 3: Extraneous files in tmp/ directory
-**Location:** tmp/sphere_viz_helpers.c, tmp/sphere_viz_main.c
-**Problem:** These files should not be in the repository
-**Fix:** Delete these files and add tmp/ to .gitignore
-
----
-
-## ✅ COMPLETED: All Build Errors Fixed and Repository Cleaned
-
-### Task 1: Fix tab_training.c duplicate code
-- [x] Examined tab_training.c to find duplicate toggle button code
-- [x] Removed the duplicate definition (lines 1218-1238)
-- [x] Kept only one clean implementation
-- [x] Tested build - SUCCESS
-
-### Task 2: Fix sphere_visualization.c unused variables
-- [x] Verified variables ARE used (false alarm in todo.md)
-- [x] No changes needed - all variables are properly used
-- [x] Tested build - SUCCESS
-
-### Task 3: Clean up tmp/ directory
-- [x] Deleted tmp/sphere_viz_helpers.c
-- [x] Deleted tmp/sphere_viz_main.c
-- [x] Verified tmp/ already in .gitignore
-- [x] Tested build - SUCCESS
-
-### Task 4: Comprehensive File Audit
-- [x] Identified all extraneous files in repository
-- [x] Found and removed 12 backup files (.backup, .bak, .old)
-- [x] Found and removed 60 temporary Python scripts
-- [x] Found and removed 258 unused .md files
-- [x] Created and executed cleanup plan
-
-### Task 5: Commit fixes
-- [x] Verified zero errors, zero warnings
-- [x] Committed all fixes (2 commits)
-- [x] Pushed to GitHub successfully
+### Repository Cleanup
+- [x] Performed comprehensive file audit
+- [x] Removed 12 backup files (.backup, .bak, .old)
+- [x] Removed 60 temporary Python scripts
+- [x] Removed 258 unused .md files
+- [x] Committed and pushed changes to GitHub
+- [x] Verified duplicate repository and outputs are in .gitignore
 
 ---
 
-## ✅ ALL TASKS COMPLETE
+## 🎯 CURRENT OBJECTIVE: Deep Repository Audit
 
-**Summary:**
-- Fixed all build errors (duplicate code in tab_training.c)
-- Cleaned up repository (removed 330+ extraneous files)
-- Verified build: ZERO errors, ZERO warnings
-- All changes committed and pushed to GitHub
+Based on MASTER_PLAN.md OBJECTIVE 18 and the conversation summary, I need to perform a comprehensive file-by-file audit to identify:
+1. Unused files (dead code)
+2. Partially implemented files
+3. Files using incorrect APIs
+4. Missing proper integration
+5. Duplicate functionality
 
-**Repository Status:**
-- Clean and maintainable
-- Only essential documentation remains
-- Build system fully functional
-- Ready for continued development
+### Phase 1: Complete File Inventory
+- [x] List all .c files in repository (431 total)
+- [x] List all .h files in repository (233 total)
+- [x] List all tool files (25 total)
+- [x] Identified 9 tools NOT in Makefile
+- [x] Build system verified: ZERO errors, ZERO warnings
+
+### Phase 2: Audit Each File
+- [x] Analyzed all 25 tool files
+- [x] Identified 9 tools NOT in Makefile
+- [x] Created UNUSED_FILES_AUDIT.md with detailed analysis
+- [x] Compared train_model.c with cllm unified
+- [x] Verified train_model.c compiles (1 warning about unused variable)
+- [ ] Decide on each unused tool (add/move/delete)
+
+### Phase 3: Fix or Remove - ACTION ITEMS
+
+#### High Priority Tools to Add
+- [x] Add fix_html_entities to Makefile (referenced in MASTER_PLAN.md)
+- [x] Test fix_html_entities compilation - SUCCESS
+- [x] Verified fix_html_entities works correctly
+
+#### Medium Priority - Utility Tools
+- [ ] Add analyze_rainbow_structure to Makefile (optional target)
+- [ ] Add profile_l_lattice to Makefile (optional target)
+- [ ] Add profile_initialization to Makefile (optional target)
+- [ ] Add benchmark_cached_init to Makefile (optional target)
+
+#### Low Priority - Review and Decide
+- [ ] Review train_model.c - determine if needed vs cllm unified
+- [ ] Review train_cllm_repo.c - check for unique functionality
+- [ ] Move simple_train_and_infer.c to demos/ or delete
+- [ ] Move create_test_model.c to tests/ or delete
+
+### Phase 4: Final Verification
+- [ ] Clean build verification
+- [ ] All tests pass
+- [ ] Documentation updated
+- [ ] Commit and push changes
