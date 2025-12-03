@@ -1298,6 +1298,11 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 const char* model_name = selected_model_name[0] ? selected_model_name : "default_model";
                 
                 printf("Loading model for training: %s\n", model_name);
+                   // Reload model if it exists but is not loaded yet
+                   if (model_manager_exists(model_name)) {
+                       model_manager_reload(model_name);
+                   }
+
                 state->cllm_model = model_manager_acquire_write(model_name);
                 
                 if (!state->cllm_model) {

@@ -155,6 +155,11 @@ static bool acquire_model_for_inference(AppState* state, const char* model_name,
     }
     
     // Try to acquire existing model
+       // Reload model if it exists but is not loaded yet
+       if (model_manager_exists(model_name)) {
+           model_manager_reload(model_name);
+       }
+
     state->cllm_model = model_manager_acquire_read(model_name);
     
     if (!state->cllm_model) {

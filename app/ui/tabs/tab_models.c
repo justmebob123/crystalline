@@ -625,6 +625,9 @@ void handle_models_tab_click(AppState* state, int x, int y) {
                     printf("Double-click detected - loading model '%s'\n", models[clicked_index]->name);
                     
                     // Load the model (same as Load button)
+                       // Reload model if not already loaded
+                       model_manager_reload(models[clicked_index]->name);
+
                     CLLMModel* loaded_model = model_manager_acquire_read(models[clicked_index]->name);
                     if (loaded_model) {
                         // Release old model if any
