@@ -201,12 +201,14 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Create file browser panel (left, Flower of Life pattern)
         int col1_width = (content_width * 40) / 100;
+        float browser_width = (float)col1_width - 20.0f;
+        float browser_height = (float)content_height - 20.0f;
         panel_browser = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            content_x + 10.0f,
-            content_y + 10.0f,
-            (float)col1_width - 20.0f,
-            (float)content_height - 20.0f,
+            content_x + browser_width / 2.0f + 10.0f,
+            content_y + browser_height / 2.0f + 10.0f,
+            browser_width,
+            browser_height,
             "DOWNLOADED FILES",
             get_global_font()
         );
@@ -214,12 +216,14 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
         // Create preview panel (right)
         int col2_width = (content_width * 60) / 100;
         int col2_x = content_x + col1_width + PADDING;
+        float preview_width = (float)col2_width - 40.0f;
+        float preview_height = (float)content_height - 20.0f;
         panel_preview = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            col2_x,
-            content_y + 10.0f,
-            (float)col2_width - 40.0f,
-            (float)content_height - 20.0f,
+            col2_x + preview_width / 2.0f,
+            content_y + preview_height / 2.0f + 10.0f,
+            preview_width,
+            preview_height,
             "FILE PREVIEW",
             get_global_font()
         );

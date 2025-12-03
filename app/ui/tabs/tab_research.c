@@ -229,24 +229,29 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         int controls_width = content_width - viewer_width - PADDING;
         
         // Create viewer panel (left, golden ratio)
+        // For RECTANGULAR: x,y is CENTER, not top-left
+        float viewer_panel_width = (float)viewer_width - 20.0f;
+        float viewer_panel_height = (float)content_height - 20.0f;
         panel_viewer = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            content_x + 10.0f,
-            content_y + 10.0f,
-            (float)viewer_width - 20.0f,
-            (float)content_height - 20.0f,
+            content_x + viewer_panel_width / 2.0f + 10.0f,
+            content_y + viewer_panel_height / 2.0f + 10.0f,
+            viewer_panel_width,
+            viewer_panel_height,
             "FILE VIEWER",
             get_global_font()
         );
         
         // Create controls panel (right)
         int controls_x = content_x + viewer_width + PADDING;
+        float controls_panel_width = (float)controls_width - 20.0f;
+        float controls_panel_height = (float)content_height - 20.0f;
         panel_controls = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            controls_x,
-            content_y + 10.0f,
-            (float)controls_width - 20.0f,
-            (float)content_height - 20.0f,
+            controls_x + controls_panel_width / 2.0f,
+            content_y + controls_panel_height / 2.0f + 10.0f,
+            controls_panel_width,
+            controls_panel_height,
             "CONTROLS",
             get_global_font()
         );
@@ -254,12 +259,14 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         // Create file list panel within controls
         int list_y_start = content_y + 200;
         int list_height = content_height - 220;
+        float files_panel_width = (float)controls_width - 40.0f;
+        float files_panel_height = (float)list_height;
         panel_files = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            controls_x + 10.0f,
-            list_y_start,
-            (float)controls_width - 40.0f,
-            (float)list_height,
+            controls_x + files_panel_width / 2.0f + 10.0f,
+            list_y_start + files_panel_height / 2.0f,
+            files_panel_width,
+            files_panel_height,
             "FILES",
             get_global_font()
         );

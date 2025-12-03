@@ -118,12 +118,14 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Create URL list panel (left, 50%)
         int col1_width = (content_width * 50) / 100;
+        float panel1_width = (float)col1_width - 20.0f;
+        float panel1_height = (float)content_height - 20.0f;
         panel_urls = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            content_x + 10.0f,
-            content_y + 10.0f,
-            (float)col1_width - 20.0f,
-            (float)content_height - 20.0f,
+            content_x + panel1_width / 2.0f + 10.0f,
+            content_y + panel1_height / 2.0f + 10.0f,
+            panel1_width,
+            panel1_height,
             "URL LIST",
             get_global_font()
         );
@@ -131,12 +133,14 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         // Create actions panel (middle, 25%)
         int col2_width = (content_width * 25) / 100;
         int col2_x = content_x + col1_width + PADDING;
+        float panel2_width = (float)col2_width - 20.0f;
+        float panel2_height = (float)content_height - 20.0f;
         panel_actions = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            col2_x,
-            content_y + 10.0f,
-            (float)col2_width - 20.0f,
-            (float)content_height - 20.0f,
+            col2_x + panel2_width / 2.0f,
+            content_y + panel2_height / 2.0f + 10.0f,
+            panel2_width,
+            panel2_height,
             "ACTIONS",
             get_global_font()
         );
@@ -144,12 +148,14 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         // Create filters panel (right, 25%)
         int col3_width = (content_width * 25) / 100;
         int col3_x = col2_x + col2_width + PADDING;
+        float panel3_width = (float)col3_width - 20.0f;
+        float panel3_height = (float)content_height - 20.0f;
         panel_filters = crystalline_panel_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            col3_x,
-            content_y + 10.0f,
-            (float)col3_width - 20.0f,
-            (float)content_height - 40.0f,
+            col3_x + panel3_width / 2.0f,
+            content_y + panel3_height / 2.0f + 10.0f,
+            panel3_width,
+            panel3_height,
             "FILTERS",
             get_global_font()
         );

@@ -15,28 +15,39 @@
 - [x] Fixed button interactions
 - [x] Fixed list fonts
 
+## Previous Fixes
+- [x] Fix #1: Button interactions (NULL font)
+- [x] Fix #2: List rendering (NULL font)
+- [x] Fix #3: Panel style (CIRCULAR to RECTANGULAR)
+
+## Current Issue: Panels Off-Screen
+User reports:
+- Three panels go off TOP of screen
+- One panel covers menu and goes off LEFT side
+- Panels not centered properly
+- Random shapes visible (box outline, multi-sided shape)
+
 ## Investigation Complete
-- [x] Check sidebar width constant (SIDEBAR_WIDTH) - Correct (200)
-- [x] Verify content_x calculation respects sidebar - Correct
-- [x] Check if panels are positioned correctly - FOUND ISSUE!
-- [x] Examine coordinate system and positioning logic
+- [x] Check SUBMENU_HEIGHT value - 40px
+- [x] Verify panel Y coordinates - FOUND ISSUE!
+- [x] Examine panel positioning calculations
 
-## Root Cause #3: Wrong Panel Style
-Panels used CRYSTALLINE_STYLE_CIRCULAR with width/height values:
-- Circular style expects: center point + radius
-- Tabs were passing: center point + width + height
-- Result: Massive circles (radius ~1000px) overlapping sidebar
+## Root Cause #4: Center vs Top-Left Positioning
+crystalline_rect_create() treats x,y as CENTER, not top-left!
 
-Example:
-- viewer_width = 1063, passed as radius
-- Circle centered at x=531 with radius=1043
-- Circle extends from x=-512 to x=1574 (overlaps sidebar at x=0-200!)
+Example bug:
+- Panel created at (210, 50) with size (1043, 840)
+- Rectangle centered at (210, 50)
+- Top edge: 50 - 420 = -370 (OFF SCREEN!)
+- Left edge: 210 - 521 = -311 (OFF SCREEN!)
 
 ## Fix Applied
-Changed all panels from CIRCULAR to RECTANGULAR style:
+Calculate center point correctly for all panels:
 - Research Tab: 3 panels fixed
-- URL Manager Tab: 3 panels fixed  
+- URL Manager Tab: 3 panels fixed
 - Downloaded Files Tab: 2 panels fixed
 
+Formula: center = position + (size / 2)
+
 - [ ] Build and test
-- [ ] Verify panels now render correctly within bounds
+- [ ] Verify panels now render on-screen
