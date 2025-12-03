@@ -451,43 +451,64 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
         char timestamp[32];
         get_timestamp(timestamp, sizeof(timestamp));
         
-        // Try to acquire existing model from model manager
-        state->model = model_manager_acquire_write(model_name);
-        
-        if (!state->model) {
-            // Model doesn't exist, create it
-            printf("%s Creating new model '%s' via model manager...\n", timestamp, model_name);
-            
-            // Create default config for crawler
-            CLLMConfig default_config = {
-                .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
-                .embedding_dim = 1024,    // Increased from 512 (better representations)
-                .num_layers = 6,
-                .num_heads = 8,
-                .ff_dim = 4096,           // Increased from 2048 (more capacity)
-                .max_seq_len = 1024,      // Increased from 512 (longer context)
-                .dropout = 0.1f
-            };
-            
-            // Create model through model manager
-            if (model_manager_create(model_name, &default_config) != 0) {
-                fprintf(stderr, "%s Failed to create model via model manager\n", timestamp);
-                free(state);
-                return NULL;
-            }
-            
-            // Now acquire it for training
-            state->model = model_manager_acquire_write(model_name);
-            if (!state->model) {
-                fprintf(stderr, "%s Failed to acquire newly created model\n", timestamp);
-                free(state);
-                return NULL;
-            }
-            
-            printf("%s Model '%s' created and acquired for training\n", timestamp, model_name);
-        } else {
-            printf("%s Using existing model '%s' from model manager\n", timestamp, model_name);
-        }
+           
+           // First, check if model exists and prepare it
+           extern bool model_manager_exists(const char* name);
+           extern bool model_manager_prepare(const char* name);
+           extern bool model_manager_reload(const char* name);
+           
+           bool model_exists = model_manager_exists(model_name);
+           
+           if (model_exists) {
+               // Model exists, prepare and load it
+               printf("%s Model '%s' exists, preparing...\n", timestamp, model_name);
+               if (!model_manager_prepare(model_name)) {
+                   fprintf(stderr, "%s Failed to prepare model '%s'\n", timestamp, model_name);
+                   free(state);
+                   return NULL;
+               }
+               
+               if (!model_manager_reload(model_name)) {
+                   fprintf(stderr, "%s Failed to load model '%s' into memory\n", timestamp, model_name);
+                   free(state);
+                   return NULL;
+               }
+               
+               printf("%s Model '%s' prepared and loaded\n", timestamp, model_name);
+           } else {
+               // Model doesn't exist, create it
+               printf("%s Creating new model '%s' via model manager...\n", timestamp, model_name);
+               
+               // Create default config for crawler
+               CLLMConfig default_config = {
+                   .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
+                   .embedding_dim = 1024,    // Increased from 512 (better representations)
+                   .num_layers = 6,
+                   .num_heads = 8,
+                   .ff_dim = 4096,           // Increased from 2048 (more capacity)
+                   .max_seq_len = 1024,      // Increased from 512 (longer context)
+                   .dropout = 0.1f
+               };
+               
+               // Create model through model manager
+               if (model_manager_create(model_name, &default_config) != 0) {
+                   fprintf(stderr, "%s Failed to create model via model manager\n", timestamp);
+                   free(state);
+                   return NULL;
+               }
+               
+               printf("%s Model '%s' created successfully\n", timestamp, model_name);
+           }
+           
+           // Now acquire the model for training (it should be accessible now)
+           state->model = model_manager_acquire_write(model_name);
+           if (!state->model) {
+               fprintf(stderr, "%s Failed to acquire model '%s' for training\n", timestamp, model_name);
+               free(state);
+               return NULL;
+           }
+           
+           printf("%s Model '%s' acquired for training\n", timestamp, model_name);
     }
     
     // Initialize training state
