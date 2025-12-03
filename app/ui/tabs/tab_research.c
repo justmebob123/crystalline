@@ -272,12 +272,15 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
         );
         
         // Create file list
+        // For RECTANGULAR: x,y is CENTER, not top-left
+        float list_width = (float)controls_width - 60.0f;
+        float list_display_height = 30.0f * 10;  // item_height * visible_items
         list_files = crystalline_list_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            controls_x + 20.0f,
-            list_y_start + 40.0f,
-            (float)controls_width - 60.0f,
-            (float)list_height - 60.0f,
+            controls_x + list_width / 2.0f + 20.0f,
+            list_y_start + list_display_height / 2.0f + 40.0f,
+            list_width,
+            30.0f,  // item_height
             get_global_font()
         );
         

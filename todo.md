@@ -1,53 +1,42 @@
-# TODO: Fix Crystalline UI Layout Issues
+# TODO: Fix Crystalline UI - Lists Not Displaying Items
 
-## Status: NEW CRITICAL ISSUES - Layout and Positioning Problems
+## Status: PROGRESS - Panels Fixed, Lists Still Empty
 
-## User Report (Research Tab - affects all converted tabs)
-1. ✅ Buttons detect clicks (fixed)
-2. ✅ Lists have fonts (fixed)
-3. ❌ UI draws OVER the left sidebar menu
-4. ❌ Still don't see actual file viewer or list
-5. ❌ Debug says "Found 2 documents" but nothing visible
-6. ❌ Layout doesn't make sense
+## User Report (Research Tab)
+Progress:
+- ✅ Two panels now properly positioned (don't overlap menu)
+- ✅ One panel has a box inside (for files)
+- ❌ No files actually displayed in the list
+- ❌ Buttons don't seem to populate the list
+- ❌ Debug says "Found 2 documents" but nothing visible
+- ❌ Strange outline of a box visible
+- ❌ Outline of multi-sided circular shape visible
 
-## Completed Tasks
-- [x] Read MASTER_PLAN.md
-- [x] Fixed button interactions
-- [x] Fixed list fonts
-
-## Previous Fixes
-- [x] Fix #1: Button interactions (NULL font)
-- [x] Fix #2: List rendering (NULL font)
-- [x] Fix #3: Panel style (CIRCULAR to RECTANGULAR)
-
-## Current Issue: Panels Off-Screen
-User reports:
-- Three panels go off TOP of screen
-- One panel covers menu and goes off LEFT side
-- Panels not centered properly
-- Random shapes visible (box outline, multi-sided shape)
+## Completed Fixes
+- [x] Fix #1: Button interactions (event handling)
+- [x] Fix #2: List fonts (NULL → get_global_font)
+- [x] Fix #3: Panel style (CIRCULAR → RECTANGULAR)
+- [x] Fix #4: Panel positioning (center point calculation)
 
 ## Investigation Complete
-- [x] Check SUBMENU_HEIGHT value - 40px
-- [x] Verify panel Y coordinates - FOUND ISSUE!
-- [x] Examine panel positioning calculations
+- [x] Check if list items are being added - YES (in draw function)
+- [x] Verify list bounds and positioning - FOUND ISSUE!
+- [x] Lists also use center positioning, not top-left
 
-## Root Cause #4: Center vs Top-Left Positioning
-crystalline_rect_create() treats x,y as CENTER, not top-left!
-
-Example bug:
-- Panel created at (210, 50) with size (1043, 840)
-- Rectangle centered at (210, 50)
-- Top edge: 50 - 420 = -370 (OFF SCREEN!)
-- Left edge: 210 - 521 = -311 (OFF SCREEN!)
+## Root Cause #5: List Positioning
+Lists also use crystalline_rect_create() which treats x,y as CENTER!
+- Same issue as panels
+- Lists positioned as if x,y were top-left
+- Result: Lists off-screen or in wrong location
 
 ## Fix Applied
-Calculate center point correctly for all panels:
-- Research Tab: 3 panels fixed
-- URL Manager Tab: 3 panels fixed
-- Downloaded Files Tab: 2 panels fixed
+Calculate center point for all lists:
+- Research Tab: list_files repositioned
+- URL Manager Tab: list_urls repositioned
+- Downloaded Files Tab: list_files repositioned
 
-Formula: center = position + (size / 2)
+Formula: center = position + (display_height / 2)
+Note: display_height = item_height * visible_items = 30 * 10 = 300px
 
 - [ ] Build and test
-- [ ] Verify panels now render on-screen
+- [ ] Verify lists now display items

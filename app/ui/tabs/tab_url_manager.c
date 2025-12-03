@@ -161,12 +161,15 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
         );
         
         // Create URL list
+        // For RECTANGULAR: x,y is CENTER, not top-left
+        float url_list_width = (float)col1_width - 40.0f;
+        float url_list_display_height = 30.0f * 10;  // item_height * visible_items
         list_urls = crystalline_list_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
-            content_x + PADDING,
-            content_y + 80.0f,
-            (float)col1_width - 40.0f,
-            (float)content_height - 120.0f,
+            content_x + url_list_width / 2.0f + PADDING,
+            content_y + url_list_display_height / 2.0f + 80.0f,
+            url_list_width,
+            30.0f,  // item_height
             get_global_font()
         );
         

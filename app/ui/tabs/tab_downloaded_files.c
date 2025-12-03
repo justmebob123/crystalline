@@ -229,12 +229,15 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
         );
         
         // Create file list (clock lattice - 60 positions)
+        // For RECTANGULAR: x,y is CENTER, not top-left
+        float file_list_width = (float)col1_width - 40.0f;
+        float file_list_display_height = 30.0f * 10;  // item_height * visible_items
         list_files = crystalline_list_create(
             CRYSTALLINE_STYLE_RECTANGULAR,  // Use rectangular for file list
-            content_x + PADDING,
-            content_y + 100.0f,
-            (float)col1_width - 40.0f,
-            (float)content_height - 200.0f,
+            content_x + file_list_width / 2.0f + PADDING,
+            content_y + file_list_display_height / 2.0f + 100.0f,
+            file_list_width,
+            30.0f,  // item_height
             get_global_font()
         );
         
