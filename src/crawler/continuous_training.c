@@ -490,8 +490,9 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
                    .dropout = 0.1f
                };
                
-               // Create model through model manager
-               if (model_manager_create(model_name, &default_config) != 0) {
+               // Create model through model manager (returns ManagedModel* not int!)
+               ManagedModel* created = model_manager_create(model_name, &default_config);
+               if (!created) {
                    fprintf(stderr, "%s Failed to create model via model manager\n", timestamp);
                    free(state);
                    return NULL;
