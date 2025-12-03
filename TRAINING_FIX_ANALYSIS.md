@@ -266,3 +266,75 @@ The training system was architecturally sound but had a critical gap in the mode
 **Build Status:** ✅ ZERO errors, ZERO warnings
 **Training Status:** ✅ Should now work correctly
 **Next Step:** User testing to verify training threads start and CPU usage increases
+---
+
+## 🚨 CRITICAL UPDATE: THE ACTUAL ROOT CAUSE (2024-12-02)
+
+### Issue 3: Type Confusion in model_manager_create Return Value
+
+**THE REAL BUG:**
+```c
+// WRONG CODE (what was there):
+if (model_manager_create(model_name, &default_config) != 0) {
+    fprintf(stderr, "Failed to create model\n");
+    return NULL;
+}
+
+// model_manager_create returns ManagedModel* (pointer), NOT int!
+// When creation succeeded, it returned a non-NULL pointer
+// Comparing pointer != 0 evaluated to TRUE
+// So code thought creation FAILED when it actually SUCCEEDED!
+```
+
+**THE FIX:**
+```c
+// CORRECT CODE:
+ManagedModel* created = model_manager_create(model_name, &default_config);
+if (!created) {
+    fprintf(stderr, "Failed to create model\n");
+    return NULL;
+}
+```
+
+**Evidence from logs:**
+```
+[00:25:05] Creating new model 'model' via model manager...
+Created model 'model' (50000 vocab, 1024 dim, 6 layers)
+Auto-saving model to disk: ./models/model.cllm
+  ✓ Model saved successfully
+[00:25:05] Failed to create model via model manager  ← WRONG! It succeeded!
+```
+
+The model was created successfully (you can see the success messages), but the code incorrectly thought it failed because of the type confusion. This caused `continuous_training_init()` to return NULL, which prevented training threads from ever starting.
+
+**This was the ACTUAL root cause all along!**
+
+---
+
+## COMPLETE FIX SEQUENCE
+
+1. ✅ **Fix 1:** Add `model_manager_reload()` after `model_manager_prepare()` in crawler_api.c
+2. ✅ **Fix 2:** Rewrite model acquisition logic in continuous_training.c  
+3. ✅ **Fix 3:** Fix return type check for `model_manager_create()` (THE CRITICAL ONE!)
+
+All three fixes were necessary, but Fix 3 was the actual blocker preventing training from starting.
+
+---
+
+## VERIFICATION (Updated)
+
+After all fixes, you should now see:
+
+```
+Preparing first available model: small_model
+✓ Model 'small_model' is now accessible (requires 10000 primes)
+✓ Model loaded into memory
+✓ Successfully loaded model: small_model
+[timestamp] === CONTINUOUS TRAINING STARTED ===
+[timestamp] Threads: 7
+[timestamp] Model: small_model
+[timestamp] Training on: page_xxx.tok
+```
+
+**CPU usage should spike to 100%+ immediately after "CONTINUOUS TRAINING STARTED"**
+
