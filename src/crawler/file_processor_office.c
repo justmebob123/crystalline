@@ -143,8 +143,7 @@ int process_office_file(const char* input_path, const char* output_path) {
     if (bytes_read != 8) {
         fprintf(stderr, "Warning: Could not read magic bytes from office file\n");
     }
-    }
-    }
+    fclose(f);
     
     // Check for OLE signature (DOC, XLS, PPT)
     if (magic[0] == 0xD0 && magic[1] == 0xCF && magic[2] == 0x11 && magic[3] == 0xE0) {
