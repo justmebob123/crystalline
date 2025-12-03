@@ -8,7 +8,7 @@
  * Start the crawler thread
  * Returns 0 on success, -1 on error
  */
-int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode);
+int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode, const char* model_name);
 
 /**
  * Stop the crawler thread

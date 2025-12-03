@@ -36,7 +36,7 @@ struct CrawlerState {
     char start_url[512];
     int max_pages;
     int num_threads;  // Number of threads per stage (preprocessor, tokenizer, training)
-    
+    char model_name[256];  // NEW: Selected model name for training
     
     ExtractionMode extraction_mode;  // Content extraction mode
     
@@ -255,22 +255,45 @@ int crawler_start(CrawlerState* state) {
     state->tokenizer_internal = tokenizer_init(state->data_dir);
     
     // Initialize training component
-    // Use existing model from model manager instead of creating new one
+    // Use specified model from model manager
     char model_path[2048];
+    CLLMModel* existing_model = NULL;
     
-    // Try to use the first available model from model manager
-    extern CLLMModel* model_manager_get_first(void);
-    CLLMModel* existing_model = model_manager_get_first();
-    
-    if (existing_model) {
-        // Use existing model
-        printf("✓ Using existing model from model manager\n");
-        state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+    // Try to use the specified model name
+    if (state->model_name[0] != '\0') {
+        // Model name was specified - try to load it
+        printf("✓ Loading specified model: %s\n", state->model_name);
+        
+        // First reload the model to ensure it's registered
+        extern bool model_manager_reload(const char* name);
+        model_manager_reload(state->model_name);
+        
+        // Then acquire it for training
+        extern CLLMModel* model_manager_acquire_read(const char* name);
+        existing_model = model_manager_acquire_read(state->model_name);
+        
+        if (existing_model) {
+            printf("✓ Successfully loaded model: %s\n", state->model_name);
+            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+        } else {
+            fprintf(stderr, "⚠ Warning: Could not load model '%s', will create new one\n", state->model_name);
+            snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+        }
     } else {
-        // No existing model, create new one
-        snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
-        printf("⚠ No existing model found, will create new one\n");
-        state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+        // No model name specified - try to use first available
+        extern CLLMModel* model_manager_get_first(void);
+        existing_model = model_manager_get_first();
+        
+        if (existing_model) {
+            printf("✓ Using first available model from model manager\n");
+            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads);
+        } else {
+            // No existing model, create new one
+            snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+            printf("⚠ No existing model found, will create new one\n");
+            state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads);
+        }
     }
     
     // Start crawler thread (single thread for sequential downloading)
@@ -407,11 +430,19 @@ void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode) {
     pthread_mutex_lock(&state->status_lock);
     state->extraction_mode = mode;
     pthread_mutex_unlock(&state->status_lock);
+}
+
+void crawler_set_model_name(CrawlerState* state, const char* model_name) {
+    if (!state) return;
     
-    // If preprocessor is already initialized, update it
-    if (state->preprocessor_internal) {
-        preprocessor_set_extraction_mode((PreprocessorState*)state->preprocessor_internal, mode);
+    pthread_mutex_lock(&state->status_lock);
+    if (model_name && model_name[0] != '\0') {
+        strncpy(state->model_name, model_name, sizeof(state->model_name) - 1);
+        state->model_name[sizeof(state->model_name) - 1] = '\0';
+    } else {
+        state->model_name[0] = '\0';
     }
+    pthread_mutex_unlock(&state->status_lock);
 }
 
 /**

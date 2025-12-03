@@ -826,9 +826,19 @@ void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
             }
             
             // Start the crawler thread (no start URL - uses database)
-            extern int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode);
-            if (start_crawler_thread(state, NULL, g_crawler_state.extraction_mode) == 0) {
-                add_activity_log("Crawler started - processing URLs from database");
+            extern int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode, const char* model_name);
+            
+            // Pass the selected model name (or NULL if none selected)
+            const char* model_to_use = (crawler_selected_model_name[0] != '\0') ? crawler_selected_model_name : NULL;
+            
+            if (start_crawler_thread(state, NULL, g_crawler_state.extraction_mode, model_to_use) == 0) {
+                if (model_to_use) {
+                    char msg[512];
+                    snprintf(msg, sizeof(msg), "Crawler started with model: %s", model_to_use);
+                    add_activity_log(msg);
+                } else {
+                    add_activity_log("Crawler started - will use first available model");
+                }
             } else {
                 add_activity_log("Error: Failed to start crawler");
             }

@@ -50,7 +50,7 @@ static void crawler_event_callback(const CrawlerEvent* event, void* user_data __
     fflush(stdout);
 }
 
-int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode) {
+int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode, const char* model_name) {
     pthread_mutex_lock(&g_crawler_mutex);
     
     // Check if already running
@@ -85,6 +85,14 @@ int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode 
     
     // Set extraction mode
     crawler_set_extraction_mode(g_crawler_state, extraction_mode);
+    
+    // Set model name for training
+    if (model_name && model_name[0] != '\0') {
+        crawler_set_model_name(g_crawler_state, model_name);
+        printf("✓ Crawler will use model: %s\n", model_name);
+    } else {
+        printf("⚠ No model specified, will use first available model\n");
+    }
     
     // NEW: Set URL manager for database integration
     // Get URL manager from crawler tab state

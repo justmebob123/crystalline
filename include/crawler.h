@@ -157,6 +157,11 @@ void crawler_set_callback(CrawlerState* state, CrawlerCallback callback, void* u
 void crawler_set_extraction_mode(CrawlerState* state, ExtractionMode mode);
 
 /**
+ * Set the model name to use for training
+ */
+void crawler_set_model_name(CrawlerState* state, const char* model_name);
+
+/**
  * Set URL manager for database integration
  * @param state Crawler state
  * @param url_manager CrawlerURLManager pointer (void* to avoid circular dependency)
