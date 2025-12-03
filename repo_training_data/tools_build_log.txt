@@ -1,3 +1,0 @@
-make: Entering directory '/workspace/crystalline/tools'
-make: Nothing to be done for 'all'.
-make: Leaving directory '/workspace/crystalline/tools'

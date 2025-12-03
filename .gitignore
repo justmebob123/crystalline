@@ -93,3 +93,23 @@ REPOSITORY_INVENTORY.txt
 !GEOMETRIC_PATTERN_IMPLEMENTATION.md
 *.backup
 tmp/
+
+# Model files
+*.cllm
+
+# Training data directories
+data/
+squad_data/
+production_training/
+production_checkpoints/
+training_test/
+repo_training_data/
+test_run_checkpoints/
+
+# Large media files
+*.jpg
+*.png
+*.jpeg
+
+# Tool checkpoints
+tools/checkpoints/
