@@ -149,7 +149,7 @@ static Vec3 vec3_scale(Vec3 v, float s) {
 }
 
 static float vec3_length(Vec3 v) {
-    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    return prime_sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
 }
 
 static Vec3 vec3_normalize(Vec3 v) {
@@ -221,7 +221,7 @@ static void draw_3d_circle(SDL_Renderer* renderer, Vec3 center, float radius,
                     int screen_cx, int screen_cy, SDL_Color color, int num_segments) {
     // Find two perpendicular vectors in the plane
     Vec3 u, v;
-    if (fabsf(normal.z) < 0.9f) {
+    if (prime_fabsf(normal.z) < 0.9f) {
         u = vec3_normalize((Vec3){-normal.y, normal.x, 0});
     } else {
         u = vec3_normalize((Vec3){0, -normal.z, normal.y});
@@ -259,7 +259,7 @@ static void draw_clock_ticks(SDL_Renderer* renderer, Vec3 center, float radius,
                       int screen_cx, int screen_cy, SDL_Color color) {
     // Find perpendicular vectors
     Vec3 u, v;
-    if (fabsf(normal.z) < 0.9f) {
+    if (prime_fabsf(normal.z) < 0.9f) {
         u = vec3_normalize((Vec3){-normal.y, normal.x, 0});
     } else {
         u = vec3_normalize((Vec3){0, -normal.z, normal.y});
@@ -304,7 +304,7 @@ static void draw_3d_sphere_wireframe(SDL_Renderer* renderer, Vec3 center, float 
     // Draw latitude circles
     for (int lat = -lat_lines; lat <= lat_lines; lat++) {
         float y = (lat / (float)lat_lines) * radius;
-        float r = sqrtf(radius * radius - y * y);
+        float r = prime_sqrtf(radius * radius - y * y);
         if (r < 0.1f) continue;
         
         const int num_points = 24 + density * 12;
@@ -377,7 +377,7 @@ static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bo
     (void)sphere_radius;  // We calculate our own sizes
     
     // Golden ratio for icosahedron
-    const float phi = (1.0f + sqrtf(5.0f)) / 2.0f;
+    const float phi = (1.0f + prime_sqrtf(5.0f)) / 2.0f;
     
     // 12 icosahedron vertices (normalized)
     Vec3 vertices[12] = {
