@@ -307,9 +307,9 @@ static void* training_worker_thread(void* arg) {
             if (entry->d_name[0] == '.') continue;
             if (strstr(entry->d_name, ".tok") == NULL) continue;
             
-            char filepath[2048];
-            // Truncate filename to prevent buffer overflow (max 255 chars)
-            char safe_name[256];
+            char filepath[4096];  // Increased from 2048 to accommodate long paths
+            // Truncate filename to prevent buffer overflow (max 2000 chars for 4096 buffer)
+            char safe_name[2048];  // Increased from 256 to allow longer filenames
             strncpy(safe_name, entry->d_name, sizeof(safe_name) - 1);
             safe_name[sizeof(safe_name) - 1] = '\0';
             

@@ -168,14 +168,14 @@ void* tokenizer_thread_func(void* arg) {
             if (strstr(entry->d_name, ".txt") == NULL) continue;
             
             // Check if already tokenized
-            char output_path[2048];
+            char output_path[4096];  // Increased from 2048 to accommodate long paths
             char* base = strdup(entry->d_name);
             char* dot = strrchr(base, '.');
             if (dot) *dot = '\0';
             
-            // Truncate base name to prevent buffer overflow (max 1000 chars)
-            if (strlen(base) > 1000) {
-                base[1000] = '\0';
+            // Truncate base name to prevent buffer overflow (max 2000 chars for 4096 buffer)
+            if (strlen(base) > 2000) {
+                base[2000] = '\0';
             }
             
             snprintf(output_path, sizeof(output_path), 
@@ -188,9 +188,9 @@ void* tokenizer_thread_func(void* arg) {
             }
             
             // Tokenize file
-            char input_path[2048];
-            // Truncate filename to prevent buffer overflow (max 255 chars)
-            char safe_name[256];
+            char input_path[4096];  // Increased from 2048 to accommodate long paths
+            // Truncate filename to prevent buffer overflow (max 2000 chars for 4096 buffer)
+            char safe_name[2048];  // Increased from 256 to allow longer filenames
             strncpy(safe_name, entry->d_name, sizeof(safe_name) - 1);
             safe_name[sizeof(safe_name) - 1] = '\0';
             

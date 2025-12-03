@@ -53,13 +53,13 @@ static int process_docx(const char* input_path, const char* output_path) {
     int result = system(extract_cmd);
     
     // Cleanup temp directory
-    char cleanup_cmd[2048];
-    // Truncate temp_dir to prevent buffer overflow (max 2039 chars for "rm -rf ''")
+    char cleanup_cmd[4096];  // Increased to accommodate long paths
+    // Truncate temp_dir to prevent buffer overflow (max 4080 chars for "rm -rf ''")
     size_t cleanup_len = strlen(temp_dir);
-    if (cleanup_len > 2039) {
-        char truncated[2040];
-        strncpy(truncated, temp_dir, 2039);
-        truncated[2039] = '\0';
+    if (cleanup_len > 4080) {
+        char truncated[4081];
+        strncpy(truncated, temp_dir, 4080);
+        truncated[4080] = '\0';
         snprintf(cleanup_cmd, sizeof(cleanup_cmd), "rm -rf '%s'", truncated);
     } else {
         snprintf(cleanup_cmd, sizeof(cleanup_cmd), "rm -rf '%s'", temp_dir);
@@ -144,6 +144,13 @@ int process_office_file(const char* input_path, const char* output_path) {
         fprintf(stderr, "Warning: Could not read magic bytes from office file\n");
     }
     fclose(f);
+    
+    // Check for ZIP signature (DOCX, XLSX, PPTX)
+    if (magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04) {
+        // Modern Office format (ZIP-based)
+        // For now, assume DOCX (most common)
+        return process_docx(input_path, output_path);
+    }
     
     // Check for OLE signature (DOC, XLS, PPT)
     if (magic[0] == 0xD0 && magic[1] == 0xCF && magic[2] == 0x11 && magic[3] == 0xE0) {
