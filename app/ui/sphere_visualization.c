@@ -113,7 +113,7 @@ static SDL_Color get_thread_state_color(int state) {
 /**
  * Draw spheres in 3D mode with depth and perspective
  */
-static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds,
+static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds __attribute__((unused)),
                            int center_x, int center_y, int arrangement_radius, 
                            int sphere_radius, int max_batches) {
     SDL_Color text_color = {220, 220, 220, 255};

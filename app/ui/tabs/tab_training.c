@@ -1453,16 +1453,14 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 extern int start_crawler_thread(AppState* state, const char* start_url, 
                                                ExtractionMode extraction_mode, const char* model_name);
                 
-                // Get selected model name (if any)
-                const char* selected_model = (state->selected_model_name[0] != '\0') ? 
-                                            state->selected_model_name : NULL;
+                // TODO: Add model selector to training tab
+                // For now, use NULL to let crawler auto-select first available model
+                const char* selected_model = NULL;
                 
-                // Start crawler with human text extraction and selected model
+                // Start crawler with human text extraction and auto-selected model
                 if (start_crawler_thread(state, start_url, EXTRACT_HUMAN_TEXT, selected_model) == 0) {
                     printf("✓ Crawler thread started successfully\n");
-                    if (selected_model) {
-                        printf("  Using model: %s\n", selected_model);
-                    }
+                    printf("  Using first available model (auto-selected)\n");
                 } else {
                     printf("✗ Failed to start crawler thread\n");
                     crawler_running = false;
