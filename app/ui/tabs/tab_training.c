@@ -1194,12 +1194,19 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     int toggle_w = 100;
     int toggle_h = 30;
     
+    // Debug: Print click coordinates and button bounds
+    if (x >= content_x && x <= content_x + sphere_viz_width &&
+        y >= content_y && y <= content_y + sphere_viz_height) {
+        printf("Click in sphere viz area: x=%d, y=%d, toggle_x=%d, toggle_y=%d, toggle_w=%d, toggle_h=%d\n",
+               x, y, toggle_x, toggle_y, toggle_w, toggle_h);
+    }
+    
     if (x >= toggle_x && x <= toggle_x + toggle_w &&
         y >= toggle_y && y <= toggle_y + toggle_h) {
         // Toggle visualization mode
         state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) 
                                   ? SPHERE_VIZ_3D : SPHERE_VIZ_2D;
-        printf("Toggled sphere visualization to %s mode\n", 
+        printf("✓ Toggled sphere visualization to %s mode\n", 
                state->sphere_viz_mode == SPHERE_VIZ_2D ? "2D" : "3D");
         return;
     }

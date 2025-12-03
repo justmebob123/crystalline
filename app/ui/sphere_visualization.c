@@ -119,25 +119,54 @@ static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bo
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color grid_color = {50, 50, 60, 255};
     
-    // 3D parameters
-    int base_radius = arrangement_radius;
-    int z_spacing = base_radius / 2;
+    // Golden ratio for TRUE 12-fold icosahedral symmetry
+    const float phi = (1.0f + sqrtf(5.0f)) / 2.0f;
     
-    // Draw spheres in 3D arrangement (two rings of 6)
+    // 12 icosahedral vertices (TRUE 12-fold symmetry!)
+    float vertices[12][3] = {
+        {0, 1, phi},   {0, -1, phi},   {0, 1, -phi},  {0, -1, -phi},
+        {1, phi, 0},   {-1, phi, 0},   {1, -phi, 0},  {-1, -phi, 0},
+        {phi, 0, 1},   {-phi, 0, 1},   {phi, 0, -1},  {-phi, 0, -1}
+    };
+    
+    // Normalize vertices to unit sphere
     for (int i = 0; i < 12; i++) {
-        // Arrange in two rings: inner (0-5) and outer (6-11)
-        int ring = i / 6;
-        int pos_in_ring = i % 6;
+        float len = sqrtf(vertices[i][0]*vertices[i][0] + 
+                         vertices[i][1]*vertices[i][1] + 
+                         vertices[i][2]*vertices[i][2]);
+        vertices[i][0] /= len;
+        vertices[i][1] /= len;
+        vertices[i][2] /= len;
+    }
+    
+    // Rotation angles for better 3D view
+    float rot_x = 0.5f;  // Tilt forward
+    float rot_y = 0.3f;  // Slight rotation
+    
+    // Draw spheres in TRUE 12-fold icosahedral arrangement
+    for (int i = 0; i < 12; i++) {
+        // Get vertex position
+        float x = vertices[i][0];
+        float y = vertices[i][1];
+        float z = vertices[i][2];
         
-        // Calculate 3D position
-        float angle = (pos_in_ring * 2.0f * M_PI) / 6.0f;
-        float radius_3d = base_radius * (ring == 0 ? 0.7f : 1.0f);
-        float z = (ring == 0 ? -z_spacing : z_spacing);
+        // Apply rotation around X axis
+        float y1 = y * prime_cosf(rot_x) - z * prime_sinf(rot_x);
+        float z1 = y * prime_sinf(rot_x) + z * prime_cosf(rot_x);
         
-        // Apply perspective projection
-        float perspective_scale = 1.0f / (1.0f + z / 500.0f);
-        int sphere_x = center_x + (int)(radius_3d * prime_cosf(angle) * perspective_scale);
-        int sphere_y = center_y + (int)(radius_3d * prime_sinf(angle) * perspective_scale);
+        // Apply rotation around Y axis
+        float x2 = x * prime_cosf(rot_y) + z1 * prime_sinf(rot_y);
+        float z2 = -x * prime_sinf(rot_y) + z1 * prime_cosf(rot_y);
+        
+        // Scale to arrangement radius
+        x2 *= arrangement_radius;
+        y1 *= arrangement_radius;
+        z2 *= arrangement_radius;
+        
+        // Perspective projection (stronger perspective)
+        float perspective_scale = 1.0f / (1.0f + z2 / (arrangement_radius * 2.0f));
+        int sphere_x = center_x + (int)(x2 * perspective_scale);
+        int sphere_y = center_y + (int)(y1 * perspective_scale);
         int scaled_radius = (int)(sphere_radius * perspective_scale);
         
         // Calculate activity level
@@ -149,11 +178,11 @@ static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bo
         // Get color based on activity
         SDL_Color sphere_color = get_activity_color(activity);
         
-        // Darken based on depth
-        float depth_factor = (z + z_spacing) / (2.0f * z_spacing);
-        sphere_color.r = (Uint8)(sphere_color.r * (0.5f + 0.5f * depth_factor));
-        sphere_color.g = (Uint8)(sphere_color.g * (0.5f + 0.5f * depth_factor));
-        sphere_color.b = (Uint8)(sphere_color.b * (0.5f + 0.5f * depth_factor));
+        // Darken based on depth (z2 ranges from -arrangement_radius to +arrangement_radius)
+        float depth_factor = (z2 / arrangement_radius + 1.0f) / 2.0f;  // 0 to 1
+        sphere_color.r = (Uint8)(sphere_color.r * (0.4f + 0.6f * depth_factor));
+        sphere_color.g = (Uint8)(sphere_color.g * (0.4f + 0.6f * depth_factor));
+        sphere_color.b = (Uint8)(sphere_color.b * (0.4f + 0.6f * depth_factor));
         
         // Draw sphere
         draw_filled_circle(renderer, sphere_x, sphere_y, scaled_radius, sphere_color);
@@ -168,12 +197,20 @@ static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bo
         snprintf(sphere_label, sizeof(sphere_label), "%d", i);
         draw_text(renderer, sphere_label, sphere_x - 4, sphere_y - 6, text_color);
         
-        // Draw batch count
+        // Draw batch count (offset from sphere center)
         if (state->sphere_stats.batches_processed[i] > 0) {
             char batch_text[16];
             snprintf(batch_text, sizeof(batch_text), "%d", state->sphere_stats.batches_processed[i]);
-            int text_x = sphere_x + (int)((scaled_radius + 15) * prime_cosf(angle) * perspective_scale) - 10;
-            int text_y = sphere_y + (int)((scaled_radius + 15) * prime_sinf(angle) * perspective_scale) - 6;
+            // Calculate offset direction from center
+            float dx = (sphere_x - center_x);
+            float dy = (sphere_y - center_y);
+            float dist = sqrtf(dx*dx + dy*dy);
+            if (dist > 0.1f) {
+                dx /= dist;
+                dy /= dist;
+            }
+            int text_x = sphere_x + (int)(dx * (scaled_radius + 15)) - 10;
+            int text_y = sphere_y + (int)(dy * (scaled_radius + 15)) - 6;
             draw_text(renderer, batch_text, text_x, text_y, (SDL_Color){180, 180, 180, 255});
         }
     }
