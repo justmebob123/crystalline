@@ -80,53 +80,27 @@ void model_selector_update_list(ModelSelector* selector) {
     }
     selector->num_models = 0;
     
-    printf("DEBUG: Calling model_manager_list...\n");
-    fflush(stdout);
+    // CRITICAL FIX: Use thread-safe API to avoid race condition
+    uint32_t count = model_manager_count();
     
-    // Get models from model manager
-    uint32_t count = 0;
-    ManagedModel** models = model_manager_list(&count);
-    
-    printf("DEBUG: model_manager_list returned, count=%u\n", count);
-    fflush(stdout);
-    
-    printf("DEBUG: Processing %u models...\n", count);
-    fflush(stdout);
-    
-    if (models && count > 0) {
+    if (count > 0) {
+        // Get model names one by one using thread-safe API
         for (uint32_t i = 0; i < count && i < MAX_MODELS; i++) {
-            printf("DEBUG: Checking model %u...\n", i);
-            fflush(stdout);
-            
-            if (models[i]) {
-                printf("DEBUG: Model %u exists, name='%s'\n", i, models[i]->name ? models[i]->name : "NULL");
-                fflush(stdout);
-                
-                if (models[i]->name && models[i]->name[0] != '\0') {
-                    selector->model_list[i] = strdup(models[i]->name);
-                    selector->num_models++;
-                    printf("DEBUG: Added model %u to list\n", i);
-                    fflush(stdout);
-                }
+            char* name = model_manager_get_name_at_index(i);
+            if (name) {
+                selector->model_list[i] = name;  // Already allocated by strdup in get_name_at_index
+                selector->num_models++;
             }
         }
         
-        printf("DEBUG: Setting first model as selected...\n");
-        fflush(stdout);
-        
         // Set first model as selected if none selected
-        if (strcmp(selector->selected_model, "No model selected") == 0 && count > 0) {
-            if (models[0] && models[0]->name && models[0]->name[0] != '\0') {
-                strncpy(selector->selected_model, models[0]->name, 255);
+        if (strcmp(selector->selected_model, "No model selected") == 0 && selector->num_models > 0) {
+            if (selector->model_list[0]) {
+                strncpy(selector->selected_model, selector->model_list[0], 255);
                 selector->selected_model[255] = '\0';
-                printf("DEBUG: First model selected: '%s'\n", selector->selected_model);
-                fflush(stdout);
             }
         }
     }
-    
-    printf("DEBUG: model_selector_update_list complete\n");
-    fflush(stdout);
 }
 
 /**

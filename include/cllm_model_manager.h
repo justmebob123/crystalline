@@ -244,6 +244,13 @@ ManagedModel** model_manager_list(uint32_t* count);
 uint32_t model_manager_count(void);
 
 /**
+ * Get model name at specific index (thread-safe)
+ * Returns a copy of the model name that must be freed by caller
+ * Returns NULL if index out of bounds
+ */
+char* model_manager_get_name_at_index(uint32_t index);
+
+/**
  * Check if a model exists
  * 
  * @param name Name of the model

@@ -102,9 +102,15 @@ bool model_manager_init(const char* models_dir) {
                 memcpy(model_name, entry->d_name, name_len);
                 model_name[name_len] = '\0';
                 
-                // Build full path
+                // Build full path (with bounds checking to prevent truncation)
                 char model_path[MODEL_PATH_MAX];
-                snprintf(model_path, MODEL_PATH_MAX, "%s/%s", g_model_manager.models_dir, entry->d_name);
+                int path_len = snprintf(model_path, MODEL_PATH_MAX, "%s/%s", 
+                                       g_model_manager.models_dir, entry->d_name);
+                if (path_len >= MODEL_PATH_MAX) {
+                    fprintf(stderr, "Model path too long, skipping: %s/%s\n", 
+                           g_model_manager.models_dir, entry->d_name);
+                    continue;
+                }
                 
                 // Register the model (without loading it)
                 // Create managed model entry
@@ -721,6 +727,28 @@ uint32_t model_manager_count(void) {
     pthread_mutex_unlock(&g_model_manager.manager_lock);
     
     return count;
+}
+
+// Thread-safe function to get model name at index
+// Returns NULL if index out of bounds or model doesn't exist
+// Caller must free the returned string
+char* model_manager_get_name_at_index(uint32_t index) {
+    if (!g_manager_initialized) {
+        return NULL;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    if (index >= g_model_manager.num_models || !g_model_manager.models[index]) {
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return NULL;
+    }
+    
+    char* name = strdup(g_model_manager.models[index]->name);
+    
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    return name;
 }
 
 bool model_manager_exists(const char* name) {
