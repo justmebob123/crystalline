@@ -565,3 +565,510 @@ void crystalline_element_set_colors(CrystallineElementBase* base,
     base->active_color = active;
     base->disabled_color = disabled;
 }
+/*
+ * Progress Bar Implementation
+ */
+
+CrystallineProgress* crystalline_progress_create(CrystallineElementStyle style,
+                                                  float x, float y,
+                                                  float size_param1,
+                                                  float size_param2) {
+    CrystallineProgress* progress = (CrystallineProgress*)malloc(sizeof(CrystallineProgress));
+    if (!progress) return NULL;
+    
+    memset(progress, 0, sizeof(CrystallineProgress));
+    
+    // Initialize base properties
+    progress->base.style = style;
+    progress->base.state = CRYSTALLINE_STATE_NORMAL;
+    progress->base.position = crystalline_point_cartesian(x, y);
+    progress->base.visible = true;
+    progress->base.enabled = true;
+    
+    // Set default colors
+    progress->base.color = crystalline_color_rgb(100, 200, 100);
+    progress->base.hover_color = progress->base.color;
+    progress->base.active_color = progress->base.color;
+    progress->base.disabled_color = crystalline_color_rgb(100, 100, 100);
+    
+    // Initialize progress
+    progress->progress = 0.0f;
+    progress->show_percentage = true;
+    
+    // Set size based on style
+    if (style == CRYSTALLINE_STYLE_CIRCULAR) {
+        progress->radius = size_param1;
+        progress->thickness = size_param2 > 0 ? size_param2 : 10.0f;
+        progress->start_angle = -M_PI / 2.0f;  // Start at top
+        progress->base.bounds = crystalline_rect_circle(x, y, size_param1);
+    } else {
+        progress->width = size_param1;
+        progress->height = size_param2;
+        progress->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
+    }
+    
+    // Initialize color animation
+    progress->color_anim = crystalline_anim_color(
+        crystalline_color_activity(0.0f),
+        crystalline_color_activity(1.0f),
+        1.0f
+    );
+    
+    return progress;
+}
+
+void crystalline_progress_destroy(CrystallineProgress* progress) {
+    if (progress) {
+        free(progress);
+    }
+}
+
+void crystalline_progress_render(CrystallineProgress* progress, SDL_Renderer* renderer) {
+    if (!progress || !progress->base.visible) return;
+    
+    // Get color based on progress (activity-based)
+    SDL_Color color = crystalline_color_activity(progress->progress);
+    
+    if (progress->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
+        // Circular progress (ring)
+        
+        // Draw background ring
+        CrystallineDrawStyle bg_style = crystalline_draw_style_stroked(
+            crystalline_color_brightness(color, 0.3f), progress->thickness
+        );
+        crystalline_draw_circle(renderer, progress->base.position, progress->radius, bg_style);
+        
+        // Draw progress arc
+        float end_angle = progress->start_angle + CRYSTALLINE_TWO_PI * progress->progress;
+        CrystallineDrawStyle progress_style = crystalline_draw_style_stroked(
+            color, progress->thickness
+        );
+        crystalline_draw_arc(renderer, progress->base.position, progress->radius,
+                            progress->start_angle, end_angle, progress_style);
+        
+        // Draw percentage text
+        if (progress->show_percentage && progress->font) {
+            char text[32];
+            snprintf(text, sizeof(text), "%.0f%%", progress->progress * 100.0f);
+            crystalline_draw_text_centered(renderer, text, progress->base.position,
+                                          crystalline_color_rgb(255, 255, 255),
+                                          progress->font);
+        }
+    } else {
+        // Rectangular progress bar
+        
+        // Draw background
+        CrystallineDrawStyle bg_style = crystalline_draw_style_filled(
+            crystalline_color_brightness(color, 0.3f)
+        );
+        crystalline_draw_rect(renderer, progress->base.bounds, bg_style);
+        
+        // Draw progress fill
+        float filled_width = progress->width * progress->progress;
+        CrystallineRect filled = crystalline_rect_create(
+            progress->base.position.x - progress->width / 2.0f + filled_width / 2.0f,
+            progress->base.position.y,
+            filled_width,
+            progress->height
+        );
+        CrystallineDrawStyle fill_style = crystalline_draw_style_filled(color);
+        crystalline_draw_rect(renderer, filled, fill_style);
+        
+        // Draw border
+        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
+            crystalline_color_brightness(color, 0.8f), 2.0f
+        );
+        crystalline_draw_rect(renderer, progress->base.bounds, border_style);
+        
+        // Draw percentage text
+        if (progress->show_percentage && progress->font) {
+            char text[32];
+            snprintf(text, sizeof(text), "%.0f%%", progress->progress * 100.0f);
+            crystalline_draw_text_centered(renderer, text, progress->base.position,
+                                          crystalline_color_rgb(255, 255, 255),
+                                          progress->font);
+        }
+    }
+}
+
+void crystalline_progress_update(CrystallineProgress* progress, float delta_time) {
+    if (!progress) return;
+    
+    // Update color animation based on progress
+    crystalline_anim_color_update(&progress->color_anim, delta_time);
+}
+
+void crystalline_progress_set_value(CrystallineProgress* progress, float value) {
+    if (!progress) return;
+    progress->progress = crystalline_clamp(value, 0.0f, 1.0f);
+}
+
+void crystalline_progress_set_label(CrystallineProgress* progress, const char* label) {
+    if (!progress || !label) return;
+    strncpy(progress->label, label, sizeof(progress->label) - 1);
+    progress->label[sizeof(progress->label) - 1] = '\0';
+}
+
+float crystalline_progress_get_value(CrystallineProgress* progress) {
+    if (!progress) return 0.0f;
+    return progress->progress;
+}
+
+void crystalline_progress_set_style(CrystallineProgress* progress, CrystallineElementStyle style) {
+    if (!progress) return;
+    progress->base.style = style;
+    
+    // Recalculate bounds
+    if (style == CRYSTALLINE_STYLE_CIRCULAR) {
+        progress->base.bounds = crystalline_rect_circle(
+            progress->base.position.x,
+            progress->base.position.y,
+            progress->radius
+        );
+    } else {
+        progress->base.bounds = crystalline_rect_create(
+            progress->base.position.x,
+            progress->base.position.y,
+            progress->width,
+            progress->height
+        );
+    }
+}
+
+/*
+ * Input Field Implementation (Stub - Full implementation would be extensive)
+ */
+
+CrystallineInput* crystalline_input_create(CrystallineElementStyle style,
+                                            float x, float y,
+                                            float size_param1,
+                                            float size_param2,
+                                            const char* placeholder,
+                                            TTF_Font* font) {
+    CrystallineInput* input = (CrystallineInput*)malloc(sizeof(CrystallineInput));
+    if (!input) return NULL;
+    
+    memset(input, 0, sizeof(CrystallineInput));
+    
+    input->base.style = style;
+    input->base.state = CRYSTALLINE_STATE_NORMAL;
+    input->base.position = crystalline_point_cartesian(x, y);
+    input->base.visible = true;
+    input->base.enabled = true;
+    
+    input->base.color = crystalline_color_rgb(80, 80, 100);
+    input->base.hover_color = crystalline_color_rgb(100, 100, 120);
+    input->base.active_color = crystalline_color_rgb(120, 120, 140);
+    input->base.disabled_color = crystalline_color_rgb(60, 60, 60);
+    
+    if (placeholder) {
+        strncpy(input->placeholder, placeholder, sizeof(input->placeholder) - 1);
+    }
+    input->font = font;
+    
+    if (style == CRYSTALLINE_STYLE_CIRCULAR) {
+        input->radius = size_param1;
+        input->sides = 12;  // Dodecagon
+        input->base.bounds = crystalline_rect_circle(x, y, size_param1);
+    } else {
+        input->width = size_param1;
+        input->height = size_param2;
+        input->padding = 5.0f;
+        input->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
+    }
+    
+    input->cursor_anim = crystalline_anim_pulse(1.0f, 1.0f);
+    
+    return input;
+}
+
+void crystalline_input_destroy(CrystallineInput* input) {
+    if (input) {
+        free(input);
+    }
+}
+
+void crystalline_input_render(CrystallineInput* input, SDL_Renderer* renderer) {
+    if (!input || !input->base.visible) return;
+    
+    SDL_Color color = get_element_color(&input->base);
+    
+    if (input->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
+        // Draw dodecagon border
+        CrystallineDrawStyle style = crystalline_draw_style_stroked(color, 2.0f);
+        crystalline_draw_polygon(renderer, input->base.position, input->radius, 
+                                input->sides, 0.0f, style);
+    } else {
+        // Draw rectangular border
+        CrystallineDrawStyle bg_style = crystalline_draw_style_filled(
+            crystalline_color_brightness(color, 0.2f)
+        );
+        crystalline_draw_rect(renderer, input->base.bounds, bg_style);
+        
+        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(color, 2.0f);
+        crystalline_draw_rect(renderer, input->base.bounds, border_style);
+    }
+    
+    // Draw text or placeholder
+    const char* display_text = input->text[0] ? input->text : input->placeholder;
+    if (input->font && display_text[0]) {
+        SDL_Color text_color = input->text[0] ? 
+            crystalline_color_rgb(255, 255, 255) : 
+            crystalline_color_rgb(150, 150, 150);
+        crystalline_draw_text_centered(renderer, display_text, input->base.position,
+                                      text_color, input->font);
+    }
+}
+
+void crystalline_input_update(CrystallineInput* input, float delta_time) {
+    if (!input) return;
+    crystalline_anim_pulse_update(&input->cursor_anim, delta_time);
+}
+
+bool crystalline_input_handle_mouse(CrystallineInput* input, SDL_Event* event) {
+    if (!input || !input->base.visible || !input->base.enabled) return false;
+    
+    float mouse_x = (float)event->button.x;
+    float mouse_y = (float)event->button.y;
+    CrystallinePoint mouse_pos = crystalline_point_cartesian(mouse_x, mouse_y);
+    
+    bool inside = crystalline_rect_contains_point(input->base.bounds, mouse_pos);
+    
+    if (event->type == SDL_MOUSEBUTTONDOWN && inside) {
+        input->base.state = CRYSTALLINE_STATE_FOCUSED;
+        return true;
+    }
+    
+    return false;
+}
+
+bool crystalline_input_handle_keyboard(CrystallineInput* input, SDL_Event* event) {
+    if (!input || input->base.state != CRYSTALLINE_STATE_FOCUSED) return false;
+    
+    if (event->type == SDL_KEYDOWN) {
+        // Basic text input handling (simplified)
+        if (event->key.keysym.sym == SDLK_BACKSPACE && input->cursor_pos > 0) {
+            input->text[--input->cursor_pos] = '\0';
+            if (input->on_change) {
+                input->on_change(input->text, input->base.user_data);
+            }
+            return true;
+        } else if (event->key.keysym.sym == SDLK_RETURN) {
+            if (input->on_submit) {
+                input->on_submit(input->text, input->base.user_data);
+            }
+            return true;
+        }
+    } else if (event->type == SDL_TEXTINPUT) {
+        // Add character
+        if (input->cursor_pos < (int)sizeof(input->text) - 1) {
+            input->text[input->cursor_pos++] = event->text.text[0];
+            input->text[input->cursor_pos] = '\0';
+            if (input->on_change) {
+                input->on_change(input->text, input->base.user_data);
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void crystalline_input_set_text(CrystallineInput* input, const char* text) {
+    if (!input || !text) return;
+    strncpy(input->text, text, sizeof(input->text) - 1);
+    input->text[sizeof(input->text) - 1] = '\0';
+    input->cursor_pos = strlen(input->text);
+}
+
+void crystalline_input_set_placeholder(CrystallineInput* input, const char* placeholder) {
+    if (!input || !placeholder) return;
+    strncpy(input->placeholder, placeholder, sizeof(input->placeholder) - 1);
+    input->placeholder[sizeof(input->placeholder) - 1] = '\0';
+}
+
+void crystalline_input_set_password_mode(CrystallineInput* input, bool enabled) {
+    if (!input) return;
+    input->password_mode = enabled;
+}
+
+void crystalline_input_set_callbacks(CrystallineInput* input,
+                                     void (*on_change)(const char* text, void* data),
+                                     void (*on_submit)(const char* text, void* data),
+                                     void* data) {
+    if (!input) return;
+    input->on_change = on_change;
+    input->on_submit = on_submit;
+    input->base.user_data = data;
+}
+
+const char* crystalline_input_get_text(CrystallineInput* input) {
+    if (!input) return "";
+    return input->text;
+}
+
+void crystalline_input_set_style(CrystallineInput* input, CrystallineElementStyle style) {
+    if (!input) return;
+    input->base.style = style;
+}
+
+/*
+ * Stub implementations for remaining elements
+ * (Panel, List, Toggle, Dropdown - to be fully implemented)
+ */
+
+CrystallinePanel* crystalline_panel_create(CrystallineElementStyle style,
+                                            float x, float y,
+                                            float size_param1,
+                                            float size_param2,
+                                            const char* title,
+                                            TTF_Font* title_font) {
+    CrystallinePanel* panel = (CrystallinePanel*)malloc(sizeof(CrystallinePanel));
+    if (!panel) return NULL;
+    memset(panel, 0, sizeof(CrystallinePanel));
+    
+    panel->base.style = style;
+    panel->base.position = crystalline_point_cartesian(x, y);
+    panel->base.visible = true;
+    panel->base.enabled = true;
+    
+    if (title) strncpy(panel->title, title, sizeof(panel->title) - 1);
+    panel->title_font = title_font;
+    
+    if (style == CRYSTALLINE_STYLE_CIRCULAR) {
+        panel->radius = size_param1;
+        panel->base.bounds = crystalline_rect_circle(x, y, size_param1);
+    } else {
+        panel->width = size_param1;
+        panel->height = size_param2;
+        panel->corner_radius = 5.0f;
+        panel->border_width = 2.0f;
+        panel->padding = 10.0f;
+        panel->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
+    }
+    
+    return panel;
+}
+
+void crystalline_panel_destroy(CrystallinePanel* panel) {
+    if (panel) free(panel);
+}
+
+void crystalline_panel_render(CrystallinePanel* panel, SDL_Renderer* renderer) {
+    if (!panel || !panel->base.visible) return;
+    
+    SDL_Color color = crystalline_color_rgb(40, 40, 50);
+    SDL_Color border_color = crystalline_color_rgb(100, 100, 120);
+    
+    if (panel->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
+        CrystallineDrawStyle style = crystalline_draw_style_both(color, border_color, 2.0f);
+        crystalline_draw_circle(renderer, panel->base.position, panel->radius, style);
+        
+        if (panel->show_flower_border) {
+            CrystallineDrawStyle flower_style = crystalline_draw_style_stroked(border_color, 1.0f);
+            crystalline_draw_flower_of_life(renderer, panel->base.position, 
+                                           panel->radius / 3.0f, 1, flower_style);
+        }
+    } else {
+        CrystallineDrawStyle bg_style = crystalline_draw_style_filled(color);
+        crystalline_draw_rect(renderer, panel->base.bounds, bg_style);
+        
+        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(border_color, panel->border_width);
+        crystalline_draw_rect(renderer, panel->base.bounds, border_style);
+    }
+    
+    // Draw title
+    if (panel->title_font && panel->title[0]) {
+        CrystallinePoint title_pos = crystalline_point_cartesian(
+            panel->base.position.x,
+            panel->base.position.y - panel->height / 2.0f + 20.0f
+        );
+        crystalline_draw_text_centered(renderer, panel->title, title_pos,
+                                      crystalline_color_rgb(255, 255, 255),
+                                      panel->title_font);
+    }
+}
+
+void crystalline_panel_set_style(CrystallinePanel* panel, CrystallineElementStyle style) {
+    if (!panel) return;
+    panel->base.style = style;
+}
+
+// Stub implementations for List, Toggle, Dropdown
+CrystallineList* crystalline_list_create(CrystallineElementStyle style, float x, float y,
+                                          float size_param1, float size_param2, TTF_Font* font) {
+    CrystallineList* list = (CrystallineList*)malloc(sizeof(CrystallineList));
+    if (!list) return NULL;
+    memset(list, 0, sizeof(CrystallineList));
+    list->base.style = style;
+    list->base.position = crystalline_point_cartesian(x, y);
+    list->font = font;
+    list->selected_index = -1;
+    list->hover_index = -1;
+    return list;
+}
+
+void crystalline_list_destroy(CrystallineList* list) { if (list) free(list); }
+void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) { (void)list; (void)renderer; }
+bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) { (void)list; (void)event; return false; }
+bool crystalline_list_handle_keyboard(CrystallineList* list, SDL_Event* event) { (void)list; (void)event; return false; }
+void crystalline_list_set_items(CrystallineList* list, char** items, int count) { (void)list; (void)items; (void)count; }
+void crystalline_list_add_item(CrystallineList* list, const char* item) { (void)list; (void)item; }
+void crystalline_list_remove_item(CrystallineList* list, int index) { (void)list; (void)index; }
+void crystalline_list_clear(CrystallineList* list) { (void)list; }
+void crystalline_list_set_selected(CrystallineList* list, int index) { if (list) list->selected_index = index; }
+void crystalline_list_set_callback(CrystallineList* list, void (*callback)(int, void*), void* data) { 
+    if (list) { list->on_select = callback; list->base.user_data = data; }
+}
+int crystalline_list_get_selected(CrystallineList* list) { return list ? list->selected_index : -1; }
+void crystalline_list_set_style(CrystallineList* list, CrystallineElementStyle style) { if (list) list->base.style = style; }
+
+CrystallineToggle* crystalline_toggle_create(CrystallineElementStyle style, float x, float y,
+                                              float size_param1, float size_param2,
+                                              const char* label, TTF_Font* font) {
+    CrystallineToggle* toggle = (CrystallineToggle*)malloc(sizeof(CrystallineToggle));
+    if (!toggle) return NULL;
+    memset(toggle, 0, sizeof(CrystallineToggle));
+    toggle->base.style = style;
+    toggle->base.position = crystalline_point_cartesian(x, y);
+    if (label) strncpy(toggle->label, label, sizeof(toggle->label) - 1);
+    toggle->font = font;
+    return toggle;
+}
+
+void crystalline_toggle_destroy(CrystallineToggle* toggle) { if (toggle) free(toggle); }
+void crystalline_toggle_render(CrystallineToggle* toggle, SDL_Renderer* renderer) { (void)toggle; (void)renderer; }
+void crystalline_toggle_update(CrystallineToggle* toggle, float delta_time) { (void)toggle; (void)delta_time; }
+bool crystalline_toggle_handle_mouse(CrystallineToggle* toggle, SDL_Event* event) { (void)toggle; (void)event; return false; }
+void crystalline_toggle_set_value(CrystallineToggle* toggle, bool value) { if (toggle) toggle->value = value; }
+void crystalline_toggle_set_callback(CrystallineToggle* toggle, void (*callback)(bool, void*), void* data) {
+    if (toggle) { toggle->on_change = callback; toggle->base.user_data = data; }
+}
+bool crystalline_toggle_get_value(CrystallineToggle* toggle) { return toggle ? toggle->value : false; }
+void crystalline_toggle_set_style(CrystallineToggle* toggle, CrystallineElementStyle style) { if (toggle) toggle->base.style = style; }
+
+CrystallineDropdown* crystalline_dropdown_create(CrystallineElementStyle style, float x, float y,
+                                                  float size_param1, float size_param2, TTF_Font* font) {
+    CrystallineDropdown* dropdown = (CrystallineDropdown*)malloc(sizeof(CrystallineDropdown));
+    if (!dropdown) return NULL;
+    memset(dropdown, 0, sizeof(CrystallineDropdown));
+    dropdown->base.style = style;
+    dropdown->base.position = crystalline_point_cartesian(x, y);
+    dropdown->font = font;
+    dropdown->selected_index = -1;
+    dropdown->hover_index = -1;
+    return dropdown;
+}
+
+void crystalline_dropdown_destroy(CrystallineDropdown* dropdown) { if (dropdown) free(dropdown); }
+void crystalline_dropdown_render(CrystallineDropdown* dropdown, SDL_Renderer* renderer) { (void)dropdown; (void)renderer; }
+void crystalline_dropdown_update(CrystallineDropdown* dropdown, float delta_time) { (void)dropdown; (void)delta_time; }
+bool crystalline_dropdown_handle_mouse(CrystallineDropdown* dropdown, SDL_Event* event) { (void)dropdown; (void)event; return false; }
+bool crystalline_dropdown_handle_keyboard(CrystallineDropdown* dropdown, SDL_Event* event) { (void)dropdown; (void)event; return false; }
+void crystalline_dropdown_set_options(CrystallineDropdown* dropdown, char** options, int count) { (void)dropdown; (void)options; (void)count; }
+void crystalline_dropdown_set_selected(CrystallineDropdown* dropdown, int index) { if (dropdown) dropdown->selected_index = index; }
+void crystalline_dropdown_set_callback(CrystallineDropdown* dropdown, void (*callback)(int, void*), void* data) {
+    if (dropdown) { dropdown->on_select = callback; dropdown->base.user_data = data; }
+}
+int crystalline_dropdown_get_selected(CrystallineDropdown* dropdown) { return dropdown ? dropdown->selected_index : -1; }
+void crystalline_dropdown_set_style(CrystallineDropdown* dropdown, CrystallineElementStyle style) { if (dropdown) dropdown->base.style = style; }
