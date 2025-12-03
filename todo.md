@@ -62,10 +62,11 @@ At the beginning of EVERY response, you MUST:
 - [ ] Test model loading from list
 
 #### 2C: Add Model Selector to Training Tab
-- [ ] Add ModelSelector widget to training tab
-- [ ] Store selected model in static variable
-- [ ] Pass selected model to crawler
-- [ ] Show which model is being used
+- [x] Model selector already exists in training tab
+- [x] Selected model stored in static variable
+- [x] Updated crawler start to use selected model
+- [x] Shows which model is being used in console
+- [x] Build successful: ZERO errors, ZERO warnings
 - [ ] Test model selection in training
 
 #### 2D: Add Model Rename Functionality
