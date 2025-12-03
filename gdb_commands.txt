@@ -1,4 +1,0 @@
-set environment LD_LIBRARY_PATH=.:./algorithms
-run 100 test_model_simple.cllm
-bt
-quit

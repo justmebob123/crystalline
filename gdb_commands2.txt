@@ -1,8 +1,0 @@
-set environment LD_LIBRARY_PATH=.:./algorithms
-break cllm_create_model
-run 100 test_model_simple.cllm
-print config
-continue
-print model
-bt
-quit

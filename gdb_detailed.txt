@@ -1,9 +1,0 @@
-set environment LD_LIBRARY_PATH=.:./algorithms
-break big_cmp_abs
-run 100 test_model_simple.cllm
-print *a
-print *b
-print a->d[0]
-print b->d[0]
-bt 10
-quit
