@@ -78,6 +78,9 @@ static ModelSelector* llm_model_selector = NULL;
 // Selected model name (NOT loaded until inference starts)
 static char llm_selected_model_name[256] = {0};
 
+// Currently loaded model name (for releasing)
+static char llm_loaded_model_name[256] = {0};
+
 // Model selector callback for LLM
 static void on_llm_model_selected(const char* model_name, void* user_data) {
     AppState* state = (AppState*)user_data;
@@ -1252,26 +1255,47 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     if (x >= g_load_btn.x && x <= g_load_btn.x + g_load_btn.w &&
         y >= g_load_btn.y && y <= g_load_btn.y + g_load_btn.h) {
         printf("Loading CLLM model...\n");
-        // Try to load from default locations
-        const char* model_paths[] = {
-            "data/models/default_model.cllm",
-            "models/default_model.cllm",
-            "../data/models/default_model.cllm"
-        };
-        for (int i = 0; i < 3; i++) {
-            CLLMModel* loaded = cllm_read_model(model_paths[i]);
-            if (loaded) {
-                if (state->cllm_model) {
-                    cllm_free_model(state->cllm_model);  // Free old model to prevent memory leak
+        
+        // Use model manager to get the selected model
+        extern CLLMModel* model_manager_acquire_read(const char* name);
+        extern void model_manager_release_read(const char* name);
+        extern const char* model_manager_get_first_name(void);
+        extern bool model_manager_prepare(const char* name);
+        extern bool model_manager_reload(const char* name);
+        
+        // Get model name from selector or use first available
+        const char* model_name = llm_selected_model_name[0] ? llm_selected_model_name : model_manager_get_first_name();
+        
+        if (model_name) {
+            // Prepare and load the model
+            if (model_manager_prepare(model_name)) {
+                if (model_manager_reload(model_name)) {
+                    CLLMModel* loaded = model_manager_acquire_read(model_name);
+                    if (loaded) {
+                        // Release old model if any
+                        if (state->cllm_model && llm_loaded_model_name[0]) {
+                            model_manager_release_read(llm_loaded_model_name);
+                        }
+                        
+                        state->cllm_model = loaded;
+                        strncpy(llm_loaded_model_name, model_name, sizeof(llm_loaded_model_name) - 1);
+                        
+                        if (state->cllm_inference) {
+                            cllm_inference_cleanup(state->cllm_inference);
+                        }
+                        state->cllm_inference = cllm_inference_init(state->cllm_model);
+                        printf("✓ Model loaded: %s\n", model_name);
+                    } else {
+                        fprintf(stderr, "Failed to acquire model: %s\n", model_name);
+                    }
+                } else {
+                    fprintf(stderr, "Failed to load model into memory: %s\n", model_name);
                 }
-                state->cllm_model = loaded;
-                if (state->cllm_inference) {
-                    cllm_inference_cleanup(state->cllm_inference);
-                }
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-                printf("✓ Model loaded from: %s\n", model_paths[i]);
-                break;
+            } else {
+                fprintf(stderr, "Failed to prepare model: %s\n", model_name);
             }
+        } else {
+            fprintf(stderr, "No models available\n");
         }
         return;
     }

@@ -473,11 +473,16 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            
              // Sphere Visualization - Show kissing spheres architecture
              // EXPANDED: Use 70% of width and 60% of height for better visibility
-              int sphere_viz_width = (content_w * 7) / 10;
-              int sphere_viz_height = (content_h * 6) / 10;
-              if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
+              int sphere_viz_width = (content_w * 6) / 10;
+              int sphere_viz_height = (content_h * 7) / 10;
+              if (sphere_viz_height < 500) sphere_viz_height = 500;  // Minimum height
 // MOVED:            SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
              SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
+
+           // Draw sphere visualization FIRST
+             draw_sphere_visualization(renderer, state, sphere_bounds);
+
+           // Draw toggle button AFTER (on top of visualization)
            
            // Add 2D/3D toggle button in top-right corner of sphere visualization
            SDL_Rect toggle_btn = {
@@ -487,8 +492,8 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            };
            
            const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "Switch to 3D" : "Switch to 2D";
-           SDL_Color toggle_btn_color = {60, 60, 70, 255};
-           SDL_Color toggle_text_color = {200, 200, 200, 255};
+           SDL_Color toggle_btn_color = {70, 130, 180, 255};
+           SDL_Color toggle_text_color = {255, 255, 255, 255};
            
            // Draw toggle button
            SDL_SetRenderDrawColor(renderer, toggle_btn_color.r, toggle_btn_color.g, toggle_btn_color.b, 255);
@@ -500,7 +505,6 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
            draw_text(renderer, toggle_label, toggle_btn.x + 5, toggle_btn.y + 8, toggle_text_color);
            
-             draw_sphere_visualization(renderer, state, sphere_bounds);
            // UI Integration: Framework Status & Performance Metrics Panel
            SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
                                         content_w - sphere_viz_width - 20, sphere_viz_height};
@@ -1180,9 +1184,9 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     int content_y = RENDER_OFFSET_Y + 20;
     int content_w = RENDER_WIDTH - 40;
     int content_h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 40;
-    int sphere_viz_width = (content_w * 7) / 10;
-    int sphere_viz_height = (content_h * 6) / 10;
-    if (sphere_viz_height < 400) sphere_viz_height = 400;
+    int sphere_viz_width = (content_w * 6) / 10;
+    int sphere_viz_height = (content_h * 7) / 10;
+    if (sphere_viz_height < 500) sphere_viz_height = 500;
     
     // Toggle button bounds
     int toggle_x = content_x + sphere_viz_width - 110;

@@ -245,10 +245,17 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     SDL_RenderDrawRect(renderer, &bounds);
     
     // Calculate center and radius for sphere arrangement
+    // Use smaller dimension and leave margin for spheres at edges
     int center_x = bounds.x + bounds.w / 2;
     int center_y = bounds.y + bounds.h / 2;
-    int arrangement_radius = (bounds.w < bounds.h ? bounds.w : bounds.h) / 3;
+    int min_dimension = (bounds.w < bounds.h ? bounds.w : bounds.h);
+    int arrangement_radius = (min_dimension - 100) / 3;  // Leave 100px margin
     int sphere_radius = arrangement_radius / 5;
+    
+    // Ensure spheres fit within bounds
+    if (arrangement_radius + sphere_radius * 2 > min_dimension / 2) {
+        arrangement_radius = (min_dimension / 2) - sphere_radius * 2 - 20;
+    }
     
     // Draw title
     draw_text(renderer, "KISSING SPHERES ARCHITECTURE", bounds.x + 10, bounds.y + 10, text_color);
