@@ -1040,8 +1040,13 @@ bool model_manager_rename(const char* old_name, const char* new_name) {
     
     // Construct new path
     char new_path[1024];
-    snprintf(new_path, sizeof(new_path), "%s/%s.cllm", 
-             g_model_manager.models_dir, new_name);
+    int path_len = snprintf(new_path, sizeof(new_path), "%s/%s.cllm", 
+                            g_model_manager.models_dir, new_name);
+    if (path_len < 0 || path_len >= (int)sizeof(new_path)) {
+        fprintf(stderr, "Model path too long for rename\n");
+        pthread_mutex_unlock(&g_model_manager.manager_lock);
+        return false;
+    }
     
     // Rename file on disk
     if (rename(managed->path, new_path) != 0) {
