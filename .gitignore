@@ -113,3 +113,6 @@ test_run_checkpoints/
 
 # Tool checkpoints
 tools/checkpoints/
+# Performance analysis
+perf_analysis*/
+checkpoints_quick/
