@@ -292,7 +292,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     
     printf("Using %d parallel workers for training\n", num_threads);
     
-    for (int epoch = 0; epoch < epochs; epoch++) {
+    for (int epoch = 0; epoch < epochs && state->running; epoch++) {
         // Use parallel training (crystalline loss, multi-threaded)
         float loss = threaded_train_epoch_lockfree(threaded_system, epoch);
         total_loss += loss;
@@ -349,7 +349,10 @@ static void* training_worker_thread(void* arg) {
     while (state->running) {
         DIR* dir = opendir(queue_dir);
         if (!dir) {
-            sleep(5);
+            // Interruptible sleep - check state->running every 100ms
+            for (int i = 0; i < 50 && state->running; i++) {
+                usleep(100000);  // 100ms
+            }
             continue;
         }
         
@@ -398,7 +401,10 @@ static void* training_worker_thread(void* arg) {
         closedir(dir);
         
         if (!found_file) {
-            sleep(5);  // Wait for new files
+            // Interruptible sleep - check state->running every 100ms
+            for (int i = 0; i < 50 && state->running; i++) {
+                usleep(100000);  // 100ms
+            }
         }
     }
     

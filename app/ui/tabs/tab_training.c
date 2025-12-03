@@ -478,6 +478,28 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
               if (sphere_viz_height < 400) sphere_viz_height = 400;  // Minimum height
 // MOVED:            SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
              SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
+           
+           // Add 2D/3D toggle button in top-right corner of sphere visualization
+           SDL_Rect toggle_btn = {
+               sphere_bounds.x + sphere_bounds.w - 110,
+               sphere_bounds.y + 10,
+               100, 30
+           };
+           
+           const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "Switch to 3D" : "Switch to 2D";
+           SDL_Color toggle_btn_color = {60, 60, 70, 255};
+           SDL_Color toggle_text_color = {200, 200, 200, 255};
+           
+           // Draw toggle button
+           SDL_SetRenderDrawColor(renderer, toggle_btn_color.r, toggle_btn_color.g, toggle_btn_color.b, 255);
+           SDL_RenderFillRect(renderer, &toggle_btn);
+           SDL_SetRenderDrawColor(renderer, 100, 100, 110, 255);
+           SDL_RenderDrawRect(renderer, &toggle_btn);
+           
+           // Draw button text
+           extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
+           draw_text(renderer, toggle_label, toggle_btn.x + 5, toggle_btn.y + 8, toggle_text_color);
+           
              draw_sphere_visualization(renderer, state, sphere_bounds);
            // UI Integration: Framework Status & Performance Metrics Panel
            SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
@@ -1151,6 +1173,32 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     if (!state) return;
     
     // Silent click handling
+    
+    // Check for 2D/3D toggle button click
+    // Calculate sphere visualization bounds (same as in draw function)
+    int content_x = RENDER_OFFSET_X + 20;
+    int content_y = RENDER_OFFSET_Y + 20;
+    int content_w = RENDER_WIDTH - 40;
+    int content_h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 40;
+    int sphere_viz_width = (content_w * 7) / 10;
+    int sphere_viz_height = (content_h * 6) / 10;
+    if (sphere_viz_height < 400) sphere_viz_height = 400;
+    
+    // Toggle button bounds
+    int toggle_x = content_x + sphere_viz_width - 110;
+    int toggle_y = content_y + 10;
+    int toggle_w = 100;
+    int toggle_h = 30;
+    
+    if (x >= toggle_x && x <= toggle_x + toggle_w &&
+        y >= toggle_y && y <= toggle_y + toggle_h) {
+        // Toggle visualization mode
+        state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) 
+                                  ? SPHERE_VIZ_3D : SPHERE_VIZ_2D;
+        printf("Toggled sphere visualization to %s mode\n", 
+               state->sphere_viz_mode == SPHERE_VIZ_2D ? "2D" : "3D");
+        return;
+    }
     
     // Check scrollbar click first
     int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
