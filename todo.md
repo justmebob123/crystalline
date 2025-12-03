@@ -124,6 +124,30 @@ All three warnings are **compiler false positives** - the code has proper runtim
 
 ---
 
+## MASTER_PLAN RULE 7 UPDATED ✅
+
+### Changes Made (Commit 504b550)
+With user approval, updated RULE 7 in MASTER_PLAN.md to include:
+
+1. **Mandatory Build Testing Requirements**
+   - Added explicit requirement to test every build after changes
+   - Added "NEVER SKIP STEP 4" warning
+   - Added verification of build success before claiming completion
+   - Added explicit "NEVER" list of prohibited actions
+
+2. **Git Operations Guidance**
+   - Added proper git push command with authentication
+   - Added feature branch creation guidance
+   - Added commit message best practices
+   - Added note about automatic $GITHUB_TOKEN authentication
+
+### Updated RULE 7 Now Includes:
+- ✅ **MANDATORY Process** with 7 clear steps
+- ✅ **NEVER** section listing prohibited actions
+- ✅ **Git Operations** section with proper authentication
+- ✅ Emphasis on testing BEFORE claiming completion
+- ✅ Clear consequences of skipping verification
+
 ## NEXT STEPS
 
 The build is now clean and functional. Ready for:
