@@ -268,26 +268,54 @@ int crawler_start(CrawlerState* state) {
         extern bool model_manager_reload(const char* name);
         model_manager_reload(state->model_name);
         
-        // Then acquire it for training
+        // Prepare model (expands abacus if needed, marks accessible)
+        extern bool model_manager_prepare(const char* name);
         extern CLLMModel* model_manager_acquire_read(const char* name);
-        existing_model = model_manager_acquire_read(state->model_name);
         
-        if (existing_model) {
-            printf("✓ Successfully loaded model: %s\n", state->model_name);
-            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
+        printf("Preparing model '%s' for training...\n", state->model_name);
+        if (model_manager_prepare(state->model_name)) {
+            printf("✓ Model prepared successfully\n");
+            
+            // Now acquire it for training
+            existing_model = model_manager_acquire_read(state->model_name);
+            
+            if (existing_model) {
+                printf("✓ Successfully loaded model: %s\n", state->model_name);
+                state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
+            } else {
+                fprintf(stderr, "⚠ Warning: Could not acquire model after preparation\n");
+                snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+                state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
+            }
         } else {
-            fprintf(stderr, "⚠ Warning: Could not load model '%s', will create new one\n", state->model_name);
+            fprintf(stderr, "⚠ Warning: Could not prepare model '%s', will create new one\n", state->model_name);
             snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
             state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
         }
     } else {
         // No model name specified - try to use first available
         extern CLLMModel* model_manager_get_first(void);
-        existing_model = model_manager_get_first();
+        extern const char* model_manager_get_first_name(void);
+        extern bool model_manager_prepare(const char* name);
         
-        if (existing_model) {
-            printf("✓ Using first available model from model manager\n");
-            state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
+        const char* first_name = model_manager_get_first_name();
+        if (first_name) {
+            printf("Preparing first available model: %s\n", first_name);
+            if (model_manager_prepare(first_name)) {
+                existing_model = model_manager_get_first();
+                if (existing_model) {
+                    printf("✓ Using first available model from model manager\n");
+                    state->training_internal = continuous_training_init(state->data_dir, NULL, existing_model, state->num_threads, state->callback_user_data);
+                } else {
+                    fprintf(stderr, "⚠ Warning: Could not acquire first model after preparation\n");
+                    snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+                    state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
+                }
+            } else {
+                fprintf(stderr, "⚠ Warning: Could not prepare first model\n");
+                snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);
+                state->training_internal = continuous_training_init(state->data_dir, model_path, NULL, state->num_threads, state->callback_user_data);
+            }
         } else {
             // No existing model, create new one
             snprintf(model_path, sizeof(model_path), "%s/model.cllm", state->data_dir);

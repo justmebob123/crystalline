@@ -804,6 +804,24 @@ CLLMModel* model_manager_get_first(void) {
     return model;
 }
 
+const char* model_manager_get_first_name(void) {
+    if (!g_manager_initialized) {
+        return NULL;
+    }
+    
+    pthread_mutex_lock(&g_model_manager.manager_lock);
+    
+    // Return first model name if any exist
+    const char* name = NULL;
+    if (g_model_manager.num_models > 0 && g_model_manager.models[0]) {
+        name = g_model_manager.models[0]->name;
+    }
+    
+    pthread_mutex_unlock(&g_model_manager.manager_lock);
+    
+    return name;
+}
+
 // ============================================================================
 // INTERNAL SAVE/LOAD FUNCTIONS (Stubs for now)
 // ============================================================================

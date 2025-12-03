@@ -23,6 +23,7 @@
 #include "cllm_vocab_builder.h"
 #include "cllm_model_manager.h"
 #include "cllm_utils.h"
+#include "../../crawler_thread.h"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -1448,10 +1449,20 @@ void handle_training_tab_click(AppState* state, int x, int y) {
                 load_crawl_queue(state);
                 pages_in_queue = state->crawler_queue_size;
                 
-                // Start crawler thread
-                extern int start_crawler_thread(AppState* state, const char* start_url);
-                if (start_crawler_thread(state, start_url) == 0) {
+                // Start crawler thread with proper parameters
+                extern int start_crawler_thread(AppState* state, const char* start_url, 
+                                               ExtractionMode extraction_mode, const char* model_name);
+                
+                // Get selected model name (if any)
+                const char* selected_model = (state->selected_model_name[0] != '\0') ? 
+                                            state->selected_model_name : NULL;
+                
+                // Start crawler with human text extraction and selected model
+                if (start_crawler_thread(state, start_url, EXTRACT_HUMAN_TEXT, selected_model) == 0) {
                     printf("✓ Crawler thread started successfully\n");
+                    if (selected_model) {
+                        printf("  Using model: %s\n", selected_model);
+                    }
                 } else {
                     printf("✗ Failed to start crawler thread\n");
                     crawler_running = false;

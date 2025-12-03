@@ -280,6 +280,12 @@ bool model_manager_get_status(const char* name, bool* is_accessible,
  */
 CLLMModel* model_manager_get_first(void);
 
+/**
+ * Get name of first registered model (for auto-selection)
+ * Returns: Model name or NULL if no models
+ */
+const char* model_manager_get_first_name(void);
+
 // ============================================================================
 // DISK-BASED MODEL ACCESS (NEW - OBJECTIVE 26)
 // ============================================================================
