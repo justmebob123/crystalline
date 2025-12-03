@@ -482,8 +482,8 @@ int start_training_thread(AppState* state) {
         return -1;
     }
     
-    // Detach thread so it cleans up automatically
-    pthread_detach(training_thread);
+    // Do NOT detach - we need to join it later in stop_training_thread()
+    // pthread_detach(training_thread);
     
     printf("✓ Training thread started with kissing spheres architecture\n");
     printf("  12 parallel workers will process batches\n");
