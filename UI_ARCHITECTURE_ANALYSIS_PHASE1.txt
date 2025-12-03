@@ -1,0 +1,72 @@
+====================================================================================================
+COMPLETE UI ARCHITECTURE ANALYSIS - BIDIRECTIONAL DEEP DIVE
+====================================================================================================
+
+## PHASE 1: COMPLETE FILE INVENTORY
+
+### Framework: 11 files
+  - app/ui.c                                                     ( 444 lines,  16580 bytes)
+  - app/ui/components.c                                          (1286 lines,  44412 bytes)
+  - app/ui/components.h                                          (   0 lines,  10538 bytes)
+  - app/ui/event_system.c                                        ( 394 lines,  11806 bytes)
+  - app/ui/event_system.h                                        (   0 lines,   5460 bytes)
+  - app/ui/left_sidebar.c                                        ( 250 lines,   8433 bytes)
+  - app/ui/left_sidebar.h                                        (   0 lines,    515 bytes)
+  - app/ui/loading_screen.c                                      ( 160 lines,   5692 bytes)
+  - app/ui/loading_screen.h                                      (   0 lines,   1609 bytes)
+  - app/ui/sphere_visualization.c                                ( 755 lines,  28233 bytes)
+  - app/ui/sphere_visualization.h                                (   0 lines,    548 bytes)
+
+### Widgets: 6 files
+  - app/simple_dialog.c                                          ( 176 lines,   7346 bytes)
+  - app/simple_dialog.h                                          (   0 lines,   1227 bytes)
+  - app/ui/model_selector.c                                      ( 355 lines,  12047 bytes)
+  - app/ui/model_selector.h                                      (   0 lines,   1417 bytes)
+  - app/ui/scroll_panel.c                                        ( 232 lines,   7872 bytes)
+  - app/ui/scroll_panel.h                                        (   0 lines,   2350 bytes)
+
+### Tabs: 17 files
+  - app/ui/tab_init.c                                            (  52 lines,   1218 bytes)
+  - app/ui/tab_init.h                                            (   0 lines,    358 bytes)
+  - app/ui/tabs/tab_benchmark.c                                  ( 344 lines,  13319 bytes)
+  - app/ui/tabs/tab_crawler.c                                    ( 953 lines,  37653 bytes)
+  - app/ui/tabs/tab_crawler.h                                    (   0 lines,    688 bytes)
+  - app/ui/tabs/tab_downloaded_files.c                           ( 545 lines,  19560 bytes)
+  - app/ui/tabs/tab_downloaded_files.h                           (   0 lines,    418 bytes)
+  - app/ui/tabs/tab_llm.c                                        (1438 lines,  59715 bytes)
+  - app/ui/tabs/tab_models.c                                     ( 684 lines,  27774 bytes)
+  - app/ui/tabs/tab_models.h                                     (   0 lines,    416 bytes)
+  - app/ui/tabs/tab_research.c                                   ( 592 lines,  22297 bytes)
+  - app/ui/tabs/tab_training.c                                   (1806 lines,  76748 bytes)
+  - app/ui/tabs/tab_training.h                                   (   0 lines,    302 bytes)
+  - app/ui/tabs/tab_url_manager.c                                ( 554 lines,  20483 bytes)
+  - app/ui/tabs/tab_url_manager.h                                (   0 lines,    366 bytes)
+  - app/ui/tabs/tab_video.c                                      ( 238 lines,   8968 bytes)
+  - app/ui/tabs/tab_video.h                                      (   0 lines,    346 bytes)
+
+### Input System: 7 files
+  - app/input_manager.c                                          ( 412 lines,  14467 bytes)
+  - app/input_manager.h                                          (   0 lines,   2755 bytes)
+  - app/input_registration.c                                     ( 195 lines,   8755 bytes)
+  - app/input_registration.h                                     (   0 lines,    605 bytes)
+  - app/prime_input.c                                            ( 426 lines,  15993 bytes)
+  - app/text_input.c                                             ( 300 lines,  10293 bytes)
+  - app/text_input.h                                             (   0 lines,   1349 bytes)
+
+### Layout System: 8 files
+  - app/ui/layout_engine.c                                       ( 289 lines,   9821 bytes)
+  - app/ui/layout_engine.h                                       (   0 lines,   4879 bytes)
+  - app/ui/layout_manager.c                                      ( 208 lines,   7134 bytes)
+  - app/ui/layout_manager.h                                      (   0 lines,   2692 bytes)
+  - app/ui/layout_system.c                                       ( 547 lines,  18440 bytes)
+  - app/ui/layout_system.h                                       (   0 lines,   6108 bytes)
+  - app/ui_layout.c                                              (  81 lines,   2856 bytes)
+  - app/ui_layout.h                                              (   0 lines,   2554 bytes)
+
+### State Management: 2 files
+  - app/ui/state_manager.c                                       ( 463 lines,  16156 bytes)
+  - app/ui/state_manager.h                                       (   0 lines,   7969 bytes)
+
+### Integration: 2 files
+  - app/app_common.h                                             (   0 lines,  17910 bytes)
+  - app/main.c                                                   (1082 lines,  43302 bytes)

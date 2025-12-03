@@ -467,24 +467,29 @@ void handle_research_tab_click(AppState* state, int x, int y) {
     
     int panel_x = RENDER_WIDTH;
     
-    // Scan button (y ≈ 90)
-    SDL_Rect scan_btn = {panel_x + 10, 90, 80, 22};
+    // Calculate Y positions to match draw function layout
+    // Draw function: panel_y = RENDER_OFFSET_Y, y = panel_y + 10
+    // Then: +20 (MODEL text) +40 (selector) +20 (RESEARCH BROWSER) +20 (directory) = 150
+    int buttons_y = RENDER_OFFSET_Y + 10 + 20 + 40 + 20 + 20;  // = 150
+    
+    // Scan button
+    SDL_Rect scan_btn = {panel_x + 10, buttons_y, 80, 22};
     if (x >= scan_btn.x && x <= scan_btn.x + scan_btn.w &&
         y >= scan_btn.y && y <= scan_btn.y + scan_btn.h) {
         scan_research_directory(current_directory);
         return;
     }
     
-    // Refresh button (y ≈ 90)
-    SDL_Rect refresh_btn = {panel_x + 100, 90, 80, 22};
+    // Refresh button
+    SDL_Rect refresh_btn = {panel_x + 100, buttons_y, 80, 22};
     if (x >= refresh_btn.x && x <= refresh_btn.x + refresh_btn.w &&
         y >= refresh_btn.y && y <= refresh_btn.y + refresh_btn.h) {
         scan_research_directory(current_directory);
         return;
     }
     
-    // Up directory button (y ≈ 90)
-    SDL_Rect up_btn = {panel_x + 190, 90, 80, 22};
+    // Up directory button
+    SDL_Rect up_btn = {panel_x + 190, buttons_y, 80, 22};
     if (x >= up_btn.x && x <= up_btn.x + up_btn.w &&
         y >= up_btn.y && y <= up_btn.y + up_btn.h) {
         // Go up one directory
@@ -496,10 +501,12 @@ void handle_research_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Sort buttons (y ≈ 150)
+    // Sort buttons
+    // After buttons: +28, then +50 (search input), +16, +26 = 270
+    int sort_y = buttons_y + 28 + 50 + 16 + 26;  // = 270
     int btn_width = (CONTROL_PANEL_WIDTH - 30) / 4;
     for (int i = 0; i < 4; i++) {
-        SDL_Rect sort_btn = {panel_x + 10 + i * (btn_width + 3), 150, btn_width, 20};
+        SDL_Rect sort_btn = {panel_x + 10 + i * (btn_width + 3), sort_y, btn_width, 20};
         if (x >= sort_btn.x && x <= sort_btn.x + sort_btn.w &&
             y >= sort_btn.y && y <= sort_btn.y + sort_btn.h) {
             if (sort_mode == (SortMode)i) {
@@ -514,7 +521,8 @@ void handle_research_tab_click(AppState* state, int x, int y) {
     }
     
     // File list clicks
-    int list_y = 196;
+    // After sort buttons: +20 = 290
+    int list_y = sort_y + 20;  // = 290
     int list_height = WINDOW_HEIGHT - list_y - 20;
     SDL_Rect list_rect = {panel_x + 10, list_y, CONTROL_PANEL_WIDTH - 20, list_height};
     
