@@ -415,6 +415,16 @@ static void on_browse_models_clicked(void* user_data) {
     if (!model_browser_visible) {
         init_model_browser(state);
         scan_models_directory();
+        
+        // Populate the list with model filenames
+        if (llm_ui.browser_list) {
+            char** items = (char**)malloc(model_browser.model_count * sizeof(char*));
+            for (int i = 0; i < model_browser.model_count; i++) {
+                items[i] = model_browser.models[i].filename;
+            }
+            crystalline_list_set_items(llm_ui.browser_list, items, model_browser.model_count);
+            free(items);
+        }
     }
     model_browser_visible = !model_browser_visible;
 }
@@ -426,6 +436,62 @@ static void on_thread_list_clicked(void* user_data) {
         init_thread_manager();
     }
     thread_list_visible = !thread_list_visible;
+}
+
+static void on_browser_refresh_clicked(void* user_data) {
+    (void)user_data;
+    printf("Browser refresh button clicked\n");
+    scan_models_directory();
+    
+    // Update list with model filenames
+    if (llm_ui.browser_list) {
+        char** items = (char**)malloc(model_browser.model_count * sizeof(char*));
+        for (int i = 0; i < model_browser.model_count; i++) {
+            items[i] = model_browser.models[i].filename;
+        }
+        crystalline_list_set_items(llm_ui.browser_list, items, model_browser.model_count);
+        free(items);
+    }
+}
+
+static void on_browser_load_clicked(void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state) return;
+    
+    printf("Browser load button clicked\n");
+    
+    if (llm_ui.browser_list) {
+        int selected = crystalline_list_get_selected(llm_ui.browser_list);
+        if (selected >= 0 && selected < model_browser.model_count) {
+            ModelFileInfo* model = &model_browser.models[selected];
+            printf("Loading model: %s\n", model->filename);
+            
+            // Extract model name (remove .cllm extension)
+            char model_name[256];
+            strncpy(model_name, model->filename, sizeof(model_name) - 1);
+            model_name[sizeof(model_name) - 1] = '\0';
+            char* ext = strstr(model_name, ".cllm");
+            if (ext) *ext = '\0';
+            
+            // Load the model
+            on_llm_model_selected(model_name, state);
+            
+            // Close browser
+            model_browser_visible = false;
+        }
+    }
+}
+
+static void on_browser_export_clicked(void* user_data) {
+    (void)user_data;
+    printf("Browser export button clicked\n");
+    // TODO: Implement model export functionality
+}
+
+static void on_browser_close_clicked(void* user_data) {
+    (void)user_data;
+    printf("Browser close button clicked\n");
+    model_browser_visible = false;
 }
 
 // Add message to chat history
@@ -889,6 +955,81 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             font
         );
         crystalline_button_set_callback(llm_ui.btn_clear, on_clear_clicked, state);
+        
+        // Model Browser Panel (centered, created but not visible initially)
+        int browser_w = 600;
+        int browser_h = 500;
+        int browser_x = WINDOW_WIDTH / 2;
+        int browser_y = WINDOW_HEIGHT / 2;
+        
+        llm_ui.browser_panel = crystalline_panel_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            browser_x,
+            browser_y,
+            browser_w,
+            browser_h,
+            "MODEL BROWSER",
+            font
+        );
+        
+        // Model list inside browser panel
+        llm_ui.browser_list = crystalline_list_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            browser_x,
+            browser_y + 40.0f,
+            browser_w - 40.0f,
+            browser_h - 150.0f,
+            font
+        );
+        
+        // Browser buttons
+        float btn_y = browser_y + browser_h / 2.0f - 30.0f;
+        float btn_spacing = 110.0f;
+        float btn_start_x = browser_x - btn_spacing * 1.5f;
+        
+        llm_ui.btn_browser_refresh = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x,
+            btn_y,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "REFRESH",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_browser_refresh, on_browser_refresh_clicked, state);
+        
+        llm_ui.btn_browser_load = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing,
+            btn_y,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "LOAD",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_browser_load, on_browser_load_clicked, state);
+        
+        llm_ui.btn_browser_export = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing * 2,
+            btn_y,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "EXPORT",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_browser_export, on_browser_export_clicked, state);
+        
+        llm_ui.btn_browser_close = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            btn_start_x + btn_spacing * 3,
+            btn_y,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "CLOSE",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_browser_close, on_browser_close_clicked, state);
     }
     
     SDL_Color text_color = {220, 220, 220, 255};
@@ -1127,12 +1268,41 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         SDL_RenderFillRect(renderer, &overlay);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         
-        // Model browser panel (centered)
-        int panel_w = 600;
-        int panel_h = 500;
-        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
-        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
-        draw_model_browser_panel(renderer, panel_x, panel_y, panel_w, panel_h);
+        // Render Model Browser using Crystalline UI
+        if (llm_ui.browser_panel) {
+            crystalline_panel_render(llm_ui.browser_panel, renderer);
+        }
+        
+        if (llm_ui.browser_list) {
+            // Update list with current models if needed
+            if (model_browser.needs_refresh) {
+                char** items = (char**)malloc(model_browser.model_count * sizeof(char*));
+                for (int i = 0; i < model_browser.model_count; i++) {
+                    items[i] = model_browser.models[i].filename;
+                }
+                crystalline_list_set_items(llm_ui.browser_list, items, model_browser.model_count);
+                free(items);
+                model_browser.needs_refresh = false;
+            }
+            
+            crystalline_list_render(llm_ui.browser_list, renderer);
+        }
+        
+        if (llm_ui.btn_browser_refresh) {
+            crystalline_button_render(llm_ui.btn_browser_refresh, renderer);
+        }
+        
+        if (llm_ui.btn_browser_load) {
+            crystalline_button_render(llm_ui.btn_browser_load, renderer);
+        }
+        
+        if (llm_ui.btn_browser_export) {
+            crystalline_button_render(llm_ui.btn_browser_export, renderer);
+        }
+        
+        if (llm_ui.btn_browser_close) {
+            crystalline_button_render(llm_ui.btn_browser_close, renderer);
+        }
     }
     
     if (thread_list_visible) {
@@ -1202,21 +1372,39 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     
     // Handle model browser panel clicks
     if (model_browser_visible) {
+        // Handle browser button clicks
+        if (llm_ui.btn_browser_refresh && crystalline_button_handle_mouse(llm_ui.btn_browser_refresh, &dummy_event)) {
+            return;
+        }
+        
+        if (llm_ui.btn_browser_load && crystalline_button_handle_mouse(llm_ui.btn_browser_load, &dummy_event)) {
+            return;
+        }
+        
+        if (llm_ui.btn_browser_export && crystalline_button_handle_mouse(llm_ui.btn_browser_export, &dummy_event)) {
+            return;
+        }
+        
+        if (llm_ui.btn_browser_close && crystalline_button_handle_mouse(llm_ui.btn_browser_close, &dummy_event)) {
+            return;
+        }
+        
+        // Handle list clicks
+        if (llm_ui.browser_list && crystalline_list_handle_mouse(llm_ui.browser_list, &dummy_event)) {
+            return;
+        }
+        
+        // Click outside panel - close it
         int panel_w = 600;
         int panel_h = 500;
         int panel_x = (WINDOW_WIDTH - panel_w) / 2;
         int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
         
-        // Check if click is inside panel
-        if (x >= panel_x && x <= panel_x + panel_w &&
-            y >= panel_y && y <= panel_y + panel_h) {
-            // Handle panel clicks (TODO: implement specific button handling)
-            // For now, just close on any click inside
-            model_browser_visible = false;
-        } else {
-            // Click outside panel - close it
+        if (x < panel_x || x > panel_x + panel_w ||
+            y < panel_y || y > panel_y + panel_h) {
             model_browser_visible = false;
         }
+        
         return;
     }
     
