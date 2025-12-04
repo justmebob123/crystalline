@@ -100,12 +100,12 @@ The Crystalline UI library (app/ui/crystalline/) is INCOMPLETE and needs feature
 ## Action Plan - Fix Crystalline UI Library
 
 ### Phase 1: Add Checkbox Support to CrystallineList
-- [ ] Add `bool* item_checked` array to CrystallineList struct
-- [ ] Add checkbox rendering in crystalline_list_render()
-- [ ] Add checkbox click detection in crystalline_list_handle_mouse()
-- [ ] Add API: crystalline_list_set_item_checked()
-- [ ] Add API: crystalline_list_get_item_checked()
-- [ ] Add callback for checkbox changes
+- [x] Add `bool* item_checked` array to CrystallineList struct
+- [x] Add checkbox rendering in crystalline_list_render()
+- [x] Add checkbox click detection in crystalline_list_handle_mouse()
+- [x] Add API: crystalline_list_set_item_checked()
+- [x] Add API: crystalline_list_get_item_checked()
+- [x] Add callback for checkbox changes
 
 ### Phase 2: Implement Hover Animations
 - [ ] Add hover state detection to all elements

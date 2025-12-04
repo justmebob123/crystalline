@@ -215,9 +215,9 @@ typedef struct {
     float scroll_offset;            // Current scroll offset
     bool scrollable;                // Enable scrolling
     
-    void (*on_select)(int index, void* data);  // Selection callback
-} CrystallineList;
+       void (*on_select)(int index, void* data);  // Selection callback
        void (*on_check)(int index, bool checked, void* data);  // Checkbox callback
+} CrystallineList;
 
 /*
  * Toggle Element

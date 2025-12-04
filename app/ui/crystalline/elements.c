@@ -1075,7 +1075,6 @@ void crystalline_list_destroy(CrystallineList* list) {
     }
 }
 
-           if (list->item_checked) free(list->item_checked);
 void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
     if (!list || !list->base.visible || !list->font) return;
     
