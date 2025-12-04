@@ -440,6 +440,29 @@ void crystalline_dropdown_set_selected(CrystallineDropdown* dropdown, int index)
 void crystalline_dropdown_set_callback(CrystallineDropdown* dropdown,
                                        void (*callback)(int index, void* data), void* data);
 
+// TextArea - Scrollable multi-line text display for chat messages
+typedef enum {
+    CRYSTALLINE_MESSAGE_USER,
+    CRYSTALLINE_MESSAGE_ASSISTANT,
+    CRYSTALLINE_MESSAGE_SYSTEM
+} CrystallineMessageType;
+
+typedef struct CrystallineTextArea CrystallineTextArea;
+
+CrystallineTextArea* crystalline_textarea_create(CrystallineElementStyle style,
+                                                   float x, float y,
+                                                   float width, float height,
+                                                   TTF_Font* font);
+void crystalline_textarea_destroy(CrystallineTextArea* area);
+void crystalline_textarea_add_message(CrystallineTextArea* area,
+                                      CrystallineMessageType type,
+                                      const char* text,
+                                      const char* timestamp);
+void crystalline_textarea_clear(CrystallineTextArea* area);
+void crystalline_textarea_scroll(CrystallineTextArea* area, float delta);
+void crystalline_textarea_render(CrystallineTextArea* area, SDL_Renderer* renderer);
+bool crystalline_textarea_handle_event(CrystallineTextArea* area, SDL_Event* event);
+
 /*
  * Element Property Getters
  */
