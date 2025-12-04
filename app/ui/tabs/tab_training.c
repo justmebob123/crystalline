@@ -611,7 +611,9 @@ void update_training_visualization(AppState* state) {
     // Update from training metrics
     if (state->training_metrics) {
         g_training_ui.viz_data.current_epoch = state->training_metrics->training.current_epoch;
-        g_training_ui.viz_data.total_epochs = state->training_metrics->training.total_epochs;
+        // PHASE 2: Read total_epochs from state->training_epochs (slider value)
+        // training_metrics->training.total_epochs is never set by training system
+        g_training_ui.viz_data.total_epochs = state->training_epochs;
         g_training_ui.viz_data.current_loss = state->training_metrics->training.current_loss;
         
         // Update best loss
