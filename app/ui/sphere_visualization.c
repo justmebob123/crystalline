@@ -518,48 +518,206 @@ static void draw_spheres_3d(SDL_Renderer* renderer, AppState* state, SDL_Rect bo
             }
         }
     }
-}static void draw_spheres_2d(SDL_Renderer* renderer, AppState* state,
+}
+
+/**
+ * PHASE 5: Draw spheres in 2D arrangement showing full hierarchy
+ * 
+ * Layout:
+ * - Center: Root sphere (small, gray, "CTRL")
+ * - Circle: 12 level-1 spheres (always visible, even if inactive)
+ * - Around parents: Level-2 children (smaller, connected)
+ * 
+ * Colors:
+ * - Root: Gray
+ * - Control threads: Purple gradient
+ * - Worker threads: Activity gradient (green -> yellow -> red)
+ * - Inactive: Dark gray outline
+ */
+static void draw_spheres_2d(SDL_Renderer* renderer, AppState* state,
                            int center_x, int center_y, int arrangement_radius, 
                            int sphere_radius, int max_batches) {
     SDL_Color text_color = {220, 220, 220, 255};
     SDL_Color grid_color = {50, 50, 60, 255};
+    SDL_Color control_color = {150, 100, 200, 255};  // Purple for control threads
+    SDL_Color ghost_color = {40, 40, 50, 255};       // Gray for inactive positions
     
-    // Draw 12 worker spheres in a circle
-    for (int i = 0; i < 12; i++) {
-        // Calculate position
-        float angle = (i * 2.0f * M_PI) / 12.0f - M_PI / 2.0f; // Start at top
-        int sphere_x = center_x + (int)(arrangement_radius * prime_cosf(angle));
-        int sphere_y = center_y + (int)(arrangement_radius * prime_sinf(angle));
+    // ========================================================================
+    // PART 1: Draw root sphere (sphere 0) at center
+    // ========================================================================
+    
+    int root_radius = sphere_radius / 2;  // Half size for root
+    
+    // Check if root is active
+    int root_active = (state->sphere_stats.hierarchy_level[0] >= 0);
+    
+    if (root_active) {
+        // Root is always control thread
+        SDL_Color root_color = {100, 100, 120, 255};  // Gray
         
-        // Calculate activity level
-        float activity = 0.0f;
-        if (max_batches > 0) {
-            activity = (float)state->sphere_stats.batches_processed[i] / (float)max_batches;
+        // Draw filled circle
+        draw_filled_circle(renderer, center_x, center_y, root_radius, root_color);
+        
+        // Draw border
+        draw_circle_outline(renderer, center_x, center_y, root_radius, text_color);
+        
+        // Draw "CTRL" label
+        draw_text(renderer, "CTRL", center_x - 12, center_y + root_radius + 5, text_color);
+        
+        // Draw sphere ID
+        draw_text(renderer, "0", center_x - 3, center_y - 4, text_color);
+    }
+    
+    // ========================================================================
+    // PART 2: Draw 12 level-1 spheres in circle (ALWAYS 12 positions)
+    // ========================================================================
+    
+    for (int i = 0; i < 12; i++) {
+        int sphere_id = i + 1;  // Spheres 1-12
+        
+        // Calculate position using prime_* functions (NO math.h!)
+        float angle = (i * 2.0f * 3.14159265359f) / 12.0f - 3.14159265359f / 2.0f;  // Start at top
+        int x = center_x + (int)(arrangement_radius * prime_cosf(angle));
+        int y = center_y + (int)(arrangement_radius * prime_sinf(angle));
+        
+        // Check if this sphere is active
+        int is_active = (state->sphere_stats.hierarchy_level[sphere_id] >= 0);
+        
+        if (is_active) {
+            // Active sphere - determine color based on role
+            SDL_Color sphere_color;
+            
+            if (state->sphere_stats.is_control[sphere_id]) {
+                // Control thread - purple gradient based on children count
+                int num_children = state->sphere_stats.num_children[sphere_id];
+                int intensity = 100 + (num_children * 12);  // More children = brighter
+                if (intensity > 255) intensity = 255;
+                sphere_color = (SDL_Color){intensity, 50, 200, 255};
+            } else {
+                // Worker thread - activity gradient based on batch count
+                float activity = 0.0f;
+                if (max_batches > 0) {
+                    activity = (float)state->sphere_stats.batches_processed[sphere_id] / (float)max_batches;
+                }
+                if (activity > 1.0f) activity = 1.0f;
+                
+                // Green -> Yellow -> Red gradient
+                int r = (int)(activity * 255);
+                int g = (int)((1.0f - activity) * 255);
+                sphere_color = (SDL_Color){r, g, 0, 255};
+            }
+            
+            // Draw filled circle
+            draw_filled_circle(renderer, x, y, sphere_radius, sphere_color);
+            
+            // Draw border
+            draw_circle_outline(renderer, x, y, sphere_radius, text_color);
+            
+            // Draw connection to root
+            SDL_SetRenderDrawColor(renderer, 50, 50, 60, 128);
+            SDL_RenderDrawLine(renderer, center_x, center_y, x, y);
+            
+            // Draw sphere ID
+            char id_str[8];
+            snprintf(id_str, sizeof(id_str), "%d", sphere_id);
+            draw_text(renderer, id_str, x - 4, y - 4, text_color);
+            
+            // Draw role indicator
+            if (state->sphere_stats.is_control[sphere_id]) {
+                draw_text(renderer, "C", x - 3, y + sphere_radius + 5, control_color);
+            }
+            
+            // Draw batch count (outside circle)
+            if (!state->sphere_stats.is_control[sphere_id] && state->sphere_stats.batches_processed[sphere_id] > 0) {
+                char batch_str[16];
+                snprintf(batch_str, sizeof(batch_str), "%d", 
+                        state->sphere_stats.batches_processed[sphere_id]);
+                int text_x = x + (int)((sphere_radius + 15) * prime_cosf(angle)) - 10;
+                int text_y = y + (int)((sphere_radius + 15) * prime_sinf(angle)) - 6;
+                draw_text(renderer, batch_str, text_x, text_y, (SDL_Color){180, 180, 180, 255});
+            }
+            
+        } else {
+            // Inactive position - draw ghost outline
+            draw_circle_outline(renderer, x, y, sphere_radius, ghost_color);
+            
+            // Draw symmetry group number
+            char group_str[8];
+            snprintf(group_str, sizeof(group_str), "%d", i);
+            draw_text(renderer, group_str, x - 4, y - 4, ghost_color);
+        }
+    }
+    
+    // ========================================================================
+    // PART 3: Draw level-2 children around their parents
+    // ========================================================================
+    
+    int child_radius = sphere_radius / 2;  // Half size for children
+    int child_offset = sphere_radius + 20;  // Distance from parent center
+    
+    // Iterate through all possible spheres (13-143)
+    for (int sphere_id = 13; sphere_id < 144; sphere_id++) {
+        // Check if this sphere is active
+        if (state->sphere_stats.hierarchy_level[sphere_id] < 0) continue;
+        
+        // Get parent ID
+        int parent_id = state->sphere_stats.parent_id[sphere_id];
+        if (parent_id < 1 || parent_id > 12) continue;  // Must be level-1 parent
+        
+        // Calculate parent position
+        int parent_index = parent_id - 1;  // 0-11
+        float parent_angle = (parent_index * 2.0f * 3.14159265359f) / 12.0f - 3.14159265359f / 2.0f;
+        int parent_x = center_x + (int)(arrangement_radius * prime_cosf(parent_angle));
+        int parent_y = center_y + (int)(arrangement_radius * prime_sinf(parent_angle));
+        
+        // Calculate child position around parent
+        // Distribute children evenly around parent
+        int num_siblings = state->sphere_stats.num_children[parent_id];
+        int child_index = 0;
+        
+        // Find this child's index among siblings
+        for (int s = 13; s < sphere_id; s++) {
+            if (state->sphere_stats.parent_id[s] == parent_id) {
+                child_index++;
+            }
         }
         
-        // Get color based on activity
-        SDL_Color sphere_color = get_activity_color(activity);
+        // Position child around parent
+        float child_angle = parent_angle + (2.0f * 3.14159265359f * child_index) / (float)num_siblings;
+        int child_x = parent_x + (int)(child_offset * prime_cosf(child_angle));
+        int child_y = parent_y + (int)(child_offset * prime_sinf(child_angle));
         
-        // Draw sphere
-        draw_filled_circle(renderer, sphere_x, sphere_y, sphere_radius, sphere_color);
-        draw_circle_outline(renderer, sphere_x, sphere_y, sphere_radius, text_color);
+        // Determine color (children are always workers initially)
+        float activity = 0.0f;
+        if (max_batches > 0) {
+            activity = (float)state->sphere_stats.batches_processed[sphere_id] / (float)max_batches;
+        }
+        if (activity > 1.0f) activity = 1.0f;
         
-        // Draw connection line to center
-        SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 128);
-        SDL_RenderDrawLine(renderer, center_x, center_y, sphere_x, sphere_y);
+        int r = (int)(activity * 255);
+        int g = (int)((1.0f - activity) * 255);
+        SDL_Color child_color = {r, g, 0, 255};
         
-        // Draw sphere number
-        char sphere_label[8];
-        snprintf(sphere_label, sizeof(sphere_label), "%d", i);
-        draw_text(renderer, sphere_label, sphere_x - 4, sphere_y - 6, text_color);
+        // Draw filled circle
+        draw_filled_circle(renderer, child_x, child_y, child_radius, child_color);
+        
+        // Draw border
+        draw_circle_outline(renderer, child_x, child_y, child_radius, text_color);
+        
+        // Draw connection to parent
+        SDL_SetRenderDrawColor(renderer, 50, 50, 60, 128);
+        SDL_RenderDrawLine(renderer, parent_x, parent_y, child_x, child_y);
+        
+        // Draw sphere ID
+        char id_str[8];
+        snprintf(id_str, sizeof(id_str), "%d", sphere_id);
+        draw_text(renderer, id_str, child_x - 4, child_y - 3, text_color);
         
         // Draw batch count
-        if (state->sphere_stats.batches_processed[i] > 0) {
-            char batch_text[16];
-            snprintf(batch_text, sizeof(batch_text), "%d", state->sphere_stats.batches_processed[i]);
-            int text_x = sphere_x + (int)((sphere_radius + 15) * prime_cosf(angle)) - 10;
-            int text_y = sphere_y + (int)((sphere_radius + 15) * prime_sinf(angle)) - 6;
-            draw_text(renderer, batch_text, text_x, text_y, (SDL_Color){180, 180, 180, 255});
+        if (state->sphere_stats.batches_processed[sphere_id] > 0) {
+            char batch_str[16];
+            snprintf(batch_str, sizeof(batch_str), "%d", state->sphere_stats.batches_processed[sphere_id]);
+            draw_text(renderer, batch_str, child_x - 6, child_y + child_radius + 5, (SDL_Color){180, 180, 180, 255});
         }
     }
 }
