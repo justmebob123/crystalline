@@ -195,6 +195,11 @@ typedef struct {
     int selected_index;             // Selected item index (-1 = none)
     int hover_index;                // Hovered item index (-1 = none)
     TTF_Font* font;                 // Font for items
+       
+       // Checkbox support
+       bool* item_checked;             // Array of checkbox states (NULL = no checkboxes)
+       bool show_checkboxes;           // Show checkboxes for each item
+       float checkbox_size;            // Size of checkboxes
     
     // Circular style properties
     float radius;                   // List radius
@@ -212,6 +217,7 @@ typedef struct {
     
     void (*on_select)(int index, void* data);  // Selection callback
 } CrystallineList;
+       void (*on_check)(int index, bool checked, void* data);  // Checkbox callback
 
 /*
  * Toggle Element
@@ -415,6 +421,13 @@ void crystalline_list_clear(CrystallineList* list);
 void crystalline_list_set_selected(CrystallineList* list, int index);
 void crystalline_list_set_callback(CrystallineList* list,
                                    void (*callback)(int index, void* data), void* data);
+   
+// List checkbox functions
+void crystalline_list_enable_checkboxes(CrystallineList* list, float checkbox_size);
+void crystalline_list_set_item_checked(CrystallineList* list, int index, bool checked);
+bool crystalline_list_get_item_checked(CrystallineList* list, int index);
+void crystalline_list_set_check_callback(CrystallineList* list,
+                                         void (*callback)(int index, bool checked, void* data), void* data);
 
 // Toggle
 void crystalline_toggle_set_value(CrystallineToggle* toggle, bool value);

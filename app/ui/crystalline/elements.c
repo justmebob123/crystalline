@@ -1055,6 +1055,11 @@ CrystallineList* crystalline_list_create(CrystallineElementStyle style, float x,
     list->scroll_offset = 0.0f;
     list->scrollable = true;
     
+       
+       // Initialize checkbox support
+       list->item_checked = NULL;
+       list->show_checkboxes = false;
+       list->checkbox_size = 12.0f;
     return list;
 }
 
@@ -1070,6 +1075,7 @@ void crystalline_list_destroy(CrystallineList* list) {
     }
 }
 
+           if (list->item_checked) free(list->item_checked);
 void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
     if (!list || !list->base.visible || !list->font) return;
     
@@ -1814,4 +1820,38 @@ int crystalline_dropdown_get_selected(CrystallineDropdown* dropdown) {
 void crystalline_dropdown_set_style(CrystallineDropdown* dropdown, CrystallineElementStyle style) {
     if (!dropdown) return;
     dropdown->base.style = style;
+}
+
+/*
+ * List checkbox functions
+ */
+
+void crystalline_list_enable_checkboxes(CrystallineList* list, float checkbox_size) {
+    if (!list) return;
+    
+    list->show_checkboxes = true;
+    list->checkbox_size = checkbox_size;
+    
+    // Allocate checkbox array if not already allocated
+    if (!list->item_checked && list->item_count > 0) {
+        list->item_checked = (bool*)calloc(list->item_count, sizeof(bool));
+    }
+}
+
+void crystalline_list_set_item_checked(CrystallineList* list, int index, bool checked) {
+    if (!list || !list->item_checked || index < 0 || index >= list->item_count) return;
+    list->item_checked[index] = checked;
+}
+
+bool crystalline_list_get_item_checked(CrystallineList* list, int index) {
+    if (!list || !list->item_checked || index < 0 || index >= list->item_count) return false;
+    return list->item_checked[index];
+}
+
+void crystalline_list_set_check_callback(CrystallineList* list,
+                                         void (*callback)(int index, bool checked, void* data), 
+                                         void* data) {
+    if (!list) return;
+    list->on_check = callback;
+    list->base.user_data = data;
 }
