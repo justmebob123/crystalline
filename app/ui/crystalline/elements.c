@@ -1296,6 +1296,14 @@ void crystalline_list_set_items(CrystallineList* list, char** items, int count) 
     for (int i = 0; i < count; i++) {
         list->items[i] = strdup(items[i]);
     }
+    
+    // Reallocate checkbox array if checkboxes are enabled
+    if (list->show_checkboxes) {
+        if (list->item_checked) {
+            free(list->item_checked);
+        }
+        list->item_checked = (bool*)calloc(count, sizeof(bool));
+    }
 }
 
 void crystalline_list_add_item(CrystallineList* list, const char* item) {
