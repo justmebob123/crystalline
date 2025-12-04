@@ -323,6 +323,7 @@ static void on_2d3d_toggle_clicked(void* data) {
 static void on_batch_size_changed(float value, void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
+    // PHASE 4: Batch size range 1-256 (was 1-32)
     state->training_batch_size = (int)(value * 255) + 1;  // 1-256
 }
 
@@ -398,7 +399,8 @@ void init_training_tab(AppState* state) {
     // Create visualization panel (left side)
     // IMPORTANT: Crystalline UI uses CENTER coordinates, not top-left
     float viz_panel_width = (float)(viz_width - 20);
-    float viz_panel_height = (float)(WINDOW_HEIGHT - RENDER_OFFSET_Y - 20);
+    // PHASE 3: Reduce height by 130px to leave room for progress bar
+    float viz_panel_height = (float)(WINDOW_HEIGHT - RENDER_OFFSET_Y - 150);  // Was -20, now -150
     g_training_ui.viz_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         RENDER_OFFSET_X + 10 + viz_panel_width / 2.0f,  // CENTER X
@@ -583,11 +585,13 @@ void init_training_tab(AppState* state) {
     // Create progress bar (using CENTER coordinates)
     float progress_width = (float)(viz_width - 40);
     float progress_height = 20.0f;  // Reduced from 30 to 20
-    // Position at bottom of screen instead of blocking visualization
+    // PHASE 3: Position 20px below sphere visualization
+    int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 150;  // Match draw function
+    float viz_bottom = RENDER_OFFSET_Y + viz_height;
     g_training_ui.training_progress = crystalline_progress_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         RENDER_OFFSET_X + 20 + progress_width / 2.0f,
-        WINDOW_HEIGHT - 30.0f,  // Bottom of screen
+        viz_bottom + 20.0f + progress_height / 2.0f,  // 20px below viz, centered
         progress_width,
         progress_height
     );
@@ -696,7 +700,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // CRITICAL: Use same calculation as init_training_tab()
     int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
     int viz_width = (int)(content_width * 0.618f);     // 865px (NOT 667px!)
-    int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
+    // PHASE 3: Reduce height by 130px to leave room for progress bar below
+    int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 150;  // Was -20, now -150 (130px less)
     
     // Use layout helper to calculate proper visualization area
     SDL_Rect sphere_bounds = crystalline_layout_viz_area(
@@ -731,8 +736,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     int slider_y = RENDER_OFFSET_Y + 150;
     char label[64];
     
-    // Batch Size
-    snprintf(label, sizeof(label), "Batch Size: %d", state->training_batch_size);
+    // Batch Size (PHASE 4: Range 1-256)
+    snprintf(label, sizeof(label), "Batch Size: %d (1-256)", state->training_batch_size);
     draw_text(renderer, label, slider_x, slider_y - SLIDER_LABEL_SPACING, text_color);
     if (g_training_ui.slider_batch) crystalline_slider_render(g_training_ui.slider_batch, renderer);
     
