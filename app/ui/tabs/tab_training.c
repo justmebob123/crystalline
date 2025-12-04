@@ -164,6 +164,15 @@ static void on_select_all_clicked(void* data) {
     }
 }
 
+static void on_pause_clicked(void* data) {
+    AppState* state = (AppState*)data;
+    if (!state) return;
+    
+    // Toggle pause state
+    state->training_paused = !state->training_paused;
+    printf("Training %s\n", state->training_paused ? "paused" : "resumed");
+}
+
 static void on_start_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
@@ -369,6 +378,7 @@ void init_training_tab(AppState* state) {
         "PAUSE",
         font
     );
+    crystalline_button_set_callback(g_training_ui.btn_pause, on_pause_clicked, state);
     
     g_training_ui.btn_start = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
@@ -615,15 +625,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_button_set_label(g_training_ui.btn_2d3d_toggle, toggle_label);
     }
     
-    // Render buttons
-    if (g_training_ui.btn_pause) crystalline_button_render(g_training_ui.btn_pause, renderer);
-    if (g_training_ui.btn_start) crystalline_button_render(g_training_ui.btn_start, renderer);
-    if (g_training_ui.btn_save) crystalline_button_render(g_training_ui.btn_save, renderer);
-    if (g_training_ui.btn_scan) crystalline_button_render(g_training_ui.btn_scan, renderer);
-    if (g_training_ui.btn_select) crystalline_button_render(g_training_ui.btn_select, renderer);
-    if (g_training_ui.btn_2d3d_toggle) crystalline_button_render(g_training_ui.btn_2d3d_toggle, renderer);
-    
-    // Render sliders with labels (proper spacing)
+    // Render sliders FIRST (background layer)
+    // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     // Calculate layout dimensions (same as init)
     int content_width_full = WINDOW_WIDTH - SIDEBAR_WIDTH;
@@ -667,35 +670,46 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.file_list) {
         crystalline_list_render(g_training_ui.file_list, renderer);
     }
+    
+    // NOW render buttons on TOP (so they're clickable and not covered)
+    if (g_training_ui.btn_pause) crystalline_button_render(g_training_ui.btn_pause, renderer);
+    if (g_training_ui.btn_start) crystalline_button_render(g_training_ui.btn_start, renderer);
+    if (g_training_ui.btn_save) crystalline_button_render(g_training_ui.btn_save, renderer);
+    if (g_training_ui.btn_scan) crystalline_button_render(g_training_ui.btn_scan, renderer);
+    if (g_training_ui.btn_select) crystalline_button_render(g_training_ui.btn_select, renderer);
+    if (g_training_ui.btn_2d3d_toggle) crystalline_button_render(g_training_ui.btn_2d3d_toggle, renderer);
 
     
-    // Draw metrics panel content
-    int metrics_x = (int)(RENDER_OFFSET_X + viz_width * 0.618f) + 10;
-    int metrics_y = RENDER_OFFSET_Y + 120;
+    // Draw metrics panel content INSIDE the STATUS panel
+    // Panel was created at: metrics_x = RENDER_OFFSET_X + viz_width - 250
+    //                       metrics_y = RENDER_OFFSET_Y + 100
+    // These are TOP-LEFT coordinates for text positioning
+    int metrics_text_x = RENDER_OFFSET_X + viz_width_full - 250 + 10;  // Panel left + padding
+    int metrics_text_y = RENDER_OFFSET_Y + 100 + 30;  // Panel top + padding for title
     
-    draw_text(renderer, "FRAMEWORK STATUS", metrics_x, metrics_y, (SDL_Color){100, 150, 200, 255});
-    metrics_y += 25;
-    draw_text(renderer, "Lattice Embeddings: ACTIVE", metrics_x, metrics_y, (SDL_Color){100, 255, 100, 255});
-    metrics_y += 18;
-    draw_text(renderer, "Angular Attention: ACTIVE", metrics_x, metrics_y, (SDL_Color){100, 255, 100, 255});
-    metrics_y += 18;
-    draw_text(renderer, "Crystalline Loss: ACTIVE", metrics_x, metrics_y, (SDL_Color){100, 255, 100, 255});
-    metrics_y += 25;
+    draw_text(renderer, "FRAMEWORK STATUS", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
+    metrics_text_y += 25;
+    draw_text(renderer, "Lattice Embeddings: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
+    metrics_text_y += 18;
+    draw_text(renderer, "Angular Attention: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
+    metrics_text_y += 18;
+    draw_text(renderer, "Crystalline Loss: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
+    metrics_text_y += 25;
     
-    draw_text(renderer, "PERFORMANCE", metrics_x, metrics_y, (SDL_Color){100, 150, 200, 255});
-    metrics_y += 25;
+    draw_text(renderer, "PERFORMANCE", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
+    metrics_text_y += 25;
     
     char perf[128];
     snprintf(perf, sizeof(perf), "Active Threads: %d", state->sphere_stats.active_spheres);
-    draw_text(renderer, perf, metrics_x, metrics_y, text_color);
-    metrics_y += 18;
+    draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 18;
     
     snprintf(perf, sizeof(perf), "Total Batches: %d", state->sphere_stats.total_batches);
-    draw_text(renderer, perf, metrics_x, metrics_y, text_color);
-    metrics_y += 18;
+    draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 18;
     
     snprintf(perf, sizeof(perf), "Gradient Norm: %.4f", state->sphere_stats.total_gradient_norm);
-    draw_text(renderer, perf, metrics_x, metrics_y, text_color);
+    draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
 }
 
 /**
