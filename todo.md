@@ -93,11 +93,11 @@
 - [ ] Test tab switching during training (NEEDS USER TESTING)
 - [ ] Commit: "fix: Tab switching blocked during training"
 
-### PHASE 1: Status Bar Overlap (HIGH - 20 min) - DO SECOND
-- [ ] Remove overlapping status bar from top (lines 693-701)
-- [ ] Add epoch/loss to Framework Status panel (after line 785)
-- [ ] Build and verify
-- [ ] Test metrics visibility
+### PHASE 1: Status Bar Overlap (HIGH - 20 min) ✅ COMPLETE
+- [x] Remove overlapping status bar from top (lines 693-701)
+- [x] Add epoch/loss to Framework Status panel (after line 785)
+- [x] Build and verify (zero errors, zero warnings)
+- [ ] Test metrics visibility (NEEDS USER TESTING)
 - [ ] Commit: "fix: Status bar overlapped by sphere visualization"
 
 ### PHASE 2: Total Epochs Zero (HIGH - 10 min) - DO THIRD

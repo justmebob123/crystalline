@@ -687,13 +687,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Color text_color = {220, 220, 220, 255};
     
     int text_x = RENDER_OFFSET_X + 30;
-    int text_y = RENDER_OFFSET_Y + 10;  // Moved up from 50 to 10
-    
-    char metrics[256];
-    snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
-            g_training_ui.viz_data.current_epoch, g_training_ui.viz_data.total_epochs,
-            g_training_ui.viz_data.current_loss, g_training_ui.viz_data.best_loss);
-    draw_text(renderer, metrics, text_x, text_y, text_color);
+    // REMOVED: Status bar at top was overlapped by sphere visualization
+    // Epoch/loss metrics now displayed in Framework Status panel (right side)
     
     // Draw sphere visualization using layout helper
     // CRITICAL: Use same calculation as init_training_tab()
@@ -785,6 +780,22 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     draw_text(renderer, "FRAMEWORK STATUS", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
     metrics_text_y += 25;
+    
+    // PHASE 1: Add epoch/loss metrics here (moved from overlapping top status bar)
+    char epoch_loss[128];
+    snprintf(epoch_loss, sizeof(epoch_loss), "Epoch: %d / %d",
+            g_training_ui.viz_data.current_epoch, g_training_ui.viz_data.total_epochs);
+    draw_text(renderer, epoch_loss, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 18;
+    
+    snprintf(epoch_loss, sizeof(epoch_loss), "Loss: %.4f", g_training_ui.viz_data.current_loss);
+    draw_text(renderer, epoch_loss, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 18;
+    
+    snprintf(epoch_loss, sizeof(epoch_loss), "Best: %.4f", g_training_ui.viz_data.best_loss);
+    draw_text(renderer, epoch_loss, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 25;
+    
     draw_text(renderer, "Lattice Embeddings: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
     metrics_text_y += 18;
     draw_text(renderer, "Angular Attention: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
