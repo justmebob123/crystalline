@@ -510,11 +510,13 @@ void init_training_tab(AppState* state) {
        // NOTE: Dropdown will be populated in draw_training_tab() after model_manager initializes
     
     // Create file list (using CENTER coordinates)
+    // Position below buttons with proper spacing
     float list_height = 200.0f;
     float item_height = 25.0f;  // Height per item (NOT total list height)
+    float list_y = RENDER_OFFSET_Y + 520 + list_height / 2.0f;  // Moved further down
     g_training_ui.file_list = crystalline_list_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_center_x, RENDER_OFFSET_Y + 450 + list_height / 2.0f,  // Moved down to avoid overlap
+        slider_center_x, list_y,
         slider_w, item_height,  // Pass item height, not total height
         font
     );
@@ -693,7 +695,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Render file list using Crystalline UI
     char file_list_label[128];
     snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
-    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 420, text_color);  // Position label above list
+    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 490, text_color);  // Position label above list
     
     if (g_training_ui.file_list) {
         crystalline_list_render(g_training_ui.file_list, renderer);

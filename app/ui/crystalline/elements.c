@@ -1121,16 +1121,37 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
         }
     } else {
         // Rectangular list
-        float item_y = list->base.position.y - (list->visible_items * list->item_height) / 2.0f;
+        
+        // Draw border FIRST (before items, so items appear on top)
+        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
+            crystalline_color_rgb(100, 100, 120), 2.0f
+        );
+        crystalline_draw_rect(renderer, list->base.bounds, border_style);
+        
+        // Calculate item positions from ACTUAL list bounds with padding
+        float padding = 5.0f;
+        float list_top = list->base.position.y - list->base.bounds.height / 2.0f;
+        float list_bottom = list->base.position.y + list->base.bounds.height / 2.0f;
+        float usable_height = list->base.bounds.height - 2 * padding;
+        
+        // Start items inside the list bounds with padding
+        float item_y_start = list_top + padding + list->item_height / 2.0f;
+        
+        // Calculate how many items actually fit in the visible area
+        int items_that_fit = (int)(usable_height / list->item_height);
         
         int start_index = (int)(list->scroll_offset / list->item_height);
-        int end_index = start_index + list->visible_items;
+        int end_index = start_index + items_that_fit;
         if (end_index > list->item_count) end_index = list->item_count;
         
         for (int i = start_index; i < end_index; i++) {
             if (!list->items[i]) continue;
             
-            float y = item_y + (i - start_index) * list->item_height;
+            float y = item_y_start + (i - start_index) * list->item_height;
+            
+            // Ensure item doesn't go beyond list bottom
+            if (y + list->item_height / 2.0f > list_bottom - padding) break;
+            
             CrystallinePoint item_pos = crystalline_point_cartesian(list->base.position.x, y);
             
             // Determine color
@@ -1177,12 +1198,7 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
                }
         }
         
-               
-           // Draw border
-           CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
-               crystalline_color_rgb(100, 100, 120), 2.0f
-        );
-        crystalline_draw_rect(renderer, list->base.bounds, border_style);
+        // Border already drawn at the beginning of rectangular list rendering
     }
 }
 
@@ -1198,17 +1214,30 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
         list->hover_index = -1;
         
         if (list->base.style == CRYSTALLINE_STYLE_RECTANGULAR) {
-            float item_y = list->base.position.y - (list->visible_items * list->item_height) / 2.0f;
-            int start_index = (int)(list->scroll_offset / list->item_height);
+            // Use SAME calculation as rendering
+            float padding = 5.0f;
+            float list_top = list->base.position.y - list->base.bounds.height / 2.0f;
+            float list_bottom = list->base.position.y + list->base.bounds.height / 2.0f;
+            float usable_height = list->base.bounds.height - 2 * padding;
+            float item_y_start = list_top + padding + list->item_height / 2.0f;
+            int items_that_fit = (int)(usable_height / list->item_height);
             
-            for (int i = 0; i < list->visible_items && (start_index + i) < list->item_count; i++) {
-                float y = item_y + i * list->item_height;
+            int start_index = (int)(list->scroll_offset / list->item_height);
+            int end_index = start_index + items_that_fit;
+            if (end_index > list->item_count) end_index = list->item_count;
+            
+            for (int i = start_index; i < end_index; i++) {
+                float y = item_y_start + (i - start_index) * list->item_height;
+                
+                // Ensure item doesn't go beyond list bottom
+                if (y + list->item_height / 2.0f > list_bottom - padding) break;
+                
                 CrystallineRect item_rect = crystalline_rect_create(
                     list->base.position.x, y, list->width, list->item_height
                 );
                 
                 if (crystalline_rect_contains_point(item_rect, mouse_pos)) {
-                    list->hover_index = start_index + i;
+                    list->hover_index = i;
                     return true;
                 }
             }
@@ -1217,10 +1246,17 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
         if (list->hover_index >= 0) {
                // Check if click is on checkbox (if checkboxes are enabled)
                if (list->show_checkboxes && list->item_checked) {
-                   float item_y = list->base.position.y - (list->visible_items * list->item_height) / 2.0f;
+                   // Use SAME calculation as rendering
+                   float padding = 5.0f;
+                   float list_top = list->base.position.y - list->base.bounds.height / 2.0f;
+                   float list_bottom = list->base.position.y + list->base.bounds.height / 2.0f;
+                   float usable_height = list->base.bounds.height - 2 * padding;
+                   float item_y_start = list_top + padding + list->item_height / 2.0f;
+                   int items_that_fit = (int)(usable_height / list->item_height);
+                   
                    int start_index = (int)(list->scroll_offset / list->item_height);
                    int relative_index = list->hover_index - start_index;
-                   float y = item_y + relative_index * list->item_height;
+                   float y = item_y_start + relative_index * list->item_height;
                    
                    // Calculate checkbox position
                    float checkbox_x = list->base.position.x - list->width/2.0f + 20.0f;
@@ -1230,9 +1266,14 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
                    float dy = mouse_y - y;
                    float dist = sqrtf(dx*dx + dy*dy);
                    
+                   printf("CHECKBOX CLICK: mouse=(%f,%f) checkbox=(%f,%f) dist=%f size=%f\n",
+                          mouse_x, mouse_y, checkbox_x, y, dist, list->checkbox_size);
+                   
                    if (dist <= list->checkbox_size + 5.0f) {
                        // Toggle checkbox
                        list->item_checked[list->hover_index] = !list->item_checked[list->hover_index];
+                       printf("CHECKBOX TOGGLED: index=%d checked=%d\n", 
+                              list->hover_index, list->item_checked[list->hover_index]);
                        
                        // Call checkbox callback
                        if (list->on_check) {

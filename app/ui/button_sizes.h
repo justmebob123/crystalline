@@ -9,9 +9,9 @@
 
 // Circular button radii (for Crystalline UI style)
 #define BUTTON_RADIUS_PRIMARY 40    // Main actions (START, TRAIN)
-#define BUTTON_RADIUS_SECONDARY 30  // Secondary actions (SCAN, SELECT, LOAD)
-#define BUTTON_RADIUS_TERTIARY 25   // Supporting actions (PAUSE, SAVE, STOP)
-#define BUTTON_RADIUS_TINY 20       // Utility buttons (2D/3D toggle, settings)
+#define BUTTON_RADIUS_SECONDARY 25  // Secondary actions (SCAN, SELECT, LOAD) - Reduced from 30
+#define BUTTON_RADIUS_TERTIARY 20   // Supporting actions (PAUSE, SAVE, STOP) - Reduced from 25
+#define BUTTON_RADIUS_TINY 15       // Utility buttons (2D/3D toggle, settings) - Reduced from 20
 
 // Rectangular button sizes
 #define BUTTON_RECT_WIDTH_SMALL 80
