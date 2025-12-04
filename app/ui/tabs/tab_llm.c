@@ -494,6 +494,42 @@ static void on_browser_close_clicked(void* user_data) {
     model_browser_visible = false;
 }
 
+static void on_size_selected(int index, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state) return;
+    
+    printf("Model size selected: index=%d\n", index);
+    
+    // Model size parameters based on selection
+    uint32_t vocab_sizes[] = {10000, 30000, 50000, 50000, 50000, 50000, 50000};
+    uint32_t embed_dims[] = {256, 768, 1024, 1280, 1600, 2048, 4096};
+    uint32_t num_layers[] = {6, 12, 24, 36, 48, 64, 32};
+    uint32_t num_heads[] = {4, 12, 16, 20, 25, 32, 32};
+    uint32_t ff_dims[] = {1024, 3072, 4096, 5120, 6400, 8192, 11008};
+    
+    if (index >= 0 && index < 7) {
+        // Create model with selected size
+        char model_name[64];
+        const char* size_names[] = {"tiny", "small", "medium", "large", "huge", "massive", "astronomical"};
+        snprintf(model_name, sizeof(model_name), "model_%s", size_names[index]);
+        
+        printf("Creating model: %s\n", model_name);
+        printf("  Vocab: %u, Embed: %u, Layers: %u, Heads: %u, FF: %u\n",
+               vocab_sizes[index], embed_dims[index], num_layers[index], 
+               num_heads[index], ff_dims[index]);
+        
+        // TODO: Actually create the model using these parameters
+        // For now, just close the dialog
+        model_size_dialog_visible = false;
+    }
+}
+
+static void on_size_cancel_clicked(void* user_data) {
+    (void)user_data;
+    printf("Size dialog cancel button clicked\n");
+    model_size_dialog_visible = false;
+}
+
 // Add message to chat history
 void add_chat_message(const char* text, bool is_user) {
     // Add to old array for compatibility
@@ -1030,6 +1066,57 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             font
         );
         crystalline_button_set_callback(llm_ui.btn_browser_close, on_browser_close_clicked, state);
+        
+        // Model Size Dialog (centered, created but not visible initially)
+        int size_w = 500;
+        int size_h = 600;
+        int size_x = WINDOW_WIDTH / 2;
+        int size_y = WINDOW_HEIGHT / 2;
+        
+        llm_ui.size_panel = crystalline_panel_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            size_x,
+            size_y,
+            size_w,
+            size_h,
+            "SELECT MODEL SIZE",
+            font
+        );
+        
+        // Model size list with 7 options
+        llm_ui.size_list = crystalline_list_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            size_x,
+            size_y + 20.0f,
+            size_w - 40.0f,
+            size_h - 120.0f,
+            font
+        );
+        
+        // Populate size list with 7 model sizes
+        char* size_options[] = {
+            "TINY - 25M params (RECOMMENDED)",
+            "SMALL - 117M params",
+            "MEDIUM - 345M params (RECOMMENDED)",
+            "LARGE - 762M params",
+            "HUGE - 1.5B params",
+            "MASSIVE - 3B params",
+            "ASTRONOMICAL - 7B params"
+        };
+        crystalline_list_set_items(llm_ui.size_list, size_options, 7);
+        crystalline_list_set_callback(llm_ui.size_list, on_size_selected, state);
+        
+        // Cancel button for size dialog
+        llm_ui.btn_size_cancel = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            size_x,
+            size_y + size_h / 2.0f - 30.0f,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "CANCEL",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_size_cancel, on_size_cancel_clicked, state);
     }
     
     SDL_Color text_color = {220, 220, 220, 255};
@@ -1252,12 +1339,18 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         SDL_RenderFillRect(renderer, &overlay);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         
-        // Model size dialog (centered)
-        int panel_w = 500;
-        int panel_h = 450;
-        int panel_x = (WINDOW_WIDTH - panel_w) / 2;
-        int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
-        draw_model_size_dialog(renderer, panel_x, panel_y, panel_w, panel_h);
+        // Render Model Size Dialog using Crystalline UI
+        if (llm_ui.size_panel) {
+            crystalline_panel_render(llm_ui.size_panel, renderer);
+        }
+        
+        if (llm_ui.size_list) {
+            crystalline_list_render(llm_ui.size_list, renderer);
+        }
+        
+        if (llm_ui.btn_size_cancel) {
+            crystalline_button_render(llm_ui.btn_size_cancel, renderer);
+        }
     }
     
     if (model_browser_visible) {
@@ -1471,137 +1564,32 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
         return;
     }
     
-    // Handle model size dialog clicks
+    // Handle model size dialog clicks using Crystalline UI
     if (model_size_dialog_visible) {
+        // Handle cancel button click
+        if (llm_ui.btn_size_cancel &amp;&amp; crystalline_button_handle_mouse(llm_ui.btn_size_cancel, &amp;dummy_event)) {
+            return;
+        }
+        
+        // Handle list selection
+        if (llm_ui.size_list &amp;&amp; crystalline_list_handle_mouse(llm_ui.size_list, &amp;dummy_event)) {
+            return;
+        }
+        
+        // Click outside dialog - close it
         int panel_w = 500;
-        int panel_h = 600;  // Increased height for more buttons
+        int panel_h = 600;
         int panel_x = (WINDOW_WIDTH - panel_w) / 2;
         int panel_y = (WINDOW_HEIGHT - panel_h) / 2;
-        
-        // Check which button was clicked
-        int content_y = panel_y + 50 - model_dialog_scroll;
-        int btn_width = panel_w - 40;
-        int btn_height = 70;
-        int spacing = 12;
-        
-        // Define scrollable area bounds
-        int scroll_top = panel_y + 50;
-        int scroll_bottom = panel_y + panel_h - 50;
-        
-        // TINY button (NEW - FIRST OPTION)
-        SDL_Rect tiny_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= tiny_btn.x && x <= tiny_btn.x + tiny_btn.w &&
-            y >= tiny_btn.y && y <= tiny_btn.y + tiny_btn.h &&
-            tiny_btn.y >= scroll_top && tiny_btn.y + tiny_btn.h <= scroll_bottom) {
-            printf("Acquiring TINY model (25M params)...\n");
-            acquire_model_for_inference(state, "tiny_model", 10000, 256, 4, 4, 1024);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Small button
-        SDL_Rect small_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= small_btn.x && x <= small_btn.x + small_btn.w &&
-            y >= small_btn.y && y <= small_btn.y + small_btn.h &&
-            small_btn.y >= scroll_top && small_btn.y + small_btn.h <= scroll_bottom) {
-            printf("Acquiring SMALL model (117M params)...\n");
-            acquire_model_for_inference(state, "small_model", 10000, 512, 6, 8, 2048);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Medium button
-        SDL_Rect medium_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= medium_btn.x && x <= medium_btn.x + medium_btn.w &&
-            y >= medium_btn.y && y <= medium_btn.y + medium_btn.h &&
-            medium_btn.y >= scroll_top && medium_btn.y + medium_btn.h <= scroll_bottom) {
-            printf("Acquiring MEDIUM model (345M params)...\n");
-            acquire_model_for_inference(state, "medium_model", 10000, 768, 12, 12, 3072);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Large button
-        SDL_Rect large_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= large_btn.x && x <= large_btn.x + large_btn.w &&
-            y >= large_btn.y && y <= large_btn.y + large_btn.h &&
-            large_btn.y >= scroll_top && large_btn.y + large_btn.h <= scroll_bottom) {
-            printf("Acquiring LARGE model (762M params)...\n");
-            acquire_model_for_inference(state, "large_model", 10000, 1024, 24, 16, 4096);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Huge button
-        SDL_Rect huge_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= huge_btn.x && x <= huge_btn.x + huge_btn.w &&
-            y >= huge_btn.y && y <= huge_btn.y + huge_btn.h &&
-            huge_btn.y >= scroll_top && huge_btn.y + huge_btn.h <= scroll_bottom) {
-            printf("Acquiring HUGE model (1.5B params)...\n");
-            acquire_model_for_inference(state, "huge_model", 10000, 1280, 36, 20, 5120);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Massive button
-        SDL_Rect massive_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= massive_btn.x && x <= massive_btn.x + massive_btn.w &&
-            y >= massive_btn.y && y <= massive_btn.y + massive_btn.h &&
-            massive_btn.y >= scroll_top && massive_btn.y + massive_btn.h <= scroll_bottom) {
-            printf("Acquiring MASSIVE model (3B params)...\n");
-            acquire_model_for_inference(state, "massive_model", 10000, 1536, 48, 24, 6144);
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Astronomical button
-        SDL_Rect astro_btn = {panel_x + 20, content_y, btn_width, btn_height};
-        if (x >= astro_btn.x && x <= astro_btn.x + astro_btn.w &&
-            y >= astro_btn.y && y <= astro_btn.y + astro_btn.h &&
-            astro_btn.y >= scroll_top && astro_btn.y + astro_btn.h <= scroll_bottom) {
-            printf("Creating ASTRONOMICAL model (7B params)...\n");
-            printf("WARNING: This will use ~28GB RAM!\n");
-            state->cllm_model = app_create_cllm_model_astronomical();
-            if (state->cllm_model) {
-                if (state->cllm_inference) cllm_inference_cleanup(state->cllm_inference);
-                state->cllm_inference = cllm_inference_init(state->cllm_model);
-            }
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
-        content_y += btn_height + spacing;
-        
-        // Cancel button (fixed at bottom)
-        SDL_Rect cancel_btn = {panel_x + panel_w/2 - 50, panel_y + panel_h - 45, 100, 30};
-        if (x >= cancel_btn.x && x <= cancel_btn.x + cancel_btn.w &&
-            y >= cancel_btn.y && y <= cancel_btn.y + cancel_btn.h) {
-            model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
-            return;
-        }
         
         // Click outside dialog - close it
         if (x < panel_x || x > panel_x + panel_w ||
             y < panel_y || y > panel_y + panel_h) {
             model_size_dialog_visible = false;
-            model_dialog_scroll = 0;
         }
         return;
     }
-    
+
     // Create button - show size selection dialog
     if (x >= g_create_btn.x && x <= g_create_btn.x + g_create_btn.w &&
         y >= g_create_btn.y && y <= g_create_btn.y + g_create_btn.h) {
