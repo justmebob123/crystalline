@@ -769,13 +769,15 @@ void handle_input(AppState* state, SDL_Event* event) {
             break;
             
         case SDL_MOUSEBUTTONDOWN:
-            handle_mouse_click(state, event->button.x, event->button.y);
             state->dragging_slider = true;
             
-            // Route mouse down events to Training Tab for dropdown selection
+            // Route mouse down events to tabs for Crystalline UI elements
             if (state->current_tab == TAB_TRAINING) {
                 extern void handle_training_tab_mouse_down(AppState* state, int x, int y);
                 handle_training_tab_mouse_down(state, event->button.x, event->button.y);
+            } else {
+                // For non-Crystalline tabs, use old handler
+                handle_mouse_click(state, event->button.x, event->button.y);
             }
             break;
             

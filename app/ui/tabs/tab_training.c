@@ -416,8 +416,8 @@ void init_training_tab(AppState* state) {
     );
     
     // Create circular buttons (Crystalline UI style)
-    int btn_x = RENDER_OFFSET_X + viz_width / 2;
-    int btn_y = WINDOW_HEIGHT - 100;
+    int btn_x = RENDER_OFFSET_X + viz_width + control_width / 2;  // MOVED to control panel
+    int btn_y = WINDOW_HEIGHT - 80;  // Bottom of control panel
     
     printf("=== BUTTON POSITIONS ===\n");
     printf("btn_x = %d, btn_y = %d\n", btn_x, btn_y);
@@ -445,7 +445,7 @@ void init_training_tab(AppState* state) {
     
     g_training_ui.btn_save = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
-        btn_x + 100, btn_y,
+        btn_x + 80, btn_y,
         BUTTON_RADIUS_TERTIARY, 0,
         "SAVE",
         font

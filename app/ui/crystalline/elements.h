@@ -66,10 +66,10 @@ typedef enum {
 #define PADDING_LIST_ITEM 5.0f
 
 // Checkbox sizing
-#define CHECKBOX_SIZE_SMALL 14.0f
-#define CHECKBOX_SIZE_MEDIUM 18.0f
-#define CHECKBOX_SIZE_LARGE 22.0f
-#define CHECKBOX_CLICK_TOLERANCE 10.0f
+#define CHECKBOX_SIZE_SMALL 18.0f
+#define CHECKBOX_SIZE_MEDIUM 24.0f  // Increased from 18px - must be clearly visible
+#define CHECKBOX_SIZE_LARGE 28.0f
+#define CHECKBOX_CLICK_TOLERANCE 12.0f  // Increased tolerance
 
 // Dropdown sizing
 #define DROPDOWN_OPTION_HEIGHT 30.0f
