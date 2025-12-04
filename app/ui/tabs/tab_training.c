@@ -508,7 +508,7 @@ void init_training_tab(AppState* state) {
     float list_height = 200.0f;
     g_training_ui.file_list = crystalline_list_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_center_x, ctrl_y + 80 + list_height / 2.0f,
+        slider_center_x, RENDER_OFFSET_Y + 120 + list_height / 2.0f,
         slider_w, list_height,
         font
     );
@@ -691,7 +691,6 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, file_list_label, slider_x, ctrl_y + 60, text_color);
     
     if (g_training_ui.file_list) {
-           printf("FILE LIST RENDER: item_count=%d show_checkboxes=%d\n", g_training_ui.file_list->item_count, g_training_ui.file_list->show_checkboxes);
         crystalline_list_render(g_training_ui.file_list, renderer);
     }
     
