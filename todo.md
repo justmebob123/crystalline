@@ -1,121 +1,54 @@
-# Training Tab Visual Fixes - Based on Original Screenshot
+# TODO - Training Tab Fixes
+
+## RULES (FROM MASTER PLAN) - READ BEFORE EVERY ACTION
+1. **WORKSPACE PATHS**: Always use relative paths (e.g., "src/main.py" NOT "/workspace/src/main.py")
+2. **BUILD VERIFICATION**: Make ONE change at a time, run `make` after EACH change
+3. **NO ASSUMPTIONS**: Never assume file contents - always verify with actual extraction
+4. **TOOL RESULTS**: Carefully analyze all tool execution results before proceeding
+5. **USER INPUT**: Use 'ask' tool ONLY when essential user input is required (USER CAN RESPOND)
+6. **COMPLETION**: Use 'complete' tool ONLY when ALL tasks are finished
 
 ## Current Status
-**MULTIPLE CRITICAL FIXES APPLIED:**
 
-1. **Panel Width Fix:** Changed from RENDER_WIDTH (1080px) to full content_width (1400px) - eliminates massive black unused space
-2. **Hover Animation Fix:** Added button mouse motion handling - enables hover effects
-3. **Model Dropdown Fix:** Populated dropdown with available models - makes it functional
-4. **Coordinate System:** All elements use CENTER-based positioning (matching Research Tab)
+### ✅ COMPLETED
+1. [x] Fixed checkbox rendering in CrystallineList
+   - Added rendering code inside for loop
+   - Checkboxes show as circles (green=checked, gray=unchecked)
+   - BUILD VERIFIED: ✅ Zero errors
 
-These fixes address all major issues from the screenshot analysis.
+2. [x] Fixed checkbox click handling
+   - Detects clicks within checkbox circle
+   - Toggles state and calls callback
+   - BUILD VERIFIED: ✅ Zero errors
 
-## Tasks to Complete
+3. [x] Added dropdown debug output
+   - Shows state every 60 frames
+   - BUILD VERIFIED: ✅ Zero errors
 
-### Phase 1: Fix Layout Issues (Panels Going Off Screen)
-- [x] Analyze current panel positioning code - panels are within bounds
-- [x] Check RENDER_OFFSET values - correct (200, 40)
-- [x] ROOT CAUSE FOUND: Training Tab using TOP-LEFT coords, should use CENTER
-- [x] FIXED: Converted all panels to CENTER coordinates
-- [x] FIXED: Converted all sliders to CENTER coordinates
-- [x] FIXED: Converted all rectangular elements to CENTER coordinates
-- [ ] Test in running application to verify fix works
+4. [x] Added model population debug output
+   - Shows model count and names
+   - BUILD VERIFIED: ✅ Zero errors
 
-### Phase 2: Fix Button Sizes
-- [x] Apply button_sizes.h constants to Training Tab - already done
-- [x] Buttons already using correct sizes (40px, 30px, 25px)
-- [x] Rebuild and verify - build clean
+5. [x] All changes committed and pushed to GitHub
+   - Branch: feature/crystalline-ui-system
+   - Commit: 6368220
 
-### Phase 3: Fix Slider Issues
-- [x] Slider track height already set to 20px
-- [x] Changed handle size to use SLIDER_HANDLE_SIZE constant (12px)
-- [x] Labels already use SLIDER_LABEL_SPACING (25px above slider)
-- [ ] Verify sliders render correctly without overlap
-- [ ] Test all 4 sliders work properly
+### 📊 BUILD STATUS
+```
+✅ Zero compilation errors
+✅ Zero warnings
+✅ All changes pushed to GitHub
+✅ Ready for user testing
+```
 
-### Phase 4: Make File List Visible
-- [x] Verify CrystallineList is being populated with file data - confirmed
-- [x] File list is rendered in visible area (x=887, y=370, w=353, h=200)
-- [x] Added file count display label "Training Files (N):"
-- [ ] Test in running application to verify visibility
-- [x] Checkboxes already enabled and clickable
+### 🎯 NEXT STEPS
+**Waiting for user to test the application and report:**
+1. Does file list show with checkboxes?
+2. Can checkboxes be clicked to toggle?
+3. What does console show for model dropdown?
+4. Does dropdown expand when clicked?
 
-### Phase 5: Add Hover Animations
-- [x] Hover state tracking already implemented in Crystalline UI
-- [x] Color transitions already defined (normal vs hover colors)
-- [x] All buttons already handle mouse events for hover
-- [x] Sliders already have hover support
-- [ ] Test hover animations work in running application
-
-### Phase 6: Fix 2D/3D Toggle
-- [x] Toggle button callback already wired (on_2d3d_toggle_clicked)
-- [x] Switches between SPHERE_VIZ_2D and SPHERE_VIZ_3D
-- [x] Button label updates based on current mode
-- [ ] Test toggle functionality in running application
-- [ ] Verify visualization updates correctly
-
-### Phase 7: Final Verification
-- [x] Screenshot analysis complete - ALL ISSUES IDENTIFIED
-- [x] MULTIPLE CRITICAL FIXES APPLIED
-- [x] Build successful - zero errors, zero warnings
-- [x] Changes committed and pushed
-- [ ] **NEED USER TO TEST:** Run application and verify visual output
-- [ ] **NEED USER TO TEST:** Take new screenshot to compare
-- [ ] **NEED USER TO TEST:** Report any remaining visual issues
-
-## FIXES APPLIED (Based on Screenshot Analysis)
-
-### 1. Panel Width Fix
-**Problem:** Massive black unused space (~760px)
-**Solution:** Changed from RENDER_WIDTH (1080px) to content_width (1400px)
-**Result:** Panels now fill entire available area
-
-### 2. Hover Animation Fix
-**Problem:** No color change on button hover
-**Solution:** Added button mouse motion handling
-**Result:** Buttons now receive hover events and change color
-
-### 3. Model Dropdown Fix
-**Problem:** Dropdown not populated, non-functional
-**Solution:** Populate with available models using get_available_models()
-**Result:** Dropdown now shows models and is clickable
-
-### 4. Coordinate System
-**All elements use CENTER-based positioning (matching Research Tab)**
-
-## FIXES APPLIED (Latest Commit)
-
-### 1. Rendering Order Fixed
-- Sliders render FIRST (background)
-- Buttons render LAST (top, clickable)
-- Prevents overlap issue
-
-### 2. All Buttons Wired
-- ✅ PAUSE: on_pause_clicked (NEW)
-- ✅ START: on_start_clicked
-- ✅ SAVE: on_save_clicked
-- ✅ SCAN: on_scan_clicked
-- ✅ SELECT: on_select_all_clicked
-- ✅ 2D/3D: on_2d3d_toggle_clicked
-
-### 3. Framework Status Fixed
-- Text now renders INSIDE STATUS panel
-- Correct positioning with padding
-
-## Testing Checklist
-- [x] Panels fill screen width (no black space) - FIXED
-- [x] Buttons no longer covered by sliders - FIXED
-- [x] All button callbacks wired - FIXED
-- [x] Framework Status in panel - FIXED
-- [ ] **USER TEST:** Verify buttons work when clicked
-- [ ] **USER TEST:** Verify 2D/3D toggle visible and works
-- [ ] **USER TEST:** Verify hover animations
-- [ ] **USER TEST:** Take new screenshot
-
-## Recent Fix
-- [x] Fixed compilation error: ctrl_y variable now defined in render function
-- [x] Build successful: Zero errors, zero warnings
-- [x] Changes committed and pushed
-
-## Success Criteria
-All 8 visual issues from original screenshot must be fixed and visible in the running application.
+## Notes
+- Following RULE 4: Made changes incrementally with build verification after each step
+- All code changes verified to compile before committing
+- Debug output added to diagnose remaining issues
