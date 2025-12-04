@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -g -O2 -fPIC -I../../../include
 LDFLAGS = -lSDL2 -lSDL2_ttf -lm
 
 # Source files
-SRCS = element.c container.c button.c list.c slider.c dropdown.c panel.c label.c
+SRCS = element.c container.c button.c list.c slider.c dropdown.c panel.c label.c textinput.c
 OBJS = $(SRCS:.c=.o)
 
 # Library name
