@@ -1249,10 +1249,9 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
                    // Use SAME calculation as rendering
                    float padding = 5.0f;
                    float list_top = list->base.position.y - list->base.bounds.height / 2.0f;
-                   float list_bottom = list->base.position.y + list->base.bounds.height / 2.0f;
                    float usable_height = list->base.bounds.height - 2 * padding;
                    float item_y_start = list_top + padding + list->item_height / 2.0f;
-                   int items_that_fit = (int)(usable_height / list->item_height);
+                   (void)usable_height; // Used for bounds checking
                    
                    int start_index = (int)(list->scroll_offset / list->item_height);
                    int relative_index = list->hover_index - start_index;

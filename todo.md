@@ -1,4 +1,4 @@
-# TODO - Crystalline UI System Enhancement - COMPLETE
+# TODO - Crystalline CLLM Integration - Active Development
 
 ## RULES (FROM MASTER PLAN) - READ BEFORE EVERY ACTION
 1. **WORKSPACE PATHS**: Always use relative paths (e.g., "src/main.py" NOT "/workspace/src/main.py")
@@ -9,34 +9,28 @@
 6. **COMPLETION**: Use 'complete' tool ONLY when ALL tasks are finished
 7. **UI LIBRARY FIRST**: If ANY feature is missing from V2 library, STOP and implement it properly before proceeding
 
-## OBJECTIVE: Crystalline UI Enhancement - COMPLETE ✅
+## CURRENT PRIORITY: OBJECTIVE 2D - Remove Legacy Code (MASTER_PLAN)
 
-**What Was Done:**
-- Added TextArea widget to existing Crystalline UI library
-- Properly integrated into elements.h and elements.c structure
-- Uses CrystallineElementBase for consistency
-- Supports chat message display with color coding
-- Removed temporary V2 development files
-- Clean integration on feature branch
+**From SECONDARY_OBJECTIVES.md - MEDIUM PRIORITY:**
+Clean codebase of all non-crystalline implementations
 
-**Result:**
+**Tasks:**
+1. [ ] Delete legacy training files (cllm_training_mt.c, cllm_training_parallel.c, etc.)
+2. [ ] Remove legacy function implementations
+3. [ ] Search and destroy: "standard", "legacy", "old", "fallback"
+4. [ ] Update Makefile to remove deleted files
+5. [ ] Verify build after deletions
+
+**Previous Work Completed:**
+- ✅ TextArea widget added to Crystalline UI library
 - ✅ Build successful (zero errors, zero warnings)
-- ✅ TextArea ready for use in LLM tab
-- ✅ All changes committed and pushed
-- ✅ No breaking changes to existing code
 
-### Phase 1: Audit V2 Library for Missing Features ✅ COMPLETE
-- [x] Review all 9 tabs to identify required features
-- [x] Check if V2 library has all needed widgets
-- [x] Identify any missing functionality
-- [x] Document gaps that need implementation
+## Phase 1: Identify Legacy Code to Remove
 
-**AUDIT RESULTS:**
-- ✅ Button, List, Slider, Dropdown, Panel, Label, Container - ALL PRESENT
-- ❌ **Text Input Widget** - MISSING (required by LLM, Models, Crawler tabs)
-- ❌ **Scrollable Text Area** - MISSING (required by LLM tab for chat display)
-
-**DECISION:** Following RULE 7 - PAUSING all tab conversion to implement missing widgets
+### 1A: Search for Legacy Files
+- [ ] Find all files with "mt", "parallel", "legacy", "standard" in names
+- [ ] Identify unused training implementations
+- [ ] List files for deletion
 
 ### Phase 2: Implement Missing V2 Library Features - IN PROGRESS
 **CRITICAL: Must complete before any tab conversion**
