@@ -502,23 +502,7 @@ void init_training_tab(AppState* state) {
     );
     crystalline_dropdown_set_callback(g_training_ui.model_dropdown, on_model_selected, state);
     
-    // Populate dropdown with available models from model_manager
-    extern uint32_t model_manager_count(void);
-    extern char* model_manager_get_name_at_index(uint32_t index);
-    
-    uint32_t model_count = model_manager_count();
-       printf("MODEL DROPDOWN: Found %u models\n", model_count);
-    if (model_count > 0) {
-        char** model_names = malloc(model_count * sizeof(char*));
-        if (model_names) {
-            for (uint32_t i = 0; i < model_count; i++) {
-                model_names[i] = model_manager_get_name_at_index(i);
-                   printf("  Model %u: %s\n", i, model_names[i]);
-            }
-            crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
-            free(model_names);
-        }
-    }
+       // NOTE: Dropdown will be populated in draw_training_tab() after model_manager initializes
     
     // Create file list (using CENTER coordinates)
     float list_height = 200.0f;
@@ -593,6 +577,27 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize on first draw
     if (!g_training_ui.initialized) {
         init_training_tab(state);
+    }
+    
+    // Populate model dropdown if empty (after model_manager initializes)
+    static bool models_populated = false;
+    if (!models_populated && g_training_ui.model_dropdown) {
+        extern uint32_t model_manager_count(void);
+        extern char* model_manager_get_name_at_index(uint32_t index);
+        
+        uint32_t model_count = model_manager_count();
+        if (model_count > 0) {
+            char** model_names = malloc(model_count * sizeof(char*));
+            if (model_names) {
+                for (uint32_t i = 0; i < model_count; i++) {
+                    model_names[i] = model_manager_get_name_at_index(i);
+                }
+                crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
+                printf("MODEL DROPDOWN: Populated with %u models\n", model_count);
+                free(model_names);
+                models_populated = true;
+            }
+        }
     }
     
     // Update visualization data
@@ -686,6 +691,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, file_list_label, slider_x, ctrl_y + 60, text_color);
     
     if (g_training_ui.file_list) {
+           printf("FILE LIST RENDER: item_count=%d show_checkboxes=%d\n", g_training_ui.file_list->item_count, g_training_ui.file_list->show_checkboxes);
         crystalline_list_render(g_training_ui.file_list, renderer);
     }
     
