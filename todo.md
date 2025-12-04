@@ -100,27 +100,32 @@ python3 tools/fix_html_entities.py <file>
 ### Phase 2: Create Global Button Size Constants
 - [x] Define standard button sizes (small, medium, large)
 - [x] Create constants file for UI sizing (app/ui/button_sizes.h)
-- [ ] Apply consistently across all tabs
+- [x] Apply to Training Tab
+- [ ] Apply to other tabs (Research, Models, etc.)
 - [ ] Ensure hover animations work
 
 ### Phase 3: Fix Layout and Positioning
-- [ ] Fix panels going off screen
-- [ ] Center all elements correctly
-- [ ] Fix slider positioning and sizing
-- [ ] Ensure proper spacing between elements
-- [ ] Make sure all content is visible
+- [x] Fix slider positioning and sizing
+- [x] Ensure proper spacing between elements (using constants)
+- [x] Fix slider label overlap
+- [ ] Fix panels going off screen (needs runtime testing)
+- [ ] Center all elements correctly (needs runtime testing)
+- [ ] Make sure all content is visible (needs runtime testing)
 
 ### Phase 4: Restore Missing Elements
-- [ ] Add file list display
-- [ ] Add file selection checkboxes
-- [ ] Restore any missing metrics
-- [ ] Verify all information is present
+- [x] Add file list display
+- [x] Add file selection checkboxes
+- [x] Make checkboxes clickable
+- [x] Show file count and selected count
+- [ ] Restore any missing metrics (needs verification)
+- [ ] Verify all information is present (needs runtime testing)
 
 ### Phase 5: Fix Button Functionality
-- [ ] Wire 2D/3D toggle correctly
+- [x] Wire 2D/3D toggle correctly
+- [x] Reduce button sizes appropriately
+- [x] Update 2D/3D button label dynamically
 - [ ] Add hover animations to all buttons
-- [ ] Reduce button sizes appropriately
-- [ ] Test all button callbacks
+- [ ] Test all button callbacks (needs runtime testing)
 
 ### Phase 6: Verify Wiring
 - [ ] Test all buttons work
