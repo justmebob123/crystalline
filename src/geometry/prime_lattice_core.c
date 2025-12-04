@@ -11,7 +11,7 @@
 #include "../include/bigfixed_core.h"
 #include "../include/prime_bigint_transcendental.h"
 #include "../include/cllm_mathematical_constants.h"
-#include "../include/ai/cllm_phonetic_values.h"
+#include "../include/phonetic_values.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

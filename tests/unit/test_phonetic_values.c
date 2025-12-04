@@ -2,7 +2,7 @@
  * Unit tests for phonetic value system
  */
 
-#include "../../include/ai/cllm_phonetic_values.h"
+#include "../../include/phonetic_values.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>

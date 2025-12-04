@@ -5,7 +5,7 @@
  * Maps phonetic/cultural layers to numeric values based on linguistic analysis.
  */
 
-#include "../../include/ai/cllm_phonetic_values.h"
+#include "../include/phonetic_values.h"
 #include <string.h>
 #include <stdio.h>
 

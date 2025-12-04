@@ -54,15 +54,15 @@ Full unabridged implementation of crystalline CLLM with:
 ### Day 2 - Angular Position & Plimpton Integration
 
 #### Morning: Complete Angular Position θ
-- [ ] Update `src/ai/cllm_angular_position.c`
-- [ ] Add `omega_correction()` function for cymatic frequencies
-- [ ] Add `psi_correction()` function for Plimpton triples
-- [ ] Update `angular_position_calculate()` signature to include ω and ψ
-- [ ] Update all call sites in codebase
-- [ ] Add comprehensive unit tests
-- [ ] Verify θ values are in range [0, 2π]
+- [x] Update `src/core/cllm_angular_position.c` (ALREADY COMPLETE) ✅
+- [x] Add `omega_correction()` function for cymatic frequencies (ALREADY EXISTS) ✅
+- [x] Add `psi_correction()` function for Plimpton triples (ALREADY EXISTS) ✅
+- [x] `angular_position_calculate()` already includes ω and ψ (VERIFIED) ✅
+- [x] All call sites already updated (VERIFIED) ✅
+- [ ] Add comprehensive unit tests (NEEDED)
+- [ ] Verify θ values are in range [0, 2π] (NEEDED)
 - [ ] Build and verify (zero errors, zero warnings)
-- [ ] Commit: "feat: Complete angular position θ with ω and ψ corrections"
+- [ ] Document completion status
 
 #### Afternoon: Plimpton 322 Integration
 - [ ] Update `src/geometry/pythagorean_triples.c`
