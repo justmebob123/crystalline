@@ -834,6 +834,14 @@ void handle_training_tab_mouse_down(AppState* state, int x, int y) {
     event.button.y = y;
     event.button.button = SDL_BUTTON_LEFT;
     
+    // Buttons need BUTTONDOWN to set ACTIVE state
+    if (g_training_ui.btn_pause) crystalline_button_handle_mouse(g_training_ui.btn_pause, &event);
+    if (g_training_ui.btn_start) crystalline_button_handle_mouse(g_training_ui.btn_start, &event);
+    if (g_training_ui.btn_save) crystalline_button_handle_mouse(g_training_ui.btn_save, &event);
+    if (g_training_ui.btn_scan) crystalline_button_handle_mouse(g_training_ui.btn_scan, &event);
+    if (g_training_ui.btn_select) crystalline_button_handle_mouse(g_training_ui.btn_select, &event);
+    if (g_training_ui.btn_2d3d_toggle) crystalline_button_handle_mouse(g_training_ui.btn_2d3d_toggle, &event);
+    
     // Dropdown needs BUTTONDOWN for selection
     if (g_training_ui.model_dropdown) {
         crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
@@ -843,6 +851,12 @@ void handle_training_tab_mouse_down(AppState* state, int x, int y) {
     if (g_training_ui.file_list) {
         crystalline_list_handle_mouse(g_training_ui.file_list, &event);
     }
+    
+    // Sliders need BUTTONDOWN to start dragging
+    if (g_training_ui.slider_batch) crystalline_slider_handle_mouse(g_training_ui.slider_batch, &event);
+    if (g_training_ui.slider_sequence) crystalline_slider_handle_mouse(g_training_ui.slider_sequence, &event);
+    if (g_training_ui.slider_epochs) crystalline_slider_handle_mouse(g_training_ui.slider_epochs, &event);
+    if (g_training_ui.slider_lr) crystalline_slider_handle_mouse(g_training_ui.slider_lr, &event);
 }
 
 /**
