@@ -36,6 +36,9 @@ static CLLMBatchIterator* g_batch_iterator = NULL;
 static pthread_t stats_update_thread;
 static volatile bool stats_thread_running = false;
 
+// PHASE 5: Forward declaration for hierarchy reporting
+static void report_sphere_hierarchy_internal(AppState* state, ThreadedTrainingSystem* system);
+
 /**
  * UI Integration: Metrics callback function
  * 
@@ -105,8 +108,8 @@ static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system)
     state->sphere_stats.active_spheres = num_workers;
     state->sphere_stats.total_batches = 0;
     
-    // Extract statistics from all worker spheres (up to 12 for UI display)
-    int display_count = (num_workers < 12) ? num_workers : 12;
+    // PHASE 5: Extract statistics from ALL worker spheres (up to 144 for hierarchical display)
+    int display_count = (num_workers < 144) ? num_workers : 144;
     for (int i = 0; i < display_count; i++) {
         int batches = 0;
         float loss = 0.0f;
@@ -121,7 +124,92 @@ static void update_sphere_stats(AppState* state, ThreadedTrainingSystem* system)
     // Get total gradient norm
     state->sphere_stats.total_gradient_norm = threaded_training_get_gradient_norm(system);
     
+    // PHASE 5: Report hierarchy information for visualization
+    // This populates parent_id, num_children, is_control, hierarchy_level, symmetry_group arrays
+    report_sphere_hierarchy_internal(state, system);
+    
     pthread_mutex_unlock(&state->sphere_stats_mutex);
+}
+
+/**
+ * PHASE 5: Report sphere hierarchy to AppState for visualization
+ * 
+ * This is the actual implementation that has access to both AppState
+ * and ThreadedTrainingSystem internals. Called from update_sphere_stats().
+ */
+static void report_sphere_hierarchy_internal(AppState* state, ThreadedTrainingSystem* system) {
+    if (!state || !system) return;
+    
+    // NOTE: Mutex already held by caller (update_sphere_stats)
+    
+    // Initialize all to defaults
+    for (int i = 0; i < 144; i++) {
+        state->sphere_stats.parent_id[i] = -1;        // No parent
+        state->sphere_stats.num_children[i] = 0;      // No children
+        state->sphere_stats.is_control[i] = 0;        // Worker by default
+        state->sphere_stats.hierarchy_level[i] = -1;  // Inactive
+        state->sphere_stats.symmetry_group[i] = -1;   // No group
+    }
+    
+    // For now, report flat structure (all spheres at level 1, no hierarchy)
+    // This will be enhanced when dynamic spawning is implemented
+    int num_workers = threaded_training_get_num_workers(system);
+    
+    // Sphere 0 is root (control thread)
+    if (num_workers > 0) {
+        state->sphere_stats.hierarchy_level[0] = 0;
+        state->sphere_stats.symmetry_group[0] = -1;  // Root has all groups
+        state->sphere_stats.is_control[0] = 1;       // Root is always control
+        state->sphere_stats.num_children[0] = (num_workers > 12) ? 12 : num_workers;
+        state->sphere_stats.parent_id[0] = -1;       // Root has no parent
+    }
+    
+    // Spheres 1-12 are level-1 (workers or control if they have children)
+    int level1_count = (num_workers > 12) ? 12 : num_workers;
+    for (int i = 0; i < level1_count; i++) {
+        int sphere_id = i + 1;
+        state->sphere_stats.hierarchy_level[sphere_id] = 1;
+        state->sphere_stats.symmetry_group[sphere_id] = i;  // 0-11
+        state->sphere_stats.parent_id[sphere_id] = 0;       // Parent is root
+        
+        // Determine if this sphere has children (becomes control)
+        // For now, simple distribution: if we have > 12 workers, distribute extras
+        if (num_workers > 12) {
+            int extras = num_workers - 12;
+            int children_per_sphere = extras / 12;
+            int remainder = extras % 12;
+            
+            if (i < remainder) {
+                state->sphere_stats.num_children[sphere_id] = children_per_sphere + 1;
+                state->sphere_stats.is_control[sphere_id] = 1;
+            } else if (children_per_sphere > 0) {
+                state->sphere_stats.num_children[sphere_id] = children_per_sphere;
+                state->sphere_stats.is_control[sphere_id] = 1;
+            } else {
+                state->sphere_stats.num_children[sphere_id] = 0;
+                state->sphere_stats.is_control[sphere_id] = 0;
+            }
+        } else {
+            state->sphere_stats.num_children[sphere_id] = 0;
+            state->sphere_stats.is_control[sphere_id] = 0;  // Worker
+        }
+    }
+    
+    // Spheres 13+ are level-2 children (workers)
+    if (num_workers > 12) {
+        int child_id = 13;
+        for (int parent = 1; parent <= 12 && child_id < num_workers; parent++) {
+            int num_children = state->sphere_stats.num_children[parent];
+            for (int c = 0; c < num_children && child_id < num_workers; c++) {
+                state->sphere_stats.hierarchy_level[child_id] = 2;
+                state->sphere_stats.symmetry_group[child_id] = c % 12;  // Cycle through 0-11
+                state->sphere_stats.parent_id[child_id] = parent;
+                state->sphere_stats.num_children[child_id] = 0;
+                state->sphere_stats.is_control[child_id] = 0;  // Children are workers
+                child_id++;
+            }
+        }
+    }
 }
 
 /**

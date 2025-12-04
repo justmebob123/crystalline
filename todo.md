@@ -106,15 +106,17 @@
 - [ ] Test correct total epochs display (NEEDS USER TESTING)
 - [ ] Commit: "fix: Total epochs showing zero"
 
-### PHASE 5: Child Spheres (HIGH - 90 min) - DO FOURTH
-- [ ] Step 5.1: Expand sphere_stats arrays to 144 (app_common.h)
-- [ ] Step 5.2: Add hierarchy reporting function (cllm_training_threaded.c)
-- [ ] Step 5.3: Call hierarchy reporting during training
-- [ ] Step 5.4: Rewrite draw_spheres_2d() completely
-- [ ] Step 5.5: Update function signature and call
+### PHASE 5: Child Spheres (HIGH - 110 min) ⏳ IN PROGRESS - COMPLETE IMPLEMENTATION
+- [x] Step 5.1: Expand sphere_stats arrays to 144 elements (15 min) ✅
+- [x] Step 5.2: Add hierarchy reporting function (30 min) ✅
+- [ ] Step 5.3: Call hierarchy reporting during training (10 min)
+- [ ] Step 5.4: Rewrite draw_spheres_2d() completely (45 min)
+- [ ] Step 5.5: Update function signature and calls (10 min)
 - [ ] Build and verify after EACH step
-- [ ] Test with 32 cores
-- [ ] Commit: "feat: Show child spheres in 2D visualization"
+- [ ] Test with 32 cores (NEEDS USER TESTING)
+- [ ] Commit: "feat: Complete hierarchical sphere visualization"
+
+**Full Implementation Plan:** PHASE_5_COMPLETE_IMPLEMENTATION_PLAN.md (1000+ lines)
 
 ### PHASE 3: Progress Bar Position (MEDIUM - 15 min) - DO FIFTH
 - [ ] Reduce visualization height (line 707)

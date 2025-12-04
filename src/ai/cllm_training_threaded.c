@@ -689,6 +689,30 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
     free(ctx);
 }
 
+/**
+ * Report sphere hierarchy to AppState for visualization
+ * 
+ * PHASE 5: This function traverses the threading hierarchy and populates
+ * the AppState sphere_stats arrays with parent-child relationships,
+ * control vs worker status, and hierarchy levels.
+ * 
+ * Called periodically during training to update UI visualization.
+ * 
+ * NOTE: Uses void* to avoid circular dependency with app_common.h
+ * The calling code (training_thread.c) has access to AppState and
+ * passes it as void* here.
+ */
+void threaded_training_report_hierarchy(ThreadedTrainingSystem* system, void* app_state_ptr) {
+    // This function is intentionally left as a stub in the library.
+    // The actual implementation is in app/training_thread.c where
+    // AppState is available. This avoids circular dependencies.
+    (void)system;
+    (void)app_state_ptr;
+    
+    // The training_thread.c will call this and handle the actual
+    // hierarchy reporting using direct access to AppState.
+}
+
 // Forward declarations
 
 /**

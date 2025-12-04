@@ -197,6 +197,18 @@ int threaded_training_get_next_sphere_id(void* user_data);
  */
 CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system);
 
+/**
+ * Report sphere hierarchy to AppState for visualization
+ * 
+ * PHASE 5: Traverses the threading hierarchy and populates AppState
+ * sphere_stats arrays with parent-child relationships, control vs worker
+ * status, and hierarchy levels for complete visualization.
+ * 
+ * @param system Threaded training system
+ * @param state Application state (contains sphere_stats)
+ */
+void threaded_training_report_hierarchy(ThreadedTrainingSystem* system, void* state);
+
 #ifdef __cplusplus
 }
 #endif

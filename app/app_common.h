@@ -362,10 +362,16 @@ typedef struct {
     char crawler_data_dir[512];
     
     // Kissing spheres training statistics (for UI display)
+    // PHASE 5: Expanded to support hierarchical visualization (up to 144 spheres)
     struct {
-        int batches_processed[12];   // Per-sphere batch count
-        float avg_loss[12];           // Per-sphere average loss
-        int active_spheres;           // Number of active spheres
+        int batches_processed[144];   // Per-sphere batch count (12^2 = 144 max)
+        float avg_loss[144];           // Per-sphere average loss
+        int parent_id[144];            // Parent sphere ID (-1 for root/orphan)
+        int num_children[144];         // Number of children per sphere
+        int is_control[144];           // 1 if control thread, 0 if worker
+        int hierarchy_level[144];      // Level in hierarchy (0=root, 1=level-1, 2=level-2, -1=inactive)
+        int symmetry_group[144];       // Symmetry group (0-11, -1=none)
+        int active_spheres;            // Number of active spheres
         float total_gradient_norm;    // Total gradient magnitude
         int total_batches;            // Total batches across all spheres
     } sphere_stats;
