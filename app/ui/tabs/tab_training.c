@@ -151,6 +151,8 @@ static void on_scan_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
     
+    printf("=== SCAN BUTTON CLICKED ===\n");
+    
     char training_dir[1024];
     extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
     workspace_get_training_dir(state, training_dir, sizeof(training_dir));
@@ -176,6 +178,8 @@ static void on_pause_clicked(void* data) {
 static void on_start_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
+    
+    printf("=== START BUTTON CLICKED ===\n");
     
     if (state->training_in_progress) {
         // Stop training
@@ -249,9 +253,14 @@ static void on_2d3d_toggle_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
     
+    printf("=== 2D/3D TOGGLE CLICKED ===\n");
+    printf("Current mode: %d\n", state->sphere_viz_mode);
+    
     // Toggle between 2D and 3D
     state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? 
                              SPHERE_VIZ_3D : SPHERE_VIZ_2D;
+    
+    printf("New mode: %d\n", state->sphere_viz_mode);
 }
 
 /**
@@ -371,6 +380,12 @@ void init_training_tab(AppState* state) {
     int btn_x = RENDER_OFFSET_X + viz_width / 2;
     int btn_y = WINDOW_HEIGHT - 100;
     
+    printf("=== BUTTON POSITIONS ===\n");
+    printf("btn_x = %d, btn_y = %d\n", btn_x, btn_y);
+    printf("PAUSE: x=%d, y=%d\n", btn_x - 100, btn_y);
+    printf("START: x=%d, y=%d\n", btn_x, btn_y);
+    printf("SAVE: x=%d, y=%d\n", btn_x + 100, btn_y);
+    
     g_training_ui.btn_pause = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
         btn_x - 100, btn_y,
@@ -401,6 +416,9 @@ void init_training_tab(AppState* state) {
     // Create buttons in control panel
     int ctrl_x = RENDER_OFFSET_X + viz_width + control_width / 2;
     int ctrl_y = RENDER_OFFSET_Y + 250;
+    
+    printf("SCAN: x=%d, y=%d\n", ctrl_x - 50, ctrl_y);
+    printf("SELECT: x=%d, y=%d\n", ctrl_x + 50, ctrl_y);
     
     g_training_ui.btn_scan = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
