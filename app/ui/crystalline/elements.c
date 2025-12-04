@@ -1113,6 +1113,21 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
             // Draw item text
             crystalline_draw_text_centered(renderer, list->items[i], item_pos,
                                           crystalline_color_rgb(255, 255, 255), list->font);
+
+               // Draw checkbox if enabled
+               if (list->show_checkboxes && list->item_checked) {
+                   float checkbox_x = list->base.position.x - list->width/2.0f + 20.0f;
+                   CrystallinePoint checkbox_pos = crystalline_point_cartesian(checkbox_x, y);
+                   SDL_Color checkbox_color = list->item_checked[i] ? 
+                       crystalline_color_rgb(100, 255, 100) : 
+                       crystalline_color_rgb(80, 80, 80);
+                   CrystallineDrawStyle checkbox_style = crystalline_draw_style_filled(checkbox_color);
+                   crystalline_draw_circle(renderer, checkbox_pos, list->checkbox_size, checkbox_style);
+                   CrystallineDrawStyle checkbox_border = crystalline_draw_style_stroked(
+                       crystalline_color_rgb(150, 150, 150), 1.0f
+                   );
+                   crystalline_draw_circle(renderer, checkbox_pos, list->checkbox_size, checkbox_border);
+               }
         }
     } else {
         // Rectangular list
@@ -1148,31 +1163,10 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
             // Draw item text
             crystalline_draw_text_centered(renderer, list->items[i], item_pos,
                                           crystalline_color_rgb(255, 255, 255), list->font);
-               
-               // Draw checkbox if enabled
-               if (list->show_checkboxes && list->item_checked) {
-                   // Position checkbox on left side of item
-                   float checkbox_x = list->base.position.x - list->width/2.0f + 20.0f;
-                   CrystallinePoint checkbox_pos = crystalline_point_cartesian(checkbox_x, y);
-                   
-                   // Checkbox color: green if checked, gray if unchecked
-                   SDL_Color checkbox_color = list->item_checked[i] ? 
-                       crystalline_color_rgb(100, 255, 100) : 
-                       crystalline_color_rgb(80, 80, 80);
-                   
-                   // Draw filled checkbox circle
-                   CrystallineDrawStyle checkbox_style = crystalline_draw_style_filled(checkbox_color);
-                   crystalline_draw_circle(renderer, checkbox_pos, list->checkbox_size, checkbox_style);
-                   
-                   // Draw checkbox border
-                   CrystallineDrawStyle checkbox_border = crystalline_draw_style_stroked(
-                       crystalline_color_rgb(150, 150, 150), 1.0f
-                   );
-                   crystalline_draw_circle(renderer, checkbox_pos, list->checkbox_size, checkbox_border);
-               }
         }
         
-               
+        // Draw border
+        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
             crystalline_color_rgb(100, 100, 120), 2.0f
         );
         crystalline_draw_rect(renderer, list->base.bounds, border_style);
@@ -1208,26 +1202,18 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
         }
     } else if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
         if (list->hover_index >= 0) {
-               // Check if click is on checkbox (if checkboxes are enabled)
+               // Check if click is on checkbox
                if (list->show_checkboxes && list->item_checked) {
                    float item_y = list->base.position.y - (list->visible_items * list->item_height) / 2.0f;
                    int start_index = (int)(list->scroll_offset / list->item_height);
                    int relative_index = list->hover_index - start_index;
                    float y = item_y + relative_index * list->item_height;
-                   
-                   // Calculate checkbox position
                    float checkbox_x = list->base.position.x - list->width/2.0f + 20.0f;
-                   
-                   // Check if click is within checkbox circle
                    float dx = mouse_x - checkbox_x;
                    float dy = mouse_y - y;
                    float dist = sqrtf(dx*dx + dy*dy);
-                   
                    if (dist <= list->checkbox_size + 5.0f) {
-                       // Toggle checkbox
                        list->item_checked[list->hover_index] = !list->item_checked[list->hover_index];
-                       
-                       // Call checkbox callback
                        if (list->on_check) {
                            list->on_check(list->hover_index, list->item_checked[list->hover_index], list->base.user_data);
                        }
@@ -1235,7 +1221,6 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
                    }
                }
                
-               // Regular item selection (not checkbox)
             list->selected_index = list->hover_index;
             if (list->on_select) {
                 list->on_select(list->selected_index, list->base.user_data);
@@ -1614,7 +1599,7 @@ void crystalline_dropdown_render(CrystallineDropdown* dropdown, SDL_Renderer* re
     
     // DEBUG: Print dropdown state
     static int debug_counter = 0;
-    if (debug_counter++ % 60 == 0) {  // Print every 60 frames
+    if (debug_counter++ % 60 == 0) {
         printf("DROPDOWN RENDER: visible=%d enabled=%d option_count=%d selected=%d expanded=%d\n",
                dropdown->base.visible, dropdown->base.enabled, dropdown->option_count,
                dropdown->selected_index, dropdown->expanded);
