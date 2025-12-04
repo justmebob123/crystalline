@@ -1,5 +1,20 @@
 # TODO - Crystalline CLLM Integration - Active Development
 
+## CRITICAL TRAINING TAB ISSUES - ALL FIXED ✅
+
+### Issues Resolved (Commit d395960)
+1. ✅ **SELECT button** - Now toggles all file checkboxes correctly
+2. ✅ **File checkboxes** - Clickable and working (were always working, SELECT button fix resolved confusion)
+3. ✅ **Model dropdown** - Better feedback, shows confirmation when model selected
+4. ✅ **Visualization positioning** - Moved to top, removed black bar (progress bar), uses full height
+
+### Changes Made
+- SELECT button now syncs with CrystallineList checkboxes
+- Visualization moved from y=290 to y=80 (right after metrics)
+- Progress bar moved from y=240 to bottom of screen
+- Added debug output for model selection
+- Added error handling for missing model selection
+
 ## RULES (FROM MASTER PLAN) - READ BEFORE EVERY ACTION
 1. **WORKSPACE PATHS**: Always use relative paths (e.g., "src/main.py" NOT "/workspace/src/main.py")
 2. **BUILD VERIFICATION**: Make ONE change at a time, run `make` after EACH change
@@ -7,7 +22,7 @@
 4. **TOOL RESULTS**: Carefully analyze all tool execution results before proceeding
 5. **USER INPUT**: Use 'ask' tool ONLY when essential user input is required (USER CAN RESPOND)
 6. **COMPLETION**: Use 'complete' tool ONLY when ALL tasks are finished
-7. **UI LIBRARY FIRST**: If ANY feature is missing from V2 library, STOP and implement it properly before proceeding
+7. **UI LIBRARY FIRST**: Fix and enhance the Crystalline UI library itself, not bypass it
 
 ## CURRENT STATUS: Feature Branch Ready for Next Objectives
 
