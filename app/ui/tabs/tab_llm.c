@@ -17,6 +17,7 @@
 // Forward declarations for callbacks (non-static so they can be used in input_registration.c)
 void llm_input_on_change(const char* text, void* user_data);
 void llm_input_on_submit(const char* text, void* user_data);
+void clear_chat_history(void);
 
 #define MAX_CHAT_MESSAGES 100
 #define MAX_MESSAGE_LENGTH 2048
@@ -558,7 +559,7 @@ static void on_thread_selected(int index, void* user_data) {
                 strftime(time_str, sizeof(time_str), "%H:%M:%S", tm_info);
                 
                 crystalline_textarea_add_message(llm_ui.chat_area, 
-                    thread->messages[i].text, msg_type, time_str);
+                    msg_type, thread->messages[i].text, time_str);
             }
         }
         
@@ -601,7 +602,7 @@ void add_chat_message(const char* text, bool is_user) {
         char timestamp[32];
         strftime(timestamp, sizeof(timestamp), "%H:%M:%S", tm_info);
         
-        crystalline_textarea_add_message(llm_ui.chat_area, text, msg_type, timestamp);
+        crystalline_textarea_add_message(llm_ui.chat_area, msg_type, text, timestamp);
     }
     
     // Auto-scroll to bottom
@@ -616,46 +617,6 @@ void clear_chat_history(void) {
     // Clear Crystalline TextArea
     if (llm_ui.chat_area) {
         crystalline_textarea_clear(llm_ui.chat_area);
-    }
-}
-
-// Draw model browser panel
-    int chars_per_line = (width - 20) / 7;  // Approximate
-    int num_lines = (strlen(msg->text) + chars_per_line - 1) / chars_per_line;
-    int msg_height = num_lines * 16 + 20;
-    
-    // Draw message bubble
-    SDL_Rect bubble;
-    if (msg->is_user) {
-        // User messages on right
-        bubble = (SDL_Rect){x + width / 4, y, width * 3 / 4 - 10, msg_height};
-        SDL_SetRenderDrawColor(renderer, user_bg.r, user_bg.g, user_bg.b, 255);
-    } else {
-        // AI messages on left
-        bubble = (SDL_Rect){x + 10, y, width * 3 / 4 - 10, msg_height};
-        SDL_SetRenderDrawColor(renderer, ai_bg.r, ai_bg.g, ai_bg.b, 255);
-    }
-    SDL_RenderFillRect(renderer, &bubble);
-    
-    // Draw border
-    SDL_SetRenderDrawColor(renderer, 100, 100, 120, 255);
-    SDL_RenderDrawRect(renderer, &bubble);
-    
-    // Draw label
-    const char* label = msg->is_user ? "You" : "AI";
-    draw_text(renderer, label, bubble.x + 5, bubble.y + 3, 
-             msg->is_user ? (SDL_Color){200, 220, 255, 255} : (SDL_Color){150, 200, 150, 255});
-    
-    // Draw message text (word-wrapped)
-    int text_y = bubble.y + 18;
-    for (size_t i = 0; i < strlen(msg->text); i += chars_per_line) {
-        char line[256];
-        int len = (int)strlen(msg->text + i);
-        if (len > chars_per_line) len = chars_per_line;
-        memcpy(line, msg->text + i, (size_t)len);
-        line[len] = '\0';
-        draw_text(renderer, line, bubble.x + 8, text_y, text_color);
-        text_y += 16;
     }
 }
 
@@ -682,7 +643,9 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize Crystalline UI elements on first draw
     if (!llm_ui.chat_area) {
         // Get font for UI elements
-        TTF_Font* font = get_font(FONT_REGULAR, 16);
+        // Font rendering handled by Crystalline UI
+        TTF_Font* font = NULL;
+        (void)font;
         
         // Chat area - main message display (LEFT SIDE)
         int chat_x = RENDER_OFFSET_X;
@@ -718,7 +681,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             chat_x + input_width + 30.0f,
             input_y + 20.0f,
-            BUTTON_SIZE_SECONDARY,
+            BUTTON_RADIUS_SECONDARY,
             0.0f,
             "SEND",
             font
@@ -730,7 +693,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             chat_x + input_width + 80.0f,
             input_y + 20.0f,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "CLR",
             font
@@ -772,7 +735,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x,
             btn_y,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "REFRESH",
             font
@@ -783,7 +746,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing,
             btn_y,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "LOAD",
             font
@@ -794,7 +757,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 2,
             btn_y,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "EXPORT",
             font
@@ -805,7 +768,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             btn_start_x + btn_spacing * 3,
             btn_y,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "CLOSE",
             font
@@ -856,7 +819,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             size_x,
             size_y + size_h / 2.0f - 30.0f,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "CANCEL",
             font
@@ -895,7 +858,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             CRYSTALLINE_STYLE_CIRCULAR,
             thread_x,
             thread_y + thread_h / 2.0f - 30.0f,
-            BUTTON_SIZE_TERTIARY,
+            BUTTON_RADIUS_TERTIARY,
             0.0f,
             "CLOSE",
             font
