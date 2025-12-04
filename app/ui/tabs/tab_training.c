@@ -618,6 +618,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.model_dropdown) crystalline_dropdown_render(g_training_ui.model_dropdown, renderer);
     
     // Render file list using Crystalline UI
+    int ctrl_y = RENDER_OFFSET_Y + 250;
     char file_list_label[128];
     snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
     draw_text(renderer, file_list_label, slider_x, ctrl_y + 60, text_color);
