@@ -301,10 +301,14 @@ static void on_model_selected(int index, void* data) {
     AppState* state = (AppState*)data;
     if (!state || !g_training_ui.model_dropdown) return;
     
-    // Get selected model name
-    // TODO: Implement model list retrieval
-    snprintf(g_training_ui.selected_model, sizeof(g_training_ui.selected_model), 
-            "model_%d", index);
+    // Get selected model name from model_manager
+    extern char* model_manager_get_name_at_index(uint32_t index);
+    char* model_name = model_manager_get_name_at_index((uint32_t)index);
+    if (model_name) {
+        strncpy(g_training_ui.selected_model, model_name, sizeof(g_training_ui.selected_model) - 1);
+        g_training_ui.selected_model[sizeof(g_training_ui.selected_model) - 1] = '\0';
+        printf("MODEL SELECTED: %s (index %d)\n", g_training_ui.selected_model, index);
+    }
 }
 
 // File checkbox callback
@@ -685,10 +689,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.model_dropdown) crystalline_dropdown_render(g_training_ui.model_dropdown, renderer);
     
     // Render file list using Crystalline UI
-    int ctrl_y = RENDER_OFFSET_Y + 250;
     char file_list_label[128];
     snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
-    draw_text(renderer, file_list_label, slider_x, ctrl_y + 60, text_color);
+    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 105, text_color);
     
     if (g_training_ui.file_list) {
         crystalline_list_render(g_training_ui.file_list, renderer);
