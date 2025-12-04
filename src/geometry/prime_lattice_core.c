@@ -10,6 +10,7 @@
 #include "../include/bigint_core.h"
 #include "../include/bigfixed_core.h"
 #include "../include/prime_bigint_transcendental.h"
+#include "../include/cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -507,7 +508,8 @@ double O_exponent(uint64_t n, int k, const char *lambda_phon) {
 
 double L_lattice(uint64_t n, uint64_t d, int k, const char *lambda_phon,
                  uint16_t omega, uint64_t p, uint64_t q) {
-    // L = 3^O × ∏cos(Θ×φᵢ) × Γ(k) × ν(λ) × Γ(n,d)
+    // COMPLETE UNABRIDGED FORMULA:
+    // L = 3^O × ∏cos(Θ×φᵢ) × Γ(k) × ν(λ) × (ω) × Ψ(ψ) × Γ(n,d)
     
     // Calculate O
     double o = O_exponent(n, k, lambda_phon);
@@ -533,10 +535,21 @@ double L_lattice(uint64_t n, uint64_t d, int k, const char *lambda_phon,
     // ν(λ): Phonetic value
     double nu = nu_lambda(lambda_phon);
     
+    // (ω): Einstein's Λ correction = 3/144000
+    double einstein_lambda = EINSTEIN_LAMBDA_DOUBLE;
+    
+    // Ψ(ψ): Plimpton 322 ratios
+    double psi_b = pythagorean_ratio(p, q);  // (p²-q²)/(p²+q²)
+    uint64_t p2 = p * p;
+    uint64_t q2 = q * q;
+    double psi_c = (2.0 * p * q) / (double)(p2 + q2);  // 2pq/(p²+q²)
+    double psi_correction = psi_b * psi_c;
+    
     // Γ(n,d): Lattice entropy
     double gamma_nd = lattice_entropy(n, d);
     
-    return base * prod * gamma_k * nu * gamma_nd;
+    // COMPLETE FORMULA: Multiply all terms
+    return base * prod * gamma_k * nu * einstein_lambda * psi_correction * gamma_nd;
 }
 /* ============================================================================
  * ARBITRARY PRECISION LATTICE FORMULA

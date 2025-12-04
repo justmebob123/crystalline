@@ -26,13 +26,16 @@ Full unabridged implementation of crystalline CLLM with:
 ### Day 1 - Einstein's Λ & Phonetic Values
 
 #### Morning: Einstein's Λ Correction
-- [ ] Add EINSTEIN_LAMBDA_CORRECTION constant (3/144000) to `cllm_mathematical_constants.h`
-- [ ] Integrate correction into `L_lattice()` function in `cllm_lattice_formula.c`
+- [x] Add EINSTEIN_LAMBDA_CORRECTION constant (3/144000) to `cllm_mathematical_constants.h` (ALREADY EXISTS)
+- [x] Integrate correction into `L_lattice()` function in `prime_lattice_core.c`
+- [x] Add include for cllm_mathematical_constants.h
+- [x] Integrate Plimpton 322 ratios into double precision version
+- [x] Update formula comment to show complete unabridged version
 - [ ] Add unit test for correction factor
 - [ ] Verify output scaling is correct (~0.0000208)
 - [ ] Document mathematical significance
-- [ ] Build and verify (zero errors, zero warnings)
-- [ ] Commit: "feat: Add Einstein's Λ correction to lattice formula"
+- [x] Build and verify (zero errors, zero warnings) ✅
+- [ ] Commit: "feat: Complete L_lattice double precision with Einstein's Λ and Plimpton ratios"
 
 #### Afternoon: Phonetic Value System
 - [ ] Create `src/ai/cllm_phonetic_values.c` (NEW FILE)
