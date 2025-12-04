@@ -434,7 +434,7 @@ float crystalline_pulse_current(CrystallinePulseAnim* anim) {
  * Rotation Animation Functions
  */
 
-float crystalline_rotation_angle(CrystallineRotationAnim* anim, float time) {
+float crystalline_rotation_angle(CrystallineRotationAnim* anim, float time __attribute__((unused))) {
     float t = crystalline_anim_get_eased_time(&anim->base);
     return anim->start_angle + (anim->end_angle - anim->start_angle) * t;
 }
@@ -447,7 +447,7 @@ float crystalline_rotation_current(CrystallineRotationAnim* anim) {
  * Fade Animation Functions
  */
 
-float crystalline_fade_alpha(CrystallineFadeAnim* anim, float time) {
+float crystalline_fade_alpha(CrystallineFadeAnim* anim, float time __attribute__((unused))) {
     float t = crystalline_anim_get_eased_time(&anim->base);
     return anim->start_alpha + (anim->end_alpha - anim->start_alpha) * t;
 }
@@ -460,7 +460,7 @@ float crystalline_fade_current(CrystallineFadeAnim* anim) {
  * Spiral Animation Functions
  */
 
-CrystallinePoint crystalline_spiral_position(CrystallineSpiralAnim* anim, float time) {
+CrystallinePoint crystalline_spiral_position(CrystallineSpiralAnim* anim, float time __attribute__((unused))) {
     float t = crystalline_anim_get_eased_time(&anim->base);
     float angle = CRYSTALLINE_TWO_PI * anim->rotations * t;
     
@@ -483,7 +483,7 @@ CrystallinePoint crystalline_spiral_current(CrystallineSpiralAnim* anim) {
  * Color Animation Functions
  */
 
-SDL_Color crystalline_color_anim_at(CrystallineColorAnim* anim, float time) {
+SDL_Color crystalline_color_anim_at(CrystallineColorAnim* anim, float time __attribute__((unused))) {
     float t = crystalline_anim_get_eased_time(&anim->base);
     
     if (anim->use_hsv) {
@@ -501,7 +501,7 @@ SDL_Color crystalline_color_anim_current(CrystallineColorAnim* anim) {
  * Position Animation Functions
  */
 
-CrystallinePoint crystalline_position_anim_at(CrystallinePositionAnim* anim, float time) {
+CrystallinePoint crystalline_position_anim_at(CrystallinePositionAnim* anim, float time __attribute__((unused))) {
     float t = crystalline_anim_get_eased_time(&anim->base);
     
     if (anim->use_spiral) {

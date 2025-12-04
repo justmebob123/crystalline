@@ -18,6 +18,7 @@ static float clamp_float(float value, float min, float max) {
     return value;
 }
 
+static Uint8 clamp_byte(int value) __attribute__((unused));
 static Uint8 clamp_byte(int value) {
     if (value < 0) return 0;
     if (value > 255) return 255;

@@ -111,7 +111,6 @@ static SDL_Color get_thread_state_color(int state) {
  */
 
 /**
-/**
  * COMPLETE 3D KISSING SPHERES VISUALIZATION
  * 
  * This is the CORRECT implementation based on deep mathematical analysis:
@@ -140,6 +139,7 @@ static Vec3 vec3_add(Vec3 a, Vec3 b) {
     return (Vec3){a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
+static Vec3 vec3_sub(Vec3 a, Vec3 b) __attribute__((unused));
 static Vec3 vec3_sub(Vec3 a, Vec3 b) {
     return (Vec3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
@@ -189,6 +189,7 @@ static Vec3 rotate_y(Vec3 v, float angle) {
 }
 
 // Rotate vector around Z axis
+static Vec3 rotate_z(Vec3 v, float angle) __attribute__((unused));
 static Vec3 rotate_z(Vec3 v, float angle) {
     float c = prime_cosf(angle);
     float s = prime_sinf(angle);

@@ -209,7 +209,7 @@ static void on_start_clicked(void* data) {
         }
         
         // Start training thread
-        extern void start_training_thread(AppState* state);
+        extern int start_training_thread(AppState* state);
         start_training_thread(state);
     }
 }
@@ -222,6 +222,7 @@ static void on_save_clicked(void* data) {
     char checkpoint_path[512];
     snprintf(checkpoint_path, sizeof(checkpoint_path), 
             "checkpoints/checkpoint_epoch_%d.cllm", state->training_current_epoch);
+    extern int cllm_write_model(CLLMModel* model, const char* path);
     if (cllm_write_model(state->cllm_model, checkpoint_path) == 0) {
         printf("✓ Checkpoint saved: %s\n", checkpoint_path);
     }
@@ -470,7 +471,7 @@ void init_training_tab(AppState* state) {
 /**
  * Update visualization data from training state
  */
-static void update_training_visualization(AppState* state) {
+void update_training_visualization(AppState* state) {
     if (!state) return;
     
     // Update from training metrics

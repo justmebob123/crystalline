@@ -101,7 +101,7 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Calculate center
     float center_x = RENDER_OFFSET_X + RENDER_WIDTH / 2.0f;
-    float center_y = RENDER_OFFSET_Y + WINDOW_HEIGHT / 2.0f;
+    float center_y __attribute__((unused)) = RENDER_OFFSET_Y + WINDOW_HEIGHT / 2.0f;
     
     // Draw title using golden ratio positioning
     CrystallinePoint title_pos = crystalline_point_cartesian(center_x, RENDER_OFFSET_Y + 40.0f);

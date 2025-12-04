@@ -23,7 +23,7 @@
 #define MAX_TOKENS_PER_FILE 100000
 
 // Real-time stats update thread for crawler
-static pthread_t crawler_stats_update_thread;
+static pthread_t crawler_stats_update_thread __attribute__((unused));
 static volatile int crawler_stats_thread_running = 0;
 
 /**
@@ -235,6 +235,7 @@ static void update_crawler_sphere_stats(ContinuousTrainingState* state, Threaded
 /**
  * Real-time stats update thread for crawler - continuously polls sphere stats during training
  */
+static void* crawler_stats_update_thread_func(void* arg) __attribute__((unused));
 static void* crawler_stats_update_thread_func(void* arg) {
    ContinuousTrainingState* state = (ContinuousTrainingState*)arg;
    

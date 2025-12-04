@@ -423,7 +423,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     if (research_state.selected_file >= 0 && research_state.selected_file < research_state.file_count) {
         int viewer_x = content_x + 20;
         int viewer_y = content_y + 60;
-        int viewer_width = (int)(content_width / 1.618f) - 40;
+        int viewer_width __attribute__((unused)) = (int)(content_width / 1.618f) - 40;
         
         // File header
         ResearchFile* file = &research_state.files[research_state.selected_file];
@@ -487,8 +487,11 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
        int controls_x = content_x + (int)(content_width / 1.618f) + PADDING;
        
        // Current directory path
-       char dir_text[256];
-       snprintf(dir_text, sizeof(dir_text), "Directory: %s", research_state.current_directory);
+       char dir_text[512];
+       char truncated_dir[480];
+       strncpy(truncated_dir, research_state.current_directory, sizeof(truncated_dir) - 1);
+       truncated_dir[sizeof(truncated_dir) - 1] = '\0';
+       snprintf(dir_text, sizeof(dir_text), "Directory: %s", truncated_dir);
        CrystallinePoint dir_pos = crystalline_point_cartesian(controls_x + 20.0f, content_y + 225.0f);
        crystalline_draw_text(renderer, dir_text, dir_pos, text_color, NULL);
        

@@ -1636,7 +1636,7 @@ void crystalline_dropdown_render(CrystallineDropdown* dropdown, SDL_Renderer* re
         // Draw dropdown list when expanded
         if (dropdown->expanded && dropdown->option_count > 0) {
             int visible_options = dropdown->option_count < 5 ? dropdown->option_count : 5;
-            float list_height = visible_options * dropdown->item_height;
+            float list_height __attribute__((unused)) = visible_options * dropdown->item_height;
             
             for (int i = 0; i < visible_options && i < dropdown->option_count; i++) {
                 float y = dropdown->base.position.y + dropdown->item_height / 2.0f + 

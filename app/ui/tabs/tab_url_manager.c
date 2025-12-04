@@ -247,12 +247,15 @@ void draw_url_manager_tab(SDL_Renderer* renderer, AppState* state) {
             URLEntry* entry = url_state.url_list[i];
             if (!entry) continue;
             
-            char url_display[512];
+            char url_display[1024];
+            char truncated_url[256];
+            strncpy(truncated_url, entry->url, sizeof(truncated_url) - 1);
+            truncated_url[sizeof(truncated_url) - 1] = '\0';
             snprintf(url_display, sizeof(url_display),
                      "%s | %s | %s",
                      entry->domain,
                      entry->status,
-                     entry->url);
+                     truncated_url);
             
             crystalline_list_add_item(list_urls, url_display);
         }

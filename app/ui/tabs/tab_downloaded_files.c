@@ -196,8 +196,8 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
         int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
         int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
         
-        float center_x = content_x + content_width / 2.0f;
-        float center_y = content_y + content_height / 2.0f;
+        float center_x __attribute__((unused)) = content_x + content_width / 2.0f;
+        float center_y __attribute__((unused)) = content_y + content_height / 2.0f;
         
         // Create file browser panel (left, Flower of Life pattern)
         int col1_width = (content_width * 40) / 100;

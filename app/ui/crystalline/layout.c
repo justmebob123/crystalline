@@ -254,7 +254,7 @@ CrystallinePoint crystalline_layout_spiral_position(CrystallinePoint center,
                                                      int index) {
     // Golden ratio spiral: r = a * φ^(θ/π)
     // Adjust to use spacing parameter
-    float angle = CRYSTALLINE_TWO_PI * index / CRYSTALLINE_TWELVE_FOLD;
+    float angle __attribute__((unused)) = CRYSTALLINE_TWO_PI * index / CRYSTALLINE_TWELVE_FOLD;
     float growth = spacing / (CRYSTALLINE_TWO_PI * start_radius);
     
     CrystallinePoint spiral_point = crystalline_layout_spiral_custom(
@@ -314,7 +314,7 @@ CrystallineLayoutResult crystalline_layout_grid_golden(CrystallinePoint center,
     
     // Use golden ratio for cell sizing
     float cell_width = width / cols;
-    float cell_height = height / rows;
+    float cell_height __attribute__((unused)) = height / rows;
     
     int idx = 0;
     for (int row = 0; row < rows; row++) {
