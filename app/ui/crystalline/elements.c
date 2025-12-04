@@ -1614,12 +1614,6 @@ void crystalline_dropdown_render(CrystallineDropdown* dropdown, SDL_Renderer* re
     
     SDL_Color color = get_element_color(&dropdown->base);
     
-    // DEBUG: Print dropdown state
-    static int debug_counter = 0;
-    if (debug_counter++ % 60 == 0) {  // Print every 60 frames
-               dropdown->base.visible, dropdown->base.enabled, dropdown->option_count,
-               dropdown->selected_index, dropdown->expanded);
-    }
     
     if (dropdown->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
         // Radial menu (12-fold)
