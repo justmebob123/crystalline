@@ -66,15 +66,20 @@ Full unabridged implementation of crystalline CLLM with:
 - [x] Document completion status ✅
 
 #### Afternoon: Plimpton 322 Integration
-- [ ] Update `src/geometry/pythagorean_triples.c`
-- [ ] Implement `calculate_plimpton_ratios()` with BigInt precision
-- [ ] Add coprime verification (gcd(p,q) = 1)
-- [ ] Add "not both odd" constraint check
-- [ ] Integrate into `L_lattice()` as Ψ(ψ) term
-- [ ] Add unit tests with known Pythagorean triples
-- [ ] Verify ratios sum to 1.0
-- [ ] Build and verify (zero errors, zero warnings)
-- [ ] Commit: "feat: Integrate Plimpton 322 ratios into lattice formula"
+- [x] Create `src/geometry/plimpton_322.c` (NEW FILE) ✅
+- [x] Create `include/plimpton_322.h` (NEW FILE) ✅
+- [x] Implement `calculate_plimpton_ratios()` function ✅
+- [x] Add coprime verification `is_coprime()` using prime_gcd ✅
+- [x] Add constraint verification `verify_plimpton_constraints()` ✅
+- [x] Implement triple generation `generate_pythagorean_triple()` ✅
+- [x] Implement triple verification `verify_pythagorean_triple_validity()` ✅
+- [x] Implement optimal generator finding `find_optimal_generators()` ✅
+- [x] Already integrated into `L_lattice()` (verified in Day 1) ✅
+- [x] Add comprehensive unit tests (8 test suites) ✅
+- [x] Verify ratios satisfy Pythagorean relationship (b/d)² + (c/d)² = 1 ✅
+- [x] Test with 6 known Plimpton 322 triples (all passing) ✅
+- [x] Build and verify (zero errors, zero warnings) ✅
+- [ ] Commit: "feat: Implement comprehensive Plimpton 322 system"
 
 ### Day 3 - Entropy & Cymatic Integration
 
