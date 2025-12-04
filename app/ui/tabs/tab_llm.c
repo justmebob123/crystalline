@@ -4,6 +4,8 @@
 #include "../../ui_layout.h"
 #include "../../input_manager.h"
 #include "../model_selector.h"
+#include "../crystalline/elements.h"
+#include "../button_sizes.h"
 #include "../../../include/cllm_utils.h"
 #include "../../../include/cllm_model_manager.h"
 #include <string.h>
@@ -101,9 +103,43 @@ static void on_llm_model_selected(const char* model_name, void* user_data) {
 }
 static int chat_scroll_offset = 0;
 
-// UI state
-// Removed unused variable: input_active
-// Removed unused variable - input_cursor (now managed by InputManager)
+// UI state - Crystalline UI Elements
+static struct {
+    // Main chat interface
+    CrystallineTextArea* chat_area;
+    CrystallineInput* message_input;
+    CrystallineButton* btn_send;
+    CrystallineButton* btn_clear;
+    
+    // Model browser dialog
+    CrystallinePanel* browser_panel;
+    CrystallineList* browser_list;
+    CrystallineButton* btn_browser_refresh;
+    CrystallineButton* btn_browser_load;
+    CrystallineButton* btn_browser_export;
+    CrystallineButton* btn_browser_close;
+    
+    // Model size dialog
+    CrystallinePanel* size_panel;
+    CrystallineList* size_list;
+    CrystallineButton* btn_size_cancel;
+    
+    // Thread list dialog
+    CrystallinePanel* thread_panel;
+    CrystallineList* thread_list;
+    CrystallineButton* btn_thread_close;
+    
+    // Control buttons
+    CrystallineButton* btn_browse_models;
+    CrystallineButton* btn_thread_list;
+    CrystallineButton* btn_new_thread;
+    
+    // Sliders
+    CrystallineSlider* slider_temperature;
+    CrystallineSlider* slider_tokens;
+    CrystallineSlider* slider_top_k;
+    CrystallineSlider* slider_top_p;
+} llm_ui = {0};
 
 // Model browser state
 static ModelBrowser model_browser = {0};
@@ -347,8 +383,54 @@ static void switch_to_thread(int thread_index) {
     chat_scroll_offset = 0;
 }
 
+// Button callbacks
+static void on_send_clicked(void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state) return;
+    
+    printf("Send button clicked\n");
+    
+    // Get text from input field
+    if (llm_ui.message_input &amp;&amp; llm_ui.message_input->text[0] != '\0') {
+        // Trigger the submit callback
+        llm_input_on_submit(llm_ui.message_input->text, state);
+        
+        // Clear input field
+        llm_ui.message_input->text[0] = '\0';
+        llm_ui.message_input->cursor_pos = 0;
+    }
+}
+
+static void on_clear_clicked(void* user_data) {
+    (void)user_data;
+    printf("Clear button clicked\n");
+    clear_chat_history();
+}
+
+static void on_browse_models_clicked(void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state) return;
+    
+    printf("Browse models button clicked\n");
+    if (!model_browser_visible) {
+        init_model_browser(state);
+        scan_models_directory();
+    }
+    model_browser_visible = !model_browser_visible;
+}
+
+static void on_thread_list_clicked(void* user_data) {
+    (void)user_data;
+    printf("Thread list button clicked\n");
+    if (thread_manager.thread_count == 0) {
+        init_thread_manager();
+    }
+    thread_list_visible = !thread_list_visible;
+}
+
 // Add message to chat history
 void add_chat_message(const char* text, bool is_user) {
+    // Add to old array for compatibility
     if (chat_message_count >= MAX_CHAT_MESSAGES) {
         // Shift messages up
         for (int i = 0; i < MAX_CHAT_MESSAGES - 1; i++) {
@@ -363,6 +445,20 @@ void add_chat_message(const char* text, bool is_user) {
     chat_history[chat_message_count].timestamp = time(NULL);
     chat_message_count++;
     
+    // Add to Crystalline TextArea
+    if (llm_ui.chat_area) {
+        CrystallineMessageType msg_type = is_user ? 
+            CRYSTALLINE_MESSAGE_USER : CRYSTALLINE_MESSAGE_ASSISTANT;
+        
+        // Format timestamp
+        time_t now = time(NULL);
+        struct tm* tm_info = localtime(&now);
+        char timestamp[32];
+        strftime(timestamp, sizeof(timestamp), "%H:%M:%S", tm_info);
+        
+        crystalline_textarea_add_message(llm_ui.chat_area, text, msg_type, timestamp);
+    }
+    
     // Auto-scroll to bottom
     chat_scroll_offset = 0;
 }
@@ -371,6 +467,11 @@ void add_chat_message(const char* text, bool is_user) {
 void clear_chat_history(void) {
     chat_message_count = 0;
     chat_scroll_offset = 0;
+    
+    // Clear Crystalline TextArea
+    if (llm_ui.chat_area) {
+        crystalline_textarea_clear(llm_ui.chat_area);
+    }
 }
 
 // Draw model browser panel
@@ -725,6 +826,69 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         
         // Set callback to load model when selected
         model_selector_set_callback(llm_model_selector, on_llm_model_selected, state);
+        
+        // Initialize model browser state
+        init_model_browser(state);
+        init_thread_manager();
+    }
+    
+    // Initialize Crystalline UI elements on first draw
+    if (!llm_ui.chat_area) {
+        // Get font for UI elements
+        TTF_Font* font = get_font(FONT_REGULAR, 16);
+        
+        // Chat area - main message display (LEFT SIDE)
+        int chat_x = RENDER_OFFSET_X;
+        int chat_y = RENDER_OFFSET_Y;
+        int chat_width = RENDER_WIDTH;
+        int chat_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 100;
+        
+        llm_ui.chat_area = crystalline_textarea_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            chat_x + chat_width / 2.0f,
+            chat_y + chat_height / 2.0f,
+            chat_width,
+            chat_height,
+            font
+        );
+        
+        // Message input field (BOTTOM LEFT)
+        int input_y = chat_y + chat_height + 10;
+        int input_width = chat_width - 120;
+        
+        llm_ui.message_input = crystalline_input_create(
+            CRYSTALLINE_STYLE_RECTANGULAR,
+            chat_x + input_width / 2.0f,
+            input_y + 20.0f,
+            input_width,
+            40.0f,
+            "Type your message...",
+            font
+        );
+        
+        // Send button (BOTTOM LEFT, next to input)
+        llm_ui.btn_send = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            chat_x + input_width + 30.0f,
+            input_y + 20.0f,
+            BUTTON_SIZE_SECONDARY,
+            0.0f,
+            "SEND",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_send, on_send_clicked, state);
+        
+        // Clear button (BOTTOM LEFT, next to send)
+        llm_ui.btn_clear = crystalline_button_create(
+            CRYSTALLINE_STYLE_CIRCULAR,
+            chat_x + input_width + 80.0f,
+            input_y + 20.0f,
+            BUTTON_SIZE_TERTIARY,
+            0.0f,
+            "CLR",
+            font
+        );
+        crystalline_button_set_callback(llm_ui.btn_clear, on_clear_clicked, state);
     }
     
     SDL_Color text_color = {220, 220, 220, 255};
@@ -903,34 +1067,13 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     int input_height = 80;
     int chat_height = WINDOW_HEIGHT - 60 - input_height - 20;
     
-    g_chat_area = (SDL_Rect){RENDER_OFFSET_X + 10, RENDER_OFFSET_Y + 10, chat_width, chat_height};  // Fixed: account for sidebar
-    SDL_SetRenderDrawColor(renderer, 25, 25, 35, 255);
-    SDL_RenderFillRect(renderer, &g_chat_area);
-    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
-    SDL_RenderDrawRect(renderer, &g_chat_area);
-    
-    // Draw chat messages
-    int msg_y = g_chat_area.y + g_chat_area.h - 10 - chat_scroll_offset;
-    for (int i = chat_message_count - 1; i >= 0; i--) {
-        int chars_per_line = (g_chat_area.w - 40) / 7;
-        int num_lines = (strlen(chat_history[i].text) + chars_per_line - 1) / chars_per_line;
-        int msg_height = num_lines * 16 + 30;
-        
-        msg_y -= msg_height;
-        
-        if (msg_y + msg_height < g_chat_area.y) break;
-        if (msg_y > g_chat_area.y + g_chat_area.h) continue;
-        
-        draw_chat_message(renderer, &chat_history[i], g_chat_area.x, msg_y, g_chat_area.w);
-        msg_y -= 10;
+    // Render chat area using Crystalline UI TextArea
+    if (llm_ui.chat_area) {
+        crystalline_textarea_render(llm_ui.chat_area, renderer);
     }
     
-    if (chat_message_count == 0) {
-        draw_text(renderer, "Start a conversation...", 
-                 g_chat_area.x + g_chat_area.w / 2 - 80,
-                 g_chat_area.y + g_chat_area.h / 2,
-                 (SDL_Color){100, 100, 100, 255});
-    }
+    // Store bounds for compatibility with old code
+    g_chat_area = (SDL_Rect){RENDER_OFFSET_X + 10, RENDER_OFFSET_Y + 10, chat_width, chat_height};
     
     // === INPUT AREA ===
     // NOTE: Input field is now rendered by InputManager (see below)
@@ -940,16 +1083,24 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Placeholder text is handled by InputManager - no manual drawing needed
     
-    // Send button positioned at right edge of input area (overlapping visually)
+    // Render input field and buttons using Crystalline UI
+    if (llm_ui.message_input) {
+        crystalline_input_render(llm_ui.message_input, renderer);
+    }
+    
+    if (llm_ui.btn_send) {
+        // Update button label based on generation state
+        const char* send_text = state->llm_generating ? "..." : "SEND";
+        strncpy(llm_ui.btn_send->label, send_text, sizeof(llm_ui.btn_send->label) - 1);
+        crystalline_button_render(llm_ui.btn_send, renderer);
+    }
+    
+    if (llm_ui.btn_clear) {
+        crystalline_button_render(llm_ui.btn_clear, renderer);
+    }
+    
+    // Store bounds for compatibility with old code
     g_send_btn = (SDL_Rect){g_input_rect.x + g_input_rect.w + 10, input_y, 100, input_height};
-    SDL_Color send_color = state->llm_generating ? 
-        (SDL_Color){80, 80, 80, 255} : (SDL_Color){80, 150, 80, 255};
-    SDL_SetRenderDrawColor(renderer, send_color.r, send_color.g, send_color.b, 255);
-    SDL_RenderFillRect(renderer, &g_send_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &g_send_btn);
-    const char* send_text = state->llm_generating ? "..." : "Send";
-    draw_text(renderer, send_text, g_send_btn.x + 32, g_send_btn.y + 32, text_color);
     
     // Draw overlay panels if visible
     if (model_size_dialog_visible) {
@@ -1024,6 +1175,25 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
 
 void handle_llm_tab_click(AppState* state, int x, int y) {
     if (!state) return;
+    
+    // Handle Crystalline UI button clicks
+    SDL_Event dummy_event;
+    dummy_event.type = SDL_MOUSEBUTTONUP;
+    dummy_event.button.x = x;
+    dummy_event.button.y = y;
+    
+    if (llm_ui.btn_send && crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event)) {
+        return;
+    }
+    
+    if (llm_ui.btn_clear && crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event)) {
+        return;
+    }
+    
+    // Handle TextArea clicks (for scrolling)
+    if (llm_ui.chat_area && crystalline_textarea_handle_event(llm_ui.chat_area, &dummy_event)) {
+        return;
+    }
     
     // Check model selector click first
     if (llm_model_selector && model_selector_handle_click(llm_model_selector, x, y)) {

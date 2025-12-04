@@ -9,21 +9,178 @@
 6. **COMPLETION**: Use 'complete' tool ONLY when ALL tasks are finished
 7. **UI LIBRARY FIRST**: If ANY feature is missing from V2 library, STOP and implement it properly before proceeding
 
-## CURRENT PRIORITY: OBJECTIVE 2D - Remove Legacy Code (MASTER_PLAN)
+## CURRENT STATUS: Feature Branch Ready for Next Objectives
 
-**From SECONDARY_OBJECTIVES.md - MEDIUM PRIORITY:**
-Clean codebase of all non-crystalline implementations
+**Build Status:**
+- ✅ All libraries compile: Zero errors, zero warnings
+- ✅ All tools compile successfully
+- ✅ App compiles: Zero errors, zero warnings
+- ✅ TextArea widget integrated into Crystalline UI
 
-**Tasks:**
-1. [ ] Delete legacy training files (cllm_training_mt.c, cllm_training_parallel.c, etc.)
-2. [ ] Remove legacy function implementations
-3. [ ] Search and destroy: "standard", "legacy", "old", "fallback"
-4. [ ] Update Makefile to remove deleted files
-5. [ ] Verify build after deletions
+**Branch:** feature/crystalline-ui-system
+**Latest Commit:** b12bd53
 
-**Previous Work Completed:**
-- ✅ TextArea widget added to Crystalline UI library
-- ✅ Build successful (zero errors, zero warnings)
+## CURRENT PRIORITY: UI Library Improvements and Tab Migration
+
+### Phase 1: Audit All 9 Tabs
+**Goal:** Identify manual SDL rendering that should use Crystalline UI library
+
+**Tab Status (SDL_Render calls vs Crystalline UI usage):**
+
+**CRITICAL - Need Full Conversion:**
+1. [ ] **LLM Tab** (1,437 lines) - 77 SDL_Render calls, 0 crystalline_ calls ❌ WORST
+2. [ ] **Crawler Tab** (953 lines) - 12 SDL_Render calls, 0 crystalline_ calls ❌
+3. [ ] **Models Tab** (683 lines) - 7 SDL_Render calls, 0 crystalline_ calls ❌
+
+**GOOD - Already Using Crystalline UI:**
+4. [x] **Training Tab** (938 lines) - 2 SDL_Render calls, 100 crystalline_ calls ✅ BEST
+5. [x] **Research Tab** (731 lines) - 1 SDL_Render call, 87 crystalline_ calls ✅
+6. [x] **URL Manager Tab** (461 lines) - 1 SDL_Render call, 63 crystalline_ calls ✅
+7. [x] **Downloaded Files Tab** (582 lines) - 1 SDL_Render call, 51 crystalline_ calls ✅
+8. [x] **Video Tab** (333 lines) - 1 SDL_Render call, 51 crystalline_ calls ✅
+9. [x] **Benchmark Tab** (427 lines) - 1 SDL_Render call, 41 crystalline_ calls ✅
+
+**Analysis:**
+- 5 tabs already converted to Crystalline UI ✅
+- 3 tabs need full conversion (LLM, Crawler, Models) ❌
+- LLM tab is the worst offender with 77 manual SDL calls
+
+**Priority Order:**
+1. [ ] LLM Tab - Most manual rendering (77 calls)
+2. [ ] Crawler Tab - Moderate manual rendering (12 calls)
+3. [ ] Models Tab - Some manual rendering (7 calls)
+
+### Phase 2: Analyze LLM Tab Structure
+
+**Current Implementation Analysis:**
+- **Lines:** 1,437 total
+- **Manual SDL Rendering:** 77 calls
+- **Crystalline UI Usage:** 0 calls ❌
+
+**Key Components Identified:**
+1. **Model Browser Panel** (lines 377-476)
+   - Panel background with border
+   - Title text
+   - Directory path display
+   - Refresh button
+   - Scrollable model list with selection
+   - Load/Export/Close buttons
+   - **Needs:** CrystallinePanel, CrystallineList, CrystallineButton
+
+2. **Model Size Dialog** (lines 478-600)
+   - Panel background with border
+   - Title text
+   - Scrollable list of 7 model size options (TINY to ASTRONOMICAL)
+   - Each option shows: name, specs, RAM requirements
+   - Cancel button
+   - **Needs:** CrystallinePanel, CrystallineList (or custom scrollable container), CrystallineButton
+
+3. **Thread List Panel** (referenced but not shown yet)
+   - Conversation thread management
+   - **Needs:** CrystallinePanel, CrystallineList
+
+4. **Chat Interface** (main area)
+   - Message display with user/AI distinction
+   - Input area
+   - **Needs:** CrystallineTextArea (already exists!), CrystallineInput
+
+**Data Structures:**
+- `ChatMessage` - text, is_user flag, timestamp
+- `ModelFileInfo` - filename, path, size, metadata
+- `ModelBrowser` - directory, models array, selection state
+- `ConversationThread` - name, messages array, timestamps
+- `ThreadManager` - threads array, active thread
+
+**Crystalline UI Library Capabilities:**
+
+✅ **CrystallineList** - Fully featured:
+- Scrollable list with selection
+- Checkbox support (already implemented!)
+- Custom item height
+- Selection and check callbacks
+- Supports both circular and rectangular styles
+
+✅ **CrystallineTextArea** - Perfect for chat:
+- Message types: USER, ASSISTANT, SYSTEM
+- Color-coded message bubbles
+- Timestamp support
+- Auto-scroll functionality
+- Mouse wheel scrolling
+- Multi-line text with word wrap
+
+✅ **CrystallineButton** - Ready to use:
+- Circular and rectangular styles
+- Callbacks with user_data
+- Hover states
+
+✅ **CrystallinePanel** - Container support:
+- Background with border
+- Optional title
+- Proper visual grouping
+
+✅ **CrystallineInput** - Text input:
+- Single-line input
+- Placeholder text
+- Focus management
+
+**Assessment: ALL NEEDED FEATURES EXIST! ✅**
+
+The Crystalline UI library already has everything needed to convert the LLM tab:
+- Model browser → CrystallinePanel + CrystallineList
+- Model size dialog → CrystallinePanel + CrystallineList (7 items)
+- Chat interface → CrystallineTextArea (perfect match!)
+- Thread list → CrystallinePanel + CrystallineList
+- All buttons → CrystallineButton
+- Input field → CrystallineInput
+
+### Phase 3: Convert LLM Tab to Crystalline UI
+
+**Conversion Strategy:**
+Convert one component at a time, test after each change (RULE 2: BUILD VERIFICATION)
+
+**Component Conversion Order:**
+
+#### 3A: Model Browser Panel (lines 377-476)
+- [x] Add Crystalline UI element declarations to llm_ui struct
+- [x] Build verified: Zero errors, zero warnings
+- [ ] Initialize CrystallinePanel for model browser
+- [ ] Initialize CrystallineList for model files
+- [ ] Initialize CrystallineButtons (Refresh, Load, Export, Close)
+- [ ] Replace draw_model_browser_panel() with Crystalline UI rendering
+- [ ] Wire up callbacks
+- [ ] Test build and functionality
+
+#### 3B: Model Size Dialog (lines 478-600)
+- [ ] Replace manual SDL rendering with CrystallinePanel
+- [ ] Replace scrollable options with CrystallineList (7 items)
+- [ ] Replace cancel button with CrystallineButton
+- [ ] Wire up callbacks
+- [ ] Test build and functionality
+
+#### 3C: Thread List Panel
+- [ ] Replace with CrystallinePanel + CrystallineList
+- [ ] Wire up thread selection
+- [ ] Test build and functionality
+
+#### 3D: Chat Interface
+- [ ] Replace with CrystallineTextArea
+- [ ] Configure USER/ASSISTANT message types
+- [ ] Wire up message display
+- [ ] Test build and functionality
+
+#### 3E: Input Area
+- [ ] Replace with CrystallineInput
+- [ ] Wire up send callback
+- [ ] Test build and functionality
+
+**Expected Results:**
+- Reduce from 77 SDL_Render calls to ~1-2
+- Reduce from 1,437 lines to ~600-700 lines (50% reduction)
+- Consistent UI with other tabs
+- Better maintainability
+
+**Next Action:**
+Start with 3A: Model Browser Panel conversion
 
 ## Phase 1: Identify Legacy Code to Remove
 
