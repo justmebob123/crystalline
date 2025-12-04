@@ -778,8 +778,8 @@ void handle_input(AppState* state, SDL_Event* event) {
             
             // Route mouse up events to crystalline UI tabs for click callbacks
             if (state->current_tab == TAB_TRAINING) {
-                extern void handle_training_tab_mouse_up(AppState* state);
-                handle_training_tab_mouse_up(state);
+                extern void handle_training_tab_mouse_up(AppState* state, int x, int y);
+                handle_training_tab_mouse_up(state, event->button.x, event->button.y);
             } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
                 extern void handle_video_tab_mouse_up(AppState* state, int x, int y);
                 handle_video_tab_mouse_up(state, event->button.x, event->button.y);
