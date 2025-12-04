@@ -1,48 +1,42 @@
-# TODO - Training Tab Start Button Fix
+# TODO - Training Tab Issues
 
-## ✅ FIXED AND VERIFIED
+## ✅ START Button Fixed (commit eaa3fa8)
+- Buttons now receive BUTTONDOWN events correctly
+- START button responds to clicks
 
-### The Bug
-**Problem:** Buttons were NOT receiving `SDL_MOUSEBUTTONDOWN` events in `handle_training_tab_mouse_down()`
+## 🔧 FIXES IN PROGRESS
 
-**How Crystalline UI Buttons Work:**
-1. BUTTONDOWN event → Sets button state to ACTIVE
-2. BUTTONUP event → If state is ACTIVE, triggers callback
+### Fix 1: Model Loading Failure ✅
+**Root Cause:** Model manager uses lazy loading - models are registered but not loaded into memory
+- Models have `is_accessible = false` until explicitly loaded
+- `model_manager_acquire_write()` requires model to be accessible first
 
-**What Was Happening:**
-- `handle_training_tab_mouse_down()` only sent BUTTONDOWN to dropdown and file list
-- Buttons never received BUTTONDOWN, so state never became ACTIVE
-- When BUTTONUP arrived, callback never fired because state wasn't ACTIVE
-- User clicked START but nothing happened, then couldn't click anything else
+**Solution Applied:**
+- Check if model is accessible before acquiring
+- If not accessible, call `model_manager_reload()` to load from disk
+- Then acquire write access for training
+- Added clear status messages for each step
 
-### The Fix Applied
-Added button and slider event handling to `handle_training_tab_mouse_down()`:
-```c
-// Buttons need BUTTONDOWN to set ACTIVE state
-if (g_training_ui.btn_pause) crystalline_button_handle_mouse(g_training_ui.btn_pause, &event);
-if (g_training_ui.btn_start) crystalline_button_handle_mouse(g_training_ui.btn_start, &event);
-if (g_training_ui.btn_save) crystalline_button_handle_mouse(g_training_ui.btn_save, &event);
-if (g_training_ui.btn_scan) crystalline_button_handle_mouse(g_training_ui.btn_scan, &event);
-if (g_training_ui.btn_select) crystalline_button_handle_mouse(g_training_ui.btn_select, &event);
-if (g_training_ui.btn_2d3d_toggle) crystalline_button_handle_mouse(g_training_ui.btn_2d3d_toggle, &event);
+### Fix 2: Debug Output Flooding ✅
+**Root Cause:** Excessive debug printf statements in crystalline UI elements
+- List rendering: Every 60 frames
+- Dropdown handling: Every 10 calls
+- Checkbox clicks: Every click
 
-// Sliders need BUTTONDOWN to start dragging
-if (g_training_ui.slider_batch) crystalline_slider_handle_mouse(g_training_ui.slider_batch, &event);
-if (g_training_ui.slider_sequence) crystalline_slider_handle_mouse(g_training_ui.slider_sequence, &event);
-if (g_training_ui.slider_epochs) crystalline_slider_handle_mouse(g_training_ui.slider_epochs, &event);
-if (g_training_ui.slider_lr) crystalline_slider_handle_mouse(g_training_ui.slider_lr, &event);
-```
+**Solution Applied:**
+- Removed list render debug output
+- Removed dropdown handle debug output
+- Removed checkbox click debug output
+- Kept only button click debug (useful for testing)
 
-## Build Status ✅
+## Next Steps
+- [x] Build and verify zero errors/warnings ✅
+- [ ] Commit fixes
+- [ ] User test: Model loading and training start
+- [ ] User test: Verify clean terminal output (no flooding)
+- [ ] Address "no training context" error if it still occurs
+
+## Build Status
 - **Errors:** 0 ✅
 - **Warnings:** 0 ✅
 - **Branch:** feature/crystalline-ui-system
-- **Status:** Ready to commit
-
-## Next Steps
-- [x] Build and verify zero errors/warnings
-- [ ] Commit fix with descriptive message
-- [ ] User test: Click START button and verify training starts
-- [ ] User test: Verify all other buttons work (PAUSE, SAVE, SCAN, SELECT, 2D/3D)
-- [ ] User test: Verify sliders still work correctly
-- [ ] User test: Verify UI remains responsive after clicking START

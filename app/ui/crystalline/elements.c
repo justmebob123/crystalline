@@ -1084,11 +1084,6 @@ void crystalline_list_destroy(CrystallineList* list) {
 
 void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
     if (!list || !list->base.visible || !list->font) return;
-    static int list_render_count = 0;
-    if (list_render_count++ % 60 == 0) {
-        printf("LIST RENDER: item_count=%d show_checkboxes=%d visible_items=%d\\n",
-               list->item_count, list->show_checkboxes, list->visible_items);
-    }
     
     if (list->base.style == CRYSTALLINE_STYLE_CIRCULAR) {
         // Circular list - items on clock lattice
@@ -1266,14 +1261,9 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
                    float dy = mouse_y - y;
                    float dist = sqrtf(dx*dx + dy*dy);
                    
-                   printf("CHECKBOX CLICK: mouse=(%f,%f) checkbox=(%f,%f) dist=%f size=%f\n",
-                          mouse_x, mouse_y, checkbox_x, y, dist, list->checkbox_size);
-                   
                    if (dist <= list->checkbox_size + list->checkbox_click_tolerance) {
                        // Toggle checkbox
                        list->item_checked[list->hover_index] = !list->item_checked[list->hover_index];
-                       printf("CHECKBOX TOGGLED: index=%d checked=%d\n", 
-                              list->hover_index, list->item_checked[list->hover_index]);
                        
                        // Call checkbox callback
                        if (list->on_check) {
@@ -1807,11 +1797,6 @@ void crystalline_dropdown_update(CrystallineDropdown* dropdown, float delta_time
 
 bool crystalline_dropdown_handle_mouse(CrystallineDropdown* dropdown, SDL_Event* event) {
     if (!dropdown || !dropdown->base.visible || !dropdown->base.enabled) return false;
-    static int call_count = 0;
-    if (call_count++ % 10 == 0) {
-        printf("DROPDOWN HANDLE MOUSE: event=%d expanded=%d hover=%d option_count=%d\\n",
-               event->type, dropdown->expanded, dropdown->hover_index, dropdown->option_count);
-    }
     
     float mouse_x = (float)event->button.x;
     float mouse_y = (float)event->button.y;

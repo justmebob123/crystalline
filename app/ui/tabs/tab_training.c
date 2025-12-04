@@ -216,11 +216,33 @@ static void on_start_clicked(void* data) {
         // Load model if needed
         if (!state->cllm_model && g_training_ui.selected_model[0]) {
             printf("Loading selected model: '%s'\n", g_training_ui.selected_model);
-            state->cllm_model = model_manager_acquire_write(g_training_ui.selected_model);
-            if (state->cllm_model) {
-                printf("✓ Model loaded successfully\n");
+            
+            // First, check if model is accessible (already loaded)
+            extern bool model_manager_get_status(const char* name, bool* is_accessible, bool* is_training);
+            bool is_accessible = false;
+            bool is_training = false;
+            
+            if (model_manager_get_status(g_training_ui.selected_model, &is_accessible, &is_training)) {
+                if (!is_accessible) {
+                    // Model exists but not loaded - load it now
+                    printf("Model not loaded yet, loading from disk...\n");
+                    extern bool model_manager_reload(const char* name);
+                    if (!model_manager_reload(g_training_ui.selected_model)) {
+                        printf("ERROR: Failed to load model '%s' from disk\n", g_training_ui.selected_model);
+                        return;
+                    }
+                    printf("✓ Model loaded from disk\n");
+                }
+                
+                // Now acquire write access
+                state->cllm_model = model_manager_acquire_write(g_training_ui.selected_model);
+                if (state->cllm_model) {
+                    printf("✓ Model acquired for training\n");
+                } else {
+                    printf("ERROR: Failed to acquire model '%s'\n", g_training_ui.selected_model);
+                }
             } else {
-                printf("ERROR: Failed to load model '%s'\n", g_training_ui.selected_model);
+                printf("ERROR: Model '%s' not found in model manager\n", g_training_ui.selected_model);
             }
         } else if (!g_training_ui.selected_model[0]) {
             printf("ERROR: No model selected! Please select a model from the dropdown first.\n");
