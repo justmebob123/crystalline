@@ -6,6 +6,7 @@
  */
 
 #include "elements.h"
+#include "../button_sizes.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -308,7 +309,12 @@ CrystallineSlider* crystalline_slider_create(CrystallineElementStyle style,
     } else {
         slider->width = size_param1;
         slider->height = size_param2;
+        // Use SLIDER_HANDLE_SIZE constant for consistency
+        #ifdef SLIDER_HANDLE_SIZE
+        slider->handle_size = SLIDER_HANDLE_SIZE;
+        #else
         slider->handle_size = prime_fminf(size_param1 * 0.1f, size_param2);
+        #endif
         slider->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
     }
     

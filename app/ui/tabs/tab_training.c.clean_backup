@@ -135,11 +135,6 @@ static void scan_training_directory(const char* dir_path) {
             items[i] = g_training_ui.files[i].filename;
         }
         crystalline_list_set_items(g_training_ui.file_list, items, g_training_ui.file_count);
-        
-        // Sync checkbox states
-        for (int i = 0; i < g_training_ui.file_count; i++) {
-            crystalline_list_set_item_checked(g_training_ui.file_list, i, g_training_ui.files[i].selected);
-        }
         free(items);
     }
 }
@@ -289,14 +284,6 @@ static void on_model_selected(int index, void* data) {
             "model_%d", index);
 }
 
-// File checkbox callback
-static void on_file_checkbox_changed(int index, bool checked, void* user_data) {
-    (void)user_data;
-    if (index >= 0 && index < g_training_ui.file_count) {
-        g_training_ui.files[index].selected = checked;
-    }
-}
-
 /**
  * Initialize training tab
  */
@@ -414,8 +401,8 @@ void init_training_tab(AppState* state) {
     
     // Create sliders (rectangular style for better precision)
     int slider_x = RENDER_OFFSET_X + viz_width + 20;
-    int slider_w = control_width - 60;
     int slider_y = RENDER_OFFSET_Y + 150;
+    int slider_w = control_width - 60;
     
     g_training_ui.slider_batch = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
@@ -465,8 +452,6 @@ void init_training_tab(AppState* state) {
         slider_w, 200,
         font
     );
-    crystalline_list_enable_checkboxes(g_training_ui.file_list, true);
-    crystalline_list_set_check_callback(g_training_ui.file_list, on_file_checkbox_changed, state);
     
     // Create progress bar
     g_training_ui.training_progress = crystalline_progress_create(
@@ -589,8 +574,11 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.btn_2d3d_toggle) crystalline_button_render(g_training_ui.btn_2d3d_toggle, renderer);
     
     // Render sliders with labels (proper spacing)
+    int control_width = RENDER_WIDTH - viz_width;
     int slider_x = RENDER_OFFSET_X + viz_width + 20;
-    int slider_y = RENDER_OFFSET_Y + 150;    
+    int slider_y = RENDER_OFFSET_Y + 150;
+    int slider_w = control_width - 60;
+    
     char label[64];
     
     // Batch Size
@@ -617,15 +605,55 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, "Model:", slider_x, RENDER_OFFSET_Y + 40, text_color);
     if (g_training_ui.model_dropdown) crystalline_dropdown_render(g_training_ui.model_dropdown, renderer);
     
-    // Render file list using Crystalline UI
-    char file_list_label[128];
-    snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
-    draw_text(renderer, file_list_label, slider_x, ctrl_y + 60, text_color);
+    // Render file list with checkboxes (manual rendering)
+    int ctrl_y = RENDER_OFFSET_Y + 250;
+    int file_list_y = ctrl_y + 80;
+    int file_list_height = 200;
     
-    if (g_training_ui.file_list) {
-        crystalline_list_render(g_training_ui.file_list, renderer);
+    // File list header
+    char file_header[64];
+    int selected_count = 0;
+    for (int i = 0; i < g_training_ui.file_count; i++) {
+        if (g_training_ui.files[i].selected) selected_count++;
     }
-
+    snprintf(file_header, sizeof(file_header), "Training Files: %d (%d selected)", 
+             g_training_ui.file_count, selected_count);
+    draw_text(renderer, file_header, slider_x, ctrl_y + 60, text_color);
+    
+    // File list background
+    SDL_Rect file_list_rect = {slider_x, file_list_y, slider_w, file_list_height};
+    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    SDL_RenderFillRect(renderer, &file_list_rect);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &file_list_rect);
+    
+    // Render files with checkboxes
+    int file_y = file_list_y + 5;
+    int max_visible = (file_list_height - 10) / 18;
+    for (int i = 0; i < g_training_ui.file_count && i < max_visible; i++) {
+        SDL_Color file_color = g_training_ui.files[i].selected ? 
+            (SDL_Color){100, 200, 255, 255} : text_color;
+        
+        // Checkbox
+        SDL_Rect checkbox = {slider_x + 5, file_y, 12, 12};
+        SDL_SetRenderDrawColor(renderer, 50, 50, 60, 255);
+        SDL_RenderFillRect(renderer, &checkbox);
+        SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
+        SDL_RenderDrawRect(renderer, &checkbox);
+        
+        if (g_training_ui.files[i].selected) {
+            SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+            SDL_Rect check = {checkbox.x + 2, checkbox.y + 2, 8, 8};
+            SDL_RenderFillRect(renderer, &check);
+        }
+        
+        // Filename (truncated)
+        char display_name[50];
+        snprintf(display_name, sizeof(display_name), "%.45s", g_training_ui.files[i].filename);
+        draw_text(renderer, display_name, slider_x + 22, file_y, file_color);
+        
+        file_y += 18;
+    }
     
     // Draw metrics panel content
     int metrics_x = (int)(RENDER_OFFSET_X + viz_width * 0.618f) + 10;
@@ -685,13 +713,33 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     // Handle dropdown click
     if (g_training_ui.model_dropdown) crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
     
-    // Handle file list clicks
-    if (g_training_ui.file_list) {
-        crystalline_list_handle_mouse(g_training_ui.file_list, &event);
+    // Handle file list checkbox clicks
+    int ctrl_y = RENDER_OFFSET_Y + 250;
+    int file_list_y = ctrl_y + 80;
+    int file_list_height = 200;
+    int viz_width = (int)(RENDER_WIDTH * 0.618f);
+    int control_width = RENDER_WIDTH - viz_width;
+    int slider_x = RENDER_OFFSET_X + viz_width + 20;
+    int slider_w = control_width - 60;
+    
+    SDL_Rect file_list_rect = {slider_x, file_list_y, slider_w, file_list_height};
+    
+    if (x >= file_list_rect.x && x <= file_list_rect.x + file_list_rect.w &&
+        y >= file_list_rect.y && y <= file_list_rect.y + file_list_rect.h) {
+        
+        // Calculate which file was clicked
+        int relative_y = y - file_list_rect.y - 5;
+        int file_index = relative_y / 18;
+        
+        if (file_index >= 0 && file_index < g_training_ui.file_count) {
+            // Toggle selection
+            g_training_ui.files[file_index].selected = !g_training_ui.files[file_index].selected;
+            printf("Toggled file %d: %s -> %s\n", file_index, 
+                   g_training_ui.files[file_index].filename,
+                   g_training_ui.files[file_index].selected ? "selected" : "unselected");
+        }
     }
 }
-
-
 
 /**
  * Handle mouse release
