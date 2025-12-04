@@ -139,10 +139,10 @@ The Crystalline UI library (app/ui/crystalline/) is INCOMPLETE and needs feature
 ## Current Status
 - [x] Identified that manual rendering is WRONG approach
 - [x] Understood need to fix Crystalline UI library itself
-- [ ] Fix CrystallineList to support checkboxes
-- [ ] Fix hover animations
-- [ ] Fix sizing issues
-- [ ] Apply to Training Tab using ONLY Crystalline UI elements
+- [x] Fix CrystallineList to support checkboxes
+- [ ] Fix hover animations (Phase 2 - Next)
+- [ ] Fix sizing issues (Phase 2 - Next)
+- [x] Apply to Training Tab using ONLY Crystalline UI elements
 
 ## Key Principle
 **FIX THE UI LIBRARY - DON'T BYPASS IT**
