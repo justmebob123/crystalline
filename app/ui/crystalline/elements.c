@@ -1148,8 +1148,6 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
             // Draw item text
             crystalline_draw_text_centered(renderer, list->items[i], item_pos,
                                           crystalline_color_rgb(255, 255, 255), list->font);
-        }
-        
                
                // Draw checkbox if enabled
                if (list->show_checkboxes && list->item_checked) {
@@ -1172,8 +1170,9 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
                    );
                    crystalline_draw_circle(renderer, checkbox_pos, list->checkbox_size, checkbox_border);
                }
-        // Draw border
-        CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
+        }
+        
+               
             crystalline_color_rgb(100, 100, 120), 2.0f
         );
         crystalline_draw_rect(renderer, list->base.bounds, border_style);
