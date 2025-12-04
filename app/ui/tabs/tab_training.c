@@ -161,9 +161,32 @@ static void on_scan_clicked(void* data) {
 
 static void on_select_all_clicked(void* data) {
     (void)data;
+    
+    // Toggle: if all are selected, unselect all; otherwise select all
+    bool all_selected = true;
     for (int i = 0; i < g_training_ui.file_count; i++) {
-        g_training_ui.files[i].selected = true;
+        if (!g_training_ui.files[i].selected) {
+            all_selected = false;
+            break;
+        }
     }
+    
+    // Toggle state
+    bool new_state = !all_selected;
+    
+    // Update internal array
+    for (int i = 0; i < g_training_ui.file_count; i++) {
+        g_training_ui.files[i].selected = new_state;
+    }
+    
+    // Sync with CrystallineList checkboxes
+    if (g_training_ui.file_list) {
+        for (int i = 0; i < g_training_ui.file_count; i++) {
+            crystalline_list_set_item_checked(g_training_ui.file_list, i, new_state);
+        }
+    }
+    
+    printf("SELECT button: %s all files\n", new_state ? "Selected" : "Unselected");
 }
 
 static void on_pause_clicked(void* data) {
@@ -192,7 +215,15 @@ static void on_start_clicked(void* data) {
         
         // Load model if needed
         if (!state->cllm_model && g_training_ui.selected_model[0]) {
+            printf("Loading selected model: '%s'\n", g_training_ui.selected_model);
             state->cllm_model = model_manager_acquire_write(g_training_ui.selected_model);
+            if (state->cllm_model) {
+                printf("✓ Model loaded successfully\n");
+            } else {
+                printf("ERROR: Failed to load model '%s'\n", g_training_ui.selected_model);
+            }
+        } else if (!g_training_ui.selected_model[0]) {
+            printf("ERROR: No model selected! Please select a model from the dropdown first.\n");
         }
         
         // Initialize training if needed
@@ -308,7 +339,10 @@ static void on_model_selected(int index, void* data) {
     if (model_name) {
         strncpy(g_training_ui.selected_model, model_name, sizeof(g_training_ui.selected_model) - 1);
         g_training_ui.selected_model[sizeof(g_training_ui.selected_model) - 1] = '\0';
-        printf("MODEL SELECTED: %s (index %d)\n", g_training_ui.selected_model, index);
+        printf("MODEL SELECTED: '%s' (index %d)\n", g_training_ui.selected_model, index);
+        printf("  This model will be used when you click START\n");
+    } else {
+        printf("ERROR: Could not get model name for index %d\n", index);
     }
 }
 
@@ -525,11 +559,12 @@ void init_training_tab(AppState* state) {
     
     // Create progress bar (using CENTER coordinates)
     float progress_width = (float)(viz_width - 40);
-    float progress_height = 30.0f;
+    float progress_height = 20.0f;  // Reduced from 30 to 20
+    // Position at bottom of screen instead of blocking visualization
     g_training_ui.training_progress = crystalline_progress_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         RENDER_OFFSET_X + 20 + progress_width / 2.0f,
-        RENDER_OFFSET_Y + 200 + progress_height / 2.0f,
+        WINDOW_HEIGHT - 30.0f,  // Bottom of screen
         progress_width,
         progress_height
     );
@@ -624,12 +659,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_panel_render(g_training_ui.metrics_panel, renderer);
     }
     
-    // Draw training metrics text
+    // Draw training metrics text at top
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
     SDL_Color text_color = {220, 220, 220, 255};
     
     int text_x = RENDER_OFFSET_X + 30;
-    int text_y = RENDER_OFFSET_Y + 50;
+    int text_y = RENDER_OFFSET_Y + 10;  // Moved up from 50 to 10
     
     char metrics[256];
     snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
@@ -637,13 +672,13 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
             g_training_ui.viz_data.current_loss, g_training_ui.viz_data.best_loss);
     draw_text(renderer, metrics, text_x, text_y, text_color);
     
-    // Draw sphere visualization (call existing function - DO NOT MODIFY)
+    // Draw sphere visualization starting right after metrics (NO GAP)
     int viz_width = (int)(RENDER_WIDTH * 0.618f);
     SDL_Rect sphere_bounds = {
         RENDER_OFFSET_X + 30,
-        RENDER_OFFSET_Y + 250,
+        RENDER_OFFSET_Y + 40,  // Changed from 250 to 40 - right after metrics
         viz_width - 280,
-        400
+        WINDOW_HEIGHT - RENDER_OFFSET_Y - 80  // Use remaining height
     };
     draw_sphere_visualization(renderer, state, sphere_bounds);
     
