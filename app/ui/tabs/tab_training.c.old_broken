@@ -1,0 +1,1864 @@
+/**
+ * Training Tab - Redesigned with Dynamic Layout System
+ * 
+ * Features:
+ * - Dynamic layout management (no hardcoded positions)
+ * - Crawler integration
+ * - Training visualization in display area
+ * - Professional UI design
+ * - Proper hit detection
+ */
+
+#include "cllm_metrics.h"
+#include "../../app_common.h"
+#include "../../text_input.h"
+#include "../../training_thread.h"
+#include "../../ui_layout.h"
+#include "../../input_manager.h"
+#include "../model_selector.h"
+   #include "../sphere_visualization.h"
+#include "../../time_format.h"
+#include <errno.h>
+#include "cllm_format.h"
+#include "cllm_training.h"
+#include "cllm_vocab_builder.h"
+#include "cllm_model_manager.h"
+#include "cllm_utils.h"
+#include "../../crawler_thread.h"
+#include <stdio.h>
+#include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+
+#define MAX_TRAINING_FILES 100
+#define MAX_LOSS_HISTORY 100
+
+// Training file structure
+typedef struct {
+    char filename[256];
+    char filepath[512];
+    bool selected;
+    size_t size;
+} TrainingFile;
+
+// UI Button structure
+typedef struct {
+    SDL_Rect bounds;
+    char label[64];
+    bool enabled;
+    bool visible;
+} UIButton;
+
+// Training visualization data
+typedef struct {
+    float loss_history[MAX_LOSS_HISTORY];
+    int loss_count;
+    int current_epoch;
+    int total_epochs;
+    float current_loss;
+    float best_loss;
+} TrainingVisualization;
+
+// Static state
+static TrainingFile training_files[MAX_TRAINING_FILES];
+static int file_count = 0;
+static int scroll_offset = 0;
+static TrainingVisualization viz_data = {0};
+
+// UI Elements with dynamic positioning
+static UIButton btn_scan_dir;
+static UIButton btn_select_all;
+static UIButton btn_start_training;
+static UIButton btn_start_crawler;
+static UIButton btn_save;
+static UIButton btn_load;
+
+static SDL_Rect file_list_rect;
+static SDL_Rect viz_area_rect;
+
+// Collapsible panel header bounds (for click detection)
+// TODO: Implement collapsible panels in Phase 4.3
+// static SDL_Rect framework_header_rect;
+// static SDL_Rect performance_header_rect;
+// static SDL_Rect legend_header_rect;
+// static SDL_Rect terminal_header_rect;
+
+// Input initialization flag
+static bool inputs_initialized = false;
+
+// Model selector
+static ModelSelector* model_selector = NULL;
+
+// Selected model name (NOT loaded until training starts)
+static char selected_model_name[256] = {0};
+
+// Control panel scrolling
+static int control_panel_scroll_offset = 0;
+static int control_panel_content_height = 0;
+static bool control_panel_scrollbar_dragging = false;
+static int control_panel_drag_start_y = 0;
+static int control_panel_drag_start_offset = 0;
+
+// Mouse drag state for 3D rotation
+static bool sphere_rotation_dragging = false;
+static int rotation_drag_start_x = 0;
+static int rotation_drag_start_y = 0;
+static double rotation_drag_start_rot_x = 0.0;
+static double rotation_drag_start_rot_y = 0.0;
+
+// Slider bounds (set during rendering)
+static SDL_Rect batch_slider_rect = {0};
+static SDL_Rect seq_slider_rect = {0};
+static SDL_Rect epochs_slider_rect = {0};
+static SDL_Rect lr_slider_rect = {0};
+
+// Model selector callback
+static void on_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    // CRITICAL FIX: Do NOT load model here - only store the name
+    // Models should only be loaded when training actually starts
+    // This prevents massive memory consumption when just browsing models
+    
+    printf("Training tab: Model '%s' selected (not loaded yet)\n", model_name);
+    
+    // Store selected model name
+    strncpy(selected_model_name, model_name, sizeof(selected_model_name) - 1);
+    selected_model_name[sizeof(selected_model_name) - 1] = '\0';
+    
+    // Do NOT call model_manager_acquire_write() here
+    // Model will be loaded on-demand when "Start Training" is clicked
+}
+
+// Crawler state
+static bool crawler_running = false;
+static int pages_crawled = 0;
+static int pages_in_queue = 0;
+
+/**
+ * Helper function to draw collapsible panel header
+ * Returns true if clicked
+ * TODO: Implement in Phase 4.3
+ */
+static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
+                                   int x, int y, int width, bool expanded,
+                                   int mouse_x, int mouse_y, bool mouse_clicked) __attribute__((unused));
+static bool draw_collapsible_header(SDL_Renderer* renderer, const char* title, 
+                                   int x, int y, int width, bool expanded,
+                                   int mouse_x, int mouse_y, bool mouse_clicked) {
+    SDL_Rect header_rect = {x, y, width, 25};
+    
+    // Check if mouse is over header
+    bool mouse_over = (mouse_x >= header_rect.x && mouse_x <= header_rect.x + header_rect.w &&
+                       mouse_y >= header_rect.y && mouse_y <= header_rect.y + header_rect.h);
+    
+    // Draw header background (highlight if mouse over)
+    if (mouse_over) {
+        SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    }
+    SDL_RenderFillRect(renderer, &header_rect);
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &header_rect);
+    
+    // Draw expand/collapse icon (using ASCII characters for compatibility)
+    const char* icon = expanded ? "v" : ">";
+    draw_text(renderer, icon, x + 5, y + 5, (SDL_Color){150, 150, 160, 255});
+    
+    // Draw title
+    draw_text(renderer, title, x + 25, y + 5, (SDL_Color){100, 150, 200, 255});
+    
+    // Return true if clicked
+    return mouse_over && mouse_clicked;
+}
+
+/**
+ * Load crawl queue from file
+ * Creates file with start URL if it doesn't exist
+ */
+static void load_crawl_queue(AppState* state) {
+    if (!state) return;
+    
+    char queue_path[1024];
+    snprintf(queue_path, sizeof(queue_path), "%s/links_to_crawl.txt", state->crawler_data_dir);
+    
+    // Create directory if it doesn't exist
+    char mkdir_cmd[1100];
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "mkdir -p %s", state->crawler_data_dir);
+    (void)system(mkdir_cmd);
+    
+    FILE* f = fopen(queue_path, "r");
+    if (f) {
+        // File exists - count lines
+        state->crawler_queue_size = 0;
+        char line[2048];
+        while (fgets(line, sizeof(line), f)) {
+            state->crawler_queue_size++;
+        }
+        fclose(f);
+        printf("Loaded crawl queue: %d URLs\n", state->crawler_queue_size);
+    } else {
+        // File doesn't exist - create it with start URL
+        f = fopen(queue_path, "w");
+        if (f) {
+            fprintf(f, "%s\n", state->crawler_start_url);
+            fclose(f);
+            state->crawler_queue_size = 1;
+            printf("Created new crawl queue with start URL: %s\n", state->crawler_start_url);
+        } else {
+            printf("Error: Could not create crawl queue file: %s\n", queue_path);
+        }
+    }
+}
+
+/**
+ * Add URL to crawl queue
+ */
+static void add_url_to_queue(AppState* state, const char* url) __attribute__((unused));
+static void add_url_to_queue(AppState* state, const char* url) {
+    if (!state || !url || url[0] == '\0') return;
+    
+    char queue_path[1024];
+    snprintf(queue_path, sizeof(queue_path), "%s/links_to_crawl.txt", state->crawler_data_dir);
+    
+    FILE* f = fopen(queue_path, "a");
+    if (f) {
+        fprintf(f, "%s\n", url);
+        fclose(f);
+        state->crawler_queue_size++;
+        printf("Added URL to queue: %s\n", url);
+    }
+}
+
+/**
+ * Scan training directory for files
+ */
+void scan_training_directory(const char* dir_path) {
+    printf("DEBUG: Scanning directory: %s\n", dir_path);
+    DIR* dir = opendir(dir_path);
+    if (!dir) {
+        printf("ERROR: Could not open directory: %s (errno=%d)\n", dir_path, errno);
+        perror("opendir");
+        return;
+    }
+    
+    file_count = 0;
+    struct dirent* entry;
+    
+    while ((entry = readdir(dir)) != NULL && file_count < MAX_TRAINING_FILES) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        
+        const char* ext = strrchr(entry->d_name, '.');
+        if (ext && strcmp(ext, ".txt") == 0) {
+            char full_path[512];
+            snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
+            
+            struct stat st;
+            if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode)) {
+                strncpy(training_files[file_count].filename, entry->d_name, 
+                       sizeof(training_files[file_count].filename) - 1);
+                training_files[file_count].filename[sizeof(training_files[file_count].filename) - 1] = '\0';
+                strncpy(training_files[file_count].filepath, full_path,
+                       sizeof(training_files[file_count].filepath) - 1);
+                training_files[file_count].filepath[sizeof(training_files[file_count].filepath) - 1] = '\0';
+                training_files[file_count].selected = false;
+                training_files[file_count].size = st.st_size;
+                
+                file_count++;
+            }
+        }
+    }
+    
+    closedir(dir);
+    printf("Found %d training files in %s\n", file_count, dir_path);
+}
+
+/**
+ * Initialize training tab
+ */
+void init_training_tab(AppState* state) {
+    if (!state) return;
+    
+    // Scan default training directory
+    char training_dir[1024];
+    extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
+    workspace_get_training_dir(state, training_dir, sizeof(training_dir));
+    scan_training_directory(training_dir);
+    
+    // Initialize visualization area (left side of screen)
+    // Visualization area (accounting for sidebar and submenu)
+    viz_area_rect.x = RENDER_OFFSET_X + 10;
+    viz_area_rect.y = RENDER_OFFSET_Y + 10;
+    viz_area_rect.w = RENDER_WIDTH - 20;
+    viz_area_rect.h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
+    
+    // NOTE: Inputs are now registered centrally at startup via init_all_inputs()
+    // This prevents duplicate registration and ensures all tabs have inputs immediately
+    if (!inputs_initialized) {
+        inputs_initialized = true;
+    }
+    
+    // Initialize visualization data
+    viz_data.loss_count = 0;
+    viz_data.current_epoch = 0;
+    viz_data.total_epochs = 0;
+    viz_data.current_loss = 0.0f;
+    viz_data.best_loss = INFINITY;
+}
+
+/**
+ * Draw training visualization in display area
+ */
+void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
+    if (!state) return;
+    
+    SDL_Color bg_color = {20, 20, 25, 255};
+    SDL_Color text_color = {220, 220, 220, 255};
+    SDL_Color grid_color = {40, 40, 50, 255};
+    SDL_Color loss_color = {100, 200, 255, 255};
+    
+    // CRYSTALLINE UI: Draw background with proper panel styling
+       SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+       SDL_RenderFillRect(renderer, &viz_area_rect);
+       
+       // CRYSTALLINE UI: Outer border (3px, lighter)
+       SDL_Color outer_border = {60, 60, 70, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {viz_area_rect.x - i, viz_area_rect.y - i, 
+                            viz_area_rect.w + 2*i, viz_area_rect.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, outer_border.r, outer_border.g, outer_border.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // CRYSTALLINE UI: Inner border (2px, darker)
+       SDL_Color inner_border = {30, 30, 40, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {viz_area_rect.x + 3 + i, viz_area_rect.y + 3 + i,
+                            viz_area_rect.w - 6 - 2*i, viz_area_rect.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, inner_border.r, inner_border.g, inner_border.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
+    
+    int content_x = viz_area_rect.x + 20;
+    int content_y = viz_area_rect.y + 20;
+    int content_w = viz_area_rect.w - 40;
+    int content_h = viz_area_rect.h - 40;
+    
+    // Title
+    draw_text(renderer, "TRAINING VISUALIZATION", content_x, content_y, text_color);
+    content_y += 30;
+    
+    // CRITICAL: Show status message if training is active
+    if (state->training_in_progress && state->training_status_message[0] != '\0') {
+        SDL_Color status_color = {100, 200, 255, 255};  // Bright blue
+        draw_text(renderer, state->training_status_message, content_x, content_y, status_color);
+        content_y += 25;
+        
+        // Show preprocessing progress bar if applicable
+        if (state->training_preprocessing_progress > 0.0f && state->training_preprocessing_progress < 1.0f) {
+            // Draw progress bar background
+            SDL_Rect prep_bg = {content_x, content_y, content_w, 25};
+            SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+            SDL_RenderFillRect(renderer, &prep_bg);
+            
+            // Draw progress fill
+            SDL_Rect prep_fill = {prep_bg.x, prep_bg.y, 
+                                  (int)(prep_bg.w * state->training_preprocessing_progress), 
+                                  prep_bg.h};
+            SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+            SDL_RenderFillRect(renderer, &prep_fill);
+            
+            // Draw border
+            SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+            SDL_RenderDrawRect(renderer, &prep_bg);
+            
+            // Draw percentage text on progress bar
+            char prep_percent[32];
+            snprintf(prep_percent, sizeof(prep_percent), "%.0f%%", 
+                    state->training_preprocessing_progress * 100.0f);
+            draw_text(renderer, prep_percent, 
+                     prep_bg.x + prep_bg.w / 2 - 15, 
+                     prep_bg.y + 5, 
+                     (SDL_Color){255, 255, 255, 255});
+            
+            content_y += 35;
+        }
+    }
+    
+       // Always show sphere visualization and training metrics (even when idle)
+       // This allows users to see the kissing spheres architecture at all times
+       
+       if (true) {  // Always show - removed conditional
+           // Training metrics - Epoch and Loss
+           char metrics[256];
+           snprintf(metrics, sizeof(metrics), "Epoch: %d / %d  |  Loss: %.4f  |  Best: %.4f",
+                   viz_data.current_epoch, viz_data.total_epochs, 
+                   viz_data.current_loss, viz_data.best_loss);
+           draw_text(renderer, metrics, content_x, content_y, text_color);
+           content_y += 25;
+           
+           // ENHANCED: Batch Progress Display
+           if (state->training_metrics) {
+               int current_batch = state->training_metrics->training.current_step;
+               int total_batches = state->training_metrics->training.total_steps;
+               
+               if (total_batches > 0) {
+                   float batch_percent = (current_batch * 100.0f) / total_batches;
+                   char batch_info[256];
+                   snprintf(batch_info, sizeof(batch_info), "Batch %d/%d (%.1f%%)",
+                           current_batch, total_batches, batch_percent);
+                   draw_text(renderer, batch_info, content_x, content_y, text_color);
+                   content_y += 20;
+                   
+                   // Throughput display
+                   if (state->training_metrics->training.batches_per_second > 0.1f) {
+                       char throughput[128];
+                       snprintf(throughput, sizeof(throughput), "Throughput: %.1f batches/sec",
+                               state->training_metrics->training.batches_per_second);
+                       draw_text(renderer, throughput, content_x, content_y, 
+                                (SDL_Color){150, 200, 150, 255});
+                       content_y += 20;
+                   }
+                   
+                   // Time estimates
+                   if (state->training_metrics->training.elapsed_time_seconds > 0.1) {
+                       char time_str[128];
+                       
+                       // Elapsed time
+                       format_time_elapsed(state->training_metrics->training.elapsed_time_seconds,
+                                         time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){180, 180, 200, 255});
+                       content_y += 18;
+                       
+                       // Remaining time
+                       format_time_remaining(state->training_metrics->training.estimated_time_remaining_seconds,
+                                           time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){180, 180, 200, 255});
+                       content_y += 18;
+                       
+                       // ETA
+                       format_eta(state->training_metrics->training.estimated_time_remaining_seconds,
+                                 time_str, sizeof(time_str));
+                       draw_text(renderer, time_str, content_x, content_y, 
+                                (SDL_Color){200, 200, 100, 255});
+                       content_y += 25;
+                   }
+               }
+           }
+           
+           // ENHANCED: Progress bar with percentage overlay
+           SDL_Rect progress_bg = {content_x, content_y, content_w, 30};
+           SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+           SDL_RenderFillRect(renderer, &progress_bg);
+           
+           // Calculate progress from batch count (more accurate than epoch)
+           float progress = 0.0f;
+           if (state->training_metrics && state->training_metrics->training.total_steps > 0) {
+               progress = (float)state->training_metrics->training.current_step / 
+                         state->training_metrics->training.total_steps;
+            } else if (viz_data.total_epochs > 0 && viz_data.current_epoch > 0) {
+                // Fallback: Use completed epochs (current_epoch is incremented AFTER each epoch)
+                // Subtract 1 to show 0% at start of first epoch
+                progress = (float)(viz_data.current_epoch - 1) / viz_data.total_epochs;
+           }
+           
+           if (progress > 0.0f) {
+               SDL_Rect progress_fill = {progress_bg.x, progress_bg.y, 
+                                        (int)(progress_bg.w * progress), progress_bg.h};
+               // Gradient color based on progress
+               int r = 100 + (int)(100 * progress);
+               int g = 200 - (int)(50 * progress);
+               SDL_SetRenderDrawColor(renderer, r, g, 100, 255);
+               SDL_RenderFillRect(renderer, &progress_fill);
+               
+               // Percentage text overlay (centered)
+               char percent_text[32];
+               snprintf(percent_text, sizeof(percent_text), "%.1f%%", progress * 100.0f);
+               int text_w = strlen(percent_text) * 8;  // Approximate width
+               draw_text(renderer, percent_text, 
+                        progress_bg.x + progress_bg.w/2 - text_w/2,
+                        progress_bg.y + 8,
+                        (SDL_Color){255, 255, 255, 255});
+           }
+           
+           SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+           SDL_RenderDrawRect(renderer, &progress_bg);
+           content_y += 45;
+              
+           
+             // Sphere Visualization - Show kissing spheres architecture
+             // EXPANDED: Use 70% of width and 60% of height for better visibility
+              int sphere_viz_width = (content_w * 6) / 10;
+              int sphere_viz_height = (content_h * 7) / 10;
+              if (sphere_viz_height < 500) sphere_viz_height = 500;  // Minimum height
+// MOVED:            SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
+             SDL_Rect sphere_bounds = {content_x, content_y, sphere_viz_width, sphere_viz_height};
+
+           // Draw sphere visualization FIRST
+             draw_sphere_visualization(renderer, state, sphere_bounds);
+
+           // Draw toggle button AFTER (on top of visualization)
+           
+           // Add 2D/3D toggle button in top-right corner of sphere visualization
+           SDL_Rect toggle_btn = {
+               sphere_bounds.x + sphere_bounds.w - 110,
+               sphere_bounds.y + 10,
+               100, 30
+           };
+           
+           const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "Switch to 3D" : "Switch to 2D";
+           SDL_Color toggle_btn_color = {70, 130, 180, 255};
+           SDL_Color toggle_text_color = {255, 255, 255, 255};
+           
+           // Draw toggle button
+           SDL_SetRenderDrawColor(renderer, toggle_btn_color.r, toggle_btn_color.g, toggle_btn_color.b, 255);
+           SDL_RenderFillRect(renderer, &toggle_btn);
+           SDL_SetRenderDrawColor(renderer, 100, 100, 110, 255);
+           SDL_RenderDrawRect(renderer, &toggle_btn);
+           
+           // Draw button text
+           extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
+           draw_text(renderer, toggle_label, toggle_btn.x + 5, toggle_btn.y + 8, toggle_text_color);
+           
+           // UI Integration: Framework Status & Performance Metrics Panel
+           SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
+                                        content_w - sphere_viz_width - 20, sphere_viz_height};
+           
+           // CRYSTALLINE UI: Draw metrics panel with proper borders
+       SDL_SetRenderDrawColor(renderer, 25, 25, 30, 255);
+       SDL_RenderFillRect(renderer, &metrics_bounds);
+       
+       // Outer border (3px, lighter)
+       SDL_Color metrics_outer = {50, 50, 60, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {metrics_bounds.x - i, metrics_bounds.y - i,
+                            metrics_bounds.w + 2*i, metrics_bounds.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, metrics_outer.r, metrics_outer.g, metrics_outer.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // Inner border (2px, darker)
+       SDL_Color metrics_inner = {20, 20, 25, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {metrics_bounds.x + 3 + i, metrics_bounds.y + 3 + i,
+                            metrics_bounds.w - 6 - 2*i, metrics_bounds.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, metrics_inner.r, metrics_inner.g, metrics_inner.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
+           
+           int metrics_x = metrics_bounds.x + 10;
+           int metrics_y = metrics_bounds.y + 10;
+           
+           // Title
+           draw_text(renderer, "FRAMEWORK STATUS", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           // Framework status indicators (from metrics if available)
+           if (state->training_metrics) {
+               draw_text(renderer, "Lattice Embeddings: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "Angular Attention: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "Crystalline Loss: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 18;
+               draw_text(renderer, "12-Fold Symmetry: ACTIVE", metrics_x, metrics_y, 
+                        (SDL_Color){100, 255, 100, 255});
+               metrics_y += 25;
+           }
+           
+           // Performance Metrics
+           draw_text(renderer, "PERFORMANCE", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           char perf_text[128];
+           
+           // Active threads
+           snprintf(perf_text, sizeof(perf_text), "Active Threads: %d", 
+                   state->sphere_stats.active_spheres);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // Total batches
+           snprintf(perf_text, sizeof(perf_text), "Total Batches: %d", 
+                   state->sphere_stats.total_batches);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // Gradient norm
+           snprintf(perf_text, sizeof(perf_text), "Gradient Norm: %.4f", 
+                   state->sphere_stats.total_gradient_norm);
+           draw_text(renderer, perf_text, metrics_x, metrics_y, text_color);
+           metrics_y += 25;
+           
+           // Thread State Legend
+           draw_text(renderer, "THREAD STATES", metrics_x, metrics_y, 
+                    (SDL_Color){100, 150, 200, 255});
+           metrics_y += 25;
+           
+           // Color legend
+           SDL_Rect color_box = {metrics_x, metrics_y, 12, 12};
+           
+           // WORKING - Green
+           SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Working", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // WAITING - Blue
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Waiting", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // IDLE - Gray
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 40, 40, 50, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Idle", metrics_x + 18, metrics_y, text_color);
+           metrics_y += 18;
+           
+           // CONTROL - Gold
+           color_box.y = metrics_y;
+           SDL_SetRenderDrawColor(renderer, 200, 150, 50, 255);
+           SDL_RenderFillRect(renderer, &color_box);
+           draw_text(renderer, "Control (Node Zero)", metrics_x + 18, metrics_y, text_color);
+           
+           content_y += sphere_viz_height + 20;
+        
+        // Loss graph
+        if (viz_data.loss_count > 1) {
+            int graph_h = content_h - (content_y - viz_area_rect.y - 20);
+            SDL_Rect graph_rect = {content_x, content_y, content_w, graph_h};
+            
+            // Draw graph background
+            SDL_SetRenderDrawColor(renderer, 30, 30, 35, 255);
+            SDL_RenderFillRect(renderer, &graph_rect);
+            SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
+            SDL_RenderDrawRect(renderer, &graph_rect);
+            
+            // Draw grid lines
+            for (int i = 1; i < 5; i++) {
+                int grid_y = graph_rect.y + (graph_rect.h * i) / 5;
+                SDL_SetRenderDrawColor(renderer, 40, 40, 45, 255);
+                SDL_RenderDrawLine(renderer, graph_rect.x, grid_y, graph_rect.x + graph_rect.w, grid_y);
+            }
+            
+            // Find min/max loss for scaling
+            float min_loss = viz_data.loss_history[0];
+            float max_loss = viz_data.loss_history[0];
+            for (int i = 1; i < viz_data.loss_count; i++) {
+                if (viz_data.loss_history[i] < min_loss) min_loss = viz_data.loss_history[i];
+                if (viz_data.loss_history[i] > max_loss) max_loss = viz_data.loss_history[i];
+            }
+            
+            float loss_range = max_loss - min_loss;
+            if (loss_range < 0.001f) loss_range = 0.001f;
+            
+            // Draw loss curve
+            SDL_SetRenderDrawColor(renderer, loss_color.r, loss_color.g, loss_color.b, 255);
+            for (int i = 1; i < viz_data.loss_count; i++) {
+                int x1 = graph_rect.x + ((i - 1) * graph_rect.w) / (MAX_LOSS_HISTORY - 1);
+                int y1 = graph_rect.y + graph_rect.h - 
+                          (int)(((viz_data.loss_history[i - 1] - min_loss) / loss_range) * graph_rect.h);
+                int x2 = graph_rect.x + (i * graph_rect.w) / (MAX_LOSS_HISTORY - 1);
+                int y2 = graph_rect.y + graph_rect.h - 
+                          (int)(((viz_data.loss_history[i] - min_loss) / loss_range) * graph_rect.h);
+                
+                SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+            }
+            
+            // Draw axis labels
+            char min_label[32], max_label[32];
+            snprintf(min_label, sizeof(min_label), "%.4f", min_loss);
+            snprintf(max_label, sizeof(max_label), "%.4f", max_loss);
+            draw_text(renderer, max_label, graph_rect.x - 60, graph_rect.y, text_color);
+            draw_text(renderer, min_label, graph_rect.x - 60, graph_rect.y + graph_rect.h - 10, text_color);
+        }
+    } else {
+        // No training data - show instructions
+        draw_text(renderer, "No training in progress", content_x, content_y, text_color);
+        content_y += 25;
+        draw_text(renderer, "1. Select training files from the panel", content_x, content_y, text_color);
+        content_y += 20;
+        draw_text(renderer, "2. Configure parameters", content_x, content_y, text_color);
+        content_y += 20;
+        draw_text(renderer, "3. Click START TRAINING", content_x, content_y, text_color);
+        content_y += 30;
+    }
+    
+    // Crawler status (if running)
+    if (crawler_running || state->crawler_running) {
+        // Get real-time crawler status
+        extern void get_crawler_status(int* pages_crawled, int* queue_size);
+        int current_pages = 0, current_queue = 0;
+        get_crawler_status(&current_pages, &current_queue);
+        
+        int crawler_y = viz_area_rect.y + viz_area_rect.h - 80;
+        SDL_Rect crawler_status = {content_x, crawler_y, content_w, 70};
+        SDL_SetRenderDrawColor(renderer, 40, 60, 40, 255);
+        SDL_RenderFillRect(renderer, &crawler_status);
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        SDL_RenderDrawRect(renderer, &crawler_status);
+        
+        char crawler_text[128];
+        snprintf(crawler_text, sizeof(crawler_text), 
+                "CRAWLER ACTIVE | Pages: %d | Training Queue: %d", 
+                current_pages, current_queue);
+        draw_text(renderer, crawler_text, crawler_status.x + 10, crawler_status.y + 10, 
+                 (SDL_Color){100, 255, 100, 255});
+        
+        // Show current URL being crawled
+        if (state->crawler_current_url[0] != '\0') {
+            char url_display[100];
+            snprintf(url_display, sizeof(url_display), "Current: %.80s", state->crawler_current_url);
+            draw_text(renderer, url_display, crawler_status.x + 10, crawler_status.y + 28, text_color);
+        } else {
+            draw_text(renderer, "Initializing crawler...", 
+                     crawler_status.x + 10, crawler_status.y + 28, text_color);
+        }
+        
+        draw_text(renderer, "Continuously crawling and training...", 
+                 crawler_status.x + 10, crawler_status.y + 46, text_color);
+    }
+    
+    // Draw terminal output window at bottom (if training in progress)
+    if (state->training_in_progress && state->terminal_buffer) {
+        int terminal_height = 200;
+        int terminal_y = viz_area_rect.y + viz_area_rect.h - terminal_height;
+        SDL_Rect terminal_bounds = {
+            viz_area_rect.x,
+            terminal_y,
+            viz_area_rect.w,
+            terminal_height
+        };
+        draw_terminal_output(renderer, state, terminal_bounds);
+    }
+}
+
+/**
+ * Draw control panel with dynamic layout
+ */
+void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
+    if (!state) return;
+    
+    // Initialize tab on first draw
+    static bool tab_initialized = false;
+    if (!tab_initialized) {
+        init_training_tab(state);
+        tab_initialized = true;
+    }
+    
+    // Initialize model selector on first draw
+    if (!model_selector) {
+        int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+        // Increased height from 30 to 50 for better visibility
+        model_selector = model_selector_create(panel_x + 10, RENDER_OFFSET_Y + 50, CONTROL_PANEL_WIDTH - 20, 50);
+        model_selector_update_list(model_selector);
+        
+        // Set callback to load model when selected
+        model_selector_set_callback(model_selector, on_model_selected, state);
+    }
+    
+    // Update visualization data from training state
+    update_training_visualization(state);
+    
+    // Draw visualization area first
+    draw_training_visualization(renderer, state);
+    
+    // Setup control panel layout (accounting for sidebar and submenu)
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    int panel_y = RENDER_OFFSET_Y;
+    int panel_width = CONTROL_PANEL_WIDTH;
+    int panel_height = WINDOW_HEIGHT - panel_y;
+    
+    SDL_Color text_color = {220, 220, 220, 255};
+    SDL_Color bg_color = {40, 40, 50, 255};
+    SDL_Color button_color = {60, 60, 80, 255};
+    SDL_Color active_color = {100, 150, 200, 255};
+    
+    // CRYSTALLINE UI: Draw control panel with proper borders
+       SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+       SDL_Rect panel_rect = {panel_x, panel_y, panel_width - 20, panel_height};  // Leave space for scrollbar
+       SDL_RenderFillRect(renderer, &panel_rect);
+       
+       // Outer border (3px, lighter)
+       SDL_Color panel_outer = {70, 70, 90, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {panel_rect.x - i, panel_rect.y - i,
+                            panel_rect.w + 2*i, panel_rect.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, panel_outer.r, panel_outer.g, panel_outer.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // Inner border (2px, darker)
+       SDL_Color panel_inner = {30, 30, 40, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {panel_rect.x + 3 + i, panel_rect.y + 3 + i,
+                            panel_rect.w - 6 - 2*i, panel_rect.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, panel_inner.r, panel_inner.g, panel_inner.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
+    
+    // Set clipping rect for scrollable content
+    SDL_RenderSetClipRect(renderer, &panel_rect);
+    
+    // Initialize layout system with scroll offset
+    LayoutContainer layout;
+    SDL_Rect scrolled_panel = {panel_x, panel_y - control_panel_scroll_offset, panel_width - 20, panel_height + 2000};
+    layout_init(&layout, scrolled_panel, LAYOUT_VERTICAL, 10, 8);
+    
+    // === SECTION 0: MODEL SELECTOR ===
+    SDL_Rect model_label = layout_add_label(&layout, "MODEL", 18);
+    draw_text(renderer, "MODEL", model_label.x, model_label.y, text_color);
+    
+    // Render model selector
+    if (model_selector) {
+        model_selector_render(model_selector, renderer);
+    }
+    layout_add_spacing(&layout, 50); // Space for model selector (increased from 30)
+    layout_add_spacing(&layout, 10); // Extra spacing for clarity
+    
+    // === SECTION 0.5: TRAINING CONFIGURATION ===
+    SDL_Rect config_label = layout_add_label(&layout, "CONFIGURATION", 18);
+    draw_text(renderer, "CONFIGURATION", config_label.x, config_label.y, text_color);
+    
+    // Batch Size slider (EXPANDED: 1-256 instead of 1-16)
+    char batch_label[64];
+    snprintf(batch_label, sizeof(batch_label), "Batch Size: %d", state->training_batch_size);
+    SDL_Rect batch_label_rect = layout_add_label(&layout, batch_label, 16);
+    draw_text(renderer, batch_label, batch_label_rect.x, batch_label_rect.y, text_color);
+    
+    batch_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &batch_slider_rect);
+    
+    // Slider handle (batch_size range: 1-256)
+    int batch_handle_x = batch_slider_rect.x + ((state->training_batch_size - 1) * batch_slider_rect.w) / 255;
+    SDL_Rect batch_handle = {batch_handle_x - 5, batch_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &batch_handle);
+    
+    // Sequence Length slider
+    char seq_label[64];
+    snprintf(seq_label, sizeof(seq_label), "Sequence Length: %d", state->training_sequence_length);
+    SDL_Rect seq_label_rect = layout_add_label(&layout, seq_label, 16);
+    draw_text(renderer, seq_label, seq_label_rect.x, seq_label_rect.y, text_color);
+    
+    seq_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &seq_slider_rect);
+    
+    // Slider handle (sequence_length range: 32-512)
+    int seq_handle_x = seq_slider_rect.x + ((state->training_sequence_length - 32) * seq_slider_rect.w) / 480;
+    SDL_Rect seq_handle = {seq_handle_x - 5, seq_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &seq_handle);
+    
+    // Epochs slider
+    char epochs_label[64];
+    snprintf(epochs_label, sizeof(epochs_label), "Epochs: %d", state->training_epochs);
+    SDL_Rect epochs_label_rect = layout_add_label(&layout, epochs_label, 16);
+    draw_text(renderer, epochs_label, epochs_label_rect.x, epochs_label_rect.y, text_color);
+    
+    epochs_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &epochs_slider_rect);
+    
+    // Slider handle (epochs range: 1-100)
+    int epochs_handle_x = epochs_slider_rect.x + ((state->training_epochs - 1) * epochs_slider_rect.w) / 99;
+    SDL_Rect epochs_handle = {epochs_handle_x - 5, epochs_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &epochs_handle);
+    
+    // Learning Rate slider (NEW - logarithmic scale: 0.0001 to 0.1)
+    char lr_label[64];
+    snprintf(lr_label, sizeof(lr_label), "Learning Rate: %.4f", state->training_learning_rate);
+    SDL_Rect lr_label_rect = layout_add_label(&layout, lr_label, 16);
+    draw_text(renderer, lr_label, lr_label_rect.x, lr_label_rect.y, text_color);
+    
+    lr_slider_rect = layout_add_element(&layout, 0, 20);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderFillRect(renderer, &lr_slider_rect);
+    
+    // Slider handle (learning rate: logarithmic scale 0.0001 to 0.1)
+    // Map 0.0001 to 0.1 logarithmically: log10(0.0001) = -4, log10(0.1) = -1
+    float log_lr = log10f(state->training_learning_rate);
+    float log_min = -4.0f;  // log10(0.0001)
+    float log_max = -1.0f;  // log10(0.1)
+    int lr_handle_x = lr_slider_rect.x + ((log_lr - log_min) * lr_slider_rect.w) / (log_max - log_min);
+    SDL_Rect lr_handle = {lr_handle_x - 5, lr_slider_rect.y - 2, 10, 24};
+    SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+    SDL_RenderFillRect(renderer, &lr_handle);
+    
+    layout_add_spacing(&layout, 5);
+    
+    // === SECTION 0.75: MODEL INFO ===
+    if (state->cllm_model) {
+        SDL_Rect info_label = layout_add_label(&layout, "MODEL INFO", 18);
+        draw_text(renderer, "MODEL INFO", info_label.x, info_label.y, text_color);
+        
+        // Training steps (from metadata)
+        uint64_t training_steps = state->cllm_model->training_meta.training_steps;
+        char steps_info[64];
+        snprintf(steps_info, sizeof(steps_info), "Training Steps: %lu", (unsigned long)training_steps);
+        SDL_Rect steps_info_rect = layout_add_label(&layout, steps_info, 16);
+        draw_text(renderer, steps_info, steps_info_rect.x, steps_info_rect.y, text_color);
+        
+        // Learning rate (from metadata)
+        float lr = state->cllm_model->training_meta.learning_rate;
+        if (lr > 0) {
+            char lr_info[64];
+            snprintf(lr_info, sizeof(lr_info), "Learning Rate: %.6f", lr);
+            SDL_Rect lr_info_rect = layout_add_label(&layout, lr_info, 16);
+            draw_text(renderer, lr_info, lr_info_rect.x, lr_info_rect.y, text_color);
+        }
+        
+        // Model architecture
+        char arch_info[64];
+        snprintf(arch_info, sizeof(arch_info), "Layers: %u", state->cllm_model->num_layers);
+        SDL_Rect arch_info_rect = layout_add_label(&layout, arch_info, 16);
+        draw_text(renderer, arch_info, arch_info_rect.x, arch_info_rect.y, text_color);
+        
+        char vocab_info[64];
+        snprintf(vocab_info, sizeof(vocab_info), "Vocab: %lu", state->cllm_model->vocab_size);
+        SDL_Rect vocab_info_rect = layout_add_label(&layout, vocab_info, 16);
+        draw_text(renderer, vocab_info, vocab_info_rect.x, vocab_info_rect.y, text_color);
+        
+        layout_add_spacing(&layout, 5);
+    }
+    
+    // === SECTION 1: STATUS ===
+    SDL_Rect status_label = layout_add_label(&layout, "STATUS", 18);
+    draw_text(renderer, "STATUS", status_label.x, status_label.y, text_color);
+    
+    const char* status = state->training_in_progress ? "Training..." : "Ready";
+    SDL_Color status_color = state->training_in_progress ? 
+        (SDL_Color){255, 200, 100, 255} : (SDL_Color){100, 255, 100, 255};
+    
+    char status_text[64];
+    snprintf(status_text, sizeof(status_text), "* %s", status);
+    SDL_Rect status_rect = layout_add_label(&layout, status_text, 18);
+    draw_text(renderer, status_text, status_rect.x, status_rect.y, status_color);
+    
+    // Check model status: registered vs loaded
+    char model_status_buf[512];  // Increased from 256 to 512 to prevent truncation
+    const char* model_status;
+    SDL_Color model_color;
+    
+    if (state->cllm_model) {
+        // Model is loaded in memory
+        if (selected_model_name[0]) {
+            // Truncate model name if too long to ensure it fits
+            char truncated_name[200];
+            strncpy(truncated_name, selected_model_name, sizeof(truncated_name) - 1);
+            truncated_name[sizeof(truncated_name) - 1] = '\0';
+            
+            snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Loaded)", truncated_name);
+            model_status = model_status_buf;
+        } else {
+            model_status = "Model: Loaded & Ready";
+        }
+        model_color = (SDL_Color){100, 255, 100, 255};  // Green
+    } else {
+        // Check if any models are registered (available to load)
+        extern uint32_t model_manager_count(void);
+        uint32_t model_count = model_manager_count();
+        
+        if (model_count > 0) {
+            if (selected_model_name[0]) {
+                // Truncate model name if too long to ensure it fits
+                char truncated_name[200];
+                strncpy(truncated_name, selected_model_name, sizeof(truncated_name) - 1);
+                truncated_name[sizeof(truncated_name) - 1] = '\0';
+                
+                snprintf(model_status_buf, sizeof(model_status_buf), "Model: %s (Not Loaded)", truncated_name);
+                model_status = model_status_buf;
+            } else {
+                model_status = "Model: Available (select to load)";
+            }
+            model_color = (SDL_Color){255, 200, 100, 255};  // Orange
+        } else {
+            model_status = "Model: None Available";
+            model_color = (SDL_Color){255, 100, 100, 255};  // Red
+        }
+    }
+    
+    SDL_Rect model_rect = layout_add_label(&layout, model_status, 18);
+    draw_text(renderer, model_status, model_rect.x, model_rect.y, model_color);
+    
+    layout_add_spacing(&layout, 5);
+    
+    // === SECTION 2: TRAINING DATA ===
+    SDL_Rect data_label = layout_add_label(&layout, "TRAINING DATA", 18);
+    draw_text(renderer, "TRAINING DATA", data_label.x, data_label.y, text_color);
+    
+    // Buttons row
+    int button_width = (panel_width - 30) / 2;
+    SDL_Rect btn_row = layout_add_element(&layout, 0, 25);
+    
+    btn_scan_dir.bounds = (SDL_Rect){btn_row.x, btn_row.y, button_width, 25};
+    btn_scan_dir.enabled = true;
+    btn_scan_dir.visible = true;
+    strncpy(btn_scan_dir.label, "Scan Dir", sizeof(btn_scan_dir.label) - 1);
+    
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_scan_dir.bounds);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &btn_scan_dir.bounds);
+    draw_text(renderer, btn_scan_dir.label, btn_scan_dir.bounds.x + 25, btn_scan_dir.bounds.y + 6, text_color);
+    
+    btn_select_all.bounds = (SDL_Rect){btn_row.x + button_width + 10, btn_row.y, button_width, 25};
+    btn_select_all.enabled = true;
+    btn_select_all.visible = true;
+    strncpy(btn_select_all.label, "Select All", sizeof(btn_select_all.label) - 1);
+    
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_select_all.bounds);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &btn_select_all.bounds);
+    draw_text(renderer, btn_select_all.label, btn_select_all.bounds.x + 15, btn_select_all.bounds.y + 6, text_color);
+    
+    // File count
+    int selected_count = 0;
+    for (int i = 0; i < file_count; i++) {
+        if (training_files[i].selected) selected_count++;
+    }
+    
+    char file_info[64];
+    snprintf(file_info, sizeof(file_info), "Files: %d (%d selected)", file_count, selected_count);
+    SDL_Rect file_info_rect = layout_add_label(&layout, file_info, 18);
+    draw_text(renderer, file_info, file_info_rect.x, file_info_rect.y, text_color);
+    
+    // File list
+    file_list_rect = layout_add_element(&layout, 0, 60);
+    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    SDL_RenderFillRect(renderer, &file_list_rect);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &file_list_rect);
+    
+    // Draw files
+    int file_y = file_list_rect.y + 5;
+    int max_visible = (file_list_rect.h - 10) / 16;
+    for (int i = scroll_offset; i < file_count && i < scroll_offset + max_visible; i++) {
+        SDL_Color file_color = training_files[i].selected ? 
+            (SDL_Color){100, 200, 255, 255} : text_color;
+        
+        // Checkbox
+        SDL_Rect checkbox = {file_list_rect.x + 5, file_y, 10, 10};
+        SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+        SDL_RenderFillRect(renderer, &checkbox);
+        SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+        SDL_RenderDrawRect(renderer, &checkbox);
+        
+        if (training_files[i].selected) {
+            SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, 255);
+            SDL_Rect check = {checkbox.x + 2, checkbox.y + 2, 6, 6};
+            SDL_RenderFillRect(renderer, &check);
+        }
+        
+        // Filename (truncated)
+        char display_name[40];
+        snprintf(display_name, sizeof(display_name), "%.32s", training_files[i].filename);
+        draw_text(renderer, display_name, file_list_rect.x + 20, file_y, file_color);
+        
+        file_y += 16;
+    }
+    
+    layout_add_spacing(&layout, 5);
+    
+    // === SECTION 3: ACTIONS ===
+    SDL_Rect actions_label = layout_add_label(&layout, "ACTIONS", 18);
+    draw_text(renderer, "ACTIONS", actions_label.x, actions_label.y, text_color);
+    
+    // Start Training button
+    btn_start_training.bounds = layout_add_button(&layout, NULL, 0, 30);
+    btn_start_training.enabled = true;
+    btn_start_training.visible = true;
+    
+    SDL_Color train_color = state->training_in_progress ? 
+        (SDL_Color){200, 80, 80, 255} : (SDL_Color){80, 100, 120, 255};
+    SDL_SetRenderDrawColor(renderer, train_color.r, train_color.g, train_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_start_training.bounds);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &btn_start_training.bounds);
+    
+    const char* train_text = state->training_in_progress ? "STOP TRAINING" : "START TRAINING";
+    int text_offset = state->training_in_progress ? 45 : 50;
+    draw_text(renderer, train_text, btn_start_training.bounds.x + text_offset, 
+             btn_start_training.bounds.y + 11, (SDL_Color){255, 255, 255, 255});
+    
+    // Start Crawler button (NEW!)
+    btn_start_crawler.bounds = layout_add_button(&layout, NULL, 0, 30);
+    btn_start_crawler.enabled = true;
+    btn_start_crawler.visible = true;
+    
+    SDL_Color crawler_color = crawler_running ? 
+        (SDL_Color){200, 80, 80, 255} : (SDL_Color){60, 120, 60, 255};
+    SDL_SetRenderDrawColor(renderer, crawler_color.r, crawler_color.g, crawler_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_start_crawler.bounds);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &btn_start_crawler.bounds);
+    
+    const char* crawler_text = crawler_running ? "STOP CRAWLER" : "START CRAWLER";
+    int crawler_offset = crawler_running ? 50 : 55;
+    draw_text(renderer, crawler_text, btn_start_crawler.bounds.x + crawler_offset, 
+             btn_start_crawler.bounds.y + 11, (SDL_Color){255, 255, 255, 255});
+    
+    // Save/Load buttons
+    SDL_Rect save_load_row = layout_add_element(&layout, 0, 25);
+    
+    btn_save.bounds = (SDL_Rect){save_load_row.x, save_load_row.y, button_width, 25};
+    btn_save.enabled = true;
+    btn_save.visible = true;
+    
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_save.bounds);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &btn_save.bounds);
+    draw_text(renderer, "Save", btn_save.bounds.x + 35, btn_save.bounds.y + 6, text_color);
+    
+    btn_load.bounds = (SDL_Rect){save_load_row.x + button_width + 10, save_load_row.y, button_width, 25};
+    btn_load.enabled = true;
+    btn_load.visible = true;
+    
+    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
+    SDL_RenderFillRect(renderer, &btn_load.bounds);
+    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
+    SDL_RenderDrawRect(renderer, &btn_load.bounds);
+    draw_text(renderer, "Load", btn_load.bounds.x + 35, btn_load.bounds.y + 6, text_color);
+    
+    // Render all inputs through input manager
+    extern InputManager* g_input_manager;
+    if (g_input_manager) {
+        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_TRAINING);
+    }
+    
+    // Clear clipping rect
+    SDL_RenderSetClipRect(renderer, NULL);
+    
+    // Calculate content height (approximate based on layout)
+    control_panel_content_height = layout.current_y - (panel_y - control_panel_scroll_offset);
+    
+    // Draw scrollbar if content exceeds panel height
+    if (control_panel_content_height > panel_height) {
+        int scrollbar_x = panel_x + panel_width - 20;
+        int scrollbar_y = panel_y;
+        int scrollbar_w = 15;
+        int scrollbar_h = panel_height;
+        
+        // Draw scrollbar background
+        SDL_Rect scrollbar_bg = {scrollbar_x, scrollbar_y, scrollbar_w, scrollbar_h};
+        SDL_SetRenderDrawColor(renderer, 40, 45, 50, 255);
+        SDL_RenderFillRect(renderer, &scrollbar_bg);
+        
+        // Draw scrollbar border
+        SDL_SetRenderDrawColor(renderer, 60, 65, 70, 255);
+        SDL_RenderDrawRect(renderer, &scrollbar_bg);
+        
+        // Calculate handle size and position
+        float content_ratio = (float)panel_height / (float)control_panel_content_height;
+        int handle_height = (int)(scrollbar_h * content_ratio);
+        if (handle_height < 20) handle_height = 20;  // Minimum handle size
+        
+        float scroll_ratio = (float)control_panel_scroll_offset / 
+                            (float)(control_panel_content_height - panel_height);
+        int handle_y = scrollbar_y + (int)((scrollbar_h - handle_height) * scroll_ratio);
+        
+        // Draw scrollbar handle
+        SDL_Rect handle = {scrollbar_x + 2, handle_y, scrollbar_w - 4, handle_height};
+        SDL_SetRenderDrawColor(renderer, 100, 120, 140, 255);
+        SDL_RenderFillRect(renderer, &handle);
+        
+        SDL_SetRenderDrawColor(renderer, 120, 140, 160, 255);
+        SDL_RenderDrawRect(renderer, &handle);
+    }
+}
+
+/**
+ * Update visualization data
+ */
+void update_training_visualization(AppState* state) {
+    if (!state) return;
+    
+    viz_data.current_epoch = state->training_current_epoch;
+    viz_data.total_epochs = state->training_epochs;
+    viz_data.current_loss = state->training_loss;
+    
+    // Add to loss history
+    if (viz_data.current_loss > 0.0f && viz_data.current_loss < 1000.0f) {
+        if (viz_data.loss_count < MAX_LOSS_HISTORY) {
+            viz_data.loss_history[viz_data.loss_count++] = viz_data.current_loss;
+        } else {
+            // Shift array and add new value
+            for (int i = 0; i < MAX_LOSS_HISTORY - 1; i++) {
+                viz_data.loss_history[i] = viz_data.loss_history[i + 1];
+            }
+            viz_data.loss_history[MAX_LOSS_HISTORY - 1] = viz_data.current_loss;
+        }
+        
+        if (viz_data.current_loss < viz_data.best_loss) {
+            viz_data.best_loss = viz_data.current_loss;
+        }
+    }
+}
+
+/**
+ * Handle text input events
+ * NOTE: Input events are now handled by InputManager in main event loop
+ * This function is kept for compatibility but does nothing
+ */
+bool handle_training_tab_event(AppState* state, SDL_Event* event) {
+    (void)state;
+    (void)event;
+    return false; // InputManager handles all input events now
+}
+
+/**
+ * Handle mouse clicks with dynamic hit detection
+ */
+void handle_training_tab_click(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    // Silent click handling
+    
+    // Check for 2D/3D toggle button click
+    // Calculate sphere visualization bounds (same as in draw function)
+       int content_x = viz_area_rect.x + 20;
+       int content_y = viz_area_rect.y + 20;
+       int content_w = viz_area_rect.w - 40;
+       int content_h = viz_area_rect.h - 40;
+    
+       
+       // Account for title
+       content_y += 30;
+       
+       // Account for metrics line (ALWAYS shown, even when not training)
+       content_y += 25;
+       
+       // Account for status message if shown
+       if (state->training_in_progress && state->training_status_message[0] != '\0') {
+           content_y += 25;
+           
+           // Account for preprocessing progress bar if shown
+           if (state->training_preprocessing_progress > 0.0f && 
+               state->training_preprocessing_progress < 1.0f) {
+               content_y += 35;
+           }
+       }
+       
+       // Account for progress bar
+       content_y += 45;
+    
+    int sphere_viz_width = (content_w * 6) / 10;
+    int sphere_viz_height = (content_h * 7) / 10;
+    if (sphere_viz_height < 500) sphere_viz_height = 500;
+    
+    // Toggle button bounds
+    int toggle_x = content_x + sphere_viz_width - 110;
+    int toggle_y = content_y + 10;
+    int toggle_w = 100;
+    int toggle_h = 30;
+    
+    // Debug: Print click coordinates and button bounds
+    if (x >= content_x && x <= content_x + sphere_viz_width &&
+        y >= content_y && y <= content_y + sphere_viz_height) {
+        printf("Click in sphere viz area: x=%d, y=%d, toggle_x=%d, toggle_y=%d, toggle_w=%d, toggle_h=%d\n",
+               x, y, toggle_x, toggle_y, toggle_w, toggle_h);
+    }
+    
+    if (x >= toggle_x && x <= toggle_x + toggle_w &&
+        y >= toggle_y && y <= toggle_y + toggle_h) {
+        // Toggle visualization mode
+        state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) 
+                                  ? SPHERE_VIZ_3D : SPHERE_VIZ_2D;
+        printf("✓ Toggled sphere visualization to %s mode\n", 
+               state->sphere_viz_mode == SPHERE_VIZ_2D ? "2D" : "3D");
+        return;
+    }
+    
+    // Start rotation dragging if clicking in sphere viz area (3D mode only)
+    if (x >= content_x && x <= content_x + sphere_viz_width &&
+        y >= content_y && y <= content_y + sphere_viz_height &&
+        state->sphere_viz_mode == SPHERE_VIZ_3D) {
+        sphere_rotation_dragging = true;
+        rotation_drag_start_x = x;
+        rotation_drag_start_y = y;
+        rotation_drag_start_rot_x = state->rotation_x;
+        rotation_drag_start_rot_y = state->rotation_y;
+        return;
+    }
+    
+    // Check scrollbar click first
+    int panel_x = RENDER_OFFSET_X + RENDER_WIDTH;
+    int panel_y = RENDER_OFFSET_Y;
+    int panel_width = CONTROL_PANEL_WIDTH;
+    int panel_height = WINDOW_HEIGHT - panel_y;
+    
+    if (control_panel_content_height > panel_height) {
+        int scrollbar_x = panel_x + panel_width - 20;
+        int scrollbar_y = panel_y;
+        int scrollbar_w = 15;
+        int scrollbar_h = panel_height;
+        
+        // Check if clicking on scrollbar
+        if (x >= scrollbar_x && x < scrollbar_x + scrollbar_w &&
+            y >= scrollbar_y && y < scrollbar_y + scrollbar_h) {
+            control_panel_scrollbar_dragging = true;
+            control_panel_drag_start_y = y;
+            control_panel_drag_start_offset = control_panel_scroll_offset;
+            return;
+        }
+    }
+    
+    // Update visualization
+    update_training_visualization(state);
+    
+    // Check model selector click first (BUTTONDOWN - opens dropdown)
+    if (model_selector && model_selector_handle_button_down(model_selector, x, y)) {
+        return;
+    }
+    
+    // Check slider clicks
+    if (rect_contains_point(batch_slider_rect, x, y)) {
+        // Calculate new batch size (1-256)
+        int offset = x - batch_slider_rect.x;
+        int new_value = 1 + (offset * 255) / batch_slider_rect.w;
+        if (new_value < 1) new_value = 1;
+        if (new_value > 256) new_value = 256;
+        state->training_batch_size = new_value;
+        printf("Batch size set to: %d\n", new_value);
+        return;
+    }
+    
+    if (rect_contains_point(seq_slider_rect, x, y)) {
+        // Calculate new sequence length (32-512)
+        int offset = x - seq_slider_rect.x;
+        int new_value = 32 + (offset * 480) / seq_slider_rect.w;
+        if (new_value < 32) new_value = 32;
+        if (new_value > 512) new_value = 512;
+        state->training_sequence_length = new_value;
+        printf("Sequence length set to: %d\n", new_value);
+        return;
+    }
+    
+    if (rect_contains_point(epochs_slider_rect, x, y)) {
+        // Calculate new epochs (1-100)
+        int offset = x - epochs_slider_rect.x;
+        int new_value = 1 + (offset * 99) / epochs_slider_rect.w;
+        if (new_value < 1) new_value = 1;
+        if (new_value > 100) new_value = 100;
+        state->training_epochs = new_value;
+        printf("Epochs set to: %d\n", new_value);
+        return;
+    }
+    
+    
+    // Input clicks are now handled by InputManager in main event loop
+    // No need for tab-specific input click handling
+    
+    // Check button clicks using dynamic bounds
+    if (rect_contains_point(btn_scan_dir.bounds, x, y)) {
+        printf("Scan directory button clicked\n");
+        char training_dir[1024];
+        extern void workspace_get_training_dir(AppState* state, char* output, size_t output_size);
+        workspace_get_training_dir(state, training_dir, sizeof(training_dir));
+        scan_training_directory(training_dir);
+        return;
+    }
+    
+    if (rect_contains_point(btn_select_all.bounds, x, y)) {
+        bool all_selected = true;
+        for (int i = 0; i < file_count; i++) {
+            if (!training_files[i].selected) {
+                all_selected = false;
+                break;
+            }
+        }
+        for (int i = 0; i < file_count; i++) {
+            training_files[i].selected = !all_selected;
+        }
+        printf("Select all toggled\n");
+        return;
+    }
+    
+    // File list clicks
+    if (rect_contains_point(file_list_rect, x, y)) {
+        int file_index = scroll_offset + (y - file_list_rect.y - 5) / 16;
+        if (file_index >= 0 && file_index < file_count) {
+            training_files[file_index].selected = !training_files[file_index].selected;
+            printf("Toggled file: %s\n", training_files[file_index].filename);
+        }
+        return;
+    }
+    
+    // Start Training button
+    if (rect_contains_point(btn_start_training.bounds, x, y)) {
+        if (state->training_in_progress) {
+            stop_training_thread(state);
+            printf("Stopping training...\n");
+        } else {
+            // Start training (existing logic)
+            int selected_count = 0;
+            for (int i = 0; i < file_count; i++) {
+                if (training_files[i].selected) selected_count++;
+            }
+            
+            if (selected_count == 0) {
+                printf("No files selected for training\n");
+                return;
+            }
+            
+            // CRITICAL FIX: Load model on-demand when training starts
+            if (!state->cllm_model) {
+                // Use selected model name from model selector
+                   const char* model_name = selected_model_name[0] ? selected_model_name : model_manager_get_name_at_index(0);
+                printf("Loading model for training: %s\n", model_name);
+                   if (!model_name) {
+                       printf("ERROR: No models available\n");
+                       return;
+                   }
+                   // Reload model if it exists but is not loaded yet
+                   if (model_manager_exists(model_name)) {
+                      printf("DEBUG: Model exists check for '%s'\n", model_name);
+                       model_manager_reload(model_name);
+                          printf("DEBUG: Calling model_manager_reload...\n");
+                   }
+
+                state->cllm_model = model_manager_acquire_write(model_name);
+                
+                if (!state->cllm_model) {
+                    // Model doesn't exist, create it
+                    printf("Model not found, creating new model...\n");
+                    system("mkdir -p models");
+                    
+                    CLLMConfig* config = cllm_create_config(
+                        10000,  // vocab_size
+                        512,    // embedding_dim
+                        6,      // num_layers
+                        8,      // num_heads
+                        2048    // ff_dim
+                    );
+                    
+                    if (!config) {
+                        printf("ERROR: Failed to create config\n");
+                        return;
+                    }
+                    
+                    ManagedModel* managed = model_manager_create(model_name, config);
+                    cllm_free_config(config);
+                    if (!managed) {
+                        printf("ERROR: Failed to create model\n");
+                        return;
+                    }
+                    
+                    state->cllm_model = model_manager_acquire_write(model_name);
+                    if (!state->cllm_model) {
+                        printf("ERROR: Failed to acquire newly created model\n");
+                        return;
+                    }
+                    printf("✓ Model created and loaded into memory\n");
+                } else {
+                    printf("✓ Model loaded into memory for training\n");
+                }
+            }
+            
+            // Initialize training
+            if (!state->cllm_training) {
+                // Use configuration from UI sliders
+                CLLMTrainingConfig config = {
+                    .num_epochs = state->training_epochs,
+                    .batch_size = state->training_batch_size,        // From UI slider
+                    .sequence_length = state->training_sequence_length, // From UI slider
+                    .learning_rate = state->training_learning_rate,
+                    .weight_decay = 0.01f,
+                    .gradient_clip = 1.0f,
+                    .warmup_steps = 100,
+                    .save_every = 5,
+                    .eval_interval = 100,
+                    .max_steps = 10000,
+                    
+                    // Performance optimizations - ENABLED
+                    .gradient_accumulation_steps = 8,    // Effective batch size = batch_size * 8
+                    .use_mixed_precision = 1,            // Enable FP16/FP32 mixed precision
+                    .loss_scale = 1024.0f,               // Initial loss scale for FP16
+                    .loss_scale_growth = 2.0f,           // Growth factor for dynamic scaling
+                    .loss_scale_backoff = 0.5f,          // Backoff factor for dynamic scaling
+                    .loss_scale_window = 2000            // Steps before increasing loss scale
+                };
+                strcpy(config.optimizer, "adam");
+                
+                // Save configuration to model metadata for future use
+                if (state->cllm_model) {
+                    state->cllm_model->training_meta.learning_rate = config.learning_rate;
+                    strncpy(state->cllm_model->training_meta.optimizer, config.optimizer, 
+                            sizeof(state->cllm_model->training_meta.optimizer) - 1);
+                    printf("Saved training configuration to model metadata\n");
+                }
+                
+                // Build vocabulary
+                   // Set status for vocabulary building
+                   snprintf(state->training_status_message, sizeof(state->training_status_message),
+                           "Building vocabulary from training files...");
+                   state->training_preprocessing_progress = 0.1f;
+                   SDL_PumpEvents();  // Allow UI to update
+                   
+                printf("Building vocabulary...\n");
+                for (int i = 0; i < file_count; i++) {
+                    if (training_files[i].selected) {
+                        cllm_build_vocabulary_from_file(state->cllm_model, training_files[i].filepath);
+                        break;
+                    }
+                }
+                
+                state->cllm_training = cllm_training_init(state->cllm_model, &config);
+                
+                // Load training data
+                if (state->cllm_training) {
+                       snprintf(state->training_status_message, sizeof(state->training_status_message),
+                               "Loading training data...");
+                       state->training_preprocessing_progress = 0.3f;
+                       SDL_PumpEvents();
+                       
+                    printf("Loading training data...\n");
+                    for (int i = 0; i < file_count; i++) {
+                        if (training_files[i].selected) {
+                            cllm_load_training_data(state->cllm_training, training_files[i].filepath);
+                        }
+                    }
+                }
+            }
+            
+            // Start training thread
+               // Set status for thread initialization
+               snprintf(state->training_status_message, sizeof(state->training_status_message),
+                       "Initializing 12 training threads...");
+               state->training_preprocessing_progress = 0.8f;
+               SDL_PumpEvents();
+               
+            printf("Starting training...\n");
+            start_training_thread(state);
+        }
+        return;
+    }
+    
+    // Start Crawler button (NEW!)
+    if (rect_contains_point(btn_start_crawler.bounds, x, y)) {
+        // Crawler button clicked
+        
+        if (crawler_running || state->crawler_running) {
+            printf("Stopping crawler...\n");
+            crawler_running = false;
+            state->crawler_running = false;
+            state->crawler_current_url[0] = '\0';
+            
+            // Stop crawler thread
+            extern void stop_crawler_thread(void);
+            stop_crawler_thread();
+        } else {
+            // Get URL from input manager
+            extern InputManager* g_input_manager;
+            const char* start_url = g_input_manager ? 
+                input_manager_get_text(g_input_manager, "training.crawler_url") : "";
+            
+            // Retrieved URL from InputManager
+            
+            // Update state
+            if (start_url && start_url[0] != '\0') {
+                strncpy(state->crawler_start_url, start_url, sizeof(state->crawler_start_url) - 1);
+                state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+            }
+            
+            if (start_url && start_url[0] != '\0') {
+                printf("Starting crawler from URL: %s\n", start_url);
+                
+                // Update state
+                strncpy(state->crawler_start_url, start_url, sizeof(state->crawler_start_url) - 1);
+                state->crawler_start_url[sizeof(state->crawler_start_url) - 1] = '\0';
+                state->crawler_running = true;
+                state->crawler_pages_crawled = 0;
+                strncpy(state->crawler_current_url, start_url, sizeof(state->crawler_current_url) - 1);
+                
+                crawler_running = true;
+                pages_crawled = 0;
+                
+                // Load or create crawl queue
+                load_crawl_queue(state);
+                pages_in_queue = state->crawler_queue_size;
+                
+                // Start crawler thread with proper parameters
+                extern int start_crawler_thread(AppState* state, const char* start_url, 
+                                               ExtractionMode extraction_mode, const char* model_name);
+                
+                // Use selected model from model selector (or NULL for auto-select)
+                const char* model_to_use = (selected_model_name[0] != '\0') ? 
+                                          selected_model_name : NULL;
+                
+                // Start crawler with human text extraction and selected model
+                if (start_crawler_thread(state, start_url, EXTRACT_HUMAN_TEXT, model_to_use) == 0) {
+                    printf("✓ Crawler thread started successfully\n");
+                    if (model_to_use) {
+                        printf("  Using selected model: %s\n", model_to_use);
+                    } else {
+                        printf("  Using first available model (auto-selected)\n");
+                    }
+                } else {
+                    printf("✗ Failed to start crawler thread\n");
+                    crawler_running = false;
+                    state->crawler_running = false;
+                }
+                printf("Crawler will start from: %s\n", start_url);
+                printf("Data directory: %s\n", state->crawler_data_dir);
+                printf("Queue file: %s/links_to_crawl.txt\n", state->crawler_data_dir);
+                printf("Crawler functionality will be integrated with tools/cllm_crawler\n");
+            } else {
+                printf("Error: Please enter a valid URL to start crawling\n");
+            }
+        }
+        return;
+    }
+    
+    // Save button
+    if (rect_contains_point(btn_save.bounds, x, y)) {
+        printf("Save checkpoint\n");
+        if (state->cllm_model) {
+            system("mkdir -p checkpoints");
+            char checkpoint_path[512];
+            snprintf(checkpoint_path, sizeof(checkpoint_path), 
+                    "checkpoints/checkpoint_epoch_%d.cllm", state->training_current_epoch);
+            if (cllm_write_model(state->cllm_model, checkpoint_path) == 0) {
+                printf("✓ Checkpoint saved: %s\n", checkpoint_path);
+            }
+        }
+        return;
+    }
+    
+    // Load button
+    if (rect_contains_point(btn_load.bounds, x, y)) {
+        printf("Load checkpoint (not yet implemented)\n");
+        return;
+    }
+}
+
+/**
+ * Handle keyboard input
+ */
+void handle_training_tab_keydown(AppState* state, int key) {
+    if (!state) return;
+    
+    // Handle 3D rotation with arrow keys (when in 3D mode)
+    if (state->sphere_viz_mode == SPHERE_VIZ_3D) {
+        const double rotation_speed = 0.1;
+        
+        switch (key) {
+            case SDLK_LEFT:
+                state->rotation_y -= rotation_speed;
+                return;
+            case SDLK_RIGHT:
+                state->rotation_y += rotation_speed;
+                return;
+            case SDLK_UP:
+                state->rotation_x -= rotation_speed;
+                // Clamp to prevent flipping
+                if (state->rotation_x < -PRIME_PI / 2.0) 
+                    state->rotation_x = -PRIME_PI / 2.0;
+                return;
+            case SDLK_DOWN:
+                state->rotation_x += rotation_speed;
+                // Clamp to prevent flipping
+                if (state->rotation_x > PRIME_PI / 2.0) 
+                    state->rotation_x = PRIME_PI / 2.0;
+                return;
+            case SDLK_r:
+                // Reset rotation
+                state->rotation_x = 0.0;
+                state->rotation_y = 0.0;
+                state->rotation_z = 0.0;
+                printf("✓ Reset 3D rotation\n");
+                return;
+        }
+    }
+}
+
+/**
+ * Handle text input
+ */
+void handle_training_tab_text_input(AppState* state, const char* text) {
+    (void)state;
+    (void)text;
+}
+
+/**
+ * Draw terminal output window
+ */
+void draw_terminal_output(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds) {
+    if (!renderer || !state || !state->terminal_buffer) return;
+    
+    SDL_Color bg_color = {20, 20, 25, 255};
+    SDL_Color text_color = {180, 180, 180, 255};
+    SDL_Color header_color = {100, 150, 200, 255};
+    SDL_Color border_color = {60, 60, 70, 255};
+    
+    // Draw background
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+    SDL_RenderFillRect(renderer, &bounds);
+    
+    // Draw border
+    SDL_SetRenderDrawColor(renderer, border_color.r, border_color.g, border_color.b, 255);
+    SDL_RenderDrawRect(renderer, &bounds);
+    
+    // Draw header
+    draw_text(renderer, "TERMINAL OUTPUT", bounds.x + 10, bounds.y + 5, header_color);
+    
+    // Draw auto-scroll indicator
+    const char* scroll_status = state->terminal_buffer->auto_scroll ? "[Auto-scroll: ON]" : "[Auto-scroll: OFF]";
+    draw_text(renderer, scroll_status, bounds.x + bounds.w - 150, bounds.y + 5, 
+             state->terminal_buffer->auto_scroll ? (SDL_Color){100, 255, 100, 255} : (SDL_Color){255, 100, 100, 255});
+    
+    // Calculate text area
+    int text_x = bounds.x + 10;
+    int text_y = bounds.y + 25;
+    int text_w = bounds.w - 20;
+    int text_h = bounds.h - 30;
+    int line_height = 14;
+    int max_visible_lines = text_h / line_height;
+    
+    // Draw lines from buffer
+    int line_count = terminal_buffer_get_line_count(state->terminal_buffer);
+    int start_line = line_count - max_visible_lines - state->terminal_buffer->scroll_offset;
+    if (start_line < 0) start_line = 0;
+    
+    int y = text_y;
+    for (int i = start_line; i < line_count && y < bounds.y + bounds.h - 5; i++) {
+        const char* line = terminal_buffer_get_line(state->terminal_buffer, i);
+        
+        // Truncate line if too long
+        char display_line[256];
+        int max_chars = text_w / 7;  // Approximate characters per line
+        if (strlen(line) > (size_t)max_chars) {
+            snprintf(display_line, sizeof(display_line), "%.240s...", line);
+        } else {
+            strncpy(display_line, line, sizeof(display_line) - 1);
+            display_line[sizeof(display_line) - 1] = '\0';
+        }
+        
+        draw_text(renderer, display_line, text_x, y, text_color);
+        y += line_height;
+    }
+    
+    // Draw scroll indicator if not at bottom
+    if (state->terminal_buffer->scroll_offset > 0) {
+        char scroll_info[64];
+        snprintf(scroll_info, sizeof(scroll_info), "↑ %d more lines above", 
+                state->terminal_buffer->scroll_offset);
+        draw_text(renderer, scroll_info, bounds.x + bounds.w / 2 - 80, bounds.y + bounds.h - 15,
+                 (SDL_Color){255, 200, 100, 255});
+    }
+}
+
+/**
+ * Handle mouse wheel scrolling
+ */
+void handle_training_tab_scroll(AppState* state, int wheel_y) {
+    if (!state) return;
+    
+    int panel_y = RENDER_OFFSET_Y;
+    int panel_height = WINDOW_HEIGHT - panel_y;
+    
+    // Only scroll if content exceeds panel height
+    if (control_panel_content_height > panel_height) {
+        int scroll_speed = 20;
+        int delta = -wheel_y * scroll_speed;
+        
+        control_panel_scroll_offset += delta;
+        
+        // Clamp scroll offset
+        int max_offset = control_panel_content_height - panel_height;
+        if (control_panel_scroll_offset < 0) control_panel_scroll_offset = 0;
+        if (control_panel_scroll_offset > max_offset) control_panel_scroll_offset = max_offset;
+    }
+}
+
+/**
+ * Handle mouse button release
+ */
+void handle_training_tab_mouse_up(AppState* state, int x, int y) {
+    if (!state) return;
+    control_panel_scrollbar_dragging = false;
+    sphere_rotation_dragging = false;
+    
+    // Handle model selector BUTTONUP (selects item)
+    if (model_selector && model_selector_handle_button_up(model_selector, x, y)) {
+        return;
+    }
+}
+
+/**
+ * Handle mouse motion (for scrollbar dragging)
+ */
+void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    // Handle model selector hover
+    if (model_selector) {
+        model_selector_handle_motion(model_selector, x, y);
+    }
+    
+    // Handle 3D sphere rotation dragging
+    if (sphere_rotation_dragging) {
+        int delta_x = x - rotation_drag_start_x;
+        int delta_y = y - rotation_drag_start_y;
+        
+        // Update rotation based on mouse movement
+        state->rotation_y = rotation_drag_start_rot_y + delta_x * 0.01;
+        state->rotation_x = rotation_drag_start_rot_x + delta_y * 0.01;
+        
+        // Clamp rotation_x to prevent flipping
+        if (state->rotation_x > PRIME_PI / 2.0) state->rotation_x = PRIME_PI / 2.0;
+        if (state->rotation_x < -PRIME_PI / 2.0) state->rotation_x = -PRIME_PI / 2.0;
+        
+        return;
+    }
+    
+    if (control_panel_scrollbar_dragging) {
+        int panel_y = RENDER_OFFSET_Y;
+        int panel_height = WINDOW_HEIGHT - panel_y;
+        
+        int delta_y = y - control_panel_drag_start_y;
+        
+        // Convert pixel delta to content delta
+        float scrollbar_h = panel_height - 20;  // Minus handle min size
+        float content_h = control_panel_content_height - panel_height;
+        float ratio = content_h / scrollbar_h;
+        
+        int new_offset = control_panel_drag_start_offset + (int)(delta_y * ratio);
+        
+        // Clamp offset
+        int max_offset = control_panel_content_height - panel_height;
+        if (new_offset < 0) new_offset = 0;
+        if (new_offset > max_offset) new_offset = max_offset;
+        
+        control_panel_scroll_offset = new_offset;
+    }
+}
+
+/**
+ * Cleanup
+ */
+void cleanup_training_tab(void) {
+    // Cleanup if needed
+}
