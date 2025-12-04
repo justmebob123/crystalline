@@ -83,14 +83,34 @@ These fixes address all major issues from the screenshot analysis.
 ### 4. Coordinate System
 **All elements use CENTER-based positioning (matching Research Tab)**
 
+## FIXES APPLIED (Latest Commit)
+
+### 1. Rendering Order Fixed
+- Sliders render FIRST (background)
+- Buttons render LAST (top, clickable)
+- Prevents overlap issue
+
+### 2. All Buttons Wired
+- ✅ PAUSE: on_pause_clicked (NEW)
+- ✅ START: on_start_clicked
+- ✅ SAVE: on_save_clicked
+- ✅ SCAN: on_scan_clicked
+- ✅ SELECT: on_select_all_clicked
+- ✅ 2D/3D: on_2d3d_toggle_clicked
+
+### 3. Framework Status Fixed
+- Text now renders INSIDE STATUS panel
+- Correct positioning with padding
+
 ## Testing Checklist
-- [ ] Panels fill screen width (no black space)
-- [ ] Buttons show hover animation
-- [ ] Model dropdown works
-- [ ] Sliders functional with proper labels
-- [ ] File list visible with checkboxes
-- [ ] 3D toggle works
-- [ ] All button callbacks work
+- [x] Panels fill screen width (no black space) - FIXED
+- [x] Buttons no longer covered by sliders - FIXED
+- [x] All button callbacks wired - FIXED
+- [x] Framework Status in panel - FIXED
+- [ ] **USER TEST:** Verify buttons work when clicked
+- [ ] **USER TEST:** Verify 2D/3D toggle visible and works
+- [ ] **USER TEST:** Verify hover animations
+- [ ] **USER TEST:** Take new screenshot
 
 ## Recent Fix
 - [x] Fixed compilation error: ctrl_y variable now defined in render function

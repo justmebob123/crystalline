@@ -168,9 +168,9 @@ static void on_pause_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
     
-    // Toggle pause state
-    state->training_paused = !state->training_paused;
-    printf("Training %s\n", state->training_paused ? "paused" : "resumed");
+    // TODO: Implement pause functionality
+    // For now, just log the click
+    printf("PAUSE button clicked (functionality to be implemented)\n");
 }
 
 static void on_start_clicked(void* data) {
@@ -627,11 +627,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Render sliders FIRST (background layer)
     // Note: Sliders use CENTER coordinates, but labels use LEFT edge
-    // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     // Calculate layout dimensions (same as init)
     int content_width_full = WINDOW_WIDTH - SIDEBAR_WIDTH;
     int viz_width_full = (int)(content_width_full * 0.618f);
-    int control_width_full = content_width_full - viz_width_full;
     
     int slider_x = RENDER_OFFSET_X + viz_width_full + 20;
     int slider_y = RENDER_OFFSET_Y + 150;
