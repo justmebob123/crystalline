@@ -391,7 +391,7 @@ static void on_send_clicked(void* user_data) {
     printf("Send button clicked\n");
     
     // Get text from input field
-    if (llm_ui.message_input &amp;&amp; llm_ui.message_input->text[0] != '\0') {
+    if (llm_ui.message_input && llm_ui.message_input->text[0] != '\0') {
         // Trigger the submit callback
         llm_input_on_submit(llm_ui.message_input->text, state);
         
@@ -1375,12 +1375,12 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     // Handle model size dialog clicks using Crystalline UI
     if (model_size_dialog_visible) {
         // Handle cancel button click
-        if (llm_ui.btn_size_cancel &amp;&amp; crystalline_button_handle_mouse(llm_ui.btn_size_cancel, &amp;dummy_event)) {
+        if (llm_ui.btn_size_cancel && crystalline_button_handle_mouse(llm_ui.btn_size_cancel, &dummy_event)) {
             return;
         }
         
         // Handle list selection
-        if (llm_ui.size_list &amp;&amp; crystalline_list_handle_mouse(llm_ui.size_list, &amp;dummy_event)) {
+        if (llm_ui.size_list && crystalline_list_handle_mouse(llm_ui.size_list, &dummy_event)) {
             return;
         }
         
