@@ -507,13 +507,21 @@ void init_training_tab(AppState* state) {
     extern char* model_manager_get_name_at_index(uint32_t index);
     
     uint32_t model_count = model_manager_count();
+       printf("=== MODEL DROPDOWN POPULATION ===\n");
+       printf("Model count: %u\n", model_count);
+       printf(===
+       printf(===
     if (model_count > 0) {
         char** model_names = malloc(model_count * sizeof(char*));
         if (model_names) {
             for (uint32_t i = 0; i < model_count; i++) {
                 model_names[i] = model_manager_get_name_at_index(i);
+                   printf("  Model %u: %s\n", i, model_names[i] ? model_names[i] : "NULL");
             }
+                   printf(
             crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
+               printf("✓ Dropdown populated with %d models\n", (int)model_count);
+               printf(✓
             free(model_names);
         }
     }
