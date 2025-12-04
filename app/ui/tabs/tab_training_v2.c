@@ -5,7 +5,6 @@
  * Demonstrates automatic layout, unified event handling, and 75% code reduction.
  */
 
-#include "../../app_state.h"
 #include "../../app_common.h"
 #include "../sphere_visualization.h"
 #include "../crystalline/v2/core.h"

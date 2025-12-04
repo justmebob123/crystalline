@@ -132,6 +132,96 @@ typedef enum {
 
 ## Widgets
 
+### Text Input
+
+**Create:**
+```c
+CrystallineTextInput* input = crystalline_textinput_create(
+    crystalline_bounds(400, 300, 300, 40),  // bounds
+    "Enter text here...",                    // placeholder
+    256,                                     // max_length (0 = unlimited)
+    on_text_change,                          // on_change callback
+    on_text_submit,                          // on_submit callback
+    user_data                                // user data
+);
+```
+
+**Configure:**
+```c
+crystalline_textinput_set_text(input, "Initial text");
+crystalline_textinput_set_font(input, font);
+crystalline_textinput_set_focus(input, true);
+crystalline_textinput_set_colors(input, normal, focused, text, placeholder);
+```
+
+**Callbacks:**
+```c
+void on_text_change(const char* text, void* user_data) {
+    printf("Text changed: %s\n", text);
+}
+
+void on_text_submit(const char* text, void* user_data) {
+    printf("Text submitted: %s\n", text);
+}
+```
+
+**Features:**
+- Single-line text input
+- Cursor with blinking animation
+- Placeholder text when empty
+- Focus management (click to focus, ESC to unfocus)
+- Text editing: Backspace, Delete, Home, End, Arrow keys
+- Submit on Enter key
+- Visual feedback (border color changes when focused)
+
+---
+
+### Text Area
+
+**Create:**
+```c
+CrystallineTextArea* area = crystalline_textarea_create(
+    crystalline_bounds(400, 300, 600, 400),  // bounds
+    true                                      // auto_scroll
+);
+```
+
+**Add Messages:**
+```c
+crystalline_textarea_add_message(
+    area,
+    CRYSTALLINE_MESSAGE_USER,
+    "Hello, how are you?",
+    "12:34 PM"
+);
+
+crystalline_textarea_add_message(
+    area,
+    CRYSTALLINE_MESSAGE_ASSISTANT,
+    "I'm doing well, thank you!",
+    "12:35 PM"
+);
+```
+
+**Configure:**
+```c
+crystalline_textarea_set_font(area, font);
+crystalline_textarea_set_colors(area, bg, user_color, assistant_color, system_color);
+crystalline_textarea_set_auto_scroll(area, true);
+crystalline_textarea_scroll_to_bottom(area);
+```
+
+**Features:**
+- Multi-line message display
+- Three message types: USER, ASSISTANT, SYSTEM
+- Color-coded message bubbles
+- Timestamp support
+- Auto-scroll to bottom
+- Mouse wheel scrolling
+- Message spacing and padding
+
+---
+
 ### Button
 
 **Create:**

@@ -53,13 +53,19 @@
 - [ ] Update API.md documentation
 - [ ] Commit V2 library updates
 
-### Phase 3: Switch Training Tab to V2
-- [ ] Update main.c to call init_training_tab_v2()
-- [ ] Update main.c to call draw_training_tab_v2()
-- [ ] Update main.c to call handle_training_tab_v2_event()
-- [ ] Remove old Training Tab event handlers from main.c
-- [ ] Build and test Training Tab V2
-- [ ] Verify all functionality works
+### Phase 3: Switch Training Tab to V2 - NEEDS WORK
+**BLOCKER IDENTIFIED:** tab_training_v2.c has several issues:
+- Uses wrong AppState field names (training_context vs actual fields)
+- Uses non-existent size constants (CRYSTALLINE_SIZE_PRIMARY/TERTIARY)
+- Missing variable declarations (viz_width)
+- Needs to be updated to match actual AppState structure
+
+**Decision:** Pause V2 migration and ask user for guidance on next steps.
+
+**Options:**
+1. Fix tab_training_v2.c to match actual AppState (requires understanding full state structure)
+2. Convert a simpler tab first (Models, Crawler, etc.)
+3. User provides guidance on AppState structure and requirements
 
 ### Phase 4: Convert Remaining 8 Tabs to V2
 **Priority Order:**
