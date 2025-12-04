@@ -511,10 +511,11 @@ void init_training_tab(AppState* state) {
     
     // Create file list (using CENTER coordinates)
     float list_height = 200.0f;
+    float item_height = 25.0f;  // Height per item (NOT total list height)
     g_training_ui.file_list = crystalline_list_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_center_x, RENDER_OFFSET_Y + 120 + list_height / 2.0f,
-        slider_w, list_height,
+        slider_center_x, RENDER_OFFSET_Y + 450 + list_height / 2.0f,  // Moved down to avoid overlap
+        slider_w, item_height,  // Pass item height, not total height
         font
     );
     crystalline_list_enable_checkboxes(g_training_ui.file_list, true);
@@ -692,7 +693,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Render file list using Crystalline UI
     char file_list_label[128];
     snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
-    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 405, text_color);
+    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 420, text_color);  // Position label above list
     
     if (g_training_ui.file_list) {
         crystalline_list_render(g_training_ui.file_list, renderer);
