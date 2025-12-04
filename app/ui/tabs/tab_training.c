@@ -7,6 +7,8 @@
  * Layout:
  * - Left Panel (61.8%): Visualization area with sphere and metrics
  * - Right Panel (38.2%): Controls with circular buttons and sliders
+ * 
+ * CRITICAL: Render content manually inside panels, don't rely entirely on Crystalline UI elements
  */
 
 #include "../../app_common.h"
@@ -15,6 +17,7 @@
 #include "../crystalline/draw.h"
 #include "../crystalline/geometry.h"
 #include "../sphere_visualization.h"
+#include "../button_sizes.h"
 #include "../../training_thread.h"
 #include "../../time_format.h"
 #include "cllm_training.h"
@@ -338,8 +341,8 @@ void init_training_tab(AppState* state) {
     
     g_training_ui.btn_pause = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
-        btn_x - 150, btn_y,
-        40, 0,  // radius = 40
+        btn_x - 100, btn_y,
+        BUTTON_RADIUS_TERTIARY, 0,
         "PAUSE",
         font
     );
@@ -347,7 +350,7 @@ void init_training_tab(AppState* state) {
     g_training_ui.btn_start = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
         btn_x, btn_y,
-        60, 0,  // radius = 60 (larger for primary action)
+        BUTTON_RADIUS_PRIMARY, 0,
         "START",
         font
     );
@@ -355,8 +358,8 @@ void init_training_tab(AppState* state) {
     
     g_training_ui.btn_save = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
-        btn_x + 150, btn_y,
-        40, 0,  // radius = 40
+        btn_x + 100, btn_y,
+        BUTTON_RADIUS_TERTIARY, 0,
         "SAVE",
         font
     );
@@ -368,8 +371,8 @@ void init_training_tab(AppState* state) {
     
     g_training_ui.btn_scan = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
-        ctrl_x - 60, ctrl_y,
-        45, 0,
+        ctrl_x - 50, ctrl_y,
+        BUTTON_RADIUS_SECONDARY, 0,
         "SCAN",
         font
     );
@@ -377,20 +380,21 @@ void init_training_tab(AppState* state) {
     
     g_training_ui.btn_select = crystalline_button_create(
         CRYSTALLINE_STYLE_CIRCULAR,
-        ctrl_x + 60, ctrl_y,
-        45, 0,
+        ctrl_x + 50, ctrl_y,
+        BUTTON_RADIUS_SECONDARY, 0,
         "SELECT",
         font
     );
     crystalline_button_set_callback(g_training_ui.btn_select, on_select_all_clicked, state);
     
-    // Create 2D/3D toggle button
+    // Create 2D/3D toggle button (small rectangular button)
     g_training_ui.btn_2d3d_toggle = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         metrics_x + 115,
         metrics_y - 40,
-        100, 30,
-        "Switch to 2D",
+        BUTTON_RECT_WIDTH_SMALL, 
+        BUTTON_RECT_HEIGHT,
+        "2D/3D",
         font
     );
     crystalline_button_set_callback(g_training_ui.btn_2d3d_toggle, on_2d3d_toggle_clicked, state);
@@ -403,7 +407,7 @@ void init_training_tab(AppState* state) {
     g_training_ui.slider_batch = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         slider_x, slider_y,
-        slider_w, 20,
+        slider_w, SLIDER_TRACK_HEIGHT,
         1, 256
     );
     crystalline_slider_set_callback(g_training_ui.slider_batch, on_batch_size_changed, state);
@@ -411,7 +415,7 @@ void init_training_tab(AppState* state) {
     g_training_ui.slider_sequence = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         slider_x, slider_y + 60,
-        slider_w, 20,
+        slider_w, SLIDER_TRACK_HEIGHT,
         32, 512
     );
     crystalline_slider_set_callback(g_training_ui.slider_sequence, on_sequence_length_changed, state);
@@ -419,7 +423,7 @@ void init_training_tab(AppState* state) {
     g_training_ui.slider_epochs = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         slider_x, slider_y + 120,
-        slider_w, 20,
+        slider_w, SLIDER_TRACK_HEIGHT,
         1, 100
     );
     crystalline_slider_set_callback(g_training_ui.slider_epochs, on_epochs_changed, state);
@@ -427,7 +431,7 @@ void init_training_tab(AppState* state) {
     g_training_ui.slider_lr = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         slider_x, slider_y + 180,
-        slider_w, 20,
+        slider_w, SLIDER_TRACK_HEIGHT,
         0.0001f, 0.1f
     );
     crystalline_slider_set_callback(g_training_ui.slider_lr, on_learning_rate_changed, state);
@@ -555,6 +559,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_progress_render(g_training_ui.training_progress, renderer);
     }
     
+    // Update 2D/3D toggle button label
+    if (g_training_ui.btn_2d3d_toggle) {
+        const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "3D" : "2D";
+        crystalline_button_set_label(g_training_ui.btn_2d3d_toggle, toggle_label);
+    }
+    
     // Render buttons
     if (g_training_ui.btn_pause) crystalline_button_render(g_training_ui.btn_pause, renderer);
     if (g_training_ui.btn_start) crystalline_button_render(g_training_ui.btn_start, renderer);
@@ -563,35 +573,87 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.btn_select) crystalline_button_render(g_training_ui.btn_select, renderer);
     if (g_training_ui.btn_2d3d_toggle) crystalline_button_render(g_training_ui.btn_2d3d_toggle, renderer);
     
-    // Render sliders with labels
+    // Render sliders with labels (proper spacing)
+    int control_width = RENDER_WIDTH - viz_width;
     int slider_x = RENDER_OFFSET_X + viz_width + 20;
     int slider_y = RENDER_OFFSET_Y + 150;
+    int slider_w = control_width - 60;
     
     char label[64];
+    
+    // Batch Size
     snprintf(label, sizeof(label), "Batch Size: %d", state->training_batch_size);
-    draw_text(renderer, label, slider_x, slider_y - 20, text_color);
+    draw_text(renderer, label, slider_x, slider_y - SLIDER_LABEL_SPACING, text_color);
     if (g_training_ui.slider_batch) crystalline_slider_render(g_training_ui.slider_batch, renderer);
     
+    // Sequence Length
     snprintf(label, sizeof(label), "Sequence Length: %d", state->training_sequence_length);
-    draw_text(renderer, label, slider_x, slider_y + 40, text_color);
+    draw_text(renderer, label, slider_x, slider_y + 60 - SLIDER_LABEL_SPACING, text_color);
     if (g_training_ui.slider_sequence) crystalline_slider_render(g_training_ui.slider_sequence, renderer);
     
+    // Epochs
     snprintf(label, sizeof(label), "Epochs: %d", state->training_epochs);
-    draw_text(renderer, label, slider_x, slider_y + 100, text_color);
+    draw_text(renderer, label, slider_x, slider_y + 120 - SLIDER_LABEL_SPACING, text_color);
     if (g_training_ui.slider_epochs) crystalline_slider_render(g_training_ui.slider_epochs, renderer);
     
+    // Learning Rate
     snprintf(label, sizeof(label), "Learning Rate: %.4f", state->training_learning_rate);
-    draw_text(renderer, label, slider_x, slider_y + 160, text_color);
+    draw_text(renderer, label, slider_x, slider_y + 180 - SLIDER_LABEL_SPACING, text_color);
     if (g_training_ui.slider_lr) crystalline_slider_render(g_training_ui.slider_lr, renderer);
     
     // Render model dropdown
     draw_text(renderer, "Model:", slider_x, RENDER_OFFSET_Y + 40, text_color);
     if (g_training_ui.model_dropdown) crystalline_dropdown_render(g_training_ui.model_dropdown, renderer);
     
-    // Render file list
+    // Render file list with checkboxes (manual rendering)
     int ctrl_y = RENDER_OFFSET_Y + 250;
-    draw_text(renderer, "Training Files:", slider_x, ctrl_y + 60, text_color);
-    if (g_training_ui.file_list) crystalline_list_render(g_training_ui.file_list, renderer);
+    int file_list_y = ctrl_y + 80;
+    int file_list_height = 200;
+    
+    // File list header
+    char file_header[64];
+    int selected_count = 0;
+    for (int i = 0; i < g_training_ui.file_count; i++) {
+        if (g_training_ui.files[i].selected) selected_count++;
+    }
+    snprintf(file_header, sizeof(file_header), "Training Files: %d (%d selected)", 
+             g_training_ui.file_count, selected_count);
+    draw_text(renderer, file_header, slider_x, ctrl_y + 60, text_color);
+    
+    // File list background
+    SDL_Rect file_list_rect = {slider_x, file_list_y, slider_w, file_list_height};
+    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    SDL_RenderFillRect(renderer, &file_list_rect);
+    SDL_SetRenderDrawColor(renderer, 60, 60, 70, 255);
+    SDL_RenderDrawRect(renderer, &file_list_rect);
+    
+    // Render files with checkboxes
+    int file_y = file_list_y + 5;
+    int max_visible = (file_list_height - 10) / 18;
+    for (int i = 0; i < g_training_ui.file_count && i < max_visible; i++) {
+        SDL_Color file_color = g_training_ui.files[i].selected ? 
+            (SDL_Color){100, 200, 255, 255} : text_color;
+        
+        // Checkbox
+        SDL_Rect checkbox = {slider_x + 5, file_y, 12, 12};
+        SDL_SetRenderDrawColor(renderer, 50, 50, 60, 255);
+        SDL_RenderFillRect(renderer, &checkbox);
+        SDL_SetRenderDrawColor(renderer, 80, 80, 90, 255);
+        SDL_RenderDrawRect(renderer, &checkbox);
+        
+        if (g_training_ui.files[i].selected) {
+            SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+            SDL_Rect check = {checkbox.x + 2, checkbox.y + 2, 8, 8};
+            SDL_RenderFillRect(renderer, &check);
+        }
+        
+        // Filename (truncated)
+        char display_name[50];
+        snprintf(display_name, sizeof(display_name), "%.45s", g_training_ui.files[i].filename);
+        draw_text(renderer, display_name, slider_x + 22, file_y, file_color);
+        
+        file_y += 18;
+    }
     
     // Draw metrics panel content
     int metrics_x = (int)(RENDER_OFFSET_X + viz_width * 0.618f) + 10;
@@ -651,8 +713,32 @@ void handle_training_tab_click(AppState* state, int x, int y) {
     // Handle dropdown click
     if (g_training_ui.model_dropdown) crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
     
-    // Handle list click
-    if (g_training_ui.file_list) crystalline_list_handle_mouse(g_training_ui.file_list, &event);
+    // Handle file list checkbox clicks
+    int ctrl_y = RENDER_OFFSET_Y + 250;
+    int file_list_y = ctrl_y + 80;
+    int file_list_height = 200;
+    int viz_width = (int)(RENDER_WIDTH * 0.618f);
+    int control_width = RENDER_WIDTH - viz_width;
+    int slider_x = RENDER_OFFSET_X + viz_width + 20;
+    int slider_w = control_width - 60;
+    
+    SDL_Rect file_list_rect = {slider_x, file_list_y, slider_w, file_list_height};
+    
+    if (x >= file_list_rect.x && x <= file_list_rect.x + file_list_rect.w &&
+        y >= file_list_rect.y && y <= file_list_rect.y + file_list_rect.h) {
+        
+        // Calculate which file was clicked
+        int relative_y = y - file_list_rect.y - 5;
+        int file_index = relative_y / 18;
+        
+        if (file_index >= 0 && file_index < g_training_ui.file_count) {
+            // Toggle selection
+            g_training_ui.files[file_index].selected = !g_training_ui.files[file_index].selected;
+            printf("Toggled file %d: %s -> %s\n", file_index, 
+                   g_training_ui.files[file_index].filename,
+                   g_training_ui.files[file_index].selected ? "selected" : "unselected");
+        }
+    }
 }
 
 /**
