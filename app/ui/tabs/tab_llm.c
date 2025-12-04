@@ -647,10 +647,12 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         TTF_Font* font = NULL;
         (void)font;
         
-        // Chat area - main message display (LEFT SIDE)
+        // Chat area - main message display
+        // Use full content width like Training Tab
+        int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
         int chat_x = RENDER_OFFSET_X;
         int chat_y = RENDER_OFFSET_Y;
-        int chat_width = RENDER_WIDTH;
+        int chat_width = content_width - 20;  // Leave 20px margin
         int chat_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 100;
         
         llm_ui.chat_area = crystalline_textarea_create(

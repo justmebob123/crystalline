@@ -673,7 +673,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     draw_text(renderer, metrics, text_x, text_y, text_color);
     
     // Draw sphere visualization using layout helper
-    int viz_width = (int)(RENDER_WIDTH * 0.618f);
+    // CRITICAL: Use same calculation as init_training_tab()
+    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);     // 865px (NOT 667px!)
     int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
     
     // Use layout helper to calculate proper visualization area
@@ -682,7 +684,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         RENDER_OFFSET_Y,
         viz_width,
         viz_height,
-        250,  // metrics panel width
+        230,  // metrics panel width (matches metrics_panel_width)
         20    // spacing
     );
     
@@ -894,6 +896,12 @@ void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
     if (g_training_ui.slider_sequence) crystalline_slider_handle_mouse(g_training_ui.slider_sequence, &event);
     if (g_training_ui.slider_epochs) crystalline_slider_handle_mouse(g_training_ui.slider_epochs, &event);
     if (g_training_ui.slider_lr) crystalline_slider_handle_mouse(g_training_ui.slider_lr, &event);
+    
+    // CRITICAL: Handle dropdown hover for option selection
+    if (g_training_ui.model_dropdown) crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
+    
+    // Handle file list hover
+    if (g_training_ui.file_list) crystalline_list_handle_mouse(g_training_ui.file_list, &event);
 }
 
 /**
