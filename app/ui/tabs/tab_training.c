@@ -618,13 +618,12 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Render sliders with labels (proper spacing)
     // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     // Calculate layout dimensions (same as init)
-    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
-    int viz_width = (int)(content_width * 0.618f);
-    int control_width = content_width - viz_width;
+    int content_width_full = WINDOW_WIDTH - SIDEBAR_WIDTH;
+    int viz_width_full = (int)(content_width_full * 0.618f);
+    int control_width_full = content_width_full - viz_width_full;
     
-    int slider_x = RENDER_OFFSET_X + viz_width + 20;
+    int slider_x = RENDER_OFFSET_X + viz_width_full + 20;
     int slider_y = RENDER_OFFSET_Y + 150;
-    int slider_w = control_width - 60;
     char label[64];
     
     // Batch Size
