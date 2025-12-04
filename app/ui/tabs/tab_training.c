@@ -851,6 +851,9 @@ void handle_training_tab_click(AppState* state, int x, int y) {
 void handle_training_tab_mouse_down(AppState* state, int x, int y) {
     if (!state) return;
     
+    // CRITICAL: Ignore sidebar clicks (handled by main.c)
+    if (x < SIDEBAR_WIDTH) return;
+    
     SDL_Event event = {0};
     event.type = SDL_MOUSEBUTTONDOWN;
     event.button.x = x;
@@ -888,6 +891,9 @@ void handle_training_tab_mouse_down(AppState* state, int x, int y) {
 void handle_training_tab_mouse_up(AppState* state, int x, int y) {
     if (!state) return;
     
+    // CRITICAL: Ignore sidebar clicks (handled by main.c)
+    if (x < SIDEBAR_WIDTH) return;
+    
     SDL_Event event = {0};
     event.type = SDL_MOUSEBUTTONUP;
     event.button.x = x;
@@ -914,6 +920,9 @@ void handle_training_tab_mouse_up(AppState* state, int x, int y) {
  */
 void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
     if (!state) return;
+    
+    // CRITICAL: Ignore sidebar hover (handled by main.c)
+    if (x < SIDEBAR_WIDTH) return;
     
     SDL_Event event = {0};
     event.type = SDL_MOUSEMOTION;

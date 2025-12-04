@@ -771,35 +771,47 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_MOUSEBUTTONDOWN:
             state->dragging_slider = true;
             
-            // Route mouse down events to tabs for Crystalline UI elements
-            if (state->current_tab == TAB_TRAINING) {
-                extern void handle_training_tab_mouse_down(AppState* state, int x, int y);
-                handle_training_tab_mouse_down(state, event->button.x, event->button.y);
-            } else {
-                // For non-Crystalline tabs, use old handler
+            // CRITICAL: Check sidebar FIRST before routing to tabs
+            if (event->button.x < SIDEBAR_WIDTH) {
+                // Sidebar click - handle tab switching
                 handle_mouse_click(state, event->button.x, event->button.y);
+            } else {
+                // Content area click - route to appropriate tab
+                if (state->current_tab == TAB_TRAINING) {
+                    extern void handle_training_tab_mouse_down(AppState* state, int x, int y);
+                    handle_training_tab_mouse_down(state, event->button.x, event->button.y);
+                } else {
+                    // For non-Crystalline tabs, use old handler
+                    handle_mouse_click(state, event->button.x, event->button.y);
+                }
             }
             break;
             
         case SDL_MOUSEBUTTONUP:
             state->dragging_slider = false;
             
-            // Route mouse up events to crystalline UI tabs for click callbacks
-            if (state->current_tab == TAB_TRAINING) {
-                extern void handle_training_tab_mouse_up(AppState* state, int x, int y);
-                handle_training_tab_mouse_up(state, event->button.x, event->button.y);
-            } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
-                extern void handle_video_tab_mouse_up(AppState* state, int x, int y);
-                handle_video_tab_mouse_up(state, event->button.x, event->button.y);
-            } else if (state->current_tab == TAB_RESEARCH) {
-                extern void handle_research_tab_mouse_up(AppState* state, int x, int y);
-                handle_research_tab_mouse_up(state, event->button.x, event->button.y);
-            } else if (state->current_tab == TAB_URL_MANAGER) {
-                extern void handle_url_manager_tab_mouse_up(AppState* state, int x, int y);
-                handle_url_manager_tab_mouse_up(state, event->button.x, event->button.y);
-            } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
-                extern void handle_downloaded_files_tab_mouse_up(AppState* state, int x, int y);
-                handle_downloaded_files_tab_mouse_up(state, event->button.x, event->button.y);
+            // CRITICAL: Check sidebar FIRST before routing to tabs
+            if (event->button.x < SIDEBAR_WIDTH) {
+                // Sidebar click - already handled in BUTTONDOWN, but process for consistency
+                handle_mouse_click(state, event->button.x, event->button.y);
+            } else {
+                // Content area click - route to appropriate tab
+                if (state->current_tab == TAB_TRAINING) {
+                    extern void handle_training_tab_mouse_up(AppState* state, int x, int y);
+                    handle_training_tab_mouse_up(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
+                    extern void handle_video_tab_mouse_up(AppState* state, int x, int y);
+                    handle_video_tab_mouse_up(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_RESEARCH) {
+                    extern void handle_research_tab_mouse_up(AppState* state, int x, int y);
+                    handle_research_tab_mouse_up(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_URL_MANAGER) {
+                    extern void handle_url_manager_tab_mouse_up(AppState* state, int x, int y);
+                    handle_url_manager_tab_mouse_up(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
+                    extern void handle_downloaded_files_tab_mouse_up(AppState* state, int x, int y);
+                    handle_downloaded_files_tab_mouse_up(state, event->button.x, event->button.y);
+                }
             }
             break;
             
