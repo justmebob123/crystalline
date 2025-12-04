@@ -1,0 +1,16 @@
+=== DROPDOWN ANALYSIS ===
+    g_training_ui.model_dropdown = crystalline_dropdown_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        slider_center_x, RENDER_OFFSET_Y + 60 + dropdown_height / 2.0f,
+        slider_w, dropdown_height,
+        font
+    );
+    crystalline_dropdown_set_callback(g_training_ui.model_dropdown, on_model_selected, state);
+    
+       // NOTE: Dropdown will be populated in draw_training_tab() after model_manager initializes
+    
+    // Create file list (using CENTER coordinates)
+
+=== Dropdown Event Handling ===
+807:    if (g_training_ui.model_dropdown) crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
+831:        crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);

@@ -1,0 +1,67 @@
+=== SPHERE VISUALIZATION ANALYSIS ===
+8: * - Left Panel (61.8%): Visualization area with sphere and metrics
+19:#include "../sphere_visualization.h"
+288:    printf("Current mode: %d\n", state->sphere_viz_mode);
+291:    state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? 
+294:    printf("New mode: %d\n", state->sphere_viz_mode);
+675:    // Draw sphere visualization starting right after metrics (NO GAP)
+677:    SDL_Rect sphere_bounds = {
+683:    draw_sphere_visualization(renderer, state, sphere_bounds);
+692:        const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "3D" : "2D";
+768:    snprintf(perf, sizeof(perf), "Active Threads: %d", state->sphere_stats.active_spheres);
+772:    snprintf(perf, sizeof(perf), "Total Batches: %d", state->sphere_stats.total_batches);
+776:    snprintf(perf, sizeof(perf), "Gradient Norm: %.4f", state->sphere_stats.total_gradient_norm);
+900:    if (state->sphere_viz_mode == SPHERE_VIZ_3D) {
+
+=== Visualization Drawing Code ===
+
+static void on_start_clicked(void* data) {
+    AppState* state = (AppState*)data;
+    if (!state) return;
+    
+    printf("=== START BUTTON CLICKED ===\n");
+    
+    if (state->training_in_progress) {
+        // Stop training
+        printf("Stopping training...\n");
+        extern void stop_training_thread(AppState* state);
+        stop_training_thread(state);
+    } else {
+        // Start training
+        printf("Starting training...\n");
+        
+        // Load model if needed
+        if (!state->cllm_model && g_training_ui.selected_model[0]) {
+            printf("Loading selected model: '%s'\n", g_training_ui.selected_model);
+            state->cllm_model = model_manager_acquire_write(g_training_ui.selected_model);
+            if (state->cllm_model) {
+                printf("✓ Model loaded successfully\n");
+            } else {
+                printf("ERROR: Failed to load model '%s'\n", g_training_ui.selected_model);
+            }
+        } else if (!g_training_ui.selected_model[0]) {
+            printf("ERROR: No model selected! Please select a model from the dropdown first.\n");
+        }
+        
+        // Initialize training if needed
+        if (!state->cllm_training && state->cllm_model) {
+            CLLMTrainingConfig config = {
+                .num_epochs = state->training_epochs,
+                .batch_size = state->training_batch_size,
+                .sequence_length = state->training_sequence_length,
+                .learning_rate = state->training_learning_rate,
+                .weight_decay = 0.01f,
+                .gradient_clip = 1.0f,
+                .warmup_steps = 100,
+                .save_every = 5,
+                .eval_interval = 100,
+                .max_steps = 10000,
+                .gradient_accumulation_steps = 8,
+                .use_mixed_precision = 1,
+                .loss_scale = 1024.0f,
+                .loss_scale_growth = 2.0f,
+                .loss_scale_backoff = 0.5f,
+                .loss_scale_window = 2000
+            };
+            strcpy(config.optimizer, "adam");
+            

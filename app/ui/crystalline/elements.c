@@ -1065,7 +1065,8 @@ CrystallineList* crystalline_list_create(CrystallineElementStyle style, float x,
        // Initialize checkbox support
        list->item_checked = NULL;
        list->show_checkboxes = false;
-       list->checkbox_size = 12.0f;
+       list->checkbox_size = CHECKBOX_SIZE_MEDIUM;  // Use standard size (18px)
+       list->checkbox_click_tolerance = CHECKBOX_CLICK_TOLERANCE;  // 10px tolerance
     return list;
 }
 
@@ -1268,7 +1269,7 @@ bool crystalline_list_handle_mouse(CrystallineList* list, SDL_Event* event) {
                    printf("CHECKBOX CLICK: mouse=(%f,%f) checkbox=(%f,%f) dist=%f size=%f\n",
                           mouse_x, mouse_y, checkbox_x, y, dist, list->checkbox_size);
                    
-                   if (dist <= list->checkbox_size + 5.0f) {
+                   if (dist <= list->checkbox_size + list->checkbox_click_tolerance) {
                        // Toggle checkbox
                        list->item_checked[list->hover_index] = !list->item_checked[list->hover_index];
                        printf("CHECKBOX TOGGLED: index=%d checked=%d\n", 
@@ -1642,9 +1643,14 @@ CrystallineDropdown* crystalline_dropdown_create(CrystallineElementStyle style, 
         dropdown->expand_anim = crystalline_anim_spiral(0.0f, size_param1, 1.0f, 0.3f);
     } else {
         dropdown->width = size_param1;
-        dropdown->item_height = size_param2 > 0 ? size_param2 : 30.0f;
-        dropdown->max_height = dropdown->item_height * 5;  // Show max 5 items
+        dropdown->item_height = size_param2 > 0 ? size_param2 : DROPDOWN_OPTION_HEIGHT;
+        dropdown->max_height = dropdown->item_height * DROPDOWN_MAX_VISIBLE;
         dropdown->base.bounds = crystalline_rect_create(x, y, size_param1, dropdown->item_height);
+        
+        // Initialize interaction improvements
+        dropdown->show_hover_highlight = true;
+        dropdown->hover_color = crystalline_color_rgb(120, 150, 200);
+        dropdown->option_click_tolerance = DROPDOWN_CLICK_TOLERANCE;
     }
     
     return dropdown;
@@ -1822,8 +1828,12 @@ bool crystalline_dropdown_handle_mouse(CrystallineDropdown* dropdown, SDL_Event*
                 for (int i = 0; i < visible_options; i++) {
                     float y = dropdown->base.position.y + dropdown->item_height / 2.0f + 
                              (i + 1) * dropdown->item_height;
+                    
+                    // Expand rect with tolerance for easier clicking
                     CrystallineRect opt_rect = crystalline_rect_create(
-                        dropdown->base.position.x, y, dropdown->width, dropdown->item_height
+                        dropdown->base.position.x, y, 
+                        dropdown->width + dropdown->option_click_tolerance * 2, 
+                        dropdown->item_height + dropdown->option_click_tolerance
                     );
                     
                     if (crystalline_rect_contains_point(opt_rect, mouse_pos)) {
@@ -1969,4 +1979,55 @@ void crystalline_list_set_check_callback(CrystallineList* list,
     if (!list) return;
     list->on_check = callback;
     list->base.user_data = data;
+}
+
+/*
+ * Layout Helper Functions Implementation
+ */
+
+CrystallineRect crystalline_layout_split_horizontal(
+    CrystallineRect parent, 
+    float left_ratio,
+    float spacing) 
+{
+    float left_width = parent.width * left_ratio - spacing / 2.0f;
+    float left_x = parent.center.x - parent.width / 2.0f + left_width / 2.0f;
+    
+    return crystalline_rect_create(left_x, parent.center.y, left_width, parent.height);
+}
+
+CrystallineRect crystalline_layout_split_vertical(
+    CrystallineRect parent,
+    float top_ratio,
+    float spacing)
+{
+    float top_height = parent.height * top_ratio - spacing / 2.0f;
+    float top_y = parent.center.y - parent.height / 2.0f + top_height / 2.0f;
+    
+    return crystalline_rect_create(parent.center.x, top_y, parent.width, top_height);
+}
+
+CrystallinePoint crystalline_layout_center_in_rect(CrystallineRect rect) {
+    return rect.center;
+}
+
+SDL_Rect crystalline_layout_viz_area(
+    int panel_x, int panel_y,
+    int panel_width, int panel_height,
+    int metrics_width, int spacing)
+{
+    SDL_Rect viz_area;
+    viz_area.x = panel_x + spacing;
+    viz_area.y = panel_y + spacing;
+    viz_area.w = panel_width - metrics_width - spacing * 3;
+    viz_area.h = panel_height - spacing * 2;
+    
+    return viz_area;
+}
+
+CrystallinePoint crystalline_layout_topleft_to_center(
+    float x, float y,
+    float width, float height)
+{
+    return crystalline_point_cartesian(x + width / 2.0f, y + height / 2.0f);
 }

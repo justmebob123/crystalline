@@ -672,14 +672,20 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
             g_training_ui.viz_data.current_loss, g_training_ui.viz_data.best_loss);
     draw_text(renderer, metrics, text_x, text_y, text_color);
     
-    // Draw sphere visualization starting right after metrics (NO GAP)
+    // Draw sphere visualization using layout helper
     int viz_width = (int)(RENDER_WIDTH * 0.618f);
-    SDL_Rect sphere_bounds = {
-        RENDER_OFFSET_X + 30,
-        RENDER_OFFSET_Y + 40,  // Changed from 250 to 40 - right after metrics
-        viz_width - 280,
-        WINDOW_HEIGHT - RENDER_OFFSET_Y - 80  // Use remaining height
-    };
+    int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;
+    
+    // Use layout helper to calculate proper visualization area
+    SDL_Rect sphere_bounds = crystalline_layout_viz_area(
+        RENDER_OFFSET_X,
+        RENDER_OFFSET_Y,
+        viz_width,
+        viz_height,
+        250,  // metrics panel width
+        20    // spacing
+    );
+    
     draw_sphere_visualization(renderer, state, sphere_bounds);
     
     // Render progress bar

@@ -51,6 +51,32 @@ typedef enum {
 } CrystallineElementState;
 
 /*
+ * Standard Spacing and Sizing Constants
+ */
+// Spacing constants
+#define SPACING_TINY 5.0f
+#define SPACING_SMALL 10.0f
+#define SPACING_MEDIUM 15.0f
+#define SPACING_LARGE 20.0f
+#define SPACING_XLARGE 30.0f
+
+// Padding constants
+#define PADDING_PANEL 15.0f
+#define PADDING_ELEMENT 10.0f
+#define PADDING_LIST_ITEM 5.0f
+
+// Checkbox sizing
+#define CHECKBOX_SIZE_SMALL 14.0f
+#define CHECKBOX_SIZE_MEDIUM 18.0f
+#define CHECKBOX_SIZE_LARGE 22.0f
+#define CHECKBOX_CLICK_TOLERANCE 10.0f
+
+// Dropdown sizing
+#define DROPDOWN_OPTION_HEIGHT 30.0f
+#define DROPDOWN_MAX_VISIBLE 5
+#define DROPDOWN_CLICK_TOLERANCE 5.0f
+
+/*
  * Common Element Properties
  */
 typedef struct {
@@ -200,6 +226,7 @@ typedef struct {
        bool* item_checked;             // Array of checkbox states (NULL = no checkboxes)
        bool show_checkboxes;           // Show checkboxes for each item
        float checkbox_size;            // Size of checkboxes
+       float checkbox_click_tolerance; // Click detection tolerance
     
     // Circular style properties
     float radius;                   // List radius
@@ -262,6 +289,11 @@ typedef struct {
     float width;                    // Dropdown width
     float item_height;              // Height per item
     float max_height;               // Maximum dropdown height
+    
+    // Interaction improvements
+    bool show_hover_highlight;      // Highlight hovered option
+    SDL_Color hover_color;          // Color for hover state
+    float option_click_tolerance;   // Extra pixels for easier clicking
     
     CrystallineSpiralAnim expand_anim;  // Expand/collapse animation
     void (*on_select)(int index, void* data);  // Selection callback
@@ -510,6 +542,40 @@ void crystalline_element_set_colors(CrystallineElementBase* base,
                                     SDL_Color hover,
                                     SDL_Color active,
                                     SDL_Color disabled);
+
+/*
+ * Layout Helper Functions
+ */
+
+// Split a rectangle horizontally (left/right)
+CrystallineRect crystalline_layout_split_horizontal(
+    CrystallineRect parent, 
+    float left_ratio,  // 0.0 to 1.0, ratio for left side
+    float spacing      // spacing between left and right
+);
+
+// Split a rectangle vertically (top/bottom)
+CrystallineRect crystalline_layout_split_vertical(
+    CrystallineRect parent,
+    float top_ratio,   // 0.0 to 1.0, ratio for top side
+    float spacing      // spacing between top and bottom
+);
+
+// Get center point of a rectangle
+CrystallinePoint crystalline_layout_center_in_rect(CrystallineRect rect);
+
+// Calculate visualization area (accounting for metrics panel)
+SDL_Rect crystalline_layout_viz_area(
+    int panel_x, int panel_y,
+    int panel_width, int panel_height,
+    int metrics_width, int spacing
+);
+
+// Helper to convert TOP-LEFT coordinates to CENTER coordinates
+CrystallinePoint crystalline_layout_topleft_to_center(
+    float x, float y,
+    float width, float height
+);
 
 #ifdef __cplusplus
 }
