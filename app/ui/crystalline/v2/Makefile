@@ -26,3 +26,10 @@ clean:
 	@echo "✓ Cleaned Crystalline UI V2"
 
 .PHONY: clean
+
+# Test demo
+test_demo: test_demo.c $(LIB)
+	$(CC) $(CFLAGS) test_demo.c -o test_demo -L. -lcrystalline_v2 $(LDFLAGS)
+	@echo "✓ Test demo built"
+
+.PHONY: test_demo
