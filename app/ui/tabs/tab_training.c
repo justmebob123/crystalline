@@ -310,8 +310,10 @@ void init_training_tab(AppState* state) {
     TTF_Font* font = get_global_font();
     
     // Calculate layout using golden ratio
-    int viz_width = (int)(RENDER_WIDTH * 0.618f);  // 61.8%
-    int control_width = RENDER_WIDTH - viz_width;   // 38.2%
+    // Use full available width (like Research Tab does)
+    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);     // 865px (61.8%)
+    int control_width = content_width - viz_width;      // 535px (38.2%)
     
     // Create visualization panel (left side)
     // IMPORTANT: Crystalline UI uses CENTER coordinates, not top-left
@@ -472,6 +474,14 @@ void init_training_tab(AppState* state) {
     );
     crystalline_dropdown_set_callback(g_training_ui.model_dropdown, on_model_selected, state);
     
+    // Populate dropdown with available models
+    extern char** get_available_models(int* count);
+    int model_count = 0;
+    char** models = get_available_models(&model_count);
+    if (models && model_count > 0) {
+        crystalline_dropdown_set_options(g_training_ui.model_dropdown, models, model_count);
+    }
+    
     // Create file list (using CENTER coordinates)
     float list_height = 200.0f;
     g_training_ui.file_list = crystalline_list_create(
@@ -606,8 +616,10 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_training_ui.btn_2d3d_toggle) crystalline_button_render(g_training_ui.btn_2d3d_toggle, renderer);
     
     // Render sliders with labels (proper spacing)
+    // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     int slider_x = RENDER_OFFSET_X + viz_width + 20;
-    int slider_y = RENDER_OFFSET_Y + 150;    
+    int slider_y = RENDER_OFFSET_Y + 150;
+    int slider_w = control_width - 60;
     char label[64];
     
     // Batch Size
@@ -748,6 +760,14 @@ void handle_training_tab_mouse_motion(AppState* state, int x, int y) {
     event.type = SDL_MOUSEMOTION;
     event.motion.x = x;
     event.motion.y = y;
+    
+    // Handle button hover (CRITICAL for hover animations!)
+    if (g_training_ui.btn_pause) crystalline_button_handle_mouse(g_training_ui.btn_pause, &event);
+    if (g_training_ui.btn_start) crystalline_button_handle_mouse(g_training_ui.btn_start, &event);
+    if (g_training_ui.btn_save) crystalline_button_handle_mouse(g_training_ui.btn_save, &event);
+    if (g_training_ui.btn_scan) crystalline_button_handle_mouse(g_training_ui.btn_scan, &event);
+    if (g_training_ui.btn_select) crystalline_button_handle_mouse(g_training_ui.btn_select, &event);
+    if (g_training_ui.btn_2d3d_toggle) crystalline_button_handle_mouse(g_training_ui.btn_2d3d_toggle, &event);
     
     // Handle slider dragging
     if (g_training_ui.slider_batch) crystalline_slider_handle_mouse(g_training_ui.slider_batch, &event);
