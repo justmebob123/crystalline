@@ -38,14 +38,17 @@ Full unabridged implementation of crystalline CLLM with:
 - [ ] Commit: "feat: Complete L_lattice double precision with Einstein's Λ and Plimpton ratios"
 
 #### Afternoon: Phonetic Value System
-- [ ] Create `src/ai/cllm_phonetic_values.c` (NEW FILE)
-- [ ] Create `include/ai/cllm_phonetic_values.h` (NEW FILE)
-- [ ] Implement phonetic mapping table (dub=3, knbt=3, k'anchay=3, kub=3)
-- [ ] Implement hash-based lookup function `get_phonetic_value()`
-- [ ] Integrate into `L_lattice()` as ν(λ) term
-- [ ] Add unit tests for all known phonemes
-- [ ] Add test for unknown phonemes (default to 3.0)
-- [ ] Build and verify (zero errors, zero warnings)
+- [x] Create `src/ai/cllm_phonetic_values.c` (NEW FILE) ✅
+- [x] Create `include/ai/cllm_phonetic_values.h` (NEW FILE) ✅
+- [x] Implement phonetic mapping table (dub=3, knbt=3, k'anchay=3, kub=3) ✅
+- [x] Implement lookup function `get_phonetic_value()` (linear search for now) ✅
+- [x] Integrate into `L_lattice()` via `nu_lambda()` wrapper ✅
+- [x] Add unit tests for all known phonemes ✅
+- [x] Add test for unknown phonemes (default to 3.0) ✅
+- [x] Add test for NULL input ✅
+- [x] Add test for phonetic registration checks ✅
+- [x] Add test for phonetic iteration ✅
+- [x] Build and verify (zero errors, zero warnings) ✅
 - [ ] Commit: "feat: Implement phonetic value system ν(λ)"
 
 ### Day 2 - Angular Position & Plimpton Integration

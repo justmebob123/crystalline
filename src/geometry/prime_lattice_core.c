@@ -11,6 +11,7 @@
 #include "../include/bigfixed_core.h"
 #include "../include/prime_bigint_transcendental.h"
 #include "../include/cllm_mathematical_constants.h"
+#include "../include/ai/cllm_phonetic_values.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -77,44 +78,9 @@ void lattice_cleanup(void) {
  * ============================================================================ */
 
 double nu_lambda(const char *lambda_phon) {
-    if (!lambda_phon) return 1.0;
-    
-    double base_val = 0.0;
-    
-    // Convert to lowercase for comparison
-    char lower[64];
-    strncpy(lower, lambda_phon, 63);
-    lower[63] = '\0';
-    for (int i = 0; lower[i]; i++) {
-        if (lower[i] >= 'A' && lower[i] <= 'Z') {
-            lower[i] = lower[i] + ('a' - 'A');
-        }
-    }
-    
-    // Phonetic mappings from complete symbol table
-    if (strstr(lower, "dub")) {
-        base_val = 3.0;  // ν(dub) = 3
-    } else if (strstr(lower, "knbt")) {
-        base_val = 3.0;  // ν(knbt) = 3
-    } else if (strstr(lower, "k'ancha") || strstr(lower, "kancha")) {
-        base_val = 3.0;  // ν(k'ancha) = 3
-    } else if (strstr(lower, "kub")) {
-        base_val = 3.0;  // ν(kub) = 3 (cube/triad)
-    } else if (strstr(lower, "triad")) {
-        base_val = 3.0;  // Triad core
-    } else if (strstr(lower, "seven") || strstr(lower, "7")) {
-        base_val = 7.0;  // Seven rays
-    } else if (strstr(lower, "twelve") || strstr(lower, "12")) {
-        base_val = 12.0;  // Zodiac/clock
-    } else if (strstr(lower, "nineteen") || strstr(lower, "19")) {
-        base_val = 19.0;  // Metonic cycle
-    } else if (strstr(lower, "thirtyone") || strstr(lower, "31")) {
-        base_val = 31.0;  // Crown
-    } else {
-        base_val = 3.0;  // Default: triad base
-    }
-    
-    return base_val;
+    // Use the new phonetic value system
+    // This provides a centralized, maintainable phonetic mapping
+    return get_phonetic_value(lambda_phon);
 }
 
 void update_phi_freqs(const double *phi_base, double *phi_updated,
