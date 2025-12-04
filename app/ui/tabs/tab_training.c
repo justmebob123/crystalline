@@ -298,6 +298,7 @@ static void on_learning_rate_changed(float value, void* data) {
  * Model dropdown callback
  */
 static void on_model_selected(int index, void* data) {
+    printf("=== MODEL SELECTION CALLBACK CALLED: index=%d ===\n", index);
     AppState* state = (AppState*)data;
     if (!state || !g_training_ui.model_dropdown) return;
     
@@ -419,7 +420,7 @@ void init_training_tab(AppState* state) {
     
     // Create buttons in control panel
     int ctrl_x = RENDER_OFFSET_X + viz_width + control_width / 2;
-    int ctrl_y = RENDER_OFFSET_Y + 250;
+    int ctrl_y = RENDER_OFFSET_Y + 380;
     
     printf("SCAN: x=%d, y=%d\n", ctrl_x - 50, ctrl_y);
     printf("SELECT: x=%d, y=%d\n", ctrl_x + 50, ctrl_y);
@@ -691,7 +692,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Render file list using Crystalline UI
     char file_list_label[128];
     snprintf(file_list_label, sizeof(file_list_label), "Training Files (%d):", g_training_ui.file_count);
-    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 105, text_color);
+    draw_text(renderer, file_list_label, slider_x, RENDER_OFFSET_Y + 405, text_color);
     
     if (g_training_ui.file_list) {
         crystalline_list_render(g_training_ui.file_list, renderer);
