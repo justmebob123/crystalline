@@ -218,11 +218,12 @@ static void on_start_clicked(void* data) {
             printf("Loading selected model: '%s'\n", g_training_ui.selected_model);
             
             // First, check if model is accessible (already loaded)
-            extern bool model_manager_get_status(const char* name, bool* is_accessible, bool* is_training);
+            extern bool model_manager_get_status(const char* name, bool* is_accessible, bool* is_training, uint32_t* read_count);
             bool is_accessible = false;
             bool is_training = false;
+            uint32_t read_count = 0;
             
-            if (model_manager_get_status(g_training_ui.selected_model, &is_accessible, &is_training)) {
+            if (model_manager_get_status(g_training_ui.selected_model, &is_accessible, &is_training, &read_count)) {
                 if (!is_accessible) {
                     // Model exists but not loaded - load it now
                     printf("Model not loaded yet, loading from disk...\n");

@@ -1,42 +1,34 @@
-# TODO - Training Tab Issues
+# TODO - Training Tab Build Error
 
-## ✅ START Button Fixed (commit eaa3fa8)
-- Buttons now receive BUTTONDOWN events correctly
-- START button responds to clicks
+## ✅ FIXED: Build Error on Line 221
+**Error:** Conflicting types - model_manager_get_status() declaration mismatch
+**Root Cause:** Function declared with 3 parameters but actual signature has 4 parameters
+- Missing parameter: `uint32_t* read_count`
 
-## 🔧 FIXES IN PROGRESS
+**Fix Applied:**
+- Updated extern declaration to include all 4 parameters
+- Added `uint32_t read_count = 0;` variable
+- Updated function call to pass `&amp;read_count` as 4th argument
 
-### Fix 1: Model Loading Failure ✅
-**Root Cause:** Model manager uses lazy loading - models are registered but not loaded into memory
-- Models have `is_accessible = false` until explicitly loaded
-- `model_manager_acquire_write()` requires model to be accessible first
-
-**Solution Applied:**
-- Check if model is accessible before acquiring
-- If not accessible, call `model_manager_reload()` to load from disk
-- Then acquire write access for training
-- Added clear status messages for each step
-
-### Fix 2: Debug Output Flooding ✅
-**Root Cause:** Excessive debug printf statements in crystalline UI elements
-- List rendering: Every 60 frames
-- Dropdown handling: Every 10 calls
-- Checkbox clicks: Every click
-
-**Solution Applied:**
-- Removed list render debug output
-- Removed dropdown handle debug output
-- Removed checkbox click debug output
-- Kept only button click debug (useful for testing)
-
-## Next Steps
-- [x] Build and verify zero errors/warnings ✅
-- [ ] Commit fixes
-- [ ] User test: Model loading and training start
-- [ ] User test: Verify clean terminal output (no flooding)
-- [ ] Address "no training context" error if it still occurs
+## Investigation Steps
+- [x] Check line 221 of app/ui/tabs/tab_training.c
+- [x] Identify the conflicting type declaration
+- [x] Check function signature in header file (has 4 params)
+- [x] Fix type mismatch (added missing 4th parameter)
+- [x] Rebuild and verify ✅
 
 ## Build Status
 - **Errors:** 0 ✅
 - **Warnings:** 0 ✅
 - **Branch:** feature/crystalline-ui-system
+
+## Previous Fixes (Completed)
+- ✅ START Button Fixed (commit eaa3fa8)
+- ✅ Model Loading Fixed (commit ef3a03b)
+- ✅ Debug Output Flooding Fixed (commit ef3a03b)
+
+## Build Status
+- **Errors:** 1 (line 221 type conflict)
+- **Warnings:** Unknown
+- **Branch:** feature/crystalline-ui-system
+- **Latest Commit:** ef3a03b
