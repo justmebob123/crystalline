@@ -175,7 +175,7 @@ static float top_p = 0.9f;
 
 // Store button positions
 static SDL_Rect g_send_btn;
-static SDL_Rect g_clear_chat_btn;
+// static SDL_Rect g_clear_chat_btn;  // Removed - using Crystalline UI
 static SDL_Rect g_input_rect;
 static SDL_Rect g_chat_area;
 static SDL_Rect g_create_btn;
@@ -653,7 +653,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         int chat_x = RENDER_OFFSET_X;
         int chat_y = RENDER_OFFSET_Y;
         int chat_width = content_width - 20;  // Leave 20px margin
-        int chat_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 100;
+        int chat_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 120;  // Leave room for input
         
         llm_ui.chat_area = crystalline_textarea_create(
             CRYSTALLINE_STYLE_RECTANGULAR,
@@ -664,8 +664,8 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             font
         );
         
-        // Message input field (BOTTOM LEFT)
-        int input_y = chat_y + chat_height + 10;
+        // Message input field (FIXED AT BOTTOM)
+        int input_y = WINDOW_HEIGHT - 70;  // Fixed position at bottom of screen
         int input_width = chat_width - 120;
         
         llm_ui.message_input = crystalline_input_create(
@@ -697,7 +697,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
             input_y + 20.0f,
             BUTTON_RADIUS_TERTIARY,
             0.0f,
-            "CLR",
+            "CLEAR",
             font
         );
         crystalline_button_set_callback(llm_ui.btn_clear, on_clear_clicked, state);
@@ -1031,13 +1031,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_RenderDrawRect(renderer, &g_thread_list_btn);
     draw_text(renderer, "Conversations", g_thread_list_btn.x + 55, g_thread_list_btn.y + 6, text_color);
     
-    // Clear chat button
-    g_clear_chat_btn = layout_add_button(&layout, NULL, 0, 25);
-    SDL_SetRenderDrawColor(renderer, button_color.r, button_color.g, button_color.b, 255);
-    SDL_RenderFillRect(renderer, &g_clear_chat_btn);
-    SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, 255);
-    SDL_RenderDrawRect(renderer, &g_clear_chat_btn);
-    draw_text(renderer, "Clear Chat", g_clear_chat_btn.x + 70, g_clear_chat_btn.y + 6, text_color);
+    // Legacy clear chat button removed - now using Crystalline UI button
     
     // === CHAT AREA (LEFT SIDE) ===
     int chat_width = RENDER_WIDTH - 20;  // Width is correct
@@ -1331,11 +1325,7 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     }
     
     // Clear chat
-    if (x >= g_clear_chat_btn.x && x <= g_clear_chat_btn.x + g_clear_chat_btn.w &&
-        y >= g_clear_chat_btn.y && y <= g_clear_chat_btn.y + g_clear_chat_btn.h) {
-        clear_chat_history();
-        return;
-    }
+    // Legacy clear button click handling removed - now handled by Crystalline UI
     
     // Handle model size dialog clicks using Crystalline UI
     if (model_size_dialog_visible) {
