@@ -771,6 +771,12 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_MOUSEBUTTONDOWN:
             handle_mouse_click(state, event->button.x, event->button.y);
             state->dragging_slider = true;
+            
+            // Route mouse down events to Training Tab for dropdown selection
+            if (state->current_tab == TAB_TRAINING) {
+                extern void handle_training_tab_mouse_down(AppState* state, int x, int y);
+                handle_training_tab_mouse_down(state, event->button.x, event->button.y);
+            }
             break;
             
         case SDL_MOUSEBUTTONUP:

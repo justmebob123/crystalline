@@ -777,6 +777,29 @@ void handle_training_tab_click(AppState* state, int x, int y) {
 
 
 /**
+ * Handle mouse press (BUTTONDOWN)
+ */
+void handle_training_tab_mouse_down(AppState* state, int x, int y) {
+    if (!state) return;
+    
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.x = x;
+    event.button.y = y;
+    event.button.button = SDL_BUTTON_LEFT;
+    
+    // Dropdown needs BUTTONDOWN for selection
+    if (g_training_ui.model_dropdown) {
+        crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
+    }
+    
+    // File list needs BUTTONDOWN for checkbox clicks
+    if (g_training_ui.file_list) {
+        crystalline_list_handle_mouse(g_training_ui.file_list, &event);
+    }
+}
+
+/**
  * Handle mouse release
  */
 void handle_training_tab_mouse_up(AppState* state, int x, int y) {
@@ -801,9 +824,6 @@ void handle_training_tab_mouse_up(AppState* state, int x, int y) {
     if (g_training_ui.slider_sequence) crystalline_slider_handle_mouse(g_training_ui.slider_sequence, &event);
     if (g_training_ui.slider_epochs) crystalline_slider_handle_mouse(g_training_ui.slider_epochs, &event);
     if (g_training_ui.slider_lr) crystalline_slider_handle_mouse(g_training_ui.slider_lr, &event);
-       
-       // Handle dropdown release (needed for selection)
-       if (g_training_ui.model_dropdown) crystalline_dropdown_handle_mouse(g_training_ui.model_dropdown, &event);
 }
 
 /**
