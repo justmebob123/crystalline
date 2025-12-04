@@ -1175,6 +1175,7 @@ void crystalline_list_render(CrystallineList* list, SDL_Renderer* renderer) {
                
            // Draw border
            CrystallineDrawStyle border_style = crystalline_draw_style_stroked(
+               crystalline_color_rgb(100, 100, 120), 2.0f
         );
         crystalline_draw_rect(renderer, list->base.bounds, border_style);
     }
