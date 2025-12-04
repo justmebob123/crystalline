@@ -314,36 +314,44 @@ void init_training_tab(AppState* state) {
     int control_width = RENDER_WIDTH - viz_width;   // 38.2%
     
     // Create visualization panel (left side)
+    // IMPORTANT: Crystalline UI uses CENTER coordinates, not top-left
+    float viz_panel_width = (float)(viz_width - 20);
+    float viz_panel_height = (float)(WINDOW_HEIGHT - RENDER_OFFSET_Y - 20);
     g_training_ui.viz_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        RENDER_OFFSET_X + 10,
-        RENDER_OFFSET_Y + 10,
-        viz_width - 20,
-        WINDOW_HEIGHT - RENDER_OFFSET_Y - 20,
+        RENDER_OFFSET_X + 10 + viz_panel_width / 2.0f,  // CENTER X
+        RENDER_OFFSET_Y + 10 + viz_panel_height / 2.0f, // CENTER Y
+        viz_panel_width,
+        viz_panel_height,
         "TRAINING",
         font
     );
     
     // Create control panel (right side)
+    float control_panel_width = (float)(control_width - 30);
+    float control_panel_height = (float)(WINDOW_HEIGHT - RENDER_OFFSET_Y - 20);
     g_training_ui.control_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        RENDER_OFFSET_X + viz_width + 10,
-        RENDER_OFFSET_Y + 10,
-        control_width - 30,
-        WINDOW_HEIGHT - RENDER_OFFSET_Y - 20,
+        RENDER_OFFSET_X + viz_width + 10 + control_panel_width / 2.0f,  // CENTER X
+        RENDER_OFFSET_Y + 10 + control_panel_height / 2.0f,             // CENTER Y
+        control_panel_width,
+        control_panel_height,
         "CONTROLS",
         font
     );
     
     // Create metrics panel (inside viz panel, right side)
+    // Using CENTER coordinates
     int metrics_x = RENDER_OFFSET_X + viz_width - 250;
     int metrics_y = RENDER_OFFSET_Y + 100;
+    float metrics_panel_width = 230.0f;
+    float metrics_panel_height = 400.0f;
     g_training_ui.metrics_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        metrics_x,
-        metrics_y,
-        230,
-        400,
+        metrics_x + metrics_panel_width / 2.0f,  // CENTER X
+        metrics_y + metrics_panel_height / 2.0f, // CENTER Y
+        metrics_panel_width,
+        metrics_panel_height,
         "STATUS",
         font
     );
@@ -400,81 +408,90 @@ void init_training_tab(AppState* state) {
     );
     crystalline_button_set_callback(g_training_ui.btn_select, on_select_all_clicked, state);
     
-    // Create 2D/3D toggle button (small rectangular button)
+    // Create 2D/3D toggle button (small rectangular button, using CENTER coordinates)
+    float toggle_width = (float)BUTTON_RECT_WIDTH_SMALL;
+    float toggle_height = (float)BUTTON_RECT_HEIGHT;
     g_training_ui.btn_2d3d_toggle = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        metrics_x + 115,
-        metrics_y - 40,
-        BUTTON_RECT_WIDTH_SMALL, 
-        BUTTON_RECT_HEIGHT,
+        metrics_x + 115 + toggle_width / 2.0f,
+        metrics_y - 40 + toggle_height / 2.0f,
+        toggle_width, 
+        toggle_height,
         "2D/3D",
         font
     );
     crystalline_button_set_callback(g_training_ui.btn_2d3d_toggle, on_2d3d_toggle_clicked, state);
     
     // Create sliders (rectangular style for better precision)
+    // Using CENTER coordinates
     int slider_x = RENDER_OFFSET_X + viz_width + 20;
     int slider_w = control_width - 60;
     int slider_y = RENDER_OFFSET_Y + 150;
+    float slider_center_x = slider_x + slider_w / 2.0f;
+    float slider_height = (float)SLIDER_TRACK_HEIGHT;
     
     g_training_ui.slider_batch = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, slider_y,
-        slider_w, SLIDER_TRACK_HEIGHT,
+        slider_center_x, slider_y + slider_height / 2.0f,
+        slider_w, slider_height,
         1, 256
     );
     crystalline_slider_set_callback(g_training_ui.slider_batch, on_batch_size_changed, state);
     
     g_training_ui.slider_sequence = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, slider_y + 60,
-        slider_w, SLIDER_TRACK_HEIGHT,
+        slider_center_x, slider_y + 60 + slider_height / 2.0f,
+        slider_w, slider_height,
         32, 512
     );
     crystalline_slider_set_callback(g_training_ui.slider_sequence, on_sequence_length_changed, state);
     
     g_training_ui.slider_epochs = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, slider_y + 120,
-        slider_w, SLIDER_TRACK_HEIGHT,
+        slider_center_x, slider_y + 120 + slider_height / 2.0f,
+        slider_w, slider_height,
         1, 100
     );
     crystalline_slider_set_callback(g_training_ui.slider_epochs, on_epochs_changed, state);
     
     g_training_ui.slider_lr = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, slider_y + 180,
-        slider_w, SLIDER_TRACK_HEIGHT,
+        slider_center_x, slider_y + 180 + slider_height / 2.0f,
+        slider_w, slider_height,
         0.0001f, 0.1f
     );
     crystalline_slider_set_callback(g_training_ui.slider_lr, on_learning_rate_changed, state);
     
-    // Create model dropdown
+    // Create model dropdown (using CENTER coordinates)
+    float dropdown_height = 40.0f;
     g_training_ui.model_dropdown = crystalline_dropdown_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, RENDER_OFFSET_Y + 60,
-        slider_w, 40,
+        slider_center_x, RENDER_OFFSET_Y + 60 + dropdown_height / 2.0f,
+        slider_w, dropdown_height,
         font
     );
     crystalline_dropdown_set_callback(g_training_ui.model_dropdown, on_model_selected, state);
     
-    // Create file list
+    // Create file list (using CENTER coordinates)
+    float list_height = 200.0f;
     g_training_ui.file_list = crystalline_list_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        slider_x, ctrl_y + 80,
-        slider_w, 200,
+        slider_center_x, ctrl_y + 80 + list_height / 2.0f,
+        slider_w, list_height,
         font
     );
     crystalline_list_enable_checkboxes(g_training_ui.file_list, true);
     crystalline_list_set_check_callback(g_training_ui.file_list, on_file_checkbox_changed, state);
     
-    // Create progress bar
+    // Create progress bar (using CENTER coordinates)
+    float progress_width = (float)(viz_width - 40);
+    float progress_height = 30.0f;
     g_training_ui.training_progress = crystalline_progress_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        RENDER_OFFSET_X + 20,
-        RENDER_OFFSET_Y + 200,
-        viz_width - 40,
-        30
+        RENDER_OFFSET_X + 20 + progress_width / 2.0f,
+        RENDER_OFFSET_Y + 200 + progress_height / 2.0f,
+        progress_width,
+        progress_height
     );
     
     // Scan initial directory

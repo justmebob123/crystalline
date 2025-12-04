@@ -1,16 +1,20 @@
 # Training Tab Visual Fixes - Based on Original Screenshot
 
 ## Current Status
-The Crystalline UI library has checkbox support, but the Training Tab still has the 8 visual issues identified in the original screenshot.
+**MAJOR FIX APPLIED:** Converted all Training Tab coordinates from TOP-LEFT to CENTER-based positioning to match Crystalline UI library requirements.
+
+Root Cause Found: The Training Tab was using TOP-LEFT coordinates when creating Crystalline UI elements, but the library expects CENTER coordinates (like the Research Tab uses).
 
 ## Tasks to Complete
 
 ### Phase 1: Fix Layout Issues (Panels Going Off Screen)
 - [x] Analyze current panel positioning code - panels are within bounds
 - [x] Check RENDER_OFFSET values - correct (200, 40)
-- [ ] Check if panel borders are rendering correctly
-- [ ] Verify panel title rendering
-- [ ] Test that nothing is cut off at edges
+- [x] ROOT CAUSE FOUND: Training Tab using TOP-LEFT coords, should use CENTER
+- [x] FIXED: Converted all panels to CENTER coordinates
+- [x] FIXED: Converted all sliders to CENTER coordinates
+- [x] FIXED: Converted all rectangular elements to CENTER coordinates
+- [ ] Test in running application to verify fix works
 
 ### Phase 2: Fix Button Sizes
 - [x] Apply button_sizes.h constants to Training Tab - already done
@@ -64,6 +68,11 @@ Most of the 8 original issues have already been fixed in the code:
 - ✅ All elements within window bounds
 
 The code looks correct. Need to test the running application to verify visual output.
+
+## Recent Fix
+- [x] Fixed compilation error: ctrl_y variable now defined in render function
+- [x] Build successful: Zero errors, zero warnings
+- [x] Changes committed and pushed
 
 ## Success Criteria
 All 8 visual issues from original screenshot must be fixed and visible in the running application.
