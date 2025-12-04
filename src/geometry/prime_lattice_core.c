@@ -12,6 +12,7 @@
 #include "../include/prime_bigint_transcendental.h"
 #include "../include/cllm_mathematical_constants.h"
 #include "../include/phonetic_values.h"
+#include "../include/lattice_entropy.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
