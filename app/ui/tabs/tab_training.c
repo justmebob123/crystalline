@@ -324,13 +324,27 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
     SDL_Color grid_color = {40, 40, 50, 255};
     SDL_Color loss_color = {100, 200, 255, 255};
     
-    // Draw background
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    SDL_RenderFillRect(renderer, &viz_area_rect);
-    
-    // Draw border
-    SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
-    SDL_RenderDrawRect(renderer, &viz_area_rect);
+    // CRYSTALLINE UI: Draw background with proper panel styling
+       SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+       SDL_RenderFillRect(renderer, &viz_area_rect);
+       
+       // CRYSTALLINE UI: Outer border (3px, lighter)
+       SDL_Color outer_border = {60, 60, 70, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {viz_area_rect.x - i, viz_area_rect.y - i, 
+                            viz_area_rect.w + 2*i, viz_area_rect.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, outer_border.r, outer_border.g, outer_border.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // CRYSTALLINE UI: Inner border (2px, darker)
+       SDL_Color inner_border = {30, 30, 40, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {viz_area_rect.x + 3 + i, viz_area_rect.y + 3 + i,
+                            viz_area_rect.w - 6 - 2*i, viz_area_rect.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, inner_border.r, inner_border.g, inner_border.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
     
     int content_x = viz_area_rect.x + 20;
     int content_y = viz_area_rect.y + 20;
@@ -519,11 +533,27 @@ void draw_training_visualization(SDL_Renderer* renderer, AppState* state) {
            SDL_Rect metrics_bounds = {content_x + sphere_viz_width + 20, content_y, 
                                         content_w - sphere_viz_width - 20, sphere_viz_height};
            
-           // Draw metrics panel background
-           SDL_SetRenderDrawColor(renderer, 25, 25, 30, 255);
-           SDL_RenderFillRect(renderer, &metrics_bounds);
-           SDL_SetRenderDrawColor(renderer, grid_color.r, grid_color.g, grid_color.b, 255);
-           SDL_RenderDrawRect(renderer, &metrics_bounds);
+           // CRYSTALLINE UI: Draw metrics panel with proper borders
+       SDL_SetRenderDrawColor(renderer, 25, 25, 30, 255);
+       SDL_RenderFillRect(renderer, &metrics_bounds);
+       
+       // Outer border (3px, lighter)
+       SDL_Color metrics_outer = {50, 50, 60, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {metrics_bounds.x - i, metrics_bounds.y - i,
+                            metrics_bounds.w + 2*i, metrics_bounds.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, metrics_outer.r, metrics_outer.g, metrics_outer.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // Inner border (2px, darker)
+       SDL_Color metrics_inner = {20, 20, 25, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {metrics_bounds.x + 3 + i, metrics_bounds.y + 3 + i,
+                            metrics_bounds.w - 6 - 2*i, metrics_bounds.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, metrics_inner.r, metrics_inner.g, metrics_inner.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
            
            int metrics_x = metrics_bounds.x + 10;
            int metrics_y = metrics_bounds.y + 10;
@@ -761,10 +791,28 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Color button_color = {60, 60, 80, 255};
     SDL_Color active_color = {100, 150, 200, 255};
     
-    // Draw panel background
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    SDL_Rect panel_rect = {panel_x, panel_y, panel_width - 20, panel_height};  // Leave space for scrollbar
-    SDL_RenderFillRect(renderer, &panel_rect);
+    // CRYSTALLINE UI: Draw control panel with proper borders
+       SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
+       SDL_Rect panel_rect = {panel_x, panel_y, panel_width - 20, panel_height};  // Leave space for scrollbar
+       SDL_RenderFillRect(renderer, &panel_rect);
+       
+       // Outer border (3px, lighter)
+       SDL_Color panel_outer = {70, 70, 90, 255};
+       for (int i = 0; i < 3; i++) {
+           SDL_Rect outer = {panel_rect.x - i, panel_rect.y - i,
+                            panel_rect.w + 2*i, panel_rect.h + 2*i};
+           SDL_SetRenderDrawColor(renderer, panel_outer.r, panel_outer.g, panel_outer.b, 255);
+           SDL_RenderDrawRect(renderer, &outer);
+       }
+       
+       // Inner border (2px, darker)
+       SDL_Color panel_inner = {30, 30, 40, 255};
+       for (int i = 0; i < 2; i++) {
+           SDL_Rect inner = {panel_rect.x + 3 + i, panel_rect.y + 3 + i,
+                            panel_rect.w - 6 - 2*i, panel_rect.h - 6 - 2*i};
+           SDL_SetRenderDrawColor(renderer, panel_inner.r, panel_inner.g, panel_inner.b, 255);
+           SDL_RenderDrawRect(renderer, &inner);
+       }
     
     // Set clipping rect for scrollable content
     SDL_RenderSetClipRect(renderer, &panel_rect);
