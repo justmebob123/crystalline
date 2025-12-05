@@ -57,7 +57,13 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     for (uint32_t i = 0; i < config->vocab_size; i++) {
         model->tokens[i].frequency = 0;
         snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
-        model->tokens[i].symmetry_group = 0;
+        
+        // CRITICAL FIX: Initialize prime_encoding (was left as 0 from calloc)
+        extern uint64_t crystalline_get_nth_prime(uint32_t n);
+        model->tokens[i].prime_encoding = crystalline_get_nth_prime(i);
+        
+        // CRITICAL FIX: Distribute across 12 symmetry groups (12-fold symmetry)
+        model->tokens[i].symmetry_group = i % 12;
     }
     
     // Calculate total weights needed

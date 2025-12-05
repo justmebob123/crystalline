@@ -102,13 +102,48 @@ Before fixing NaN issues, perform depth-13 analysis of:
 - MODEL_MANAGEMENT_DEPTH_7_ANALYSIS.md
 - COMPREHENSIVE_FIX_COMPLETE.md
 
-## READY FOR USER TESTING ✅
+## DEPTH-13 ANALYSIS COMPLETE - NEW CRITICAL BUGS FOUND 🔴
 
-All 4 critical bugs have been fixed:
+### Previous Fixes (Phases 1-2) ✅
 1. ✅ Dropdown visibility (Z-order fixed)
 2. ✅ Model selection visibility (dropdown now on top)
-3. ✅ NaN embeddings (detection and lazy init added)
-4. ✅ Inference failures (NaN check prevents propagation)
+3. ✅ Float/double type mismatches (all fixed)
+4. ✅ NaN detection in forward pass (added)
+
+### NEW CRITICAL BUGS DISCOVERED (Depth-13 Analysis) 🔴
+
+#### Bug #1: Uninitialized prime_encoding (CRITICAL)
+**Location:** `src/ai/cllm_create.c`  
+**Problem:** `token->prime_encoding` is NEVER initialized, remains 0 from calloc  
+**Impact:** L_lattice(0, ...) computes with n=0, produces near-zero embeddings  
+**Evidence:** Mean=0.000000, StdDev=0.000000 in terminal output
+
+#### Bug #2: Float cast in double* storage (CRITICAL)
+**Location:** `src/ai/cllm_lattice_embeddings.c:76`  
+**Problem:** `embeddings[i] = (float)normalized` casts double to float before storing in double*  
+**Impact:** Precision loss, potential data corruption
+
+#### Bug #3: Symmetry group always zero (HIGH)
+**Location:** `src/ai/cllm_create.c`  
+**Problem:** All tokens assigned `symmetry_group = 0`  
+**Impact:** Violates 12-fold symmetry, reduces embedding quality
+
+### FIXES REQUIRED
+
+#### Fix 1: Initialize prime_encoding
+```c
+model->tokens[i].prime_encoding = get_nth_prime(i);
+```
+
+#### Fix 2: Remove float cast
+```c
+embeddings[token_id * embedding_dim + dim] = normalized;  // No cast
+```
+
+#### Fix 3: Distribute symmetry groups
+```c
+model->tokens[i].symmetry_group = i % 12;
+```
 
 ---
 

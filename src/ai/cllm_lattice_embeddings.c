@@ -84,7 +84,8 @@ void cllm_embeddings_init_lattice(CLLMModel* model) {
             if (normalized < -1.0) normalized = -1.0;
             
             // Store in embedding matrix
-            embeddings[token_id * embedding_dim + dim] = (float)normalized;
+            // CRITICAL FIX: Don't cast to float - embeddings is double*
+            embeddings[token_id * embedding_dim + dim] = normalized;
             
             // Update statistics
             sum += normalized;
