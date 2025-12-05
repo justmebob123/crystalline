@@ -57,7 +57,7 @@ static void* sphere_worker_thread_lockfree(void* arg);
 static void* sphere_worker_thread_dynamic(void* arg);
 static int transition_to_control_thread(SphereTrainingContext* ctx);
 static int transition_to_worker_thread(SphereTrainingContext* ctx);
-static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);
+static int sphere_spawn_children(SphereTrainingContext* parent);
 static int sphere_despawn_children(SphereTrainingContext* parent);
 static void* control_thread_func(void* arg);
 static void accumulate_gradients(ThreadedTrainingSystem* system);
@@ -1862,7 +1862,7 @@ static void* sphere_worker_thread_dynamic(void* arg) {
                        ctx->sphere_id, pending, available_cores, ctx->hierarchy_level);
                 
                 // Spawn exactly 12 children (12-fold symmetry)
-                if (sphere_spawn_children(ctx, 12) == 0) {
+                if (sphere_spawn_children(ctx) == 0) {
                     printf("[Worker %d] Successfully spawned 12 children\n", ctx->sphere_id);
                 } else {
                     printf("[Worker %d] Failed to spawn children\n", ctx->sphere_id);
@@ -2157,8 +2157,27 @@ static int sphere_despawn_children(SphereTrainingContext* parent) {
     return 0;
 }
 
-static int sphere_spawn_children(SphereTrainingContext* parent, int num_children) {
-    if (!parent || num_children <= 0 || num_children > 12) return -1;
+/**
+ * Spawn exactly 12 children (12-fold symmetry enforcement)
+ * 
+ * This function ALWAYS spawns exactly 12 children to maintain the
+ * 12-fold symmetry structure throughout the recursive hierarchy.
+ * Each child is assigned a unique symmetry group (0-11).
+ * 
+ * @param parent Parent context to spawn children from
+ * @return 0 on success, -1 on failure
+ */
+static int sphere_spawn_children(SphereTrainingContext* parent) {
+    if (!parent) {
+        fprintf(stderr, "[ERROR] sphere_spawn_children: NULL parent context\n");
+        return -1;
+    }
+    
+    // CRITICAL: Always spawn exactly 12 children (12-fold symmetry)
+    const int NUM_CHILDREN = 12;
+    
+    printf("[Sphere %d] Spawning %d children (12-fold symmetry enforcement)\n",
+           parent->sphere_id, NUM_CHILDREN);
     
     // Transition parent to control thread using thread-safe function
     if (transition_to_control_thread(parent) != 0) {
@@ -2167,18 +2186,20 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         return -1;
     }
     
-    // Allocate children array
-    parent->children = (SphereTrainingContext**)calloc(num_children, sizeof(SphereTrainingContext*));
+    // Allocate children array (always 12)
+    parent->children = (SphereTrainingContext**)calloc(NUM_CHILDREN, sizeof(SphereTrainingContext*));
     if (!parent->children) {
+        fprintf(stderr, "[ERROR] Failed to allocate children array for sphere %d\n",
+                parent->sphere_id);
         // Revert transition on failure
         transition_to_worker_thread(parent);
         return -1;
     }
     
-    parent->num_children = num_children;
+    parent->num_children = NUM_CHILDREN;
     
     // Create child contexts
-    for (int i = 0; i < num_children; i++) {
+    for (int i = 0; i < NUM_CHILDREN; i++) {
         int child_symmetry_group = i;  // 0-11
         int child_id = atomic_fetch_add(&parent->system->sphere_id_counter, 1);
         
@@ -2228,8 +2249,8 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         pthread_attr_destroy(&child_attr);
     }
     
-    printf("[Sphere %d] Spawned %d children, transitioned to control thread\n", 
-           parent->sphere_id, num_children);
+    printf("[Sphere %d] Successfully spawned %d children (12-fold symmetry), transitioned to control thread\n", 
+           parent->sphere_id, NUM_CHILDREN);
     
     return 0;
 }
