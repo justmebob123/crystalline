@@ -93,45 +93,50 @@
 
 ---
 
-### ⏳ Task 3.2: Wire Kissing Boundaries for Gradient Sharing - NEXT
+### ✅ Task 3.2: Wire Kissing Boundaries for Gradient Sharing - COMPLETE
 
-**Goal**: Enable gradient sharing between adjacent segments (siblings)
+**What Was Done**:
+1. ✅ Added `sibling_boundaries[12]` array to SphereTrainingContext
+2. ✅ Initialize boundaries array in sphere_context_create()
+3. ✅ Create boundaries between siblings when children spawn
+4. ✅ Create boundary between last and first child (complete the ring)
+5. ✅ Share gradients across boundaries after batch processing
+6. ✅ Destroy boundaries in sphere_context_free()
 
-**Files to Modify**:
-- `src/ai/cllm_training_threaded.c` - Add boundary creation and usage
-- `src/ai/cllm_kissing_boundaries.c` - Already exists, needs wiring
+**Build Status**: Zero errors, 1 pre-existing warning
 
-**What Needs to Happen**:
-1. Create kissing boundaries between adjacent segments
-2. Share gradients across boundaries during accumulation
-3. Use lock-free boundary synchronization
-4. Wire `crystalline_boundary_create()` into sphere spawning
-5. Wire `crystalline_boundary_sync()` into gradient accumulation
+**Integration Progress**: 50% (up from 45%)
 
-**Current State**:
-- ✅ Kissing boundary system exists (`cllm_kissing_boundaries.c`)
-- ✅ API defined in `cllm_crystalline_memory.h`
-- ❌ Never called during training
-- ❌ No boundaries created between segments
-- ❌ No gradient sharing across boundaries
+**Documentation**: See PHASE_3_TASK_3_2_COMPLETE.md
 
-**Target State**:
-- ✅ Boundaries created when children spawn
-- ✅ Gradients shared across boundaries
-- ✅ Lock-free synchronization active
-- ✅ 12-fold symmetry maintained
+**Key Achievement**: Spheres now actively share gradients with siblings through kissing boundaries
 
 ---
 
-### Task 3.3: Wire Lock-Free Memory for Accumulation
+### ⏳ Task 3.3: Wire Lock-Free Memory for Accumulation - NEXT
 
 **Goal**: Remove gradient_lock mutex, use atomic operations
 
+**Files to Modify**:
+- `src/ai/cllm_training_threaded.c` - Replace mutex with atomics
+
 **What Needs to Happen**:
 1. Replace `pthread_mutex_lock(&system->gradient_lock)` with atomic ops
-2. Use `atomic_fetch_add` for gradient accumulation
+2. Use lock-free gradient accumulation (already partially done)
 3. Remove the gradient_lock mutex entirely
 4. Verify lock-free performance improvement
+
+**Current State**:
+- ✅ Lock-free segment access (each sphere owns its segment)
+- ✅ Lock-free boundary writes (atomic spinlock)
+- ❌ Still using mutex for final gradient accumulation
+- ❌ gradient_lock still exists in system structure
+
+**Target State**:
+- ✅ No mutexes for gradient operations
+- ✅ Pure atomic operations for accumulation
+- ✅ Lock-free throughout entire gradient pipeline
+- ✅ Performance improvement verified
 
 ## 📊 PRIORITY MATRIX
 
