@@ -499,33 +499,38 @@ Full unabridged implementation of crystalline CLLM with:
 **Build Status**: Clean (0 errors, 2 warnings about unused legacy functions)
 
 ### Day 5 Afternoon Complete ✅
-**Task**: 12-Fold Spawning Enforcement
-- ✅ Updated `sphere_spawn_children()` function signature:
-  * Removed `num_children` parameter
-  * Function now ALWAYS spawns exactly 12 children
-  * Enforces 12-fold symmetry throughout the hierarchy
-- ✅ Added `NUM_CHILDREN` constant (always 12)
-- ✅ Updated loop to use `NUM_CHILDREN` instead of variable
-- ✅ Enhanced logging:
-  * Logs spawning of 12 children with symmetry enforcement message
+**Task**: Adaptive 12-Fold Spawning with Hardware Awareness
+- ✅ Updated `sphere_spawn_children()` to support adaptive spawning:
+  * Maintains `num_children` parameter for flexibility (1-12)
+  * Validates range: must be between 1 and 12
+  * Adapts to available CPU cores
+  * Maintains 12-fold symmetry structure even with fewer children
+- ✅ Enhanced spawning logic in dynamic worker thread:
+  * Calculates optimal children based on available cores
+  * Prefers 12 for full symmetry when cores available
+  * Adapts to limited hardware (e.g., 4 cores → 4 children)
+  * Each child still assigned unique symmetry group (0-11)
+- ✅ Improved logging:
+  * Logs adaptive spawning with core count
   * Logs each child creation with symmetry group and ID
-  * Logs successful completion with 12-fold symmetry confirmation
-- ✅ Improved error handling:
+  * Shows actual vs. ideal child count
+- ✅ Enhanced error handling:
+  * Validates num_children range (1-12)
   * Better error messages for each failure point
   * Proper cleanup on failure
   * Uses transition functions for rollback
-- ✅ Updated forward declaration (removed parameter)
-- ✅ Updated call site (removed argument)
-- ✅ Symmetry group assignment (0-11) already correct
-- ✅ Child context creation with proper hierarchy already correct
-- ✅ Child threads started with dynamic version already correct
+- ✅ Symmetry group assignment (0-11) maintained
+- ✅ Child context creation with proper hierarchy maintained
+- ✅ Child threads started with dynamic version maintained
 - ✅ Build: Zero errors, 2 warnings (unused legacy functions)
 
-**Key Achievement**: Strict 12-fold symmetry enforcement - no flexibility, always exactly 12 children
+**Key Achievement**: Adaptive 12-fold symmetry - maintains structure while respecting hardware limits
 
-**Commits**: 1 (pending)
+**Key Insight**: Threads can be reassigned or change roles within the 12-fold symmetry structure, allowing flexible work distribution even with limited cores
+
+**Commits**: 2 (1 reverted, 1 pending)
 **Files Modified**: 1 (cllm_training_threaded.c)
-**Function Signature Changed**: sphere_spawn_children() - removed num_children parameter
+**Function Signature**: sphere_spawn_children(parent, num_children) - adaptive parameter
 **Build Status**: Clean (0 errors, 2 warnings about unused legacy functions)
 
 ---
