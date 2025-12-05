@@ -842,19 +842,9 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     
     CLLMBatch* batch = ctx->current_batch;
     
-    // Zero gradients in crystalline memory (12-fold structure)
-    if (ctx->crystalline_memory) {
-        // Zero all 12 segments
-        for (int seg = 0; seg < NUM_SYMMETRY_GROUPS; seg++) {
-            CrystallineSegment* segment = crystalline_memory_get_segment(ctx->crystalline_memory, seg);
-            if (segment && segment->data) {
-                memset(segment->data, 0, segment->size);
-            }
-        }
-    } else {
-        // Fallback to legacy local_gradients (should not happen)
-        memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
-    }
+    // Zero gradients in local_gradients buffer
+    // CRITICAL FIX: Use local_gradients which has the full gradient size
+    memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
     
     // Process each sequence in the batch
     float total_loss = 0.0f;
@@ -894,27 +884,11 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
             batch->seq_len
         );
         
-        // Backward pass - compute gradients to crystalline memory
-        // Use the segment corresponding to this sphere's symmetry group
-        double* gradient_buffer = NULL;
-        
-        if (ctx->crystalline_memory) {
-            // Get segment for this sphere's symmetry group
-            CrystallineSegment* segment = crystalline_memory_get_segment(
-                ctx->crystalline_memory, 
-                ctx->symmetry_group
-            );
-            
-            if (segment && segment->data) {
-                gradient_buffer = (double*)segment->data;
-            } else {
-                // Fallback to legacy
-                gradient_buffer = ctx->local_gradients;
-            }
-        } else {
-            // Fallback to legacy local_gradients
-            gradient_buffer = ctx->local_gradients;
-        }
+        // Backward pass - compute gradients
+        // CRITICAL FIX: Use local_gradients, NOT crystalline memory segments
+        // Each segment is only 1/12th of the full gradient size, but backward
+        // pass needs to write ALL vocab_size * embed_dim gradients
+        double* gradient_buffer = ctx->local_gradients;
         
         cllm_backward_training_threaded(
             training,
@@ -942,56 +916,15 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         );
     }
     
-    // PHASE 4: Lock-free gradient accumulation using crystalline memory
-    // Each worker writes ONLY to its own segment (no locking needed)
-    // This is safe because each worker has exclusive access to its segment
+    // PHASE 4: Gradient accumulation using local_gradients
+    // CRITICAL FIX: Use local_gradients which has the full gradient size
+    // Crystalline memory segments are only 1/12th the size and cause buffer overflows
     ThreadedTrainingSystem* system = ctx->system;
     
-    if (ctx->crystalline_memory) {
-        // Get gradient data from crystalline memory segment
-        CrystallineSegment* segment = crystalline_memory_get_segment(
-            ctx->crystalline_memory, 
-            ctx->symmetry_group
-        );
-        
-        if (segment && segment->data) {
-            double* segment_gradients = (double*)segment->data;
-            size_t num_gradients = segment->size / sizeof(double);
-            
-            // Copy from crystalline segment to accumulated gradients
-            // Each sphere writes to its own lock-free segment
-            for (size_t i = 0; i < num_gradients && 
-                 (ctx->gradient_segment_start + i) < ctx->gradient_segment_end &&
-                 (ctx->gradient_segment_start + i) < ctx->gradient_size; i++) {
-                system->accumulated_gradients[ctx->gradient_segment_start + i] = segment_gradients[i];
-            }
-            
-            // PHASE 3: Share gradients across kissing boundaries with siblings
-            // This enables gradient communication between adjacent spheres
-            for (int b = 0; b < NUM_SYMMETRY_GROUPS; b++) {
-                KissingBoundary* boundary = ctx->sibling_boundaries[b];
-                if (boundary) {
-                    // Write our gradients to the boundary (lock-free)
-                    void* boundary_mem = crystalline_boundary_write(boundary, ctx->symmetry_group);
-                    if (boundary_mem) {
-                        // Copy a portion of our gradients to the boundary
-                        size_t boundary_gradient_count = boundary->boundary_size / sizeof(double);
-                        size_t copy_count = (boundary_gradient_count < num_gradients) ? 
-                                           boundary_gradient_count : num_gradients;
-                        
-                        memcpy(boundary_mem, segment_gradients, copy_count * sizeof(double));
-                        
-                        // Release the write lock
-                        crystalline_boundary_release(boundary);
-                    }
-                }
-            }
-        }
-    } else {
-        // Fallback to legacy local_gradients
-        for (size_t i = ctx->gradient_segment_start; i < ctx->gradient_segment_end && i < ctx->gradient_size; i++) {
-            system->accumulated_gradients[i] = ctx->local_gradients[i];
-        }
+    // Copy from local_gradients to accumulated gradients
+    // Each sphere writes to its own lock-free segment
+    for (size_t i = ctx->gradient_segment_start; i < ctx->gradient_segment_end && i < ctx->gradient_size; i++) {
+        system->accumulated_gradients[i] = ctx->local_gradients[i];
     }
 }
 
