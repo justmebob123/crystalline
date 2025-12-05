@@ -43,6 +43,23 @@ typedef struct {
     int total_epochs;
     float current_loss;
     float best_loss;
+    float learning_rate;
+    float batch_progress;
+    
+    // Entropy metrics
+    float current_entropy;
+    float target_entropy;
+    float entropy_delta;
+    
+    // Hierarchy status
+    bool hierarchy_active;
+    int hierarchy_depth;
+    int active_spheres;
+    
+    // Cymatic timing
+    float cymatic_frequency;
+    float resonance_strength;
+    float phase_alignment;
 } TrainingVisualization;
 
 // UI State
