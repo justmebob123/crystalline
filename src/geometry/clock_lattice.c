@@ -224,3 +224,126 @@ double get_ring_radius_for_visualization(int ring, double base_radius) {
         default: return base_radius * 1.25;
     }
 }
+
+// ============================================================================
+// MEMORY MAPPING IMPLEMENTATION (Phase 3, Day 9)
+// ============================================================================
+
+/**
+ * Get number of positions in ring
+ * 
+ * Babylonian clock structure:
+ * - Ring 0: 12 positions (hours)
+ * - Ring 1: 60 positions (minutes)
+ * - Ring 2: 60 positions (seconds)
+ * - Ring 3: 100 positions (milliseconds)
+ * - Ring 4+: 1000 positions each (extended rings)
+ */
+uint32_t get_ring_positions(uint32_t ring) {
+    switch (ring) {
+        case 0: return 12;    // Hours
+        case 1: return 60;    // Minutes
+        case 2: return 60;    // Seconds
+        case 3: return 100;   // Milliseconds
+        default: return 1000; // Extended rings
+    }
+}
+
+/**
+ * Get total positions up to ring
+ * 
+ * Cumulative positions:
+ * - Ring 0: 12 total
+ * - Ring 1: 12 + 60 = 72 total
+ * - Ring 2: 72 + 60 = 132 total
+ * - Ring 3: 132 + 100 = 232 total
+ * - Ring 4+: 232 + 1000*(ring-3) total
+ */
+uint32_t get_cumulative_positions(uint32_t ring) {
+    if (ring == 0) return 12;
+    if (ring == 1) return 72;
+    if (ring == 2) return 132;
+    if (ring == 3) return 232;
+    
+    // Ring 4+: 232 + 1000 * (ring - 3)
+    return 232 + 1000 * (ring - 3);
+}
+
+/**
+ * Calculate clock position for thread
+ * 
+ * Maps thread_id to position within its ring based on hierarchy level.
+ * Uses modular arithmetic to wrap around ring positions.
+ */
+uint32_t calculate_clock_position(int thread_id, int hierarchy_level) {
+    // Use hierarchy level to determine ring
+    uint32_t ring = (uint32_t)hierarchy_level;
+    
+    // Get number of positions in this ring
+    uint32_t positions = get_ring_positions(ring);
+    
+    // Map thread_id to position using modular arithmetic
+    // This ensures even distribution across the ring
+    uint32_t position = (uint32_t)thread_id % positions;
+    
+    return position;
+}
+
+/**
+ * Calculate memory offset for ring position
+ * 
+ * Divides total memory among all positions up to and including this ring.
+ * Each position gets an equal share of memory.
+ */
+size_t calculate_memory_offset(uint32_t ring, uint32_t position, size_t total_memory) {
+    // Get total positions up to this ring
+    uint32_t total_positions = get_cumulative_positions(ring);
+    
+    // Calculate memory per position
+    size_t memory_per_position = total_memory / total_positions;
+    
+    // Get cumulative positions before this ring
+    uint32_t positions_before = (ring == 0) ? 0 : get_cumulative_positions(ring - 1);
+    
+    // Calculate offset: positions_before + position
+    size_t offset = (positions_before + position) * memory_per_position;
+    
+    return offset;
+}
+
+/**
+ * Map thread to memory position using clock structure
+ * 
+ * This function maps a thread to a specific memory location based on:
+ * 1. Thread ID - determines position within ring
+ * 2. Hierarchy level - determines which ring
+ * 3. Total memory - determines segment size
+ * 
+ * The mapping preserves the Babylonian clock structure in memory layout.
+ */
+ClockMemoryPosition map_thread_to_memory(
+    int thread_id,
+    int hierarchy_level,
+    size_t total_memory
+) {
+    ClockMemoryPosition mem_pos;
+    
+    // Determine ring based on hierarchy level
+    mem_pos.ring = (uint32_t)hierarchy_level;
+    
+    // Calculate position within ring
+    mem_pos.position = calculate_clock_position(thread_id, hierarchy_level);
+    
+    // Calculate memory offset
+    mem_pos.memory_offset = calculate_memory_offset(
+        mem_pos.ring,
+        mem_pos.position,
+        total_memory
+    );
+    
+    // Calculate segment size
+    uint32_t total_positions = get_cumulative_positions(mem_pos.ring);
+    mem_pos.segment_size = total_memory / total_positions;
+    
+    return mem_pos;
+}

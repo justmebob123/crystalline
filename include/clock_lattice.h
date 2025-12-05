@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +90,77 @@ void map_token_to_clock_lattice(uint32_t token_id, uint64_t prime,
  * @return Radius for this ring
  */
 double get_ring_radius_for_visualization(int ring, double base_radius);
+
+// ============================================================================
+// MEMORY MAPPING (Phase 3, Day 9)
+// ============================================================================
+
+/**
+ * Clock-based memory position
+ * Maps threads to memory using Babylonian clock structure
+ */
+typedef struct {
+    uint32_t ring;           // Which ring (0-4+)
+    uint32_t position;       // Position in ring
+    size_t memory_offset;    // Offset in memory (bytes)
+    size_t segment_size;     // Size of this segment (bytes)
+} ClockMemoryPosition;
+
+/**
+ * Map thread to memory position using clock structure
+ * 
+ * Uses Babylonian clock structure:
+ * - Ring 0: 12 positions (hours)
+ * - Ring 1: 60 positions (minutes)
+ * - Ring 2: 60 positions (seconds)
+ * - Ring 3: 100 positions (milliseconds)
+ * - Ring 4+: 1000 positions each
+ * 
+ * @param thread_id Thread ID
+ * @param hierarchy_level Level in hierarchy (0 = root)
+ * @param total_memory Total memory available (bytes)
+ * @return Memory position for this thread
+ */
+ClockMemoryPosition map_thread_to_memory(
+    int thread_id,
+    int hierarchy_level,
+    size_t total_memory
+);
+
+/**
+ * Calculate clock position for thread
+ * 
+ * @param thread_id Thread ID
+ * @param hierarchy_level Level in hierarchy
+ * @return Position in ring (0-based)
+ */
+uint32_t calculate_clock_position(int thread_id, int hierarchy_level);
+
+/**
+ * Calculate memory offset for ring position
+ * 
+ * @param ring Ring number
+ * @param position Position in ring
+ * @param total_memory Total memory available
+ * @return Memory offset in bytes
+ */
+size_t calculate_memory_offset(uint32_t ring, uint32_t position, size_t total_memory);
+
+/**
+ * Get number of positions in ring
+ * 
+ * @param ring Ring number
+ * @return Number of positions in this ring
+ */
+uint32_t get_ring_positions(uint32_t ring);
+
+/**
+ * Get total positions up to ring
+ * 
+ * @param ring Ring number
+ * @return Total positions in all rings up to and including this ring
+ */
+uint32_t get_cumulative_positions(uint32_t ring);
 
 #ifdef __cplusplus
 }
