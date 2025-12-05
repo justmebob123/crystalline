@@ -507,7 +507,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     }
 }
 
-void handle_research_tab_click(AppState* state, int x, int y) {
+void handle_research_tab_mouse_down(AppState* state, int x, int y) {
     if (!state || !ui_initialized) return;
     
     SDL_Event event;
@@ -729,4 +729,7 @@ void cleanup_research_tab(void) {
     btn_sort_name = btn_sort_size = btn_sort_date = btn_sort_type = NULL;
     
     ui_initialized = false;
+}// Legacy function for compatibility
+void handle_research_tab_click(AppState* state, int x, int y) {
+    handle_research_tab_mouse_down(state, x, y);
 }

@@ -310,7 +310,7 @@ void handle_url_manager_click(AppState* state, int x, int y) {
 }
 
 // Alias for main.c compatibility
-void handle_url_manager_tab_click(AppState* state, int x, int y) {
+void handle_url_manager_tab_mouse_down(AppState* state, int x, int y) {
     handle_url_manager_click(state, x, y);
 }
 
@@ -459,4 +459,7 @@ void cleanup_url_manager_tab(void) {
     
     url_state.initialized = false;
     ui_initialized = false;
+}// Legacy function for compatibility
+void handle_url_manager_tab_click(AppState* state, int x, int y) {
+    handle_url_manager_tab_mouse_down(state, x, y);
 }

@@ -789,6 +789,15 @@ void handle_input(AppState* state, SDL_Event* event) {
                 } else if (state->current_tab == TAB_VIDEO_GENERATOR) {
                     extern void handle_video_tab_mouse_down(AppState* state, int x, int y);
                     handle_video_tab_mouse_down(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_RESEARCH) {
+                    extern void handle_research_tab_mouse_down(AppState* state, int x, int y);
+                    handle_research_tab_mouse_down(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_URL_MANAGER) {
+                    extern void handle_url_manager_tab_mouse_down(AppState* state, int x, int y);
+                    handle_url_manager_tab_mouse_down(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
+                    extern void handle_downloaded_files_tab_mouse_down(AppState* state, int x, int y);
+                    handle_downloaded_files_tab_mouse_down(state, event->button.x, event->button.y);
                 } else {
                     // For non-Crystalline tabs, use old handler
                     handle_mouse_click(state, event->button.x, event->button.y);

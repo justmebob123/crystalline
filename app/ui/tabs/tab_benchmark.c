@@ -334,7 +334,7 @@ void benchmark_tab_render(SDL_Renderer* renderer, TTF_Font* font, int x, int y, 
     crystalline_draw_text_centered(renderer, instructions, inst_pos, accent_color, NULL);
 }
 
-void handle_benchmark_tab_click(AppState* state, int x, int y) {
+void handle_benchmark_tab_mouse_down(AppState* state, int x, int y) {
     if (!state || !ui_initialized) return;
     
     // Create SDL event for button handling
@@ -425,4 +425,7 @@ void benchmark_tab_cleanup(void) {
         progress_benchmark = NULL;
     }
     ui_initialized = false;
+}// Legacy function for compatibility
+void handle_benchmark_tab_click(AppState* state, int x, int y) {
+    handle_benchmark_tab_mouse_down(state, x, y);
 }

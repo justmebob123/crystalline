@@ -401,7 +401,7 @@ void handle_downloaded_files_click(AppState* state, int x, int y) {
 }
 
 // Alias for main.c compatibility
-void handle_downloaded_files_tab_click(AppState* state, int x, int y) {
+void handle_downloaded_files_tab_mouse_down(AppState* state, int x, int y) {
     handle_downloaded_files_click(state, x, y);
 }
 
@@ -580,4 +580,7 @@ void cleanup_downloaded_files_tab(void) {
     
     files_state.initialized = false;
     ui_initialized = false;
+}// Legacy function for compatibility
+void handle_downloaded_files_tab_click(AppState* state, int x, int y) {
+    handle_downloaded_files_tab_mouse_down(state, x, y);
 }
