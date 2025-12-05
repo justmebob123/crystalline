@@ -52,8 +52,6 @@ typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
 typedef struct SphereTrainingContext SphereTrainingContext;
 
 // Function forward declarations (after typedef)
-static void* sphere_worker_thread(void* arg);
-static void* sphere_worker_thread_lockfree(void* arg);
 static void* sphere_worker_thread_dynamic(void* arg);
 static int transition_to_control_thread(SphereTrainingContext* ctx);
 static int transition_to_worker_thread(SphereTrainingContext* ctx);
@@ -178,9 +176,11 @@ struct ThreadedTrainingSystem {
     pthread_mutex_t gradient_lock;             // Protects gradient accumulation at boundaries
     pthread_mutex_t model_lock;                // Protects model weight updates at boundaries
     
-    // Synchronization (MASTER PLAN - use barriers!)
-    pthread_barrier_t epoch_barrier;
-    pthread_barrier_t batch_barrier;
+    // Synchronization - Message-based (no barriers)
+    // Removed: pthread_barrier_t epoch_barrier;
+    // Removed: pthread_barrier_t batch_barrier;
+    atomic_int workers_ready;        // Count of workers ready for next batch
+    atomic_int workers_completed;    // Count of workers who completed batch
     
     // Statistics
     float epoch_loss;
@@ -1283,10 +1283,9 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     pthread_mutex_init(&system->gradient_lock, NULL);
     pthread_mutex_init(&system->model_lock, NULL);
     
-    // Initialize barriers for N worker threads + 1 control thread + 1 main thread
-    // Total participants: num_threads (workers) + 1 (control) + 1 (main)
-    pthread_barrier_init(&system->epoch_barrier, NULL, num_threads + 2);
-    pthread_barrier_init(&system->batch_barrier, NULL, num_threads + 2);
+    // Initialize atomic counters for message-based synchronization
+    atomic_init(&system->workers_ready, 0);
+    atomic_init(&system->workers_completed, 0);
     
     // OPTIMIZATION PHASE 2: Skip full kissing spheres hierarchy creation
     // Only create sphere contexts for active workers (saves 376MB)
@@ -1581,8 +1580,8 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     pthread_mutex_destroy(&system->gradient_lock);
     pthread_mutex_destroy(&system->model_lock);
     
-    pthread_barrier_destroy(&system->epoch_barrier);
-    pthread_barrier_destroy(&system->batch_barrier);
+    // Barriers removed - using message-based synchronization
+    // No cleanup needed for atomic counters
     
     // PHASE 5: Cleanup infrastructure
     if (system->control_process) {
@@ -1627,33 +1626,60 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
  * - Synchronizes at Point A (batch distribution)
  * - Synchronizes at Point B (batch completion)
  */
+/**
+ * Message-Based Control Thread (Node Zero)
+ * 
+ * Coordinates workers using message passing instead of barriers.
+ * NEVER processes batches - only coordinates and accumulates gradients.
+ * 
+ * Synchronization:
+ * - Workers send MSG_BATCH_COMPLETE when done
+ * - Control waits for all completions before accumulating
+ * - Uses atomic counters for tracking
+ */
 static void* control_thread_func(void* arg) {
     ThreadedTrainingSystem* system = (ThreadedTrainingSystem*)arg;
     
-    printf("[Node Zero] Control thread started - NEVER processes batches\n");
-    printf("[Node Zero] Using barrier synchronization + lock-free gradient accumulation\n");
+    printf("[Node Zero] Control thread started - Message-based coordination\n");
+    printf("[Node Zero] NEVER processes batches - only coordinates\n");
     
-    while (1) {
-        // POINT A: Wait for batch distribution
-        pthread_barrier_wait(&system->batch_barrier);
+    while (atomic_load(&system->running)) {
+        // Wait for all workers to complete their batches
+        int expected_workers = system->num_worker_spheres;
+        int completed = 0;
+        
+        // Poll for completion with timeout
+        int timeout_ms = 1000;  // 1 second
+        int elapsed_ms = 0;
+        
+        while (completed < expected_workers && atomic_load(&system->running)) {
+            // Check completion counter
+            completed = atomic_load(&system->workers_completed);
+            
+            if (completed < expected_workers) {
+                usleep(1000);  // 1ms sleep
+                elapsed_ms += 1;
+                
+                // Timeout check
+                if (elapsed_ms >= timeout_ms) {
+                    // Reset and try again
+                    elapsed_ms = 0;
+                }
+            }
+        }
         
         // Check if we should stop
-       // Check if we should stop (AFTER barrier to avoid deadlock)
-       if (!atomic_load(&system->running)) {
-           // Must still participate in Point B barrier before exiting
-           pthread_barrier_wait(&system->batch_barrier);
-           break;
-       }
+        if (!atomic_load(&system->running)) {
+            break;
+        }
         
-        // Workers are now processing batches...
-        // Control thread waits at next barrier
-        
-        // POINT B: Wait for batch completion
-        pthread_barrier_wait(&system->batch_barrier);
-        
-        // KISSING BOUNDARY: Accumulate gradients with proper synchronization
-        // Workers have completed their batches, now accumulate their gradients
-        accumulate_gradients(system);
+        // All workers completed - accumulate gradients
+        if (completed >= expected_workers) {
+            accumulate_gradients(system);
+            
+            // Reset completion counter for next batch
+            atomic_store(&system->workers_completed, 0);
+        }
     }
     
     printf("[Node Zero] Control thread stopping\n");
@@ -1671,79 +1697,6 @@ static void* control_thread_func(void* arg) {
  * - Process batch immediately
  * - Repeat until epoch done
  */
-static void* sphere_worker_thread_lockfree(void* arg) {
-    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
-    ThreadedTrainingSystem* system = ctx->system;
-    
-    printf("[Worker %d] Thread started (symmetry group %d) - LOCK-FREE MODE\n", 
-           ctx->sphere_id, ctx->symmetry_group);
-    
-    // UI Integration: Update thread state to WORKING
-    if (system->metrics) {
-        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
-    }
-    
-    int batches_processed = 0;
-    
-    while (atomic_load(&system->running)) {
-        // Pop work from queue (non-blocking)
-        CLLMBatch* batch = work_queue_pop(system->work_queue);
-        
-        if (!batch) {
-            // No work available - check if epoch done AND queue is truly empty
-            if (atomic_load(&system->work_queue->epoch_done)) {
-                // Double-check queue is actually empty
-                size_t head = atomic_load(&system->work_queue->head);
-                size_t tail = atomic_load(&system->work_queue->tail);
-                if (head >= tail) {
-                    break;  // Epoch complete and queue empty
-                }
-            }
-            
-            // UI Integration: Update thread state to IDLE
-            if (system->metrics) {
-                cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_IDLE);
-            }
-            
-            // Yield CPU to other threads
-            sched_yield();
-            continue;
-        }
-        
-        // UI Integration: Update thread state to WORKING
-        if (system->metrics) {
-            cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
-        }
-        
-        // Process batch immediately (no waiting!)
-        ctx->current_batch = batch;
-        
-        // PHASE 6: Control threads NEVER process batches
-        if (!ctx->is_control_thread) {
-            sphere_process_batch(ctx, system->training);
-            batches_processed++;
-            
-            // UI Integration: Update thread workload
-            if (system->metrics) {
-                cllm_metrics_update_thread_workload(system->metrics, ctx->sphere_id, batches_processed);
-            }
-        }
-        
-        // Free batch
-        cllm_batch_free(batch);
-        ctx->current_batch = NULL;
-    }
-    
-    // UI Integration: Update thread state to TERMINATED
-    if (system->metrics) {
-        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_TERMINATED);
-    }
-    
-    printf("[Worker %d] Thread stopping (processed %d batches) - LOCK-FREE\n", 
-           ctx->sphere_id, batches_processed);
-    
-    return NULL;
-}
 
 /**
  * Worker thread function with dynamic spawning - PHASE 2: Day 4 Afternoon
@@ -1825,6 +1778,9 @@ static void* sphere_worker_thread_dynamic(void* arg) {
         // Free batch
         cllm_batch_free(batch);
         ctx->current_batch = NULL;
+        
+        // Signal batch completion (for message-based coordination)
+        atomic_fetch_add(&system->workers_completed, 1);
         
         // Periodic workload check for dynamic spawning
         double current_time = get_current_time_seconds();
@@ -1915,56 +1871,6 @@ static void* sphere_worker_thread_dynamic(void* arg) {
  * 
  * NOTE: This function is kept for comparison but not used in Phase 2B
  * Phase 2B uses sphere_worker_thread_lockfree() instead
- */
-static void* sphere_worker_thread(void* arg) {
-    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
-    ThreadedTrainingSystem* system = ctx->system;
-    
-    printf("[Worker %d] Thread started (symmetry group %d)\n", 
-           ctx->sphere_id, ctx->symmetry_group);
-    
-    int batches_processed = 0;
-    
-    while (1) {
-        // POINT A: Wait for batch assignment from main thread
-        pthread_barrier_wait(&system->batch_barrier);
-        
-        // Check if we should stop
-       // Check if we should stop (AFTER barrier to avoid deadlock)
-       if (!atomic_load(&system->running)) {
-           // Must still participate in Point B barrier before exiting
-           pthread_barrier_wait(&system->batch_barrier);
-           break;
-       }
-        
-        // PHASE 6: Control threads NEVER process batches
-        // Only leaf workers (no children) process batches
-        if (ctx->current_batch && !ctx->is_control_thread) {
-            sphere_process_batch(ctx, system->training);
-            batches_processed++;
-        } else if (ctx->is_control_thread) {
-            // Control thread: coordinate children instead
-            // Children will process batches at their level
-        }
-        
-        // POINT B: Signal completion to main thread
-        pthread_barrier_wait(&system->batch_barrier);
-    }
-    
-    printf("[Worker %d] Thread stopping (processed %d batches)\n", 
-           ctx->sphere_id, batches_processed);
-    
-    return NULL;
-}
-
-/**
- * PHASE 3: Removed distribute_batch_to_sphere() and wait_for_sphere()
- * Now using barrier synchronization instead of condition variables
- */
-
-/**
- * PHASE 4: Lock-free gradient accumulation
- * Control thread reads all worker segments at barrier (safe - workers are waiting)
  */
 static int validate_gradients(double* gradients, size_t size, const char* source) {
     int nan_count = 0;
