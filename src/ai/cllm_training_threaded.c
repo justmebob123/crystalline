@@ -33,10 +33,12 @@
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
 #include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure
+#include "ai/cllm_cache_optimization.h"  // PHASE 3: Cache optimization
 #include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
 #include "prime_math.h"
+#include "prime_types.h"                 // For PRIME_PI
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -112,6 +114,10 @@ struct SphereTrainingContext {
     
     // PHASE 3: Crystalline Memory Structure
     CrystallineMemoryBlock* crystalline_memory;  // 12-fold memory structure
+    
+    // PHASE 3, Day 10: Cache Optimization
+    CachePlacement cache_placement;              // Cache-aware thread positioning
+    double theta;                                 // Angular position θ for this sphere
 };
 
 /**
@@ -694,6 +700,18 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     printf("[Sphere %d] Clock position: ring=%u, position=%u, offset=%zu, segment_size=%zu\n",
            sphere_id, clock_pos.ring, clock_pos.position, 
            clock_pos.memory_offset, clock_pos.segment_size);
+    
+    // PHASE 3, Day 10: Calculate theta and set up cache optimization
+    // For now, use symmetry group to calculate initial theta
+    // In full implementation, this would use the complete L(n,d,k,lambda,omega,psi) formula
+    ctx->theta = (symmetry_group / 12.0) * 2.0 * PRIME_PI;
+    
+    // Calculate cache placement based on theta
+    ctx->cache_placement = calculate_cache_placement(ctx->theta, sphere_id);
+    
+    printf("[Sphere %d] Cache placement: theta=%.4f, cache_line=%u, numa_node=%u, cpu_core=%d\n",
+           sphere_id, ctx->theta, ctx->cache_placement.cache_line,
+           ctx->cache_placement.numa_node, ctx->cache_placement.cpu_core);
     
     return ctx;
 }
@@ -1760,6 +1778,16 @@ static void* sphere_worker_thread_dynamic(void* arg) {
     
     printf("[Worker %d] Dynamic thread started (symmetry group %d, level %d)\n", 
            ctx->sphere_id, ctx->symmetry_group, ctx->hierarchy_level);
+    
+    // PHASE 3, Day 10: Position thread for optimal cache usage
+    int affinity_result = position_thread_for_cache(pthread_self(), &ctx->cache_placement);
+    if (affinity_result == 0) {
+        printf("[Worker %d] CPU affinity set: cache_line=%u, numa_node=%u, cpu_core=%d\n",
+               ctx->sphere_id, ctx->cache_placement.cache_line,
+               ctx->cache_placement.numa_node, ctx->cache_placement.cpu_core);
+    } else {
+        printf("[Worker %d] Warning: Failed to set CPU affinity\n", ctx->sphere_id);
+    }
     
     // Initialize workload detector
     WorkloadDetectorContext detector;
