@@ -375,7 +375,7 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/cllm_model_manager \
        tools/init_lattice_embeddings tools/benchmark_ntt_attention \
        tools/validate_kissing_spheres tools/analyze_cymatic_resonance \
-       tools/visualize_angular_positions
+       tools/visualize_angular_positions tools/ui_layout_analyzer
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."

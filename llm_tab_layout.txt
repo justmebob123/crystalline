@@ -1,0 +1,73 @@
+# UI Layout Export
+# Screen: 160x90 (scaled from 1600x900)
+
+Element: ChatArea
+  Type: 4
+  Center: (605.0, 415.0)
+  Size: 790.0 x 730.0
+  Bounds: (210, 50) to (1000, 780)
+  Visible: yes, Enabled: yes
+
+Element: MessageInput
+  Type: 3
+  Center: (550.0, 830.0)
+  Size: 680.0 x 80.0
+  Bounds: (210, 790) to (890, 870)
+  Visible: yes, Enabled: yes
+
+Element: SendBtn
+  Type: 1
+  Center: (950.0, 830.0)
+  Size: 100.0 x 80.0
+  Bounds: (900, 790) to (1000, 870)
+  Visible: yes, Enabled: yes
+
+Element: Temperature
+  Type: 2
+  Center: (1145.0, 50.0)
+  Size: 250.0 x 30.0
+  Bounds: (1020, 35) to (1270, 65)
+  Visible: yes, Enabled: yes
+
+Element: MaxTokens
+  Type: 2
+  Center: (1145.0, 120.0)
+  Size: 250.0 x 30.0
+  Bounds: (1020, 105) to (1270, 135)
+  Visible: yes, Enabled: yes
+
+Element: TopK
+  Type: 2
+  Center: (1145.0, 190.0)
+  Size: 250.0 x 30.0
+  Bounds: (1020, 175) to (1270, 205)
+  Visible: yes, Enabled: yes
+
+Element: TopP
+  Type: 2
+  Center: (1145.0, 260.0)
+  Size: 250.0 x 30.0
+  Bounds: (1020, 245) to (1270, 275)
+  Visible: yes, Enabled: yes
+
+Element: BrowseModels
+  Type: 1
+  Center: (1145.0, 350.0)
+  Size: 250.0 x 40.0
+  Bounds: (1020, 330) to (1270, 370)
+  Visible: yes, Enabled: yes
+
+Element: NewThread
+  Type: 1
+  Center: (1145.0, 410.0)
+  Size: 250.0 x 40.0
+  Bounds: (1020, 390) to (1270, 430)
+  Visible: yes, Enabled: yes
+
+Element: ClearChat
+  Type: 1
+  Center: (1145.0, 470.0)
+  Size: 250.0 x 40.0
+  Bounds: (1020, 450) to (1270, 490)
+  Visible: yes, Enabled: yes
+
