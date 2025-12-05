@@ -824,6 +824,85 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     snprintf(perf, sizeof(perf), "Gradient Norm: %.4f", state->sphere_stats.total_gradient_norm);
     draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
+    metrics_text_y += 25;
+    
+    // PHASE 6: Display entropy metrics if available
+    extern void* get_training_system(void);  // From training_thread.c
+    void* training_system = get_training_system();
+    
+    if (training_system) {
+        // Get entropy context
+        extern void* threaded_training_get_entropy_context(void* system);
+        void* entropy_ctx = threaded_training_get_entropy_context(training_system);
+        
+        if (entropy_ctx) {
+            // Get model entropy stats
+            extern const void* get_model_entropy_stats(const void* ctx);
+            const void* model_stats = get_model_entropy_stats(entropy_ctx);
+            
+            if (model_stats) {
+                draw_text(renderer, "ENTROPY METRICS", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
+                metrics_text_y += 25;
+                
+                // Cast to access the structure
+                typedef struct {
+                    void* dimensions[12];
+                    double total_entropy;
+                    double normalized_entropy;
+                    uint64_t update_count;
+                    double entropy_trend;
+                    double last_total_entropy;
+                } ModelEntropyStats;
+                
+                const ModelEntropyStats* stats = (const ModelEntropyStats*)model_stats;
+                
+                char entropy_text[128];
+                snprintf(entropy_text, sizeof(entropy_text), "Total: %.4f", stats->total_entropy);
+                draw_text(renderer, entropy_text, metrics_text_x, metrics_text_y, text_color);
+                metrics_text_y += 18;
+                
+                snprintf(entropy_text, sizeof(entropy_text), "Normalized: %.4f", stats->normalized_entropy);
+                draw_text(renderer, entropy_text, metrics_text_x, metrics_text_y, text_color);
+                metrics_text_y += 18;
+                
+                snprintf(entropy_text, sizeof(entropy_text), "Trend: %+.4f", stats->entropy_trend);
+                SDL_Color trend_color = (stats->entropy_trend > 0) ? 
+                    (SDL_Color){255, 150, 100, 255} : (SDL_Color){100, 255, 150, 255};
+                draw_text(renderer, entropy_text, metrics_text_x, metrics_text_y, trend_color);
+            }
+        }
+        
+        // Get adaptive hierarchy context
+        extern void* threaded_training_get_adaptive_hierarchy(void* system);
+        void* hierarchy_ctx = threaded_training_get_adaptive_hierarchy(training_system);
+        
+        if (hierarchy_ctx) {
+            metrics_text_y += 25;
+            draw_text(renderer, "ADAPTIVE HIERARCHY", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
+            metrics_text_y += 25;
+            
+            // Display hierarchy status
+            draw_text(renderer, "Status: ACTIVE", metrics_text_x, metrics_text_y, (SDL_Color){100, 255, 100, 255});
+        }
+        
+        // Get cymatic timing stats
+        extern int threaded_training_get_cymatic_stats(void* system, uint64_t* epoch_syncs, uint64_t* batch_syncs);
+        uint64_t epoch_syncs = 0, batch_syncs = 0;
+        
+        if (threaded_training_get_cymatic_stats(training_system, &epoch_syncs, &batch_syncs) == 0) {
+            metrics_text_y += 25;
+            draw_text(renderer, "CYMATIC TIMING", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
+            metrics_text_y += 25;
+            
+            char cymatic_text[128];
+            snprintf(cymatic_text, sizeof(cymatic_text), "Epoch Syncs: %lu", (unsigned long)epoch_syncs);
+            draw_text(renderer, cymatic_text, metrics_text_x, metrics_text_y, text_color);
+            metrics_text_y += 18;
+            
+            snprintf(cymatic_text, sizeof(cymatic_text), "Batch Syncs: %lu", (unsigned long)batch_syncs);
+            draw_text(renderer, cymatic_text, metrics_text_x, metrics_text_y, text_color);
+        }
+    }
 }
 
 /**

@@ -678,3 +678,17 @@ void get_training_state(AppState* state, int* epoch, float* loss, bool* in_progr
     if (in_progress) *in_progress = state->training_in_progress;
     pthread_mutex_unlock(&training_mutex);
 }
+
+/**
+ * PHASE 6: Get training system for UI access
+ * 
+ * Returns the global training system pointer for UI to access
+ * entropy, hierarchy, and cymatic data.
+ */
+void* get_training_system(void) {
+    void* system = NULL;
+    pthread_mutex_lock(&training_mutex);
+    system = g_threaded_system;
+    pthread_mutex_unlock(&training_mutex);
+    return system;
+}
