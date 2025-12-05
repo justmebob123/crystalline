@@ -194,9 +194,8 @@ struct ThreadedTrainingSystem {
     // Gradient accumulation (temporary until shared memory fully integrated)
     double* accumulated_gradients;              // Accumulated gradients from all spheres
     
-    // KISSING BOUNDARY LOCKS - RESTORED for proper synchronization
-    // These locks protect shared memory at kissing boundaries between threads
-    pthread_mutex_t gradient_lock;             // Protects gradient accumulation at boundaries
+    // KISSING BOUNDARY LOCK - Only for model weight updates
+    // Gradient accumulation is now fully lock-free (PHASE 3 complete)
     pthread_mutex_t model_lock;                // Protects model weight updates at boundaries
     
     // Synchronization - Message-based (no barriers)
@@ -1464,8 +1463,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         return NULL;
     }
     
-    // Initialize kissing boundary locks - RESTORED for proper synchronization
-    pthread_mutex_init(&system->gradient_lock, NULL);
+    // Initialize kissing boundary lock for model updates
+    // Gradient lock removed - now fully lock-free (PHASE 3)
     pthread_mutex_init(&system->model_lock, NULL);
     
     // Initialize atomic counters for message-based synchronization
@@ -1810,8 +1809,8 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         printf("  ✓ Work queue freed\n");
     }
     
-    // Destroy kissing boundary locks - RESTORED
-    pthread_mutex_destroy(&system->gradient_lock);
+    // Destroy kissing boundary lock for model updates
+    // Gradient lock removed - now fully lock-free (PHASE 3)
     pthread_mutex_destroy(&system->model_lock);
     
     // Barriers removed - using message-based synchronization
@@ -2636,15 +2635,13 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         return;
     }
     
-    printf("[DEBUG] accumulate_gradients: About to acquire lock\n");
+    printf("[DEBUG] accumulate_gradients: Starting lock-free accumulation\n");
     fflush(stdout);
     
-    // KISSING BOUNDARY LOCK - Protect shared gradient accumulation
-    // Multiple threads write to accumulated_gradients - this is a kissing boundary
-    pthread_mutex_lock(&system->gradient_lock);
-    
-    printf("[DEBUG] accumulate_gradients: Lock acquired, about to memset\n");
-    fflush(stdout);
+    // PHASE 3: Lock-free gradient accumulation
+    // This function is called by the control thread AFTER all workers complete
+    // No mutex needed because there's no concurrent access at this point
+    // Each worker already wrote to its own segment (lock-free)
     
     // Zero accumulated gradients
     printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
@@ -2733,7 +2730,8 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         fprintf(stderr, "CRITICAL: Accumulated gradients are invalid!\n");
     }
     
-    pthread_mutex_unlock(&system->gradient_lock);
+    printf("[DEBUG] accumulate_gradients: Lock-free accumulation complete\n");
+    fflush(stdout);
 }
 
 /**
