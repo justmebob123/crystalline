@@ -134,11 +134,11 @@ static void on_model_selected(int index, void* data) {
             state->cllm_inference = NULL;
         }
         
-        // First, prepare the model (ensures abacus has enough primes)
-        printf("Preparing model: %s\n", model_name);
-        if (!model_manager_prepare(model_name)) {
-            printf("ERROR: Failed to prepare model\n");
-            add_chat_message("Error: Failed to prepare model.", false);
+        // Load the model into memory (this also prepares the abacus)
+        printf("Loading model: %s\n", model_name);
+        if (!model_manager_reload(model_name)) {
+            printf("ERROR: Failed to load model\n");
+            add_chat_message("Error: Failed to load model into memory.", false);
             return;
         }
         

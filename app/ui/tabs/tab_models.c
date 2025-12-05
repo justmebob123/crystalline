@@ -76,20 +76,24 @@ static void update_model_info(void) {
         "Status: %s\n"
         "Accessible: %s\n"
         "Training: %s\n"
+        "Active Readers: %u\n\n"
         "Vocab Size: %u\n"
         "Embedding Dim: %u\n"
         "Num Layers: %u\n"
         "Num Heads: %u\n"
-        "Required Primes: %lu",
+        "Required Primes: %lu\n\n"
+        "%s",
         model->name,
-        model->model ? "Loaded" : "Not Loaded",
+        model->model ? "Loaded in Memory" : "Not Loaded",
         model->is_accessible ? "Yes" : "No",
         model->is_training ? "Yes" : "No",
+        model->read_count,
         model->vocab_size,
         model->embedding_dim,
         model->num_layers,
         model->num_heads,
-        (unsigned long)model->required_primes
+        (unsigned long)model->required_primes,
+        model->model ? "Ready for use" : "Click 'Load Model' to load into memory"
     );
     
     crystalline_textarea_add_message(g_models_ui.info_display, 
@@ -140,12 +144,12 @@ static void on_load_clicked(void* data) {
     
     printf("Loading model: %s\n", g_models_ui.selected_model_name);
     
-    // Prepare model (loads if not already loaded)
-    if (model_manager_prepare(g_models_ui.selected_model_name)) {
-        printf("Model loaded successfully\n");
+    // Reload model (actually loads it into memory)
+    if (model_manager_reload(g_models_ui.selected_model_name)) {
+        printf("✓ Model loaded successfully into memory\n");
         update_model_info();
     } else {
-        printf("Failed to load model\n");
+        printf("ERROR: Failed to load model\n");
     }
 }
 

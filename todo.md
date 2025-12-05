@@ -22,7 +22,7 @@ Changed LLM tab to use `model_manager_acquire_read()` instead of `app_load_model
 3. ✅ Added `model_manager_release_read()` to cleanup function
 4. ✅ Added proper error handling and user feedback
 
-## Active Tasks
+## Completed Tasks ✅
 
 ### Task 1: Model Manager Concurrent Access ✅ COMPLETE
 - [x] Identified root cause (LLM tab loading separate model copy)
@@ -32,27 +32,43 @@ Changed LLM tab to use `model_manager_acquire_read()` instead of `app_load_model
 - [x] Added proper error handling
 - [x] Created comprehensive documentation
 
-### Task 2: Fix Models Tab API ⚠️ TODO (NEXT)
-- [ ] Add CrystallineElementStyle parameter to all element creations
-- [ ] Fix panel creation calls
-- [ ] Fix list creation calls
-- [ ] Fix button creation calls
-- [ ] Verify build succeeds
+### Task 1.5: Model Loading Fix ✅ COMPLETE
+- [x] Performed depth-3 analysis of model manager
+- [x] Identified root cause: prepare() doesn't load model
+- [x] Fixed LLM tab to use model_manager_reload()
+- [x] Fixed Models tab to use model_manager_reload()
+- [x] Enhanced Models tab info display
+- [x] Fixed header file signature mismatch
+- [x] Build succeeds with zero errors
+- [x] Created comprehensive documentation
 
-### Task 3: Fix Crawler Tab API ⚠️ TODO
-- [ ] Fix CrystallineTextarea → CrystallineTextArea type name
-- [ ] Add CrystallineElementStyle parameter to all element creations
-- [ ] Fix all element creation calls
-- [ ] Fix crawler function signatures
-- [ ] Fix CrawlerStatus field names
-- [ ] Verify build succeeds
+### Task 2: Fix Models Tab API ✅ COMPLETE
+- [x] Added CrystallineElementStyle parameter to all element creations
+- [x] Fixed panel creation calls
+- [x] Fixed list creation calls
+- [x] Fixed button creation calls
+- [x] Fixed textarea type name (CrystallineTextArea)
+- [x] Fixed event handlers to use unified handle_mouse API
+- [x] Fixed model info display to use correct field names
+- [x] Build succeeds
+
+### Task 3: Fix Crawler Tab API ✅ COMPLETE
+- [x] Fixed CrystallineTextarea → CrystallineTextArea type name
+- [x] Added CrystallineElementStyle parameter to all element creations
+- [x] Fixed all element creation calls
+- [x] Fixed crawler function signatures
+- [x] Fixed CrawlerStatus field names
+- [x] Simplified stats display (removed get_crawler_state dependency)
+- [x] Fixed event handlers to use unified handle_mouse API
+- [x] Build succeeds
 
 ### Task 4: Wire Tabs into Main Event Loop ✅ COMPLETE
 - [x] Added Models tab to all event handlers
 - [x] Added Crawler tab to all event handlers
 - [x] Updated render switch cases
+- [x] Removed legacy click handler
 
-### Task 5: Delete Legacy Code ⚠️ TODO
+### Task 5: Delete Legacy Code ⚠️ TODO (NEXT)
 - [ ] Delete app/ui/components/ directory
 - [ ] Remove legacy includes from Makefile
 - [ ] Verify build succeeds

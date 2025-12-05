@@ -8,7 +8,7 @@
 void init_models_tab(AppState* state);
 
 // Cleanup models tab
-void cleanup_models_tab(AppState* state);
+void cleanup_models_tab(void);
 
 // Draw models tab
 void draw_models_tab(AppState* state);

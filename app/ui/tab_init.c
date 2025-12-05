@@ -40,7 +40,13 @@ void cleanup_all_tabs(AppState* state) {
     printf("\n=== Cleaning Up UI Tabs ===\n");
     
     // Models Tab
-    cleanup_models_tab(state);
+    cleanup_models_tab();
+    
+    // Crawler Tab
+    cleanup_crawler_tab();
+    
+    // LLM Tab
+    cleanup_llm_tab();
     
     // Training Tab
     cleanup_training_tab();
