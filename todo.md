@@ -117,25 +117,32 @@
 
 ---
 
-### ✅ Task 3.3: Wire Lock-Free Memory for Accumulation - COMPLETE
+### ✅ Task 3.3: Optimize Lock-Free Gradient Pipeline - COMPLETE
 
 **What Was Done**:
-1. ✅ Removed `pthread_mutex_lock/unlock` from accumulate_gradients()
-2. ✅ Removed gradient_lock from ThreadedTrainingSystem structure
-3. ✅ Removed gradient_lock initialization and destruction
-4. ✅ Updated comments to reflect lock-free architecture
+1. ✅ Analyzed gradient access patterns for lock-free optimization
+2. ✅ Verified worker computation is lock-free (segment-based)
+3. ✅ Verified boundary sharing is lock-free (atomic spinlocks)
+4. ✅ **CRITICAL FIX**: Restored gradient_lock for accumulated_gradients[]
 
-**Why No Mutex Needed**:
-- Each sphere writes to its OWN segment (lock-free)
-- accumulate_gradients() called by control thread AFTER workers finish
-- No concurrent access exists during accumulation
-- Mutex was protecting against non-existent race condition
+**Why Lock IS Needed**:
+- accumulate_gradients() writes to accumulated_gradients[]
+- threaded_training_get_gradient_norm() reads from accumulated_gradients[]
+- UI thread and crawler thread call get_gradient_norm() asynchronously
+- Without lock: torn reads, inconsistent data, race condition
+
+**What's Lock-Free**:
+- ✅ Worker gradient computation (segment-based, no locks)
+- ✅ Boundary sharing (atomic spinlocks)
+- ✅ Segment writes (no overlap, no locks)
 
 **Build Status**: Zero errors, 1 pre-existing warning
 
 **Integration Progress**: 55% (up from 50%)
 
-**Key Achievement**: Complete lock-free gradient pipeline from computation to accumulation
+**Key Achievement**: Optimized lock-free pipeline with proper synchronization
+
+**See**: CRITICAL_BUG_FIX.md for detailed analysis
 
 ## 📊 PRIORITY MATRIX
 
