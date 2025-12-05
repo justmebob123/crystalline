@@ -449,9 +449,9 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
 
 /**
  * Event Handlers
- * Pattern copied from training tab
+ * EXACT pattern from training tab - handles DOWN, UP, and MOTION separately
  */
-void handle_llm_tab_click(AppState* state, int x, int y) {
+void handle_llm_tab_mouse_down(AppState* state, int x, int y) {
     if (!state) return;
     
     SDL_Event dummy_event = {0};
@@ -460,22 +460,16 @@ void handle_llm_tab_click(AppState* state, int x, int y) {
     dummy_event.button.y = y;
     dummy_event.button.button = SDL_BUTTON_LEFT;
     
-    // Let Crystalline UI handle events
-    // NO manual click detection!
-    
-    if (llm_ui.btn_send && crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event)) return;
-    if (llm_ui.btn_clear && crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event)) return;
-    if (llm_ui.btn_browse_models && crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event)) return;
-    if (llm_ui.btn_new_thread && crystalline_button_handle_mouse(llm_ui.btn_new_thread, &dummy_event)) return;
-    if (llm_ui.message_input && crystalline_input_handle_mouse(llm_ui.message_input, &dummy_event)) return;
-    if (llm_ui.slider_temperature && crystalline_slider_handle_mouse(llm_ui.slider_temperature, &dummy_event)) return;
-    if (llm_ui.slider_tokens && crystalline_slider_handle_mouse(llm_ui.slider_tokens, &dummy_event)) return;
-    if (llm_ui.slider_top_k && crystalline_slider_handle_mouse(llm_ui.slider_top_k, &dummy_event)) return;
-    if (llm_ui.slider_top_p && crystalline_slider_handle_mouse(llm_ui.slider_top_p, &dummy_event)) return;
-}
-
-void handle_llm_tab_mouse_down(AppState* state, int x, int y) {
-    handle_llm_tab_click(state, x, y);
+    // Handle all elements - buttons, input, sliders
+    if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
+    if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
+    if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);
+    if (llm_ui.btn_new_thread) crystalline_button_handle_mouse(llm_ui.btn_new_thread, &dummy_event);
+    if (llm_ui.message_input) crystalline_input_handle_mouse(llm_ui.message_input, &dummy_event);
+    if (llm_ui.slider_temperature) crystalline_slider_handle_mouse(llm_ui.slider_temperature, &dummy_event);
+    if (llm_ui.slider_tokens) crystalline_slider_handle_mouse(llm_ui.slider_tokens, &dummy_event);
+    if (llm_ui.slider_top_k) crystalline_slider_handle_mouse(llm_ui.slider_top_k, &dummy_event);
+    if (llm_ui.slider_top_p) crystalline_slider_handle_mouse(llm_ui.slider_top_p, &dummy_event);
 }
 
 void handle_llm_tab_mouse_up(AppState* state, int x, int y) {
@@ -487,6 +481,13 @@ void handle_llm_tab_mouse_up(AppState* state, int x, int y) {
     dummy_event.button.y = y;
     dummy_event.button.button = SDL_BUTTON_LEFT;
     
+    // CRITICAL: Handle buttons FIRST - this triggers callbacks!
+    if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
+    if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
+    if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);
+    if (llm_ui.btn_new_thread) crystalline_button_handle_mouse(llm_ui.btn_new_thread, &dummy_event);
+    
+    // Handle sliders
     if (llm_ui.slider_temperature) crystalline_slider_handle_mouse(llm_ui.slider_temperature, &dummy_event);
     if (llm_ui.slider_tokens) crystalline_slider_handle_mouse(llm_ui.slider_tokens, &dummy_event);
     if (llm_ui.slider_top_k) crystalline_slider_handle_mouse(llm_ui.slider_top_k, &dummy_event);
@@ -501,10 +502,22 @@ void handle_llm_tab_mouse_motion(AppState* state, int x, int y) {
     dummy_event.motion.x = x;
     dummy_event.motion.y = y;
     
+    // Handle hover states for buttons
+    if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
+    if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
+    if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);
+    if (llm_ui.btn_new_thread) crystalline_button_handle_mouse(llm_ui.btn_new_thread, &dummy_event);
+    
+    // Handle slider dragging
     if (llm_ui.slider_temperature) crystalline_slider_handle_mouse(llm_ui.slider_temperature, &dummy_event);
     if (llm_ui.slider_tokens) crystalline_slider_handle_mouse(llm_ui.slider_tokens, &dummy_event);
     if (llm_ui.slider_top_k) crystalline_slider_handle_mouse(llm_ui.slider_top_k, &dummy_event);
     if (llm_ui.slider_top_p) crystalline_slider_handle_mouse(llm_ui.slider_top_p, &dummy_event);
+}
+
+// Legacy handler for compatibility
+void handle_llm_tab_click(AppState* state, int x, int y) {
+    handle_llm_tab_mouse_down(state, x, y);
 }
 
 void handle_llm_tab_keydown(AppState* state, int key) {
