@@ -305,6 +305,72 @@ Full unabridged implementation of crystalline CLLM with:
 - [ ] Commit: "feat: Implement 12-fold crystalline memory structure"
 
 ## 🔵 PHASE 4: PLIMPTON WORK DISTRIBUTION (DAYS 13-15)
+
+### Day 13 - Parent-Child Relationships & Work Distribution
+
+#### Morning: Parent-Child Relationships ✅
+- [x] Create `include/ai/cllm_plimpton_relationships.h` (NEW FILE) ✅
+- [x] Create `src/ai/cllm_plimpton_relationships.c` (NEW FILE) ✅
+- [x] Implement coprime validation for parent-child relationships ✅
+- [x] Add parent-child relationship tracking ✅
+- [x] Enforce Plimpton constraints in spawning (gcd(p,q)=1, not both odd, p>q) ✅
+- [x] Create comprehensive unit tests (19 tests, all passing) ✅
+- [x] Document mathematical basis ✅
+- [x] Build and verify (zero errors, zero warnings) ✅
+- [ ] Commit: "feat: Implement Plimpton parent-child relationships"
+
+#### Afternoon: Work Distribution Ratios
+- [ ] Create `include/ai/cllm_work_distribution.h` (NEW FILE)
+- [ ] Create `src/ai/cllm_work_distribution.c` (NEW FILE)
+- [ ] Implement ratio-based work distribution using Plimpton ratios
+- [ ] Calculate work splits (parent_keeps = b/d, child_gets = c/d)
+- [ ] Add validation (ratios sum to 1.0)
+- [ ] Create comprehensive unit tests
+- [ ] Benchmark performance
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Implement Plimpton work distribution ratios"
+
+### Day 14 - Ratio-Based Batch Splitting & Cache-Aware Distribution
+
+#### Morning: Ratio-Based Batch Splitting
+- [ ] Update `src/ai/cllm_training_threaded.c`
+- [ ] Implement split_batch_by_ratios() function
+- [ ] Split batches according to Plimpton ratios
+- [ ] Assign work to parent and children
+- [ ] Add validation and error handling
+- [ ] Create unit tests
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Implement ratio-based batch splitting"
+
+#### Afternoon: Cache-Aware Distribution
+- [ ] Create `include/ai/cllm_cache_aware_distribution.h` (NEW FILE)
+- [ ] Create `src/ai/cllm_cache_aware_distribution.c` (NEW FILE)
+- [ ] Implement NUMA-aware work distribution
+- [ ] Add cache locality optimization
+- [ ] Implement work stealing for load balancing
+- [ ] Create unit tests
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Implement cache-aware work distribution"
+
+### Day 15 - Integration & Testing
+
+#### Morning: Integration with Training System
+- [ ] Integrate Plimpton relationships with sphere spawning
+- [ ] Update spawn_children() to use Plimpton constraints
+- [ ] Integrate work distribution with batch processing
+- [ ] Add end-to-end integration tests
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Integrate Plimpton work distribution with training"
+
+#### Afternoon: Performance Testing & Optimization
+- [ ] Create performance benchmarks
+- [ ] Compare with previous work distribution
+- [ ] Optimize hot paths
+- [ ] Add performance metrics
+- [ ] Document performance improvements
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "perf: Optimize Plimpton work distribution"
+
 ## 🟣 PHASE 5: CYMATIC TIMING INTEGRATION (DAYS 16-18)
 ## 🟠 PHASE 6: ENTROPY OPTIMIZATION (DAYS 19-21)
 ## 🧪 PHASE 7: COMPREHENSIVE TESTING (DAYS 22-28)
