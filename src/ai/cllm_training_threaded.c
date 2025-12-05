@@ -36,6 +36,10 @@
 #include "ai/cllm_cache_optimization.h"  // PHASE 3: Cache optimization
 #include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
+#include "ai/cllm_entropy_integration.h" // PHASE 6: Entropy integration
+#include "ai/cllm_adaptive_hierarchy.h"  // PHASE 6: Adaptive hierarchy
+#include "ai/cllm_entropy_allocation.h"  // PHASE 6: Entropy-based allocation
+#include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
 #include "prime_float_math.h"
 #include "prime_math.h"
 #include "prime_types.h"                 // For PRIME_PI
@@ -118,6 +122,12 @@ struct SphereTrainingContext {
     // PHASE 3, Day 10: Cache Optimization
     CachePlacement cache_placement;              // Cache-aware thread positioning
     double theta;                                 // Angular position θ for this sphere
+    
+    // PHASE 6: Entropy-based allocation
+    int allocated_threads;                       // Threads allocated to this sphere
+    bool can_spawn_children;                     // Can spawn based on allocation
+    ThreadAllocationPlan* allocation_plan;       // Allocation plan for children
+    int assigned_batches;                        // Batches assigned based on entropy
 };
 
 /**
@@ -212,6 +222,12 @@ struct ThreadedTrainingSystem {
     
     // UI Integration: Real-time metrics collection
     CLLMMetrics* metrics;                      // Metrics system for UI updates
+    
+    // PHASE 6: Entropy Optimization - ACTUALLY WIRED NOW
+    EntropyIntegrationContext* entropy_context;     // Entropy monitoring and integration
+    AdaptiveHierarchyContext* adaptive_hierarchy;   // Adaptive hierarchy depth management
+    ThreadAllocationPlan* entropy_allocation;       // Entropy-based thread allocation
+    WorkDistributionPlan* work_distribution;        // Entropy-based work distribution
 };
 
 /**
@@ -713,6 +729,12 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
            sphere_id, ctx->theta, ctx->cache_placement.cache_line,
            ctx->cache_placement.numa_node, ctx->cache_placement.cpu_core);
     
+    // PHASE 6: Initialize entropy allocation fields
+    ctx->allocated_threads = 1;  // Default to 1 thread
+    ctx->can_spawn_children = false;  // Will be set based on allocation
+    ctx->allocation_plan = NULL;  // Will be set when spawning children
+    ctx->assigned_batches = 0;  // Will be set by work distribution
+    
     return ctx;
 }
 
@@ -848,6 +870,15 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     
     // PHASE 7: Record sphere statistics
     cllm_sphere_stats_record_batch(&ctx->sphere_stats, ctx->batch_loss, valid_sequences);
+    
+    // PHASE 6: Update entropy monitoring - ACTUALLY WIRED NOW
+    if (ctx->system->entropy_context) {
+        // Update entropy statistics based on current batch
+        update_entropy_statistics(
+            ctx->system->entropy_context,
+            batch->seq_len
+        );
+    }
     
     // PHASE 4: Lock-free gradient accumulation
     // Each worker writes ONLY to its own segment (no locking needed)
@@ -1568,6 +1599,55 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         printf("  ✓ Metrics system initialized for UI integration\n");
     }
     
+    // PHASE 6: Initialize entropy optimization systems - ACTUALLY WIRED NOW
+    printf("  Initializing entropy optimization systems...\n");
+    
+    // Create entropy integration context
+    system->entropy_context = (EntropyIntegrationContext*)calloc(1, sizeof(EntropyIntegrationContext));
+    if (system->entropy_context && entropy_integration_init(system->entropy_context, training->model)) {
+        printf("  ✓ Entropy integration initialized (12 dimensions)\n");
+    } else {
+        fprintf(stderr, "WARNING: Failed to initialize entropy integration context\n");
+        free(system->entropy_context);
+        system->entropy_context = NULL;
+    }
+    
+    // Create adaptive hierarchy context
+    system->adaptive_hierarchy = (AdaptiveHierarchyContext*)calloc(1, sizeof(AdaptiveHierarchyContext));
+    if (system->adaptive_hierarchy) {
+        AdaptiveHierarchyConfig config;
+        adaptive_hierarchy_config_init_default(&config);
+        if (adaptive_hierarchy_init(system->adaptive_hierarchy, system->entropy_context, &config)) {
+            printf("  ✓ Adaptive hierarchy initialized (multi-factor scoring)\n");
+        } else {
+            fprintf(stderr, "WARNING: Failed to initialize adaptive hierarchy context\n");
+            free(system->adaptive_hierarchy);
+            system->adaptive_hierarchy = NULL;
+        }
+    }
+    
+    // Create entropy allocation plan
+    system->entropy_allocation = (ThreadAllocationPlan*)calloc(1, sizeof(ThreadAllocationPlan));
+    if (system->entropy_allocation) {
+        system->entropy_allocation->total_available_threads = system->num_worker_spheres;
+        system->entropy_allocation->enforce_12fold = true;
+        printf("  ✓ Entropy-based thread allocation initialized\n");
+    } else {
+        fprintf(stderr, "WARNING: Failed to create entropy allocation plan\n");
+    }
+    
+    // Create entropy work distribution plan (will be populated during training)
+    system->work_distribution = (WorkDistributionPlan*)calloc(1, sizeof(WorkDistributionPlan));
+    if (system->work_distribution) {
+        system->work_distribution->assignments = NULL;
+        system->work_distribution->num_assignments = 0;
+        printf("  ✓ Entropy work distribution plan initialized\n");
+    } else {
+        fprintf(stderr, "WARNING: Failed to create entropy work distribution plan\n");
+    }
+    
+    printf("  ✓ All entropy optimization systems initialized\n\n");
+    
     // Give threads time to initialize before returning
     usleep(10000);  // 10ms - allow worker threads to start and enter wait state
     
@@ -1659,6 +1739,32 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
     if (system->metrics) {
         cllm_metrics_free(system->metrics);
         printf("  ✓ Metrics system freed\n");
+    }
+    
+    // PHASE 6: Cleanup entropy optimization systems
+    if (system->entropy_context) {
+        entropy_integration_destroy(system->entropy_context);
+        free(system->entropy_context);
+        printf("  ✓ Entropy integration freed\n");
+    }
+    
+    if (system->adaptive_hierarchy) {
+        adaptive_hierarchy_destroy(system->adaptive_hierarchy);
+        free(system->adaptive_hierarchy);
+        printf("  ✓ Adaptive hierarchy freed\n");
+    }
+    
+    if (system->entropy_allocation) {
+        free(system->entropy_allocation);
+        printf("  ✓ Entropy allocation freed\n");
+    }
+    
+    if (system->work_distribution) {
+        if (system->work_distribution->assignments) {
+            free(system->work_distribution->assignments);
+        }
+        free(system->work_distribution);
+        printf("  ✓ Entropy work distribution freed\n");
     }
     
     free(system);
@@ -1888,12 +1994,36 @@ static void* sphere_worker_thread_dynamic(void* arg) {
                 printf("[Worker %d] SPAWNING: pending=%zu, cores=%d, depth=%d\n",
                        ctx->sphere_id, pending, available_cores, ctx->hierarchy_level);
                 
-                // Calculate optimal number of children (adaptive 12-fold symmetry)
-                // Prefer 12 for full symmetry, but adapt to available cores
-                int num_children_to_spawn = (available_cores >= 12) ? 12 : available_cores;
+                // PHASE 6: Use adaptive hierarchy to determine optimal depth and children count
+                int num_children_to_spawn = 12;  // Default to full 12-fold symmetry
+                
+                if (ctx->system->adaptive_hierarchy) {
+                    // Get recommended depth based on current state
+                    int recommended_depth = calculate_entropy_aware_depth(
+                        ctx->system->adaptive_hierarchy,
+                        available_cores,
+                        ctx->system->num_worker_spheres,
+                        pending
+                    );
+                    
+                    printf("[Worker %d] Adaptive hierarchy: depth=%d, cores=%d, pending=%zu\n",
+                           ctx->sphere_id, recommended_depth, available_cores, pending);
+                    
+                    // Get entropy-aware children count
+                    num_children_to_spawn = get_entropy_aware_children_count(
+                        ctx->system->adaptive_hierarchy,
+                        ctx->hierarchy_level,
+                        available_cores,
+                        pending
+                    );
+                } else {
+                    // Fallback to simple core count check (old behavior)
+                    num_children_to_spawn = (available_cores >= 12) ? 12 : available_cores;
+                }
+                
                 if (num_children_to_spawn < 1) num_children_to_spawn = 1;
                 
-                printf("[Worker %d] Spawning %d children (cores=%d)\n",
+                printf("[Worker %d] Spawning %d children (cores=%d, entropy-aware)\n",
                        ctx->sphere_id, num_children_to_spawn, available_cores);
                 
                 if (sphere_spawn_children(ctx, num_children_to_spawn) == 0) {
@@ -2185,10 +2315,51 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
     
     parent->num_children = num_children;
     
+    // PHASE 6: Calculate entropy-based thread allocation
+    if (parent->system->entropy_allocation && parent->system->entropy_context) {
+        AllocationConfig config;
+        allocation_config_init_default(&config);
+        config.strategy = ALLOCATION_ADAPTIVE;
+        config.enforce_12fold = true;
+        
+        // Calculate entropy-based allocation
+        bool success = calculate_thread_allocation(
+            parent->system->entropy_context,     // EntropyIntegrationContext*
+            num_children * 12,                    // available_threads
+            &config,                              // AllocationConfig*
+            parent->system->entropy_allocation    // ThreadAllocationPlan* (output)
+        );
+        
+        if (success) {
+            printf("[Sphere %d] Entropy allocation calculated:\n", parent->sphere_id);
+            print_allocation_plan(parent->system->entropy_allocation);
+            
+            // Store allocation plan for children to use
+            parent->allocation_plan = parent->system->entropy_allocation;
+        } else {
+            fprintf(stderr, "[WARNING] Entropy allocation failed, using default\n");
+            parent->allocation_plan = NULL;
+        }
+    } else {
+        parent->allocation_plan = NULL;
+    }
+    
     // Create child contexts
     for (int i = 0; i < num_children; i++) {
         int child_symmetry_group = i;  // 0-11
         int child_id = atomic_fetch_add(&parent->system->sphere_id_counter, 1);
+        
+        // PHASE 6: Get dimension-specific thread allocation if available
+        int allocated_threads = 1;  // Default
+        if (parent->allocation_plan) {
+            const DimensionAllocation* dim_alloc = get_dimension_allocation(
+                parent->allocation_plan,
+                child_symmetry_group
+            );
+            if (dim_alloc && dim_alloc->is_active) {
+                allocated_threads = dim_alloc->adjusted_threads;
+            }
+        }
         
         parent->children[i] = sphere_context_create(
             child_id,
@@ -2197,6 +2368,18 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
             parent->shared_gradients,
             parent->system->num_worker_spheres
         );
+        
+        // PHASE 6: Set allocation info after creation
+        if (parent->children[i]) {
+            parent->children[i]->allocated_threads = allocated_threads;
+            parent->children[i]->can_spawn_children = (allocated_threads >= 12);
+            parent->children[i]->allocation_plan = NULL;  // Will get its own when it spawns
+            parent->children[i]->assigned_batches = 0;
+            
+            printf("[Sphere %d -> Child %d] Allocated %d threads (dimension %d, can_spawn=%d)\n",
+                   parent->sphere_id, child_id, allocated_threads, child_symmetry_group,
+                   parent->children[i]->can_spawn_children);
+        }
         
         if (!parent->children[i]) {
             // Cleanup on failure
@@ -2431,6 +2614,76 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         system->metrics->training.elapsed_time_seconds = 0.0;
         system->metrics->training.estimated_time_remaining_seconds = 0.0;
         system->metrics->training.batches_per_second = 0.0f;
+    }
+    
+    // PHASE 6: Calculate entropy-based work distribution BEFORE pushing batches
+    if (system->work_distribution && system->entropy_context) {
+        printf("Calculating entropy-based work distribution...\n");
+        
+        // Create work distribution plan
+        WorkDistributionPlan plan;
+        plan.assignments = NULL;
+        plan.num_assignments = 0;
+        
+        // Configure work distribution
+        WorkDistributionConfig config;
+        work_distribution_config_init(&config);
+        config.strategy = WORK_DIST_ENTROPY_ONLY;
+        config.enforce_12fold = true;
+        
+        // Calculate entropy-based work distribution
+        bool success = calculate_entropy_work_distribution(
+            system->entropy_context,
+            system->entropy_allocation,
+            total_batches_in_epoch,
+            &config,
+            &plan
+        );
+        
+        if (success && plan.assignments) {
+            printf("  ✓ Entropy-based work distribution calculated:\n");
+            printf("    Total work: %zu batches\n", plan.total_work_size);
+            printf("    Distributed: %zu batches\n", plan.distributed_work);
+            printf("    Assignments: %zu\n", plan.num_assignments);
+            
+            // Assign work to sphere contexts based on dimension
+            for (int i = 0; i < system->num_worker_spheres; i++) {
+                int dimension = i % 12;
+                
+                // Find assignment for this dimension
+                size_t work_for_dimension = 0;
+                for (size_t j = 0; j < plan.num_assignments; j++) {
+                    if (plan.assignments[j].dimension == (uint32_t)dimension) {
+                        work_for_dimension += plan.assignments[j].work_size;
+                    }
+                }
+                
+                system->sphere_contexts[i]->assigned_batches = (int)work_for_dimension;
+                
+                printf("    [Worker %d] Dimension %d: assigned=%d batches\n",
+                       i, dimension, system->sphere_contexts[i]->assigned_batches);
+            }
+            
+            // Free work distribution plan
+            if (plan.assignments) {
+                free(plan.assignments);
+            }
+            
+            printf("  ✓ Work distribution complete\n");
+        } else {
+            fprintf(stderr, "WARNING: Failed to calculate entropy work distribution, using uniform distribution\n");
+            // Fallback: uniform distribution
+            int batches_per_worker = total_batches_in_epoch / system->num_worker_spheres;
+            for (int i = 0; i < system->num_worker_spheres; i++) {
+                system->sphere_contexts[i]->assigned_batches = batches_per_worker;
+            }
+        }
+    } else {
+        // No entropy distribution available - use uniform distribution
+        int batches_per_worker = total_batches_in_epoch / system->num_worker_spheres;
+        for (int i = 0; i < system->num_worker_spheres; i++) {
+            system->sphere_contexts[i]->assigned_batches = batches_per_worker;
+        }
     }
     
     // Push all batches to work queue

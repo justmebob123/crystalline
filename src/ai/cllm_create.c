@@ -1,6 +1,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
+#include "../include/ai/cllm_lattice_embeddings.h"  // PHASE 2: Lattice formula integration
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -90,10 +91,20 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->embeddings.embedding_dim = config->embedding_dim;
     model->embeddings.embeddings = model->weights;
     
-    // Initialize with small random values
-    for (uint64_t i = 0; i < embedding_weights; i++) {
-        model->embeddings.embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
-    }
+    // PHASE 2: Initialize with crystalline lattice formula instead of random values
+    // This uses the complete L(n,d,k,λ,ω,ψ) formula with all 9 terms:
+    // - O(n,k,λ): Octahedral symmetry
+    // - 3^O: Base exponential
+    // - θ(n,k,λ,ω,ψ): Angular position
+    // - ∏cos(θ·φᵢ): Dimensional product
+    // - Γ(k): Möbius twist
+    // - ν(λ): Phonetic value
+    // - Λ: Einstein's correction (3/144000)
+    // - Ψ(ψ): Plimpton ratios
+    // - Γ(n,d): Lattice entropy
+    printf("Initializing embeddings with crystalline lattice formula...\n");
+    cllm_init_embeddings_with_lattice(model);
+    printf("✓ Lattice-based embedding initialization complete\n");
     
     // Allocate attention layers
     model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));

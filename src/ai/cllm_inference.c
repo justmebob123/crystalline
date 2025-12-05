@@ -1,6 +1,7 @@
 #include "cllm_inference.h"
 #include "cllm.h"
 #include "prime_math.h"
+#include "prime_lattice_core.h"  // For theta_n() angular position
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -242,16 +243,129 @@ void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_stat
 // Simple attention forward pass
 void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len) {
-    // Suppress unused parameter warnings - these will be used when attention is fully implemented
-    (void)key_cache;
+    (void)key_cache;  // TODO: Use for caching in future
     (void)value_cache;
-    (void)seq_len;
     
-    // Simple pass-through for now (TODO: implement proper attention)
-    uint32_t dim = layer->num_heads * layer->head_dim;
-    for (uint32_t i = 0; i < dim; i++) {
-        output[i] = input[i];
+    if (!layer || !input || !output || seq_len <= 0) return;
+    
+    uint32_t num_heads = layer->num_heads;
+    uint32_t head_dim = layer->head_dim;
+    uint32_t embed_dim = num_heads * head_dim;
+    
+    // Allocate Q, K, V
+    double* Q = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* K = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* V = (double*)calloc(seq_len * embed_dim, sizeof(double));
+    double* scores = (double*)calloc(seq_len * seq_len, sizeof(double));
+    
+    if (!Q || !K || !V || !scores) {
+        free(Q); free(K); free(V); free(scores);
+        // Fallback to pass-through
+        for (uint32_t i = 0; i < embed_dim; i++) {
+            output[i] = input[i];
+        }
+        return;
     }
+    
+    // Project to Q, K, V using lattice weights
+    for (int pos = 0; pos < seq_len; pos++) {
+        double* in_vec = &input[pos * embed_dim];
+        
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                double q_sum = 0.0, k_sum = 0.0, v_sum = 0.0;
+                
+                for (uint32_t i = 0; i < head_dim; i++) {
+                    size_t w_idx = h * head_dim * head_dim + d * head_dim + i;
+                    double in_val = in_vec[h * head_dim + i];
+                    
+                    q_sum += layer->query_lattice[w_idx] * in_val;
+                    k_sum += layer->key_lattice[w_idx] * in_val;
+                    v_sum += layer->value_lattice[w_idx] * in_val;
+                }
+                
+                Q[pos * embed_dim + h * head_dim + d] = q_sum;
+                K[pos * embed_dim + h * head_dim + d] = k_sum;
+                V[pos * embed_dim + h * head_dim + d] = v_sum;
+            }
+        }
+    }
+    
+    // Compute attention scores using theta_n() for positional encoding
+    double scale = 1.0 / prime_sqrt((double)head_dim);
+    
+    for (uint32_t h = 0; h < num_heads; h++) {
+        for (int i = 0; i < seq_len; i++) {
+            double* q = &Q[i * embed_dim + h * head_dim];
+            
+            // Calculate angular position for query using theta_n()
+            // theta_n(n, k, lambda, omega, p, q, use_ratio)
+            double theta_q = theta_n(i, h, "", 432, 2, 1, false);
+            
+            for (int j = 0; j < seq_len; j++) {
+                double* k = &K[j * embed_dim + h * head_dim];
+                
+                // Calculate angular position for key
+                double theta_k = theta_n(j, h, "", 432, 2, 1, false);
+                
+                // Compute dot product with angular position encoding
+                double score = 0.0;
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    // Apply rotary position encoding using theta
+                    double angle = theta_q - theta_k;
+                    double cos_val = prime_cos(angle);
+                    
+                    // Rotate query and key using cosine (simplified rotary encoding)
+                    double q_rot = q[d] * cos_val;
+                    double k_rot = k[d] * cos_val;
+                    
+                    score += q_rot * k_rot;
+                }
+                
+                scores[i * seq_len + j] = score * scale;
+            }
+            
+            // Softmax over scores for this query
+            double max_score = scores[i * seq_len];
+            for (int j = 1; j < seq_len; j++) {
+                if (scores[i * seq_len + j] > max_score) {
+                    max_score = scores[i * seq_len + j];
+                }
+            }
+            
+            double sum_exp = 0.0;
+            for (int j = 0; j < seq_len; j++) {
+                scores[i * seq_len + j] = prime_exp(scores[i * seq_len + j] - max_score);
+                sum_exp += scores[i * seq_len + j];
+            }
+            
+            for (int j = 0; j < seq_len; j++) {
+                scores[i * seq_len + j] /= sum_exp;
+            }
+        }
+    }
+    
+    // Compute weighted sum of values
+    memset(output, 0, seq_len * embed_dim * sizeof(double));
+    
+    for (uint32_t h = 0; h < num_heads; h++) {
+        for (int i = 0; i < seq_len; i++) {
+            for (int j = 0; j < seq_len; j++) {
+                double attn_weight = scores[i * seq_len + j];
+                double* v = &V[j * embed_dim + h * head_dim];
+                double* out = &output[i * embed_dim + h * head_dim];
+                
+                for (uint32_t d = 0; d < head_dim; d++) {
+                    out[d] += attn_weight * v[d];
+                }
+            }
+        }
+    }
+    
+    free(Q);
+    free(K);
+    free(V);
+    free(scores);
 }
 
 // Simple feedforward pass
