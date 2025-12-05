@@ -6,6 +6,25 @@
 **Integration Progress**: 100% (ALL Phases Complete)
 **Final Commit**: 874f917 - Code quality improvements
 
+## ⚠️ CRITICAL RULES - ALWAYS FOLLOW ⚠️
+
+### GIT PUSH AUTHENTICATION (MANDATORY)
+**ALWAYS use correct authentication when pushing:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git <branch-name>
+```
+
+**NEVER use:**
+- ❌ `git push origin <branch>`
+- ❌ `git push` without full URL
+- ❌ Any other authentication method
+
+**ALWAYS use:**
+- ✅ Full URL with $GITHUB_TOKEN
+- ✅ Format: `https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git`
+
 ## ✅ COMPLETE: Phase 5 - Cymatic Timing Integration
 
 ### Task 5.1: Wire Cymatic Barriers into Training Loop ✅
