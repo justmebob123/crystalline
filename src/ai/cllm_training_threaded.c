@@ -32,6 +32,7 @@
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
+#include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
 #include "prime_math.h"
@@ -107,6 +108,9 @@ struct SphereTrainingContext {
     // PHASE 7: Sphere Integration
     SphereStatistics sphere_stats;             // Sphere statistics tracking
     void* sphere_geometry;                     // Sphere geometry data (future)
+    
+    // PHASE 3: Crystalline Memory Structure
+    CrystallineMemoryBlock* crystalline_memory;  // 12-fold memory structure
 };
 
 /**
@@ -658,6 +662,25 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // PHASE 8: Thread-local training context (will be allocated later with model info)
     ctx->thread_local_training = NULL;
     
+    // PHASE 3: Create crystalline memory structure
+    // Allocate memory in 12-fold structure (one segment per symmetry group)
+    // Total size = gradient_size (distributed across 12 segments)
+    ctx->crystalline_memory = crystalline_memory_create(
+        gradient_size * sizeof(double),  // Total size for all gradients
+        sphere_id,                        // Owner sphere ID
+        0                                 // Hierarchy level (will be updated)
+    );
+    
+    if (!ctx->crystalline_memory) {
+        fprintf(stderr, "Failed to create crystalline memory for sphere %d\n", sphere_id);
+        free(ctx->local_gradients);
+        pthread_mutex_destroy(&ctx->lock);
+        pthread_cond_destroy(&ctx->work_ready);
+        pthread_cond_destroy(&ctx->work_done);
+        free(ctx);
+        return NULL;
+    }
+    
     return ctx;
 }
 
@@ -686,6 +709,12 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
         ctx->current_batch = NULL;  // Don't free it, just clear the pointer
     }
         thread_local_training_free(ctx->thread_local_training);
+    }
+    
+    // PHASE 3: Destroy crystalline memory structure
+    if (ctx->crystalline_memory) {
+        crystalline_memory_destroy(ctx->crystalline_memory);
+        ctx->crystalline_memory = NULL;
     }
     
     free(ctx->local_gradients);
@@ -2143,6 +2172,28 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         parent->children[i]->parent = parent;
         parent->children[i]->hierarchy_level = parent->hierarchy_level + 1;
         parent->children[i]->system = parent->system;
+        
+        // PHASE 3: Link parent-child crystalline memory
+        if (parent->crystalline_memory && parent->children[i]->crystalline_memory) {
+            // Create shared memory region between parent and child
+            // Size = 1/12 of total gradient size (one segment)
+            size_t shared_size = (parent->gradient_size * sizeof(double)) / NUM_SYMMETRY_GROUPS;
+            
+            int link_result = crystalline_memory_link_parent_child(
+                parent->crystalline_memory,
+                parent->children[i]->crystalline_memory,
+                child_symmetry_group,
+                shared_size
+            );
+            
+            if (link_result != 1) {
+                fprintf(stderr, "[WARNING] Failed to link crystalline memory for sphere %d -> child %d\n",
+                        parent->sphere_id, child_id);
+            } else {
+                printf("[Sphere %d] Linked crystalline memory with child %d (symmetry group %d)\n",
+                       parent->sphere_id, child_id, child_symmetry_group);
+            }
+        }
         
         // Create hierarchy node for child
         int child_symmetry_groups[1] = {child_symmetry_group};
