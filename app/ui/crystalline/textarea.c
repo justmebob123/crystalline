@@ -183,10 +183,14 @@ void crystalline_textarea_scroll(CrystallineTextArea* area, float delta) {
 void crystalline_textarea_render(CrystallineTextArea* area, SDL_Renderer* renderer) {
     if (!area || !renderer || !area->base.visible) return;
     
-    int x = (int)area->base.position.x;
-    int y = (int)area->base.position.y;
+    int center_x = (int)area->base.position.x;
+    int center_y = (int)area->base.position.y;
     int width = (int)area->width;
     int height = (int)area->height;
+    
+    // Convert CENTER coordinates to TOP-LEFT for SDL_Rect
+    int x = center_x - width / 2;
+    int y = center_y - height / 2;
     
     SDL_Rect rect = {x, y, width, height};
     

@@ -184,6 +184,12 @@ void init_llm_tab(AppState* state) {
     // Calculate available height (same as training tab)
     int available_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;  // Full render area
     
+    printf("LLM TAB LAYOUT DEBUG:\n");
+    printf("  WINDOW_HEIGHT=%d, RENDER_OFFSET_Y=%d\n", WINDOW_HEIGHT, RENDER_OFFSET_Y);
+    printf("  available_height=%d\n", available_height);
+    printf("  content_width=%d, chat_width=%d, control_width=%d\n", 
+           content_width, chat_width, control_width);
+    
     // === CHAT AREA (LEFT SIDE) ===
     
     // Chat display area (top part) - leave 100px at bottom for input
@@ -191,6 +197,8 @@ void init_llm_tab(AppState* state) {
     int chat_y = RENDER_OFFSET_Y + 10;
     int chat_w = chat_width - 20;
     int chat_h = available_height - 110;  // Leave room for input field at bottom
+    
+    printf("  CHAT: x=%d, y=%d, w=%d, h=%d\n", chat_x, chat_y, chat_w, chat_h);
     
     llm_ui.chat_area = crystalline_textarea_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
@@ -206,6 +214,8 @@ void init_llm_tab(AppState* state) {
     int input_y = RENDER_OFFSET_Y + available_height - 90;  // 90px from bottom
     int input_w = chat_width - 130;  // Leave room for send button
     int input_h = 80;
+    
+    printf("  INPUT: x=%d, y=%d, w=%d, h=%d\n", input_x, input_y, input_w, input_h);
     
     llm_ui.message_input = crystalline_input_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
@@ -239,6 +249,9 @@ void init_llm_tab(AppState* state) {
     int ctrl_w = control_width - 20;
     int ctrl_y = RENDER_OFFSET_Y + 10;  // Start at same Y as chat area
     float slider_center_x = ctrl_x + ctrl_w / 2.0f;
+    
+    printf("  CONTROL PANEL: x=%d, y=%d, w=%d, slider_center_x=%.1f\n", 
+           ctrl_x, ctrl_y, ctrl_w, slider_center_x);
     
     // Temperature slider
     llm_ui.slider_temperature = crystalline_slider_create(
