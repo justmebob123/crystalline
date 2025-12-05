@@ -252,7 +252,10 @@ void draw_video_tab(SDL_Renderer* renderer, AppState* state) {
 /**
  * Handle video tab mouse click with crystalline UI
  */
-void handle_video_tab_click(AppState* state, int x, int y) {
+/**
+ * Handle video tab mouse down
+ */
+void handle_video_tab_mouse_down(AppState* state, int x, int y) {
     if (!state || !ui_initialized) return;
     
     // Create SDL event for button handling
@@ -264,6 +267,11 @@ void handle_video_tab_click(AppState* state, int x, int y) {
     
     // Check button click
     crystalline_button_handle_mouse(btn_record, &event);
+}
+
+// Legacy function for compatibility
+void handle_video_tab_click(AppState* state, int x, int y) {
+    handle_video_tab_mouse_down(state, x, y);
 }
 
 /**
