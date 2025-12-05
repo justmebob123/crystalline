@@ -176,10 +176,9 @@ void init_llm_tab(AppState* state) {
     extern TTF_Font* get_global_font(void);
     TTF_Font* font = get_global_font();
     
-    // Use RENDER_WIDTH (not full width like training tab)
-    int content_width = RENDER_WIDTH;  // 1080px
-    int chat_width = (int)(content_width * 0.75f);     // 810px (75%)
-    int control_width = content_width - chat_width;     // 270px (25%)
+    // Chat area uses RENDER_WIDTH, control panel uses CONTROL_PANEL area
+    int chat_width = RENDER_WIDTH - 10;  // 1070px (full render width minus padding)
+    int control_width = CONTROL_PANEL_WIDTH - 20;  // 300px (control panel minus padding)
     
     // Calculate available height (same as training tab)
     int available_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 20;  // Full render area
@@ -187,8 +186,8 @@ void init_llm_tab(AppState* state) {
     printf("LLM TAB LAYOUT DEBUG:\n");
     printf("  WINDOW_HEIGHT=%d, RENDER_OFFSET_Y=%d\n", WINDOW_HEIGHT, RENDER_OFFSET_Y);
     printf("  available_height=%d\n", available_height);
-    printf("  content_width=%d, chat_width=%d, control_width=%d\n", 
-           content_width, chat_width, control_width);
+    printf("  chat_width=%d, control_width=%d\n", 
+           chat_width, control_width);
     
     // === CHAT AREA (LEFT SIDE) ===
     
@@ -244,27 +243,16 @@ void init_llm_tab(AppState* state) {
     crystalline_button_set_callback(llm_ui.btn_send, on_send_clicked, state);
     
     // === CONTROL PANEL (RIGHT SIDE) ===
-    
-    int ctrl_x = RENDER_OFFSET_X + chat_width + 10;
-    int ctrl_w = control_width - 20;
+    // Position in the ACTUAL control panel area (1280-1600)
+    int ctrl_x = WINDOW_WIDTH - CONTROL_PANEL_WIDTH + 10;  // 1290
+    int ctrl_w = control_width;  // 300
     int ctrl_y = RENDER_OFFSET_Y + 10;  // Start at same Y as chat area
-    float slider_center_x = ctrl_x + ctrl_w / 2.0f;
+    float slider_center_x = ctrl_x + ctrl_w / 2.0f;  // 1440
     
     printf("  CONTROL PANEL: x=%d, y=%d, w=%d, slider_center_x=%.1f\n", 
            ctrl_x, ctrl_y, ctrl_w, slider_center_x);
     
-    // Calculate vertical spacing to fill available height
-    // Total elements: 4 sliders (30px each) + 3 buttons (40px each) = 240px
-    // Available height: available_height - 20 (top/bottom padding) = 820px
-    // Remaining space for gaps: 820 - 240 = 580px
-    // Number of gaps: 6 (between 7 elements)
-    // Gap size: 580 / 6 = ~97px
-    int element_gap = (available_height - 20 - (4 * 30 + 3 * 40)) / 6;
-    if (element_gap < 20) element_gap = 20;  // Minimum 20px gap
-    
-    printf("  Element gap: %dpx (to fill %dpx height)\n", element_gap, available_height);
-    
-    // Temperature slider
+    // Temperature slider (TOP JUSTIFIED - fixed spacing)
     llm_ui.slider_temperature = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         slider_center_x,
@@ -276,7 +264,7 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_temperature, state->llm_temperature);
     crystalline_slider_set_callback(llm_ui.slider_temperature, on_temperature_changed, state);
-    ctrl_y += 30 + element_gap;
+    ctrl_y += 70;
     
     // Max tokens slider
     llm_ui.slider_tokens = crystalline_slider_create(
@@ -290,7 +278,7 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_tokens, (float)state->llm_max_tokens);
     crystalline_slider_set_callback(llm_ui.slider_tokens, on_tokens_changed, state);
-    ctrl_y += 30 + element_gap;
+    ctrl_y += 70;
     
     // Top-K slider
     llm_ui.slider_top_k = crystalline_slider_create(
@@ -303,7 +291,7 @@ void init_llm_tab(AppState* state) {
         100.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_k, 50.0f);
-    ctrl_y += 30 + element_gap;
+    ctrl_y += 70;
     
     // Top-P slider
     llm_ui.slider_top_p = crystalline_slider_create(
@@ -316,7 +304,7 @@ void init_llm_tab(AppState* state) {
         1.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_p, 0.9f);
-    ctrl_y += 30 + element_gap;
+    ctrl_y += 90;
     
     // Browse Models button
     llm_ui.btn_browse_models = crystalline_button_create(
@@ -329,7 +317,7 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_browse_models, on_browse_models_clicked, state);
-    ctrl_y += 40 + element_gap;
+    ctrl_y += 60;
     
     // New Thread button
     llm_ui.btn_new_thread = crystalline_button_create(
@@ -342,7 +330,7 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_new_thread, on_new_thread_clicked, state);
-    ctrl_y += 40 + element_gap;
+    ctrl_y += 60;
     
     // Clear button
     llm_ui.btn_clear = crystalline_button_create(
@@ -355,8 +343,6 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_clear, on_clear_clicked, state);
-    
-    printf("  Final ctrl_y: %d (should be near %d)\n", ctrl_y + 40, RENDER_OFFSET_Y + available_height);
     
     llm_ui.initialized = true;
     printf("=== LLM TAB INITIALIZED ===\n");
@@ -422,9 +408,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     SDL_Color text_color = {220, 220, 220, 255};
     
     // Calculate label positions (same as init)
-    int content_width = RENDER_WIDTH;
-    int chat_width = (int)(content_width * 0.75f);
-    int ctrl_x = RENDER_OFFSET_X + chat_width + 10;
+    int ctrl_x = WINDOW_WIDTH - CONTROL_PANEL_WIDTH + 10;  // 1290
     int label_x = ctrl_x + 5;
     int label_y = RENDER_OFFSET_Y + 40;
     
