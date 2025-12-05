@@ -31,6 +31,7 @@
 #include "ai/cllm_loss.h"
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
+#include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
 #include "prime_math.h"
@@ -43,20 +44,23 @@
 #include <unistd.h>
 #include <time.h>  // For timing metrics
 
-// Forward declarations
-static void* sphere_worker_thread(void* arg);
-static void* sphere_worker_thread_lockfree(void* arg);
-static void* control_thread_func(void* arg);
-static void accumulate_gradients(ThreadedTrainingSystem* system);
-static int validate_gradients(double* gradients, size_t size, const char* source);
-static void clip_gradients(double* gradients, size_t size, double max_norm);
-
 /**
  * Thread-local training context for each sphere
  */
 // Forward declarations
 typedef struct ThreadedTrainingSystem ThreadedTrainingSystem;
 typedef struct SphereTrainingContext SphereTrainingContext;
+
+// Function forward declarations (after typedef)
+static void* sphere_worker_thread(void* arg);
+static void* sphere_worker_thread_lockfree(void* arg);
+static void* sphere_worker_thread_dynamic(void* arg);
+static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);
+static int sphere_despawn_children(SphereTrainingContext* parent);
+static void* control_thread_func(void* arg);
+static void accumulate_gradients(ThreadedTrainingSystem* system);
+static int validate_gradients(double* gradients, size_t size, const char* source);
+static void clip_gradients(double* gradients, size_t size, double max_norm);
 
 struct SphereTrainingContext {
     int sphere_id;
@@ -1457,9 +1461,9 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         pthread_attr_t worker_attr;
         pthread_attr_init(&worker_attr);
         pthread_attr_setstacksize(&worker_attr, 1024 * 1024);
-        // PHASE 2B: Use lock-free worker thread (no barriers!)
+        // PHASE 2: Day 4 - Use dynamic worker thread with spawning
         rc = pthread_create(&system->sphere_contexts[i]->thread, &worker_attr, 
-                           sphere_worker_thread_lockfree, system->sphere_contexts[i]);
+                           sphere_worker_thread_dynamic, system->sphere_contexts[i]);
         pthread_attr_destroy(&worker_attr);
         if (rc != 0) {
             fprintf(stderr, "ERROR: Failed to create worker thread %d (error %d)\n", i, rc);
@@ -1740,6 +1744,163 @@ static void* sphere_worker_thread_lockfree(void* arg) {
 }
 
 /**
+ * Worker thread function with dynamic spawning - PHASE 2: Day 4 Afternoon
+ * 
+ * This version monitors workload and dynamically spawns/despawns children
+ * based on system load, available cores, and hierarchy depth.
+ * 
+ * Features:
+ * - Real-time workload monitoring
+ * - Intelligent spawn/despawn decisions
+ * - Hysteresis to prevent thrashing
+ * - Automatic role transitions (worker <-> control)
+ * - 12-fold symmetry enforcement
+ */
+static void* sphere_worker_thread_dynamic(void* arg) {
+    SphereTrainingContext* ctx = (SphereTrainingContext*)arg;
+    ThreadedTrainingSystem* system = ctx->system;
+    
+    printf("[Worker %d] Dynamic thread started (symmetry group %d, level %d)\n", 
+           ctx->sphere_id, ctx->symmetry_group, ctx->hierarchy_level);
+    
+    // Initialize workload detector
+    WorkloadDetectorContext detector;
+    workload_detector_init(&detector, true);  // verbose = true
+    
+    // UI Integration: Update thread state to WORKING
+    if (system->metrics) {
+        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
+    }
+    
+    int batches_processed = 0;
+    double last_check_time = get_current_time_seconds();
+    const double CHECK_INTERVAL = 1.0;  // Check workload every 1 second
+    
+    while (atomic_load(&system->running)) {
+        // Pop work from queue (non-blocking)
+        CLLMBatch* batch = work_queue_pop(system->work_queue);
+        
+        if (!batch) {
+            // No work available - check if epoch done AND queue is truly empty
+            if (atomic_load(&system->work_queue->epoch_done)) {
+                // Double-check queue is actually empty
+                size_t head = atomic_load(&system->work_queue->head);
+                size_t tail = atomic_load(&system->work_queue->tail);
+                if (head >= tail) {
+                    break;  // Epoch complete and queue empty
+                }
+            }
+            
+            // UI Integration: Update thread state to IDLE
+            if (system->metrics) {
+                cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_IDLE);
+            }
+            
+            // Yield CPU to other threads
+            sched_yield();
+            continue;
+        }
+        
+        // UI Integration: Update thread state to WORKING
+        if (system->metrics) {
+            cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_WORKING);
+        }
+        
+        // Process batch immediately (no waiting!)
+        ctx->current_batch = batch;
+        
+        // PHASE 6: Control threads NEVER process batches
+        if (!ctx->is_control_thread) {
+            sphere_process_batch(ctx, system->training);
+            batches_processed++;
+            
+            // UI Integration: Update thread workload
+            if (system->metrics) {
+                cllm_metrics_update_thread_workload(system->metrics, ctx->sphere_id, batches_processed);
+            }
+        }
+        
+        // Free batch
+        cllm_batch_free(batch);
+        ctx->current_batch = NULL;
+        
+        // Periodic workload check for dynamic spawning
+        double current_time = get_current_time_seconds();
+        if (current_time - last_check_time >= CHECK_INTERVAL) {
+            last_check_time = current_time;
+            
+            // Collect workload metrics
+            WorkloadMetrics metrics;
+            size_t pending, pushed, popped;
+            work_queue_stats(system->work_queue, &pending, &pushed, &popped);
+            
+            collect_workload_metrics(
+                pending,
+                system->num_active_workers,
+                popped,
+                current_time,
+                ctx->hierarchy_level,
+                &metrics
+            );
+            
+            // Get available cores
+            int available_cores = get_available_cores();
+            
+            // Make spawn/despawn decision
+            SpawnDecision decision = should_spawn_children(
+                &detector,
+                &metrics,
+                ctx->num_children,
+                available_cores
+            );
+            
+            // Execute decision
+            if (decision == SPAWN_DECISION_YES && !ctx->is_control_thread) {
+                printf("[Worker %d] SPAWNING: pending=%zu, cores=%d, depth=%d\n",
+                       ctx->sphere_id, pending, available_cores, ctx->hierarchy_level);
+                
+                // Spawn exactly 12 children (12-fold symmetry)
+                if (sphere_spawn_children(ctx, 12) == 0) {
+                    printf("[Worker %d] Successfully spawned 12 children\n", ctx->sphere_id);
+                } else {
+                    printf("[Worker %d] Failed to spawn children\n", ctx->sphere_id);
+                }
+            } else if (decision == SPAWN_DECISION_DESPAWN && ctx->is_control_thread) {
+                printf("[Worker %d] DESPAWNING: pending=%zu, cores=%d\n",
+                       ctx->sphere_id, pending, available_cores);
+                
+                // Despawn all children
+                if (sphere_despawn_children(ctx) == 0) {
+                    printf("[Worker %d] Successfully despawned children\n", ctx->sphere_id);
+                } else {
+                    printf("[Worker %d] Failed to despawn children\n", ctx->sphere_id);
+                }
+            }
+        }
+    }
+    
+    // Cleanup: If we have children, wait for them to finish
+    if (ctx->is_control_thread && ctx->children) {
+        printf("[Worker %d] Waiting for %d children to complete\n",
+               ctx->sphere_id, ctx->num_children);
+        sphere_despawn_children(ctx);
+    }
+    
+    // Cleanup workload detector
+    workload_detector_destroy(&detector);
+    
+    // UI Integration: Update thread state to TERMINATED
+    if (system->metrics) {
+        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_TERMINATED);
+    }
+    
+    printf("[Worker %d] Dynamic thread stopping (processed %d batches)\n", 
+           ctx->sphere_id, batches_processed);
+    
+    return NULL;
+}
+
+/**
  * Worker thread function - PHASE 3: Barrier Synchronization (LEGACY)
  * 
  * NOTE: This function is kept for comparison but not used in Phase 2B
@@ -1848,6 +2009,54 @@ static void clip_gradients(double* gradients, size_t size, double max_norm) {
  * Control threads NEVER process batches - only coordinate children.
  */
    __attribute__((unused))
+/**
+ * Despawn all children and transition back to worker thread
+ * 
+ * @param parent Parent context with children to despawn
+ * @return 0 on success, -1 on failure
+ */
+static int sphere_despawn_children(SphereTrainingContext* parent) {
+    if (!parent || !parent->is_control_thread || !parent->children) {
+        return -1;
+    }
+    
+    printf("[Sphere %d] Despawning %d children, transitioning back to worker\n",
+           parent->sphere_id, parent->num_children);
+    
+    // Signal children to stop (they'll finish their current batch and exit)
+    // Note: Children check system->running flag, which we don't modify here
+    // They will naturally exit when the epoch completes
+    
+    // Wait for all children to complete
+    for (int i = 0; i < parent->num_children; i++) {
+        if (parent->children[i]) {
+            pthread_join(parent->children[i]->thread, NULL);
+            
+            // Free child hierarchy node
+            if (parent->children[i]->hierarchy_node) {
+                lattice_hierarchy_free(parent->children[i]->hierarchy_node);
+            }
+            
+            // Free child context
+            sphere_context_free(parent->children[i]);
+            parent->children[i] = NULL;
+        }
+    }
+    
+    // Free children array
+    free(parent->children);
+    parent->children = NULL;
+    parent->num_children = 0;
+    
+    // Transition back to worker thread
+    parent->is_control_thread = 0;
+    
+    printf("[Sphere %d] Successfully despawned children, now a worker thread\n",
+           parent->sphere_id);
+    
+    return 0;
+}
+
 static int sphere_spawn_children(SphereTrainingContext* parent, int num_children) {
     if (!parent || num_children <= 0 || num_children > 12) return -1;
     
@@ -1904,13 +2113,13 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
             parent->hierarchy_node
         );
         
-        // Start child thread
+        // Start child thread - use dynamic version
         // OPTIMIZATION: Use 1MB stack for child threads
         pthread_attr_t child_attr;
         pthread_attr_init(&child_attr);
         pthread_attr_setstacksize(&child_attr, 1024 * 1024);
         pthread_create(&parent->children[i]->thread, &child_attr, 
-                      sphere_worker_thread, parent->children[i]);
+                      sphere_worker_thread_dynamic, parent->children[i]);
         pthread_attr_destroy(&child_attr);
     }
     
