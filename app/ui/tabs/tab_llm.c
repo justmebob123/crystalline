@@ -643,9 +643,8 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     // Initialize Crystalline UI elements on first draw
     if (!llm_ui.chat_area) {
         // Get font for UI elements
-        // Font rendering handled by Crystalline UI
-        TTF_Font* font = NULL;
-        (void)font;
+        extern TTF_Font* get_global_font(void);
+        TTF_Font* font = get_global_font();
         
         // Chat area - main message display
         // Use full content width like Training Tab
