@@ -69,22 +69,23 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 **FIXES COMPLETED**:
 1. ✅ Fixed LLM tab NULL font issue (critical bug)
-2. ✅ Verified coordinate system (CENTER coordinates)
-3. ✅ Verified all tabs use correct font access
+2. ✅ Fixed LLM tab layout extending off-screen (used RENDER_WIDTH)
+3. ✅ Fixed Training tab heap-use-after-free crash (AddressSanitizer)
+4. ✅ Verified coordinate system (CENTER coordinates)
+5. ✅ Verified all tabs use correct font access
 
 **NEXT ACTIONS** (PRIORITY ORDER):
 1. ✅ DONE: Fixed LLM tab NULL font issue
-2. 🔄 IN PROGRESS: Determine if overlay should block clicks during training
-3. ⏳ TODO: Test LLM tab to verify layout is fixed
-4. ⏳ TODO: Test all other tabs for layout issues
-5. ⏳ TODO: Implement overlay if needed for training
+2. ✅ DONE: Fixed LLM tab layout extending off-screen
+3. ✅ DONE: Fixed Training tab heap-use-after-free crash
+4. ⏳ TODO: Test all tabs for any remaining layout issues
+5. ⏳ TODO: Check other tabs for similar width calculation issues
 6. ⏳ TODO: Then proceed with Models/Crawler conversion
 
-**DECISION NEEDED**:
-- Should training create an overlay to block ALL clicks (menu + tabs)?
-- Or should training allow tab switching?
-- Current behavior: No overlay, tabs can be switched
-- User expectation: Unclear - mentions inconsistent blocking
+**CRITICAL BUGS FIXED**:
+- Training tab: Heap-use-after-free when accessing freed metrics
+- LLM tab: NULL font causing text rendering failures
+- LLM tab: Chat area extending 320px off-screen to the right
 
 ### Phase 1: Complete Crystalline UI Elements (Day 1) - ✅ COMPLETE
 
