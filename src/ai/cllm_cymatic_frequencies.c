@@ -6,7 +6,6 @@
 #include "ai/cllm_cymatic_frequencies.h"
 #include "prime_float_math.h"
 #include <string.h>
-#include <math.h>
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -115,7 +114,7 @@ double cymatic_resonance_factor(double freq1, double freq2) {
     // Find closest common ratio
     double min_error = 1.0;
     for (size_t i = 0; i < sizeof(common_ratios) / sizeof(common_ratios[0]); i++) {
-        double error = fabs(ratio - common_ratios[i]);
+        double error = prime_fabs(ratio - common_ratios[i]);
         if (error < min_error) {
             min_error = error;
         }
@@ -155,7 +154,7 @@ bool cymatic_is_natural_harmonic(double freq, double tolerance) {
     // Check if freq is a harmonic of 432 Hz
     double ratio = freq / FREQ_432_HZ;
     double closest_integer = prime_round(ratio);
-    double error = fabs(ratio - closest_integer);
+    double error = prime_fabs(ratio - closest_integer);
     
     return (error < tolerance / FREQ_432_HZ);
 }

@@ -75,6 +75,7 @@ float prime_tanhf(float x);
 
 // Absolute value
 float prime_fabsf(float x);
+double prime_fabs(double x);
 
 // Double precision math functions (for compatibility)
 double prime_exp(double x);
