@@ -55,29 +55,43 @@
 - [x] Task 4.1: Calculate work distribution using Plimpton ratios
 - [x] Task 4.2: Enforce work distribution in worker threads
 
-## 📋 REMAINING WORK (25%)
+## 📋 ACTIVE WORK: Phase 6 - UI Integration (25%)
 
-### Phase 6: UI Integration (NEXT - Final Phase)
+### Phase 6: UI Integration (IN PROGRESS - Final Phase)
 **Estimated Time**: 4-6 hours  
 **Target Integration**: 100%
 
+#### Step 1: Add Accessor Functions ✅
+- [x] Add threaded_training_get_entropy_context() to expose entropy data
+- [x] Add threaded_training_get_adaptive_hierarchy() to expose hierarchy data
+- [x] Add threaded_training_get_cymatic_stats() to expose barrier statistics
+- [x] Update header file with new function declarations
+- [x] Build and verify zero errors
+
+#### Step 2: Wire UI to Display Entropy Metrics (NEXT)
 - [ ] Task 6.1: Add entropy metrics to training tab
+  - Get entropy context from training system
   - Display model entropy statistics
-  - Show per-dimension entropy values
+  - Show per-dimension entropy values (12 dimensions)
   - Add entropy history graph
   
+#### Step 3: Wire UI to Display Adaptive Hierarchy (AFTER 6.1)
 - [ ] Task 6.2: Add adaptive hierarchy visualization
+  - Get adaptive hierarchy context from training system
   - Show current hierarchy depth
   - Display spawn/despawn decisions
   - Show entropy-aware children counts
   
+#### Step 4: Wire UI to Display Entropy Coloring (AFTER 6.2)
 - [ ] Task 6.3: Add entropy coloring to sphere visualization
   - Color spheres based on entropy levels
   - Show high-entropy dimensions in different colors
   - Add legend for entropy color mapping
   
+#### Step 5: Wire UI to Display Cymatic Timing (AFTER 6.3)
 - [ ] Task 6.4: Add cymatic timing visualization
-  - Display current barrier frequencies
+  - Get cymatic stats from training system
+  - Display current barrier frequencies (7.83 Hz, 432 Hz)
   - Show synchronization timing statistics
   - Add timing history graph
 

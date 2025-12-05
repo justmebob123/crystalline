@@ -209,6 +209,34 @@ CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system);
  */
 void threaded_training_report_hierarchy(ThreadedTrainingSystem* system, void* state);
 
+/**
+ * PHASE 6: Get entropy integration context for UI display
+ * 
+ * @param system Threaded training system
+ * @return Pointer to entropy context, or NULL if not available
+ */
+void* threaded_training_get_entropy_context(ThreadedTrainingSystem* system);
+
+/**
+ * PHASE 6: Get adaptive hierarchy context for UI display
+ * 
+ * @param system Threaded training system
+ * @return Pointer to adaptive hierarchy context, or NULL if not available
+ */
+void* threaded_training_get_adaptive_hierarchy(ThreadedTrainingSystem* system);
+
+/**
+ * PHASE 6: Get cymatic barrier statistics
+ * 
+ * @param system Threaded training system
+ * @param epoch_syncs Output: number of epoch barrier synchronizations
+ * @param batch_syncs Output: number of batch barrier synchronizations
+ * @return 0 on success, -1 if barriers not available
+ */
+int threaded_training_get_cymatic_stats(ThreadedTrainingSystem* system,
+                                        uint64_t* epoch_syncs,
+                                        uint64_t* batch_syncs);
+
 #ifdef __cplusplus
 }
 #endif

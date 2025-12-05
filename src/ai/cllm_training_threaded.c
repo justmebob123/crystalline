@@ -3289,3 +3289,44 @@ CLLMMetrics* threaded_training_get_metrics(ThreadedTrainingSystem* system) {
     if (!system) return NULL;
     return system->metrics;
 }
+
+/**
+ * PHASE 6: Get entropy integration context for UI display
+ */
+void* threaded_training_get_entropy_context(ThreadedTrainingSystem* system) {
+    if (!system) return NULL;
+    return system->entropy_context;
+}
+
+/**
+ * PHASE 6: Get adaptive hierarchy context for UI display
+ */
+void* threaded_training_get_adaptive_hierarchy(ThreadedTrainingSystem* system) {
+    if (!system) return NULL;
+    return system->adaptive_hierarchy;
+}
+
+/**
+ * PHASE 6: Get cymatic barrier statistics
+ */
+int threaded_training_get_cymatic_stats(ThreadedTrainingSystem* system,
+                                        uint64_t* epoch_syncs,
+                                        uint64_t* batch_syncs) {
+    if (!system) return -1;
+    
+    // Check if barriers are available
+    if (!system->epoch_barrier || !system->batch_barrier) {
+        return -1;  // Barriers not available
+    }
+    
+    // Get statistics from barriers
+    if (epoch_syncs) {
+        *epoch_syncs = system->epoch_barrier->sync_count;
+    }
+    
+    if (batch_syncs) {
+        *batch_syncs = system->batch_barrier->sync_count;
+    }
+    
+    return 0;
+}
