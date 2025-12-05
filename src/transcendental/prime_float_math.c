@@ -494,6 +494,12 @@ double prime_fmod(double x, double y) {
     return x - (int64_t)(x / y) * y;
 }
 
+// Float version of prime_fmod
+float prime_fmodf(float x, float y) {
+    if (y == 0.0f) return 0.0f;
+    return x - (int32_t)(x / y) * y;
+}
+
 double prime_acos(double x) {
     // Simple approximation - for production use proper series or lookup
     if (x < -1.0) x = -1.0;
