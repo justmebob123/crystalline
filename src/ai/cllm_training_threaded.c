@@ -194,9 +194,11 @@ struct ThreadedTrainingSystem {
     // Gradient accumulation (temporary until shared memory fully integrated)
     double* accumulated_gradients;              // Accumulated gradients from all spheres
     
-    // KISSING BOUNDARY LOCK - Only for model weight updates
-    // Gradient accumulation is now fully lock-free (PHASE 3 complete)
-    pthread_mutex_t model_lock;                // Protects model weight updates at boundaries
+    // KISSING BOUNDARY LOCKS - Protect shared memory at boundaries
+    // gradient_lock: Protects accumulated_gradients during accumulation and reads
+    // model_lock: Protects model weight updates at boundaries
+    pthread_mutex_t gradient_lock;             // Protects accumulated_gradients array
+    pthread_mutex_t model_lock;                // Protects model weight updates
     
     // Synchronization - Message-based (no barriers)
     // Removed: pthread_barrier_t epoch_barrier;
@@ -1463,8 +1465,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         return NULL;
     }
     
-    // Initialize kissing boundary lock for model updates
-    // Gradient lock removed - now fully lock-free (PHASE 3)
+    // Initialize kissing boundary locks
+    pthread_mutex_init(&system->gradient_lock, NULL);
     pthread_mutex_init(&system->model_lock, NULL);
     
     // Initialize atomic counters for message-based synchronization
@@ -1809,8 +1811,8 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         printf("  ✓ Work queue freed\n");
     }
     
-    // Destroy kissing boundary lock for model updates
-    // Gradient lock removed - now fully lock-free (PHASE 3)
+    // Destroy kissing boundary locks
+    pthread_mutex_destroy(&system->gradient_lock);
     pthread_mutex_destroy(&system->model_lock);
     
     // Barriers removed - using message-based synchronization
@@ -2635,13 +2637,16 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         return;
     }
     
-    printf("[DEBUG] accumulate_gradients: Starting lock-free accumulation\n");
+    printf("[DEBUG] accumulate_gradients: About to acquire lock\n");
     fflush(stdout);
     
-    // PHASE 3: Lock-free gradient accumulation
-    // This function is called by the control thread AFTER all workers complete
-    // No mutex needed because there's no concurrent access at this point
-    // Each worker already wrote to its own segment (lock-free)
+    // PHASE 3: Gradient accumulation with proper synchronization
+    // Lock protects against concurrent reads from other threads (UI, crawler)
+    // that call threaded_training_get_gradient_norm() while we're accumulating
+    pthread_mutex_lock(&system->gradient_lock);
+    
+    printf("[DEBUG] accumulate_gradients: Lock acquired, starting accumulation\n");
+    fflush(stdout);
     
     // Zero accumulated gradients
     printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
@@ -2730,7 +2735,9 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         fprintf(stderr, "CRITICAL: Accumulated gradients are invalid!\n");
     }
     
-    printf("[DEBUG] accumulate_gradients: Lock-free accumulation complete\n");
+    pthread_mutex_unlock(&system->gradient_lock);
+    
+    printf("[DEBUG] accumulate_gradients: Accumulation complete, lock released\n");
     fflush(stdout);
 }
 
@@ -3088,13 +3095,18 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
 double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
     if (!system || !system->accumulated_gradients) return 0.0;
     
-       // PHASE 4: Lock-free - safe to read after barrier synchronization
+    // PHASE 3: Lock protects against concurrent writes in accumulate_gradients()
+    // This function can be called from UI/crawler threads while accumulation is happening
+    pthread_mutex_lock(&system->gradient_lock);
+    
     double norm = 0.0;
     for (size_t i = 0; i < system->gradient_size; i++) {
         double val = system->accumulated_gradients[i];
         norm += val * val;
     }
     norm = prime_sqrt(norm);
+    
+    pthread_mutex_unlock(&system->gradient_lock);
     
     return norm;
 }
