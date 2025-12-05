@@ -55,12 +55,31 @@
 - [x] Task 4.1: Calculate work distribution using Plimpton ratios
 - [x] Task 4.2: Enforce work distribution in worker threads
 
-## 📋 REMAINING WORK
+## 📋 REMAINING WORK (25%)
 
-### Phase 6: UI Integration (After Phase 5)
+### Phase 6: UI Integration (NEXT - Final Phase)
+**Estimated Time**: 4-6 hours  
+**Target Integration**: 100%
+
 - [ ] Task 6.1: Add entropy metrics to training tab
+  - Display model entropy statistics
+  - Show per-dimension entropy values
+  - Add entropy history graph
+  
 - [ ] Task 6.2: Add adaptive hierarchy visualization
+  - Show current hierarchy depth
+  - Display spawn/despawn decisions
+  - Show entropy-aware children counts
+  
 - [ ] Task 6.3: Add entropy coloring to sphere visualization
+  - Color spheres based on entropy levels
+  - Show high-entropy dimensions in different colors
+  - Add legend for entropy color mapping
+  
+- [ ] Task 6.4: Add cymatic timing visualization
+  - Display current barrier frequencies
+  - Show synchronization timing statistics
+  - Add timing history graph
 
 ## 📊 INTEGRATION STATUS
 
