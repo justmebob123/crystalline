@@ -76,33 +76,62 @@
 
 ## 🎯 PHASE 3: MEMORY SYSTEM INTEGRATION - IN PROGRESS
 
-### Current Task: Replace local_gradients with Crystalline Memory
+### ✅ Task 3.1: Replace local_gradients with Crystalline Memory - COMPLETE
 
-**Goal**: Remove the TODO comment and actually use the crystalline memory system
+**What Was Done**:
+1. ✅ Modified gradient zeroing to use crystalline memory segments
+2. ✅ Modified backward pass to write to crystalline segments
+3. ✅ Modified gradient accumulation to read from crystalline segments
+4. ✅ Used `crystalline_memory_get_segment()` API correctly
+5. ✅ Kept `local_gradients` as fallback for compatibility
+
+**Build Status**: Zero errors, 1 pre-existing warning
+
+**Integration Progress**: 45% (up from 40%)
+
+**Documentation**: See PHASE_3_TASK_3_1_COMPLETE.md
+
+---
+
+### ⏳ Task 3.2: Wire Kissing Boundaries for Gradient Sharing - NEXT
+
+**Goal**: Enable gradient sharing between adjacent segments (siblings)
 
 **Files to Modify**:
-- `src/ai/cllm_training_threaded.c` - Main integration point
-- `include/ai/cllm_training_threaded.h` - Structure definitions
+- `src/ai/cllm_training_threaded.c` - Add boundary creation and usage
+- `src/ai/cllm_kissing_boundaries.c` - Already exists, needs wiring
 
 **What Needs to Happen**:
-1. Replace `double* local_gradients` with `CrystallineMemoryBlock* gradient_memory`
-2. Use `crystalline_memory_create()` instead of `calloc()`
-3. Access gradients through segment API: `crystalline_segment_write()`
-4. Use kissing boundaries for gradient sharing between siblings
-5. Remove all `local_gradients` references
+1. Create kissing boundaries between adjacent segments
+2. Share gradients across boundaries during accumulation
+3. Use lock-free boundary synchronization
+4. Wire `crystalline_boundary_create()` into sphere spawning
+5. Wire `crystalline_boundary_sync()` into gradient accumulation
 
 **Current State**:
-- ❌ Still using `double* local_gradients` (line 89)
-- ❌ Still using `calloc()` for gradient allocation (line 656)
-- ❌ Still using direct pointer access (lines 816, 861, 888, 2510, 2521, 2528, 2531)
-- ❌ Crystalline memory system exists but NEVER CALLED
+- ✅ Kissing boundary system exists (`cllm_kissing_boundaries.c`)
+- ✅ API defined in `cllm_crystalline_memory.h`
+- ❌ Never called during training
+- ❌ No boundaries created between segments
+- ❌ No gradient sharing across boundaries
 
 **Target State**:
-- ✅ Use `CrystallineMemoryBlock* gradient_memory`
-- ✅ Use `crystalline_memory_create()` for allocation
-- ✅ Use segment API for all gradient access
-- ✅ Use kissing boundaries for gradient sharing
-- ✅ Remove all TODO comments about "Remove after shared memory integration"
+- ✅ Boundaries created when children spawn
+- ✅ Gradients shared across boundaries
+- ✅ Lock-free synchronization active
+- ✅ 12-fold symmetry maintained
+
+---
+
+### Task 3.3: Wire Lock-Free Memory for Accumulation
+
+**Goal**: Remove gradient_lock mutex, use atomic operations
+
+**What Needs to Happen**:
+1. Replace `pthread_mutex_lock(&system->gradient_lock)` with atomic ops
+2. Use `atomic_fetch_add` for gradient accumulation
+3. Remove the gradient_lock mutex entirely
+4. Verify lock-free performance improvement
 
 ## 📊 PRIORITY MATRIX
 
