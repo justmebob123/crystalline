@@ -2025,6 +2025,18 @@ static void* sphere_worker_thread_dynamic(void* arg) {
     const double CHECK_INTERVAL = 1.0;  // Check workload every 1 second
     
     while (atomic_load(&system->running)) {
+        // PHASE 4: Check if we've reached our assigned batch limit (Plimpton work distribution)
+        if (ctx->assigned_batches > 0 && batches_processed >= ctx->assigned_batches) {
+            // This worker has processed its assigned share
+            // Wait for epoch to complete
+            if (atomic_load(&system->work_queue->epoch_done)) {
+                break;
+            }
+            // Yield CPU while waiting
+            sched_yield();
+            continue;
+        }
+        
         // Pop work from queue (non-blocking)
         CLLMBatch* batch = work_queue_pop(system->work_queue);
         
