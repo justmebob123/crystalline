@@ -121,11 +121,20 @@ static void on_send_clicked(void* data) {
     // Clear input
     crystalline_input_set_text(llm_ui.message_input, "");
     
-    // TODO: Generate AI response
-    // For now, just echo back
-    char response[MAX_MESSAGE_LENGTH];
-    snprintf(response, sizeof(response), "Echo: %s", input_text);
-    add_chat_message(response, false);
+    // Generate AI response
+    if (state->cllm_inference) {
+        char response[MAX_MESSAGE_LENGTH];
+        extern int app_generate_text(AppState* state, const char* prompt, char* output, size_t output_size);
+        int result = app_generate_text(state, input_text, response, sizeof(response));
+        
+        if (result > 0) {
+            add_chat_message(response, false);
+        } else {
+            add_chat_message("Error: Failed to generate response. Make sure a model is loaded.", false);
+        }
+    } else {
+        add_chat_message("Error: No model loaded. Please load a model first.", false);
+    }
 }
 
 static void on_clear_clicked(void* data) {
