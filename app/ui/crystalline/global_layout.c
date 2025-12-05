@@ -1,0 +1,331 @@
+/*
+ * Crystalline Global Layout System - Implementation
+ */
+
+#include "global_layout.h"
+#include "../../app_common.h"
+#include <string.h>
+
+// Global layout context instance
+static CrystallineLayoutContext g_layout_context = {0};
+static bool g_layout_initialized = false;
+
+/*
+ * Global Layout Context Functions
+ */
+
+void crystalline_layout_context_init(int window_w, int window_h,
+                                      int sidebar_w, int submenu_h,
+                                      int control_panel_w) {
+    g_layout_context.window_width = window_w;
+    g_layout_context.window_height = window_h;
+    g_layout_context.sidebar_width = sidebar_w;
+    g_layout_context.submenu_height = submenu_h;
+    g_layout_context.control_panel_width = control_panel_w;
+    
+    // Calculate render area
+    g_layout_context.render_area_x = sidebar_w;
+    g_layout_context.render_area_y = submenu_h;
+    g_layout_context.render_area_width = window_w - sidebar_w - control_panel_w;
+    g_layout_context.render_area_height = window_h - submenu_h;
+    
+    // Calculate control panel area
+    g_layout_context.control_panel_x = sidebar_w + g_layout_context.render_area_width;
+    g_layout_context.control_panel_y = submenu_h;
+    g_layout_context.control_panel_height = window_h - submenu_h;
+    
+    // Default state
+    g_layout_context.control_panel_visible = true;
+    g_layout_context.sidebar_visible = true;
+    
+    g_layout_initialized = true;
+}
+
+CrystallineLayoutContext* crystalline_layout_context_get(void) {
+    if (!g_layout_initialized) {
+        // Initialize with default values from app_common.h
+        crystalline_layout_context_init(
+            WINDOW_WIDTH,
+            WINDOW_HEIGHT,
+            SIDEBAR_WIDTH,
+            SUBMENU_HEIGHT,
+            CONTROL_PANEL_WIDTH
+        );
+    }
+    return &g_layout_context;
+}
+
+void crystalline_layout_context_update_window(int window_w, int window_h) {
+    g_layout_context.window_width = window_w;
+    g_layout_context.window_height = window_h;
+    
+    // Recalculate areas
+    g_layout_context.render_area_width = window_w - g_layout_context.sidebar_width - 
+                                          g_layout_context.control_panel_width;
+    g_layout_context.render_area_height = window_h - g_layout_context.submenu_height;
+    
+    g_layout_context.control_panel_x = g_layout_context.sidebar_width + 
+                                        g_layout_context.render_area_width;
+    g_layout_context.control_panel_height = window_h - g_layout_context.submenu_height;
+}
+
+void crystalline_layout_context_toggle_control_panel(bool visible) {
+    g_layout_context.control_panel_visible = visible;
+}
+
+void crystalline_layout_context_toggle_sidebar(bool visible) {
+    g_layout_context.sidebar_visible = visible;
+}
+
+CrystallineRect crystalline_layout_get_render_area(void) {
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    return crystalline_layout_rect_from_topleft(
+        ctx->render_area_x,
+        ctx->render_area_y,
+        ctx->render_area_width,
+        ctx->render_area_height
+    );
+}
+
+CrystallineRect crystalline_layout_get_control_panel(void) {
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    return crystalline_layout_rect_from_topleft(
+        ctx->control_panel_x,
+        ctx->control_panel_y,
+        ctx->control_panel_width,
+        ctx->control_panel_height
+    );
+}
+
+CrystallineRect crystalline_layout_get_sidebar(void) {
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    return crystalline_layout_rect_from_topleft(
+        0,
+        ctx->submenu_height,
+        ctx->sidebar_width,
+        ctx->window_height - ctx->submenu_height
+    );
+}
+
+/*
+ * Tab Layout Functions
+ */
+
+CrystallineTabLayout crystalline_tab_layout_create(CrystallineTabLayoutMode mode) {
+    CrystallineTabLayout layout = {0};
+    layout.mode = mode;
+    
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    switch (mode) {
+        case CRYSTALLINE_TAB_LAYOUT_RENDER_ONLY:
+            // Use only render area (1080px)
+            layout.content_area = crystalline_layout_get_render_area();
+            layout.uses_control_panel = false;
+            break;
+            
+        case CRYSTALLINE_TAB_LAYOUT_FULL_WIDTH:
+            // Use render area + control panel (1400px)
+            layout.content_area = crystalline_layout_rect_from_topleft(
+                ctx->render_area_x,
+                ctx->render_area_y,
+                ctx->render_area_width + ctx->control_panel_width,
+                ctx->render_area_height
+            );
+            layout.uses_control_panel = true;
+            break;
+            
+        case CRYSTALLINE_TAB_LAYOUT_CENTERED:
+            // Centered in render area
+            layout.content_area = crystalline_layout_get_render_area();
+            layout.uses_control_panel = false;
+            break;
+            
+        case CRYSTALLINE_TAB_LAYOUT_CUSTOM:
+            // Custom - tab manages its own layout
+            layout.content_area = crystalline_layout_get_render_area();
+            layout.uses_control_panel = false;
+            break;
+    }
+    
+    // Default split ratios
+    layout.horizontal_split = 0.5f;
+    layout.vertical_split = 0.5f;
+    
+    // Default padding
+    layout.padding_top = CRYSTALLINE_PADDING_MEDIUM;
+    layout.padding_bottom = CRYSTALLINE_PADDING_MEDIUM;
+    layout.padding_left = CRYSTALLINE_PADDING_MEDIUM;
+    layout.padding_right = CRYSTALLINE_PADDING_MEDIUM;
+    
+    return layout;
+}
+
+CrystallineRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout) {
+    if (!layout) {
+        return (CrystallineRect){0};
+    }
+    
+    // Apply padding
+    return crystalline_layout_rect_inset(
+        layout->content_area,
+        layout->padding_top,
+        layout->padding_bottom,
+        layout->padding_left,
+        layout->padding_right
+    );
+}
+
+CrystallineRect crystalline_tab_layout_get_control(CrystallineTabLayout* layout) {
+    if (!layout || !layout->uses_control_panel) {
+        return (CrystallineRect){0};
+    }
+    
+    return layout->control_area;
+}
+
+void crystalline_tab_layout_set_padding(CrystallineTabLayout* layout,
+                                         float top, float bottom,
+                                         float left, float right) {
+    if (!layout) return;
+    
+    layout->padding_top = top;
+    layout->padding_bottom = bottom;
+    layout->padding_left = left;
+    layout->padding_right = right;
+}
+
+/*
+ * Content Area Splitting Functions
+ */
+
+void crystalline_tab_layout_split_horizontal(CrystallineTabLayout* layout,
+                                              float ratio,
+                                              float spacing,
+                                              CrystallineRect* left,
+                                              CrystallineRect* right) {
+    if (!layout || !left || !right) return;
+    
+    CrystallineRect content = crystalline_tab_layout_get_content(layout);
+    
+    // Calculate widths
+    float total_width = content.width - spacing;
+    float left_width = total_width * ratio;
+    float right_width = total_width - left_width;
+    
+    // Create left rect
+    *left = crystalline_layout_rect_from_topleft(
+        content.center.x - content.width / 2.0f,
+        content.center.y - content.height / 2.0f,
+        left_width,
+        content.height
+    );
+    
+    // Create right rect
+    *right = crystalline_layout_rect_from_topleft(
+        content.center.x - content.width / 2.0f + left_width + spacing,
+        content.center.y - content.height / 2.0f,
+        right_width,
+        content.height
+    );
+}
+
+void crystalline_tab_layout_split_vertical(CrystallineTabLayout* layout,
+                                            float ratio,
+                                            float spacing,
+                                            CrystallineRect* top,
+                                            CrystallineRect* bottom) {
+    if (!layout || !top || !bottom) return;
+    
+    CrystallineRect content = crystalline_tab_layout_get_content(layout);
+    
+    // Calculate heights
+    float total_height = content.height - spacing;
+    float top_height = total_height * ratio;
+    float bottom_height = total_height - top_height;
+    
+    // Create top rect
+    *top = crystalline_layout_rect_from_topleft(
+        content.center.x - content.width / 2.0f,
+        content.center.y - content.height / 2.0f,
+        content.width,
+        top_height
+    );
+    
+    // Create bottom rect
+    *bottom = crystalline_layout_rect_from_topleft(
+        content.center.x - content.width / 2.0f,
+        content.center.y - content.height / 2.0f + top_height + spacing,
+        content.width,
+        bottom_height
+    );
+}
+
+void crystalline_tab_layout_split_golden_horizontal(CrystallineTabLayout* layout,
+                                                     float spacing,
+                                                     CrystallineRect* left,
+                                                     CrystallineRect* right) {
+    crystalline_tab_layout_split_horizontal(layout, CRYSTALLINE_GOLDEN_RATIO, 
+                                             spacing, left, right);
+}
+
+void crystalline_tab_layout_split_golden_vertical(CrystallineTabLayout* layout,
+                                                   float spacing,
+                                                   CrystallineRect* top,
+                                                   CrystallineRect* bottom) {
+    crystalline_tab_layout_split_vertical(layout, CRYSTALLINE_GOLDEN_RATIO,
+                                           spacing, top, bottom);
+}
+
+/*
+ * Helper Functions
+ */
+
+CrystallineRect crystalline_layout_rect_from_center(float center_x, float center_y,
+                                                     float width, float height) {
+    CrystallineRect rect;
+    rect.center.x = center_x;
+    rect.center.y = center_y;
+    rect.width = width;
+    rect.height = height;
+    return rect;
+}
+
+CrystallineRect crystalline_layout_rect_from_topleft(float x, float y,
+                                                      float width, float height) {
+    CrystallineRect rect;
+    rect.center.x = x + width / 2.0f;
+    rect.center.y = y + height / 2.0f;
+    rect.width = width;
+    rect.height = height;
+    return rect;
+}
+
+CrystallinePoint crystalline_layout_rect_center(CrystallineRect rect) {
+    return rect.center;
+}
+
+CrystallineRect crystalline_layout_rect_inset(CrystallineRect rect,
+                                               float top, float bottom,
+                                               float left, float right) {
+    float new_width = rect.width - left - right;
+    float new_height = rect.height - top - bottom;
+    
+    // Calculate new center (accounting for asymmetric padding)
+    float center_x = rect.center.x + (right - left) / 2.0f;
+    float center_y = rect.center.y + (bottom - top) / 2.0f;
+    
+    return crystalline_layout_rect_from_center(center_x, center_y, new_width, new_height);
+}
+
+bool crystalline_layout_rect_contains(CrystallineRect rect, float x, float y) {
+    float left = rect.center.x - rect.width / 2.0f;
+    float right = rect.center.x + rect.width / 2.0f;
+    float top = rect.center.y - rect.height / 2.0f;
+    float bottom = rect.center.y + rect.height / 2.0f;
+    
+    return (x >= left && x <= right && y >= top && y <= bottom);
+}
