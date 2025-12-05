@@ -87,7 +87,7 @@ void test_clock_position_ring0() {
     
     // Ring 0 has 12 positions
     for (int thread_id = 0; thread_id < 24; thread_id++) {
-        uint32_t pos = calculate_clock_position(thread_id, 0);
+        uint32_t pos = calculate_thread_clock_position(thread_id, 0);
         ASSERT(pos < 12, "Position should be in range [0, 11]");
         ASSERT(pos == (uint32_t)(thread_id % 12), "Position should wrap around modulo 12");
     }
@@ -100,7 +100,7 @@ void test_clock_position_ring1() {
     
     // Ring 1 has 60 positions
     for (int thread_id = 0; thread_id < 120; thread_id++) {
-        uint32_t pos = calculate_clock_position(thread_id, 1);
+        uint32_t pos = calculate_thread_clock_position(thread_id, 1);
         ASSERT(pos < 60, "Position should be in range [0, 59]");
         ASSERT(pos == (uint32_t)(thread_id % 60), "Position should wrap around modulo 60");
     }
@@ -113,7 +113,7 @@ void test_clock_position_ring3() {
     
     // Ring 3 has 100 positions
     for (int thread_id = 0; thread_id < 200; thread_id++) {
-        uint32_t pos = calculate_clock_position(thread_id, 3);
+        uint32_t pos = calculate_thread_clock_position(thread_id, 3);
         ASSERT(pos < 100, "Position should be in range [0, 99]");
         ASSERT(pos == (uint32_t)(thread_id % 100), "Position should wrap around modulo 100");
     }
@@ -127,7 +127,7 @@ void test_clock_position_distribution() {
     // Test that positions are evenly distributed
     int counts[12] = {0};
     for (int thread_id = 0; thread_id < 120; thread_id++) {
-        uint32_t pos = calculate_clock_position(thread_id, 0);
+        uint32_t pos = calculate_thread_clock_position(thread_id, 0);
         counts[pos]++;
     }
     

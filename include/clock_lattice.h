@@ -128,13 +128,13 @@ ClockMemoryPosition map_thread_to_memory(
 );
 
 /**
- * Calculate clock position for thread
+ * Calculate clock position for thread in memory mapping
  * 
  * @param thread_id Thread ID
  * @param hierarchy_level Level in hierarchy
  * @return Position in ring (0-based)
  */
-uint32_t calculate_clock_position(int thread_id, int hierarchy_level);
+uint32_t calculate_thread_clock_position(int thread_id, int hierarchy_level);
 
 /**
  * Calculate memory offset for ring position

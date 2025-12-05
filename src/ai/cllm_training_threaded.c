@@ -33,6 +33,7 @@
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
 #include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure
+#include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "prime_float_math.h"
 #include "prime_math.h"
@@ -662,7 +663,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // PHASE 8: Thread-local training context (will be allocated later with model info)
     ctx->thread_local_training = NULL;
     
-    // PHASE 3: Create crystalline memory structure
+    // PHASE 3: Create crystalline memory structure with clock-based mapping
     // Allocate memory in 12-fold structure (one segment per symmetry group)
     // Total size = gradient_size (distributed across 12 segments)
     ctx->crystalline_memory = crystalline_memory_create(
@@ -680,6 +681,19 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
         free(ctx);
         return NULL;
     }
+    
+    // PHASE 3, Day 9: Map thread to memory using Babylonian clock structure
+    // This determines the memory position based on hierarchy level and thread ID
+    ClockMemoryPosition clock_pos = map_thread_to_memory(
+        sphere_id,
+        0,  // hierarchy_level (will be updated when spawned)
+        gradient_size * sizeof(double)
+    );
+    
+    // Store clock position information for debugging and optimization
+    printf("[Sphere %d] Clock position: ring=%u, position=%u, offset=%zu, segment_size=%zu\n",
+           sphere_id, clock_pos.ring, clock_pos.position, 
+           clock_pos.memory_offset, clock_pos.segment_size);
     
     return ctx;
 }
@@ -2173,7 +2187,7 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         parent->children[i]->hierarchy_level = parent->hierarchy_level + 1;
         parent->children[i]->system = parent->system;
         
-        // PHASE 3: Link parent-child crystalline memory
+        // PHASE 3: Link parent-child crystalline memory with clock-based mapping
         if (parent->crystalline_memory && parent->children[i]->crystalline_memory) {
             // Create shared memory region between parent and child
             // Size = 1/12 of total gradient size (one segment)
@@ -2193,6 +2207,18 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
                 printf("[Sphere %d] Linked crystalline memory with child %d (symmetry group %d)\n",
                        parent->sphere_id, child_id, child_symmetry_group);
             }
+            
+            // PHASE 3, Day 9: Map child to memory using Babylonian clock structure
+            // Child's hierarchy level determines which ring it's in
+            ClockMemoryPosition child_clock_pos = map_thread_to_memory(
+                child_id,
+                parent->hierarchy_level + 1,  // Child's hierarchy level
+                parent->gradient_size * sizeof(double)
+            );
+            
+            printf("[Sphere %d -> Child %d] Clock position: ring=%u, position=%u, offset=%zu\n",
+                   parent->sphere_id, child_id, child_clock_pos.ring, 
+                   child_clock_pos.position, child_clock_pos.memory_offset);
         }
         
         // Create hierarchy node for child

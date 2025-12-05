@@ -270,12 +270,12 @@ uint32_t get_cumulative_positions(uint32_t ring) {
 }
 
 /**
- * Calculate clock position for thread
+ * Calculate clock position for thread in memory mapping
  * 
  * Maps thread_id to position within its ring based on hierarchy level.
  * Uses modular arithmetic to wrap around ring positions.
  */
-uint32_t calculate_clock_position(int thread_id, int hierarchy_level) {
+uint32_t calculate_thread_clock_position(int thread_id, int hierarchy_level) {
     // Use hierarchy level to determine ring
     uint32_t ring = (uint32_t)hierarchy_level;
     
@@ -332,7 +332,7 @@ ClockMemoryPosition map_thread_to_memory(
     mem_pos.ring = (uint32_t)hierarchy_level;
     
     // Calculate position within ring
-    mem_pos.position = calculate_clock_position(thread_id, hierarchy_level);
+    mem_pos.position = calculate_thread_clock_position(thread_id, hierarchy_level);
     
     // Calculate memory offset
     mem_pos.memory_offset = calculate_memory_offset(
