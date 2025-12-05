@@ -1,9 +1,9 @@
-# TODO - PHASE 1 COMPLETE ✅ | PHASE 2 NEXT
+# TODO - PHASE 3: MEMORY SYSTEM INTEGRATION
 
 **Last Updated**: 2024-12-05  
-**Current Status**: Phase 1 Critical Wiring COMPLETE  
+**Current Status**: Starting Phase 3 - Replace local_gradients with crystalline memory  
 **Build Status**: Zero errors, zero warnings  
-**Integration Progress**: 20% (up from 15%)
+**Integration Progress**: 40% (Phases 1 &amp; 2 complete)
 
 ## ✅ PHASE 1 CRITICAL WIRING - COMPLETE
 
@@ -74,25 +74,35 @@
 - **20+ integration points** identified
 - **14 critical wiring gaps** documented
 
-## 🎯 CURRENT STATUS - PHASE 1 & 2 COMPLETE
+## 🎯 PHASE 3: MEMORY SYSTEM INTEGRATION - IN PROGRESS
 
-### What's Wired (✅):
-1. ✅ Entropy integration → training loop (update_entropy_statistics)
-2. ✅ Adaptive hierarchy → spawning decisions (calculate_entropy_aware_depth)
-3. ✅ Entropy allocation → thread creation (Task 1.1)
-4. ✅ Entropy work distribution → batch processing (Task 1.2)
-5. ✅ **L_lattice() → embeddings (Task 2.1) - CORE INNOVATION**
-6. ✅ **theta_n() → attention (Task 2.2) - CORE INNOVATION**
-7. ✅ System initialization → all contexts created
-8. ✅ System cleanup → all contexts freed
+### Current Task: Replace local_gradients with Crystalline Memory
 
-### What's NOT Wired (❌):
-1. ❌ Crystalline memory → gradient storage (created but not used)
-2. ❌ Kissing boundaries → gradient sharing (never called)
-3. ❌ Lock-free memory → accumulation (never called)
-4. ❌ Plimpton ratios → work splitting (never called)
-5. ❌ Cymatic barriers → training loop (never called)
-6. ❌ UI integration → entropy metrics display (not implemented)
+**Goal**: Remove the TODO comment and actually use the crystalline memory system
+
+**Files to Modify**:
+- `src/ai/cllm_training_threaded.c` - Main integration point
+- `include/ai/cllm_training_threaded.h` - Structure definitions
+
+**What Needs to Happen**:
+1. Replace `double* local_gradients` with `CrystallineMemoryBlock* gradient_memory`
+2. Use `crystalline_memory_create()` instead of `calloc()`
+3. Access gradients through segment API: `crystalline_segment_write()`
+4. Use kissing boundaries for gradient sharing between siblings
+5. Remove all `local_gradients` references
+
+**Current State**:
+- ❌ Still using `double* local_gradients` (line 89)
+- ❌ Still using `calloc()` for gradient allocation (line 656)
+- ❌ Still using direct pointer access (lines 816, 861, 888, 2510, 2521, 2528, 2531)
+- ❌ Crystalline memory system exists but NEVER CALLED
+
+**Target State**:
+- ✅ Use `CrystallineMemoryBlock* gradient_memory`
+- ✅ Use `crystalline_memory_create()` for allocation
+- ✅ Use segment API for all gradient access
+- ✅ Use kissing boundaries for gradient sharing
+- ✅ Remove all TODO comments about "Remove after shared memory integration"
 
 ## 📊 PRIORITY MATRIX
 

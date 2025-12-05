@@ -812,8 +812,19 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     
     CLLMBatch* batch = ctx->current_batch;
     
-    // Zero local gradients
-    memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
+    // Zero gradients in crystalline memory (12-fold structure)
+    if (ctx->crystalline_memory) {
+        // Zero all 12 segments
+        for (int seg = 0; seg < NUM_SYMMETRY_GROUPS; seg++) {
+            CrystallineSegment* segment = crystalline_memory_get_segment(ctx->crystalline_memory, seg);
+            if (segment && segment->data) {
+                memset(segment->data, 0, segment->size);
+            }
+        }
+    } else {
+        // Fallback to legacy local_gradients (should not happen)
+        memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
+    }
     
     // Process each sequence in the batch
     float total_loss = 0.0f;
@@ -853,12 +864,33 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
             batch->seq_len
         );
         
-        // Backward pass - compute gradients to local buffer (thread-local)
+        // Backward pass - compute gradients to crystalline memory
+        // Use the segment corresponding to this sphere's symmetry group
+        double* gradient_buffer = NULL;
+        
+        if (ctx->crystalline_memory) {
+            // Get segment for this sphere's symmetry group
+            CrystallineSegment* segment = crystalline_memory_get_segment(
+                ctx->crystalline_memory, 
+                ctx->symmetry_group
+            );
+            
+            if (segment && segment->data) {
+                gradient_buffer = (double*)segment->data;
+            } else {
+                // Fallback to legacy
+                gradient_buffer = ctx->local_gradients;
+            }
+        } else {
+            // Fallback to legacy local_gradients
+            gradient_buffer = ctx->local_gradients;
+        }
+        
         cllm_backward_training_threaded(
             training,
             ctx->thread_local_training,
             &batch->target_ids[offset],
-            ctx->local_gradients
+            gradient_buffer
         );
         
         total_loss += seq_loss;
@@ -880,12 +912,35 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         );
     }
     
-    // PHASE 4: Lock-free gradient accumulation
+    // PHASE 4: Lock-free gradient accumulation using crystalline memory
     // Each worker writes ONLY to its own segment (no locking needed)
     // This is safe because each worker has exclusive access to its segment
     ThreadedTrainingSystem* system = ctx->system;
-    for (size_t i = ctx->gradient_segment_start; i < ctx->gradient_segment_end && i < ctx->gradient_size; i++) {
-        system->accumulated_gradients[i] = ctx->local_gradients[i];
+    
+    if (ctx->crystalline_memory) {
+        // Get gradient data from crystalline memory segment
+        CrystallineSegment* segment = crystalline_memory_get_segment(
+            ctx->crystalline_memory, 
+            ctx->symmetry_group
+        );
+        
+        if (segment && segment->data) {
+            double* segment_gradients = (double*)segment->data;
+            size_t num_gradients = segment->size / sizeof(double);
+            
+            // Copy from crystalline segment to accumulated gradients
+            // Each sphere writes to its own lock-free segment
+            for (size_t i = 0; i < num_gradients && 
+                 (ctx->gradient_segment_start + i) < ctx->gradient_segment_end &&
+                 (ctx->gradient_segment_start + i) < ctx->gradient_size; i++) {
+                system->accumulated_gradients[ctx->gradient_segment_start + i] = segment_gradients[i];
+            }
+        }
+    } else {
+        // Fallback to legacy local_gradients
+        for (size_t i = ctx->gradient_segment_start; i < ctx->gradient_segment_end && i < ctx->gradient_size; i++) {
+            system->accumulated_gradients[i] = ctx->local_gradients[i];
+        }
     }
 }
 
@@ -2507,8 +2562,14 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         printf("[DEBUG] accumulate_gradients: Processing sphere %d (ctx=%p)\n", i, (void*)ctx);
         
-        if (!ctx || !ctx->local_gradients) {
-            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no ctx or gradients)\n", i);
+        // Check if sphere has valid gradient storage (crystalline memory or legacy)
+        if (!ctx) {
+            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no ctx)\n", i);
+            continue;
+        }
+        
+        if (!ctx->crystalline_memory && !ctx->local_gradients) {
+            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no gradient storage)\n", i);
             continue;
         }
         
@@ -2518,17 +2579,43 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         char source[64];
         snprintf(source, sizeof(source), "Sphere %d", i);
         printf("[DEBUG] accumulate_gradients: Validating sphere %d gradients\n", i);
-        if (!validate_gradients(ctx->local_gradients, ctx->gradient_size, source)) {
+        
+        // Get gradients from crystalline memory or fallback to local_gradients
+        double* gradient_source = NULL;
+        size_t gradient_count = 0;
+        
+        if (ctx->crystalline_memory) {
+            // Get segment for this sphere's symmetry group
+            CrystallineSegment* segment = crystalline_memory_get_segment(
+                ctx->crystalline_memory, 
+                ctx->symmetry_group
+            );
+            
+            if (segment && segment->data) {
+                gradient_source = (double*)segment->data;
+                gradient_count = segment->size / sizeof(double);
+            } else {
+                gradient_source = ctx->local_gradients;
+                gradient_count = ctx->gradient_size;
+            }
+        } else {
+            gradient_source = ctx->local_gradients;
+            gradient_count = ctx->gradient_size;
+        }
+        
+        if (!validate_gradients(gradient_source, gradient_count, source)) {
             fprintf(stderr, "WARNING: Skipping sphere %d due to invalid gradients\n", i);
             continue;
         }
         printf("[DEBUG] accumulate_gradients: Sphere %d gradients validated\n", i);
         
         // Clip gradients to prevent overflow
-        clip_gradients(ctx->local_gradients, ctx->gradient_size, 10.0);
+        clip_gradients(gradient_source, gradient_count, 10.0);
         
-        for (size_t j = 0; j < system->gradient_size; j++) {
-            system->accumulated_gradients[j] += ctx->local_gradients[j];
+        // Accumulate gradients
+        size_t accumulate_count = (gradient_count < system->gradient_size) ? gradient_count : system->gradient_size;
+        for (size_t j = 0; j < accumulate_count; j++) {
+            system->accumulated_gradients[j] += gradient_source[j];
         }
         
         valid_spheres++;
