@@ -41,6 +41,7 @@
 #include "ai/cllm_entropy_allocation.h"  // PHASE 6: Entropy-based allocation
 #include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
+#include "ai/cllm_cymatic_sync.h"           // PHASE 5: Cymatic timing synchronization
 #include "prime_float_math.h"
 #include "prime_math.h"
 #include "prime_types.h"                 // For PRIME_PI
@@ -238,6 +239,10 @@ struct ThreadedTrainingSystem {
     
     // PHASE 4: Plimpton Work Distribution
     PlimptonIntegrationContext* plimpton_context;   // Plimpton 322 work distribution
+    
+    // PHASE 5: Cymatic Timing Integration
+    CymaticBarrier* epoch_barrier;                  // Schumann resonance (7.83 Hz) epoch sync
+    CymaticBarrier* batch_barrier;                  // 432 Hz batch sync
 };
 
 /**
@@ -1758,6 +1763,40 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         fprintf(stderr, "WARNING: Failed to initialize Plimpton integration context\n");
     }
     
+    // PHASE 5: Initialize cymatic timing barriers
+    printf("  Initializing cymatic timing synchronization...\n");
+    
+    // Create epoch barrier with Schumann resonance (7.83 Hz)
+    // +1 for control thread
+    system->epoch_barrier = cymatic_barrier_create(
+        system->num_worker_spheres + 1,
+        CYMATIC_FREQ_SCHUMANN,
+        false  // Not adaptive - strict synchronization
+    );
+    
+    // Create batch barrier with 432 Hz
+    system->batch_barrier = cymatic_barrier_create(
+        system->num_worker_spheres + 1,
+        CYMATIC_FREQ_432_HZ,
+        false  // Not adaptive - strict synchronization
+    );
+    
+    if (system->epoch_barrier && system->batch_barrier) {
+        printf("  ✓ Cymatic barriers created:\n");
+        printf("    - Epoch barrier: Schumann resonance (7.83 Hz)\n");
+        printf("    - Batch barrier: 432 Hz (natural tuning)\n");
+    } else {
+        fprintf(stderr, "WARNING: Failed to create cymatic barriers (timing sync disabled)\n");
+        if (system->epoch_barrier) {
+            cymatic_barrier_destroy(system->epoch_barrier);
+            system->epoch_barrier = NULL;
+        }
+        if (system->batch_barrier) {
+            cymatic_barrier_destroy(system->batch_barrier);
+            system->batch_barrier = NULL;
+        }
+    }
+    
     // Give threads time to initialize before returning
     usleep(10000);  // 10ms - allow worker threads to start and enter wait state
     
@@ -1883,6 +1922,17 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         printf("  ✓ Plimpton integration freed\n");
     }
     
+    // PHASE 5: Cleanup cymatic timing barriers
+    if (system->epoch_barrier) {
+        cymatic_barrier_destroy(system->epoch_barrier);
+        printf("  ✓ Epoch barrier freed\n");
+    }
+    
+    if (system->batch_barrier) {
+        cymatic_barrier_destroy(system->batch_barrier);
+        printf("  ✓ Batch barrier freed\n");
+    }
+    
     free(system);
 }
 
@@ -1926,7 +1976,18 @@ static void* control_thread_func(void* arg) {
     printf("[Node Zero] Control thread started - Message-based coordination\n");
     printf("[Node Zero] NEVER processes batches - only coordinates\n");
     
+    // PHASE 5: Cymatic timing enabled
+    bool cymatic_enabled = (system->batch_barrier != NULL && system->epoch_barrier != NULL);
+    if (cymatic_enabled) {
+        printf("[Node Zero] Cymatic timing synchronization ENABLED\n");
+    }
+    
     while (atomic_load(&system->running)) {
+        // PHASE 5: Wait at batch barrier (432 Hz) before batch distribution
+        if (cymatic_enabled) {
+            cymatic_barrier_wait(system->batch_barrier);
+        }
+        
         // Wait for all workers to complete their batches
         int expected_workers = system->num_worker_spheres;
         int completed = 0;
@@ -1962,6 +2023,11 @@ static void* control_thread_func(void* arg) {
             
             // Reset completion counter for next batch
             atomic_store(&system->workers_completed, 0);
+        }
+        
+        // PHASE 5: Wait at epoch barrier (Schumann 7.83 Hz) after gradient accumulation
+        if (cymatic_enabled) {
+            cymatic_barrier_wait(system->epoch_barrier);
         }
     }
     
@@ -2024,7 +2090,15 @@ static void* sphere_worker_thread_dynamic(void* arg) {
     double last_check_time = get_current_time_seconds();
     const double CHECK_INTERVAL = 1.0;  // Check workload every 1 second
     
+    // PHASE 5: Cymatic timing enabled
+    bool cymatic_enabled = (system->batch_barrier != NULL && system->epoch_barrier != NULL);
+    
     while (atomic_load(&system->running)) {
+        // PHASE 5: Wait at batch barrier (432 Hz) before pulling work
+        if (cymatic_enabled) {
+            cymatic_barrier_wait(system->batch_barrier);
+        }
+        
         // PHASE 4: Check if we've reached our assigned batch limit (Plimpton work distribution)
         if (ctx->assigned_batches > 0 && batches_processed >= ctx->assigned_batches) {
             // This worker has processed its assigned share
@@ -2086,6 +2160,11 @@ static void* sphere_worker_thread_dynamic(void* arg) {
         
         // Signal batch completion (for message-based coordination)
         atomic_fetch_add(&system->workers_completed, 1);
+        
+        // PHASE 5: Wait at epoch barrier (Schumann 7.83 Hz) after batch completion
+        if (cymatic_enabled) {
+            cymatic_barrier_wait(system->epoch_barrier);
+        }
         
         // Periodic workload check for dynamic spawning
         double current_time = get_current_time_seconds();
