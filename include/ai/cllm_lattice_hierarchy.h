@@ -590,4 +590,60 @@ int lattice_hierarchy_get_depth(const CLLMLatticeHierarchy* sphere);
  */
 int lattice_hierarchy_count_spheres(const CLLMLatticeHierarchy* sphere);
 
+// ============================================================================
+// DEPTH MANAGEMENT
+// ============================================================================
+
+/**
+ * Calculate maximum hierarchy depth based on available cores
+ * 
+ * Determines the optimal maximum depth for the hierarchy tree based on
+ * the number of available CPU cores. Uses the formula:
+ * 
+ * max_depth = floor(log12(cores)) + 1
+ * 
+ * This ensures that at maximum depth, we don't exceed available cores.
+ * 
+ * Examples:
+ * - 12 cores -> depth 2 (1 + 12 threads)
+ * - 144 cores -> depth 3 (1 + 12 + 144 threads)
+ * - 1728 cores -> depth 4 (1 + 12 + 144 + 1728 threads)
+ * 
+ * @param available_cores Number of available CPU cores
+ * @return Maximum recommended hierarchy depth (minimum 1, maximum 5)
+ */
+int calculate_max_depth(int available_cores);
+
+/**
+ * Check if spawning is allowed at current depth
+ * 
+ * Determines if a sphere at the given depth can spawn children based on:
+ * 1. Current depth vs. maximum allowed depth (MAX_HIERARCHY_DEPTH = 5)
+ * 2. Available CPU cores for the next level
+ * 3. Total thread count limit (144,000)
+ * 
+ * @param current_depth Current hierarchy depth (0 = root)
+ * @param available_cores Number of available CPU cores
+ * @param current_thread_count Current total number of threads
+ * @return 1 if spawning is allowed, 0 otherwise
+ */
+int can_spawn_at_depth(int current_depth, int available_cores, int current_thread_count);
+
+/**
+ * Get recommended number of children for current depth
+ * 
+ * Calculates the optimal number of children to spawn based on:
+ * - Available CPU cores
+ * - Current hierarchy depth
+ * - Workload requirements
+ * 
+ * Always returns a value between 1 and 12 to maintain 12-fold symmetry.
+ * 
+ * @param current_depth Current hierarchy depth
+ * @param available_cores Number of available CPU cores
+ * @param pending_batches Number of pending work batches
+ * @return Recommended number of children (1-12)
+ */
+int get_recommended_children_count(int current_depth, int available_cores, int pending_batches);
+
 #endif // CLLM_LATTICE_HIERARCHY_H

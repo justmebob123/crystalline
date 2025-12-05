@@ -1018,3 +1018,113 @@ int lattice_hierarchy_count_spheres(const CLLMLatticeHierarchy* sphere) {
     
     return count;
 }
+
+// ============================================================================
+// DEPTH MANAGEMENT
+// ============================================================================
+
+int calculate_max_depth(int available_cores) {
+    if (available_cores <= 0) {
+        return 1;  // Minimum depth
+    }
+    
+    // Calculate depth using logarithm base 12
+    // max_depth = floor(log12(cores)) + 1
+    // 
+    // We use the change of base formula: log12(x) = log(x) / log(12)
+    // Since we don't have math.h, we'll use a simple iterative approach
+    
+    // Calculate how many levels we can support
+    // Level 0: 1 thread (root) - depth 1
+    // Level 1: 12 threads - depth 2
+    // Level 2: 144 threads - depth 3
+    // Level 3: 1,728 threads - depth 4
+    // Level 4: 20,736 threads - depth 5
+    // Level 5: 248,832 threads (exceeds 144,000 limit)
+    
+    // We need at least 12 cores to spawn children (depth 2)
+    if (available_cores < 12) {
+        return 1;
+    }
+    
+    // Check each depth level
+    if (available_cores >= 20736 && 20736 <= 144000) {
+        return 5;  // Can support depth 5 (20,736 threads at level 4)
+    }
+    if (available_cores >= 1728 && 1728 <= 144000) {
+        return 4;  // Can support depth 4 (1,728 threads at level 3)
+    }
+    if (available_cores >= 144 && 144 <= 144000) {
+        return 3;  // Can support depth 3 (144 threads at level 2)
+    }
+    if (available_cores >= 12 && 12 <= 144000) {
+        return 2;  // Can support depth 2 (12 threads at level 1)
+    }
+    
+    return 1;  // Only root thread
+}
+
+int can_spawn_at_depth(int current_depth, int available_cores, int current_thread_count) {
+    // Check if we're at maximum depth
+    if (current_depth >= 5) {  // MAX_HIERARCHY_DEPTH = 5
+        return 0;
+    }
+    
+    // Check if we have enough cores for 12 children
+    if (available_cores < 12) {
+        return 0;
+    }
+    
+    // Check if spawning 12 children would exceed the 144,000 thread limit
+    if (current_thread_count + 12 > 144000) {
+        return 0;
+    }
+    
+    // Calculate the maximum depth we can support with available cores
+    int max_depth = calculate_max_depth(available_cores);
+    
+    // Check if current depth is below the calculated maximum
+    if (current_depth >= max_depth) {
+        return 0;
+    }
+    
+    // All checks passed - spawning is allowed
+    return 1;
+}
+
+int get_recommended_children_count(int current_depth, int available_cores, int pending_batches) {
+    // If we can't spawn at this depth, return 0
+    if (!can_spawn_at_depth(current_depth, available_cores, 0)) {
+        return 0;
+    }
+    
+    // Calculate the ideal number of children based on workload
+    // We want at least 10 batches per child thread (MIN_BATCHES_PER_THREAD)
+    int ideal_children = pending_batches / 10;
+    
+    // Clamp to valid range [1, 12]
+    if (ideal_children < 1) {
+        ideal_children = 1;
+    }
+    if (ideal_children > 12) {
+        ideal_children = 12;
+    }
+    
+    // Adjust based on available cores
+    // If we have fewer cores than ideal children, reduce the count
+    if (available_cores < ideal_children) {
+        ideal_children = available_cores;
+    }
+    
+    // Ensure we still have at least 1 child if spawning is allowed
+    if (ideal_children < 1) {
+        ideal_children = 1;
+    }
+    
+    // Ensure we don't exceed 12 (12-fold symmetry)
+    if (ideal_children > 12) {
+        ideal_children = 12;
+    }
+    
+    return ideal_children;
+}
