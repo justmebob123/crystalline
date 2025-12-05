@@ -71,21 +71,36 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 1. ✅ Fixed LLM tab NULL font issue (critical bug)
 2. ✅ Fixed LLM tab layout extending off-screen (used RENDER_WIDTH)
 3. ✅ Fixed Training tab heap-use-after-free crash (AddressSanitizer)
-4. ✅ Verified coordinate system (CENTER coordinates)
-5. ✅ Verified all tabs use correct font access
+4. ✅ Fixed Downloaded Files tab layout (used RENDER_WIDTH)
+5. ✅ Fixed Research tab layout (used RENDER_WIDTH)
+6. ✅ Fixed Training tab layout (used RENDER_WIDTH, 3 locations)
+7. ✅ Fixed URL Manager tab layout (used RENDER_WIDTH)
+8. ✅ Verified coordinate system (CENTER coordinates)
+9. ✅ Verified all tabs use correct font access
 
 **NEXT ACTIONS** (PRIORITY ORDER):
 1. ✅ DONE: Fixed LLM tab NULL font issue
 2. ✅ DONE: Fixed LLM tab layout extending off-screen
 3. ✅ DONE: Fixed Training tab heap-use-after-free crash
-4. ⏳ TODO: Test all tabs for any remaining layout issues
-5. ⏳ TODO: Check other tabs for similar width calculation issues
-6. ⏳ TODO: Then proceed with Models/Crawler conversion
+4. ✅ DONE: Fixed all tabs using wrong width calculation
+5. ⏳ TODO: Test all tabs to verify fixes work correctly
+6. ⏳ TODO: Check for any remaining layout issues
+7. ⏳ TODO: Then proceed with Models/Crawler conversion
 
 **CRITICAL BUGS FIXED**:
-- Training tab: Heap-use-after-free when accessing freed metrics
+- Training tab: Heap-use-after-free when accessing freed metrics (CRASH)
 - LLM tab: NULL font causing text rendering failures
-- LLM tab: Chat area extending 320px off-screen to the right
+- All tabs: Using WINDOW_WIDTH instead of RENDER_WIDTH (extending 320px off-screen)
+  * LLM tab
+  * Training tab (3 locations)
+  * Downloaded Files tab (2 locations)
+  * Research tab
+  * URL Manager tab (2 locations)
+
+**SUMMARY**:
+All major layout issues have been fixed. All tabs now use RENDER_WIDTH (1080px)
+which properly accounts for sidebar (200px) + control panel (320px).
+No tabs should extend off-screen anymore.
 
 ### Phase 1: Complete Crystalline UI Elements (Day 1) - ✅ COMPLETE
 
