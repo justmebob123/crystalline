@@ -1,684 +1,507 @@
 /**
- * Models Tab - Complete Rewrite Using New Component System
+ * Models Tab - Complete Rewrite Using Pure Crystalline UI System
  * 
- * Provides proper model management with full wiring
+ * This is a COMPLETE REWRITE using the Crystalline UI system.
+ * NO legacy code, NO old component system, NO manual SDL rendering.
+ * 
+ * Layout:
+ * - Left Panel (70%): Model list with scrolling
+ * - Right Panel (30%): Control buttons and model info
  */
 
 #include "../../app_common.h"
-#include "../components.h"
-#include "../state_manager.h"
-#include "../event_system.h"
-#include "../../../include/cllm_model_manager.h"
+#include "../crystalline/elements.h"
+#include "../crystalline/global_layout.h"
+#include "../button_sizes.h"
+#include "cllm_model_manager.h"
 #include <stdio.h>
 #include <string.h>
 
-// UI Components
-static UIButton* btn_create = NULL;
-static UIButton* btn_load = NULL;
-static UIButton* btn_save = NULL;
-static UIButton* btn_delete = NULL;
-static UIPanel* panel_model_list = NULL;
-static UIPanel* panel_details = NULL;
-static UIDialog* dialog_delete_confirm = NULL;
+// UI State
+static struct {
+    // Panels
+    CrystallinePanel* list_panel;
+    CrystallinePanel* control_panel;
+    
+    // List
+    CrystallineList* model_list;
+    
+    // Buttons
+    CrystallineButton* btn_load;
+    CrystallineButton* btn_delete;
+    CrystallineButton* btn_refresh;
+    CrystallineButton* btn_create;
+    
+    // Text areas
+    CrystallineTextArea* info_display;
+    
+    // State
+    int selected_model_index;
+    char selected_model_name[256];
+    bool initialized;
+    
+} g_models_ui = {0};
 
-// Create model dialog inputs
-static UITextInput* input_model_name = NULL;
-static UISlider* slider_vocab_size = NULL;
-static UISlider* slider_embedding_dim = NULL;
-static UISlider* slider_num_layers = NULL;
-static UISlider* slider_num_heads = NULL;
-static UISlider* slider_hidden_dim = NULL;
-static UIButton* btn_create_confirm = NULL;
-static UIButton* btn_create_cancel = NULL;
-
-// State
-static int selected_model_index = -1;
-
-// Double-click detection
-static uint32_t last_click_time = 0;
-static int last_clicked_index = -1;
-#define DOUBLE_CLICK_MS 500
-static bool show_create_dialog = false;
-static char status_message[256] = "";
-static float status_message_timer = 0.0f;
-
-// Forward declarations
-static void on_create_button_click(void* user_data);
-static void on_load_button_click(void* user_data);
-static void on_save_button_click(void* user_data);
-static void on_delete_button_click(void* user_data);
-static void on_create_confirm_click(void* user_data);
-static void on_create_cancel_click(void* user_data);
-static void on_delete_confirm(DialogResult result, void* user_data);
-static void on_model_state_changed(const Event* event, void* user_data);
-static void on_model_state_changed_simple(void* user_data);
-
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
-
-void init_models_tab(AppState* state) {
-    (void)state;
+/**
+ * Update model info display
+ */
+static void update_model_info(void) {
+    if (!g_models_ui.info_display) return;
     
-    // Create buttons
-    btn_create = ui_button_create(20, 900, 150, 35, "Create New");
-    btn_load = ui_button_create(180, 900, 150, 35, "Load Model");
-    btn_save = ui_button_create(340, 900, 150, 35, "Save Model");
-    btn_delete = ui_button_create(500, 900, 150, 35, "Delete");
+    // Clear previous messages
+    crystalline_textarea_clear(g_models_ui.info_display);
     
-    // Set button callbacks
-    ui_button_set_callback(btn_create, on_create_button_click, state);
-    ui_button_set_callback(btn_load, on_load_button_click, state);
-    ui_button_set_callback(btn_save, on_save_button_click, state);
-    ui_button_set_callback(btn_delete, on_delete_button_click, state);
-    
-    // Initially disable save/delete (no model selected)
-    ui_button_set_enabled(btn_save, false);
-    ui_button_set_enabled(btn_delete, false);
-    
-    // Create panels
-    panel_model_list = ui_panel_create(20, 100, 600, 750, "Available Models");
-    panel_details = ui_panel_create(640, 100, 600, 750, "Model Details");
-    
-    // Create delete confirmation dialog
-    dialog_delete_confirm = ui_dialog_create(500, 300, 400, 200,
-                                             "Confirm Delete",
-                                             "Are you sure you want to delete this model?",
-                                             DIALOG_YES_NO);
-    ui_dialog_set_callback(dialog_delete_confirm, on_delete_confirm, state);
-    
-    // Create model creation dialog components
-    input_model_name = ui_text_input_create(0, 0, 300, 30, "Enter model name");
-    slider_vocab_size = ui_slider_create(0, 0, 300, 30, 1000, 50000, "Vocabulary Size");
-    slider_embedding_dim = ui_slider_create(0, 0, 300, 30, 128, 2048, "Embedding Dimension");
-    slider_num_layers = ui_slider_create(0, 0, 300, 30, 1, 32, "Number of Layers");
-    slider_num_heads = ui_slider_create(0, 0, 300, 30, 1, 32, "Number of Heads");
-    slider_hidden_dim = ui_slider_create(0, 0, 300, 30, 256, 4096, "Hidden Dimension");
-    
-    // Set default values
-    ui_slider_set_value(slider_vocab_size, 10000);
-    ui_slider_set_value(slider_embedding_dim, 512);
-    ui_slider_set_value(slider_num_layers, 6);
-    ui_slider_set_value(slider_num_heads, 8);
-    ui_slider_set_value(slider_hidden_dim, 2048);
-    
-    btn_create_confirm = ui_button_create(0, 0, 100, 30, "Create");
-    btn_create_cancel = ui_button_create(0, 0, 100, 30, "Cancel");
-    
-    ui_button_set_callback(btn_create_confirm, on_create_confirm_click, state);
-    ui_button_set_callback(btn_create_cancel, on_create_cancel_click, state);
-    
-    // Register for model state changes
-    StateManager* state_mgr = state_manager_get_instance();
-    state_register_model_callback(state_mgr, on_model_state_changed_simple, state);
-    
-    // Register for model events
-    EventSystem* event_sys = event_system_get_instance();
-    event_register(event_sys, EVENT_MODEL_LOADED, on_model_state_changed, state);
-    event_register(event_sys, EVENT_MODEL_CREATED, on_model_state_changed, state);
-    event_register(event_sys, EVENT_MODEL_SAVED, on_model_state_changed, state);
-    event_register(event_sys, EVENT_MODEL_DELETED, on_model_state_changed, state);
-    
-    selected_model_index = -1;
-}
-
-void cleanup_models_tab(AppState* state) {
-    (void)state;
-    
-    // Cleanup buttons
-    if (btn_create) ui_button_destroy(btn_create);
-    if (btn_load) ui_button_destroy(btn_load);
-    if (btn_save) ui_button_destroy(btn_save);
-    if (btn_delete) ui_button_destroy(btn_delete);
-    
-    // Cleanup panels
-    if (panel_model_list) ui_panel_destroy(panel_model_list);
-    if (panel_details) ui_panel_destroy(panel_details);
-    
-    // Cleanup dialogs
-    if (dialog_delete_confirm) ui_dialog_destroy(dialog_delete_confirm);
-    
-    // Cleanup create dialog components
-    if (input_model_name) ui_text_input_destroy(input_model_name);
-    if (slider_vocab_size) ui_slider_destroy(slider_vocab_size);
-    if (slider_embedding_dim) ui_slider_destroy(slider_embedding_dim);
-    if (slider_num_layers) ui_slider_destroy(slider_num_layers);
-    if (slider_num_heads) ui_slider_destroy(slider_num_heads);
-    if (slider_hidden_dim) ui_slider_destroy(slider_hidden_dim);
-    if (btn_create_confirm) ui_button_destroy(btn_create_confirm);
-    if (btn_create_cancel) ui_button_destroy(btn_create_cancel);
-}
-
-// ============================================================================
-// BUTTON CALLBACKS
-// ============================================================================
-
-static void on_create_button_click(void* user_data) {
-    (void)user_data;
-    show_create_dialog = true;
-    
-    // Reset inputs
-    ui_text_input_set_text(input_model_name, "");
-    ui_slider_set_value(slider_vocab_size, 10000);
-    ui_slider_set_value(slider_embedding_dim, 512);
-    ui_slider_set_value(slider_num_layers, 6);
-    ui_slider_set_value(slider_num_heads, 8);
-    ui_slider_set_value(slider_hidden_dim, 2048);
-}
-
-static void on_load_button_click(void* user_data) {
-    AppState* state = (AppState*)user_data;
-    
-    // Check if a model is selected
-    if (selected_model_index < 0) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Please select a model from the list");
-        status_message_timer = 3.0f;
+    if (g_models_ui.selected_model_index < 0) {
+        crystalline_textarea_add_message(g_models_ui.info_display, 
+            CRYSTALLINE_MESSAGE_SYSTEM, 
+            "No model selected", 
+            "");
         return;
     }
     
-    // Get selected model name
-    ManagedModel** models = NULL;
-    uint32_t model_count = 0;
-    models = model_manager_list(&model_count);
-    
-    if (selected_model_index >= (int)model_count || !models[selected_model_index]) {
-        snprintf(status_message, sizeof(status_message), "Invalid model selection");
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    const char* model_name = models[selected_model_index]->name;
-    printf("Loading selected model: %s\n", model_name);
-    
-    // CRITICAL: Prepare model before loading (expands abacus if needed)
-    printf("Preparing model '%s'...\n", model_name);
-    if (!model_manager_prepare(model_name)) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Failed to prepare model '%.200s'", model_name);
-        status_message_timer = 3.0f;
-        return;
-    }
-    printf("✓ Model prepared successfully\n");
-    
-    // Now acquire the model for use
-    CLLMModel* model = model_manager_acquire_read(model_name);
+    // Get model info
+    ManagedModel* model = model_manager_get(g_models_ui.selected_model_name);
     if (!model) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Failed to load model '%.200s'", model_name);
-        status_message_timer = 3.0f;
+        crystalline_textarea_add_message(g_models_ui.info_display, 
+            CRYSTALLINE_MESSAGE_SYSTEM, 
+            "Model not found", 
+            "");
         return;
     }
     
-    // Update state manager
-    StateManager* state_mgr = state_manager_get_instance();
-    state_set_model(state_mgr, model, model_name, models[selected_model_index]->path);
+    // Format info text
+    char info_text[2048];
+    snprintf(info_text, sizeof(info_text),
+        "Model: %s\n\n"
+        "Status: %s\n"
+        "Accessible: %s\n"
+        "Training: %s\n"
+        "Vocab Size: %u\n"
+        "Embedding Dim: %u\n"
+        "Num Layers: %u\n"
+        "Num Heads: %u\n"
+        "Required Primes: %lu",
+        model->name,
+        model->model ? "Loaded" : "Not Loaded",
+        model->is_accessible ? "Yes" : "No",
+        model->is_training ? "Yes" : "No",
+        model->vocab_size,
+        model->embedding_dim,
+        model->num_layers,
+        model->num_heads,
+        (unsigned long)model->required_primes
+    );
     
-    // Update model config
-    ManagedModel* managed = models[selected_model_index];
-    state_update_model_config(state_mgr, 
-                            managed->vocab_size,
-                            managed->embedding_dim,
-                            0,  // ff_dim not in metadata
-                            managed->num_layers,
-                            managed->num_heads);
-    
-    // Dispatch MODEL_LOADED event for cross-tab synchronization
-    EventSystem* event_sys = event_system_get_instance();
-    event_model_loaded(event_sys, model_name);
-    
-    snprintf(status_message, sizeof(status_message), 
-             "Model '%.200s' loaded successfully", model_name);
-    status_message_timer = 3.0f;
-    
-    printf("✓ Model '%s' loaded and ready for use\n", model_name);
-    
-    (void)state;
+    crystalline_textarea_add_message(g_models_ui.info_display, 
+        CRYSTALLINE_MESSAGE_SYSTEM, 
+        info_text, 
+        "");
 }
 
-static void on_save_button_click(void* user_data) {
-    AppState* state = (AppState*)user_data;
+/**
+ * Refresh model list
+ */
+static void refresh_model_list(void) {
+    if (!g_models_ui.model_list) return;
     
-    StateManager* state_mgr = state_manager_get_instance();
-    const ModelState* model_state = state_get_model(state_mgr);
+    // Get models from model_manager
+    uint32_t model_count = 0;
+    ManagedModel** models = model_manager_list(&model_count);
     
-    if (!model_state || !model_state->model_loaded) {
-        snprintf(status_message, sizeof(status_message), "No model loaded to save");
-        status_message_timer = 3.0f;
+    if (!models || model_count == 0) {
+        crystalline_list_set_items(g_models_ui.model_list, NULL, 0);
         return;
     }
     
-    const char* model_name = model_state->model_name;
-    if (model_name[0] == '\0') {
-        snprintf(status_message, sizeof(status_message), "No model selected");
-        status_message_timer = 3.0f;
-        return;
+    // Create string array for list
+    char** model_names = malloc(model_count * sizeof(char*));
+    for (uint32_t i = 0; i < model_count; i++) {
+        model_names[i] = models[i]->name;
     }
     
-    printf("Saving model: %s\n", model_name);
+    // Update list
+    crystalline_list_set_items(g_models_ui.model_list, model_names, model_count);
     
-    // Save model using model_manager
-    bool success = model_manager_save(model_name);
+    free(model_names);
     
-    if (!success) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Failed to save model '%.200s'", model_name);
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    // Dispatch MODEL_SAVED event for cross-tab synchronization
-    EventSystem* event_sys = event_system_get_instance();
-    event_model_saved(event_sys, model_name);
-    
-    snprintf(status_message, sizeof(status_message), 
-             "Model '%.200s' saved successfully", model_name);
-    status_message_timer = 3.0f;
-    
-    (void)state;
+    printf("Refreshed model list: %u models\n", model_count);
 }
 
-static void on_delete_button_click(void* user_data) {
-    (void)user_data;
+/**
+ * Button callbacks
+ */
+static void on_load_clicked(void* data) {
+    (void)data;
     
-    if (selected_model_index < 0) {
-        snprintf(status_message, sizeof(status_message), "No model selected");
-        status_message_timer = 3.0f;
+    if (g_models_ui.selected_model_index < 0) {
+        printf("No model selected\n");
         return;
     }
     
-    // Show confirmation dialog
-    ui_dialog_show(dialog_delete_confirm);
-}
-
-static void on_create_confirm_click(void* user_data) {
-    AppState* state = (AppState*)user_data;
+    printf("Loading model: %s\n", g_models_ui.selected_model_name);
     
-    const char* name = ui_text_input_get_text(input_model_name);
-    if (name[0] == '\0') {
-        snprintf(status_message, sizeof(status_message), "Please enter a model name");
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    // Check if model already exists
-    if (model_manager_exists(name)) {
-        snprintf(status_message, sizeof(status_message), "Model '%s' already exists", name);
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    // Get configuration from sliders
-    uint32_t vocab_size = ui_slider_get_value_int(slider_vocab_size);
-    uint32_t embedding_dim = ui_slider_get_value_int(slider_embedding_dim);
-    uint32_t num_layers = ui_slider_get_value_int(slider_num_layers);
-    uint32_t num_heads = ui_slider_get_value_int(slider_num_heads);
-    uint32_t hidden_dim = ui_slider_get_value_int(slider_hidden_dim);
-    
-    // Validate configuration
-    if (embedding_dim % num_heads != 0) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Embedding dimension must be divisible by number of heads");
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    printf("Creating model: %s (vocab=%u, emb=%u, layers=%u, heads=%u, hidden=%u)\n",
-           name, vocab_size, embedding_dim, num_layers, num_heads, hidden_dim);
-    
-    // Create CLLMConfig structure
-    CLLMConfig config = {
-        .vocab_size = vocab_size,
-        .embedding_dim = embedding_dim,
-        .num_layers = num_layers,
-        .num_heads = num_heads,
-        .ff_dim = hidden_dim,
-        .max_seq_len = 512,  // Default sequence length
-        .dropout = 0.1f      // Default dropout rate
-    };
-    
-    // Create model using model_manager
-    ManagedModel* managed_model = model_manager_create(name, &config);
-    
-    if (managed_model == NULL) {
-        snprintf(status_message, sizeof(status_message), 
-                 "Failed to create model '%s'", name);
-        status_message_timer = 3.0f;
-        return;
-    }
-    
-    // Update state manager
-    StateManager* state_mgr = state_manager_get_instance();
-    state_update_model_config(state_mgr, vocab_size, embedding_dim, hidden_dim, num_layers, num_heads);
-    // Model will be set when actually created/loaded
-    state_set_model(state_mgr, NULL, name, "");
-    
-    // Dispatch MODEL_CREATED event for cross-tab synchronization
-    EventSystem* event_sys = event_system_get_instance();
-    event_model_created(event_sys, name);
-    
-    snprintf(status_message, sizeof(status_message), 
-             "Model '%s' created successfully", name);
-    status_message_timer = 3.0f;
-    
-    show_create_dialog = false;
-    (void)state;
-}
-
-static void on_create_cancel_click(void* user_data) {
-    (void)user_data;
-    show_create_dialog = false;
-}
-
-static void on_delete_confirm(DialogResult result, void* user_data) {
-    (void)user_data;
-    
-    if (result == DIALOG_RESULT_YES) {
-        if (selected_model_index >= 0) {
-            uint32_t model_count = 0;
-            ManagedModel** models = model_manager_list(&model_count);
-            
-            if (selected_model_index < (int)model_count && models[selected_model_index]) {
-                const char* model_name = models[selected_model_index]->name;
-                
-                printf("Deleting model: %s\n", model_name);
-                
-                // Delete model using model_manager (delete file too)
-                bool success = model_manager_delete(model_name, true);
-                
-                if (!success) {
-                    snprintf(status_message, sizeof(status_message), 
-                             "Failed to delete model '%.200s'", model_name);
-                    status_message_timer = 3.0f;
-                    return;
-                }
-                
-                // Update state manager
-                StateManager* state_mgr = state_manager_get_instance();
-                const ModelState* model_state = state_get_model(state_mgr);
-                if (model_state && strcmp(model_state->model_name, model_name) == 0) {
-                    state_set_model(state_mgr, NULL, "", "");
-                }
-                
-                // Dispatch MODEL_DELETED event for cross-tab synchronization
-                EventSystem* event_sys = event_system_get_instance();
-                event_model_deleted(event_sys, model_name);
-                
-                snprintf(status_message, sizeof(status_message), 
-                         "Model '%.200s' deleted successfully", model_name);
-                status_message_timer = 3.0f;
-                
-                selected_model_index = -1;
-                ui_button_set_enabled(btn_save, false);
-                ui_button_set_enabled(btn_delete, false);
-            }
-        }
-    }
-}
-
-static void on_model_state_changed(const Event* event, void* user_data) {
-    (void)event;
-    (void)user_data;
-    
-    // Update button states based on model state
-    StateManager* state_mgr = state_manager_get_instance();
-    const ModelState* model_state = state_get_model(state_mgr);
-    
-    if (model_state && model_state->model_loaded) {
-        ui_button_set_enabled(btn_save, true);
+    // Prepare model (loads if not already loaded)
+    if (model_manager_prepare(g_models_ui.selected_model_name)) {
+        printf("Model loaded successfully\n");
+        update_model_info();
     } else {
-        ui_button_set_enabled(btn_save, false);
+        printf("Failed to load model\n");
     }
 }
 
-// Simple wrapper for StateChangeCallback (no Event parameter)
-static void on_model_state_changed_simple(void* user_data) {
-    on_model_state_changed(NULL, user_data);
-}
-
-// ============================================================================
-// RENDERING
-// ============================================================================
-
-void draw_models_tab(AppState* state) {
-    if (!state || !state->renderer) return;
+static void on_delete_clicked(void* data) {
+    (void)data;
     
-    // Update status message timer
-    if (status_message_timer > 0.0f) {
-        status_message_timer -= 0.016f;  // Assume ~60 FPS
-    }
-    
-    // Draw panels
-    ui_panel_render(panel_model_list, state->renderer);
-    ui_panel_render(panel_details, state->renderer);
-    
-    // Draw model list inside panel
-    SDL_Rect content = ui_panel_get_content_bounds(panel_model_list);
-    if (content.w > 0 && content.h > 0) {
-        uint32_t model_count = 0;
-        ManagedModel** models = model_manager_list(&model_count);
-        
-        int item_height = 70;
-        int current_y = content.y;
-        
-        extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
-        
-        if (model_count == 0) {
-            SDL_Color msg_color = {150, 150, 150, 255};
-            draw_text(state->renderer, "No models available.", content.x + 10, current_y, msg_color);
-            draw_text(state->renderer, "Create a new model to get started.", content.x + 10, current_y + 20, msg_color);
-        } else {
-            for (uint32_t i = 0; i < model_count; i++) {
-                if (models[i]) {
-                    SDL_Rect item_rect = {content.x, current_y, content.w, item_height};
-                    
-                    // Highlight if selected (brighter color for visibility)
-                    if ((int)i == selected_model_index) {
-                        SDL_SetRenderDrawColor(state->renderer, 80, 120, 180, 255);  // Bright blue
-                        SDL_RenderFillRect(state->renderer, &item_rect);
-                    }
-                    
-                    // Draw model info
-                    SDL_Color name_color = {220, 220, 220, 255};
-                    SDL_Color info_color = {150, 170, 190, 255};
-                    
-                    draw_text(state->renderer, models[i]->name, item_rect.x + 10, item_rect.y + 10, name_color);
-                    
-                    char info[128];
-                    snprintf(info, sizeof(info), "Vocab: %u | Layers: %u", 
-                            models[i]->vocab_size, models[i]->num_layers);
-                    draw_text(state->renderer, info, item_rect.x + 10, item_rect.y + 35, info_color);
-                    
-                    current_y += item_height + 5;
-                }
-            }
-        }
-    }
-    
-    // Draw buttons
-    ui_button_render(btn_create, state->renderer);
-    ui_button_render(btn_load, state->renderer);
-    ui_button_render(btn_save, state->renderer);
-    ui_button_render(btn_delete, state->renderer);
-    
-    // Draw status message
-    if (status_message_timer > 0.0f && status_message[0] != '\0') {
-        extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
-        SDL_Color status_color = {255, 255, 100, 255};
-        draw_text(state->renderer, status_message, 20, 950, status_color);
-    }
-    
-    // Draw create dialog if open
-    if (show_create_dialog) {
-        // Draw semi-transparent overlay
-        SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 128);
-        SDL_Rect overlay = {0, 0, 1920, 1080};
-        SDL_RenderFillRect(state->renderer, &overlay);
-        
-        // Draw dialog background
-        SDL_Rect dialog_rect = {400, 200, 600, 600};
-        SDL_SetRenderDrawColor(state->renderer, 40, 40, 40, 255);
-        SDL_RenderFillRect(state->renderer, &dialog_rect);
-        SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
-        SDL_RenderDrawRect(state->renderer, &dialog_rect);
-        
-        // Draw title
-        extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
-        SDL_Color title_color = {200, 220, 255, 255};
-        draw_text(state->renderer, "Create New Model", dialog_rect.x + 20, dialog_rect.y + 20, title_color);
-        
-        // Position and render inputs
-        int input_x = dialog_rect.x + 50;
-        int input_y = dialog_rect.y + 70;
-        int input_spacing = 60;
-        
-        SDL_Color label_color = {180, 180, 180, 255};
-        
-        draw_text(state->renderer, "Model Name:", input_x, input_y - 20, label_color);
-        ui_text_input_set_focus(input_model_name, true);
-        input_model_name->bounds = (SDL_Rect){input_x, input_y, 500, 30};
-        ui_text_input_render(input_model_name, state->renderer);
-        input_y += input_spacing;
-        
-        slider_vocab_size->bounds = (SDL_Rect){input_x, input_y, 400, 30};
-        ui_slider_render(slider_vocab_size, state->renderer);
-        input_y += input_spacing;
-        
-        slider_embedding_dim->bounds = (SDL_Rect){input_x, input_y, 400, 30};
-        ui_slider_render(slider_embedding_dim, state->renderer);
-        input_y += input_spacing;
-        
-        slider_num_layers->bounds = (SDL_Rect){input_x, input_y, 400, 30};
-        ui_slider_render(slider_num_layers, state->renderer);
-        input_y += input_spacing;
-        
-        slider_num_heads->bounds = (SDL_Rect){input_x, input_y, 400, 30};
-        ui_slider_render(slider_num_heads, state->renderer);
-        input_y += input_spacing;
-        
-        slider_hidden_dim->bounds = (SDL_Rect){input_x, input_y, 400, 30};
-        ui_slider_render(slider_hidden_dim, state->renderer);
-        input_y += input_spacing + 20;
-        
-        // Buttons
-        btn_create_confirm->bounds = (SDL_Rect){input_x, input_y, 120, 35};
-        btn_create_cancel->bounds = (SDL_Rect){input_x + 140, input_y, 120, 35};
-        ui_button_render(btn_create_confirm, state->renderer);
-        ui_button_render(btn_create_cancel, state->renderer);
-    }
-    
-    // Draw delete confirmation dialog
-    ui_dialog_render(dialog_delete_confirm, state->renderer);
-}
-
-// ============================================================================
-// EVENT HANDLING
-// ============================================================================
-
-void handle_models_tab_click(AppState* state, int x, int y) {
-    if (!state) return;
-    
-    SDL_Event fake_event;
-    fake_event.type = SDL_MOUSEBUTTONDOWN;
-    fake_event.button.button = SDL_BUTTON_LEFT;
-    fake_event.button.x = x;
-    fake_event.button.y = y;
-    
-    // Handle dialog events first (if visible)
-    if (ui_dialog_is_visible(dialog_delete_confirm)) {
-        ui_dialog_handle_event(dialog_delete_confirm, &fake_event);
+    if (g_models_ui.selected_model_index < 0) {
+        printf("No model selected\n");
         return;
     }
     
-    // Handle create dialog events
-    if (show_create_dialog) {
-        ui_text_input_handle_event(input_model_name, &fake_event);
-        ui_slider_handle_event(slider_vocab_size, &fake_event);
-        ui_slider_handle_event(slider_embedding_dim, &fake_event);
-        ui_slider_handle_event(slider_num_layers, &fake_event);
-        ui_slider_handle_event(slider_num_heads, &fake_event);
-        ui_slider_handle_event(slider_hidden_dim, &fake_event);
-        ui_button_handle_event(btn_create_confirm, &fake_event);
-        ui_button_handle_event(btn_create_cancel, &fake_event);
+    printf("Deleting model: %s\n", g_models_ui.selected_model_name);
+    
+    // Delete model (including file)
+    if (model_manager_delete(g_models_ui.selected_model_name, true)) {
+        printf("Model deleted successfully\n");
+        g_models_ui.selected_model_index = -1;
+        g_models_ui.selected_model_name[0] = '\0';
+        refresh_model_list();
+        update_model_info();
+    } else {
+        printf("Failed to delete model\n");
+    }
+}
+
+static void on_refresh_clicked(void* data) {
+    (void)data;
+    printf("Refreshing model list\n");
+    refresh_model_list();
+}
+
+static void on_create_clicked(void* data) {
+    (void)data;
+    printf("Create model button clicked (not implemented yet)\n");
+    // TODO: Implement model creation dialog
+}
+
+/**
+ * List selection callback
+ */
+static void on_model_selected(int index, void* data) {
+    (void)data;
+    
+    g_models_ui.selected_model_index = index;
+    
+    // Get model name
+    uint32_t model_count = 0;
+    ManagedModel** models = model_manager_list(&model_count);
+    
+    if (models && index >= 0 && (uint32_t)index < model_count) {
+        strncpy(g_models_ui.selected_model_name, models[index]->name, 
+                sizeof(g_models_ui.selected_model_name) - 1);
+        printf("Selected model: %s\n", g_models_ui.selected_model_name);
+        update_model_info();
+    }
+}
+
+/**
+ * Initialize Models Tab
+ */
+void init_models_tab(AppState* state) {
+    if (g_models_ui.initialized) return;
+    
+    printf("Initializing Models Tab with Crystalline UI\n");
+    
+    // Get global font
+    extern TTF_Font* get_global_font();
+    TTF_Font* font = get_global_font();
+    if (!font) {
+        printf("ERROR: Failed to get global font\n");
         return;
     }
     
-    // Handle button clicks
-    ui_button_handle_event(btn_create, &fake_event);
-    ui_button_handle_event(btn_load, &fake_event);
-    ui_button_handle_event(btn_save, &fake_event);
-    ui_button_handle_event(btn_delete, &fake_event);
+    // Calculate layout using RENDER_WIDTH (not WINDOW_WIDTH - SIDEBAR_WIDTH)
+    int content_width = RENDER_WIDTH;  // 1080px (accounts for sidebar + control panel)
+    int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
     
-    // Handle model selection in list
-    SDL_Rect content = ui_panel_get_content_bounds(panel_model_list);
-    if (ui_point_in_rect(x, y, &content)) {
-        uint32_t model_count = 0;
-        ManagedModel** models = model_manager_list(&model_count);
-        
-        int item_height = 70;
-        int relative_y = y - content.y;
-        int clicked_index = relative_y / (item_height + 5);
-        
-        if (clicked_index >= 0 && clicked_index < (int)model_count) {
-            // Check for double-click
-            uint32_t current_time = SDL_GetTicks();
-            bool is_double_click = (clicked_index == last_clicked_index) && 
-                                   ((current_time - last_click_time) < DOUBLE_CLICK_MS);
-            
-            last_clicked_index = clicked_index;
-            last_click_time = current_time;
-            
-            selected_model_index = clicked_index;
-            ui_button_set_enabled(btn_delete, true);
-            
-            // Update state manager
-            if (models[clicked_index]) {
-                StateManager* state_mgr = state_manager_get_instance();
-                state_set_model(state_mgr, NULL, models[clicked_index]->name, "");
-                
-                // Double-click loads the model
-                if (is_double_click) {
-                    printf("Double-click detected - loading model '%s'\n", models[clicked_index]->name);
-                    
-                    // Load the model (same as Load button)
-                       // Reload model if not already loaded
-                       model_manager_reload(models[clicked_index]->name);
+    // Split into left (70%) and right (30%)
+    int list_width = (int)(content_width * 0.70f);
+    int control_width = content_width - list_width;
+    
+    // Calculate TOP-LEFT positions first
+    int list_x = RENDER_OFFSET_X;
+    int list_y = SUBMENU_HEIGHT;
+    int list_w = list_width - 20;
+    int list_h = content_height - 20;
+    
+    int control_x = RENDER_OFFSET_X + list_width + 10;
+    int control_y = SUBMENU_HEIGHT;
+    int control_w = control_width - 30;
+    int control_h = content_height - 20;
+    
+    // Convert to CENTER coordinates for Crystalline UI
+    g_models_ui.list_panel = crystalline_panel_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        list_x + list_w / 2.0f,
+        list_y + list_h / 2.0f,
+        list_w,
+        list_h,
+        "Available Models",
+        font
+    );
+    
+    g_models_ui.control_panel = crystalline_panel_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        control_x + control_w / 2.0f,
+        control_y + control_h / 2.0f,
+        control_w,
+        control_h,
+        "Controls",
+        font
+    );
+    
+    // Create model list inside left panel
+    int list_content_x = list_x + 10;
+    int list_content_y = list_y + 40;
+    int list_content_w = list_w - 20;
+    int list_content_h = list_h - 50;
+    
+    g_models_ui.model_list = crystalline_list_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        list_content_x + list_content_w / 2.0f,
+        list_content_y + list_content_h / 2.0f,
+        list_content_w,
+        40,  // Item height
+        font
+    );
+    
+    crystalline_list_set_callback(g_models_ui.model_list, on_model_selected, state);
+    
+    // Create control elements inside right panel (top-justified with fixed spacing)
+    int btn_x = control_x + 10;
+    int btn_w = control_w - 20;
+    int btn_h = 50;
+    int btn_spacing = 70;
+    
+    int btn_y = control_y + 40;
+    
+    // Load button
+    g_models_ui.btn_load = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        btn_x + btn_w / 2.0f,
+        btn_y + btn_h / 2.0f,
+        btn_w,
+        btn_h,
+        "Load Model",
+        font
+    );
+    crystalline_button_set_callback(g_models_ui.btn_load, on_load_clicked, state);
+    btn_y += btn_spacing;
+    
+    // Delete button
+    g_models_ui.btn_delete = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        btn_x + btn_w / 2.0f,
+        btn_y + btn_h / 2.0f,
+        btn_w,
+        btn_h,
+        "Delete Model",
+        font
+    );
+    crystalline_button_set_callback(g_models_ui.btn_delete, on_delete_clicked, state);
+    btn_y += btn_spacing;
+    
+    // Refresh button
+    g_models_ui.btn_refresh = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        btn_x + btn_w / 2.0f,
+        btn_y + btn_h / 2.0f,
+        btn_w,
+        btn_h,
+        "Refresh List",
+        font
+    );
+    crystalline_button_set_callback(g_models_ui.btn_refresh, on_refresh_clicked, state);
+    btn_y += btn_spacing;
+    
+    // Create button
+    g_models_ui.btn_create = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        btn_x + btn_w / 2.0f,
+        btn_y + btn_h / 2.0f,
+        btn_w,
+        btn_h,
+        "Create New",
+        font
+    );
+    crystalline_button_set_callback(g_models_ui.btn_create, on_create_clicked, state);
+    btn_y += btn_spacing + 20;
+    
+    // Info display
+    int info_h = control_h - (btn_y - control_y) - 20;
+    g_models_ui.info_display = crystalline_textarea_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        btn_x + btn_w / 2.0f,
+        btn_y + info_h / 2.0f,
+        btn_w,
+        info_h,
+        font
+    );
+    
+    // Add initial message to textarea
+    crystalline_textarea_add_message(g_models_ui.info_display, 
+        CRYSTALLINE_MESSAGE_SYSTEM, 
+        "No model selected", 
+        "");
+    
+    // Initialize state
+    g_models_ui.selected_model_index = -1;
+    g_models_ui.selected_model_name[0] = '\0';
+    g_models_ui.initialized = true;
+    
+    // Load initial model list
+    refresh_model_list();
+    
+    printf("Models Tab initialized successfully\n");
+}
 
-                    CLLMModel* loaded_model = model_manager_acquire_read(models[clicked_index]->name);
-                    if (loaded_model) {
-                        // Release old model if any
-                        if (state->cllm_model) {
-                            // TODO: Get old model name to release properly
-                        }
-                        
-                        state->cllm_model = loaded_model;
-                        
-                        // Show success message (truncate model name if needed)
-                        char safe_name[200];
-                        snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
-                        snprintf(status_message, sizeof(status_message), 
-                                "Model '%.200s' loaded successfully", safe_name);
-                        status_message_timer = 3.0f;
-                        
-                        // Dispatch event
-                        EventSystem* evt_sys = event_system_get_instance();
-                        if (evt_sys) {
-                            event_dispatch(evt_sys, EVENT_MODEL_LOADED, 
-                                         (void*)models[clicked_index]->name, 
-                                         strlen(models[clicked_index]->name) + 1, 
-                                         "tab_models");
-                        }
-                    } else {
-                        // Show error message (truncate model name if needed)
-                        char safe_name[200];
-                        snprintf(safe_name, sizeof(safe_name), "%.190s", models[clicked_index]->name);
-                        snprintf(status_message, sizeof(status_message), 
-                                "Failed to load model '%.200s'", safe_name);
-                        status_message_timer = 3.0f;
-                    }
-                }
-            }
-        }
+/**
+ * Cleanup Models Tab
+ */
+void cleanup_models_tab(void) {
+    if (!g_models_ui.initialized) return;
+    
+    // Cleanup Crystalline UI elements
+    if (g_models_ui.list_panel) crystalline_panel_destroy(g_models_ui.list_panel);
+    if (g_models_ui.control_panel) crystalline_panel_destroy(g_models_ui.control_panel);
+    if (g_models_ui.model_list) crystalline_list_destroy(g_models_ui.model_list);
+    if (g_models_ui.btn_load) crystalline_button_destroy(g_models_ui.btn_load);
+    if (g_models_ui.btn_delete) crystalline_button_destroy(g_models_ui.btn_delete);
+    if (g_models_ui.btn_refresh) crystalline_button_destroy(g_models_ui.btn_refresh);
+    if (g_models_ui.btn_create) crystalline_button_destroy(g_models_ui.btn_create);
+    if (g_models_ui.info_display) crystalline_textarea_destroy(g_models_ui.info_display);
+    
+    memset(&g_models_ui, 0, sizeof(g_models_ui));
+}
+
+/**
+ * Render Models Tab
+ */
+void render_models_tab(SDL_Renderer* renderer, AppState* state) {
+    if (!g_models_ui.initialized) return;
+    
+    // Render panels
+    if (g_models_ui.list_panel) {
+        crystalline_panel_render(g_models_ui.list_panel, renderer);
+    }
+    if (g_models_ui.control_panel) {
+        crystalline_panel_render(g_models_ui.control_panel, renderer);
+    }
+    
+    // Render list
+    if (g_models_ui.model_list) {
+        crystalline_list_render(g_models_ui.model_list, renderer);
+    }
+    
+    // Render buttons
+    if (g_models_ui.btn_load) {
+        crystalline_button_render(g_models_ui.btn_load, renderer);
+    }
+    if (g_models_ui.btn_delete) {
+        crystalline_button_render(g_models_ui.btn_delete, renderer);
+    }
+    if (g_models_ui.btn_refresh) {
+        crystalline_button_render(g_models_ui.btn_refresh, renderer);
+    }
+    if (g_models_ui.btn_create) {
+        crystalline_button_render(g_models_ui.btn_create, renderer);
+    }
+    
+    // Render info display
+    if (g_models_ui.info_display) {
+        crystalline_textarea_render(g_models_ui.info_display, renderer);
+    }
+}
+
+/**
+ * Event handlers following standardized pattern
+ */
+void handle_models_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) {
+    if (!g_models_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEBUTTONDOWN;
+    sdl_event.button = *event;
+    
+    // Handle list
+    if (g_models_ui.model_list) {
+        crystalline_list_handle_mouse(g_models_ui.model_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_models_ui.btn_load) {
+        crystalline_button_handle_mouse(g_models_ui.btn_load, &sdl_event);
+    }
+    if (g_models_ui.btn_delete) {
+        crystalline_button_handle_mouse(g_models_ui.btn_delete, &sdl_event);
+    }
+    if (g_models_ui.btn_refresh) {
+        crystalline_button_handle_mouse(g_models_ui.btn_refresh, &sdl_event);
+    }
+    if (g_models_ui.btn_create) {
+        crystalline_button_handle_mouse(g_models_ui.btn_create, &sdl_event);
+    }
+}
+
+void handle_models_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
+    if (!g_models_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEBUTTONUP;
+    sdl_event.button = *event;
+    
+    // Handle list
+    if (g_models_ui.model_list) {
+        crystalline_list_handle_mouse(g_models_ui.model_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_models_ui.btn_load) {
+        crystalline_button_handle_mouse(g_models_ui.btn_load, &sdl_event);
+    }
+    if (g_models_ui.btn_delete) {
+        crystalline_button_handle_mouse(g_models_ui.btn_delete, &sdl_event);
+    }
+    if (g_models_ui.btn_refresh) {
+        crystalline_button_handle_mouse(g_models_ui.btn_refresh, &sdl_event);
+    }
+    if (g_models_ui.btn_create) {
+        crystalline_button_handle_mouse(g_models_ui.btn_create, &sdl_event);
+    }
+}
+
+void handle_models_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state) {
+    if (!g_models_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEMOTION;
+    sdl_event.motion = *event;
+    
+    // Handle list
+    if (g_models_ui.model_list) {
+        crystalline_list_handle_mouse(g_models_ui.model_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_models_ui.btn_load) {
+        crystalline_button_handle_mouse(g_models_ui.btn_load, &sdl_event);
+    }
+    if (g_models_ui.btn_delete) {
+        crystalline_button_handle_mouse(g_models_ui.btn_delete, &sdl_event);
+    }
+    if (g_models_ui.btn_refresh) {
+        crystalline_button_handle_mouse(g_models_ui.btn_refresh, &sdl_event);
+    }
+    if (g_models_ui.btn_create) {
+        crystalline_button_handle_mouse(g_models_ui.btn_create, &sdl_event);
     }
 }

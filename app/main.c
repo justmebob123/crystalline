@@ -492,7 +492,8 @@ void handle_mouse_click(AppState* state, int x, int y) {
     }
     
     if (state->current_tab == TAB_CRAWLER) {
-        handle_crawler_tab_click(state, x, y);
+        // Crawler tab uses new event handlers (mouse_down/up/motion)
+        // No legacy click handler needed
         return;
     }
     
@@ -798,6 +799,12 @@ void handle_input(AppState* state, SDL_Event* event) {
                 } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
                     extern void handle_downloaded_files_tab_mouse_down(AppState* state, int x, int y);
                     handle_downloaded_files_tab_mouse_down(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_MODELS) {
+                    extern void handle_models_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state);
+                    handle_models_tab_mouse_down(&event->button, state);
+                } else if (state->current_tab == TAB_CRAWLER) {
+                    extern void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state);
+                    handle_crawler_tab_mouse_down(&event->button, state);
                 } else {
                     // For non-Crystalline tabs, use old handler
                     handle_mouse_click(state, event->button.x, event->button.y);
@@ -835,6 +842,12 @@ void handle_input(AppState* state, SDL_Event* event) {
                 } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
                     extern void handle_downloaded_files_tab_mouse_up(AppState* state, int x, int y);
                     handle_downloaded_files_tab_mouse_up(state, event->button.x, event->button.y);
+                } else if (state->current_tab == TAB_MODELS) {
+                    extern void handle_models_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state);
+                    handle_models_tab_mouse_up(&event->button, state);
+                } else if (state->current_tab == TAB_CRAWLER) {
+                    extern void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state);
+                    handle_crawler_tab_mouse_up(&event->button, state);
                 }
             }
             break;
@@ -862,6 +875,12 @@ void handle_input(AppState* state, SDL_Event* event) {
             } else if (state->current_tab == TAB_DOWNLOADED_FILES) {
                 extern void handle_downloaded_files_tab_mouse_motion(AppState* state, int x, int y);
                 handle_downloaded_files_tab_mouse_motion(state, event->motion.x, event->motion.y);
+            } else if (state->current_tab == TAB_MODELS) {
+                extern void handle_models_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state);
+                handle_models_tab_mouse_motion(&event->motion, state);
+            } else if (state->current_tab == TAB_CRAWLER) {
+                extern void handle_crawler_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state);
+                handle_crawler_tab_mouse_motion(&event->motion, state);
             }
             
             if (event->motion.state & SDL_BUTTON_LMASK) {
@@ -1022,12 +1041,12 @@ void render(AppState* state) {
             draw_research_tab(state->renderer, state);
             break;
         case TAB_CRAWLER:
-            // Pass layout to crawler tab for proper rendering
-            draw_crawler_tab_with_layout(state, &layout);
+            // Render crawler tab with Crystalline UI
+            render_crawler_tab(state->renderer, state);
             break;
         case TAB_MODELS:
-            // Draw models management tab
-            draw_models_tab(state);
+            // Render models tab with Crystalline UI
+            render_models_tab(state->renderer, state);
             break;
         case TAB_URL_MANAGER:
             // Draw URL manager tab

@@ -1,953 +1,637 @@
-// app/ui/tabs/tab_crawler.c - Redesigned Crawler Tab with InputManager
+/**
+ * Crawler Tab - Complete Rewrite Using Pure Crystalline UI System
+ * 
+ * This is a COMPLETE REWRITE using the Crystalline UI system.
+ * NO legacy code, NO old component system, NO manual SDL rendering.
+ * 
+ * Layout:
+ * - Left Panel (70%): URL list with status and progress
+ * - Right Panel (30%): Control buttons and settings
+ */
+
 #include "../../app_common.h"
-#include "../../input_manager.h"
+#include "../crystalline/elements.h"
+#include "../crystalline/global_layout.h"
+#include "../button_sizes.h"
 #include "../../crawler_thread.h"
-#include "../layout_manager.h"
-#include "../model_selector.h"
-#include "../../../include/cllm_model_manager.h"
-#include "../../../src/crawler/prime_randomization.h"
-#include "../../../src/crawler/link_management.h"
-#include "../../../src/crawler/url_patterns.h"
-#include "../../../src/crawler/crawler_url_manager.h"
-#include "../../../src/crawler/content_filter.h"
+#include "crawler.h"
+#include "cllm_model_manager.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-// ============================================================================
-// STATE MANAGEMENT
-// ============================================================================
+// UI State
+static struct {
+    // Panels
+    CrystallinePanel* list_panel;
+    CrystallinePanel* control_panel;
+    
+    // List
+    CrystallineList* url_list;
+    
+    // Buttons
+    CrystallineButton* btn_start;
+    CrystallineButton* btn_stop;
+    CrystallineButton* btn_clear;
+    CrystallineButton* btn_add_url;
+    
+    // Sliders
+    CrystallineSlider* slider_max_depth;
+    CrystallineSlider* slider_max_urls;
+    CrystallineSlider* slider_rate_limit;
+    
+    // Text areas
+    CrystallineTextArea* stats_display;
+    CrystallineInput* url_input;
+    
+    // State
+    bool initialized;
+    bool crawler_running;
+    char selected_model[256];
+    
+    // URL tracking
+    char** urls;
+    int url_count;
+    int url_capacity;
+    
+} g_crawler_ui = {0};
 
-// UI Button structure
-typedef struct {
-    SDL_Rect bounds;
-    char label[64];
-    bool enabled;
-    bool visible;
-} UIButton;
-
-// Crawler tab state
-typedef struct {
-    // Prime Configuration
-    CrawlerPrimeConfig prime_config;
-    bool prime_enabled;
+/**
+ * Update crawler statistics display
+ */
+static void update_stats_display(void) {
+    if (!g_crawler_ui.stats_display) return;
     
-    // URL Management (NEW - using SQLite database)
-    CrawlerURLManager* url_manager;
-    int link_list_scroll;
-    bool show_add_confirmation;
-    int confirmation_timer;
+    // Format stats text
+    char stats_text[1024];
+    snprintf(stats_text, sizeof(stats_text),
+        "Status: %s\n\n"
+        "URLs in queue: %d\n\n"
+        "Note: Crawler statistics will be\n"
+        "displayed here when crawling starts.",
+        g_crawler_ui.crawler_running ? "Running" : "Stopped",
+        g_crawler_ui.url_count
+    );
     
-    // URL Pattern Selection
-    bool pattern_href;
-    bool pattern_onclick;
-    bool pattern_data_attr;
-    bool pattern_meta_refresh;
-    
-    // Content Filtering (NEW - Phase 4 Feature 1)
-    ExtractionMode extraction_mode;
-    SDL_Rect radio_extract_all;
-    SDL_Rect radio_extract_human;
-    SDL_Rect radio_extract_metadata;
-    SDL_Rect radio_extract_mixed;
-    
-    // Advanced Options (NEW)
-    bool show_advanced_options;
-    char get_parameters[256];
-    char custom_headers[512];
-    int timeout_seconds;
-    int max_redirects;
-    SDL_Rect advanced_toggle_rect;
-
-    
-    // Activity Log
-    char activity_log[10][256];
-    int activity_count;
-    
-    // UI State
-    bool inputs_initialized;
-    bool inputs_registered;
-} CrawlerTabState;
-
-static CrawlerTabState g_crawler_state = {0};
-
-// UI Buttons (stored globally for click detection)
-static UIButton btn_add_url;
-static UIButton btn_clear_url;
-static UIButton btn_start_crawler;
-static UIButton btn_reset_urls;
-static UIButton btn_save_config;
-static UIButton btn_load_config;
-
-// Model selector
-static ModelSelector* crawler_model_selector = NULL;
-
-// Selected model name (NOT loaded until crawling starts)
-static char crawler_selected_model_name[256] = {0};
-
-// Model selector callback for crawler
-static void on_crawler_model_selected(const char* model_name, void* user_data) {
-    AppState* state = (AppState*)user_data;
-    if (!state || !model_name) return;
-    
-    // CRITICAL FIX: Do NOT load model here - only store the name
-    // Models should only be loaded when crawling actually starts
-    // This prevents massive memory consumption when just browsing models
-    
-    printf("Crawler tab: Model '%s' selected (not loaded yet)\n", model_name);
-    
-    // Store selected model name
-    strncpy(crawler_selected_model_name, model_name, sizeof(crawler_selected_model_name) - 1);
-    crawler_selected_model_name[sizeof(crawler_selected_model_name) - 1] = '\0';
-    
-    // Do NOT call model_manager_acquire_write() here
-    // Model will be loaded on-demand when crawling starts
+    crystalline_textarea_clear(g_crawler_ui.stats_display);
+    crystalline_textarea_add_message(g_crawler_ui.stats_display,
+        CRYSTALLINE_MESSAGE_SYSTEM,
+        stats_text,
+        "");
 }
 
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
-
-static void init_crawler_tab_state(void) {
-    if (g_crawler_state.inputs_initialized) return;
+/**
+ * Add URL to list
+ */
+static void add_url_to_list(const char* url) {
+    if (!url || !url[0]) return;
     
-    // Initialize prime config with defaults
-    prime_config_init_default(&g_crawler_state.prime_config);
-    g_crawler_state.prime_enabled = true;
-    
-    // Initialize URL manager with SQLite database
-    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler");
-    if (!g_crawler_state.url_manager) {
-        fprintf(stderr, "ERROR: Failed to create URL manager\n");
+    // Expand capacity if needed
+    if (g_crawler_ui.url_count >= g_crawler_ui.url_capacity) {
+        int new_capacity = g_crawler_ui.url_capacity == 0 ? 10 : g_crawler_ui.url_capacity * 2;
+        char** new_urls = realloc(g_crawler_ui.urls, new_capacity * sizeof(char*));
+        if (!new_urls) return;
+        g_crawler_ui.urls = new_urls;
+        g_crawler_ui.url_capacity = new_capacity;
     }
     
-    // Enable all URL patterns by default
-    g_crawler_state.pattern_href = true;
-    g_crawler_state.pattern_onclick = true;
-    g_crawler_state.pattern_data_attr = true;
-    g_crawler_state.pattern_meta_refresh = true;
+    // Add URL
+    g_crawler_ui.urls[g_crawler_ui.url_count] = strdup(url);
+    g_crawler_ui.url_count++;
     
-    // Set default extraction mode
-    g_crawler_state.extraction_mode = EXTRACT_ALL;
+    // Update list UI
+    if (g_crawler_ui.url_list) {
+        crystalline_list_set_items(g_crawler_ui.url_list, g_crawler_ui.urls, g_crawler_ui.url_count);
+    }
     
-    // Initialize advanced options
-    g_crawler_state.show_advanced_options = false;
-    g_crawler_state.get_parameters[0] = '\0';
-    g_crawler_state.custom_headers[0] = '\0';
-    g_crawler_state.timeout_seconds = 30;
-    g_crawler_state.max_redirects = 5;
-
-    
-    g_crawler_state.inputs_registered = false;
-    g_crawler_state.inputs_initialized = true;
+    printf("Added URL: %s (total: %d)\n", url, g_crawler_ui.url_count);
 }
 
-// Helper function to check if point is in rect (same as training tab)
-static bool rect_contains_point(SDL_Rect rect, int x, int y) {
-    return (x >= rect.x && x < rect.x + rect.w &&
-            y >= rect.y && y < rect.y + rect.h);
+/**
+ * Clear all URLs
+ */
+static void clear_url_list(void) {
+    // Free all URLs
+    for (int i = 0; i < g_crawler_ui.url_count; i++) {
+        free(g_crawler_ui.urls[i]);
+    }
+    free(g_crawler_ui.urls);
+    
+    g_crawler_ui.urls = NULL;
+    g_crawler_ui.url_count = 0;
+    g_crawler_ui.url_capacity = 0;
+    
+    // Update list UI
+    if (g_crawler_ui.url_list) {
+        crystalline_list_set_items(g_crawler_ui.url_list, NULL, 0);
+    }
+    
+    printf("Cleared all URLs\n");
 }
 
-// Helper function to check if crawler is running
-static bool check_crawler_running(void) {
-    extern int is_crawler_running(void);
-    return is_crawler_running() != 0;
-}
-
-// Helper function to add activity log entry
-static void add_activity_log(const char* message) {
-    if (!message) return;
-    
-    // Shift existing messages down
-    if (g_crawler_state.activity_count >= 10) {
-        for (int i = 0; i < 9; i++) {
-            strncpy(g_crawler_state.activity_log[i], g_crawler_state.activity_log[i + 1], 255);
-            g_crawler_state.activity_log[i][255] = '\0';
-        }
-        g_crawler_state.activity_count = 9;
-    }
-    
-    // Add new message at the end
-    strncpy(g_crawler_state.activity_log[g_crawler_state.activity_count], message, 255);
-    g_crawler_state.activity_log[g_crawler_state.activity_count][255] = '\0';
-    g_crawler_state.activity_count++;
-}
-
-// Note: Column layout calculation is now handled by draw_crawler_tab_with_layout()
-// which receives the layout from the layout manager
-
-// Register inputs with InputManager (called once during first draw)
-// NOTE: Currently unused - inputs are registered globally in input_registration.c
-static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) __attribute__((unused));
-static void register_crawler_inputs(const ColumnLayout* col1, const ColumnLayout* col2) {
-    if (g_crawler_state.inputs_registered) return;
-    
-    extern InputManager* g_input_manager;
-    if (!g_input_manager) return;
-    
-    // CRITICAL: Validate layout before registering inputs
-    if (!col1 || !col2) {
-        printf("ERROR: Cannot register crawler inputs - layout not initialized\\n");
-        return;
-    }
-    if (col1->width <= 0 || col2->width <= 0) {
-        printf("ERROR: Invalid column widths: col1=%d, col2=%d\\n", col1->width, col2->width);
-        return;
-    }
-    
-    // Column 1 inputs (prime configuration)
-    int x1 = col1->x + col1->padding;
-    int y_freq = col1->y + col1->padding + 65;
-    int y_sel = y_freq + 48;
-    int y_min = y_sel + 48;
-    int y_max = y_min + 48;
-    
-    // Register prime configuration inputs
-    input_manager_register(g_input_manager, "crawler.frequency", TAB_CRAWLER, INPUT_TYPE_NUMBER,
-                         (SDL_Rect){x1, y_freq, 150, 22});
-    input_manager_set_text(g_input_manager, "crawler.frequency", "7");
-    
-    input_manager_register(g_input_manager, "crawler.selection", TAB_CRAWLER, INPUT_TYPE_NUMBER,
-                         (SDL_Rect){x1, y_sel, 150, 22});
-    input_manager_set_text(g_input_manager, "crawler.selection", "13");
-    
-    input_manager_register(g_input_manager, "crawler.delay_min", TAB_CRAWLER, INPUT_TYPE_NUMBER,
-                         (SDL_Rect){x1, y_min, 150, 22});
-    input_manager_set_text(g_input_manager, "crawler.delay_min", "3");
-    
-    input_manager_register(g_input_manager, "crawler.delay_max", TAB_CRAWLER, INPUT_TYPE_NUMBER,
-                         (SDL_Rect){x1, y_max, 150, 22});
-    input_manager_set_text(g_input_manager, "crawler.delay_max", "11");
-    
-    // Column 2 input (add URL)
-    int x2 = col2->x + col2->padding;
-    int y_url = col2->y + col2->padding + 73;
-    
-    input_manager_register(g_input_manager, "crawler.add_url", TAB_CRAWLER, INPUT_TYPE_URL,
-                         (SDL_Rect){x2, y_url, col2->width - (col2->padding * 2), 22});
-    input_manager_set_text(g_input_manager, "crawler.add_url", "");
-    
-    printf("Crawler tab: Registered 5 inputs with InputManager\n");
-    g_crawler_state.inputs_registered = true;
-}
-
-// ============================================================================
-// PRIME VALIDATION
-// ============================================================================
-
-static bool validate_prime_input(const char* input_id, uint64_t* value) {
-    extern InputManager* g_input_manager;
-    if (!g_input_manager) return false;
-    
-    const char* text = input_manager_get_text(g_input_manager, input_id);
-    if (!text || text[0] == '\0') return false;
-    
-    char* endptr;
-    unsigned long val = strtoul(text, &endptr, 10);
-    
-    if (*endptr != '\0' || val == 0) {
-        return false;
-    }
-    
-    if (!is_prime(val)) {
-        return false;
-    }
-    
-    *value = val;
-    return true;
-}
-
-// ============================================================================
-// DRAWING HELPERS
-// ============================================================================
-
-static void draw_panel_background(SDL_Renderer* renderer, const ColumnLayout* col, SDL_Color bg_color) {
-    SDL_Rect panel = {col->x, col->y, col->width, col->height};
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    SDL_RenderFillRect(renderer, &panel);
-    
-    // Border
-    SDL_SetRenderDrawColor(renderer, 60, 60, 80, 255);
-    SDL_RenderDrawRect(renderer, &panel);
-}
-
-static void draw_section_header(SDL_Renderer* renderer, const char* title, int x, int y, SDL_Color color) {
-    draw_text(renderer, title, x, y, color);
-    
-    // Underline
-    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
-    SDL_RenderDrawLine(renderer, x, y + 18, x + strlen(title) * 8, y + 18);
-}
-
-static bool draw_button_rect(SDL_Renderer* renderer, SDL_Rect rect, const char* text,
-                            SDL_Color bg_color, SDL_Color text_color, int mouse_x, int mouse_y) {
-    bool is_hovered = (mouse_x >= rect.x && mouse_x < rect.x + rect.w &&
-                       mouse_y >= rect.y && mouse_y < rect.y + rect.h);
-    
-    if (is_hovered) {
-        SDL_SetRenderDrawColor(renderer, bg_color.r + 20, bg_color.g + 20, bg_color.b + 20, 255);
-    } else {
-        SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-    }
-    SDL_RenderFillRect(renderer, &rect);
-    
-    // Border
-    SDL_SetRenderDrawColor(renderer, 100, 100, 120, 255);
-    SDL_RenderDrawRect(renderer, &rect);
-    
-    // Text (centered)
-    int text_x = rect.x + (rect.w - strlen(text) * 7) / 2;
-    int text_y = rect.y + (rect.h - 12) / 2;
-    draw_text(renderer, text, text_x, text_y, text_color);
-    
-    return is_hovered;
-}
-
-// ============================================================================
-// COLUMN 1: PRIME CONFIGURATION & URL PATTERNS
-// ============================================================================
-
-static void draw_column1_prime_config(SDL_Renderer* renderer, const ColumnLayout* col,
-                                      SDL_Color text_color, SDL_Color success_color,
-                                      SDL_Color error_color, int mouse_x, int mouse_y) {
-    int x = col->x + col->padding;
-    int y = col->y + col->padding;
-    
-    // Section header
-    draw_section_header(renderer, "PRIME CONFIGURATION", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    // Enable/Disable toggle
-    SDL_Rect toggle_rect = {x, y, 120, 25};
-    const char* toggle_text = g_crawler_state.prime_enabled ? "Enabled" : "Disabled";
-    SDL_Color toggle_color = g_crawler_state.prime_enabled ? success_color : error_color;
-    draw_button_rect(renderer, toggle_rect, toggle_text, toggle_color, text_color, mouse_x, mouse_y);
-    y += 35;
-    
-    if (g_crawler_state.prime_enabled) {
-        // Frequency Prime
-        draw_text(renderer, "Frequency:", x, y, text_color);
-        y += 18;
-        
-        uint64_t freq_val;
-        bool freq_valid = validate_prime_input("crawler.frequency", &freq_val);
-        SDL_Color freq_color = freq_valid ? success_color : error_color;
-        
-        // Input rendered by InputManager, just draw validation indicator
-        draw_text(renderer, freq_valid ? "OK" : "X", x + 160, y + 5, freq_color);
-        y += 30;
-        
-        // Selection Prime
-        draw_text(renderer, "Selection:", x, y, text_color);
-        y += 18;
-        
-        uint64_t sel_val;
-        bool sel_valid = validate_prime_input("crawler.selection", &sel_val);
-        SDL_Color sel_color = sel_valid ? success_color : error_color;
-        
-        // Input rendered by InputManager
-        draw_text(renderer, sel_valid ? "OK" : "X", x + 160, y + 5, sel_color);
-        y += 30;
-        
-        // Delay Min
-        draw_text(renderer, "Delay Min (sec):", x, y, text_color);
-        y += 18;
-        
-        uint64_t min_val;
-        bool min_valid = validate_prime_input("crawler.delay_min", &min_val);
-        SDL_Color min_color = min_valid ? success_color : error_color;
-        
-        // Input rendered by InputManager
-        draw_text(renderer, min_valid ? "OK" : "X", x + 160, y + 5, min_color);
-        y += 30;
-        
-        // Delay Max
-        draw_text(renderer, "Delay Max (sec):", x, y, text_color);
-        y += 18;
-        
-        uint64_t max_val;
-        bool max_valid = validate_prime_input("crawler.delay_max", &max_val);
-        SDL_Color max_color = max_valid ? success_color : error_color;
-        
-        // Input rendered by InputManager
-        draw_text(renderer, max_valid ? "OK" : "X", x + 160, y + 5, max_color);
-        y += 30;
-        
-        // Apply button
-        bool all_valid = freq_valid && sel_valid && min_valid && max_valid;
-        if (all_valid) {
-            SDL_Rect apply_rect = {x, y, 150, 25};
-            draw_button_rect(renderer, apply_rect, "Apply", (SDL_Color){60, 60, 80, 255},
-                           text_color, mouse_x, mouse_y);
-            y += 30;
-        }
-    }
-    
-    y += 20;
-    
-    // URL Patterns section
-    draw_section_header(renderer, "URL PATTERNS", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    const char* checkbox_on = "[X]";
-    const char* checkbox_off = "[ ]";
-    
-    // Pattern checkboxes
-    draw_text(renderer, g_crawler_state.pattern_href ? checkbox_on : checkbox_off, x, y, text_color);
-    draw_text(renderer, "Standard href", x + 35, y, text_color);
-    y += 22;
-    
-    draw_text(renderer, g_crawler_state.pattern_onclick ? checkbox_on : checkbox_off, x, y, text_color);
-    draw_text(renderer, "JavaScript onclick", x + 35, y, text_color);
-    y += 22;
-    
-    draw_text(renderer, g_crawler_state.pattern_data_attr ? checkbox_on : checkbox_off, x, y, text_color);
-    draw_text(renderer, "Data attributes", x + 35, y, text_color);
-    y += 22;
-    
-    draw_text(renderer, g_crawler_state.pattern_meta_refresh ? checkbox_on : checkbox_off, x, y, text_color);
-    draw_text(renderer, "Meta refresh", x + 35, y, text_color);
-    y += 30;
-    
-        // Content Filtering section (NEW - Phase 4 Feature 1)
-    draw_section_header(renderer, "CONTENT FILTERING", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    const char* radio_on = "(*)";
-    const char* radio_off = "( )";
-    
-    // Extraction mode radio buttons (store bounds for click detection)
-    int radio_width = 200;
-    int radio_height = 20;
-    
-    // Extract All
-    g_crawler_state.radio_extract_all = (SDL_Rect){x, y, radio_width, radio_height};
-    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_ALL ? radio_on : radio_off, x, y, text_color);
-    draw_text(renderer, "Extract All (default)", x + 35, y, text_color);
-    y += 22;
-    
-    // Human Text Only
-    g_crawler_state.radio_extract_human = (SDL_Rect){x, y, radio_width, radio_height};
-    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_HUMAN_TEXT ? radio_on : radio_off, x, y, text_color);
-    draw_text(renderer, "Human Text Only", x + 35, y, success_color);
-    y += 22;
-    
-    // Metadata Only
-    g_crawler_state.radio_extract_metadata = (SDL_Rect){x, y, radio_width, radio_height};
-    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_METADATA ? radio_on : radio_off, x, y, text_color);
-    draw_text(renderer, "Metadata Only", x + 35, y, text_color);
-    y += 22;
-    
-    // Mixed
-    g_crawler_state.radio_extract_mixed = (SDL_Rect){x, y, radio_width, radio_height};
-    draw_text(renderer, g_crawler_state.extraction_mode == EXTRACT_MIXED ? radio_on : radio_off, x, y, text_color);
-    draw_text(renderer, "Mixed (Content + Meta)", x + 35, y, text_color);
-    y += 30;
-    
-    // Advanced Options section (NEW - Phase 4 Feature 3)
-    draw_section_header(renderer, "ADVANCED OPTIONS", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    // Toggle button for showing/hiding advanced options
-    const char* advanced_toggle_text = g_crawler_state.show_advanced_options ? "[-] Hide" : "[+] Show";
-    g_crawler_state.advanced_toggle_rect = (SDL_Rect){x, y, 100, 20};
-    draw_text(renderer, advanced_toggle_text, x, y, (SDL_Color){100, 200, 255, 255});
-    y += 25;
-    
-    // Show advanced options if expanded
-    if (g_crawler_state.show_advanced_options) {
-        // GET Parameters
-        draw_text(renderer, "GET Parameters:", x, y, text_color);
-        y += 18;
-        draw_text(renderer, "(e.g., key1=val1&key2=val2)", x, y, (SDL_Color){150, 150, 150, 255});
-        y += 18;
-        if (g_crawler_state.get_parameters[0]) {
-            draw_text(renderer, g_crawler_state.get_parameters, x, y, success_color);
-        } else {
-            draw_text(renderer, "[None]", x, y, (SDL_Color){150, 150, 150, 255});
-        }
-        y += 25;
-        
-        // Custom Headers
-        draw_text(renderer, "Custom Headers:", x, y, text_color);
-        y += 18;
-        draw_text(renderer, "(e.g., User-Agent: MyBot)", x, y, (SDL_Color){150, 150, 150, 255});
-        y += 18;
-        if (g_crawler_state.custom_headers[0]) {
-            draw_text(renderer, g_crawler_state.custom_headers, x, y, success_color);
-        } else {
-            draw_text(renderer, "[None]", x, y, (SDL_Color){150, 150, 150, 255});
-        }
-        y += 25;
-        
-        // Timeout
-        char timeout_str[64];
-        snprintf(timeout_str, sizeof(timeout_str), "Timeout: %d seconds", g_crawler_state.timeout_seconds);
-        draw_text(renderer, timeout_str, x, y, text_color);
-        y += 22;
-        
-        // Max Redirects
-        char redirects_str[64];
-        snprintf(redirects_str, sizeof(redirects_str), "Max Redirects: %d", g_crawler_state.max_redirects);
-        draw_text(renderer, redirects_str, x, y, text_color);
-        y += 22;
-        
-        draw_text(renderer, "Note: Advanced options coming soon", x, y, (SDL_Color){150, 150, 150, 255});
-    }
-}
-
-// ============================================================================
-// COLUMN 2: LINK MANAGEMENT & ACTIVITY LOG
-// ============================================================================
-
-static void draw_column2_link_management(SDL_Renderer* renderer, const ColumnLayout* col,
-                                        SDL_Color text_color, SDL_Color success_color,
-                                        int mouse_x, int mouse_y) {
-    int x = col->x + col->padding;
-    int y = col->y + col->padding;
-    int content_width = col->width - (col->padding * 2);
-    
-    // Section header
-    draw_section_header(renderer, "LINK MANAGEMENT", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    // Queue size (from SQLite database)
-    int total = 0, pending = 0, crawled = 0, blocked = 0;
-    if (g_crawler_state.url_manager) {
-        crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
-    }
-    char queue_text[64];
-    snprintf(queue_text, sizeof(queue_text), "Pending URLs: %d", pending);
-    draw_text(renderer, queue_text, x, y, text_color);
-    y += 25;
-    
-    // Show crawled count
-    snprintf(queue_text, sizeof(queue_text), "Crawled: %d", crawled);
-    draw_text(renderer, queue_text, x, y, text_color);
-    y += 25;
-    
-    // Add URL input label
-    draw_text(renderer, "Add URL:", x, y, text_color);
-    y += 18;
-    
-    // Input rendered by InputManager
-    y += 30;
-    
-    // Add and Clear buttons - USE COLUMN WIDTH FOR SIZING
-    int button_width = (content_width - 10) / 2;  // Split column width between two buttons
-    btn_add_url.bounds = (SDL_Rect){x, y, button_width, 25};
-    btn_add_url.enabled = true;
-    btn_add_url.visible = true;
-    strncpy(btn_add_url.label, "Add", sizeof(btn_add_url.label) - 1);
-    draw_button_rect(renderer, btn_add_url.bounds, "Add", (SDL_Color){60, 60, 80, 255},
-                    text_color, mouse_x, mouse_y);
-    
-    btn_clear_url.bounds = (SDL_Rect){x + button_width + 10, y, button_width, 25};
-    btn_clear_url.enabled = true;
-    btn_clear_url.visible = true;
-    strncpy(btn_clear_url.label, "Clear", sizeof(btn_clear_url.label) - 1);
-    draw_button_rect(renderer, btn_clear_url.bounds, "Clear", (SDL_Color){60, 60, 80, 255},
-                    text_color, mouse_x, mouse_y);
-    y += 35;
-    
-    // Confirmation message
-    if (g_crawler_state.show_add_confirmation) {
-        draw_text(renderer, "[OK] Link added to queue", x, y, success_color);
-        g_crawler_state.confirmation_timer--;
-        if (g_crawler_state.confirmation_timer <= 0) {
-            g_crawler_state.show_add_confirmation = false;
-        }
-        y += 25;
-    }
-    
-    y += 20;
-    
-    // Recent Activity section
-    draw_section_header(renderer, "RECENT ACTIVITY", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    if (g_crawler_state.activity_count == 0) {
-        draw_text(renderer, "No activity yet", x, y, (SDL_Color){150, 150, 150, 255});
-    } else {
-        for (int i = 0; i < g_crawler_state.activity_count && i < 10; i++) {
-            draw_text(renderer, g_crawler_state.activity_log[i], x, y, text_color);
-            y += 18;
-        }
-    }
-}
-
-// ============================================================================
-// COLUMN 3: STATUS DISPLAY & CONTROLS
-// ============================================================================
-
-static void draw_column3_status(SDL_Renderer* renderer, const ColumnLayout* col,
-                                SDL_Color text_color, SDL_Color success_color,
-                                SDL_Color __attribute__((unused)) error_color, 
-                                int mouse_x, int mouse_y) {
-    int x = col->x + col->padding;
-    int y = col->y + col->padding;
-    int content_width = col->width - (col->padding * 2);
-    
-    // Section header
-    draw_section_header(renderer, "CRAWLER STATUS", x, y, (SDL_Color){180, 180, 200, 255});
-    y += 30;
-    
-    // Status display (simplified - no crawler thread access for now)
-    draw_text(renderer, "Status:", x, y, text_color);
-    draw_text(renderer, "READY", x + 70, y, text_color);
-    y += 25;
-    
-    draw_text(renderer, "Pages: 0", x, y, text_color);
-    y += 20;
-    
-    draw_text(renderer, "Tokens: 0", x, y, text_color);
-    y += 20;
-    
-    y += 30;
-    
-    // Start/Stop button - USE COLUMN WIDTH FOR SIZING
-    btn_start_crawler.bounds = (SDL_Rect){x, y, content_width, 35};
-    btn_start_crawler.enabled = true;
-    btn_start_crawler.visible = true;
-    
-    // Change label and color based on crawler state
-    bool crawler_running = check_crawler_running();
-    const char* button_label = crawler_running ? "STOP CRAWLER" : "START CRAWLER";
-    SDL_Color button_color = crawler_running ? (SDL_Color){255, 100, 100, 255} : success_color;
-    
-    strncpy(btn_start_crawler.label, button_label, sizeof(btn_start_crawler.label) - 1);
-    draw_button_rect(renderer, btn_start_crawler.bounds, button_label, button_color,
-                    text_color, mouse_x, mouse_y);
-    y += 45;
-    
-    // Reset All URLs button - USE COLUMN WIDTH FOR SIZING
-    btn_reset_urls.bounds = (SDL_Rect){x, y, content_width, 30};
-    btn_reset_urls.enabled = true;
-    btn_reset_urls.visible = true;
-    strncpy(btn_reset_urls.label, "Reset All URLs", sizeof(btn_reset_urls.label) - 1);
-    draw_button_rect(renderer, btn_reset_urls.bounds, "Reset All URLs", (SDL_Color){180, 100, 60, 255},
-                    text_color, mouse_x, mouse_y);
-    y += 40;
-    
-    // Save Config button - USE COLUMN WIDTH FOR SIZING
-    btn_save_config.bounds = (SDL_Rect){x, y, content_width, 30};
-    btn_save_config.enabled = true;
-    btn_save_config.visible = true;
-    strncpy(btn_save_config.label, "Save Config", sizeof(btn_save_config.label) - 1);
-    draw_button_rect(renderer, btn_save_config.bounds, "Save Config", (SDL_Color){60, 60, 80, 255},
-                    text_color, mouse_x, mouse_y);
-    y += 40;
-    
-    // Load Config button - USE COLUMN WIDTH FOR SIZING
-    btn_load_config.bounds = (SDL_Rect){x, y, content_width, 30};
-    btn_load_config.enabled = true;
-    btn_load_config.visible = true;
-    strncpy(btn_load_config.label, "Load Config", sizeof(btn_load_config.label) - 1);
-    draw_button_rect(renderer, btn_load_config.bounds, "Load Config", (SDL_Color){60, 60, 80, 255},
-                    text_color, mouse_x, mouse_y);
-}
-
-// ============================================================================
-// MAIN DRAWING FUNCTION
-// ============================================================================
-
-void draw_crawler_tab_with_layout(AppState* state, const TabLayout* layout) {
-    if (!state || !state->renderer || !layout) return;
-    
-    init_crawler_tab_state();
-    
-    // Initialize model selector on first draw
-    if (!crawler_model_selector && layout->num_columns > 0) {
-        crawler_model_selector = model_selector_create(
-            layout->columns[0].x + 10,
-            layout->columns[0].y + 10,
-            layout->columns[0].width - 20,
-            30
-        );
-        model_selector_update_list(crawler_model_selector);
-        
-        // Set callback to load model when selected
-        model_selector_set_callback(crawler_model_selector, on_crawler_model_selected, state);
-    }
-    
-    SDL_Renderer* renderer = state->renderer;
-    SDL_Color text_color = {220, 220, 220, 255};
-    SDL_Color bg_color = {40, 40, 50, 255};
-    SDL_Color success_color = {100, 200, 100, 255};
-    SDL_Color error_color = {200, 100, 100, 255};
-    
-    // Get mouse position
-    int mouse_x, mouse_y;
-    SDL_GetMouseState(&mouse_x, &mouse_y);
-    
-    // Draw background for each column
-    for (int i = 0; i < layout->num_columns; i++) {
-        draw_panel_background(renderer, &layout->columns[i], bg_color);
-    }
-    
-    // Draw main title (positioned below submenu to avoid overlap)
-    draw_text(renderer, "WEB CRAWLER CONTROL CENTER", layout->content_area.x + 20,
-              layout->content_area.y + 30, (SDL_Color){200, 200, 220, 255});
-    
-    // Render model selector
-    if (crawler_model_selector) {
-        model_selector_render(crawler_model_selector, renderer);
-    }
-    
-    // Note: Inputs are registered globally in input_registration.c
-    // No need to register here - just use them
-    
-    // Draw each column
-    if (layout->num_columns >= 1) {
-        draw_column1_prime_config(renderer, &layout->columns[0], text_color,
-                                  success_color, error_color, mouse_x, mouse_y);
-    }
-    
-    if (layout->num_columns >= 2) {
-        draw_column2_link_management(renderer, &layout->columns[1], text_color,
-                                     success_color, mouse_x, mouse_y);
-    }
-    
-    if (layout->num_columns >= 3) {
-        draw_column3_status(renderer, &layout->columns[2], text_color,
-                           success_color, error_color, mouse_x, mouse_y);
-    }
-    
-    // Render all inputs through InputManager
-    extern InputManager* g_input_manager;
-    if (g_input_manager) {
-        input_manager_render(g_input_manager, renderer, get_global_font(), TAB_CRAWLER);
-    }
-}
-
-// ============================================================================
-// EVENT HANDLERS
-// ============================================================================
-
-void handle_crawler_tab_click(AppState* state, int mouse_x, int mouse_y) {
+/**
+ * Button callbacks
+ */
+static void on_start_clicked(void* data) {
+    AppState* state = (AppState*)data;
     if (!state) return;
     
-    // Check model selector click first
-    if (crawler_model_selector && model_selector_handle_click(crawler_model_selector, mouse_x, mouse_y)) {
+    if (g_crawler_ui.crawler_running) {
+        printf("Crawler already running\n");
         return;
     }
     
-    // Check Add URL button
-    if (btn_add_url.visible && btn_add_url.enabled && 
-        rect_contains_point(btn_add_url.bounds, mouse_x, mouse_y)) {
-        
-        // Get URL from input
-        extern InputManager* g_input_manager;
-        if (g_input_manager) {
-            const char* url = input_manager_get_text(g_input_manager, "crawler.add_url");
-            if (url && strlen(url) > 0) {
-                // Validate URL (basic check)
-                if (strstr(url, "http://") == url || strstr(url, "https://") == url) {
-                    // Add to URL manager database
-                    if (g_crawler_state.url_manager) {
-                        int added = crawler_url_manager_add(g_crawler_state.url_manager, url, "manual");
-                        
-                        if (added == 0) {
-                            // Add to activity log
-                            char log_msg[512];
-                            snprintf(log_msg, sizeof(log_msg), "Added URL: %s", url);
-                            add_activity_log(log_msg);
-                            
-                            // Clear input
-                            input_manager_set_text(g_input_manager, "crawler.add_url", "");
-                            
-                            // Show confirmation
-                            g_crawler_state.show_add_confirmation = true;
-                            g_crawler_state.confirmation_timer = 60;
-                        } else {
-                            add_activity_log("Error: Failed to add URL to database");
-                        }
-                    } else {
-                        add_activity_log("Error: URL manager not initialized");
-                    }
-                } else {
-                    add_activity_log("Error: URL must start with http:// or https://");
-                }
-            } else {
-                add_activity_log("Error: Please enter a URL");
-            }
-        }
+    if (g_crawler_ui.url_count == 0) {
+        printf("No URLs to crawl\n");
         return;
     }
     
-    // Check Clear URL button
-    if (btn_clear_url.visible && btn_clear_url.enabled &&
-        rect_contains_point(btn_clear_url.bounds, mouse_x, mouse_y)) {
-        
-        extern InputManager* g_input_manager;
-        if (g_input_manager) {
-            input_manager_set_text(g_input_manager, "crawler.add_url", "");
-            add_activity_log("Cleared URL input");
-        }
-        return;
-    }
+    printf("Starting crawler with %d URLs\n", g_crawler_ui.url_count);
     
-    // Check Start/Stop Crawler button
-    if (btn_start_crawler.visible && btn_start_crawler.enabled &&
-        rect_contains_point(btn_start_crawler.bounds, mouse_x, mouse_y)) {
-        
-        // Check if crawler is currently running
-        if (check_crawler_running()) {
-            // Stop the crawler
-            extern void stop_crawler_thread(void);
-            stop_crawler_thread();
-            add_activity_log("Crawler stopped");
-        } else {
-            // Start the crawler
-            
-            // Check if we have URLs in the database
-            int total = 0, pending = 0, crawled = 0, blocked = 0;
-            if (g_crawler_state.url_manager) {
-                crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
-            }
-            
-            if (!g_crawler_state.url_manager || total == 0) {
-                add_activity_log("Error: No URLs in database. Add a URL first.");
-                return;
-            }
-            
-            // If no pending URLs but we have crawled ones, auto-reset them
-            if (pending == 0 && crawled > 0) {
-                add_activity_log("No pending URLs. Resetting all URLs to pending...");
-                int reset_count = crawler_url_manager_reset_all(g_crawler_state.url_manager);
-                if (reset_count > 0) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Reset %d URLs to pending status", reset_count);
-                    add_activity_log(msg);
-                } else {
-                    add_activity_log("Error: Failed to reset URLs");
-                    return;
-                }
-            }
-            
-            // Start the crawler thread (no start URL - uses database)
-            extern int start_crawler_thread(AppState* state, const char* start_url, ExtractionMode extraction_mode, const char* model_name);
-            
-            // Pass the selected model name (or NULL if none selected)
-            const char* model_to_use = (crawler_selected_model_name[0] != '\0') ? crawler_selected_model_name : NULL;
-            
-            if (start_crawler_thread(state, NULL, g_crawler_state.extraction_mode, model_to_use) == 0) {
-                if (model_to_use) {
-                    char msg[512];
-                    snprintf(msg, sizeof(msg), "Crawler started with model: %s", model_to_use);
-                    add_activity_log(msg);
-                } else {
-                    add_activity_log("Crawler started - will use first available model");
-                }
-            } else {
-                add_activity_log("Error: Failed to start crawler");
-            }
-        }
-        return;
-    }
+    // Use the first URL as start URL
+    const char* start_url = g_crawler_ui.urls[0];
     
-    // Check Reset All URLs button
-    if (btn_reset_urls.visible && btn_reset_urls.enabled &&
-        rect_contains_point(btn_reset_urls.bounds, mouse_x, mouse_y)) {
-        
-        if (!g_crawler_state.url_manager) {
-            add_activity_log("Error: URL manager not initialized");
-            return;
-        }
-        
-        // Get stats before reset
-        int total = 0, pending = 0, crawled = 0, blocked = 0;
-        crawler_url_manager_get_stats(g_crawler_state.url_manager, &total, &pending, &crawled, &blocked);
-        
-        if (total == 0) {
-            add_activity_log("No URLs in database to reset");
-            return;
-        }
-        
-        // Reset all URLs to pending
-        int reset_count = crawler_url_manager_reset_all(g_crawler_state.url_manager);
-        if (reset_count > 0) {
-            char msg[256];
-            snprintf(msg, sizeof(msg), "Reset %d URLs to pending status", reset_count);
-            add_activity_log(msg);
-        } else if (reset_count == 0) {
-            add_activity_log("All URLs already pending - nothing to reset");
-        } else {
-            add_activity_log("Error: Failed to reset URLs");
-        }
-        return;
-    }
+    // Start crawler thread with correct signature
+    extern int start_crawler_thread(AppState* state, const char* start_url, 
+                                   ExtractionMode extraction_mode, const char* model_name);
     
-    // Check Save Config button
-    if (btn_save_config.visible && btn_save_config.enabled &&
-        rect_contains_point(btn_save_config.bounds, mouse_x, mouse_y)) {
-        add_activity_log("Save Config clicked (not yet implemented)");
-        return;
-    }
-    
-        // Check Load Config button
-    if (btn_load_config.visible && btn_load_config.enabled &&
-        rect_contains_point(btn_load_config.bounds, mouse_x, mouse_y)) {
-        add_activity_log("Load Config clicked (not yet implemented)");
-        return;
-    }
-    
-    // Check extraction mode radio buttons
-    if (rect_contains_point(g_crawler_state.radio_extract_all, mouse_x, mouse_y)) {
-        g_crawler_state.extraction_mode = EXTRACT_ALL;
-        add_activity_log("Extraction mode: Extract All");
-        return;
-    }
-    
-    if (rect_contains_point(g_crawler_state.radio_extract_human, mouse_x, mouse_y)) {
-        g_crawler_state.extraction_mode = EXTRACT_HUMAN_TEXT;
-        add_activity_log("Extraction mode: Human Text Only");
-        return;
-    }
-    
-    if (rect_contains_point(g_crawler_state.radio_extract_metadata, mouse_x, mouse_y)) {
-        g_crawler_state.extraction_mode = EXTRACT_METADATA;
-        add_activity_log("Extraction mode: Metadata Only");
-        return;
-    }
-    
-    if (rect_contains_point(g_crawler_state.radio_extract_mixed, mouse_x, mouse_y)) {
-        g_crawler_state.extraction_mode = EXTRACT_MIXED;
-        add_activity_log("Extraction mode: Mixed (Content + Metadata)");
-        return;
-    }
-    
-    // Check Advanced Options toggle
-    if (rect_contains_point(g_crawler_state.advanced_toggle_rect, mouse_x, mouse_y)) {
-        g_crawler_state.show_advanced_options = !g_crawler_state.show_advanced_options;
-        if (g_crawler_state.show_advanced_options) {
-            add_activity_log("Advanced Options: Expanded");
-        } else {
-            add_activity_log("Advanced Options: Collapsed");
-        }
-        return;
+    if (start_crawler_thread(state, start_url, EXTRACT_ALL, g_crawler_ui.selected_model) == 0) {
+        g_crawler_ui.crawler_running = true;
+        printf("Crawler started successfully\n");
+    } else {
+        printf("Failed to start crawler\n");
     }
 }
 
-void handle_crawler_tab_keyboard(AppState* state, int key) {
-    // InputManager handles all keyboard input automatically
-    (void)state;
-    (void)key;
+static void on_stop_clicked(void* data) {
+    (void)data;
+    
+    if (!g_crawler_ui.crawler_running) {
+        printf("Crawler not running\n");
+        return;
+    }
+    
+    printf("Stopping crawler\n");
+    
+    // Stop crawler thread
+    extern void stop_crawler_thread(void);
+    stop_crawler_thread();
+    
+    g_crawler_ui.crawler_running = false;
+    printf("Crawler stopped\n");
 }
 
-// ============================================================================
-// CLEANUP
-// ============================================================================
+static void on_clear_clicked(void* data) {
+    (void)data;
+    
+    if (g_crawler_ui.crawler_running) {
+        printf("Cannot clear URLs while crawler is running\n");
+        return;
+    }
+    
+    clear_url_list();
+}
 
+static void on_add_url_clicked(void* data) {
+    (void)data;
+    
+    if (!g_crawler_ui.url_input) return;
+    
+    const char* url = crystalline_input_get_text(g_crawler_ui.url_input);
+    if (url && url[0]) {
+        add_url_to_list(url);
+        crystalline_input_set_text(g_crawler_ui.url_input, "");
+    }
+}
+
+/**
+ * Initialize Crawler Tab
+ */
+void init_crawler_tab(AppState* state) {
+    if (g_crawler_ui.initialized) return;
+    
+    printf("Initializing Crawler Tab with Crystalline UI\n");
+    
+    // Get global font
+    extern TTF_Font* get_global_font();
+    TTF_Font* font = get_global_font();
+    if (!font) {
+        printf("ERROR: Failed to get global font\n");
+        return;
+    }
+    
+    // Calculate layout using RENDER_WIDTH
+    int content_width = RENDER_WIDTH;
+    int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
+    
+    // Split into left (70%) and right (30%)
+    int list_width = (int)(content_width * 0.70f);
+    int control_width = content_width - list_width;
+    
+    // Calculate TOP-LEFT positions first
+    int list_x = RENDER_OFFSET_X;
+    int list_y = SUBMENU_HEIGHT;
+    int list_w = list_width - 20;
+    int list_h = content_height - 20;
+    
+    int control_x = RENDER_OFFSET_X + list_width + 10;
+    int control_y = SUBMENU_HEIGHT;
+    int control_w = control_width - 30;
+    int control_h = content_height - 20;
+    
+    // Convert to CENTER coordinates for Crystalline UI
+    g_crawler_ui.list_panel = crystalline_panel_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        list_x + list_w / 2.0f,
+        list_y + list_h / 2.0f,
+        list_w,
+        list_h,
+        "URL Queue",
+        font
+    );
+    
+    g_crawler_ui.control_panel = crystalline_panel_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        control_x + control_w / 2.0f,
+        control_y + control_h / 2.0f,
+        control_w,
+        control_h,
+        "Controls",
+        font
+    );
+    
+    // Create URL list inside left panel
+    int list_content_x = list_x + 10;
+    int list_content_y = list_y + 40;
+    int list_content_w = list_w - 20;
+    int list_content_h = list_h - 50;
+    
+    g_crawler_ui.url_list = crystalline_list_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        list_content_x + list_content_w / 2.0f,
+        list_content_y + list_content_h / 2.0f,
+        list_content_w,
+        40,  // Item height
+        font
+    );
+    
+    // Create control elements inside right panel (top-justified)
+    int elem_x = control_x + 10;
+    int elem_w = control_w - 20;
+    int elem_y = control_y + 40;
+    
+    // URL input field
+    int input_h = 40;
+    g_crawler_ui.url_input = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + input_h / 2.0f,
+        elem_w,
+        input_h,
+        "Enter URL",
+        font
+    );
+    elem_y += 50;
+    
+    // Add URL button
+    int btn_h = 50;
+    g_crawler_ui.btn_add_url = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Add URL",
+        font
+    );
+    crystalline_button_set_callback(g_crawler_ui.btn_add_url, on_add_url_clicked, state);
+    elem_y += 70;
+    
+    // Start button
+    g_crawler_ui.btn_start = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Start Crawl",
+        font
+    );
+    crystalline_button_set_callback(g_crawler_ui.btn_start, on_start_clicked, state);
+    elem_y += 70;
+    
+    // Stop button
+    g_crawler_ui.btn_stop = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Stop Crawl",
+        font
+    );
+    crystalline_button_set_callback(g_crawler_ui.btn_stop, on_stop_clicked, state);
+    elem_y += 70;
+    
+    // Clear button
+    g_crawler_ui.btn_clear = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Clear URLs",
+        font
+    );
+    crystalline_button_set_callback(g_crawler_ui.btn_clear, on_clear_clicked, state);
+    elem_y += 80;
+    
+    // Sliders
+    int slider_h = 30;
+    g_crawler_ui.slider_max_depth = crystalline_slider_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + slider_h / 2.0f,
+        elem_w,
+        slider_h,
+        1.0f, 10.0f
+    );
+    crystalline_slider_set_value(g_crawler_ui.slider_max_depth, 3.0f);
+    elem_y += 60;
+    
+    g_crawler_ui.slider_max_urls = crystalline_slider_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + slider_h / 2.0f,
+        elem_w,
+        slider_h,
+        10.0f, 1000.0f
+    );
+    crystalline_slider_set_value(g_crawler_ui.slider_max_urls, 100.0f);
+    elem_y += 60;
+    
+    g_crawler_ui.slider_rate_limit = crystalline_slider_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + slider_h / 2.0f,
+        elem_w,
+        slider_h,
+        0.5f, 10.0f
+    );
+    crystalline_slider_set_value(g_crawler_ui.slider_rate_limit, 2.0f);
+    elem_y += 70;
+    
+    // Stats display
+    int stats_h = control_h - (elem_y - control_y) - 20;
+    g_crawler_ui.stats_display = crystalline_textarea_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + stats_h / 2.0f,
+        elem_w,
+        stats_h,
+        font
+    );
+    crystalline_textarea_add_message(g_crawler_ui.stats_display,
+        CRYSTALLINE_MESSAGE_SYSTEM,
+        "Crawler ready",
+        "");
+    
+    // Initialize state
+    g_crawler_ui.initialized = true;
+    g_crawler_ui.crawler_running = false;
+    g_crawler_ui.urls = NULL;
+    g_crawler_ui.url_count = 0;
+    g_crawler_ui.url_capacity = 0;
+    
+    printf("Crawler Tab initialized successfully\n");
+}
+
+/**
+ * Cleanup Crawler Tab
+ */
 void cleanup_crawler_tab(void) {
-    if (g_crawler_state.url_manager) {
-        crawler_url_manager_destroy(g_crawler_state.url_manager);
-        g_crawler_state.url_manager = NULL;
+    if (!g_crawler_ui.initialized) return;
+    
+    // Stop crawler if running
+    if (g_crawler_ui.crawler_running) {
+        extern void stop_crawler_thread(void);
+        stop_crawler_thread();
+    }
+    
+    // Free URLs
+    clear_url_list();
+    
+    // Cleanup Crystalline UI elements
+    if (g_crawler_ui.list_panel) crystalline_panel_destroy(g_crawler_ui.list_panel);
+    if (g_crawler_ui.control_panel) crystalline_panel_destroy(g_crawler_ui.control_panel);
+    if (g_crawler_ui.url_list) crystalline_list_destroy(g_crawler_ui.url_list);
+    if (g_crawler_ui.btn_start) crystalline_button_destroy(g_crawler_ui.btn_start);
+    if (g_crawler_ui.btn_stop) crystalline_button_destroy(g_crawler_ui.btn_stop);
+    if (g_crawler_ui.btn_clear) crystalline_button_destroy(g_crawler_ui.btn_clear);
+    if (g_crawler_ui.btn_add_url) crystalline_button_destroy(g_crawler_ui.btn_add_url);
+    if (g_crawler_ui.slider_max_depth) crystalline_slider_destroy(g_crawler_ui.slider_max_depth);
+    if (g_crawler_ui.slider_max_urls) crystalline_slider_destroy(g_crawler_ui.slider_max_urls);
+    if (g_crawler_ui.slider_rate_limit) crystalline_slider_destroy(g_crawler_ui.slider_rate_limit);
+    if (g_crawler_ui.stats_display) crystalline_textarea_destroy(g_crawler_ui.stats_display);
+    if (g_crawler_ui.url_input) crystalline_input_destroy(g_crawler_ui.url_input);
+    
+    memset(&g_crawler_ui, 0, sizeof(g_crawler_ui));
+}
+
+/**
+ * Update Crawler Tab (called every frame)
+ */
+void update_crawler_tab(AppState* state) {
+    if (!g_crawler_ui.initialized) return;
+    
+    // Update stats display if crawler is running
+    if (g_crawler_ui.crawler_running) {
+        update_stats_display();
     }
 }
 
-// Get URL manager from crawler tab
-void* get_crawler_url_manager(void) {
-    extern CrawlerTabState g_crawler_state;
-    return g_crawler_state.url_manager;
+/**
+ * Render Crawler Tab
+ */
+void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
+    if (!g_crawler_ui.initialized) return;
+    
+    // Render panels
+    if (g_crawler_ui.list_panel) {
+        crystalline_panel_render(g_crawler_ui.list_panel, renderer);
+    }
+    if (g_crawler_ui.control_panel) {
+        crystalline_panel_render(g_crawler_ui.control_panel, renderer);
+    }
+    
+    // Render list
+    if (g_crawler_ui.url_list) {
+        crystalline_list_render(g_crawler_ui.url_list, renderer);
+    }
+    
+    // Render input
+    if (g_crawler_ui.url_input) {
+        crystalline_input_render(g_crawler_ui.url_input, renderer);
+    }
+    
+    // Render buttons
+    if (g_crawler_ui.btn_add_url) {
+        crystalline_button_render(g_crawler_ui.btn_add_url, renderer);
+    }
+    if (g_crawler_ui.btn_start) {
+        crystalline_button_render(g_crawler_ui.btn_start, renderer);
+    }
+    if (g_crawler_ui.btn_stop) {
+        crystalline_button_render(g_crawler_ui.btn_stop, renderer);
+    }
+    if (g_crawler_ui.btn_clear) {
+        crystalline_button_render(g_crawler_ui.btn_clear, renderer);
+    }
+    
+    // Render sliders
+    if (g_crawler_ui.slider_max_depth) {
+        crystalline_slider_render(g_crawler_ui.slider_max_depth, renderer);
+    }
+    if (g_crawler_ui.slider_max_urls) {
+        crystalline_slider_render(g_crawler_ui.slider_max_urls, renderer);
+    }
+    if (g_crawler_ui.slider_rate_limit) {
+        crystalline_slider_render(g_crawler_ui.slider_rate_limit, renderer);
+    }
+    
+    // Render stats display
+    if (g_crawler_ui.stats_display) {
+        crystalline_textarea_render(g_crawler_ui.stats_display, renderer);
+    }
+}
+
+/**
+ * Event handlers following standardized pattern
+ */
+void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) {
+    if (!g_crawler_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEBUTTONDOWN;
+    sdl_event.button = *event;
+    
+    // Handle input
+    if (g_crawler_ui.url_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.url_input, &sdl_event);
+    }
+    
+    // Handle list
+    if (g_crawler_ui.url_list) {
+        crystalline_list_handle_mouse(g_crawler_ui.url_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_crawler_ui.btn_add_url) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_add_url, &sdl_event);
+    }
+    if (g_crawler_ui.btn_start) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_start, &sdl_event);
+    }
+    if (g_crawler_ui.btn_stop) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_stop, &sdl_event);
+    }
+    if (g_crawler_ui.btn_clear) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_clear, &sdl_event);
+    }
+    
+    // Handle sliders
+    if (g_crawler_ui.slider_max_depth) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_depth, &sdl_event);
+    }
+    if (g_crawler_ui.slider_max_urls) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_urls, &sdl_event);
+    }
+    if (g_crawler_ui.slider_rate_limit) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_rate_limit, &sdl_event);
+    }
+}
+
+void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
+    if (!g_crawler_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEBUTTONUP;
+    sdl_event.button = *event;
+    
+    // Handle input
+    if (g_crawler_ui.url_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.url_input, &sdl_event);
+    }
+    
+    // Handle list
+    if (g_crawler_ui.url_list) {
+        crystalline_list_handle_mouse(g_crawler_ui.url_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_crawler_ui.btn_add_url) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_add_url, &sdl_event);
+    }
+    if (g_crawler_ui.btn_start) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_start, &sdl_event);
+    }
+    if (g_crawler_ui.btn_stop) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_stop, &sdl_event);
+    }
+    if (g_crawler_ui.btn_clear) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_clear, &sdl_event);
+    }
+    
+    // Handle sliders
+    if (g_crawler_ui.slider_max_depth) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_depth, &sdl_event);
+    }
+    if (g_crawler_ui.slider_max_urls) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_urls, &sdl_event);
+    }
+    if (g_crawler_ui.slider_rate_limit) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_rate_limit, &sdl_event);
+    }
+}
+
+void handle_crawler_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state) {
+    if (!g_crawler_ui.initialized) return;
+    
+    SDL_Event sdl_event = {0};
+    sdl_event.type = SDL_MOUSEMOTION;
+    sdl_event.motion = *event;
+    
+    // Handle input
+    if (g_crawler_ui.url_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.url_input, &sdl_event);
+    }
+    
+    // Handle list
+    if (g_crawler_ui.url_list) {
+        crystalline_list_handle_mouse(g_crawler_ui.url_list, &sdl_event);
+    }
+    
+    // Handle buttons
+    if (g_crawler_ui.btn_add_url) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_add_url, &sdl_event);
+    }
+    if (g_crawler_ui.btn_start) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_start, &sdl_event);
+    }
+    if (g_crawler_ui.btn_stop) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_stop, &sdl_event);
+    }
+    if (g_crawler_ui.btn_clear) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_clear, &sdl_event);
+    }
+    
+    // Handle sliders
+    if (g_crawler_ui.slider_max_depth) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_depth, &sdl_event);
+    }
+    if (g_crawler_ui.slider_max_urls) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_max_urls, &sdl_event);
+    }
+    if (g_crawler_ui.slider_rate_limit) {
+        crystalline_slider_handle_mouse(g_crawler_ui.slider_rate_limit, &sdl_event);
+    }
 }
