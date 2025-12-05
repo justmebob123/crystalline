@@ -40,6 +40,7 @@
 #include "ai/cllm_adaptive_hierarchy.h"  // PHASE 6: Adaptive hierarchy
 #include "ai/cllm_entropy_allocation.h"  // PHASE 6: Entropy-based allocation
 #include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
+#include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
 #include "prime_float_math.h"
 #include "prime_math.h"
 #include "prime_types.h"                 // For PRIME_PI
@@ -130,6 +131,9 @@ struct SphereTrainingContext {
     bool can_spawn_children;                     // Can spawn based on allocation
     ThreadAllocationPlan* allocation_plan;       // Allocation plan for children
     int assigned_batches;                        // Batches assigned based on entropy
+    
+    // PHASE 4: Plimpton work distribution
+    double work_fraction;                        // Fraction of work assigned (0.0-1.0)
 };
 
 /**
@@ -231,6 +235,9 @@ struct ThreadedTrainingSystem {
     AdaptiveHierarchyContext* adaptive_hierarchy;   // Adaptive hierarchy depth management
     ThreadAllocationPlan* entropy_allocation;       // Entropy-based thread allocation
     WorkDistributionPlan* work_distribution;        // Entropy-based work distribution
+    
+    // PHASE 4: Plimpton Work Distribution
+    PlimptonIntegrationContext* plimpton_context;   // Plimpton 322 work distribution
 };
 
 /**
@@ -1742,6 +1749,15 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     printf("  ✓ All entropy optimization systems initialized\n\n");
     
+    // PHASE 4: Initialize Plimpton work distribution
+    printf("  Initializing Plimpton 322 work distribution...\n");
+    system->plimpton_context = plimpton_integration_create();
+    if (system->plimpton_context) {
+        printf("  ✓ Plimpton integration initialized\n");
+    } else {
+        fprintf(stderr, "WARNING: Failed to initialize Plimpton integration context\n");
+    }
+    
     // Give threads time to initialize before returning
     usleep(10000);  // 10ms - allow worker threads to start and enter wait state
     
@@ -1859,6 +1875,12 @@ void threaded_training_free(ThreadedTrainingSystem* system) {
         }
         free(system->work_distribution);
         printf("  ✓ Entropy work distribution freed\n");
+    }
+    
+    // PHASE 4: Cleanup Plimpton work distribution
+    if (system->plimpton_context) {
+        plimpton_integration_free(system->plimpton_context);
+        printf("  ✓ Plimpton integration freed\n");
     }
     
     free(system);
@@ -2491,6 +2513,36 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
         parent->children[i]->parent = parent;
         parent->children[i]->hierarchy_level = parent->hierarchy_level + 1;
         parent->children[i]->system = parent->system;
+        
+        // PHASE 4: Calculate Plimpton work distribution for parent-child pair
+        if (parent->system->plimpton_context) {
+            WorkDistribution dist = plimpton_calculate_distribution(
+                parent->system->plimpton_context,
+                parent->sphere_id,
+                child_id
+            );
+            
+            if (dist.is_valid) {
+                // Store work fractions
+                parent->work_fraction = dist.parent_keeps;
+                parent->children[i]->work_fraction = dist.child_gets;
+                
+                printf("[Sphere %d -> Child %d] Plimpton work split: parent=%.3f, child=%.3f\n",
+                       parent->sphere_id, child_id, 
+                       dist.parent_keeps, dist.child_gets);
+            } else {
+                // Default: equal split
+                parent->work_fraction = 0.5;
+                parent->children[i]->work_fraction = 0.5 / num_children;
+                
+                printf("[Sphere %d -> Child %d] Using default work split (Plimpton invalid)\n",
+                       parent->sphere_id, child_id);
+            }
+        } else {
+            // No Plimpton context: equal split
+            parent->work_fraction = 0.5;
+            parent->children[i]->work_fraction = 0.5 / num_children;
+        }
         
         // PHASE 3: Link parent-child crystalline memory with clock-based mapping
         if (parent->crystalline_memory && parent->children[i]->crystalline_memory) {
