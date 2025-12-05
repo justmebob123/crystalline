@@ -193,7 +193,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
     if (!ui_initialized) {
         int content_x = SIDEBAR_WIDTH;
         int content_y = SUBMENU_HEIGHT;
-        int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
+        int content_width = RENDER_WIDTH;  // Use RENDER_WIDTH to account for control panel
         int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
         
         float center_x __attribute__((unused)) = content_x + content_width / 2.0f;
@@ -286,7 +286,7 @@ void draw_downloaded_files_tab(SDL_Renderer* renderer, AppState* state) {
     
     int content_x = SIDEBAR_WIDTH;
     int content_y = SUBMENU_HEIGHT;
-    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
+    int content_width = RENDER_WIDTH;  // Use RENDER_WIDTH to account for control panel
     
     // Draw title
     float center_x = content_x + content_width / 2.0f;

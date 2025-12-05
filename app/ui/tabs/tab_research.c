@@ -218,7 +218,7 @@ void draw_research_tab(SDL_Renderer* renderer, AppState* state) {
     
     int content_x = SIDEBAR_WIDTH;
     int content_y = SUBMENU_HEIGHT;
-    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;
+    int content_width = RENDER_WIDTH;  // Use RENDER_WIDTH to account for control panel
     int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
     
     // Initialize UI elements if needed
