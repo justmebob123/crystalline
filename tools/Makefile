@@ -28,3 +28,6 @@ clean:
 	@echo "✓ Tools cleaned"
 
 .PHONY: all clean
+test_train_tiny: test_train_tiny.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
