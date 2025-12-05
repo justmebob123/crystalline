@@ -55,6 +55,8 @@ typedef struct SphereTrainingContext SphereTrainingContext;
 static void* sphere_worker_thread(void* arg);
 static void* sphere_worker_thread_lockfree(void* arg);
 static void* sphere_worker_thread_dynamic(void* arg);
+static int transition_to_control_thread(SphereTrainingContext* ctx);
+static int transition_to_worker_thread(SphereTrainingContext* ctx);
 static int sphere_spawn_children(SphereTrainingContext* parent, int num_children);
 static int sphere_despawn_children(SphereTrainingContext* parent);
 static void* control_thread_func(void* arg);
@@ -2010,6 +2012,104 @@ static void clip_gradients(double* gradients, size_t size, double max_norm) {
  */
    __attribute__((unused))
 /**
+ * Transition a worker thread to control thread role
+ * 
+ * This function handles the state transition from worker to control thread.
+ * It validates the current state and prepares the context for spawning children.
+ * 
+ * @param ctx Context to transition
+ * @return 0 on success, -1 on failure
+ */
+static int transition_to_control_thread(SphereTrainingContext* ctx) {
+    if (!ctx) {
+        fprintf(stderr, "[ERROR] transition_to_control_thread: NULL context\n");
+        return -1;
+    }
+    
+    // Validate current state
+    if (ctx->is_control_thread) {
+        fprintf(stderr, "[WARNING] Sphere %d is already a control thread\n", ctx->sphere_id);
+        return 0;  // Already in desired state
+    }
+    
+    // Validate no pending work
+    if (ctx->current_batch) {
+        fprintf(stderr, "[ERROR] Sphere %d cannot transition while processing batch\n", 
+                ctx->sphere_id);
+        return -1;
+    }
+    
+    // Thread-safe state transition
+    pthread_mutex_lock(&ctx->lock);
+    
+    // Double-check state under lock
+    if (ctx->is_control_thread) {
+        pthread_mutex_unlock(&ctx->lock);
+        return 0;
+    }
+    
+    // Perform transition
+    ctx->is_control_thread = 1;
+    ctx->batches_processed = 0;  // Reset batch counter for control role
+    
+    pthread_mutex_unlock(&ctx->lock);
+    
+    printf("[Sphere %d] Transitioned to CONTROL THREAD (level %d)\n",
+           ctx->sphere_id, ctx->hierarchy_level);
+    
+    return 0;
+}
+
+/**
+ * Transition a control thread back to worker thread role
+ * 
+ * This function handles the state transition from control to worker thread.
+ * It validates that all children have been despawned before transitioning.
+ * 
+ * @param ctx Context to transition
+ * @return 0 on success, -1 on failure
+ */
+static int transition_to_worker_thread(SphereTrainingContext* ctx) {
+    if (!ctx) {
+        fprintf(stderr, "[ERROR] transition_to_worker_thread: NULL context\n");
+        return -1;
+    }
+    
+    // Validate current state
+    if (!ctx->is_control_thread) {
+        fprintf(stderr, "[WARNING] Sphere %d is already a worker thread\n", ctx->sphere_id);
+        return 0;  // Already in desired state
+    }
+    
+    // Validate no children exist
+    if (ctx->children || ctx->num_children > 0) {
+        fprintf(stderr, "[ERROR] Sphere %d cannot transition while children exist (despawn first)\n",
+                ctx->sphere_id);
+        return -1;
+    }
+    
+    // Thread-safe state transition
+    pthread_mutex_lock(&ctx->lock);
+    
+    // Double-check state under lock
+    if (!ctx->is_control_thread) {
+        pthread_mutex_unlock(&ctx->lock);
+        return 0;
+    }
+    
+    // Perform transition
+    ctx->is_control_thread = 0;
+    ctx->batches_processed = 0;  // Reset batch counter for worker role
+    
+    pthread_mutex_unlock(&ctx->lock);
+    
+    printf("[Sphere %d] Transitioned to WORKER THREAD (level %d)\n",
+           ctx->sphere_id, ctx->hierarchy_level);
+    
+    return 0;
+}
+
+/**
  * Despawn all children and transition back to worker thread
  * 
  * @param parent Parent context with children to despawn
@@ -2048,8 +2148,8 @@ static int sphere_despawn_children(SphereTrainingContext* parent) {
     parent->children = NULL;
     parent->num_children = 0;
     
-    // Transition back to worker thread
-    parent->is_control_thread = 0;
+    // Use transition function for thread-safe state change
+    transition_to_worker_thread(parent);
     
     printf("[Sphere %d] Successfully despawned children, now a worker thread\n",
            parent->sphere_id);
@@ -2060,13 +2160,18 @@ static int sphere_despawn_children(SphereTrainingContext* parent) {
 static int sphere_spawn_children(SphereTrainingContext* parent, int num_children) {
     if (!parent || num_children <= 0 || num_children > 12) return -1;
     
-    // Transition parent to control thread
-    parent->is_control_thread = 1;
+    // Transition parent to control thread using thread-safe function
+    if (transition_to_control_thread(parent) != 0) {
+        fprintf(stderr, "[ERROR] Failed to transition sphere %d to control thread\n",
+                parent->sphere_id);
+        return -1;
+    }
     
     // Allocate children array
     parent->children = (SphereTrainingContext**)calloc(num_children, sizeof(SphereTrainingContext*));
     if (!parent->children) {
-        parent->is_control_thread = 0;  // Revert
+        // Revert transition on failure
+        transition_to_worker_thread(parent);
         return -1;
     }
     
