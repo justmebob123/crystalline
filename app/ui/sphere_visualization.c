@@ -9,6 +9,13 @@
 #include "../../include/prime_float_math.h"
 #include <stdio.h>
 
+// PHASE 3, DAY 11: Crystalline Memory Visualization Integration
+#include "crystalline_visualization.h"
+
+// Global crystalline visualization state
+static CrystallineVizState g_crystalline_viz_state = {0};
+static bool g_crystalline_viz_initialized = false;
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -724,6 +731,15 @@ static void draw_spheres_2d(SDL_Renderer* renderer, AppState* state,
 
 void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect bounds) {
     if (!state) return;
+       
+       // PHASE 3, DAY 11: Initialize crystalline visualization on first call
+       if (!g_crystalline_viz_initialized) {
+           crystalline_viz_init(&g_crystalline_viz_state);
+           g_crystalline_viz_initialized = true;
+       }
+       
+       // Update crystalline visualization state from training system
+       crystalline_viz_update(&g_crystalline_viz_state, state);
     
     SDL_Color bg_color = {25, 25, 30, 255};
     SDL_Color text_color = {220, 220, 220, 255};
