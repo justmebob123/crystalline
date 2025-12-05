@@ -771,8 +771,11 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_MOUSEBUTTONDOWN:
             state->dragging_slider = true;
             
-            // CRITICAL: Check sidebar FIRST before routing to tabs
-            if (event->button.x < SIDEBAR_WIDTH) {
+            // CRITICAL: Check submenu FIRST (Y < 40, X >= 200)
+            if (event->button.y < SUBMENU_HEIGHT && event->button.x >= SIDEBAR_WIDTH) {
+                // Submenu click - handle tab switching
+                handle_mouse_click(state, event->button.x, event->button.y);
+            } else if (event->button.x < SIDEBAR_WIDTH) {
                 // Sidebar click - handle tab switching
                 handle_mouse_click(state, event->button.x, event->button.y);
             } else {
@@ -793,8 +796,11 @@ void handle_input(AppState* state, SDL_Event* event) {
         case SDL_MOUSEBUTTONUP:
             state->dragging_slider = false;
             
-            // CRITICAL: Check sidebar FIRST before routing to tabs
-            if (event->button.x < SIDEBAR_WIDTH) {
+            // CRITICAL: Check submenu FIRST (Y < 40, X >= 200)
+            if (event->button.y < SUBMENU_HEIGHT && event->button.x >= SIDEBAR_WIDTH) {
+                // Submenu click - handle tab switching
+                handle_mouse_click(state, event->button.x, event->button.y);
+            } else if (event->button.x < SIDEBAR_WIDTH) {
                 // Sidebar click - already handled in BUTTONDOWN, but process for consistency
                 handle_mouse_click(state, event->button.x, event->button.y);
             } else {

@@ -38,8 +38,7 @@ typedef struct {
 static ChatMessage chat_history[MAX_CHAT_MESSAGES];
 static int chat_message_count = 0;
 
-// Selected model name
-static char llm_selected_model_name[256] = {0};
+
 
 // UI State - Pure Crystalline UI
 static struct {
@@ -49,7 +48,8 @@ static struct {
     CrystallineButton* btn_send;
     CrystallineButton* btn_clear;
     
-    // Control panel sliders
+    // Control panel
+    CrystallineDropdown* model_dropdown;
     CrystallineSlider* slider_temperature;
     CrystallineSlider* slider_tokens;
     CrystallineSlider* slider_top_k;
@@ -62,6 +62,7 @@ static struct {
     // State
     bool initialized;
     bool is_generating;
+    char selected_model[256];
     
 } llm_ui = {0};
 
@@ -99,6 +100,60 @@ void clear_chat_history(void) {
     
     if (llm_ui.chat_area) {
         crystalline_textarea_clear(llm_ui.chat_area);
+    }
+}
+
+/**
+ * Model dropdown callback
+ */
+static void on_model_selected(int index, void* data) {
+    printf("=== LLM MODEL SELECTION CALLBACK: index=%d ===\n", index);
+    AppState* state = (AppState*)data;
+    if (!state || !llm_ui.model_dropdown) return;
+    
+    // Get selected model name from model_manager
+    extern char* model_manager_get_name_at_index(uint32_t index);
+    char* model_name = model_manager_get_name_at_index((uint32_t)index);
+    if (model_name) {
+        strncpy(llm_ui.selected_model, model_name, sizeof(llm_ui.selected_model) - 1);
+        llm_ui.selected_model[sizeof(llm_ui.selected_model) - 1] = '\0';
+        printf("LLM MODEL SELECTED: '%s' (index %d)\n", llm_ui.selected_model, index);
+        
+        // Load the model for inference
+        extern CLLMModel* app_load_model(const char* filepath);
+        char model_path[512];
+        snprintf(model_path, sizeof(model_path), "models/%s", model_name);
+        
+        CLLMModel* model = app_load_model(model_path);
+        if (model) {
+            // Create inference context if needed
+            if (state->cllm_inference) {
+                extern void cllm_inference_cleanup(CLLMInference* inference);
+                cllm_inference_cleanup(state->cllm_inference);
+            }
+            
+            extern CLLMInference* cllm_inference_init(CLLMModel* model);
+            state->cllm_inference = cllm_inference_init(model);
+            
+            if (state->cllm_inference) {
+                // Set parameters from sliders
+                extern void cllm_set_temperature(CLLMInference* inference, float temperature);
+                extern void cllm_set_max_tokens(CLLMInference* inference, int max_tokens);
+                cllm_set_temperature(state->cllm_inference, state->llm_temperature);
+                cllm_set_max_tokens(state->cllm_inference, state->llm_max_tokens);
+                
+                printf("Model loaded successfully for inference\n");
+                add_chat_message("Model loaded successfully. You can now start chatting!", false);
+            } else {
+                printf("ERROR: Failed to create inference context\n");
+                add_chat_message("Error: Failed to create inference context.", false);
+            }
+        } else {
+            printf("ERROR: Failed to load model\n");
+            add_chat_message("Error: Failed to load model.", false);
+        }
+    } else {
+        printf("ERROR: Could not get model name for index %d\n", index);
     }
 }
 
@@ -261,6 +316,20 @@ void init_llm_tab(AppState* state) {
     printf("  CONTROL PANEL: x=%d, y=%d, w=%d, slider_center_x=%.1f\n", 
            ctrl_x, ctrl_y, ctrl_w, slider_center_x);
     
+    // Model dropdown (TOP of control panel)
+    float dropdown_height = 40.0f;
+    llm_ui.model_dropdown = crystalline_dropdown_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        slider_center_x,
+        ctrl_y + dropdown_height / 2.0f,
+        ctrl_w,
+        dropdown_height,
+        font
+    );
+    crystalline_dropdown_set_callback(llm_ui.model_dropdown, on_model_selected, state);
+    ctrl_y += 70;  // Move down for next element
+    
+
     // Temperature slider (TOP JUSTIFIED - fixed spacing)
     llm_ui.slider_temperature = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
@@ -387,6 +456,34 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     if (llm_ui.btn_clear) {
         crystalline_button_render(llm_ui.btn_clear, renderer);
     }
+    // Render model dropdown
+    if (llm_ui.model_dropdown) {
+        crystalline_dropdown_render(llm_ui.model_dropdown, renderer);
+    }
+    
+
+    // Populate model dropdown if empty (after model_manager initializes)
+    static bool models_populated = false;
+    if (!models_populated && llm_ui.model_dropdown) {
+        extern uint32_t model_manager_count(void);
+        extern char* model_manager_get_name_at_index(uint32_t index);
+        
+        uint32_t model_count = model_manager_count();
+        if (model_count > 0) {
+            char** model_names = malloc(model_count * sizeof(char*));
+            if (model_names) {
+                for (uint32_t i = 0; i < model_count; i++) {
+                    model_names[i] = model_manager_get_name_at_index(i);
+                }
+                crystalline_dropdown_set_options(llm_ui.model_dropdown, model_names, (int)model_count);
+                printf("LLM MODEL DROPDOWN: Populated with %u models\n", model_count);
+                free(model_names);
+                models_populated = true;
+            }
+        }
+    }
+    
+
     
     if (llm_ui.slider_temperature) {
         crystalline_slider_render(llm_ui.slider_temperature, renderer);
@@ -412,7 +509,7 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_button_render(llm_ui.btn_new_thread, renderer);
     }
     
-    // Draw labels for sliders
+    // Draw labels for dropdown and sliders
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
     SDL_Color text_color = {220, 220, 220, 255};
     
@@ -422,6 +519,10 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     int label_y = RENDER_OFFSET_Y + 40;
     
     char label[64];
+    
+    // Model dropdown label
+    draw_text(renderer, "Model:", label_x, label_y, text_color);
+    label_y += 70;
     
     // Temperature label
     snprintf(label, sizeof(label), "Temperature: %.2f", 
@@ -460,7 +561,8 @@ void handle_llm_tab_mouse_down(AppState* state, int x, int y) {
     dummy_event.button.y = y;
     dummy_event.button.button = SDL_BUTTON_LEFT;
     
-    // Handle all elements - buttons, input, sliders
+    // Handle all elements - dropdown, buttons, input, sliders
+    if (llm_ui.model_dropdown) crystalline_dropdown_handle_mouse(llm_ui.model_dropdown, &dummy_event);
     if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
     if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
     if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);
@@ -481,7 +583,8 @@ void handle_llm_tab_mouse_up(AppState* state, int x, int y) {
     dummy_event.button.y = y;
     dummy_event.button.button = SDL_BUTTON_LEFT;
     
-    // CRITICAL: Handle buttons FIRST - this triggers callbacks!
+    // CRITICAL: Handle dropdown and buttons FIRST - this triggers callbacks!
+    if (llm_ui.model_dropdown) crystalline_dropdown_handle_mouse(llm_ui.model_dropdown, &dummy_event);
     if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
     if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
     if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);
@@ -502,7 +605,8 @@ void handle_llm_tab_mouse_motion(AppState* state, int x, int y) {
     dummy_event.motion.x = x;
     dummy_event.motion.y = y;
     
-    // Handle hover states for buttons
+    // Handle hover states for dropdown and buttons
+    if (llm_ui.model_dropdown) crystalline_dropdown_handle_mouse(llm_ui.model_dropdown, &dummy_event);
     if (llm_ui.btn_send) crystalline_button_handle_mouse(llm_ui.btn_send, &dummy_event);
     if (llm_ui.btn_clear) crystalline_button_handle_mouse(llm_ui.btn_clear, &dummy_event);
     if (llm_ui.btn_browse_models) crystalline_button_handle_mouse(llm_ui.btn_browse_models, &dummy_event);

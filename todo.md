@@ -21,6 +21,7 @@ See `LLM_TAB_EVENT_SYSTEM_FIX_COMPLETE.md` for complete details.
 - [x] Add SDL_MOUSEMOTION handler to main.c
 - [x] Route MOUSEBUTTONUP to handle_llm_tab_mouse_up()
 - [x] Route MOUSEMOTION to handle_llm_tab_mouse_motion()
+- [x] Fix submenu routing bug (Y < 40, X >= 200)
 - [x] Test event routing works correctly
 
 ### Task 7.2: Fix LLM Tab Event Handlers ✅ COMPLETE
@@ -30,24 +31,47 @@ See `LLM_TAB_EVENT_SYSTEM_FIX_COMPLETE.md` for complete details.
 - [x] Match training tab event handling pattern exactly
 - [x] Build successful with zero errors
 
-### Task 7.3: Add Model Dropdown to LLM Tab ⚠️ TODO (HIGH PRIORITY)
-- [ ] Add CrystallineDropdown* model_dropdown to llm_ui struct
-- [ ] Create dropdown in init_llm_tab()
-- [ ] Position dropdown at top of control panel
-- [ ] Populate with available models from model_manager
-- [ ] Add on_model_selected() callback
-- [ ] Load selected model for inference
-- [ ] Handle dropdown events in event handlers
+### Task 7.3: Add Model Dropdown to LLM Tab ✅ COMPLETE
+- [x] Add CrystallineDropdown* model_dropdown to llm_ui struct
+- [x] Create dropdown in init_llm_tab()
+- [x] Position dropdown at top of control panel
+- [x] Populate with available models from model_manager
+- [x] Add on_model_selected() callback
+- [x] Load selected model for inference
+- [x] Handle dropdown events in event handlers
+- [x] Render dropdown and label
+- [x] Build successful with zero errors
 
 ### Task 7.4: Verify Complete Workflow ⚠️ TODO (NEEDS USER TESTING)
+- [ ] Test submenu tabs are clickable (CRITICAL FIX APPLIED)
 - [ ] Test input field gains focus on click
 - [ ] Test typing in input field works
 - [ ] Test Send button triggers inference
-- [ ] Test model dropdown loads models (after adding dropdown)
+- [ ] Test model dropdown loads and displays models
+- [ ] Test model selection loads model for inference
 - [ ] Test inference generates response
 - [ ] Test response appears in chat area
 - [ ] Test all sliders update state
 - [ ] Test all buttons work correctly
+
+## Phase 8: Analyze All Remaining Tabs ⚠️ TODO (NEXT PRIORITY)
+
+### Task 8.1: Systematic Tab Analysis
+For each tab (Video, Research, URL Manager, Downloaded Files, Benchmark, Models, Crawler):
+- [ ] Analyze current implementation
+- [ ] Identify all UI elements used
+- [ ] Test all event handlers
+- [ ] Document layout and wiring
+- [ ] Identify issues
+- [ ] Create fix plan
+
+### Task 8.2: Create Comprehensive UI Documentation ⚠️ TODO
+- [ ] Complete UI element reference guide
+- [ ] Event handling best practices
+- [ ] Layout system guide with examples
+- [ ] Troubleshooting guide
+- [ ] UI debugging tools documentation
+- [ ] Examples for each element type
 
 ## Root Cause Analysis
 
