@@ -612,6 +612,12 @@ void init_training_tab(AppState* state) {
 void update_training_visualization(AppState* state) {
     if (!state) return;
     
+    // CRITICAL: Check if training is still active before accessing metrics
+    extern bool is_training_thread_active(void);
+    if (!is_training_thread_active()) {
+        return;  // Training stopped, don't access freed memory
+    }
+    
     // Update from training metrics
     if (state->training_metrics) {
         g_training_ui.viz_data.current_epoch = state->training_metrics->training.current_epoch;
