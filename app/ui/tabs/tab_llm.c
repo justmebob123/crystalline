@@ -165,7 +165,7 @@ static void on_tokens_changed(float value, void* data) {
 
 /**
  * Initialize LLM Tab
- * Pattern copied from init_training_tab()
+ * EXACT pattern from training tab - using TOP-LEFT coordinates
  */
 void init_llm_tab(AppState* state) {
     if (llm_ui.initialized) return;
@@ -176,70 +176,71 @@ void init_llm_tab(AppState* state) {
     extern TTF_Font* get_global_font(void);
     TTF_Font* font = get_global_font();
     
-    // Create layout using global layout system
-    CrystallineTabLayout layout = crystalline_tab_layout_create(
-        CRYSTALLINE_TAB_LAYOUT_RENDER_ONLY  // LLM uses render area only (1080px)
-    );
+    // Use RENDER_WIDTH (not full width like training tab)
+    int content_width = RENDER_WIDTH;  // 1080px
+    int chat_width = (int)(content_width * 0.75f);     // 810px (75%)
+    int control_width = content_width - chat_width;     // 270px (25%)
     
-    // Split: Chat area (75%) + Control panel (25%)
-    CrystallineRect chat_area, control_area;
-    crystalline_tab_layout_split_horizontal(&layout, 0.75f, 20.0f,
-                                            &chat_area, &control_area);
+    // === CHAT AREA (LEFT SIDE) ===
     
-    printf("Chat area: center=(%.1f, %.1f) size=(%.1f x %.1f)\n",
-           chat_area.center.x, chat_area.center.y, chat_area.width, chat_area.height);
-    printf("Control area: center=(%.1f, %.1f) size=(%.1f x %.1f)\n",
-           control_area.center.x, control_area.center.y, control_area.width, control_area.height);
+    // Chat display area (top part)
+    int chat_x = RENDER_OFFSET_X + 10;
+    int chat_y = RENDER_OFFSET_Y + 10;
+    int chat_w = chat_width - 20;
+    int chat_h = WINDOW_HEIGHT - RENDER_OFFSET_Y - 120;  // Leave room for input
     
-    // === CHAT AREA ===
-    
-    // Chat message display (top 80% of chat area)
-    float chat_display_height = chat_area.height * 0.8f;
     llm_ui.chat_area = crystalline_textarea_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        chat_area.center.x,
-        chat_area.center.y - chat_area.height * 0.1f,  // Shift up slightly
-        chat_area.width - 20,
-        chat_display_height,
+        chat_x + chat_w / 2.0f,  // TOP-LEFT + width/2 = CENTER X
+        chat_y + chat_h / 2.0f,  // TOP-LEFT + height/2 = CENTER Y
+        chat_w,
+        chat_h,
         font
     );
     
-    // Input field (bottom 20% of chat area)
-    float input_y = chat_area.center.y + chat_area.height * 0.35f;
+    // Input field (bottom part)
+    int input_x = RENDER_OFFSET_X + 10;
+    int input_y = WINDOW_HEIGHT - 100;
+    int input_w = chat_width - 130;  // Leave room for send button
+    int input_h = 80;
+    
     llm_ui.message_input = crystalline_input_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        chat_area.center.x - 60,  // Leave room for send button
-        input_y,
-        chat_area.width - 140,
-        60,
+        input_x + input_w / 2.0f,  // TOP-LEFT + width/2 = CENTER X
+        input_y + input_h / 2.0f,  // TOP-LEFT + height/2 = CENTER Y
+        input_w,
+        input_h,
         "Type your message...",
         font
     );
     crystalline_input_set_callbacks(llm_ui.message_input, NULL, NULL, state);
     
     // Send button (next to input)
+    int send_x = RENDER_OFFSET_X + chat_width - 110;
+    int send_w = 100;
+    
     llm_ui.btn_send = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        chat_area.center.x + chat_area.width/2 - 60,
-        input_y,
-        100,
-        60,
+        send_x + send_w / 2.0f,  // TOP-LEFT + width/2 = CENTER X
+        input_y + input_h / 2.0f,
+        send_w,
+        input_h,
         "SEND",
         font
     );
     crystalline_button_set_callback(llm_ui.btn_send, on_send_clicked, state);
     
-    // === CONTROL PANEL ===
+    // === CONTROL PANEL (RIGHT SIDE) ===
     
-    float ctrl_x = control_area.center.x;
-    float ctrl_y = control_area.center.y - control_area.height/2 + 30;
-    float ctrl_w = control_area.width - 20;
-    float spacing = 70;
+    int ctrl_x = RENDER_OFFSET_X + chat_width + 10;
+    int ctrl_w = control_width - 20;
+    int ctrl_y = RENDER_OFFSET_Y + 60;
+    float slider_center_x = ctrl_x + ctrl_w / 2.0f;
     
     // Temperature slider
     llm_ui.slider_temperature = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         30,
@@ -248,12 +249,12 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_temperature, state->llm_temperature);
     crystalline_slider_set_callback(llm_ui.slider_temperature, on_temperature_changed, state);
-    ctrl_y += spacing;
+    ctrl_y += 70;
     
     // Max tokens slider
     llm_ui.slider_tokens = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         30,
@@ -262,12 +263,12 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_tokens, (float)state->llm_max_tokens);
     crystalline_slider_set_callback(llm_ui.slider_tokens, on_tokens_changed, state);
-    ctrl_y += spacing;
+    ctrl_y += 70;
     
     // Top-K slider
     llm_ui.slider_top_k = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         30,
@@ -275,12 +276,12 @@ void init_llm_tab(AppState* state) {
         100.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_k, 50.0f);
-    ctrl_y += spacing;
+    ctrl_y += 70;
     
     // Top-P slider
     llm_ui.slider_top_p = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         30,
@@ -288,12 +289,12 @@ void init_llm_tab(AppState* state) {
         1.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_p, 0.9f);
-    ctrl_y += spacing + 20;
+    ctrl_y += 90;
     
     // Browse Models button
     llm_ui.btn_browse_models = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         40,
@@ -306,7 +307,7 @@ void init_llm_tab(AppState* state) {
     // New Thread button
     llm_ui.btn_new_thread = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         40,
@@ -319,7 +320,7 @@ void init_llm_tab(AppState* state) {
     // Clear button
     llm_ui.btn_clear = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        ctrl_x,
+        slider_center_x,
         ctrl_y,
         ctrl_w,
         40,
@@ -391,13 +392,12 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
     SDL_Color text_color = {220, 220, 220, 255};
     
-    // Get control area position for labels
-    CrystallineTabLayout layout = crystalline_tab_layout_create(CRYSTALLINE_TAB_LAYOUT_RENDER_ONLY);
-    CrystallineRect chat_area, control_area;
-    crystalline_tab_layout_split_horizontal(&layout, 0.75f, 20.0f, &chat_area, &control_area);
-    
-    int label_x = (int)(control_area.center.x - control_area.width/2 + 10);
-    int label_y = (int)(control_area.center.y - control_area.height/2 + 10);
+    // Calculate label positions (same as init)
+    int content_width = RENDER_WIDTH;
+    int chat_width = (int)(content_width * 0.75f);
+    int ctrl_x = RENDER_OFFSET_X + chat_width + 10;
+    int label_x = ctrl_x + 5;
+    int label_y = RENDER_OFFSET_Y + 40;
     
     char label[64];
     

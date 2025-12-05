@@ -77,37 +77,80 @@ void crystalline_layout_context_toggle_sidebar(bool visible) {
     g_layout_context.sidebar_visible = visible;
 }
 
-CrystallineRect crystalline_layout_get_render_area(void) {
+CrystallineLayoutRect crystalline_layout_get_render_area(void) {
     CrystallineLayoutContext* ctx = crystalline_layout_context_get();
     
-    return crystalline_layout_rect_from_topleft(
-        ctx->render_area_x,
-        ctx->render_area_y,
-        ctx->render_area_width,
-        ctx->render_area_height
-    );
+    return (CrystallineLayoutRect){
+        .x = ctx->render_area_x,
+        .y = ctx->render_area_y,
+        .width = ctx->render_area_width,
+        .height = ctx->render_area_height
+    };
 }
 
-CrystallineRect crystalline_layout_get_control_panel(void) {
+CrystallineLayoutRect crystalline_layout_get_control_panel_area(void) {
     CrystallineLayoutContext* ctx = crystalline_layout_context_get();
     
-    return crystalline_layout_rect_from_topleft(
-        ctx->control_panel_x,
-        ctx->control_panel_y,
-        ctx->control_panel_width,
-        ctx->control_panel_height
-    );
+    return (CrystallineLayoutRect){
+        .x = ctx->control_panel_x,
+        .y = ctx->control_panel_y,
+        .width = ctx->control_panel_width,
+        .height = ctx->control_panel_height
+    };
 }
 
-CrystallineRect crystalline_layout_get_sidebar(void) {
+CrystallineLayoutRect crystalline_layout_get_sidebar_area(void) {
     CrystallineLayoutContext* ctx = crystalline_layout_context_get();
     
-    return crystalline_layout_rect_from_topleft(
-        0,
-        ctx->submenu_height,
-        ctx->sidebar_width,
-        ctx->window_height - ctx->submenu_height
-    );
+    return (CrystallineLayoutRect){
+        .x = 0,
+        .y = ctx->submenu_height,
+        .width = ctx->sidebar_width,
+        .height = ctx->window_height - ctx->submenu_height
+    };
+}
+
+// Get visualization area (left side, golden ratio split)
+// This matches the training tab pattern exactly
+CrystallineLayoutRect crystalline_layout_get_viz_area(void) {
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    // Training tab pattern:
+    int content_width = ctx->window_width - ctx->sidebar_width;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);               // 865px (61.8%)
+    
+    return (CrystallineLayoutRect){
+        .x = ctx->render_area_x + 10,
+        .y = ctx->render_area_y + 10,
+        .width = viz_width - 20,
+        .height = ctx->window_height - ctx->render_area_y - 150
+    };
+}
+
+// Get control area (right side, golden ratio split)
+// This matches the training tab pattern exactly
+CrystallineLayoutRect crystalline_layout_get_control_area(void) {
+    CrystallineLayoutContext* ctx = crystalline_layout_context_get();
+    
+    // Training tab pattern:
+    int content_width = ctx->window_width - ctx->sidebar_width;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);               // 865px (61.8%)
+    int control_width = content_width - viz_width;                // 535px (38.2%)
+    
+    return (CrystallineLayoutRect){
+        .x = ctx->render_area_x + viz_width + 10,
+        .y = ctx->render_area_y + 10,
+        .width = control_width - 30,
+        .height = ctx->window_height - ctx->render_area_y - 20
+    };
+}
+
+// Helper: Convert TOP-LEFT rect to CENTER point for Crystalline UI
+CrystallinePoint crystalline_layout_rect_to_center(CrystallineLayoutRect rect) {
+    return (CrystallinePoint){
+        .x = rect.x + rect.width / 2.0f,
+        .y = rect.y + rect.height / 2.0f
+    };
 }
 
 /*

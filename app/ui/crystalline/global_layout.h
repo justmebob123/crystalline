@@ -22,6 +22,21 @@ extern "C" {
 #endif
 
 /*
+ * Layout Rectangle (TOP-LEFT coordinates)
+ * 
+ * This matches the training tab pattern:
+ * - x, y are TOP-LEFT coordinates
+ * - width, height are dimensions
+ * - Convert to CENTER when creating Crystalline UI elements
+ */
+typedef struct {
+    int x;       // TOP-LEFT X
+    int y;       // TOP-LEFT Y
+    int width;   // WIDTH
+    int height;  // HEIGHT
+} CrystallineLayoutRect;
+
+/*
  * Global Layout Context
  * 
  * Single source of truth for all layout dimensions.
@@ -131,14 +146,23 @@ void crystalline_layout_context_toggle_control_panel(bool visible);
 // Toggle sidebar visibility
 void crystalline_layout_context_toggle_sidebar(bool visible);
 
-// Get render area bounds
-CrystallineRect crystalline_layout_get_render_area(void);
+// Get render area bounds (TOP-LEFT coordinates)
+CrystallineLayoutRect crystalline_layout_get_render_area(void);
 
-// Get control panel bounds
-CrystallineRect crystalline_layout_get_control_panel(void);
+// Get control panel bounds (TOP-LEFT coordinates)
+CrystallineLayoutRect crystalline_layout_get_control_panel_area(void);
 
-// Get sidebar bounds
-CrystallineRect crystalline_layout_get_sidebar(void);
+// Get sidebar bounds (TOP-LEFT coordinates)
+CrystallineLayoutRect crystalline_layout_get_sidebar_area(void);
+
+// Get visualization area (left side, golden ratio split)
+CrystallineLayoutRect crystalline_layout_get_viz_area(void);
+
+// Get control area (right side, golden ratio split)
+CrystallineLayoutRect crystalline_layout_get_control_area(void);
+
+// Helper: Convert TOP-LEFT rect to CENTER point for Crystalline UI
+CrystallinePoint crystalline_layout_rect_to_center(CrystallineLayoutRect rect);
 
 /*
  * Tab Layout Functions
