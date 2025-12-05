@@ -92,6 +92,46 @@ static SDL_Color get_activity_color(float activity) {
 }
 
 /**
+ * PHASE 6: Get color based on entropy level (0.0 to 1.0)
+ * 
+ * Maps entropy values to a color spectrum:
+ * - Low entropy (0.0-0.3): Blue (ordered, low complexity)
+ * - Medium entropy (0.3-0.6): Cyan/Green (moderate complexity)
+ * - High entropy (0.6-0.9): Yellow/Orange (high complexity)
+ * - Very high entropy (0.9-1.0): Red (maximum complexity)
+ */
+static SDL_Color get_entropy_color(float normalized_entropy) {
+    SDL_Color color;
+    
+    if (normalized_entropy < 0.3f) {
+        // Low entropy - blue spectrum (ordered)
+        int intensity = 80 + (int)(normalized_entropy * 200.0f);
+        color = (SDL_Color){40, 60, intensity, 255};
+    } else if (normalized_entropy < 0.6f) {
+        // Medium entropy - cyan/green spectrum
+        float t = (normalized_entropy - 0.3f) / 0.3f;
+        int r = 40 + (int)(t * 80.0f);
+        int g = 150 + (int)(t * 80.0f);
+        int b = 200 - (int)(t * 100.0f);
+        color = (SDL_Color){r, g, b, 255};
+    } else if (normalized_entropy < 0.9f) {
+        // High entropy - yellow/orange spectrum
+        float t = (normalized_entropy - 0.6f) / 0.3f;
+        int r = 120 + (int)(t * 135.0f);
+        int g = 230 - (int)(t * 90.0f);
+        int b = 100 - (int)(t * 100.0f);
+        color = (SDL_Color){r, g, b, 255};
+    } else {
+        // Very high entropy - red spectrum (maximum complexity)
+        int intensity = 200 + (int)((normalized_entropy - 0.9f) * 550.0f);
+        if (intensity > 255) intensity = 255;
+        color = (SDL_Color){intensity, 60, 40, 255};
+    }
+    
+    return color;
+}
+
+/**
  * Get color based on thread state (UI Integration)
  */
 // TODO: Use this when implementing thread state visualization in Phase 4.2
@@ -601,17 +641,68 @@ static void draw_spheres_2d(SDL_Renderer* renderer, AppState* state,
                 if (intensity > 255) intensity = 255;
                 sphere_color = (SDL_Color){intensity, 50, 200, 255};
             } else {
-                // Worker thread - activity gradient based on batch count
-                float activity = 0.0f;
-                if (max_batches > 0) {
-                    activity = (float)state->sphere_stats.batches_processed[sphere_id] / (float)max_batches;
-                }
-                if (activity > 1.0f) activity = 1.0f;
+                // Worker thread - PHASE 6: Use entropy-based coloring if available
+                // Get entropy data from training system
+                extern void* get_training_system(void);
+                void* training_system = get_training_system();
                 
-                // Green -> Yellow -> Red gradient
-                int r = (int)(activity * 255);
-                int g = (int)((1.0f - activity) * 255);
-                sphere_color = (SDL_Color){r, g, 0, 255};
+                bool use_entropy_color = false;
+                float entropy_value = 0.0f;
+                
+                if (training_system) {
+                    extern void* threaded_training_get_entropy_context(void* system);
+                    void* entropy_ctx = threaded_training_get_entropy_context(training_system);
+                    
+                    if (entropy_ctx) {
+                        // Get dimension entropy for this sphere's symmetry group
+                        int dimension = sphere_id % 12;  // Map sphere to dimension (0-11)
+                        
+                        extern const void* get_dimension_stats(const void* ctx, unsigned int dimension);
+                        const void* dim_stats = get_dimension_stats(entropy_ctx, (unsigned int)dimension);
+                        
+                        if (dim_stats) {
+                            // Cast to access the structure
+                            typedef struct {
+                                unsigned int dimension;
+                                double current_entropy;
+                                double min_entropy;
+                                double max_entropy;
+                                double avg_entropy;
+                                uint64_t sample_count;
+                                double entropy_variance;
+                            } DimensionEntropyStats;
+                            
+                            const DimensionEntropyStats* stats = (const DimensionEntropyStats*)dim_stats;
+                            
+                            // Normalize entropy to 0-1 range
+                            if (stats->max_entropy > stats->min_entropy) {
+                                entropy_value = (float)((stats->current_entropy - stats->min_entropy) / 
+                                                       (stats->max_entropy - stats->min_entropy));
+                            } else {
+                                entropy_value = 0.5f;  // Default to medium if no range
+                            }
+                            
+                            use_entropy_color = true;
+                        }
+                    }
+                }
+                
+                if (use_entropy_color) {
+                    // Use entropy-based coloring
+                    sphere_color = get_entropy_color(entropy_value);
+                } else {
+                    // Fallback to activity gradient based on batch count
+                    float activity = 0.0f;
+                    if (max_batches > 0) {
+                        activity = (float)state->sphere_stats.batches_processed[sphere_id] / (float)max_batches;
+                    }
+                    if (activity > 1.0f) activity = 1.0f;
+                    
+                    // Green -> Yellow -> Red gradient
+                    int r = (int)(activity * 255);
+                    int g = (int)((1.0f - activity) * 255);
+                    sphere_color = (SDL_Color){r, g, 0, 255};
+                }
             }
             
             // Draw filled circle
@@ -833,31 +924,67 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
        // Unlock sphere_stats after reading all data
        pthread_mutex_unlock(&state->sphere_stats_mutex);
 
-    // Draw legend
+    // Draw legend - PHASE 6: Check if entropy coloring is active
     int legend_x = stats_panel.x + stats_panel.w - 200;
     int legend_y = stats_panel.y + 8;
     
-    draw_text(renderer, "Activity Level:", legend_x, legend_y, text_color);
-    legend_y += 18;
+    // Check if entropy data is available
+    extern void* get_training_system(void);
+    void* training_system = get_training_system();
+    bool has_entropy = false;
     
-    // Color legend with labels
-    struct {
-        const char* label;
-        SDL_Color color;
-    } legend_items[] = {
-        {"Inactive", {40, 40, 50, 255}},
-        {"Low", {60, 100, 180, 255}},
-        {"Medium", {80, 180, 200, 255}},
-        {"High", {220, 200, 80, 255}},
-        {"Very High", {255, 140, 60, 255}}  // ORANGE - >90% activity
-    };
+    if (training_system) {
+        extern void* threaded_training_get_entropy_context(void* system);
+        void* entropy_ctx = threaded_training_get_entropy_context(training_system);
+        if (entropy_ctx) {
+            has_entropy = true;
+        }
+    }
     
-    // Draw color circles with labels
-    for (int i = 0; i < 5; i++) {
-        int item_y = legend_y + (i * 16);
-        draw_filled_circle(renderer, legend_x + 5, item_y + 5, 4, legend_items[i].color);
-        draw_text(renderer, legend_items[i].label, legend_x + 15, item_y, 
-                 (SDL_Color){180, 180, 180, 255});
+    if (has_entropy) {
+        // PHASE 6: Entropy-based color legend
+        draw_text(renderer, "Entropy Level:", legend_x, legend_y, text_color);
+        legend_y += 18;
+        
+        struct {
+            const char* label;
+            SDL_Color color;
+        } entropy_legend[] = {
+            {"Low (Ordered)", {40, 60, 180, 255}},
+            {"Medium-Low", {80, 180, 150, 255}},
+            {"Medium", {120, 230, 100, 255}},
+            {"Medium-High", {200, 200, 60, 255}},
+            {"High (Complex)", {255, 100, 40, 255}}
+        };
+        
+        for (int i = 0; i < 5; i++) {
+            int item_y = legend_y + (i * 16);
+            draw_filled_circle(renderer, legend_x + 5, item_y + 5, 4, entropy_legend[i].color);
+            draw_text(renderer, entropy_legend[i].label, legend_x + 15, item_y, 
+                     (SDL_Color){180, 180, 180, 255});
+        }
+    } else {
+        // Fallback to activity-based color legend
+        draw_text(renderer, "Activity Level:", legend_x, legend_y, text_color);
+        legend_y += 18;
+        
+        struct {
+            const char* label;
+            SDL_Color color;
+        } legend_items[] = {
+            {"Inactive", {40, 40, 50, 255}},
+            {"Low", {60, 100, 180, 255}},
+            {"Medium", {80, 180, 200, 255}},
+            {"High", {220, 200, 80, 255}},
+            {"Very High", {255, 140, 60, 255}}
+        };
+        
+        for (int i = 0; i < 5; i++) {
+            int item_y = legend_y + (i * 16);
+            draw_filled_circle(renderer, legend_x + 5, item_y + 5, 4, legend_items[i].color);
+            draw_text(renderer, legend_items[i].label, legend_x + 15, item_y, 
+                     (SDL_Color){180, 180, 180, 255});
+        }
     }
 }
 
