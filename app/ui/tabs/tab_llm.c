@@ -253,6 +253,17 @@ void init_llm_tab(AppState* state) {
     printf("  CONTROL PANEL: x=%d, y=%d, w=%d, slider_center_x=%.1f\n", 
            ctrl_x, ctrl_y, ctrl_w, slider_center_x);
     
+    // Calculate vertical spacing to fill available height
+    // Total elements: 4 sliders (30px each) + 3 buttons (40px each) = 240px
+    // Available height: available_height - 20 (top/bottom padding) = 820px
+    // Remaining space for gaps: 820 - 240 = 580px
+    // Number of gaps: 6 (between 7 elements)
+    // Gap size: 580 / 6 = ~97px
+    int element_gap = (available_height - 20 - (4 * 30 + 3 * 40)) / 6;
+    if (element_gap < 20) element_gap = 20;  // Minimum 20px gap
+    
+    printf("  Element gap: %dpx (to fill %dpx height)\n", element_gap, available_height);
+    
     // Temperature slider
     llm_ui.slider_temperature = crystalline_slider_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
@@ -265,7 +276,7 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_temperature, state->llm_temperature);
     crystalline_slider_set_callback(llm_ui.slider_temperature, on_temperature_changed, state);
-    ctrl_y += 70;
+    ctrl_y += 30 + element_gap;
     
     // Max tokens slider
     llm_ui.slider_tokens = crystalline_slider_create(
@@ -279,7 +290,7 @@ void init_llm_tab(AppState* state) {
     );
     crystalline_slider_set_value(llm_ui.slider_tokens, (float)state->llm_max_tokens);
     crystalline_slider_set_callback(llm_ui.slider_tokens, on_tokens_changed, state);
-    ctrl_y += 70;
+    ctrl_y += 30 + element_gap;
     
     // Top-K slider
     llm_ui.slider_top_k = crystalline_slider_create(
@@ -292,7 +303,7 @@ void init_llm_tab(AppState* state) {
         100.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_k, 50.0f);
-    ctrl_y += 70;
+    ctrl_y += 30 + element_gap;
     
     // Top-P slider
     llm_ui.slider_top_p = crystalline_slider_create(
@@ -305,7 +316,7 @@ void init_llm_tab(AppState* state) {
         1.0f
     );
     crystalline_slider_set_value(llm_ui.slider_top_p, 0.9f);
-    ctrl_y += 90;
+    ctrl_y += 30 + element_gap;
     
     // Browse Models button
     llm_ui.btn_browse_models = crystalline_button_create(
@@ -318,7 +329,7 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_browse_models, on_browse_models_clicked, state);
-    ctrl_y += 60;
+    ctrl_y += 40 + element_gap;
     
     // New Thread button
     llm_ui.btn_new_thread = crystalline_button_create(
@@ -331,7 +342,7 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_new_thread, on_new_thread_clicked, state);
-    ctrl_y += 60;
+    ctrl_y += 40 + element_gap;
     
     // Clear button
     llm_ui.btn_clear = crystalline_button_create(
@@ -344,6 +355,8 @@ void init_llm_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(llm_ui.btn_clear, on_clear_clicked, state);
+    
+    printf("  Final ctrl_y: %d (should be near %d)\n", ctrl_y + 40, RENDER_OFFSET_Y + available_height);
     
     llm_ui.initialized = true;
     printf("=== LLM TAB INITIALIZED ===\n");
