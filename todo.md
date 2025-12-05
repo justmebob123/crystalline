@@ -60,17 +60,31 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 7. 🔍 Test every tab thoroughly
 
 **CRITICAL FINDINGS**:
-- Training tab correctly ignores sidebar clicks (x < SIDEBAR_WIDTH)
-- LLM tab uses CENTER coordinates for Crystalline UI elements
-- Need to verify if overlay is blocking clicks when training starts
-- Need to check all tabs for layout consistency
+- ✅ Training tab correctly ignores sidebar clicks (x < SIDEBAR_WIDTH)
+- ✅ Crystalline UI uses CENTER coordinates (confirmed in geometry.c)
+- ✅ LLM tab was passing NULL font - FIXED
+- ✅ All other tabs correctly use get_global_font()
+- ❌ No overlay exists to block clicks when training starts
+- ❌ User expects overlay to block menu/tabs during training
+
+**FIXES COMPLETED**:
+1. ✅ Fixed LLM tab NULL font issue (critical bug)
+2. ✅ Verified coordinate system (CENTER coordinates)
+3. ✅ Verified all tabs use correct font access
 
 **NEXT ACTIONS** (PRIORITY ORDER):
-1. Analyze and fix LLM tab layout issues
-2. Fix Training tab overlay/blocking issues  
-3. Analyze and fix all other tab layouts
-4. Test all tabs thoroughly
-5. Then proceed with Models/Crawler conversion
+1. ✅ DONE: Fixed LLM tab NULL font issue
+2. 🔄 IN PROGRESS: Determine if overlay should block clicks during training
+3. ⏳ TODO: Test LLM tab to verify layout is fixed
+4. ⏳ TODO: Test all other tabs for layout issues
+5. ⏳ TODO: Implement overlay if needed for training
+6. ⏳ TODO: Then proceed with Models/Crawler conversion
+
+**DECISION NEEDED**:
+- Should training create an overlay to block ALL clicks (menu + tabs)?
+- Or should training allow tab switching?
+- Current behavior: No overlay, tabs can be switched
+- User expectation: Unclear - mentions inconsistent blocking
 
 ### Phase 1: Complete Crystalline UI Elements (Day 1) - ✅ COMPLETE
 
