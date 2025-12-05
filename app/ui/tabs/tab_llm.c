@@ -122,7 +122,12 @@ static void on_model_selected(int index, void* data) {
         // Load the model for inference
         extern CLLMModel* app_load_model(const char* filepath);
         char model_path[512];
-        snprintf(model_path, sizeof(model_path), "models/%s", model_name);
+        // Add .cllm extension if not present
+        if (strstr(model_name, ".cllm") != NULL) {
+            snprintf(model_path, sizeof(model_path), "models/%s", model_name);
+        } else {
+            snprintf(model_path, sizeof(model_path), "models/%s.cllm", model_name);
+        }
         
         CLLMModel* model = app_load_model(model_path);
         if (model) {
