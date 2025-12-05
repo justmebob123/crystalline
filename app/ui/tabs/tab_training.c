@@ -391,10 +391,10 @@ void init_training_tab(AppState* state) {
     TTF_Font* font = get_global_font();
     
     // Calculate layout using golden ratio
-    // Use full available width (accounts for sidebar + control panel)
-    int content_width = RENDER_WIDTH;  // 1080px (accounts for sidebar + control panel)
-    int viz_width = (int)(content_width * 0.618f);     // 667px (61.8%)
-    int control_width = content_width - viz_width;      // 413px (38.2%)
+    // Use full available width INCLUDING control panel (training tab uses control panel space)
+    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);     // 865px (61.8%)
+    int control_width = content_width - viz_width;      // 535px (38.2%)
     
     // Create visualization panel (left side)
     // IMPORTANT: Crystalline UI uses CENTER coordinates, not top-left
@@ -615,7 +615,30 @@ void update_training_visualization(AppState* state) {
     // CRITICAL: Check if training is still active before accessing metrics
     extern bool is_training_thread_active(void);
     if (!is_training_thread_active()) {
-        return;  // Training stopped, don't access freed memory
+        // Training stopped - reset to clean inactive state
+        // Keep visualization visible but show as inactive
+        g_training_ui.viz_data.current_epoch = 0;
+        g_training_ui.viz_data.total_epochs = 0;
+        g_training_ui.viz_data.current_loss = 0.0f;
+        g_training_ui.viz_data.learning_rate = 0.0f;
+        g_training_ui.viz_data.batch_progress = 0.0f;
+        
+        // Reset entropy metrics
+        g_training_ui.viz_data.current_entropy = 0.0f;
+        g_training_ui.viz_data.target_entropy = 0.0f;
+        g_training_ui.viz_data.entropy_delta = 0.0f;
+        
+        // Reset hierarchy status
+        g_training_ui.viz_data.hierarchy_active = false;
+        g_training_ui.viz_data.hierarchy_depth = 0;
+        g_training_ui.viz_data.active_spheres = 0;
+        
+        // Reset cymatic timing
+        g_training_ui.viz_data.cymatic_frequency = 0.0f;
+        g_training_ui.viz_data.resonance_strength = 0.0f;
+        g_training_ui.viz_data.phase_alignment = 0.0f;
+        
+        return;  // Don't access freed memory
     }
     
     // Update from training metrics
@@ -704,8 +727,8 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     // Draw sphere visualization using layout helper
     // CRITICAL: Use same calculation as init_training_tab()
-    int content_width = RENDER_WIDTH;  // 1080px (accounts for sidebar + control panel)
-    int viz_width = (int)(content_width * 0.618f);     // 667px (61.8%)
+    int content_width = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
+    int viz_width = (int)(content_width * 0.618f);     // 865px (61.8%)
     // PHASE 3: Reduce height by 130px to leave room for progress bar below
     int viz_height = WINDOW_HEIGHT - RENDER_OFFSET_Y - 150;  // Was -20, now -150 (130px less)
     
@@ -735,7 +758,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Render sliders FIRST (background layer)
     // Note: Sliders use CENTER coordinates, but labels use LEFT edge
     // Calculate layout dimensions (same as init)
-    int content_width_full = RENDER_WIDTH;  // 1080px (accounts for sidebar + control panel)
+    int content_width_full = WINDOW_WIDTH - SIDEBAR_WIDTH;  // 1400px
     int viz_width_full = (int)(content_width_full * 0.618f);
     
     int slider_x = RENDER_OFFSET_X + viz_width_full + 20;
