@@ -53,25 +53,33 @@ The fundamental problem was:
 - [ ] Fix `viz_data` structure issues
 - [ ] Test thoroughly
 
-### Phase 3: LLM Tab Complete Rewrite ✅ COMPLETE (3-4 hours)
+### Phase 3: LLM Tab Complete Rewrite ✅ LAYOUT FIXED, ⚠️ WIRING PARTIAL
 - [x] Remove ALL legacy SDL_Rect code
 - [x] Remove ALL manual click detection
 - [x] Remove ALL manual rendering
 - [x] Convert to pure Crystalline UI
 - [x] Use new global layout system
 - [x] Fix control panel positioning
-- [x] Wire all buttons properly
 - [x] Build verified: Zero errors
 - [x] Uses Training Tab as reference (CORRECT pattern)
 - [x] CRITICAL FIX: Corrected height calculations and Y positioning
-  - Chat area: available_height - 110 (not WINDOW_HEIGHT - 120)
-  - Input field: positioned at bottom of render area (not window bottom)
-  - Control panel: starts at RENDER_OFFSET_Y + 10 (not +60)
 - [x] CRITICAL BUG FIX: Fixed textarea coordinate system error
   - crystalline_textarea_render was using CENTER coords as TOP-LEFT
-  - Added proper CENTER to TOP-LEFT conversion: x = center_x - width/2
-  - This was causing chat box to appear in center instead of left side
-  - All other Crystalline elements (buttons, sliders, inputs) were correct
+  - Added proper CENTER to TOP-LEFT conversion
+- [x] CRITICAL FIX: Control panel positioning
+  - Was creating mini control panel inside render area (X=1020)
+  - Now uses actual CONTROL_PANEL area (X=1290-1590)
+  - Chat width: 1070px (full render width)
+  - Control width: 300px (full control panel width)
+  - NO gaps on right side
+- [x] Reverted to top-justified spacing (as requested)
+- [x] Wired send button to inference engine
+  - Calls app_generate_text() → cllm_generate()
+  - Shows error if no model loaded
+- [ ] TODO: Add model dropdown UI element
+- [ ] TODO: Wire TopK/TopP sliders
+- [ ] TODO: Add model loading/switching
+- [ ] TODO: Test with actual trained model
 
 ### Phase 4: Remaining Tabs (4-6 hours)
 - [ ] Crawler tab
