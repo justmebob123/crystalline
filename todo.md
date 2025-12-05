@@ -63,6 +63,10 @@ The fundamental problem was:
 - [x] Wire all buttons properly
 - [x] Build verified: Zero errors
 - [x] Uses Training Tab as reference (CORRECT pattern)
+- [x] CRITICAL FIX: Corrected height calculations and Y positioning
+  - Chat area: available_height - 110 (not WINDOW_HEIGHT - 120)
+  - Input field: positioned at bottom of render area (not window bottom)
+  - Control panel: starts at RENDER_OFFSET_Y + 10 (not +60)
 
 ### Phase 4: Remaining Tabs (4-6 hours)
 - [ ] Crawler tab
