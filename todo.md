@@ -67,6 +67,11 @@ The fundamental problem was:
   - Chat area: available_height - 110 (not WINDOW_HEIGHT - 120)
   - Input field: positioned at bottom of render area (not window bottom)
   - Control panel: starts at RENDER_OFFSET_Y + 10 (not +60)
+- [x] CRITICAL BUG FIX: Fixed textarea coordinate system error
+  - crystalline_textarea_render was using CENTER coords as TOP-LEFT
+  - Added proper CENTER to TOP-LEFT conversion: x = center_x - width/2
+  - This was causing chat box to appear in center instead of left side
+  - All other Crystalline elements (buttons, sliders, inputs) were correct
 
 ### Phase 4: Remaining Tabs (4-6 hours)
 - [ ] Crawler tab
