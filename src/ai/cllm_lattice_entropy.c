@@ -6,7 +6,7 @@
 #include "ai/cllm_lattice_entropy.h"
 #include "prime_lattice.h"
 #include "crystal_abacus.h"
-#include <math.h>
+#include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -81,20 +81,20 @@ uint64_t count_primes_in_dimension(uint64_t n, uint32_t d) {
         }
         
         // For larger n, use approximation
-        double ln_n = log((double)n);
+        double ln_n = prime_log((double)n);
         count = (uint64_t)((double)n / ln_n);
         return count;
     }
     
     // For higher dimensions, use recursive structure
     // Each dimension d has approximately π(n^(1/d)) primes
-    double root_n = pow((double)n, 1.0 / (double)d);
+    double root_n = prime_pow((double)n, 1.0 / (double)d);
     
     if (root_n < 2.0) {
         return 0;
     }
     
-    double ln_root_n = log(root_n);
+    double ln_root_n = prime_log(root_n);
     count = (uint64_t)(root_n / ln_root_n);
     
     return count;
@@ -129,11 +129,11 @@ double calculate_point_entropy(uint64_t n, uint32_t d) {
     double entropy = 0.0;
     
     if (p_prime > ENTROPY_EPSILON) {
-        entropy -= p_prime * log2(p_prime);
+        entropy -= p_prime * prime_log2(p_prime);
     }
     
     if (p_composite > ENTROPY_EPSILON) {
-        entropy -= p_composite * log2(p_composite);
+        entropy -= p_composite * prime_log2(p_composite);
     }
     
     return entropy;
@@ -164,11 +164,11 @@ double calculate_lattice_entropy(EntropyContext *ctx, uint64_t n, uint32_t d) {
     
     // Add dimensional contribution
     // Higher dimensions have more structural complexity
-    double dimensional_factor = log2((double)(d + 1));
+    double dimensional_factor = prime_log2((double)(d + 1));
     
     // Calculate position-dependent contribution
     // Entropy increases logarithmically with position due to more possible states
-    double position_factor = log2((double)(n + 1));
+    double position_factor = prime_log2((double)(n + 1));
     
     // Combine all factors
     // Normalize by dividing by a reference scale to keep values reasonable
@@ -274,7 +274,7 @@ double calculate_normalized_entropy(EntropyContext *ctx, uint64_t n, uint32_t d)
     double entropy = calculate_lattice_entropy(ctx, n, d);
     
     // Maximum possible entropy for dimension d
-    double max_entropy = log2((double)(d + 1));
+    double max_entropy = prime_log2((double)(d + 1));
     
     if (max_entropy < ENTROPY_EPSILON) {
         return 0.0;
