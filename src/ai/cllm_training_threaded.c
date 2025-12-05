@@ -32,7 +32,7 @@
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
-#include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure
+#include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure (includes KissingBoundary)
 #include "ai/cllm_cache_optimization.h"  // PHASE 3: Cache optimization
 #include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
@@ -118,6 +118,8 @@ struct SphereTrainingContext {
     
     // PHASE 3: Crystalline Memory Structure
     CrystallineMemoryBlock* crystalline_memory;  // 12-fold memory structure
+    KissingBoundary* sibling_boundaries[NUM_SYMMETRY_GROUPS];  // Boundaries with siblings
+    int num_boundaries;                          // Number of active boundaries
     
     // PHASE 3, Day 10: Cache Optimization
     CachePlacement cache_placement;              // Cache-aware thread positioning
@@ -725,6 +727,12 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // Calculate cache placement based on theta
     ctx->cache_placement = calculate_cache_placement(ctx->theta, sphere_id);
     
+    // PHASE 3: Initialize kissing boundaries array
+    ctx->num_boundaries = 0;
+    for (int i = 0; i < NUM_SYMMETRY_GROUPS; i++) {
+        ctx->sibling_boundaries[i] = NULL;
+    }
+    
     printf("[Sphere %d] Cache placement: theta=%.4f, cache_line=%u, numa_node=%u, cpu_core=%d\n",
            sphere_id, ctx->theta, ctx->cache_placement.cache_line,
            ctx->cache_placement.numa_node, ctx->cache_placement.cpu_core);
@@ -770,6 +778,15 @@ static void sphere_context_free(SphereTrainingContext* ctx) {
         crystalline_memory_destroy(ctx->crystalline_memory);
         ctx->crystalline_memory = NULL;
     }
+    
+    // PHASE 3: Destroy kissing boundaries
+    for (int i = 0; i < NUM_SYMMETRY_GROUPS; i++) {
+        if (ctx->sibling_boundaries[i]) {
+            crystalline_boundary_destroy(ctx->sibling_boundaries[i]);
+            ctx->sibling_boundaries[i] = NULL;
+        }
+    }
+    ctx->num_boundaries = 0;
     
     free(ctx->local_gradients);
     pthread_mutex_destroy(&ctx->lock);
@@ -934,6 +951,27 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
                  (ctx->gradient_segment_start + i) < ctx->gradient_segment_end &&
                  (ctx->gradient_segment_start + i) < ctx->gradient_size; i++) {
                 system->accumulated_gradients[ctx->gradient_segment_start + i] = segment_gradients[i];
+            }
+            
+            // PHASE 3: Share gradients across kissing boundaries with siblings
+            // This enables gradient communication between adjacent spheres
+            for (int b = 0; b < NUM_SYMMETRY_GROUPS; b++) {
+                KissingBoundary* boundary = ctx->sibling_boundaries[b];
+                if (boundary) {
+                    // Write our gradients to the boundary (lock-free)
+                    void* boundary_mem = crystalline_boundary_write(boundary, ctx->symmetry_group);
+                    if (boundary_mem) {
+                        // Copy a portion of our gradients to the boundary
+                        size_t boundary_gradient_count = boundary->boundary_size / sizeof(double);
+                        size_t copy_count = (boundary_gradient_count < num_gradients) ? 
+                                           boundary_gradient_count : num_gradients;
+                        
+                        memcpy(boundary_mem, segment_gradients, copy_count * sizeof(double));
+                        
+                        // Release the write lock
+                        crystalline_boundary_release(boundary);
+                    }
+                }
             }
         }
     } else {
@@ -2485,6 +2523,68 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
             printf("[Sphere %d -> Child %d] Clock position: ring=%u, position=%u, offset=%zu\n",
                    parent->sphere_id, child_id, child_clock_pos.ring, 
                    child_clock_pos.position, child_clock_pos.memory_offset);
+        }
+        
+        // PHASE 3: Create kissing boundaries between siblings
+        // Each child shares boundaries with its adjacent siblings (in 12-fold structure)
+        if (i > 0 && parent->children[i]->crystalline_memory && parent->children[i-1]->crystalline_memory) {
+            // Create boundary between this child and previous sibling
+            int prev_symmetry = parent->children[i-1]->symmetry_group;
+            int curr_symmetry = parent->children[i]->symmetry_group;
+            
+            // Calculate boundary size (shared gradient region between segments)
+            size_t boundary_size = (parent->gradient_size * sizeof(double)) / (NUM_SYMMETRY_GROUPS * 4);
+            
+            // Create boundary using crystalline memory API
+            // Note: We use the parent's crystalline memory block as the container
+            KissingBoundary* boundary = crystalline_boundary_create(
+                parent->crystalline_memory,  // Use parent's memory block
+                prev_symmetry,
+                curr_symmetry,
+                boundary_size
+            );
+            
+            if (boundary) {
+                // Store boundary in both siblings
+                parent->children[i]->sibling_boundaries[prev_symmetry] = boundary;
+                parent->children[i-1]->sibling_boundaries[curr_symmetry] = boundary;
+                parent->children[i]->num_boundaries++;
+                parent->children[i-1]->num_boundaries++;
+                
+                printf("[Sphere %d] Created kissing boundary between children %d (sym=%d) and %d (sym=%d)\n",
+                       parent->sphere_id, parent->children[i-1]->sphere_id, prev_symmetry,
+                       parent->children[i]->sphere_id, curr_symmetry);
+            } else {
+                fprintf(stderr, "[WARNING] Failed to create kissing boundary between children %d and %d\n",
+                        parent->children[i-1]->sphere_id, parent->children[i]->sphere_id);
+            }
+        }
+        
+        // PHASE 3: Create boundary between last and first child (complete the ring)
+        if (i == num_children - 1 && num_children > 1 && 
+            parent->children[0]->crystalline_memory && parent->children[i]->crystalline_memory) {
+            int first_symmetry = parent->children[0]->symmetry_group;
+            int last_symmetry = parent->children[i]->symmetry_group;
+            
+            size_t boundary_size = (parent->gradient_size * sizeof(double)) / (NUM_SYMMETRY_GROUPS * 4);
+            
+            KissingBoundary* boundary = crystalline_boundary_create(
+                parent->crystalline_memory,  // Use parent's memory block
+                last_symmetry,
+                first_symmetry,
+                boundary_size
+            );
+            
+            if (boundary) {
+                parent->children[i]->sibling_boundaries[first_symmetry] = boundary;
+                parent->children[0]->sibling_boundaries[last_symmetry] = boundary;
+                parent->children[i]->num_boundaries++;
+                parent->children[0]->num_boundaries++;
+                
+                printf("[Sphere %d] Created kissing boundary between children %d (sym=%d) and %d (sym=%d) - ring complete\n",
+                       parent->sphere_id, parent->children[i]->sphere_id, last_symmetry,
+                       parent->children[0]->sphere_id, first_symmetry);
+            }
         }
         
         // Create hierarchy node for child
