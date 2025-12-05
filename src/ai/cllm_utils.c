@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "../include/prime_math.h"
 #include "../include/prime_float_math.h"
 
 /**
@@ -318,8 +319,8 @@ int cllm_check_model_health(CLLMModel* model) {
     if (model->embeddings.embeddings) {
         uint32_t size = model->embeddings.vocab_size * model->embeddings.embedding_dim;
         for (uint32_t i = 0; i < size; i++) {
-            float val = model->embeddings.embeddings[i];
-            if (prime_isnanf((float)val) || prime_isinff((float)val)) {
+            double val = model->embeddings.embeddings[i];  // FIXED: Use double, not float
+            if (prime_isnan(val) || prime_isinf(val)) {  // FIXED: Use double versions
                 fprintf(stderr, "Warning: NaN/Inf in embeddings at index %u\n", i);
                 issues++;
                 if (issues >= 10) break;  // Limit output

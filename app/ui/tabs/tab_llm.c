@@ -478,35 +478,8 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     if (llm_ui.btn_clear) {
         crystalline_button_render(llm_ui.btn_clear, renderer);
     }
-    // Render model dropdown
-    if (llm_ui.model_dropdown) {
-        crystalline_dropdown_render(llm_ui.model_dropdown, renderer);
-    }
     
-
-    // Populate model dropdown if empty (after model_manager initializes)
-    static bool models_populated = false;
-    if (!models_populated && llm_ui.model_dropdown) {
-        extern uint32_t model_manager_count(void);
-        extern char* model_manager_get_name_at_index(uint32_t index);
-        
-        uint32_t model_count = model_manager_count();
-        if (model_count > 0) {
-            char** model_names = malloc(model_count * sizeof(char*));
-            if (model_names) {
-                for (uint32_t i = 0; i < model_count; i++) {
-                    model_names[i] = model_manager_get_name_at_index(i);
-                }
-                crystalline_dropdown_set_options(llm_ui.model_dropdown, model_names, (int)model_count);
-                printf("LLM MODEL DROPDOWN: Populated with %u models\n", model_count);
-                free(model_names);
-                models_populated = true;
-            }
-        }
-    }
-    
-
-    
+    // Render sliders BEFORE dropdown (so dropdown appears on top when expanded)
     if (llm_ui.slider_temperature) {
         crystalline_slider_render(llm_ui.slider_temperature, renderer);
     }
@@ -530,6 +503,35 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
     if (llm_ui.btn_new_thread) {
         crystalline_button_render(llm_ui.btn_new_thread, renderer);
     }
+    
+    // Populate model dropdown if empty (after model_manager initializes)
+    static bool models_populated = false;
+    if (!models_populated && llm_ui.model_dropdown) {
+        extern uint32_t model_manager_count(void);
+        extern char* model_manager_get_name_at_index(uint32_t index);
+        
+        uint32_t model_count = model_manager_count();
+        if (model_count > 0) {
+            char** model_names = malloc(model_count * sizeof(char*));
+            if (model_names) {
+                for (uint32_t i = 0; i < model_count; i++) {
+                    model_names[i] = model_manager_get_name_at_index(i);
+                }
+                crystalline_dropdown_set_options(llm_ui.model_dropdown, model_names, (int)model_count);
+                printf("LLM MODEL DROPDOWN: Populated with %u models\n", model_count);
+                free(model_names);
+                models_populated = true;
+            }
+        }
+    }
+    
+    
+    // Render model dropdown LAST (so it appears on top when expanded)
+
+    if (llm_ui.model_dropdown) {
+        crystalline_dropdown_render(llm_ui.model_dropdown, renderer);
+    }
+    
     
     // Draw labels for dropdown and sliders
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);

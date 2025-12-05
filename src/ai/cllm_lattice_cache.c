@@ -219,7 +219,7 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
     uint32_t offset = token_id * embedding_dim;
     
     // Check if already computed
-    if (!prime_isnanf(embeddings[offset])) return;
+    if (!prime_isnan(embeddings[offset])) return;  // FIXED: Use double version for double*
     
     // Compute all dimensions for this token
     for (uint32_t dim = 0; dim < embedding_dim; dim++) {

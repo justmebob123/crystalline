@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "../include/prime_math.h"  // FIXED: Need double versions (prime_isnan, prime_isinf)
 #include "../include/prime_float_math.h"
 
 // Check for NaN or Inf values in BigFixed array
@@ -25,9 +26,9 @@ bool cllm_check_numerical_stability(BigFixed** array, size_t size, const char* n
         
         // Convert to double for checking
         double val = big_fixed_to_double(array[i]);
-        if (prime_isnanf((float)val)) {
+        if (prime_isnan(val)) {  // FIXED: Use double version, not float
             nan_count++;
-        } else if (prime_isinff((float)val)) {
+        } else if (prime_isinf(val)) {  // FIXED: Use double version, not float
             inf_count++;
         }
     }
@@ -51,9 +52,9 @@ bool cllm_check_numerical_stability_double(const double* array, size_t size, con
     size_t inf_count = 0;
     
     for (size_t i = 0; i < size; i++) {
-        if (prime_isnanf((float)array[i])) {
+        if (prime_isnan(array[i])) {  // FIXED: Use double version for double*
             nan_count++;
-        } else if (prime_isinff((float)array[i])) {
+        } else if (prime_isinf(array[i])) {  // FIXED: Use double version for double*
             inf_count++;
         }
     }

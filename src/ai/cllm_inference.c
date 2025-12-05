@@ -85,7 +85,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
     double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
     
     // Lazy initialization: compute embedding on first access
-    if (prime_isnanf(embedding[0])) {
+    if (prime_isnan(embedding[0])) {  // FIXED: Use double version for double*
         extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
         cllm_compute_embedding_lazy(model, token_id);
     }
@@ -436,6 +436,14 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     
     // Copy double embedding to double hidden_states
     double* double_embedding = &model->embeddings.embeddings[last_token * embed_dim];
+    
+    // CRITICAL FIX: Check for NaN embeddings and trigger lazy initialization
+    if (prime_isnan(double_embedding[0])) {
+        fprintf(stderr, "Warning: Embedding for token %u is NaN, triggering lazy initialization\n", last_token);
+        extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
+        cllm_compute_embedding_lazy(model, last_token);
+    }
+    
     for (uint32_t i = 0; i < embed_dim; i++) {
         inference->hidden_states[i] = double_embedding[i];
     }
