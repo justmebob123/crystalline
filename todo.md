@@ -373,6 +373,66 @@ Full unabridged implementation of crystalline CLLM with:
 - [ ] Commit: "perf: Add Plimpton integration performance benchmarks and analysis"
 
 ## 🟣 PHASE 5: CYMATIC TIMING INTEGRATION (DAYS 16-18)
+
+**Note**: Cymatic frequencies already implemented in Phase 1, Day 3. Phase 5 focuses on timing synchronization.
+
+### Day 16 - Frequency-Based Synchronization
+
+#### Morning: Timing Constants & Utilities ✅
+- [x] Add timing period constants (nanoseconds) to cllm_cymatic_frequencies.h ✅
+- [x] Create timing utility functions (frequency/period conversions) ✅
+- [x] Add frequency-to-period conversions ✅
+- [x] Create unit tests for timing utilities (10 tests, all passing) ✅
+- [x] Build and verify (zero errors, zero warnings) ✅
+- [ ] Commit: "feat: Add cymatic timing constants and utilities"
+
+#### Afternoon: Cymatic Barriers
+- [ ] Create `include/ai/cllm_cymatic_sync.h` (NEW FILE)
+- [ ] Create `src/ai/cllm_cymatic_sync.c` (NEW FILE)
+- [ ] Implement CymaticBarrier structure
+- [ ] Implement frequency-based barrier synchronization
+- [ ] Add timing measurements and statistics
+- [ ] Create unit tests (barrier synchronization)
+- [ ] Benchmark synchronization overhead
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Implement cymatic frequency barriers"
+
+### Day 17 - Training Integration
+
+#### Morning: Work Distribution Timing
+- [ ] Integrate cymatic barriers with work distribution
+- [ ] Use 432 Hz for batch distribution timing
+- [ ] Add timing measurements to training loop
+- [ ] Create integration tests
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Integrate cymatic timing with work distribution"
+
+#### Afternoon: Epoch Synchronization
+- [ ] Implement Schumann resonance (7.83 Hz) epoch sync
+- [ ] Add epoch-level timing barriers
+- [ ] Integrate with gradient accumulation
+- [ ] Add performance metrics
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "feat: Implement Schumann resonance epoch synchronization"
+
+### Day 18 - Performance & Optimization
+
+#### Morning: Timing Optimization
+- [ ] Profile timing overhead
+- [ ] Optimize barrier implementation
+- [ ] Add adaptive timing (skip if too fast)
+- [ ] Create performance benchmarks
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "perf: Optimize cymatic timing synchronization"
+
+#### Afternoon: Documentation & Testing
+- [ ] Document cymatic timing system
+- [ ] Create comprehensive integration tests
+- [ ] Add usage examples
+- [ ] Performance analysis document
+- [ ] Build and verify (zero errors, zero warnings)
+- [ ] Commit: "docs: Complete cymatic timing documentation"
+
 ## 🟠 PHASE 6: ENTROPY OPTIMIZATION (DAYS 19-21)
 ## 🧪 PHASE 7: COMPREHENSIVE TESTING (DAYS 22-28)
 ## 📚 PHASE 8: DOCUMENTATION & CLEANUP (DAYS 29-30)

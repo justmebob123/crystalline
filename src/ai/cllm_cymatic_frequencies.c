@@ -232,3 +232,54 @@ double cymatic_schumann_harmonic(uint32_t harmonic_number) {
     
     return schumann_harmonics[harmonic_number - 1];
 }
+
+/**
+ * @brief Convert frequency to period in nanoseconds
+ */
+uint64_t cymatic_frequency_to_ns(double frequency) {
+    if (frequency <= 0.0) {
+        return 0;
+    }
+    
+    double period_seconds = 1.0 / frequency;
+    return (uint64_t)(period_seconds * NS_PER_SECOND);
+}
+
+/**
+ * @brief Convert period in nanoseconds to frequency
+ */
+double cymatic_ns_to_frequency(uint64_t period_ns) {
+    if (period_ns == 0) {
+        return 0.0;
+    }
+    
+    double period_seconds = (double)period_ns / NS_PER_SECOND;
+    return 1.0 / period_seconds;
+}
+
+/**
+ * @brief Get period in nanoseconds for a frequency type
+ */
+uint64_t cymatic_get_period_ns(CymaticFrequencyType type) {
+    switch (type) {
+        case CYMATIC_FREQ_432_HZ:
+            return NS_432_HZ;
+        case CYMATIC_FREQ_528_HZ:
+            return NS_528_HZ;
+        case CYMATIC_FREQ_SCHUMANN:
+            return NS_SCHUMANN;
+        case CYMATIC_FREQ_GAMMA:
+            return NS_GAMMA;
+        case CYMATIC_FREQ_ALPHA:
+            return NS_ALPHA;
+        case CYMATIC_FREQ_THETA:
+            return NS_THETA;
+        case CYMATIC_FREQ_DELTA:
+            return NS_DELTA;
+        case CYMATIC_FREQ_BETA:
+            return NS_BETA;
+        case CYMATIC_FREQ_CUSTOM:
+        default:
+            return 0;
+    }
+}

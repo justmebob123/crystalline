@@ -55,6 +55,31 @@ extern "C" {
 #define FREQ_REFERENCE      FREQ_432_HZ
 
 /**
+ * @brief Timing periods (in seconds)
+ */
+#define PERIOD_432_HZ       (1.0 / FREQ_432_HZ)     /**< 2.31 ms */
+#define PERIOD_528_HZ       (1.0 / FREQ_528_HZ)     /**< 1.89 ms */
+#define PERIOD_SCHUMANN     (1.0 / FREQ_SCHUMANN)   /**< 127.7 ms */
+#define PERIOD_GAMMA        (1.0 / FREQ_GAMMA)      /**< 25 ms */
+#define PERIOD_ALPHA        (1.0 / FREQ_ALPHA)      /**< 100 ms */
+#define PERIOD_THETA        (1.0 / FREQ_THETA)      /**< 166.7 ms */
+#define PERIOD_DELTA        (1.0 / FREQ_DELTA)      /**< 500 ms */
+#define PERIOD_BETA         (1.0 / FREQ_BETA)       /**< 50 ms */
+
+/**
+ * @brief Timing periods (in nanoseconds for high-precision timing)
+ */
+#define NS_PER_SECOND       1000000000ULL
+#define NS_432_HZ           ((uint64_t)(PERIOD_432_HZ * NS_PER_SECOND))     /**< 2,314,815 ns */
+#define NS_528_HZ           ((uint64_t)(PERIOD_528_HZ * NS_PER_SECOND))     /**< 1,893,939 ns */
+#define NS_SCHUMANN         ((uint64_t)(PERIOD_SCHUMANN * NS_PER_SECOND))   /**< 127,713,921 ns */
+#define NS_GAMMA            ((uint64_t)(PERIOD_GAMMA * NS_PER_SECOND))      /**< 25,000,000 ns */
+#define NS_ALPHA            ((uint64_t)(PERIOD_ALPHA * NS_PER_SECOND))      /**< 100,000,000 ns */
+#define NS_THETA            ((uint64_t)(PERIOD_THETA * NS_PER_SECOND))      /**< 166,666,667 ns */
+#define NS_DELTA            ((uint64_t)(PERIOD_DELTA * NS_PER_SECOND))      /**< 500,000,000 ns */
+#define NS_BETA             ((uint64_t)(PERIOD_BETA * NS_PER_SECOND))       /**< 50,000,000 ns */
+
+/**
  * @brief Cymatic frequency type enumeration
  */
 typedef enum {
@@ -172,6 +197,30 @@ const char* cymatic_frequency_name(CymaticFrequencyType type);
  * @return Schumann harmonic frequency
  */
 double cymatic_schumann_harmonic(uint32_t harmonic_number);
+
+/**
+ * @brief Convert frequency to period in nanoseconds
+ * 
+ * @param frequency Frequency in Hz
+ * @return Period in nanoseconds
+ */
+uint64_t cymatic_frequency_to_ns(double frequency);
+
+/**
+ * @brief Convert period in nanoseconds to frequency
+ * 
+ * @param period_ns Period in nanoseconds
+ * @return Frequency in Hz
+ */
+double cymatic_ns_to_frequency(uint64_t period_ns);
+
+/**
+ * @brief Get period in nanoseconds for a frequency type
+ * 
+ * @param type Frequency type
+ * @return Period in nanoseconds
+ */
+uint64_t cymatic_get_period_ns(CymaticFrequencyType type);
 
 #ifdef __cplusplus
 }
