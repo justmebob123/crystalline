@@ -35,7 +35,7 @@ typedef enum {
     STRATEGY_GROUPED,              // N < 12: grouped assignment
     STRATEGY_PRIORITY_BASED,       // N < 12: priority-based assignment
     STRATEGY_DYNAMIC_LOAD_BALANCED // Dynamic load balancing
-} AllocationStrategy;
+} ThreadMappingStrategy;
 
 /**
  * Symmetry Group Mapping
@@ -72,7 +72,7 @@ typedef struct {
     SymmetryGroupMapping* mappings; // Array of num_physical_cores mappings
     
     // Strategy
-    AllocationStrategy strategy;
+    ThreadMappingStrategy strategy;
     
     // Validation
     bool all_groups_covered;       // True if all 12 groups are assigned
