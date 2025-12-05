@@ -207,9 +207,9 @@ CrystallineTabLayout crystalline_tab_layout_create(CrystallineTabLayoutMode mode
     return layout;
 }
 
-CrystallineRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout) {
+CrystallineLayoutRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout) {
     if (!layout) {
-        return (CrystallineRect){0};
+        return (CrystallineLayoutRect){0};
     }
     
     // Apply padding
@@ -222,9 +222,9 @@ CrystallineRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout)
     );
 }
 
-CrystallineRect crystalline_tab_layout_get_control(CrystallineTabLayout* layout) {
+CrystallineLayoutRect crystalline_tab_layout_get_control(CrystallineTabLayout* layout) {
     if (!layout || !layout->uses_control_panel) {
-        return (CrystallineRect){0};
+        return (CrystallineLayoutRect){0};
     }
     
     return layout->control_area;
@@ -248,29 +248,29 @@ void crystalline_tab_layout_set_padding(CrystallineTabLayout* layout,
 void crystalline_tab_layout_split_horizontal(CrystallineTabLayout* layout,
                                               float ratio,
                                               float spacing,
-                                              CrystallineRect* left,
-                                              CrystallineRect* right) {
+                                              CrystallineLayoutRect* left,
+                                              CrystallineLayoutRect* right) {
     if (!layout || !left || !right) return;
     
-    CrystallineRect content = crystalline_tab_layout_get_content(layout);
+    CrystallineLayoutRect content = crystalline_tab_layout_get_content(layout);
     
     // Calculate widths
     float total_width = content.width - spacing;
     float left_width = total_width * ratio;
     float right_width = total_width - left_width;
     
-    // Create left rect
+    // Create left rect (TOP-LEFT coordinates)
     *left = crystalline_layout_rect_from_topleft(
-        content.center.x - content.width / 2.0f,
-        content.center.y - content.height / 2.0f,
+        content.x,
+        content.y,
         left_width,
         content.height
     );
     
-    // Create right rect
+    // Create right rect (TOP-LEFT coordinates)
     *right = crystalline_layout_rect_from_topleft(
-        content.center.x - content.width / 2.0f + left_width + spacing,
-        content.center.y - content.height / 2.0f,
+        content.x + left_width + spacing,
+        content.y,
         right_width,
         content.height
     );
@@ -279,29 +279,29 @@ void crystalline_tab_layout_split_horizontal(CrystallineTabLayout* layout,
 void crystalline_tab_layout_split_vertical(CrystallineTabLayout* layout,
                                             float ratio,
                                             float spacing,
-                                            CrystallineRect* top,
-                                            CrystallineRect* bottom) {
+                                            CrystallineLayoutRect* top,
+                                            CrystallineLayoutRect* bottom) {
     if (!layout || !top || !bottom) return;
     
-    CrystallineRect content = crystalline_tab_layout_get_content(layout);
+    CrystallineLayoutRect content = crystalline_tab_layout_get_content(layout);
     
     // Calculate heights
     float total_height = content.height - spacing;
     float top_height = total_height * ratio;
     float bottom_height = total_height - top_height;
     
-    // Create top rect
+    // Create top rect (TOP-LEFT coordinates)
     *top = crystalline_layout_rect_from_topleft(
-        content.center.x - content.width / 2.0f,
-        content.center.y - content.height / 2.0f,
+        content.x,
+        content.y,
         content.width,
         top_height
     );
     
-    // Create bottom rect
+    // Create bottom rect (TOP-LEFT coordinates)
     *bottom = crystalline_layout_rect_from_topleft(
-        content.center.x - content.width / 2.0f,
-        content.center.y - content.height / 2.0f + top_height + spacing,
+        content.x,
+        content.y + top_height + spacing,
         content.width,
         bottom_height
     );
@@ -309,16 +309,16 @@ void crystalline_tab_layout_split_vertical(CrystallineTabLayout* layout,
 
 void crystalline_tab_layout_split_golden_horizontal(CrystallineTabLayout* layout,
                                                      float spacing,
-                                                     CrystallineRect* left,
-                                                     CrystallineRect* right) {
+                                                     CrystallineLayoutRect* left,
+                                                     CrystallineLayoutRect* right) {
     crystalline_tab_layout_split_horizontal(layout, CRYSTALLINE_GOLDEN_RATIO, 
                                              spacing, left, right);
 }
 
 void crystalline_tab_layout_split_golden_vertical(CrystallineTabLayout* layout,
                                                    float spacing,
-                                                   CrystallineRect* top,
-                                                   CrystallineRect* bottom) {
+                                                   CrystallineLayoutRect* top,
+                                                   CrystallineLayoutRect* bottom) {
     crystalline_tab_layout_split_vertical(layout, CRYSTALLINE_GOLDEN_RATIO,
                                            spacing, top, bottom);
 }
@@ -327,48 +327,49 @@ void crystalline_tab_layout_split_golden_vertical(CrystallineTabLayout* layout,
  * Helper Functions
  */
 
-CrystallineRect crystalline_layout_rect_from_center(float center_x, float center_y,
-                                                     float width, float height) {
-    CrystallineRect rect;
-    rect.center.x = center_x;
-    rect.center.y = center_y;
+CrystallineLayoutRect crystalline_layout_rect_from_center(float center_x, float center_y,
+                                                           float width, float height) {
+    CrystallineLayoutRect rect;
+    rect.x = center_x - width / 2.0f;
+    rect.y = center_y - height / 2.0f;
     rect.width = width;
     rect.height = height;
     return rect;
 }
 
-CrystallineRect crystalline_layout_rect_from_topleft(float x, float y,
-                                                      float width, float height) {
-    CrystallineRect rect;
-    rect.center.x = x + width / 2.0f;
-    rect.center.y = y + height / 2.0f;
+CrystallineLayoutRect crystalline_layout_rect_from_topleft(float x, float y,
+                                                            float width, float height) {
+    CrystallineLayoutRect rect;
+    rect.x = x;
+    rect.y = y;
     rect.width = width;
     rect.height = height;
     return rect;
 }
 
-CrystallinePoint crystalline_layout_rect_center(CrystallineRect rect) {
-    return rect.center;
+CrystallinePoint crystalline_layout_rect_center(CrystallineLayoutRect rect) {
+    CrystallinePoint center;
+    center.x = rect.x + rect.width / 2.0f;
+    center.y = rect.y + rect.height / 2.0f;
+    return center;
 }
 
-CrystallineRect crystalline_layout_rect_inset(CrystallineRect rect,
-                                               float top, float bottom,
-                                               float left, float right) {
-    float new_width = rect.width - left - right;
-    float new_height = rect.height - top - bottom;
-    
-    // Calculate new center (accounting for asymmetric padding)
-    float center_x = rect.center.x + (right - left) / 2.0f;
-    float center_y = rect.center.y + (bottom - top) / 2.0f;
-    
-    return crystalline_layout_rect_from_center(center_x, center_y, new_width, new_height);
+CrystallineLayoutRect crystalline_layout_rect_inset(CrystallineLayoutRect rect,
+                                                     float top, float bottom,
+                                                     float left, float right) {
+    CrystallineLayoutRect inset;
+    inset.x = rect.x + left;
+    inset.y = rect.y + top;
+    inset.width = rect.width - left - right;
+    inset.height = rect.height - top - bottom;
+    return inset;
 }
 
-bool crystalline_layout_rect_contains(CrystallineRect rect, float x, float y) {
-    float left = rect.center.x - rect.width / 2.0f;
-    float right = rect.center.x + rect.width / 2.0f;
-    float top = rect.center.y - rect.height / 2.0f;
-    float bottom = rect.center.y + rect.height / 2.0f;
+bool crystalline_layout_rect_contains(CrystallineLayoutRect rect, float x, float y) {
+    float left = rect.x;
+    float right = rect.x + rect.width;
+    float top = rect.y;
+    float bottom = rect.y + rect.height;
     
     return (x >= left && x <= right && y >= top && y <= bottom);
 }

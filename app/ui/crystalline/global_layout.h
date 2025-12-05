@@ -106,10 +106,10 @@ typedef struct {
     CrystallineTabLayoutMode mode;
     
     // Content area (calculated based on mode)
-    CrystallineRect content_area;
+    CrystallineLayoutRect content_area;
     
     // Control panel area (if used)
-    CrystallineRect control_area;
+    CrystallineLayoutRect control_area;
     bool uses_control_panel;
     
     // Split ratios (for dividing content area)
@@ -172,10 +172,10 @@ CrystallinePoint crystalline_layout_rect_to_center(CrystallineLayoutRect rect);
 CrystallineTabLayout crystalline_tab_layout_create(CrystallineTabLayoutMode mode);
 
 // Get content area for tab
-CrystallineRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout);
+CrystallineLayoutRect crystalline_tab_layout_get_content(CrystallineTabLayout* layout);
 
 // Get control area for tab (if uses_control_panel is true)
-CrystallineRect crystalline_tab_layout_get_control(CrystallineTabLayout* layout);
+CrystallineLayoutRect crystalline_tab_layout_get_control(CrystallineTabLayout* layout);
 
 // Set padding for tab layout
 void crystalline_tab_layout_set_padding(CrystallineTabLayout* layout,
@@ -192,8 +192,8 @@ void crystalline_tab_layout_set_padding(CrystallineTabLayout* layout,
 void crystalline_tab_layout_split_horizontal(CrystallineTabLayout* layout,
                                               float ratio,
                                               float spacing,
-                                              CrystallineRect* left,
-                                              CrystallineRect* right);
+                                              CrystallineLayoutRect* left,
+                                              CrystallineLayoutRect* right);
 
 // Split content area vertically (top/bottom)
 // ratio: 0.0-1.0, percentage for top side
@@ -201,42 +201,42 @@ void crystalline_tab_layout_split_horizontal(CrystallineTabLayout* layout,
 void crystalline_tab_layout_split_vertical(CrystallineTabLayout* layout,
                                             float ratio,
                                             float spacing,
-                                            CrystallineRect* top,
-                                            CrystallineRect* bottom);
+                                            CrystallineLayoutRect* top,
+                                            CrystallineLayoutRect* bottom);
 
 // Split using golden ratio (0.618)
 void crystalline_tab_layout_split_golden_horizontal(CrystallineTabLayout* layout,
                                                      float spacing,
-                                                     CrystallineRect* left,
-                                                     CrystallineRect* right);
+                                                     CrystallineLayoutRect* left,
+                                                     CrystallineLayoutRect* right);
 
 void crystalline_tab_layout_split_golden_vertical(CrystallineTabLayout* layout,
                                                    float spacing,
-                                                   CrystallineRect* top,
-                                                   CrystallineRect* bottom);
+                                                   CrystallineLayoutRect* top,
+                                                   CrystallineLayoutRect* bottom);
 
 /*
  * Helper Functions
  */
 
 // Create rect from center point and dimensions
-CrystallineRect crystalline_layout_rect_from_center(float center_x, float center_y,
-                                                     float width, float height);
+CrystallineLayoutRect crystalline_layout_rect_from_center(float center_x, float center_y,
+                                                           float width, float height);
 
 // Create rect from top-left point and dimensions
-CrystallineRect crystalline_layout_rect_from_topleft(float x, float y,
-                                                      float width, float height);
+CrystallineLayoutRect crystalline_layout_rect_from_topleft(float x, float y,
+                                                            float width, float height);
 
 // Get center point of rect
-CrystallinePoint crystalline_layout_rect_center(CrystallineRect rect);
+CrystallinePoint crystalline_layout_rect_center(CrystallineLayoutRect rect);
 
 // Inset rect by padding
-CrystallineRect crystalline_layout_rect_inset(CrystallineRect rect,
-                                               float top, float bottom,
-                                               float left, float right);
+CrystallineLayoutRect crystalline_layout_rect_inset(CrystallineLayoutRect rect,
+                                                     float top, float bottom,
+                                                     float left, float right);
 
 // Check if point is inside rect
-bool crystalline_layout_rect_contains(CrystallineRect rect, float x, float y);
+bool crystalline_layout_rect_contains(CrystallineLayoutRect rect, float x, float y);
 
 /*
  * Layout Constants
