@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
+#include "prime_float_math.h"
 
 // Default epsilon for ratio validation
 #define DEFAULT_EPSILON 0.0001
@@ -156,7 +157,7 @@ bool ratios_sum_to_one(
     double epsilon
 ) {
     double sum = parent_ratio + child_ratio;
-    return fabs(sum - 1.0) < epsilon;
+    return prime_fabs(sum - 1.0) < epsilon;
 }
 
 bool validate_work_distribution(
@@ -208,7 +209,7 @@ bool validate_multi_child_distribution(
         sum += distribution->child_ratios[i];
     }
     
-    return fabs(sum - 1.0) < epsilon;
+    return prime_fabs(sum - 1.0) < epsilon;
 }
 
 // ============================================================================

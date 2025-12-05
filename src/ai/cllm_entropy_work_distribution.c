@@ -8,7 +8,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
+#include "prime_float_math.h"
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -151,7 +152,7 @@ WorkDistribution calculate_combined_work_distribution(
         dist.child_gets /= sum;
     }
     
-    dist.is_valid = (fabs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
+    dist.is_valid = (prime_fabs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
     
     return dist;
 }
@@ -391,7 +392,7 @@ double calculate_work_distribution_balance(const WorkDistributionPlan* plan) {
     variance /= plan->num_assignments;
     
     // Return coefficient of variation
-    double std_dev = sqrt(variance);
+    double std_dev = prime_sqrt(variance);
     return (mean > EPSILON) ? (std_dev / mean) : 0.0;
 }
 

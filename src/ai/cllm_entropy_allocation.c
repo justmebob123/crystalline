@@ -7,7 +7,8 @@
 #include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
+#include "prime_float_math.h"
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -342,7 +343,7 @@ double calculate_allocation_balance(const ThreadAllocationPlan* plan) {
     variance /= plan->active_dimensions;
     
     // Return coefficient of variation (normalized standard deviation)
-    double std_dev = sqrt(variance);
+    double std_dev = prime_sqrt(variance);
     return (mean > EPSILON) ? (std_dev / mean) : 0.0;
 }
 
@@ -416,7 +417,7 @@ double compare_allocation_plans(
         diff += delta * delta;
     }
     
-    return sqrt(diff);
+    return prime_sqrt(diff);
 }
 
 /**

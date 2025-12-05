@@ -6,7 +6,8 @@
 #include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
+#include "../../include/prime_float_math.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -52,7 +53,7 @@ static SDL_Color get_segment_color(int segment_id, float activity) {
     // Convert HSV to RGB (simplified)
     float h = hue / 60.0f;
     float c = activity;  // Chroma based on activity
-    float x = c * (1.0f - fabsf(fmodf(h, 2.0f) - 1.0f));
+    float x = c * (1.0f - prime_fabsf(prime_fmodf(h, 2.0f) - 1.0f));
     
     float r, g, b;
     if (h < 1.0f) {
@@ -252,10 +253,10 @@ void draw_crystalline_sphere(SDL_Renderer* renderer,
             int r = sphere->radius;
             
             // Draw radial lines
-            int x1 = cx + (int)(r * cosf(angle_start));
-            int y1 = cy + (int)(r * sinf(angle_start));
-            int x2 = cx + (int)(r * cosf(angle_end));
-            int y2 = cy + (int)(r * sinf(angle_end));
+            int x1 = cx + (int)(r * prime_cosf(angle_start));
+            int y1 = cy + (int)(r * prime_sinf(angle_start));
+            int x2 = cx + (int)(r * prime_cosf(angle_end));
+            int y2 = cy + (int)(r * prime_sinf(angle_end));
             
             SDL_SetRenderDrawColor(renderer, seg_color.r, seg_color.g, seg_color.b, 255);
             SDL_RenderDrawLine(renderer, cx, cy, x1, y1);
@@ -263,8 +264,8 @@ void draw_crystalline_sphere(SDL_Renderer* renderer,
             
             // Fill segment (simplified - just draw arc)
             for (float a = angle_start; a < angle_end; a += 0.05f) {
-                int x = cx + (int)(r * cosf(a));
-                int y = cy + (int)(r * sinf(a));
+                int x = cx + (int)(r * prime_cosf(a));
+                int y = cy + (int)(r * prime_sinf(a));
                 SDL_RenderDrawLine(renderer, cx, cy, x, y);
             }
         }
@@ -339,8 +340,8 @@ void draw_crystalline_visualization(SDL_Renderer* renderer,
             // Arrange in circle based on symmetry group
             float angle = (group * 30.0f - 90.0f) * M_PI / 180.0f;
             int radius_offset = arrangement_radius * level / 2;
-            sphere->x = center_x + (int)(radius_offset * cosf(angle));
-            sphere->y = center_y + (int)(radius_offset * sinf(angle));
+            sphere->x = center_x + (int)(radius_offset * prime_cosf(angle));
+            sphere->y = center_y + (int)(radius_offset * prime_sinf(angle));
             sphere->radius = sphere_radius;
         }
     }
