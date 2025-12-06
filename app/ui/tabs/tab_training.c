@@ -21,6 +21,7 @@
 #include "../../training_thread.h"
 #include "../../time_format.h"
 #include "cllm_training.h"
+#include "cllm_training_threaded.h"
 #include "cllm_model_registry.h"
 #include <stdio.h>
 #include <string.h>
@@ -200,6 +201,9 @@ static void scan_training_directory(const char* dir_path) {
  * Model Management Functions
  */
 
+// Forward declarations
+static void training_tab_unload_model(void);
+
 /**
  * Load a model for training
  */
@@ -362,7 +366,6 @@ static void* training_thread_func(void* arg) {
     printf("=== TRAINING THREAD STARTED ===\n");
     
     // Get threaded training system from training context
-    extern ThreadedTrainingSystem* threaded_get_system(CLLMTraining* training);
     ThreadedTrainingSystem* system = threaded_get_system(tab->training);
     
     if (!system) {
@@ -378,7 +381,6 @@ static void* training_thread_func(void* arg) {
         printf("Epoch %d/%d\n", epoch + 1, tab->stats.total_epochs);
         
         // Train one epoch using kissing spheres
-        extern float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int epoch);
         float epoch_loss = threaded_train_epoch_lockfree(system, epoch);
         
         // Update statistics
@@ -443,7 +445,6 @@ static bool training_tab_start_training(AppState* state) {
     strcpy(config.optimizer, "adam");
     
     // Initialize training
-    extern CLLMTraining* cllm_training_init(CLLMModel* model, const CLLMTrainingConfig* config);
     g_training_ui.tab_state.training = cllm_training_init(
         g_training_ui.tab_state.model, 
         &config
@@ -1038,7 +1039,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     extern void draw_text(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color);
     SDL_Color text_color = {220, 220, 220, 255};
     
-    int text_x = RENDER_OFFSET_X + 30;
+    (void)text_color;  // May be used later
     // REMOVED: Status bar at top was overlapped by sphere visualization
     // Epoch/loss metrics now displayed in Framework Status panel (right side)
     
