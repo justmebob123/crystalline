@@ -242,7 +242,7 @@ int cmd_train(int argc, char** argv) {
         .sequence_length = seq_len,
         .weight_decay = 0.01f,
         .gradient_clip = 1.0f,
-        .warmup_steps = 100,
+        .warmup_steps = 0,  // DISABLED FOR TESTING
         .save_interval = 10,
         .save_every = 5,  // Save checkpoint every 5 epochs
         .eval_interval = 100,

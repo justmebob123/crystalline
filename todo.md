@@ -1,167 +1,215 @@
-# CLLM Training & Inference - Master Plan
+# CLLM Training & Inference - COMPREHENSIVE TESTING PLAN
 
-## Current Status: 🔧 MAJOR FIX APPLIED - GRADIENT EXPLOSION DISCOVERED
-- Float→Double conversion: ✅ COMPLETED (entire pipeline now uses double)
-- NaN errors in inference: ✅ FIXED (no more NaN!)
-- Gradient explosion: ⚠️ CRITICAL ISSUE DISCOVERED (gradients → inf)
-- Training pipeline: ⚠️ NEEDS GRADIENT CLIPPING
-- Model quality: ⚠️ POOR (generates mostly token_0 due to gradient explosion)
+## Current Status: 🔬 DEPTH-17 BIDIRECTIONAL ANALYSIS IN PROGRESS
+- System rebuilt: ✅ CLEAN BUILD COMPLETED
+- Code pushed to GitHub: ✅ ALL FIXES COMMITTED
+- Float→Double conversion: ✅ VERIFIED (entire pipeline uses double)
+- Optimizer gradient direction: ✅ VERIFIED (all use -= correctly)
+- Next: FULL PIPELINE TESTING with valgrind/gdb/strace
 
-## Phase 1: Review Master Plan & Current State
-- [x] Read master plan from repository
-- [x] Review current codebase state
-- [x] Identify completed vs pending tasks
+## Phase 1: System Verification ✅
+- [x] Read master plan and status reports
+- [x] Verify code is pushed to GitHub
+- [x] Clean rebuild entire system
+- [x] Verify optimizer uses correct gradient direction (-)
+- [x] Check for float usage in critical paths
 
-## Phase 2: Code Integration & Cleanup
-- [x] Fixed critical memory management bug in cllm_free()
-- [x] Debugged inference segmentation fault
-- [x] Verified inference runs without crashes
-- [x] Fixed float/double type mismatches in weight initialization
-- [ ] Commit and push all fixes (GitHub auth issue - token expired)
-- [x] Examine application for full integration
+## Phase 2: Deep Code Analysis 🔄
+- [ ] Grep ALL float usage and document locations
+- [ ] Analyze SIMD code for double precision support
+- [ ] Check forward pass for type consistency
+- [ ] Check backward pass for type consistency
+- [ ] Verify loss computation uses double
+- [ ] Verify all layer operations use double
 
-## Phase 3: Full Dataset Training
-- [x] Identified training data: data/full_training/complete_training.txt (313 lines)
-- [x] Created training configuration (500 vocab, 128 dim, 4 layers, 8 heads)
-- [x] Started training with unified CLI tool
-- [x] Fixed NaN errors by retraining with proper initialization
-- [x] Run full training on complete dataset (5 epochs)
-- [x] Monitor training progress and metrics
-- [x] Save final trained model (checkpoints/final_model.cllm)
+## Phase 3: Training Pipeline Testing 🔄
+- [ ] Train tiny model (100 vocab, 32 dim, 1 layer, 2 epochs)
+- [ ] Monitor loss - MUST decrease
+- [ ] Check for NaN errors
+- [ ] Verify gradient magnitudes
+- [ ] Train small model (200 vocab, 64 dim, 2 layers, 5 epochs)
+- [ ] Train medium model (500 vocab, 128 dim, 4 layers, 10 epochs)
+- [ ] Train FULL model on all_training/full_corpus.txt (617 lines)
 
-## Phase 4: Inference Testing
-- [x] Fixed memory corruption in cllm_free() function
-- [x] Test inference with trained model - WORKING
-- [x] Used valgrind to identify memory issues
-- [x] Used gdb for debugging segfaults
-- [x] Verify output quality with properly trained model
-- [x] Test with various prompts and parameters
-- [x] Confirmed no NaN errors in inference
+## Phase 4: Valgrind Analysis 🔄
+- [ ] Run valgrind on tiny model training
+- [ ] Check for memory leaks
+- [ ] Check for invalid reads/writes
+- [ ] Check for uninitialized values
+- [ ] Run valgrind on full model training
+- [ ] Document all memory issues found
 
-## Phase 5: Performance Analysis
-- [x] Audit SIMD functions for numerical stability
-- [x] Run comprehensive memory analysis with Valgrind
-- [x] Identified and fixed memory corruption issues
-- [ ] Profile performance bottlenecks (deferred to next session)
-- [ ] Optimize critical paths (deferred to next session)
+## Phase 5: GDB Analysis 🔄
+- [ ] Set breakpoints in forward pass
+- [ ] Verify hidden_states values
+- [ ] Check attention computation
+- [ ] Check feedforward computation
+- [ ] Set breakpoints in backward pass
+- [ ] Verify gradient computation
+- [ ] Check optimizer weight updates
 
-## Critical Fixes Applied
+## Phase 6: Strace Analysis 🔄
+- [ ] Run strace on training
+- [ ] Check file I/O patterns
+- [ ] Check memory allocation patterns
+- [ ] Identify performance bottlenecks
+- [ ] Document system call usage
 
-### 1. Memory Management Bug (✅ FIXED)
-- **Issue**: cllm_free() was trying to free individual weight pointers that were part of a single allocation
-- **Solution**: Only free the main weights array, not individual pointers into it
-- **Result**: Inference now runs without segmentation faults
-- **Files Modified**: src/ai/cllm_format.c
+## Phase 7: Inference Testing 🔄
+- [ ] Test inference with trained model
+- [ ] Input: "The sky is blue"
+- [ ] Verify output is meaningful
+- [ ] Test with various prompts
+- [ ] Check token generation quality
+- [ ] Verify no NaN errors
+- [ ] Test temperature settings
+- [ ] Test top-k/top-p sampling
 
-### 2. Inference Pipeline (✅ WORKING)
-- Model loads successfully
-- Forward pass executes without errors
-- Token generation completes
-- Note: Generated tokens are all token_0, suggesting model needs proper training
+## Phase 8: End-to-End Validation 🔄
+- [ ] Train model on full dataset (617 lines)
+- [ ] Save model checkpoint
+- [ ] Load model and test inference
+- [ ] Verify model can answer: "Is the sky blue?"
+- [ ] Test with 10 different prompts
+- [ ] Document output quality
+- [ ] Measure perplexity
+- [ ] Calculate accuracy metrics
 
-### 3. Type Consistency (✅ FIXED)
-- **Issue**: Weight initialization used float values for double* arrays
-- **Solution**: Changed all weight initialization to use double precision
-- **Files Modified**: src/ai/cllm_create.c
-- **Changes**:
-  * Attention weights: float → double
-  * Feedforward weights: float → double
-  * Layer norm parameters: float → double
+## Critical Issues to Investigate
 
-## Issues Resolved
+### Issue 1: Loss Increases Despite Correct Optimizer
+**Status**: UNRESOLVED
+**Evidence**: Loss increases even with -= in optimizer
+**Hypothesis**: 
+1. Loss computation might be wrong
+2. Forward pass might have bugs
+3. Gradient signs might be inverted somewhere
+4. Learning rate might be too high
+**Action**: Deep analysis of loss computation and gradient flow
 
-### ✅ RESOLVED: Float/Double Precision Mismatch
-- **ROOT CAUSE**: Entire inference pipeline used float while model stored double weights
-- **IMPACT**: 
-  1. Constant precision loss on every forward/backward pass
-  2. NaN errors in inference
-  3. Numerical instability
-  4. Masked gradient explosion issues
-- **SOLUTION**: Converted ALL layer operations to double precision
-  1. cllm_layer_norm: float* → double*
-  2. cllm_feedforward: float* → double*
-  3. cllm_attention_forward: double throughout
-  4. cllm_apply_temperature: float* → double*
-  5. cllm_softmax: float* → double*
-  6. cllm_sample_top_k/top_p: float* → double*
-- **VERIFICATION**:
-  1. ✅ Build succeeds with no errors
-  2. ✅ Inference runs without NaN errors
-  3. ✅ Model loads and generates tokens
-  4. ✅ No more float<->double conversions
-- **FILES MODIFIED**:
-  - src/ai/cllm_inference.c
-  - include/cllm_inference.h
-  - tools/cllm_inference.c
+### Issue 2: Model Generates Mostly token_0
+**Status**: UNRESOLVED
+**Evidence**: Inference outputs are not meaningful
+**Hypothesis**:
+1. Model not trained properly (loss increases)
+2. Embeddings not initialized correctly
+3. Softmax temperature too low
+4. Sampling strategy broken
+**Action**: Test with properly trained model
 
-## Critical Issues Discovered
+### Issue 3: Float Usage in SIMD Code
+**Status**: IDENTIFIED
+**Evidence**: 623 float usages found in codebase
+**Locations**: cllm_simd_utils.c, cllm_lattice_embed.c
+**Impact**: May cause precision issues in some operations
+**Action**: Audit and convert to double where needed
 
-### 🔴 CRITICAL: Gradient Explosion in Training
-- **DISCOVERED**: Double precision exposed severe gradient explosion
-- **SYMPTOMS**:
-  - Epoch 6: max gradient = 1.93e+10
-  - Epoch 7: max gradient = 7.64e+29
-  - Epoch 8: max gradient = inf
-  - Epoch 9: max gradient = 0 (vanishing after explosion)
-- **ROOT CAUSE**: Attention backward pass produces unbounded gradients
-- **IMPACT**: Model cannot learn, generates mostly token_0
-- **SOLUTION REQUIRED**:
-  1. Implement gradient clipping (max_norm=1.0)
-  2. Fix attention backward pass
-  3. Add gradient monitoring
-  4. Adjust learning rate (0.001 → 0.0001)
-- **PRIORITY**: CRITICAL - Must fix before any further training
+## Testing Strategy
 
-## Files Modified/Created This Session
-1. src/ai/cllm_format.c - Fixed memory management in cllm_free()
-2. src/ai/cllm_create.c - Fixed type consistency in weight initialization
-3. test_inference_direct.c - Created inference test program
-4. check_model_embeddings.c - Created embeddings verification tool
-5. check_pos_encoding.c - Created positional encoding verification tool
-6. debug_inference_nan.c - Created inference debugging tool
-7. check_attention_weights.c - Created attention weights verification tool
-8. test_trained_inference.c - Created comprehensive inference test
-9. checkpoints/final_model.cllm - Retrained model with proper initialization
-10. training_fresh.log - Training log for fresh model
-11. INFERENCE_NAN_RESOLUTION.md - Detailed debugging report
-12. CURRENT_STATE_SUMMARY.md - System status summary
-13. todo.md - Updated progress tracking
+### Minimal Test (2 minutes)
+```bash
+./tools/cllm train \
+  --data data/tiny.txt \
+  --vocab-size 100 \
+  --embed-dim 32 \
+  --num-layers 1 \
+  --num-heads 2 \
+  --epochs 2 \
+  --learning-rate 0.0001 \
+  --output checkpoints/tiny_model.cllm
+```
 
-## Immediate Action Items (CRITICAL)
+### Small Test (5 minutes)
+```bash
+./tools/cllm train \
+  --data data/test.txt \
+  --vocab-size 200 \
+  --embed-dim 64 \
+  --num-layers 2 \
+  --num-heads 4 \
+  --epochs 5 \
+  --learning-rate 0.0001 \
+  --output checkpoints/small_model.cllm
+```
 
-### Priority 1: Implement Gradient Clipping ⚠️ CRITICAL
-- [ ] Add gradient norm computation
-- [ ] Implement gradient clipping (max_norm=1.0)
-- [ ] Add gradient monitoring/logging
-- [ ] Test with clipping enabled
+### Full Test (10-15 minutes)
+```bash
+./tools/cllm train \
+  --data data/all_training/full_corpus.txt \
+  --vocab-size 500 \
+  --embed-dim 128 \
+  --num-layers 4 \
+  --num-heads 8 \
+  --epochs 20 \
+  --learning-rate 0.0001 \
+  --output checkpoints/full_model.cllm
+```
 
-### Priority 2: Fix Attention Backward Pass ⚠️ CRITICAL
-- [ ] Audit attention gradient computation
-- [ ] Add numerical stability checks
-- [ ] Verify softmax gradient
-- [ ] Test gradient flow
+### Valgrind Test
+```bash
+valgrind --leak-check=full --show-leak-kinds=all \
+  --track-origins=yes --verbose \
+  ./tools/cllm train \
+  --data data/tiny.txt \
+  --vocab-size 100 \
+  --embed-dim 32 \
+  --num-layers 1 \
+  --num-heads 2 \
+  --epochs 2 \
+  --learning-rate 0.0001 \
+  --output checkpoints/valgrind_test.cllm
+```
 
-### Priority 3: Adjust Training Hyperparameters
-- [ ] Reduce learning rate (0.001 → 0.0001)
-- [ ] Implement learning rate warmup
-- [ ] Add learning rate decay
-- [ ] Test different batch sizes
+### GDB Test
+```bash
+gdb --args ./tools/cllm train \
+  --data data/tiny.txt \
+  --vocab-size 100 \
+  --embed-dim 32 \
+  --num-layers 1 \
+  --num-heads 2 \
+  --epochs 2 \
+  --learning-rate 0.0001 \
+  --output checkpoints/gdb_test.cllm
+```
 
-### Priority 4: Comprehensive Testing
-- [ ] Train with gradient clipping
-- [ ] Monitor gradient norms per layer
-- [ ] Verify no gradient explosion
-- [ ] Validate model quality
+## Success Criteria
 
-### Priority 5: Evaluation & Validation
-- [ ] Implement perplexity calculation
-- [ ] Add proper text decoding
-- [ ] Test with diverse prompts
-- [ ] Compare with baseline
+### Training Success
+- ✅ Loss DECREASES over epochs
+- ✅ No NaN errors
+- ✅ Gradients remain stable (< 1.0)
+- ✅ Model saves successfully
+- ✅ No memory leaks (valgrind clean)
 
-## Long-term Recommendations
-1. Expand training data
-2. Optimize SIMD operations for double precision
-3. Implement proper evaluation metrics
-4. Add model checkpointing
-5. Implement early stopping
+### Inference Success
+- ✅ Model loads without errors
+- ✅ Generates tokens (not all token_0)
+- ✅ Output is somewhat coherent
+- ✅ Can respond to simple prompts
+- ✅ No NaN in outputs
+
+### Quality Metrics
+- Perplexity < 100 (for tiny dataset)
+- At least 50% of outputs are non-token_0
+- Can generate 2-3 word responses
+- Responses relate to training data
+
+## Files to Monitor
+- src/ai/cllm_training.c - Training loop
+- src/ai/cllm_inference.c - Inference pipeline
+- src/ai/cllm_optimizer_wrapper.c - Optimizer
+- src/ai/cllm_create.c - Model initialization
+- src/ai/cllm_format.c - Model save/load
+
+## Next Actions (Priority Order)
+1. ⚠️ CRITICAL: Run minimal test and verify loss decreases
+2. ⚠️ CRITICAL: If loss still increases, deep dive into loss computation
+3. Run valgrind on minimal test
+4. Run gdb on minimal test
+5. Fix any issues found
+6. Scale up to small test
+7. Scale up to full test
+8. Test inference thoroughly
+9. Document all findings
+10. Commit and push final fixes

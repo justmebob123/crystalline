@@ -238,10 +238,9 @@ void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
     const float beta2 = 0.999f;
     const float epsilon = 1e-8f;
     
-    // Bias correction
-    training->current_step++;
-    float beta1_t = prime_powf(beta1, (float)training->current_step);
-    float beta2_t = prime_powf(beta2, (float)training->current_step);
+    // Bias correction (use current_step, don't increment here as it's incremented in training loop)
+    float beta1_t = prime_powf(beta1, (float)(training->current_step + 1));
+    float beta2_t = prime_powf(beta2, (float)(training->current_step + 1));
     float bias_correction1 = 1.0f - beta1_t;
     float bias_correction2 = 1.0f - beta2_t;
     
@@ -343,6 +342,29 @@ void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
             for (uint32_t i = 0; i < ff->output_dim; i++) {
                 double grad = training->ff_grads[layer].bias2[i];
                 ff->bias2[i] -= learning_rate * grad;
+            }
+        }
+    }
+    
+    // Update layer norm parameters
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        if (!training->ln_grads || !model->layer_norms) continue;
+        
+        CLLMLayerNorm* ln = &model->layer_norms[layer];
+        
+        // Gamma (scale) parameters
+        if (training->ln_grads[layer].gamma && ln->gamma) {
+            for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                double grad = training->ln_grads[layer].gamma[i];
+                ln->gamma[i] -= learning_rate * grad;
+            }
+        }
+        
+        // Beta (shift) parameters
+        if (training->ln_grads[layer].beta && ln->beta) {
+            for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                double grad = training->ln_grads[layer].beta[i];
+                ln->beta[i] -= learning_rate * grad;
             }
         }
     }
