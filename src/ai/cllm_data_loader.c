@@ -311,7 +311,7 @@ static void* vocab_sphere_worker(void* arg) {
     
     // Pre-allocate a large buffer for tokenization to reduce malloc contention
     // This is thread-local, so no contention between threads
-    size_t buffer_size = 1024 * 1024;  // 1MB buffer per thread
+    size_t buffer_size = 4 * 1024 * 1024;  // 4MB buffer per thread (handles up to 4MB documents)
     char* thread_buffer = (char*)malloc(buffer_size);
     if (!thread_buffer) {
         fprintf(stderr, "[Sphere %d] Failed to allocate thread buffer\n", ctx->symmetry_group);
@@ -326,10 +326,18 @@ static void* vocab_sphere_worker(void* arg) {
         // Copy document to thread-local buffer (avoid strdup malloc contention)
         size_t doc_len = strlen(doc);
         if (doc_len >= buffer_size) {
-            // Document too large for buffer - skip or reallocate
-            fprintf(stderr, "[Sphere %d] Document %zu too large (%zu bytes), skipping\n", 
-                    ctx->symmetry_group, i, doc_len);
-            continue;
+            // Document too large - reallocate buffer dynamically
+            size_t new_size = doc_len + 1024;  // Add 1KB padding
+            char* new_buffer = (char*)realloc(thread_buffer, new_size);
+            if (!new_buffer) {
+                fprintf(stderr, "[Sphere %d] Document %zu too large (%zu bytes), failed to reallocate, skipping\n", 
+                        ctx->symmetry_group, i, doc_len);
+                continue;
+            }
+            thread_buffer = new_buffer;
+            buffer_size = new_size;
+            fprintf(stderr, "[Sphere %d] Reallocated buffer to %zu bytes for document %zu\n",
+                    ctx->symmetry_group, buffer_size, i);
         }
         
         memcpy(thread_buffer, doc, doc_len + 1);

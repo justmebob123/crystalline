@@ -109,6 +109,23 @@ uint32_t cllm_add_token_threadsafe(CLLMTokenizer* tokenizer, const char* token) 
  * Consolidate all partitions into single vocabulary
  * Call this after parallel vocabulary building is complete
  */
+// Simple hash table for O(1) token lookup during consolidation
+typedef struct {
+    const char* token;
+    uint32_t vocab_idx;
+} TokenHashEntry;
+
+#define HASH_TABLE_SIZE 65536  // Power of 2 for fast modulo
+
+static uint32_t hash_token_for_lookup(const char* token) {
+    uint32_t hash = 5381;
+    int c;
+    while ((c = *token++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash % HASH_TABLE_SIZE;
+}
+
 void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer) {
     if (!tokenizer || tokenizer->consolidated) return;
     
@@ -123,10 +140,31 @@ void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer) {
     
     printf("Total tokens across partitions: %u\n", total_tokens);
     
-    // Reset main vocabulary
-    tokenizer->vocab_size = 5;  // Keep special tokens
+    // Create hash table for O(1) lookups
+    TokenHashEntry* hash_table = (TokenHashEntry*)calloc(HASH_TABLE_SIZE, sizeof(TokenHashEntry));
+    if (!hash_table) {
+        fprintf(stderr, "Failed to allocate hash table for consolidation\n");
+        return;
+    }
     
-    // Merge all partitions into main vocabulary
+    // Initialize hash table with special tokens
+    for (uint32_t i = 0; i < 5 && i < tokenizer->vocab_size; i++) {
+        if (tokenizer->vocab[i]) {
+            uint32_t hash = hash_token_for_lookup(tokenizer->vocab[i]);
+            // Linear probing for collisions
+            while (hash_table[hash].token != NULL) {
+                hash = (hash + 1) % HASH_TABLE_SIZE;
+            }
+            hash_table[hash].token = tokenizer->vocab[i];
+            hash_table[hash].vocab_idx = i;
+        }
+    }
+    
+    // Reset main vocabulary (keep special tokens)
+    tokenizer->vocab_size = 5;
+    
+    // Merge all partitions into main vocabulary using hash table
+    uint32_t collisions = 0;
     for (int partition = 0; partition < 12; partition++) {
         for (uint32_t i = 0; i < tokenizer->partition_sizes[partition]; i++) {
             const char* token = tokenizer->vocab_partitions[partition][i];
@@ -134,13 +172,19 @@ void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer) {
             
             if (!token) continue;
             
-            // Check if token already exists in main vocabulary
+            // Hash lookup - O(1) average case
+            uint32_t hash = hash_token_for_lookup(token);
+            uint32_t original_hash = hash;
             uint32_t existing_idx = TOKEN_UNK;
-            for (uint32_t j = 0; j < tokenizer->vocab_size; j++) {
-                if (tokenizer->vocab[j] && strcmp(tokenizer->vocab[j], token) == 0) {
-                    existing_idx = j;
+            
+            // Linear probing to find token or empty slot
+            while (hash_table[hash].token != NULL) {
+                if (strcmp(hash_table[hash].token, token) == 0) {
+                    existing_idx = hash_table[hash].vocab_idx;
                     break;
                 }
+                hash = (hash + 1) % HASH_TABLE_SIZE;
+                if (hash == original_hash) break;  // Table full
             }
             
             if (existing_idx != TOKEN_UNK) {
@@ -150,13 +194,30 @@ void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer) {
                 // New token - add to main vocabulary
                 if (tokenizer->vocab_size < tokenizer->max_vocab_size) {
                     tokenizer->vocab[tokenizer->vocab_size] = strdup(token);
+                    if (!tokenizer->vocab[tokenizer->vocab_size]) {
+                        fprintf(stderr, "Failed to allocate token during consolidation\n");
+                        continue;
+                    }
                     tokenizer->token_counts[tokenizer->vocab_size] = count;
+                    
+                    // Add to hash table
+                    hash = hash_token_for_lookup(token);
+                    while (hash_table[hash].token != NULL) {
+                        hash = (hash + 1) % HASH_TABLE_SIZE;
+                        collisions++;
+                    }
+                    hash_table[hash].token = tokenizer->vocab[tokenizer->vocab_size];
+                    hash_table[hash].vocab_idx = tokenizer->vocab_size;
+                    
                     tokenizer->vocab_size++;
                 }
             }
         }
     }
     
+    free(hash_table);
+    
     tokenizer->consolidated = 1;
-    printf("Consolidated vocabulary: %u unique tokens\n", tokenizer->vocab_size);
+    printf("Consolidated vocabulary: %u unique tokens (hash collisions: %u)\n", 
+           tokenizer->vocab_size, collisions);
 }
