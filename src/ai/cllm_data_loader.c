@@ -486,39 +486,189 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
     
     printf("Creating training dataset...\n");
     
-    // Tokenize all documents
-    for (size_t i = 0; i < loader->num_documents; i++) {
-        uint32_t num_tokens;
-        uint32_t* doc_tokens = cllm_tokenizer_encode(loader->tokenizer, 
-                                                     loader->documents[i], 
-                                                     &num_tokens);
+    // Determine number of threads (up to 12 for 12-fold symmetry)
+    int num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_cpus < 1) num_cpus = 1;
+    if (num_cpus > 12) num_cpus = 12;
+    
+    // Check if parallel processing is worthwhile
+    if (loader->num_documents < 100 || num_cpus == 1) {
+        // Single-threaded for small datasets
+        printf("Using single-threaded tokenization (%zu documents)\n", loader->num_documents);
         
-        if (doc_tokens) {
-            // Expand capacity if needed
-            while (dataset->num_tokens + num_tokens > dataset->capacity) {
-                dataset->capacity *= 2;
-                uint32_t* new_tokens = (uint32_t*)realloc(dataset->tokens,
-                                                          dataset->capacity * sizeof(uint32_t));
-                if (!new_tokens) {
-                    free(doc_tokens);
-                    free(dataset->tokens);
-                    free(dataset);
-                    return NULL;
+        for (size_t i = 0; i < loader->num_documents; i++) {
+            uint32_t num_tokens;
+            uint32_t* doc_tokens = cllm_tokenizer_encode(loader->tokenizer, 
+                                                         loader->documents[i], 
+                                                         &num_tokens);
+            
+            if (doc_tokens) {
+                // Expand capacity if needed
+                while (dataset->num_tokens + num_tokens > dataset->capacity) {
+                    dataset->capacity *= 2;
+                    uint32_t* new_tokens = (uint32_t*)realloc(dataset->tokens,
+                                                              dataset->capacity * sizeof(uint32_t));
+                    if (!new_tokens) {
+                        free(doc_tokens);
+                        free(dataset->tokens);
+                        free(dataset);
+                        return NULL;
+                    }
+                    dataset->tokens = new_tokens;
                 }
-                dataset->tokens = new_tokens;
+                
+                // Copy tokens
+                memcpy(dataset->tokens + dataset->num_tokens, doc_tokens, 
+                       num_tokens * sizeof(uint32_t));
+                dataset->num_tokens += num_tokens;
+                
+                free(doc_tokens);
             }
             
-            // Copy tokens
-            memcpy(dataset->tokens + dataset->num_tokens, doc_tokens, 
-                   num_tokens * sizeof(uint32_t));
-            dataset->num_tokens += num_tokens;
-            
-            free(doc_tokens);
+            if ((i + 1) % 100 == 0) {
+                printf("  Processed %zu/%zu documents\n", i + 1, loader->num_documents);
+            }
+        }
+    } else {
+        // Parallel tokenization using 12-fold symmetry
+        printf("Using %d-thread parallel tokenization (%zu documents)\n", num_cpus, loader->num_documents);
+        
+        // Create per-thread token buffers
+        typedef struct {
+            uint32_t* tokens;
+            size_t num_tokens;
+            size_t capacity;
+        } ThreadTokenBuffer;
+        
+        ThreadTokenBuffer* thread_buffers = (ThreadTokenBuffer*)calloc(num_cpus, sizeof(ThreadTokenBuffer));
+        if (!thread_buffers) {
+            free(dataset->tokens);
+            free(dataset);
+            return NULL;
         }
         
-        if ((i + 1) % 100 == 0) {
-            printf("  Processed %zu/%zu documents\n", i + 1, loader->num_documents);
+        // Initialize thread buffers
+        for (int t = 0; t < num_cpus; t++) {
+            thread_buffers[t].capacity = loader->total_chars / (4 * num_cpus);
+            thread_buffers[t].tokens = (uint32_t*)malloc(thread_buffers[t].capacity * sizeof(uint32_t));
+            if (!thread_buffers[t].tokens) {
+                for (int j = 0; j < t; j++) free(thread_buffers[j].tokens);
+                free(thread_buffers);
+                free(dataset->tokens);
+                free(dataset);
+                return NULL;
+            }
+            thread_buffers[t].num_tokens = 0;
         }
+        
+        // Thread worker context
+        typedef struct {
+            CLLMDataLoader* loader;
+            ThreadTokenBuffer* buffer;
+            size_t start_doc;
+            size_t end_doc;
+            int thread_id;
+            _Atomic size_t* progress_counter;
+        } TokenizeWorkerContext;
+        
+        _Atomic size_t progress_counter = 0;
+        pthread_t* threads = (pthread_t*)malloc(num_cpus * sizeof(pthread_t));
+        TokenizeWorkerContext* contexts = (TokenizeWorkerContext*)malloc(num_cpus * sizeof(TokenizeWorkerContext));
+        
+        // Worker function
+        void* tokenize_worker(void* arg) {
+            TokenizeWorkerContext* ctx = (TokenizeWorkerContext*)arg;
+            
+            for (size_t i = ctx->start_doc; i < ctx->end_doc; i++) {
+                uint32_t num_tokens;
+                uint32_t* doc_tokens = cllm_tokenizer_encode(ctx->loader->tokenizer,
+                                                             ctx->loader->documents[i],
+                                                             &num_tokens);
+                
+                if (doc_tokens) {
+                    // Expand buffer if needed
+                    while (ctx->buffer->num_tokens + num_tokens > ctx->buffer->capacity) {
+                        ctx->buffer->capacity *= 2;
+                        uint32_t* new_tokens = (uint32_t*)realloc(ctx->buffer->tokens,
+                                                                  ctx->buffer->capacity * sizeof(uint32_t));
+                        if (!new_tokens) {
+                            free(doc_tokens);
+                            return NULL;
+                        }
+                        ctx->buffer->tokens = new_tokens;
+                    }
+                    
+                    // Copy tokens to thread buffer
+                    memcpy(ctx->buffer->tokens + ctx->buffer->num_tokens, doc_tokens,
+                           num_tokens * sizeof(uint32_t));
+                    ctx->buffer->num_tokens += num_tokens;
+                    
+                    free(doc_tokens);
+                }
+                
+                // Update progress
+                size_t current = atomic_fetch_add(ctx->progress_counter, 1) + 1;
+                if (current % 100 == 0) {
+                    printf("  Processed %zu/%zu documents\r", current, ctx->loader->num_documents);
+                    fflush(stdout);
+                }
+            }
+            
+            return NULL;
+        }
+        
+        // Launch threads
+        size_t docs_per_thread = loader->num_documents / num_cpus;
+        for (int t = 0; t < num_cpus; t++) {
+            contexts[t].loader = loader;
+            contexts[t].buffer = &thread_buffers[t];
+            contexts[t].start_doc = t * docs_per_thread;
+            contexts[t].end_doc = (t == num_cpus - 1) ? loader->num_documents : (t + 1) * docs_per_thread;
+            contexts[t].thread_id = t;
+            contexts[t].progress_counter = &progress_counter;
+            
+            pthread_create(&threads[t], NULL, tokenize_worker, &contexts[t]);
+        }
+        
+        // Wait for completion
+        for (int t = 0; t < num_cpus; t++) {
+            pthread_join(threads[t], NULL);
+        }
+        printf("\n");
+        
+        // Merge thread buffers into final dataset
+        printf("Merging tokenized data from %d threads...\n", num_cpus);
+        
+        // Calculate total tokens
+        size_t total_tokens = 0;
+        for (int t = 0; t < num_cpus; t++) {
+            total_tokens += thread_buffers[t].num_tokens;
+        }
+        
+        // Allocate final buffer
+        free(dataset->tokens);
+        dataset->tokens = (uint32_t*)malloc(total_tokens * sizeof(uint32_t));
+        if (!dataset->tokens) {
+            for (int t = 0; t < num_cpus; t++) free(thread_buffers[t].tokens);
+            free(thread_buffers);
+            free(threads);
+            free(contexts);
+            free(dataset);
+            return NULL;
+        }
+        
+        // Copy from thread buffers
+        dataset->num_tokens = 0;
+        for (int t = 0; t < num_cpus; t++) {
+            memcpy(dataset->tokens + dataset->num_tokens, thread_buffers[t].tokens,
+                   thread_buffers[t].num_tokens * sizeof(uint32_t));
+            dataset->num_tokens += thread_buffers[t].num_tokens;
+            free(thread_buffers[t].tokens);
+        }
+        
+        free(thread_buffers);
+        free(threads);
+        free(contexts);
     }
     
     printf("Dataset created: %zu tokens\n", dataset->num_tokens);
