@@ -317,6 +317,9 @@ static bool training_tab_save_model(void) {
     return true;
 }
 
+// Forward declaration
+static void training_tab_stop_training(void);
+
 /**
  * Unload the current model
  */
@@ -325,10 +328,10 @@ static void training_tab_unload_model(void) {
         return;
     }
     
-    // Stop training if active (will be implemented in Part C)
-    // if (g_training_ui.tab_state.is_training) {
-    //     training_tab_stop_training();
-    // }
+    // Stop training if active
+    if (g_training_ui.tab_state.is_training) {
+        training_tab_stop_training();
+    }
     
     // Free model
     if (g_training_ui.tab_state.model) {
@@ -344,6 +347,179 @@ static void training_tab_unload_model(void) {
     g_training_ui.tab_state.model_path[0] = '\0';
     
     printf("✓ Model unloaded\n");
+}
+
+/**
+ * Training Functions
+ */
+
+/**
+ * Training thread function
+ */
+static void* training_thread_func(void* arg) {
+    TrainingTabState* tab = (TrainingTabState*)arg;
+    
+    printf("=== TRAINING THREAD STARTED ===\n");
+    
+    // Get threaded training system from training context
+    extern ThreadedTrainingSystem* threaded_get_system(CLLMTraining* training);
+    ThreadedTrainingSystem* system = threaded_get_system(tab->training);
+    
+    if (!system) {
+        fprintf(stderr, "ERROR: Failed to get threaded training system\n");
+        tab->is_training = false;
+        return NULL;
+    }
+    
+    // Training loop
+    for (int epoch = 0; epoch < tab->stats.total_epochs && !tab->should_stop; epoch++) {
+        tab->stats.current_epoch = epoch + 1;
+        
+        printf("Epoch %d/%d\n", epoch + 1, tab->stats.total_epochs);
+        
+        // Train one epoch using kissing spheres
+        extern float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int epoch);
+        float epoch_loss = threaded_train_epoch_lockfree(system, epoch);
+        
+        // Update statistics
+        tab->stats.current_loss = epoch_loss;
+        if (epoch == 0 || epoch_loss < tab->stats.best_loss) {
+            tab->stats.best_loss = epoch_loss;
+        }
+        tab->stats.last_update_time = time(NULL);
+        
+        printf("Epoch %d/%d - Loss: %.4f\n", 
+               epoch + 1, tab->stats.total_epochs, epoch_loss);
+        
+        // Auto-save every 5 epochs
+        if ((epoch + 1) % 5 == 0) {
+            training_tab_save_model();
+        }
+    }
+    
+    // Final save
+    training_tab_save_model();
+    
+    // Cleanup
+    tab->is_training = false;
+    printf("✓ Training thread completed\n");
+    
+    return NULL;
+}
+
+/**
+ * Start training
+ */
+static bool training_tab_start_training(AppState* state) {
+    if (!g_training_ui.tab_state.model_loaded) {
+        fprintf(stderr, "No model loaded\n");
+        return false;
+    }
+    
+    if (g_training_ui.tab_state.is_training) {
+        fprintf(stderr, "Training already in progress\n");
+        return false;
+    }
+    
+    // Create training configuration
+    CLLMTrainingConfig config = {
+        .num_epochs = state->training_epochs,
+        .batch_size = state->training_batch_size,
+        .sequence_length = state->training_sequence_length,
+        .learning_rate = state->training_learning_rate,
+        .weight_decay = 0.01f,
+        .gradient_clip = 1.0f,
+        .warmup_steps = 100,
+        .save_every = 5,
+        .eval_interval = 100,
+        .max_steps = 10000,
+        .gradient_accumulation_steps = 8,
+        .use_mixed_precision = 1,
+        .loss_scale = 1024.0f,
+        .loss_scale_growth = 2.0f,
+        .loss_scale_backoff = 0.5f,
+        .loss_scale_window = 2000
+    };
+    strcpy(config.optimizer, "adam");
+    
+    // Initialize training
+    extern CLLMTraining* cllm_training_init(CLLMModel* model, const CLLMTrainingConfig* config);
+    g_training_ui.tab_state.training = cllm_training_init(
+        g_training_ui.tab_state.model, 
+        &config
+    );
+    
+    if (!g_training_ui.tab_state.training) {
+        fprintf(stderr, "Failed to initialize training\n");
+        return false;
+    }
+    
+    // Load training data
+    extern int cllm_load_training_data(CLLMTraining* training, const char* filepath);
+    for (int i = 0; i < g_training_ui.file_count; i++) {
+        if (g_training_ui.files[i].selected) {
+            cllm_load_training_data(
+                g_training_ui.tab_state.training,
+                g_training_ui.files[i].filepath
+            );
+        }
+    }
+    
+    // Initialize statistics
+    g_training_ui.tab_state.stats.current_epoch = 0;
+    g_training_ui.tab_state.stats.total_epochs = config.num_epochs;
+    g_training_ui.tab_state.stats.current_loss = 0.0f;
+    g_training_ui.tab_state.stats.best_loss = 999999.0f;
+    g_training_ui.tab_state.stats.batches_processed = 0;
+    g_training_ui.tab_state.stats.tokens_processed = 0;
+    g_training_ui.tab_state.stats.training_start_time = time(NULL);
+    memset(g_training_ui.tab_state.stats.sphere_batches, 0, sizeof(g_training_ui.tab_state.stats.sphere_batches));
+    memset(g_training_ui.tab_state.stats.sphere_losses, 0, sizeof(g_training_ui.tab_state.stats.sphere_losses));
+    
+    // Start training thread
+    g_training_ui.tab_state.is_training = true;
+    g_training_ui.tab_state.should_stop = false;
+    
+    if (pthread_create(&g_training_ui.tab_state.training_thread, NULL,
+                      training_thread_func, &g_training_ui.tab_state) != 0) {
+        fprintf(stderr, "Failed to create training thread\n");
+        extern void cllm_training_free(CLLMTraining* training);
+        cllm_training_free(g_training_ui.tab_state.training);
+        g_training_ui.tab_state.training = NULL;
+        g_training_ui.tab_state.is_training = false;
+        return false;
+    }
+    
+    printf("✓ Training started\n");
+    return true;
+}
+
+/**
+ * Stop training
+ */
+static void training_tab_stop_training(void) {
+    if (!g_training_ui.tab_state.is_training) {
+        return;
+    }
+    
+    printf("Stopping training...\n");
+    
+    // Signal thread to stop
+    g_training_ui.tab_state.should_stop = true;
+    
+    // Wait for thread to finish
+    pthread_join(g_training_ui.tab_state.training_thread, NULL);
+    
+    // Cleanup training
+    if (g_training_ui.tab_state.training) {
+        extern void cllm_training_free(CLLMTraining* training);
+        cllm_training_free(g_training_ui.tab_state.training);
+        g_training_ui.tab_state.training = NULL;
+    }
+    
+    g_training_ui.tab_state.is_training = false;
+    
+    printf("✓ Training stopped\n");
 }
 
 /**
