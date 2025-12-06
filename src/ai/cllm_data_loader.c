@@ -286,8 +286,15 @@ typedef struct {
     pthread_mutex_t* vocab_mutex;
 } VocabBuildTask;
 
+#define TOKEN_BATCH_SIZE 1000
+
 static void* vocab_build_worker(void* arg) {
     VocabBuildTask* task = (VocabBuildTask*)arg;
+    
+    // Allocate token buffer for batching (reduces lock contention)
+    char** token_batch = (char**)malloc(TOKEN_BATCH_SIZE * sizeof(char*));
+    if (!token_batch) return NULL;
+    size_t batch_count = 0;
     
     // Process assigned documents
     for (size_t i = task->start_idx; i < task->end_idx; i++) {
@@ -305,10 +312,24 @@ static void* vocab_build_worker(void* arg) {
                 *p = tolower(*p);
             }
             
-            // Add to vocabulary (thread-safe)
-            pthread_mutex_lock(task->vocab_mutex);
-            cllm_add_token(task->tokenizer, token);
-            pthread_mutex_unlock(task->vocab_mutex);
+            // Add to batch
+            token_batch[batch_count] = strdup(token);
+            if (!token_batch[batch_count]) {
+                free(text_copy);
+                goto cleanup;
+            }
+            batch_count++;
+            
+            // Flush batch when full (coarse-grained locking)
+            if (batch_count >= TOKEN_BATCH_SIZE) {
+                pthread_mutex_lock(task->vocab_mutex);
+                for (size_t j = 0; j < batch_count; j++) {
+                    cllm_add_token(task->tokenizer, token_batch[j]);
+                    free(token_batch[j]);
+                }
+                pthread_mutex_unlock(task->vocab_mutex);
+                batch_count = 0;
+            }
             
             token = strtok(NULL, " \t\n\r");
         }
@@ -316,6 +337,18 @@ static void* vocab_build_worker(void* arg) {
         free(text_copy);
     }
     
+cleanup:
+    // Flush remaining tokens
+    if (batch_count > 0) {
+        pthread_mutex_lock(task->vocab_mutex);
+        for (size_t j = 0; j < batch_count; j++) {
+            cllm_add_token(task->tokenizer, token_batch[j]);
+            free(token_batch[j]);
+        }
+        pthread_mutex_unlock(task->vocab_mutex);
+    }
+    
+    free(token_batch);
     return NULL;
 }
 
