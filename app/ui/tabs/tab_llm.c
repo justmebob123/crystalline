@@ -18,7 +18,7 @@
 #include "../crystalline/geometry.h"
 #include "../button_sizes.h"
 #include "../../cllm_integration.h"
-#include "../../../include/cllm_model_manager.h"
+#include "../../../include/cllm_model_registry.h"
 #include "../../../include/cllm_utils.h"
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +38,33 @@ typedef struct {
 static ChatMessage chat_history[MAX_CHAT_MESSAGES];
 static int chat_message_count = 0;
 
-
+// LLM Tab State - Owns its model independently
+typedef struct {
+    // Model ownership (OWNED BY THIS TAB)
+    CLLMModel* model;                // NULL when not loaded
+    char model_path[512];
+    char model_name[256];
+    bool model_loaded;
+    
+    // Inference state
+    bool is_generating;
+    pthread_t inference_thread;
+    bool should_stop;
+    
+    // Inference parameters
+    float temperature;
+    int max_tokens;
+    int top_k;
+    float top_p;
+    
+    // Inference statistics
+    struct {
+        uint64_t total_tokens_generated;
+        uint64_t total_inferences;
+        float avg_tokens_per_second;
+        time_t last_inference_time;
+    } stats;
+} LLMTabState;
 
 // UI State - Pure Crystalline UI
 static struct {
@@ -61,11 +87,92 @@ static struct {
     
     // State
     bool initialized;
-    bool is_generating;
     char selected_model[256];
-    char active_model_name[256];  // Track which model we have a read lock on
+    
+    // NEW: LLM tab state (owns model independently)
+    LLMTabState tab_state;
     
 } llm_ui = {0};
+
+/**
+ * Model Management Functions
+ */
+
+// Forward declarations
+static void llm_tab_unload_model(void);
+
+/**
+ * Load a model for inference
+ */
+static bool llm_tab_load_model(const char* model_name) {
+    if (!model_name || !model_name[0]) {
+        fprintf(stderr, "No model name provided\n");
+        return false;
+    }
+    
+    // Unload existing model if any
+    llm_tab_unload_model();
+    
+    // Build model path
+    char model_path[512];
+    extern bool model_registry_get_path(const char* name, char* path_out);
+    if (!model_registry_get_path(model_name, model_path)) {
+        fprintf(stderr, "Failed to get path for model: %s\n", model_name);
+        return false;
+    }
+    
+    // Load model
+    printf("Loading model for inference: %s\n", model_path);
+    extern CLLMModel* cllm_read_model(const char* path);
+    CLLMModel* model = cllm_read_model(model_path);
+    if (!model) {
+        fprintf(stderr, "Failed to load model: %s\n", model_path);
+        return false;
+    }
+    
+    // Store in tab state
+    llm_ui.tab_state.model = model;
+    snprintf(llm_ui.tab_state.model_path, 512, "%s", model_path);
+    snprintf(llm_ui.tab_state.model_name, 256, "%s", model_name);
+    llm_ui.tab_state.model_loaded = true;
+    
+    printf("✓ Model loaded for inference: %s (%zu vocab, %zu dim, %u layers)\n",
+           model_name, model->vocab_size, model->embedding_dim, model->num_layers);
+    
+    return true;
+}
+
+/**
+ * Unload the current model
+ */
+static void llm_tab_unload_model(void) {
+    if (!llm_ui.tab_state.model_loaded) {
+        return;
+    }
+    
+    // Stop generation if active
+    if (llm_ui.tab_state.is_generating) {
+        llm_ui.tab_state.should_stop = true;
+        if (llm_ui.tab_state.inference_thread) {
+            pthread_join(llm_ui.tab_state.inference_thread, NULL);
+        }
+    }
+    
+    // Free model
+    if (llm_ui.tab_state.model) {
+        printf("Unloading model: %s\n", llm_ui.tab_state.model_name);
+        extern void cllm_free_model(CLLMModel* model);
+        cllm_free_model(llm_ui.tab_state.model);
+        llm_ui.tab_state.model = NULL;
+    }
+    
+    // Clear state
+    llm_ui.tab_state.model_loaded = false;
+    llm_ui.tab_state.model_name[0] = '\0';
+    llm_ui.tab_state.model_path[0] = '\0';
+    
+    printf("✓ Model unloaded\n");
+}
 
 /**
  * Add message to chat history
@@ -112,9 +219,9 @@ static void on_model_selected(int index, void* data) {
     AppState* state = (AppState*)data;
     if (!state || !llm_ui.model_dropdown) return;
     
-    // Get selected model name from model_manager
-    extern char* model_manager_get_name_at_index(uint32_t index);
-    char* model_name = model_manager_get_name_at_index((uint32_t)index);
+    // Get selected model name from model registry
+    const ModelMetadata* metadata = model_registry_get_at_index((uint32_t)index);
+    const char* model_name = metadata ? metadata->name : NULL;
     if (model_name) {
         strncpy(llm_ui.selected_model, model_name, sizeof(llm_ui.selected_model) - 1);
         llm_ui.selected_model[sizeof(llm_ui.selected_model) - 1] = '\0';
