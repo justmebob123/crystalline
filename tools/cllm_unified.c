@@ -337,8 +337,29 @@ int cmd_train(int argc, char** argv) {
     training->tokens = dataset->tokens;
     training->num_tokens = dataset->num_tokens;
     
-    // Determine threading mode
-    int training_threads = (num_threads == 0) ? 12 : num_threads;
+    // Determine threading mode with proper CPU detection
+    int training_threads = num_threads;
+    if (training_threads == 0) {
+        // Auto-detect CPU cores
+        training_threads = sysconf(_SC_NPROCESSORS_ONLN);
+        if (training_threads < 1) training_threads = 1;
+        
+        // Cap at 12 for 12-fold symmetry architecture
+        if (training_threads > 12) training_threads = 12;
+        
+        printf("Auto-detected %d CPU cores, using %d threads\n", 
+               (int)sysconf(_SC_NPROCESSORS_ONLN), training_threads);
+    }
+    
+    // Warn if thread count exceeds CPU cores
+    int cpu_cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (training_threads > cpu_cores) {
+        printf("⚠️  WARNING: Using %d threads on %d CPU cores\n", 
+               training_threads, cpu_cores);
+        printf("   This may cause thread oversubscription and reduced performance.\n");
+        printf("   Consider using --threads %d for optimal performance.\n\n", cpu_cores);
+    }
+    
     bool use_threading = (training_threads > 1);
     
     if (use_threading) {

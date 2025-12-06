@@ -1,20 +1,30 @@
-# COMPREHENSIVE TESTING AND SEQUENCE LENGTH BUG FIX
+# THREADING CPU OVERSUBSCRIPTION BUG FIX
 
-## OBJECTIVES
-1. Investigate and fix the sequence length bug (seq_len > 1 breaks training)
-2. Implement comprehensive testing with larger models, more epochs, and more layers
-3. Validate the entire training pipeline with production-scale configurations
+## CRITICAL BUG IDENTIFIED
+**Issue**: Auto-thread detection hardcoded to 12 threads instead of using CPU count
+**Location**: `tools/cllm_unified.c` line 340
+**Impact**: On 2-core systems, creates 12 threads → 600% oversubscription → poor performance
 
 ## CURRENT STATUS
 - ✅ Threading system validated and working
 - ✅ Parallel vocabulary building implemented
-- ✅ seq_len=16 confirmed working (68 batches, 2 epochs completed)
-- ❌ Need to test various sequence lengths to identify the bug
-- ❌ Need comprehensive testing with larger models
+- ✅ Configuration problem resolved with warnings
+- ❌ **CRITICAL**: Auto-thread detection broken (hardcoded to 12)
+- ❌ Need to fix thread count detection
 
-## PHASE 1: SEQUENCE LENGTH BUG INVESTIGATION ✅ COMPLETE
+## PHASE 1: THREAD COUNT AUTO-DETECTION FIX 🔧 IN PROGRESS
 
-### 1.1: Reproduce the Issue ✅ COMPLETE
+### 1.1: Fix Auto-Thread Detection ✅ COMPLETE
+- [x] Fix hardcoded 12 threads in tools/cllm_unified.c line 340
+- [x] Use sysconf(_SC_NPROCESSORS_ONLN) for auto-detection
+- [x] Cap at 12 for 12-fold symmetry but respect CPU count
+- [x] Add warning when thread count exceeds CPU cores
+- [x] Test on 2-core system - Works correctly!
+- [x] Verify performance improvement - Now uses 2 threads instead of 12
+
+## PHASE 2: SEQUENCE LENGTH BUG INVESTIGATION ✅ COMPLETE
+
+### 2.1: Reproduce the Issue ✅ COMPLETE
 - [x] Test with seq_len=1 (baseline - works: 1088 batches)
 - [x] Test with seq_len=2 (works: 544 batches)
 - [x] Test with seq_len=4 (works correctly)
@@ -25,14 +35,14 @@
 - [x] Test with seq_len=128 (works: 8 batches)
 - [x] Document which sequence lengths fail: **NONE - All work correctly**
 
-### 1.2: Root Cause Identified ✅
+### 2.2: Root Cause Identified ✅
 - [x] Issue is NOT a bug - it's a configuration problem
 - [x] Default parameters (batch=32, seq_len=128) create only 1 batch for small datasets
 - [x] Training appears to hang but is actually just very slow
 - [x] All sequence lengths work correctly
 - [x] Problem is slow progress with large models and few batches
 
-### 1.3: Solution Implementation ✅ COMPLETE
+### 2.3: Solution Implementation ✅ COMPLETE
 - [x] Implement auto-parameter adjustment for small datasets
 - [x] Add warnings for suboptimal configurations
 - [x] Add better progress indicators (batch-level, time estimates)
