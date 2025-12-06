@@ -555,3 +555,10 @@ tools/fix_html_entities:
 	$(CC) $(CFLAGS) -o tools/fix_html_entities tools/fix_html_entities.c
 	@echo "✓ HTML entity fixer built: tools/fix_html_entities"
 
+
+tools/cllm-simple: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building simple (single-threaded) CLLM CLI tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/cllm-simple tools/cllm_simple.c \
+		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Simple CLI tool built: tools/cllm-simple"
