@@ -31,22 +31,22 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     // Reset accumulation counter
     training->accumulation_step = 0;
     
-    // CRITICAL: Clip gradients to prevent explosion
-    float max_grad_norm = 1.0f;  // Maximum gradient norm
+    // CRITICAL: Clip gradients to prevent explosion (use double precision!)
+    double max_grad_norm = 1.0;  // Maximum gradient norm
     
     CLLMModel* model = training->model;
     
     // Clip embedding gradients
     size_t embed_size = model->vocab_size * model->embedding_dim;
     if (training->gradients) {
-        float grad_norm = 0.0f;
+        double grad_norm = 0.0;
         for (size_t i = 0; i < embed_size; i++) {
             grad_norm += training->gradients[i] * training->gradients[i];
         }
-        grad_norm = prime_sqrtf(grad_norm);
+        grad_norm = prime_sqrt(grad_norm);
         
         if (grad_norm > max_grad_norm) {
-            float scale = max_grad_norm / grad_norm;
+            double scale = max_grad_norm / grad_norm;
             for (size_t i = 0; i < embed_size; i++) {
                 training->gradients[i] *= scale;
             }
@@ -60,15 +60,15 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
             
             // Clip query gradients
             if (training->attention_grads[layer].query_lattice) {
-                float grad_norm = 0.0f;
+                double grad_norm = 0.0;
                 for (uint64_t i = 0; i < attn_size; i++) {
                     double g = training->attention_grads[layer].query_lattice[i];
                     grad_norm += g * g;
                 }
-                grad_norm = prime_sqrtf(grad_norm);
+                grad_norm = prime_sqrt(grad_norm);
                 
                 if (grad_norm > max_grad_norm) {
-                    float scale = max_grad_norm / grad_norm;
+                    double scale = max_grad_norm / grad_norm;
                     for (uint64_t i = 0; i < attn_size; i++) {
                         training->attention_grads[layer].query_lattice[i] *= scale;
                     }
@@ -77,15 +77,15 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
             
             // Clip key gradients
             if (training->attention_grads[layer].key_lattice) {
-                float grad_norm = 0.0f;
+                double grad_norm = 0.0;
                 for (uint64_t i = 0; i < attn_size; i++) {
                     double g = training->attention_grads[layer].key_lattice[i];
                     grad_norm += g * g;
                 }
-                grad_norm = prime_sqrtf(grad_norm);
+                grad_norm = prime_sqrt(grad_norm);
                 
                 if (grad_norm > max_grad_norm) {
-                    float scale = max_grad_norm / grad_norm;
+                    double scale = max_grad_norm / grad_norm;
                     for (uint64_t i = 0; i < attn_size; i++) {
                         training->attention_grads[layer].key_lattice[i] *= scale;
                     }
@@ -94,15 +94,15 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
             
             // Clip value gradients
             if (training->attention_grads[layer].value_lattice) {
-                float grad_norm = 0.0f;
+                double grad_norm = 0.0;
                 for (uint64_t i = 0; i < attn_size; i++) {
                     double g = training->attention_grads[layer].value_lattice[i];
                     grad_norm += g * g;
                 }
-                grad_norm = prime_sqrtf(grad_norm);
+                grad_norm = prime_sqrt(grad_norm);
                 
                 if (grad_norm > max_grad_norm) {
-                    float scale = max_grad_norm / grad_norm;
+                    double scale = max_grad_norm / grad_norm;
                     for (uint64_t i = 0; i < attn_size; i++) {
                         training->attention_grads[layer].value_lattice[i] *= scale;
                     }
@@ -119,15 +119,15 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
             // Clip W1 gradients
             if (training->ff_grads[layer].w1_lattice) {
                 size_t w1_size = ff->input_dim * ff->hidden_dim;
-                float grad_norm = 0.0f;
+                double grad_norm = 0.0;
                 for (size_t i = 0; i < w1_size; i++) {
                     double g = training->ff_grads[layer].w1_lattice[i];
                     grad_norm += g * g;
                 }
-                grad_norm = prime_sqrtf(grad_norm);
+                grad_norm = prime_sqrt(grad_norm);
                 
                 if (grad_norm > max_grad_norm) {
-                    float scale = max_grad_norm / grad_norm;
+                    double scale = max_grad_norm / grad_norm;
                     for (size_t i = 0; i < w1_size; i++) {
                         training->ff_grads[layer].w1_lattice[i] *= scale;
                     }
@@ -137,15 +137,15 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
             // Clip W2 gradients
             if (training->ff_grads[layer].w2_lattice) {
                 size_t w2_size = ff->hidden_dim * ff->output_dim;
-                float grad_norm = 0.0f;
+                double grad_norm = 0.0;
                 for (size_t i = 0; i < w2_size; i++) {
                     double g = training->ff_grads[layer].w2_lattice[i];
                     grad_norm += g * g;
                 }
-                grad_norm = prime_sqrtf(grad_norm);
+                grad_norm = prime_sqrt(grad_norm);
                 
                 if (grad_norm > max_grad_norm) {
-                    float scale = max_grad_norm / grad_norm;
+                    double scale = max_grad_norm / grad_norm;
                     for (size_t i = 0; i < w2_size; i++) {
                         training->ff_grads[layer].w2_lattice[i] *= scale;
                     }
@@ -155,7 +155,7 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     }
     
     // Scale gradients by 1/accum_steps
-    float gradient_scale = 1.0f / (float)accum_steps;
+    double gradient_scale = 1.0 / (double)accum_steps;
     (void)gradient_scale;  // Currently unused - reserved for future gradient scaling
     
     // Note: Gradient scaling disabled - using gradient clipping instead
@@ -214,6 +214,45 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
         }
     }
     
+    // CRITICAL: Clip layer norm gradients to prevent NaN
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        if (training->ln_grads && model->layer_norms) {
+            // Clip gamma gradients
+            if (training->ln_grads[layer].gamma) {
+                double grad_norm = 0.0;
+                for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                    double g = training->ln_grads[layer].gamma[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrt(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    double scale = max_grad_norm / grad_norm;
+                    for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                        training->ln_grads[layer].gamma[i] *= scale;
+                    }
+                }
+            }
+            
+            // Clip beta gradients
+            if (training->ln_grads[layer].beta) {
+                double grad_norm = 0.0;
+                for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                    double g = training->ln_grads[layer].beta[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrt(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    double scale = max_grad_norm / grad_norm;
+                    for (uint32_t i = 0; i < model->embedding_dim; i++) {
+                        training->ln_grads[layer].beta[i] *= scale;
+                    }
+                }
+            }
+        }
+    }
+    
     // Use the proper BigFixed Adam optimizer from cllm_training.c
     // This provides momentum, adaptive learning rates, and bias correction
     cllm_adam_step_bigfixed(training, training->config.learning_rate);
@@ -233,16 +272,17 @@ void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
     
     CLLMModel* model = training->model;
     
-    // Adam hyperparameters
-    const float beta1 = 0.9f;
-    const float beta2 = 0.999f;
-    const float epsilon = 1e-8f;
+    // Adam hyperparameters (MUST use double for precision!)
+    const double beta1 = 0.9;
+    const double beta2 = 0.999;
+    const double epsilon = 1e-8;
     
     // Bias correction (use current_step, don't increment here as it's incremented in training loop)
-    float beta1_t = prime_powf(beta1, (float)(training->current_step + 1));
-    float beta2_t = prime_powf(beta2, (float)(training->current_step + 1));
-    float bias_correction1 = 1.0f - beta1_t;
-    float bias_correction2 = 1.0f - beta2_t;
+    // CRITICAL: Use double precision to avoid precision loss in large models
+    double beta1_t = prime_pow(beta1, (double)(training->current_step + 1));
+    double beta2_t = prime_pow(beta2, (double)(training->current_step + 1));
+    double bias_correction1 = 1.0 - beta1_t;
+    double bias_correction2 = 1.0 - beta2_t;
     
     // Update embeddings
     size_t embed_size = model->vocab_size * model->embedding_dim;
