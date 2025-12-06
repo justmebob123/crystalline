@@ -14,6 +14,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_progress.h"
+#include "../include/cllm_global_progress.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -402,9 +403,8 @@ void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     
     printf("Activating %d of 12 symmetry spheres\n", num_active_spheres);
     
-    // Initialize progress tracker
-    CLLMProgress vocab_progress;
-    cllm_progress_init(&vocab_progress, "Phase 1: Building Vocabulary", loader->num_documents);
+    // Start vocabulary building phase in global progress
+    cllm_global_progress_start_phase(CLLM_PHASE_BUILDING_VOCAB, "Building Vocabulary", loader->num_documents);
     
     // Create progress counter
     _Atomic size_t progress_counter = 0;
@@ -436,12 +436,11 @@ void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     while (atomic_load(&progress_counter) < loader->num_documents) {
         size_t current_progress = atomic_load(&progress_counter);
         if (current_progress != last_progress) {
-            cllm_progress_update(&vocab_progress, current_progress);
+            cllm_global_progress_update(current_progress);
             last_progress = current_progress;
         }
         usleep(100000);  // 100ms
     }
-    printf("\n");
     
     // Wait for all spheres to complete
     for (int i = 0; i < num_active_spheres; i++) {
@@ -449,18 +448,15 @@ void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     }
     
     // Consolidate 12 partitions into single vocabulary
-    printf("Consolidating vocabulary partitions...\n");
     cllm_consolidate_vocabulary(loader->tokenizer);
-    
-    printf("Vocabulary building complete using 12-fold symmetry\n");
     
     loader->total_tokens = 0;
     for (uint32_t i = 0; i < loader->tokenizer->vocab_size; i++) {
         loader->total_tokens += loader->tokenizer->token_counts[i];
     }
     
-    printf("Vocabulary built: %u unique tokens, %zu total tokens\n",
-           loader->tokenizer->vocab_size, loader->total_tokens);
+    // Complete vocabulary building phase
+    cllm_global_progress_complete_phase();
 }
 
 /**
@@ -488,7 +484,6 @@ typedef struct {
     size_t end_doc;
     int thread_id;
     _Atomic size_t* progress_counter;
-    CLLMProgress* progress_tracker;
 } TokenizeWorkerContext;
 
 // Worker function for parallel tokenization
@@ -524,9 +519,7 @@ static void* tokenize_worker(void* arg) {
         
         // Update progress
         size_t current = atomic_fetch_add(ctx->progress_counter, 1) + 1;
-        if (ctx->progress_tracker) {
-            cllm_progress_update(ctx->progress_tracker, current);
-        }
+        cllm_global_progress_update(current);
     }
     
     return NULL;
@@ -596,9 +589,8 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
         // Parallel tokenization using 12-fold symmetry
         printf("Using %d-thread parallel tokenization (%zu documents)\n", num_cpus, loader->num_documents);
         
-        // Initialize progress tracker
-        CLLMProgress token_progress;
-        cllm_progress_init(&token_progress, "Phase 2: Tokenizing Documents", loader->num_documents);
+        // Start tokenization phase in global progress
+        cllm_global_progress_start_phase(CLLM_PHASE_TOKENIZING, "Tokenizing Documents", loader->num_documents);
         
         // Create per-thread token buffers
         ThreadTokenBuffer* thread_buffers = (ThreadTokenBuffer*)calloc(num_cpus, sizeof(ThreadTokenBuffer));
@@ -636,7 +628,6 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
             contexts[t].end_doc = (t == num_cpus - 1) ? loader->num_documents : (t + 1) * docs_per_thread;
             contexts[t].thread_id = t;
             contexts[t].progress_counter = &progress_counter;
-            contexts[t].progress_tracker = &token_progress;
             
             pthread_create(&threads[t], NULL, tokenize_worker, &contexts[t]);
         }
@@ -646,12 +637,10 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
             pthread_join(threads[t], NULL);
         }
         
-        // Complete progress tracking
-        cllm_progress_complete(&token_progress);
-        printf("\n");
+        // Complete tokenization phase
+        cllm_global_progress_complete_phase();
         
         // Merge thread buffers into final dataset
-        printf("Merging tokenized data from %d threads...\n", num_cpus);
         
         // Calculate total tokens
         size_t total_tokens = 0;

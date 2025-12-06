@@ -27,6 +27,7 @@
 #include "../include/cllm_format.h"
 #include "../include/cllm_utils.h"
 #include "../include/cllm_batch.h"
+#include "../include/cllm_global_progress.h"
 
 // ============================================================================
 // BANNER & VERSION
@@ -165,6 +166,9 @@ int cmd_train(int argc, char** argv) {
     printf("  Threads:        %d %s\n", num_threads, num_threads == 0 ? "(auto)" : "");
     printf("\n");
     
+    // Initialize global progress tracking
+    cllm_global_progress_init();
+    
     // Create checkpoint directory
     char cmd[512];
     snprintf(cmd, sizeof(cmd), "mkdir -p %s", checkpoint_dir);
@@ -174,7 +178,7 @@ int cmd_train(int argc, char** argv) {
     }
     
     // Create tokenizer and load data
-    printf("Loading and preprocessing data...\n");
+    cllm_global_progress_start_phase(CLLM_PHASE_LOADING_DATA, "Loading Data Files", 1);
     CLLMTokenizer* tokenizer = cllm_create_tokenizer(vocab_size);
     if (!tokenizer) {
         fprintf(stderr, "Error: Failed to create tokenizer\n");
@@ -193,9 +197,11 @@ int cmd_train(int argc, char** argv) {
         fprintf(stderr, "Error: No data files found in: %s\n", data_dir);
         cllm_data_loader_free(loader);
         cllm_free_tokenizer(tokenizer);
+        cllm_global_progress_cleanup();
         return 1;
     }
-    printf("✓ Loaded %d files\n\n", files_loaded);
+    cllm_global_progress_update(1);
+    cllm_global_progress_complete_phase();
     
     // Build vocabulary
     printf("Building vocabulary...\n");
@@ -421,16 +427,18 @@ int cmd_train(int argc, char** argv) {
             return 1;
         }
         
-        printf("✓ Threaded training system created\n");
-        printf("✓ Kissing spheres initialized\n\n");
+        // Start training phase
+        size_t total_batches = cllm_batch_iterator_num_batches(batch_iter);
+        cllm_global_progress_start_phase(CLLM_PHASE_TRAINING, "Training Model", 
+                                         config.num_epochs * total_batches);
         
         // Training loop with threading
         for (int epoch = 0; epoch < config.num_epochs; epoch++) {
-            printf("Epoch %d/%d\n", epoch + 1, config.num_epochs);
-            
             float epoch_loss = threaded_train_epoch_lockfree(threaded_system, epoch);
             
-            printf("Epoch %d complete: Average Loss = %.4f\n\n", epoch + 1, epoch_loss);
+            // Update training progress
+            cllm_global_progress_update_training(epoch + 1, config.num_epochs, epoch_loss);
+            cllm_global_progress_update((epoch + 1) * total_batches);
             
             // Save checkpoint
             if ((epoch + 1) % config.save_every == 0) {
@@ -442,13 +450,12 @@ int cmd_train(int argc, char** argv) {
             }
         }
         
+        // Complete training phase
+        cllm_global_progress_complete_phase();
+        
         // Cleanup threaded system
         threaded_training_free(threaded_system);
         cllm_batch_iterator_free(batch_iter);
-        
-        printf("\nTraining complete!\n");
-        printf("Final loss: %.4f\n", training->current_loss);
-        printf("Best loss: %.4f\n", training->best_loss);
         
     } else {
         printf("Starting SINGLE-THREADED training...\n\n");
@@ -467,25 +474,28 @@ int cmd_train(int argc, char** argv) {
         }
     }
     
+    // Start saving phase
+    cllm_global_progress_start_phase(CLLM_PHASE_SAVING, "Saving Model & Vocabulary", 2);
+    
     // Save final model
     char final_model_path[512];
     snprintf(final_model_path, sizeof(final_model_path), "%s/final_model.cllm", checkpoint_dir);
-    printf("\nSaving final model to %s...\n", final_model_path);
     if (cllm_write_model(model, final_model_path) != 0) {
         fprintf(stderr, "Warning: Failed to save final model\n");
-    } else {
-        printf("✓ Final model saved\n");
     }
+    cllm_global_progress_update(1);
     
     // Save vocabulary
     char vocab_path[512];
     snprintf(vocab_path, sizeof(vocab_path), "%s/vocab.txt", checkpoint_dir);
-    printf("Saving vocabulary to %s...\n", vocab_path);
     if (cllm_save_vocab(tokenizer, vocab_path) != 0) {
         fprintf(stderr, "Warning: Failed to save vocabulary\n");
-    } else {
-        printf("✓ Vocabulary saved\n");
     }
+    cllm_global_progress_update(2);
+    cllm_global_progress_complete_phase();
+    
+    // Complete entire program
+    cllm_global_progress_complete();
     
     // Cleanup
     training->tokens = NULL;  // Don't free (belongs to dataset)
@@ -494,8 +504,8 @@ int cmd_train(int argc, char** argv) {
     cllm_data_loader_free(loader);
     cllm_free_tokenizer(tokenizer);
     cllm_free_model(model);
+    cllm_global_progress_cleanup();
     
-    printf("\nTraining setup complete!\n");
     return 0;
 }
 
