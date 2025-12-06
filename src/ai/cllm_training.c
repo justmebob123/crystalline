@@ -26,7 +26,11 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
+#include "../include/cllm_nan_checker.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved here
+
+// Enable NaN checking (set to 1 to enable, 0 to disable)
+#define ENABLE_NAN_CHECKS 1
 
 
 // Zero all gradients
@@ -1336,6 +1340,14 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         }
     }
     
+#if ENABLE_NAN_CHECKS
+    // Check embeddings for NaN
+    if (check_embeddings_for_nan(training)) {
+        fprintf(stderr, "CRITICAL: NaN detected in embeddings after initialization!\n");
+        return -1.0f;
+    }
+#endif
+    
     // Process through layers
     double* layer_input = training->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
@@ -1352,6 +1364,14 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             cllm_attention_forward_training(training, layer, attn_layer, 
                                            batch_input, batch_output, seq_len);
         }
+        
+#if ENABLE_NAN_CHECKS
+        // Check attention outputs for NaN
+        if (check_attention_outputs_for_nan(training, layer)) {
+            fprintf(stderr, "CRITICAL: NaN detected in attention output at layer %u!\n", layer);
+            return -1.0f;
+        }
+#endif
         
         // Process feedforward for each position
         for (int b = 0; b < batch_size; b++) {
@@ -1401,6 +1421,15 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                 }
             }
         }
+        
+#if ENABLE_NAN_CHECKS
+        // Check feedforward outputs for NaN
+        if (check_feedforward_outputs_for_nan(training, layer)) {
+            fprintf(stderr, "CRITICAL: NaN detected in feedforward output at layer %u!\n", layer);
+            return -1.0f;
+        }
+#endif
+        
         layer_input = training->layer_outputs[layer];
     }
     
@@ -1430,6 +1459,14 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             }
         }
     }
+    
+#if ENABLE_NAN_CHECKS
+    // Check logits for NaN
+    if (check_logits_for_nan(training)) {
+        fprintf(stderr, "CRITICAL: NaN detected in logits!\n");
+        return -1.0f;
+    }
+#endif
     
     return 0.0f;
 }
@@ -1651,6 +1688,13 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     free(grad_logits);
     free(grad_hidden);
     free(grad_layer);
+    
+#if ENABLE_NAN_CHECKS
+    // Check gradients for NaN after backward pass
+    if (check_gradients_for_nan(training)) {
+        fprintf(stderr, "CRITICAL: NaN detected in gradients after backward pass!\n");
+    }
+#endif
 }
 
 // Train the model
