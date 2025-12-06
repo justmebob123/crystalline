@@ -488,7 +488,7 @@ int cmd_train(int argc, char** argv) {
     // Save vocabulary
     char vocab_path[512];
     snprintf(vocab_path, sizeof(vocab_path), "%s/vocab.txt", checkpoint_dir);
-    if (cllm_save_vocab(tokenizer, vocab_path) != 0) {
+    if (cllm_save_vocab(tokenizer, vocab_path) == 0) {
         fprintf(stderr, "Warning: Failed to save vocabulary\n");
     }
     cllm_global_progress_update(2);
