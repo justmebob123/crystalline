@@ -233,6 +233,35 @@ int cmd_train(int argc, char** argv) {
     }
     printf("✓ Model created\n\n");
     
+    // CRITICAL FIX: Transfer vocabulary from tokenizer to model
+    printf("Transferring vocabulary to model...\n");
+    uint32_t actual_vocab_size = cllm_get_vocab_size(tokenizer);
+    printf("  Tokenizer vocabulary size: %u\n", actual_vocab_size);
+    
+    if (model->tokens) {
+        // Copy vocabulary from tokenizer to model
+        for (uint32_t i = 0; i < actual_vocab_size && i < model->vocab_size; i++) {
+            const char* token_str = cllm_get_token_string(tokenizer, i);
+            if (token_str) {
+                strncpy(model->tokens[i].token_str, token_str, sizeof(model->tokens[i].token_str) - 1);
+                model->tokens[i].token_str[sizeof(model->tokens[i].token_str) - 1] = '\0';
+                model->tokens[i].token_id = i;
+                model->tokens[i].frequency = 1;  // Will be updated during training
+            }
+        }
+        
+        // Fill remaining slots with special tokens if vocab is smaller than model capacity
+        for (uint32_t i = actual_vocab_size; i < model->vocab_size; i++) {
+            snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "<UNK_%u>", i);
+            model->tokens[i].token_id = i;
+            model->tokens[i].frequency = 0;
+        }
+        
+        printf("✓ Vocabulary transferred to model (%u tokens)\n\n", actual_vocab_size);
+    } else {
+        fprintf(stderr, "Warning: model->tokens is NULL, vocabulary not transferred\n");
+    }
+    
     // Create training configuration
     CLLMTrainingConfig config = {
         .learning_rate = learning_rate,

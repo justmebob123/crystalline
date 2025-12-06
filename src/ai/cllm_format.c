@@ -378,6 +378,60 @@ CLLMModel* cllm_read_model(const char* filepath) {
         }
     }
     
+    // CRITICAL FIX: Read vocabulary tokens if present
+    // Check for vocabulary marker
+    uint32_t vocab_marker = 0;
+    if (fread(&vocab_marker, sizeof(uint32_t), 1, file) == 1 && vocab_marker == 0x564F4301) {
+        // Read number of tokens
+        uint32_t num_tokens = 0;
+        if (fread(&num_tokens, sizeof(uint32_t), 1, file) == 1 && num_tokens > 0) {
+            // Allocate tokens array
+            model->tokens = (CLLMToken*)calloc(num_tokens, sizeof(CLLMToken));
+            if (model->tokens) {
+                // Read each token
+                for (uint32_t i = 0; i < num_tokens; i++) {
+                    // Read token_id
+                    fread(&model->tokens[i].token_id, sizeof(uint32_t), 1, file);
+                    
+                    // Read token string
+                    uint32_t len = 0;
+                    fread(&len, sizeof(uint32_t), 1, file);
+                    if (len < sizeof(model->tokens[i].token_str)) {
+                        fread(model->tokens[i].token_str, sizeof(char), len, file);
+                        model->tokens[i].token_str[len] = '\0';
+                    } else {
+                        // Token too long, skip it
+                        fseek(file, len, SEEK_CUR);
+                        snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
+                    }
+                    
+                    // Read frequency
+                    fread(&model->tokens[i].frequency, sizeof(float), 1, file);
+                    
+                    // Read prime_encoding
+                    fread(&model->tokens[i].prime_encoding, sizeof(uint64_t), 1, file);
+                    
+                    // Read symmetry_group
+                    fread(&model->tokens[i].symmetry_group, sizeof(uint32_t), 1, file);
+                }
+                
+                printf("✓ Loaded vocabulary: %u tokens\n", num_tokens);
+            }
+        }
+    } else {
+        // No vocabulary in file, use default tokens
+        printf("Warning: No vocabulary found in model file, using default tokens\n");
+        model->tokens = (CLLMToken*)calloc(model->vocab_size, sizeof(CLLMToken));
+        if (model->tokens) {
+            for (uint32_t i = 0; i < model->vocab_size; i++) {
+                model->tokens[i].token_id = i;
+                snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
+                model->tokens[i].frequency = 0;
+                model->tokens[i].symmetry_group = i % 12;
+            }
+        }
+    }
+    
     fclose(file);
     printf("✓ Model loaded: %s\n", filepath);
     printf("  Vocab: %lu | Embedding: %lu | Layers: %lu\n",
@@ -459,6 +513,39 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
         if (ff->bias1) fwrite(ff->bias1, sizeof(double), ff->hidden_dim, file);
         if (ff->w2_lattice) fwrite(ff->w2_lattice, sizeof(double), ff->hidden_dim * ff->output_dim, file);
         if (ff->bias2) fwrite(ff->bias2, sizeof(double), ff->output_dim, file);
+    }
+    
+    // CRITICAL FIX: Write vocabulary tokens
+    // This is essential for inference to work properly
+    if (model->tokens && model->vocab_size > 0) {
+        // Write vocabulary marker
+        uint32_t vocab_marker = 0x564F4301;  // Magic marker "VOC\x01" for vocabulary section
+        fwrite(&vocab_marker, sizeof(uint32_t), 1, file);
+        
+        // Write number of tokens
+        fwrite(&model->vocab_size, sizeof(uint32_t), 1, file);
+        
+        // Write each token
+        for (uint32_t i = 0; i < model->vocab_size; i++) {
+            // Write token_id
+            fwrite(&model->tokens[i].token_id, sizeof(uint32_t), 1, file);
+            
+            // Write token string length and string
+            uint32_t len = strlen(model->tokens[i].token_str);
+            fwrite(&len, sizeof(uint32_t), 1, file);
+            fwrite(model->tokens[i].token_str, sizeof(char), len, file);
+            
+            // Write frequency
+            fwrite(&model->tokens[i].frequency, sizeof(float), 1, file);
+            
+            // Write prime_encoding
+            fwrite(&model->tokens[i].prime_encoding, sizeof(uint64_t), 1, file);
+            
+            // Write symmetry_group
+            fwrite(&model->tokens[i].symmetry_group, sizeof(uint32_t), 1, file);
+        }
+        
+        printf("  Saved vocabulary: %u tokens\n", (unsigned int)model->vocab_size);
     }
     
     fclose(file);
