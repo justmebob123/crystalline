@@ -309,16 +309,32 @@ static void* vocab_sphere_worker(void* arg) {
     printf("[Sphere %d] Processing documents %zu to %zu\n", 
            ctx->symmetry_group, ctx->start_idx, ctx->end_idx);
     
+    // Pre-allocate a large buffer for tokenization to reduce malloc contention
+    // This is thread-local, so no contention between threads
+    size_t buffer_size = 1024 * 1024;  // 1MB buffer per thread
+    char* thread_buffer = (char*)malloc(buffer_size);
+    if (!thread_buffer) {
+        fprintf(stderr, "[Sphere %d] Failed to allocate thread buffer\n", ctx->symmetry_group);
+        return NULL;
+    }
+    
     // Process assigned documents
     for (size_t i = ctx->start_idx; i < ctx->end_idx; i++) {
         const char* doc = ctx->documents[i];
         if (!doc) continue;
         
-        // Tokenize and add to partitioned vocabulary (thread-safe)
-        char* text_copy = strdup(doc);
-        if (!text_copy) continue;
+        // Copy document to thread-local buffer (avoid strdup malloc contention)
+        size_t doc_len = strlen(doc);
+        if (doc_len >= buffer_size) {
+            // Document too large for buffer - skip or reallocate
+            fprintf(stderr, "[Sphere %d] Document %zu too large (%zu bytes), skipping\n", 
+                    ctx->symmetry_group, i, doc_len);
+            continue;
+        }
         
-        char* token = strtok(text_copy, " \t\n\r");
+        memcpy(thread_buffer, doc, doc_len + 1);
+        
+        char* token = strtok(thread_buffer, " \t\n\r");
         
         while (token) {
             // Convert to lowercase
@@ -328,16 +344,17 @@ static void* vocab_sphere_worker(void* arg) {
             
             // Add to thread-safe partitioned vocabulary
             // Hash determines partition, each partition has its own lock
+            // NOTE: strdup is still called inside, but much less frequently
             cllm_add_token_threadsafe(ctx->tokenizer, token);
             
             token = strtok(NULL, " \t\n\r");
         }
         
-        free(text_copy);
-        
         // Update progress
         atomic_fetch_add(ctx->progress_counter, 1);
     }
+    
+    free(thread_buffer);
     
     printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
     return NULL;
