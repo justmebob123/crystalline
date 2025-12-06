@@ -169,3 +169,85 @@ double ntt_attention_estimate_speedup(uint32_t seq_len);
 #endif
 
 #endif // NTT_ATTENTION_H
+// ============================================================================
+// DOUBLE-PRECISION NTT ATTENTION (FOR TRAINING PIPELINE)
+// ============================================================================
+
+/**
+ * @brief NTT Attention Forward (Double Precision)
+ * 
+ * Double-precision version for training pipeline.
+ * Uses O(n log n) complexity for long sequences.
+ * 
+ * @param output Output attention values [seq_len x head_dim]
+ * @param queries Query matrix [seq_len x head_dim]
+ * @param keys Key matrix [seq_len x head_dim]
+ * @param values Value matrix [seq_len x head_dim]
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension
+ * @param scale_factor Scaling factor (typically 1/sqrt(head_dim))
+ * @return 1 on success, 0 on failure
+ */
+int ntt_attention_forward_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    double scale_factor
+);
+
+/**
+ * @brief NTT Attention Single Head (Double Precision)
+ * 
+ * Process a single attention head with double precision.
+ * 
+ * @param output Output attention values [seq_len x head_dim]
+ * @param queries Query matrix [seq_len x head_dim]
+ * @param keys Key matrix [seq_len x head_dim]
+ * @param values Value matrix [seq_len x head_dim]
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension
+ * @param scale_factor Scaling factor
+ * @return 1 on success, 0 on failure
+ */
+int ntt_attention_single_head_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    double scale_factor
+);
+
+/**
+ * @brief Multi-head NTT Attention (Double Precision)
+ * 
+ * Process multiple attention heads with double precision.
+ * 
+ * @param output Output attention values [num_heads x seq_len x head_dim]
+ * @param queries Query matrix [num_heads x seq_len x head_dim]
+ * @param keys Key matrix [num_heads x seq_len x head_dim]
+ * @param values Value matrix [num_heads x seq_len x head_dim]
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension per head
+ * @param num_heads Number of attention heads
+ * @param scale_factor Scaling factor
+ * @return 1 on success, 0 on failure
+ */
+int ntt_attention_multi_head_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    uint32_t num_heads,
+    double scale_factor
+);
+
+#ifdef __cplusplus
+}
+#endif

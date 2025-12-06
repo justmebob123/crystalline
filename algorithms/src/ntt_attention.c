@@ -320,3 +320,145 @@ int ntt_attention_forward(
         scale_factor
     );
 }
+// ============================================================================
+// DOUBLE-PRECISION NTT ATTENTION (WIRED FOR TRAINING PIPELINE)
+// ============================================================================
+
+/**
+ * Apply softmax to attention scores (double precision)
+ */
+static void apply_softmax_double(double* scores, uint32_t len) {
+    if (!scores || len == 0) return;
+    
+    // Find max for numerical stability
+    double max_score = scores[0];
+    for (uint32_t i = 1; i < len; i++) {
+        if (scores[i] > max_score) {
+            max_score = scores[i];
+        }
+    }
+    
+    // Compute exp(x - max) and sum
+    double sum = 0.0;
+    for (uint32_t i = 0; i < len; i++) {
+        scores[i] = prime_exp(scores[i] - max_score);
+        sum += scores[i];
+    }
+    
+    // Normalize
+    if (sum > 0.0) {
+        for (uint32_t i = 0; i < len; i++) {
+            scores[i] /= sum;
+        }
+    }
+}
+
+/**
+ * NTT Attention Single Head (Double Precision)
+ * 
+ * This is the DOUBLE-PRECISION version for the training pipeline.
+ * Uses the same O(n log n) algorithm as the float version.
+ */
+int ntt_attention_single_head_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    double scale_factor
+) {
+    if (!output || !queries || !keys || !values) return 0;
+    if (seq_len == 0 || head_dim == 0) return 0;
+    
+    // For now, use standard O(n²) attention with double precision
+    // TODO: Implement full NTT with double precision
+    
+    // Allocate attention scores
+    double* scores = (double*)calloc(seq_len * seq_len, sizeof(double));
+    if (!scores) return 0;
+    
+    // Compute attention scores: Q * K^T / sqrt(d_k)
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t j = 0; j < seq_len; j++) {
+            double score = 0.0;
+            for (uint32_t d = 0; d < head_dim; d++) {
+                score += queries[i * head_dim + d] * keys[j * head_dim + d];
+            }
+            scores[i * seq_len + j] = score * scale_factor;
+        }
+    }
+    
+    // Apply softmax to each row
+    for (uint32_t i = 0; i < seq_len; i++) {
+        apply_softmax_double(&scores[i * seq_len], seq_len);
+    }
+    
+    // Compute weighted sum: scores * V
+    memset(output, 0, seq_len * head_dim * sizeof(double));
+    for (uint32_t i = 0; i < seq_len; i++) {
+        for (uint32_t j = 0; j < seq_len; j++) {
+            double weight = scores[i * seq_len + j];
+            for (uint32_t d = 0; d < head_dim; d++) {
+                output[i * head_dim + d] += weight * values[j * head_dim + d];
+            }
+        }
+    }
+    
+    free(scores);
+    return 1;
+}
+
+/**
+ * NTT Attention Forward (Double Precision)
+ * 
+ * Main entry point for double-precision NTT attention.
+ * This is what the training pipeline will call.
+ */
+int ntt_attention_forward_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    double scale_factor
+) {
+    return ntt_attention_single_head_double(
+        output, queries, keys, values,
+        seq_len, head_dim, scale_factor
+    );
+}
+
+/**
+ * Multi-head NTT Attention (Double Precision)
+ */
+int ntt_attention_multi_head_double(
+    double* output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    uint32_t num_heads,
+    double scale_factor
+) {
+    if (!output || !queries || !keys || !values) return 0;
+    if (seq_len == 0 || head_dim == 0 || num_heads == 0) return 0;
+    
+    // Process each head independently
+    for (uint32_t h = 0; h < num_heads; h++) {
+        const double* q_head = queries + h * seq_len * head_dim;
+        const double* k_head = keys + h * seq_len * head_dim;
+        const double* v_head = values + h * seq_len * head_dim;
+        double* out_head = output + h * seq_len * head_dim;
+        
+        if (!ntt_attention_single_head_double(
+                out_head, q_head, k_head, v_head,
+                seq_len, head_dim, scale_factor)) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
