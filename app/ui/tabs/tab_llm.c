@@ -227,39 +227,18 @@ static void on_model_selected(int index, void* data) {
         llm_ui.selected_model[sizeof(llm_ui.selected_model) - 1] = '\0';
         printf("LLM MODEL SELECTED: '%s' (index %d)\n", llm_ui.selected_model, index);
         
-        // Release previous model if held
-        if (llm_ui.active_model_name[0]) {
-            printf("Releasing previous model: %s\n", llm_ui.active_model_name);
-            model_manager_release_read(llm_ui.active_model_name);
-            llm_ui.active_model_name[0] = '\0';
-        }
-        
-        // Clean up previous inference context
-        if (state->cllm_inference) {
-            extern void cllm_inference_cleanup(CLLMInference* inference);
-            cllm_inference_cleanup(state->cllm_inference);
-            state->cllm_inference = NULL;
-        }
-        
-        // Load the model into memory (this also prepares the abacus)
-        printf("Loading model: %s\n", model_name);
-        if (!model_manager_reload(model_name)) {
-            printf("ERROR: Failed to load model\n");
-            add_chat_message("Error: Failed to load model into memory.", false);
-            return;
-        }
-        
-        // Acquire read lock on the model (allows concurrent access during training)
-        printf("Acquiring read lock on model: %s\n", model_name);
-        CLLMModel* model = model_manager_acquire_read(model_name);
-        if (model) {
-            // Store model name for later release
-            strncpy(llm_ui.active_model_name, model_name, sizeof(llm_ui.active_model_name) - 1);
-            llm_ui.active_model_name[sizeof(llm_ui.active_model_name) - 1] = '\0';
+        // Load the model using tab state
+        if (llm_tab_load_model(model_name)) {
+            // Clean up previous inference context
+            if (state->cllm_inference) {
+                extern void cllm_inference_cleanup(CLLMInference* inference);
+                cllm_inference_cleanup(state->cllm_inference);
+                state->cllm_inference = NULL;
+            }
             
             // Create inference context
             extern CLLMInference* cllm_inference_init(CLLMModel* model);
-            state->cllm_inference = cllm_inference_init(model);
+            state->cllm_inference = cllm_inference_init(llm_ui.tab_state.model);
             
             if (state->cllm_inference) {
                 // Set parameters from sliders
@@ -268,21 +247,19 @@ static void on_model_selected(int index, void* data) {
                 cllm_set_temperature(state->cllm_inference, state->llm_temperature);
                 cllm_set_max_tokens(state->cllm_inference, state->llm_max_tokens);
                 
-                printf("✓ Model acquired for inference (read lock - training can continue)\n");
+                printf("✓ Model loaded for inference\n");
                 add_chat_message("Model loaded successfully. You can now start chatting!", false);
             } else {
                 printf("ERROR: Failed to create inference context\n");
                 add_chat_message("Error: Failed to create inference context.", false);
-                // Release the model since we couldn't create inference context
-                model_manager_release_read(llm_ui.active_model_name);
-                llm_ui.active_model_name[0] = '\0';
+                llm_tab_unload_model();
             }
         } else {
-            printf("ERROR: Failed to acquire model for reading\n");
-            add_chat_message("Error: Model is not accessible. It may need to be loaded first.", false);
+            printf("ERROR: Failed to load model\n");
+            add_chat_message("Error: Failed to load model.", false);
         }
     } else {
-        printf("ERROR: Could not get model name for index %d\n", index);
+        printf("ERROR: Could not get model metadata for index %d\n", index);
     }
 }
 
@@ -617,18 +594,16 @@ void draw_llm_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_button_render(llm_ui.btn_new_thread, renderer);
     }
     
-    // Populate model dropdown if empty (after model_manager initializes)
+    // Populate model dropdown if empty (after model registry initializes)
     static bool models_populated = false;
     if (!models_populated && llm_ui.model_dropdown) {
-        extern uint32_t model_manager_count(void);
-        extern char* model_manager_get_name_at_index(uint32_t index);
-        
-        uint32_t model_count = model_manager_count();
+        uint32_t model_count = model_registry_count();
         if (model_count > 0) {
             char** model_names = malloc(model_count * sizeof(char*));
             if (model_names) {
                 for (uint32_t i = 0; i < model_count; i++) {
-                    model_names[i] = model_manager_get_name_at_index(i);
+                    const ModelMetadata* metadata = model_registry_get_at_index(i);
+                    model_names[i] = metadata ? (char*)metadata->name : "";
                 }
                 crystalline_dropdown_set_options(llm_ui.model_dropdown, model_names, (int)model_count);
                 printf("LLM MODEL DROPDOWN: Populated with %u models\n", model_count);
@@ -815,12 +790,8 @@ void llm_input_on_submit(const char* text, void* user_data) {
 void cleanup_llm_tab(void) {
     if (!llm_ui.initialized) return;
     
-    // Release model read lock if held
-    if (llm_ui.active_model_name[0]) {
-        printf("Releasing model read lock: %s\n", llm_ui.active_model_name);
-        model_manager_release_read(llm_ui.active_model_name);
-        llm_ui.active_model_name[0] = '\0';
-    }
+    // Unload model if loaded
+    llm_tab_unload_model();
     
     // Cleanup Crystalline UI elements
     if (llm_ui.chat_area) crystalline_textarea_destroy(llm_ui.chat_area);
