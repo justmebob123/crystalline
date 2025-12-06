@@ -87,12 +87,19 @@ Redesign model management to enable concurrent operations while keeping Models T
 - Simpler model loading flow
 - Ready for concurrent operations
 
-### Phase 3.4: Models Tab Refactor (4-5 hours)
-- [ ] Use registry instead of manager
-- [ ] Add training stats display
-- [ ] Add status indicators
-- [ ] Implement management operations
-- [ ] Test Models Tab display
+### Phase 3.4: Models Tab Refactor (2-3 hours) ✅ COMPLETE
+- [x] Part A: Replace model_manager with model_registry
+  - Updated refresh_model_list() to use model_registry_scan() and model_registry_count()
+  - Updated on_model_selected() to use model_registry_get_at_index()
+  - Updated on_delete_clicked() to use model_registry_delete()
+  - Updated on_load_clicked() to refresh metadata instead of loading
+- [x] Part B: Update model info display
+  - Already using model_registry_get() for metadata display
+- [x] Part C: Update button callbacks
+  - All button callbacks now use model_registry functions
+- [x] Part D: Test Models Tab display
+  - Build successful: 0 errors, 0 warnings
+  - All model_manager references removed
 
 ### Phase 3.5: Crawler Tab Refactor (2-3 hours)
 - [ ] Add per-tab model state

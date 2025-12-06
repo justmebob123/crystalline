@@ -13,7 +13,7 @@
 #include "../crystalline/elements.h"
 #include "../crystalline/global_layout.h"
 #include "../button_sizes.h"
-#include "cllm_model_manager.h"
+#include "cllm_model_registry.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -59,9 +59,9 @@ static void update_model_info(void) {
         return;
     }
     
-    // Get model info
-    ManagedModel* model = model_manager_get(g_models_ui.selected_model_name);
-    if (!model) {
+    // Get model metadata from registry
+    const ModelMetadata* metadata = model_registry_get(g_models_ui.selected_model_name);
+    if (!metadata) {
         crystalline_textarea_add_message(g_models_ui.info_display, 
             CRYSTALLINE_MESSAGE_SYSTEM, 
             "Model not found", 
@@ -73,27 +73,27 @@ static void update_model_info(void) {
     char info_text[2048];
     snprintf(info_text, sizeof(info_text),
         "Model: %s\n\n"
-        "Status: %s\n"
-        "Accessible: %s\n"
-        "Training: %s\n"
-        "Active Readers: %u\n\n"
+        "Path: %s\n"
+        "Valid: %s\n\n"
         "Vocab Size: %u\n"
         "Embedding Dim: %u\n"
         "Num Layers: %u\n"
         "Num Heads: %u\n"
-        "Required Primes: %lu\n\n"
-        "%s",
-        model->name,
-        model->model ? "Loaded in Memory" : "Not Loaded",
-        model->is_accessible ? "Yes" : "No",
-        model->is_training ? "Yes" : "No",
-        model->read_count,
-        model->vocab_size,
-        model->embedding_dim,
-        model->num_layers,
-        model->num_heads,
-        (unsigned long)model->required_primes,
-        model->model ? "Ready for use" : "Click 'Load Model' to load into memory"
+        "Max Seq Len: %u\n\n"
+        "File Size: %llu bytes\n"
+        "Created: %s"
+        "Modified: %s",
+        metadata->name,
+        metadata->path,
+        metadata->is_valid ? "Yes" : "No",
+        metadata->vocab_size,
+        metadata->embedding_dim,
+        metadata->num_layers,
+        metadata->num_heads,
+        metadata->max_seq_len,
+        (unsigned long long)metadata->file_size,
+        ctime(&metadata->created_time),
+        ctime(&metadata->modified_time)
     );
     
     crystalline_textarea_add_message(g_models_ui.info_display, 
@@ -108,19 +108,25 @@ static void update_model_info(void) {
 static void refresh_model_list(void) {
     if (!g_models_ui.model_list) return;
     
-    // Get models from model_manager
-    uint32_t model_count = 0;
-    ManagedModel** models = model_manager_list(&model_count);
+    // Scan models directory
+    model_registry_scan();
     
-    if (!models || model_count == 0) {
+    // Get model count from registry
+    uint32_t model_count = model_registry_count();
+    
+    if (model_count == 0) {
         crystalline_list_set_items(g_models_ui.model_list, NULL, 0);
+        printf("No models found\n");
         return;
     }
     
     // Create string array for list
     char** model_names = malloc(model_count * sizeof(char*));
     for (uint32_t i = 0; i < model_count; i++) {
-        model_names[i] = models[i]->name;
+        const ModelMetadata* metadata = model_registry_get_at_index(i);
+        if (metadata) {
+            model_names[i] = (char*)metadata->name;
+        }
     }
     
     // Update list
@@ -142,15 +148,11 @@ static void on_load_clicked(void* data) {
         return;
     }
     
-    printf("Loading model: %s\n", g_models_ui.selected_model_name);
+    printf("Load button clicked for model: %s\n", g_models_ui.selected_model_name);
+    printf("Note: Models Tab is for viewing only. Use Training or LLM tabs to load models.\n");
     
-    // Reload model (actually loads it into memory)
-    if (model_manager_reload(g_models_ui.selected_model_name)) {
-        printf("✓ Model loaded successfully into memory\n");
-        update_model_info();
-    } else {
-        printf("ERROR: Failed to load model\n");
-    }
+    // Just refresh the display
+    update_model_info();
 }
 
 static void on_delete_clicked(void* data) {
@@ -163,8 +165,8 @@ static void on_delete_clicked(void* data) {
     
     printf("Deleting model: %s\n", g_models_ui.selected_model_name);
     
-    // Delete model (including file)
-    if (model_manager_delete(g_models_ui.selected_model_name, true)) {
+    // Delete model file and remove from registry
+    if (model_registry_delete(g_models_ui.selected_model_name)) {
         printf("Model deleted successfully\n");
         g_models_ui.selected_model_index = -1;
         g_models_ui.selected_model_name[0] = '\0';
@@ -195,12 +197,11 @@ static void on_model_selected(int index, void* data) {
     
     g_models_ui.selected_model_index = index;
     
-    // Get model name
-    uint32_t model_count = 0;
-    ManagedModel** models = model_manager_list(&model_count);
+    // Get model metadata from registry
+    const ModelMetadata* metadata = model_registry_get_at_index((uint32_t)index);
     
-    if (models && index >= 0 && (uint32_t)index < model_count) {
-        strncpy(g_models_ui.selected_model_name, models[index]->name, 
+    if (metadata && index >= 0) {
+        strncpy(g_models_ui.selected_model_name, metadata->name, 
                 sizeof(g_models_ui.selected_model_name) - 1);
         printf("Selected model: %s\n", g_models_ui.selected_model_name);
         update_model_info();
