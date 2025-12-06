@@ -67,7 +67,15 @@ uint32_t cllm_add_token_to_partition(CLLMTokenizer* tokenizer, const char* token
     }
     
     uint32_t idx = tokenizer->partition_sizes[partition_id];
-    tokenizer->vocab_partitions[partition_id][idx] = strdup(token);
+    char* token_copy = strdup(token);
+    
+    if (!token_copy) {
+        // strdup failed - out of memory
+        pthread_mutex_unlock(&tokenizer->partition_locks[partition_id]);
+        return TOKEN_UNK;
+    }
+    
+    tokenizer->vocab_partitions[partition_id][idx] = token_copy;
     tokenizer->count_partitions[partition_id][idx] = 1;
     tokenizer->partition_sizes[partition_id]++;
     
