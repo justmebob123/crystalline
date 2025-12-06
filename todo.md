@@ -26,6 +26,7 @@
 - [x] Efficient merge phase
 - [x] Fallback to single-threaded for small datasets
 - [x] Commit: b944b0c
+- [x] Fix segfault (nested function issue) - Commit: 142284c
 - [ ] Test parallel tokenization performance (USER ACTION REQUIRED)
 
 ## 5. Complete Pipeline Status

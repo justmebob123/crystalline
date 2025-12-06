@@ -13,6 +13,7 @@
 
 #include "../include/cllm.h"
 #include "../include/cllm_tokenizer.h"
+#include "../include/cllm_progress.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -399,6 +400,10 @@ void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     
     printf("Activating %d of 12 symmetry spheres\n", num_active_spheres);
     
+    // Initialize progress tracker
+    CLLMProgress vocab_progress;
+    cllm_progress_init(&vocab_progress, "Phase 1: Building Vocabulary", loader->num_documents);
+    
     // Create progress counter
     _Atomic size_t progress_counter = 0;
     
@@ -429,10 +434,7 @@ void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     while (atomic_load(&progress_counter) < loader->num_documents) {
         size_t current_progress = atomic_load(&progress_counter);
         if (current_progress != last_progress) {
-            printf("  Processed %zu/%zu documents (%.1f%%)...\r", 
-                   current_progress, loader->num_documents, 
-                   (current_progress * 100.0) / loader->num_documents);
-            fflush(stdout);
+            cllm_progress_update(&vocab_progress, current_progress);
             last_progress = current_progress;
         }
         usleep(100000);  // 100ms
@@ -484,6 +486,7 @@ typedef struct {
     size_t end_doc;
     int thread_id;
     _Atomic size_t* progress_counter;
+    CLLMProgress* progress_tracker;
 } TokenizeWorkerContext;
 
 // Worker function for parallel tokenization
@@ -519,9 +522,8 @@ static void* tokenize_worker(void* arg) {
         
         // Update progress
         size_t current = atomic_fetch_add(ctx->progress_counter, 1) + 1;
-        if (current % 100 == 0) {
-            printf("  Processed %zu/%zu documents\r", current, ctx->loader->num_documents);
-            fflush(stdout);
+        if (ctx->progress_tracker) {
+            cllm_progress_update(ctx->progress_tracker, current);
         }
     }
     
@@ -592,6 +594,10 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
         // Parallel tokenization using 12-fold symmetry
         printf("Using %d-thread parallel tokenization (%zu documents)\n", num_cpus, loader->num_documents);
         
+        // Initialize progress tracker
+        CLLMProgress token_progress;
+        cllm_progress_init(&token_progress, "Phase 2: Tokenizing Documents", loader->num_documents);
+        
         // Create per-thread token buffers
         ThreadTokenBuffer* thread_buffers = (ThreadTokenBuffer*)calloc(num_cpus, sizeof(ThreadTokenBuffer));
         if (!thread_buffers) {
@@ -628,6 +634,7 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
             contexts[t].end_doc = (t == num_cpus - 1) ? loader->num_documents : (t + 1) * docs_per_thread;
             contexts[t].thread_id = t;
             contexts[t].progress_counter = &progress_counter;
+            contexts[t].progress_tracker = &token_progress;
             
             pthread_create(&threads[t], NULL, tokenize_worker, &contexts[t]);
         }
@@ -636,6 +643,9 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
         for (int t = 0; t < num_cpus; t++) {
             pthread_join(threads[t], NULL);
         }
+        
+        // Complete progress tracking
+        cllm_progress_complete(&token_progress);
         printf("\n");
         
         // Merge thread buffers into final dataset
