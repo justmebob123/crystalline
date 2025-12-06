@@ -1,10 +1,11 @@
 # CLLM Training & Inference - Master Plan
 
-## Current Status: ✅ ISSUE RESOLVED - FRESH MODEL TRAINED SUCCESSFULLY
-- NaN detection system: ✅ COMPLETED
-- Training pipeline: ✅ WORKING (fresh model trained successfully)
-- Inference pipeline: ✅ WORKING (no NaN errors)
-- Full dataset training: ✅ COMPLETED (5 epochs, loss: 10.26)
+## Current Status: 🔧 MAJOR FIX APPLIED - GRADIENT EXPLOSION DISCOVERED
+- Float→Double conversion: ✅ COMPLETED (entire pipeline now uses double)
+- NaN errors in inference: ✅ FIXED (no more NaN!)
+- Gradient explosion: ⚠️ CRITICAL ISSUE DISCOVERED (gradients → inf)
+- Training pipeline: ⚠️ NEEDS GRADIENT CLIPPING
+- Model quality: ⚠️ POOR (generates mostly token_0 due to gradient explosion)
 
 ## Phase 1: Review Master Plan & Current State
 - [x] Read master plan from repository
@@ -69,21 +70,47 @@
 
 ## Issues Resolved
 
-### ✅ RESOLVED: Layer 0 Attention Weights Corruption
-- **ROOT CAUSE**: Previous model had Layer 0 attention weights with astronomically large values (255083451533577267912928558841856.0)
-- **SOLUTION**: Retrained model from scratch with proper initialization
+### ✅ RESOLVED: Float/Double Precision Mismatch
+- **ROOT CAUSE**: Entire inference pipeline used float while model stored double weights
+- **IMPACT**: 
+  1. Constant precision loss on every forward/backward pass
+  2. NaN errors in inference
+  3. Numerical instability
+  4. Masked gradient explosion issues
+- **SOLUTION**: Converted ALL layer operations to double precision
+  1. cllm_layer_norm: float* → double*
+  2. cllm_feedforward: float* → double*
+  3. cllm_attention_forward: double throughout
+  4. cllm_apply_temperature: float* → double*
+  5. cllm_softmax: float* → double*
+  6. cllm_sample_top_k/top_p: float* → double*
 - **VERIFICATION**:
-  1. ✅ All embeddings are valid (no NaN)
-  2. ✅ All layer weights are in normal range (-0.09 to 0.09)
-  3. ✅ Layer 0 weights: 0.066670, 0.057445, -0.023258, etc. (NORMAL)
-  4. ✅ Inference runs without NaN errors
-  5. ✅ Model generates tokens successfully
-- **TRAINING RESULTS**:
-  - Epochs: 5
-  - Final loss: 10.26
-  - Best loss: 6.97
-  - Training time: 46 seconds
-  - Model saved: checkpoints/final_model.cllm
+  1. ✅ Build succeeds with no errors
+  2. ✅ Inference runs without NaN errors
+  3. ✅ Model loads and generates tokens
+  4. ✅ No more float<->double conversions
+- **FILES MODIFIED**:
+  - src/ai/cllm_inference.c
+  - include/cllm_inference.h
+  - tools/cllm_inference.c
+
+## Critical Issues Discovered
+
+### 🔴 CRITICAL: Gradient Explosion in Training
+- **DISCOVERED**: Double precision exposed severe gradient explosion
+- **SYMPTOMS**:
+  - Epoch 6: max gradient = 1.93e+10
+  - Epoch 7: max gradient = 7.64e+29
+  - Epoch 8: max gradient = inf
+  - Epoch 9: max gradient = 0 (vanishing after explosion)
+- **ROOT CAUSE**: Attention backward pass produces unbounded gradients
+- **IMPACT**: Model cannot learn, generates mostly token_0
+- **SOLUTION REQUIRED**:
+  1. Implement gradient clipping (max_norm=1.0)
+  2. Fix attention backward pass
+  3. Add gradient monitoring
+  4. Adjust learning rate (0.001 → 0.0001)
+- **PRIORITY**: CRITICAL - Must fix before any further training
 
 ## Files Modified/Created This Session
 1. src/ai/cllm_format.c - Fixed memory management in cllm_free()
@@ -100,9 +127,41 @@
 12. CURRENT_STATE_SUMMARY.md - System status summary
 13. todo.md - Updated progress tracking
 
-## Recommendations for Next Session
-1. **Priority 1**: Train for more epochs to improve model quality (currently generates mostly token_0)
-2. **Priority 2**: Implement proper text decoding to convert token IDs to readable text
-3. **Priority 3**: Test with larger/more diverse training data
-4. **Priority 4**: Optimize performance and run comprehensive tests
-5. **Priority 5**: Implement model evaluation metrics (perplexity, accuracy, etc.)
+## Immediate Action Items (CRITICAL)
+
+### Priority 1: Implement Gradient Clipping ⚠️ CRITICAL
+- [ ] Add gradient norm computation
+- [ ] Implement gradient clipping (max_norm=1.0)
+- [ ] Add gradient monitoring/logging
+- [ ] Test with clipping enabled
+
+### Priority 2: Fix Attention Backward Pass ⚠️ CRITICAL
+- [ ] Audit attention gradient computation
+- [ ] Add numerical stability checks
+- [ ] Verify softmax gradient
+- [ ] Test gradient flow
+
+### Priority 3: Adjust Training Hyperparameters
+- [ ] Reduce learning rate (0.001 → 0.0001)
+- [ ] Implement learning rate warmup
+- [ ] Add learning rate decay
+- [ ] Test different batch sizes
+
+### Priority 4: Comprehensive Testing
+- [ ] Train with gradient clipping
+- [ ] Monitor gradient norms per layer
+- [ ] Verify no gradient explosion
+- [ ] Validate model quality
+
+### Priority 5: Evaluation & Validation
+- [ ] Implement perplexity calculation
+- [ ] Add proper text decoding
+- [ ] Test with diverse prompts
+- [ ] Compare with baseline
+
+## Long-term Recommendations
+1. Expand training data
+2. Optimize SIMD operations for double precision
+3. Implement proper evaluation metrics
+4. Add model checkpointing
+5. Implement early stopping
