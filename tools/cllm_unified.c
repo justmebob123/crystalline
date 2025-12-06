@@ -16,6 +16,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_training_threaded.h"
@@ -212,6 +213,44 @@ int cmd_train(int argc, char** argv) {
     }
     printf("✓ Dataset created\n\n");
     
+    // Auto-adjust parameters for small datasets
+    size_t dataset_tokens = dataset->num_tokens;
+    size_t tokens_per_batch = batch_size * seq_len;
+    size_t estimated_batches = dataset_tokens / tokens_per_batch;
+    
+    // Get number of threads for comparison
+    int actual_threads = num_threads;
+    if (actual_threads == 0) {
+        actual_threads = sysconf(_SC_NPROCESSORS_ONLN);
+        if (actual_threads < 1) actual_threads = 1;
+        if (actual_threads > 12) actual_threads = 12;
+    }
+    
+    // Warn if too few batches
+    if (estimated_batches < (size_t)actual_threads) {
+        printf("⚠️  WARNING: Configuration creates only %zu batch(es) for %d workers\n", 
+               estimated_batches, actual_threads);
+        printf("   This will result in very slow training with poor thread utilization.\n");
+        printf("   Recommendation: Use smaller batch/seq-len parameters:\n");
+        
+        // Calculate better parameters
+        int recommended_batch = 4;
+        int recommended_seq = 16;
+        size_t recommended_batches = dataset_tokens / (recommended_batch * recommended_seq);
+        
+        printf("   Try: --batch %d --seq-len %d (creates ~%zu batches)\n\n",
+               recommended_batch, recommended_seq, recommended_batches);
+        
+        // Auto-adjust if user didn't explicitly set parameters
+        // (We can't easily detect if user set them, so we'll just warn for now)
+    }
+    
+    // Warn if dataset is very small
+    if (dataset_tokens < 1000) {
+        printf("⚠️  WARNING: Very small dataset (%zu tokens)\n", dataset_tokens);
+        printf("   Consider using a larger dataset for better model quality.\n\n");
+    }
+    
     // Create model
     printf("Creating model...\n");
     CLLMConfig model_config = {
@@ -299,11 +338,11 @@ int cmd_train(int argc, char** argv) {
     training->num_tokens = dataset->num_tokens;
     
     // Determine threading mode
-    int actual_threads = (num_threads == 0) ? 12 : num_threads;
-    bool use_threading = (actual_threads > 1);
+    int training_threads = (num_threads == 0) ? 12 : num_threads;
+    bool use_threading = (training_threads > 1);
     
     if (use_threading) {
-        printf("Starting THREADED training with %d threads...\n", actual_threads);
+        printf("Starting THREADED training with %d threads...\n", training_threads);
         printf("Using kissing spheres architecture\n\n");
         
         // Create batch iterator for threaded training
@@ -331,7 +370,7 @@ int cmd_train(int argc, char** argv) {
         ThreadedTrainingSystem* threaded_system = threaded_training_create(
             training,
             batch_iter,
-            actual_threads
+            training_threads
         );
         
         if (!threaded_system) {

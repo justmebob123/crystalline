@@ -1,0 +1,11 @@
+# Set up GDB
+set pagination off
+set logging file gdb_analysis.log
+set logging on
+
+# Run the program
+run
+
+# Wait for it to hang (we'll interrupt it manually after seeing the hang)
+# This is a placeholder - in practice we'd wait ~15 seconds then Ctrl+C
+
