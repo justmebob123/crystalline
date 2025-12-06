@@ -31,19 +31,33 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     // Reset accumulation counter
     training->accumulation_step = 0;
     
+    // CRITICAL: Clip gradients to prevent explosion
+    float max_grad_norm = 1.0f;  // Maximum gradient norm
+    
+    CLLMModel* model = training->model;
+    
+    // Clip embedding gradients
+    size_t embed_size = model->vocab_size * model->embedding_dim;
+    if (training->gradients) {
+        float grad_norm = 0.0f;
+        for (size_t i = 0; i < embed_size; i++) {
+            grad_norm += training->gradients[i] * training->gradients[i];
+        }
+        grad_norm = prime_sqrtf(grad_norm);
+        
+        if (grad_norm > max_grad_norm) {
+            float scale = max_grad_norm / grad_norm;
+            for (size_t i = 0; i < embed_size; i++) {
+                training->gradients[i] *= scale;
+            }
+        }
+    }
+    
     // Scale gradients by 1/accum_steps
     float gradient_scale = 1.0f / (float)accum_steps;
     (void)gradient_scale;  // Currently unused - reserved for future gradient scaling
     
-    CLLMModel* model = training->model;
-    
-    // Scale embedding gradients
-    size_t embed_size = model->vocab_size * model->embedding_dim;
-    if (training->gradients) {
-        for (size_t i = 0; i < embed_size; i++) {
-// DISABLED - USE BigFixed version:             training->gradients[i] *= gradient_scale;
-        }
-    }
+    // Note: Gradient scaling disabled - using gradient clipping instead
     
     // Scale attention gradients
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {

@@ -1,184 +1,105 @@
-# COMPLETE PIPELINE TESTING AND FIXING - NO SHORTCUTS
+# DEPTH-17 BIDIRECTIONAL ANALYSIS - FIXING NaN LOSS
 
-## CRITICAL: Read Master Plan First
-- [x] Read MASTER_PLAN.md
-- [x] Understand objectives and architecture
-- [x] No stubs, no simplifications, no shortcuts
+## CRITICAL ISSUE
+- Loss starts at ~7.19 (working)
+- Loss becomes NaN during training
+- All gradients become zero
+- This is a NUMERICAL STABILITY bug in forward/backward pass
 
-## CRITICAL BUG FOUND: Loss is NaN, Gradients are Zero
+## Phase 1: Identify Where NaN Originates [STARTING NOW]
 
-Training is running but:
-- Loss = -nan
-- All gradients = 0.00e+00
-- Model is not learning
+### 1.1 Check Forward Pass for NaN
+- [ ] Add NaN checks after each operation in forward pass
+- [ ] Check embeddings for NaN
+- [ ] Check attention outputs for NaN
+- [ ] Check feedforward outputs for NaN
+- [ ] Check logits for NaN
 
-This is caused by the wired loss function from algorithms layer!
+### 1.2 Check Backward Pass for NaN
+- [ ] Add NaN checks in gradient computation
+- [ ] Check if gradients become NaN
+- [ ] Check if weights become NaN
+- [ ] Identify exact operation causing NaN
 
-## Phase 1: Fix NaN Loss and Zero Gradients [URGENT]
+### 1.3 Check Loss Computation for NaN
+- [ ] Verify softmax doesn't produce NaN
+- [ ] Check for log(0) or log(negative)
+- [ ] Check for division by zero
+- [ ] Verify numerical stability
 
-### 1.1 Analyze Application UI Integration
-- [ ] Check app/ui/tabs/tab_training.c integration with training pipeline
-- [ ] Check app/ui/tabs/tab_llm.c integration with inference
-- [ ] Verify all UI callbacks are wired correctly
-- [ ] Check if training status updates work
-- [ ] Check if inference results display correctly
+## Phase 2: Run Under Valgrind
 
-### 1.2 Analyze Training Thread Integration
-- [ ] Check app/training_thread.c integration
-- [ ] Verify training thread uses correct training functions
-- [ ] Check if progress updates work
-- [ ] Verify checkpoint saving works
-- [ ] Check error handling
+### 2.1 Memory Leak Detection
+- [ ] Run training under valgrind --leak-check=full
+- [ ] Fix all memory leaks
+- [ ] Re-run until clean
 
-### 1.3 Analyze CLI Tool Integration
-- [ ] Check tools/cllm.c train command implementation
-- [ ] Check tools/cllm.c infer command implementation
-- [ ] Verify all CLI options work
-- [ ] Check if output is correct
-- [ ] Test error handling
+### 2.2 Invalid Memory Access
+- [ ] Check for buffer overflows
+- [ ] Check for use-after-free
+- [ ] Fix all invalid accesses
 
-## Phase 2: Wire ALL Remaining Double-Precision Functions
+## Phase 3: Run Under GDB
 
-### 2.1 Complete NTT Attention Wiring
-- [ ] Modify cllm_attention_forward() to use ntt_attention_forward_double()
-- [ ] Add adaptive selection based on sequence length
-- [ ] Test with different sequence lengths
-- [ ] Verify correctness
-- [ ] Benchmark speedup
+### 3.1 Set Breakpoints
+- [ ] Break on NaN detection
+- [ ] Break in loss computation
+- [ ] Break in gradient computation
+- [ ] Examine variables when NaN occurs
 
-### 2.2 Create and Wire Angular Attention Double
-- [ ] Create angular_attention_forward_double() in algorithms
-- [ ] Add to algorithms/include/angular_attention.h
-- [ ] Wire into attention computation
-- [ ] Test correctness
-- [ ] Benchmark
+### 3.2 Trace Execution
+- [ ] Step through forward pass
+- [ ] Step through backward pass
+- [ ] Identify exact line causing NaN
 
-### 2.3 Create and Wire Lattice Embeddings Double
-- [ ] Create lattice_embeddings_init_geometric_double() in algorithms
-- [ ] Add to algorithms/include/lattice_embeddings.h
-- [ ] Wire into model initialization
-- [ ] Test correctness
-- [ ] Verify geometric structure
+## Phase 4: Fix Numerical Stability
 
-### 2.4 Complete Optimizer Integration
-- [ ] Wire optimizer_step() into cllm_optimizer_step()
-- [ ] Replace ALL inline SGD code
-- [ ] Test Adam, RMSprop, Momentum
-- [ ] Verify convergence
-- [ ] Benchmark
+### 4.1 Add Gradient Clipping
+- [ ] Clip gradients to prevent explosion
+- [ ] Add checks for inf/nan
+- [ ] Normalize gradients if needed
 
-### 2.5 Complete Gradient Buffer Integration
-- [ ] Wire gradient_buffer_accumulate() into training loop
-- [ ] Replace ALL inline gradient accumulation
-- [ ] Add gradient clipping
-- [ ] Add gradient validation
-- [ ] Test numerical stability
+### 4.2 Fix Softmax Stability
+- [ ] Ensure max subtraction works
+- [ ] Add epsilon to prevent log(0)
+- [ ] Clamp values to safe range
 
-## Phase 3: Complete End-to-End Training Test
+### 4.3 Fix Weight Initialization
+- [ ] Check if weights are initialized correctly
+- [ ] Verify no NaN in initial weights
+- [ ] Check embedding initialization
 
-### 3.1 Prepare Training Data
-- [ ] List all training data files in data/
-- [ ] Concatenate into single training file
-- [ ] Verify data format
-- [ ] Check data size
+## Phase 5: Test With Simpler Model
 
-### 3.2 Train Complete Model
-- [ ] Create model with reasonable size (vocab=1000, embed=128, layers=4)
-- [ ] Train for 10 epochs on ALL training data
-- [ ] Monitor loss convergence
-- [ ] Save checkpoints
-- [ ] Verify model saves correctly
+### 5.1 Minimal Test
+- [ ] Create tiny model (vocab=10, embed=8, layers=1)
+- [ ] Train on tiny data (10 tokens)
+- [ ] Verify loss decreases
+- [ ] Verify no NaN
 
-### 3.3 Test Inference
+### 5.2 Gradual Increase
+- [ ] Increase model size gradually
+- [ ] Test at each step
+- [ ] Find where NaN starts occurring
+
+## Phase 6: Complete Pipeline Test
+
+### 6.1 Train Working Model
+- [ ] Use configuration that doesn't produce NaN
+- [ ] Train for 10 epochs
+- [ ] Verify loss decreases consistently
+- [ ] Save model
+
+### 6.2 Test Inference
 - [ ] Load trained model
-- [ ] Test with simple prompts
-- [ ] Test with complex prompts
-- [ ] Verify outputs are meaningful
-- [ ] Check if responses relate to training data
-
-## Phase 4: Valgrind Analysis
-
-### 4.1 Memory Leak Detection
-- [ ] Run training under valgrind
-- [ ] Check for memory leaks
-- [ ] Fix all leaks found
-- [ ] Re-run until clean
-
-### 4.2 Invalid Memory Access
-- [ ] Check for invalid reads
-- [ ] Check for invalid writes
-- [ ] Fix all issues
-- [ ] Re-run until clean
-
-## Phase 5: GDB Analysis
-
-### 5.1 Crash Detection
-- [ ] Run training under gdb
-- [ ] Catch any segfaults
-- [ ] Analyze stack traces
-- [ ] Fix all crashes
-
-### 5.2 Logic Verification
-- [ ] Set breakpoints in critical functions
-- [ ] Verify gradient computation
-- [ ] Verify weight updates
-- [ ] Verify loss computation
-
-## Phase 6: Strace Analysis
-
-### 6.1 System Call Analysis
-- [ ] Run training under strace
-- [ ] Check file operations
-- [ ] Check memory operations
-- [ ] Identify bottlenecks
-
-## Phase 7: Depth-17 Bidirectional Analysis (If Needed)
-
-### 7.1 Forward Pass Analysis
-- [ ] Trace data flow through forward pass
-- [ ] Verify all computations
-- [ ] Check for numerical issues
-- [ ] Verify activations
-
-### 7.2 Backward Pass Analysis
-- [ ] Trace gradient flow through backward pass
-- [ ] Verify all gradient computations
-- [ ] Check for zero gradients
-- [ ] Verify gradient accumulation
-
-### 7.3 Optimizer Analysis
-- [ ] Verify weight updates
-- [ ] Check learning rate
-- [ ] Verify momentum/Adam state
-- [ ] Check for NaN/Inf
-
-## Phase 8: Final Validation
-
-### 8.1 Quality Tests
-- [ ] Train model on "sky is blue" data
-- [ ] Test inference with "is the sky blue?"
-- [ ] Verify meaningful response
+- [ ] Test with "sky is blue" prompts
+- [ ] Verify meaningful outputs
 - [ ] Test multiple prompts
 
-### 8.2 Stress Tests
-- [ ] Train with maximum data
-- [ ] Train with maximum epochs
-- [ ] Test with long sequences
-- [ ] Test with large vocabulary
-
-### 8.3 Performance Tests
-- [ ] Benchmark training speed
-- [ ] Benchmark inference speed
-- [ ] Compare with baseline
-- [ ] Verify speedup claims
-
 ## Success Criteria
-
-- [ ] Training completes without crashes
-- [ ] Loss decreases consistently
-- [ ] Model saves and loads correctly
+- [ ] Loss decreases consistently (no NaN)
+- [ ] Gradients are non-zero
+- [ ] Model trains successfully
 - [ ] Inference produces meaningful outputs
 - [ ] No memory leaks
-- [ ] No invalid memory access
-- [ ] All algorithms properly wired
-- [ ] Performance improvements verified
+- [ ] No crashes
