@@ -244,9 +244,15 @@ int cmd_train(int argc, char** argv) {
         .gradient_clip = 1.0f,
         .warmup_steps = 100,
         .save_interval = 10,
+        .save_every = 5,  // Save checkpoint every 5 epochs
         .eval_interval = 100,
         .optimizer = "adam"
     };
+    
+    // Pre-compute all embeddings to avoid lazy initialization overhead during training
+    extern void cllm_precompute_all_embeddings(CLLMModel* model);
+    cllm_precompute_all_embeddings(model);
+    printf("\n");
     
     // Initialize training
     CLLMTraining* training = cllm_training_init(model, &config);
@@ -265,10 +271,38 @@ int cmd_train(int argc, char** argv) {
     // Train the model
     printf("Starting training with %d threads...\n\n", num_threads == 0 ? 12 : num_threads);
     
-    // Note: Actual training loop would go here
-    // For now, this is a placeholder showing the structure
-    printf("Training loop not yet implemented in unified CLI.\n");
-    printf("Please use the existing train_model tool for now.\n");
+    // Run the training loop
+    int train_result = cllm_train(training);
+    if (train_result != 0) {
+        fprintf(stderr, "Error: Training failed\n");
+        training->tokens = NULL;
+        cllm_training_free(training);
+        cllm_token_dataset_free(dataset);
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    // Save final model
+    char final_model_path[512];
+    snprintf(final_model_path, sizeof(final_model_path), "%s/final_model.cllm", checkpoint_dir);
+    printf("\nSaving final model to %s...\n", final_model_path);
+    if (cllm_write_model(model, final_model_path) != 0) {
+        fprintf(stderr, "Warning: Failed to save final model\n");
+    } else {
+        printf("✓ Final model saved\n");
+    }
+    
+    // Save vocabulary
+    char vocab_path[512];
+    snprintf(vocab_path, sizeof(vocab_path), "%s/vocab.txt", checkpoint_dir);
+    printf("Saving vocabulary to %s...\n", vocab_path);
+    if (cllm_save_vocab(tokenizer, vocab_path) != 0) {
+        fprintf(stderr, "Warning: Failed to save vocabulary\n");
+    } else {
+        printf("✓ Vocabulary saved\n");
+    }
     
     // Cleanup
     training->tokens = NULL;  // Don't free (belongs to dataset)
@@ -363,12 +397,51 @@ int cmd_infer(int argc, char** argv) {
     }
     printf("✓ Model loaded\n\n");
     
+    // Try to load vocabulary from same directory as model
+    char vocab_path[512];
+    char* model_dir = strdup(model_file);
+    char* last_slash = strrchr(model_dir, '/');
+    if (last_slash) {
+        *last_slash = '\0';
+        snprintf(vocab_path, sizeof(vocab_path), "%s/vocab.txt", model_dir);
+    } else {
+        snprintf(vocab_path, sizeof(vocab_path), "vocab.txt");
+    }
+    free(model_dir);
+    
+    // Load vocabulary
+    CLLMTokenizer* tokenizer = cllm_create_tokenizer(model->vocab_size);
+    if (tokenizer && cllm_load_vocab(tokenizer, vocab_path) != 0) {
+        printf("✓ Vocabulary loaded from: %s\n", vocab_path);
+        
+        // Copy vocabulary to model tokens
+        if (model->tokens) {
+            for (uint32_t i = 0; i < tokenizer->vocab_size && i < model->vocab_size; i++) {
+                if (tokenizer->vocab[i]) {
+                    strncpy(model->tokens[i].token_str, tokenizer->vocab[i], 63);
+                    model->tokens[i].token_str[63] = '\0';
+                }
+            }
+        }
+    } else {
+        fprintf(stderr, "Warning: Could not load vocabulary from %s\n", vocab_path);
+        fprintf(stderr, "Inference will use token IDs instead of text\n");
+    }
+    
     // Initialize inference
     CLLMInference* inference = cllm_inference_init(model);
     if (!inference) {
         fprintf(stderr, "Error: Failed to initialize inference\n");
+        if (tokenizer) cllm_free_tokenizer(tokenizer);
         cllm_free_model(model);
         return 1;
+    }
+    
+    // Store tokenizer in inference context for tokenization/detokenization
+    // Note: This is a workaround - ideally inference should have its own tokenizer field
+    if (tokenizer) {
+        // We'll need to pass tokenizer to generate function or store it somewhere
+        // For now, just keep it alive
     }
     
     // Set parameters
@@ -423,6 +496,7 @@ int cmd_infer(int argc, char** argv) {
     
     // Cleanup
     cllm_inference_cleanup(inference);
+    if (tokenizer) cllm_free_tokenizer(tokenizer);
     cllm_free_model(model);
     
     return 0;

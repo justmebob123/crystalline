@@ -242,3 +242,23 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
         embeddings[offset + dim] = (float)normalized;
     }
 }
+
+// Pre-compute all embeddings for training (avoids lazy initialization overhead)
+void cllm_precompute_all_embeddings(CLLMModel* model) {
+    if (!model) return;
+    
+    printf("Pre-computing all embeddings for %u tokens...\n", model->vocab_size);
+    fflush(stdout);
+    
+    for (uint32_t token_id = 0; token_id < model->vocab_size; token_id++) {
+        cllm_compute_embedding_lazy(model, token_id);
+        
+        // Progress indicator every 100 tokens
+        if ((token_id + 1) % 100 == 0) {
+            printf("\r  Computed %u/%u embeddings...", token_id + 1, model->vocab_size);
+            fflush(stdout);
+        }
+    }
+    printf("\r✓ Pre-computed all %u embeddings\n", model->vocab_size);
+    fflush(stdout);
+}

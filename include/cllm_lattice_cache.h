@@ -51,4 +51,5 @@ void cllm_lattice_cache_cleanup(void);
  * This is called automatically when an uninitialized embedding is accessed
  */
 void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
+void cllm_precompute_all_embeddings(CLLMModel* model);
 
