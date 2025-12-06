@@ -194,28 +194,32 @@ void cllm_free(CLLMModel* model) {
     
     free(model->tokens);
     free(model->lattice_points);
-    free(model->embeddings.embeddings);
-    free(model->embeddings.lattice_transform);
-    free(model->embeddings.inverse_transform);
     
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        free(model->attention_layers[i].query_lattice);
-        free(model->attention_layers[i].key_lattice);
-        free(model->attention_layers[i].value_lattice);
-        
-        free(model->ff_layers[i].w1_lattice);
-        free(model->ff_layers[i].w2_lattice);
-        free(model->ff_layers[i].bias1);
-        free(model->ff_layers[i].bias2);
-        
-        free(model->layer_norms[i].gamma);
-        free(model->layer_norms[i].beta);
+    // CRITICAL FIX: Don't free individual weight pointers!
+    // All weights (embeddings, attention, FF, layer norms) are allocated
+    // as a single block in model->weights. Only free the main weights array.
+    // The individual pointers (embeddings.embeddings, attention_layers[i].query_lattice, etc.)
+    // are just offsets into this single allocation.
+    
+    // Free the main weights array (contains all model parameters)
+    free(model->weights);
+    
+    // Free transform matrices if they were separately allocated
+    if (model->embeddings.lattice_transform && 
+        model->embeddings.lattice_transform != model->weights) {
+        free(model->embeddings.lattice_transform);
+    }
+    if (model->embeddings.inverse_transform && 
+        model->embeddings.inverse_transform != model->weights) {
+        free(model->embeddings.inverse_transform);
     }
     
+    // Free layer structure arrays (but not the weights they point to)
     free(model->attention_layers);
     free(model->ff_layers);
     free(model->layer_norms);
     
+    // Free positional encoding arrays if separately allocated
     free(model->pos_encoding.spiral_positions);
     free(model->pos_encoding.clock_positions);
     free(model->pos_encoding.prime_positions);

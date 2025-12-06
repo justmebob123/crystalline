@@ -147,12 +147,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->attention_layers[i].value_lattice = model->weights + weight_offset;
         weight_offset += qkv_size;
         
-        // Initialize attention weights with Xavier initialization
-        float xavier_std = prime_sqrtf(2.0f / (config->embedding_dim + config->embedding_dim));
+        // Initialize attention weights with Xavier initialization (DOUBLE PRECISION)
+        double xavier_std = prime_sqrt(2.0 / (config->embedding_dim + config->embedding_dim));
         for (size_t j = 0; j < qkv_size; j++) {
-            model->attention_layers[i].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
-            model->attention_layers[i].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
-            model->attention_layers[i].value_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * xavier_std;
+            model->attention_layers[i].query_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+            model->attention_layers[i].key_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
+            model->attention_layers[i].value_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
         }
     }
     
@@ -198,22 +198,22 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->ff_layers[i].bias2 = model->weights + weight_offset;
         weight_offset += config->embedding_dim;
         
-        // Initialize FF weights with He initialization (for ReLU/tanh)
-        float he_std_w1 = prime_sqrtf(2.0f / config->embedding_dim);
-        float he_std_w2 = prime_sqrtf(2.0f / config->ff_dim);
+        // Initialize FF weights with He initialization (for ReLU/tanh) - DOUBLE PRECISION
+        double he_std_w1 = prime_sqrt(2.0 / config->embedding_dim);
+        double he_std_w2 = prime_sqrt(2.0 / config->ff_dim);
         
         
         for (size_t j = 0; j < w1_size; j++) {
-            model->ff_layers[i].w1_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w1;
+            model->ff_layers[i].w1_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w1;
         }
         for (size_t j = 0; j < config->ff_dim; j++) {
-            model->ff_layers[i].bias1[j] = 0.0f;  // Biases initialized to zero
+            model->ff_layers[i].bias1[j] = 0.0;  // Biases initialized to zero
         }
         for (size_t j = 0; j < w2_size; j++) {
-            model->ff_layers[i].w2_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * he_std_w2;
+            model->ff_layers[i].w2_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w2;
         }
         for (size_t j = 0; j < config->embedding_dim; j++) {
-            model->ff_layers[i].bias2[j] = 0.0f;  // Biases initialized to zero
+            model->ff_layers[i].bias2[j] = 0.0;  // Biases initialized to zero
         }
     }
     
@@ -240,10 +240,10 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->layer_norms[i].beta = model->weights + weight_offset;
         weight_offset += config->embedding_dim;
         
-        // Initialize gamma to 1.0 and beta to 0.0
+        // Initialize gamma to 1.0 and beta to 0.0 - DOUBLE PRECISION
         for (uint32_t j = 0; j < config->embedding_dim; j++) {
-            model->layer_norms[i].gamma[j] = 1.0f;
-            model->layer_norms[i].beta[j] = 0.0f;
+            model->layer_norms[i].gamma[j] = 1.0;
+            model->layer_norms[i].beta[j] = 0.0;
         }
     }
     
