@@ -143,11 +143,12 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
  */
 float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                         uint32_t* target_tokens, int num_tokens) {
-    if (!training || !input_tokens || !target_tokens) return 0.0f;
-    if (!training->model) return 0.0f;
+    if (!training || !target_tokens) return 0.0f;
+    if (!training->model || !training->logits) return 0.0f;
     
     float total_loss = 0.0f;
     int count = 0;
+    uint32_t vocab_size = training->model->vocab_size;
     
     // Safety: limit num_tokens to prevent buffer overflow
     int safe_num_tokens = num_tokens;
@@ -156,28 +157,52 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         safe_num_tokens = training->config.batch_size * training->config.sequence_length;
     }
     
+    // Compute cross-entropy loss from logits
     for (int i = 0; i < safe_num_tokens; i++) {
-        uint32_t input = input_tokens[i];
         uint32_t target = target_tokens[i];
         
         // Bounds check
-        if (input >= training->model->vocab_size || target >= training->model->vocab_size) {
+        if (target >= vocab_size) {
             continue;
         }
         
-        // Use prime-based similarity (O(log n) vs O(n) for dot product)
-        // Add 1 to avoid zero (which breaks GCD and log)
-        float similarity = crystalline_gcd_similarity(input + 1, target + 1);
+        // Get logits for this position
+        double* logits = &training->logits[i * vocab_size];
         
-        // Add spatial locality bonus (tokens close in Ulam spiral are related)
-        float spatial_similarity = 1.0f / (1.0f + ulam_distance(input + 1, target + 1));
+        // Compute softmax (numerically stable with clamping)
+        double max_logit = logits[0];
+        for (uint32_t v = 1; v < vocab_size; v++) {
+            if (logits[v] > max_logit) max_logit = logits[v];
+        }
         
-        // Combined similarity
-        float combined = 0.7f * similarity + 0.3f * spatial_similarity;
+        // Clamp to prevent overflow
+        if (max_logit > 50.0) max_logit = 50.0;
+        if (max_logit < -50.0) max_logit = -50.0;
         
-        // Convert to loss
-        float clamped = combined > 1e-10f ? combined : 1e-10f;
-        total_loss += -prime_logf(clamped);
+        double sum_exp = 0.0;
+        for (uint32_t v = 0; v < vocab_size; v++) {
+            double shifted = logits[v] - max_logit;
+            if (shifted > 50.0) shifted = 50.0;
+            if (shifted < -50.0) shifted = -50.0;
+            sum_exp += prime_exp(shifted);
+        }
+        
+        // Avoid log(0)
+        if (sum_exp < 1e-10) sum_exp = 1e-10;
+        
+        // Cross-entropy: -log(softmax(logits[target]))
+        double shifted_target = logits[target] - max_logit;
+        if (shifted_target > 50.0) shifted_target = 50.0;
+        if (shifted_target < -50.0) shifted_target = -50.0;
+        
+        double log_prob = shifted_target - prime_log(sum_exp);
+        double loss_val = -log_prob;
+        
+        // Clamp loss to reasonable range
+        if (loss_val > 100.0) loss_val = 100.0;
+        if (loss_val < 0.0) loss_val = 0.0;
+        
+        total_loss += loss_val;
         count++;
     }
     
@@ -1219,7 +1244,9 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     uint32_t embed_dim = model->embedding_dim;
     uint32_t vocab_size = model->vocab_size;
     
-    // Get embeddings
+    // Get embeddings (with lazy initialization check)
+    extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
+    
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
@@ -1227,6 +1254,12 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             if (token_id >= vocab_size) continue;
             
             double* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            
+            // Check if embedding is NaN (lazy initialization needed)
+            if (prime_isnan(embed_src[0])) {
+                cllm_compute_embedding_lazy(model, token_id);
+            }
+            
             double* embed_dst = &training->input_embeddings[idx * embed_dim];
             memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
         }
@@ -1301,7 +1334,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     // Copy final hidden
     memcpy(training->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(double));
     
-    // Project to vocabulary
+    // Project to vocabulary (with lazy initialization for vocab embeddings)
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
@@ -1310,6 +1343,12 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                
+                // Check if vocab embedding is NaN (lazy initialization needed)
+                if (prime_isnan(vocab_embed[0])) {
+                    cllm_compute_embedding_lazy(model, v);
+                }
+                
                 float score = 0.0f;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];
