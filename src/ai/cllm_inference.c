@@ -410,7 +410,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
 }
 
 // Simple feedforward pass
-void cllm_feedforward(FeedForwardLayer* layer, float* input, float* output) {
+void cllm_feedforward(FeedForwardLayer* layer, double* input, double* output) {
     // Simple pass-through for now (TODO: implement proper feedforward)
     for (uint32_t i = 0; i < layer->output_dim; i++) {
         output[i] = input[i];
@@ -418,24 +418,24 @@ void cllm_feedforward(FeedForwardLayer* layer, float* input, float* output) {
 }
 
 // Simple layer norm
-void cllm_layer_norm(CLLMLayerNorm* ln, float* input, float* output) {
+void cllm_layer_norm(CLLMLayerNorm* ln, double* input, double* output) {
     // Compute mean
-    float mean = 0.0f;
+    double mean = 0.0;
     for (uint32_t i = 0; i < ln->dim; i++) {
         mean += input[i];
     }
     mean /= ln->dim;
     
     // Compute variance
-    float variance = 0.0f;
+    double variance = 0.0;
     for (uint32_t i = 0; i < ln->dim; i++) {
-        float diff = input[i] - mean;
+        double diff = input[i] - mean;
         variance += diff * diff;
     }
     variance /= ln->dim;
     
     // Normalize
-    float std = prime_sqrtf(variance + ln->epsilon);
+    double std = prime_sqrt(variance + ln->epsilon);
     for (uint32_t i = 0; i < ln->dim; i++) {
         output[i] = (input[i] - mean) / std;
         if (ln->gamma) output[i] *= ln->gamma[i];
@@ -492,7 +492,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Apply positional encoding
     cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
     
-    // Pass through transformer layers using standard operations
+    // Pass through transformer layers using double precision throughout
     if (model->attention_layers && model->ff_layers && model->layer_norms) {
         // Allocate attention output buffer
         double* attn_output = (double*)calloc(embed_dim, sizeof(double));
@@ -501,54 +501,21 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
             return;
         }
         
-        // Convert hidden_states to float for layer operations
-        float* hidden_float = (float*)malloc(embed_dim * sizeof(float));
-        if (!hidden_float) {
-            fprintf(stderr, "Error: Failed to allocate float buffer\n");
-            free(attn_output);
-            return;
-        }
-        
         for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-            // Convert double to float for operations
-            for (uint32_t i = 0; i < embed_dim; i++) {
-                hidden_float[i] = (float)inference->hidden_states[i];
-            }
+            // Layer norm (in-place) - now uses double
+            cllm_layer_norm(&model->layer_norms[layer], inference->hidden_states, inference->hidden_states);
             
-            // Layer norm (in-place)
-            cllm_layer_norm(&model->layer_norms[layer], hidden_float, hidden_float);
-            
-            // Attention - convert to double temporarily
-            double* hidden_double = (double*)malloc(embed_dim * sizeof(double));
-            for (uint32_t i = 0; i < embed_dim; i++) {
-                hidden_double[i] = (double)hidden_float[i];
-            }
+            // Attention - uses double
             AttentionLayer* attn_layer = &model->attention_layers[layer];
-            cllm_attention_forward(attn_layer, hidden_double, hidden_double, NULL, NULL, 1);
-            for (uint32_t i = 0; i < embed_dim; i++) {
-                hidden_float[i] = (float)hidden_double[i];
-            }
-            free(hidden_double);
+            cllm_attention_forward(attn_layer, inference->hidden_states, inference->hidden_states, NULL, NULL, 1);
             
-            // Feed-forward (in-place)
-            cllm_feedforward(&model->ff_layers[layer], hidden_float, hidden_float);
-            
-            // Convert back to double
-            for (uint32_t i = 0; i < embed_dim; i++) {
-                inference->hidden_states[i] = (double)hidden_float[i];
-            }
+            // Feed-forward (in-place) - uses double
+            cllm_feedforward(&model->ff_layers[layer], inference->hidden_states, inference->hidden_states);
         }
         
         // Final layer norm
-        for (uint32_t i = 0; i < embed_dim; i++) {
-            hidden_float[i] = (float)inference->hidden_states[i];
-        }
-        cllm_layer_norm(&model->layer_norms[model->num_layers - 1], hidden_float, hidden_float);
-        for (uint32_t i = 0; i < embed_dim; i++) {
-            inference->hidden_states[i] = (double)hidden_float[i];
-        }
+        cllm_layer_norm(&model->layer_norms[model->num_layers - 1], inference->hidden_states, inference->hidden_states);
         
-        free(hidden_float);
         free(attn_output);
     }
     
@@ -564,7 +531,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
 }
 
 // Apply temperature scaling
-void cllm_apply_temperature(float* logits, int vocab_size, float temperature) {
+void cllm_apply_temperature(double* logits, int vocab_size, double temperature) {
     if (temperature < TEMPERATURE_MIN) temperature = TEMPERATURE_MIN;
     if (temperature > TEMPERATURE_MAX) temperature = TEMPERATURE_MAX;
     for (int i = 0; i < vocab_size; i++) {
@@ -575,17 +542,17 @@ void cllm_apply_temperature(float* logits, int vocab_size, float temperature) {
 
 
 // Softmax
-void cllm_softmax(float* logits, int vocab_size) {
+void cllm_softmax(double* logits, int vocab_size) {
     // Find max for numerical stability
-    float max_logit = logits[0];
+    double max_logit = logits[0];
     for (int i = 1; i < vocab_size; i++) {
         if (logits[i] > max_logit) max_logit = logits[i];
     }
     
     // Compute exp and sum
-    float sum = 0.0f;
+    double sum = 0.0;
     for (int i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf(logits[i] - max_logit);
+        logits[i] = prime_exp(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -598,12 +565,12 @@ void cllm_softmax(float* logits, int vocab_size) {
 
 
 // Sample top-k
-uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
+uint32_t cllm_sample_top_k(double* probs, int vocab_size, int k) {
     if (k <= 0 || k > vocab_size) k = vocab_size;
     
     // Simple sampling from top-k
-    float r = (float)rand() / RAND_MAX;
-    float cumsum = 0.0f;
+    double r = (double)rand() / RAND_MAX;
+    double cumsum = 0.0;
     
     for (int i = 0; i < k && i < vocab_size; i++) {
         cumsum += probs[i];
@@ -615,9 +582,9 @@ uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k) {
 
 
 // Sample top-p (nucleus sampling)
-uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p) {
-    float r = (float)rand() / RAND_MAX;
-    float cumsum = 0.0f;
+uint32_t cllm_sample_top_p(double* probs, int vocab_size, double p) {
+    double r = (double)rand() / RAND_MAX;
+    double cumsum = 0.0;
     
     for (int i = 0; i < vocab_size; i++) {
         cumsum += probs[i];
@@ -651,17 +618,17 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
         cllm_forward(inference, tokens, num_tokens);
         
         // Apply temperature
-        cllm_apply_temperature((float*)inference->logits, inference->model->vocab_size, inference->temperature);
+        cllm_apply_temperature(inference->logits, inference->model->vocab_size, inference->temperature);
         
         // Softmax
-        cllm_softmax((float*)inference->logits, inference->model->vocab_size);
+        cllm_softmax(inference->logits, inference->model->vocab_size);
         
         // Sample next token
         uint32_t next_token;
         if (inference->top_k > 0) {
-            next_token = cllm_sample_top_k((float*)inference->logits, inference->model->vocab_size, inference->top_k);
+            next_token = cllm_sample_top_k(inference->logits, inference->model->vocab_size, inference->top_k);
         } else {
-            next_token = cllm_sample_top_p((float*)inference->logits, inference->model->vocab_size, inference->top_p);
+            next_token = cllm_sample_top_p(inference->logits, inference->model->vocab_size, inference->top_p);
         }
         
         // Add to sequence
@@ -708,27 +675,27 @@ void cllm_set_max_tokens(CLLMInference* inference, int max_tokens) {
 }
 
 // Sample token from logits distribution
-int cllm_sample_token(CLLMInference* inf, float* logits) {
+int cllm_sample_token(CLLMInference* inf, double* logits) {
     if (!inf || !logits) return 0;
     
     uint32_t vocab_size = inf->model->vocab_size;
     
     // Apply temperature
-    if (inf->temperature != 1.0f) {
+    if (inf->temperature != 1.0) {
         for (uint32_t i = 0; i < vocab_size; i++) {
             logits[i] /= inf->temperature;
         }
     }
     
     // Convert logits to probabilities using softmax
-    float max_logit = logits[0];
+    double max_logit = logits[0];
     for (uint32_t i = 1; i < vocab_size; i++) {
         if (logits[i] > max_logit) max_logit = logits[i];
     }
     
-    float sum = 0.0f;
+    double sum = 0.0;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        logits[i] = prime_expf(logits[i] - max_logit);
+        logits[i] = prime_exp(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -737,8 +704,8 @@ int cllm_sample_token(CLLMInference* inf, float* logits) {
     }
     
     // Sample from distribution
-    float r = (float)rand() / RAND_MAX;
-    float cumsum = 0.0f;
+    double r = (double)rand() / RAND_MAX;
+    double cumsum = 0.0;
     
     for (uint32_t i = 0; i < vocab_size; i++) {
         cumsum += logits[i];

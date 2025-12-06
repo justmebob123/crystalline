@@ -68,7 +68,7 @@ void cllm_attention_init(AttentionLayer* layer, uint32_t num_heads, uint32_t hea
 void cllm_attention_free(AttentionLayer* layer);
 
 /* Feed-forward functions */
-void cllm_feedforward(FeedForwardLayer* layer, float* input, float* output);
+void cllm_feedforward(FeedForwardLayer* layer, double* input, double* output);
 void cllm_activation_gelu(float* x, int size);
 void cllm_activation_relu(float* x, int size);
 void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data);
@@ -77,7 +77,7 @@ void cllm_feedforward_init(FeedForwardLayer* layer, uint32_t input_dim, uint32_t
 void cllm_feedforward_free(FeedForwardLayer* layer);
 
 /* Layer normalization functions */
-void cllm_layer_norm(CLLMLayerNorm* ln, float* input, float* output);
+void cllm_layer_norm(CLLMLayerNorm* ln, double* input, double* output);
 void cllm_layer_norm_inplace(CLLMLayerNorm* ln, float* data);
 void cllm_layer_norm_batch(CLLMLayerNorm* ln, float* input, float* output, int batch_size);
 void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon);
@@ -114,11 +114,11 @@ void cllm_generate_symmetry_attention_mask(int* symmetry_groups, int seq_len, fl
 /* Forward pass and generation */
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);
 void cllm_compute_logits(CLLMInference* inf, float* hidden_state);
-int cllm_sample_token(CLLMInference* inf, float* logits);
-void cllm_apply_temperature(float* logits, int vocab_size, float temperature);
-void cllm_softmax(float* logits, int vocab_size);
-uint32_t cllm_sample_top_k(float* probs, int vocab_size, int k);
-uint32_t cllm_sample_top_p(float* probs, int vocab_size, float p);
+int cllm_sample_token(CLLMInference* inf, double* logits);
+void cllm_apply_temperature(double* logits, int vocab_size, double temperature);
+void cllm_softmax(double* logits, int vocab_size);
+uint32_t cllm_sample_top_k(double* probs, int vocab_size, int k);
+uint32_t cllm_sample_top_p(double* probs, int vocab_size, double p);
 
 int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length);
 

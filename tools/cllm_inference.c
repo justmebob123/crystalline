@@ -18,9 +18,9 @@
 
 // Forward declarations from cllm_inference.c
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);
-void cllm_apply_temperature(float* logits, int vocab_size, float temperature);
-void cllm_softmax(float* logits, int size);
-uint32_t cllm_sample_top_k(float* logits, int vocab_size, int k);
+void cllm_apply_temperature(double* logits, int vocab_size, double temperature);
+void cllm_softmax(double* logits, int size);
+uint32_t cllm_sample_top_k(double* logits, int vocab_size, int k);
 
 static void print_usage(const char* program_name) {
     printf("Usage: %s [OPTIONS] <model_name>\n\n", program_name);
@@ -95,16 +95,16 @@ static void generate_text_proper(CLLMInference* inference, const char* prompt,
         
         // Apply temperature (BigFixed version)
         if (temperature > 0.0f && temperature != 1.0f) {
-            cllm_apply_temperature((float*)inference->logits, model->vocab_size, temperature);
+            cllm_apply_temperature(inference->logits, model->vocab_size, temperature);
         }
         
         // Apply softmax (BigFixed version)
-        cllm_softmax((float*)inference->logits, model->vocab_size);
+        cllm_softmax(inference->logits, model->vocab_size);
         
         // Sample next token (BigFixed versions)
         uint32_t next_token;
         if (top_k > 1 && temperature > 0.0f) {
-            next_token = cllm_sample_top_k((float*)inference->logits, model->vocab_size, top_k);
+            next_token = cllm_sample_top_k(inference->logits, model->vocab_size, top_k);
         } else {
             // Greedy sampling - pick highest probability
             double max_prob = inference->logits[0];
