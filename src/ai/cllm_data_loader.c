@@ -315,6 +315,10 @@ static void* vocab_build_worker(void* arg) {
             // Add to batch
             token_batch[batch_count] = strdup(token);
             if (!token_batch[batch_count]) {
+                // Free already allocated tokens in batch before cleanup
+                for (size_t j = 0; j < batch_count; j++) {
+                    free(token_batch[j]);
+                }
                 free(text_copy);
                 goto cleanup;
             }
