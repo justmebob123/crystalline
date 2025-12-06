@@ -48,15 +48,15 @@ static void cllm_zero_all_gradients(CLLMTraining* training) {
         for (uint32_t i = 0; i < training->model->num_layers; i++) {
             if (training->attention_grads[i].query_lattice) {
                 size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].query_lattice, 0, size * sizeof(float));
+                memset(training->attention_grads[i].query_lattice, 0, size * sizeof(double));
             }
             if (training->attention_grads[i].key_lattice) {
                 size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].key_lattice, 0, size * sizeof(float));
+                memset(training->attention_grads[i].key_lattice, 0, size * sizeof(double));
             }
             if (training->attention_grads[i].value_lattice) {
                 size_t size = training->model->embedding_dim * training->model->embedding_dim;
-                memset(training->attention_grads[i].value_lattice, 0, size * sizeof(float));
+                memset(training->attention_grads[i].value_lattice, 0, size * sizeof(double));
             }
         }
     }
@@ -899,7 +899,7 @@ static void cllm_attention_forward_training(
             // Query projection
             for (uint32_t h = 0; h < num_heads; h++) {
                 for (uint32_t d = 0; d < head_dim; d++) {
-                    float sum = 0.0f;
+                    double sum = 0.0;
                     for (uint32_t i = 0; i < head_dim; i++) {
                         size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
                         sum += attn_layer->query_lattice[weight_idx] * input_vec[h * head_dim + i];
@@ -911,7 +911,7 @@ static void cllm_attention_forward_training(
             // Key projection
             for (uint32_t h = 0; h < num_heads; h++) {
                 for (uint32_t d = 0; d < head_dim; d++) {
-                    float sum = 0.0f;
+                    double sum = 0.0;
                     for (uint32_t i = 0; i < head_dim; i++) {
                         size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
                         sum += attn_layer->key_lattice[weight_idx] * input_vec[h * head_dim + i];
@@ -923,7 +923,7 @@ static void cllm_attention_forward_training(
             // Value projection
             for (uint32_t h = 0; h < num_heads; h++) {
                 for (uint32_t d = 0; d < head_dim; d++) {
-                    float sum = 0.0f;
+                    double sum = 0.0;
                     for (uint32_t i = 0; i < head_dim; i++) {
                         size_t weight_idx = h * head_dim * head_dim + d * head_dim + i;
                         sum += attn_layer->value_lattice[weight_idx] * input_vec[h * head_dim + i];
@@ -934,7 +934,7 @@ static void cllm_attention_forward_training(
         }
         
         // Compute and store attention weights
-        float scale = 1.0f / prime_sqrtf((float)head_dim);
+        double scale = 1.0 / prime_sqrt((double)head_dim);
         
         for (uint32_t h = 0; h < num_heads; h++) {
             for (int i = 0; i < seq_len; i++) {
@@ -943,7 +943,7 @@ static void cllm_attention_forward_training(
                 // Compute attention scores
                 for (int j = 0; j < seq_len; j++) {
                     double* key = &keys[j * embed_dim + h * head_dim];
-                    float score = 0.0f;
+                    double score = 0.0;
                     for (uint32_t d = 0; d < head_dim; d++) {
                         score += query[d] * key[d];
                     }
@@ -1067,14 +1067,14 @@ static void attention_backward_full(
         return;
     }
     
-    float scale = 1.0f / prime_sqrtf((float)head_dim);
+    double scale = 1.0 / prime_sqrt((double)head_dim);
     
     // For each head
     for (uint32_t h = 0; h < num_heads; h++) {
         // 1. Gradient w.r.t. V: grad_V = attention_weights^T × grad_output
         for (int pos = 0; pos < seq_len; pos++) {
             for (int d = 0; d < (int)head_dim; d++) {
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (int i = 0; i < seq_len; i++) {
                     int weight_idx = h * seq_len * seq_len + i * seq_len + pos;
                     sum += attention_weights[weight_idx] * 
@@ -1087,7 +1087,7 @@ static void attention_backward_full(
         // 2. Gradient w.r.t. attention_weights: grad_weights = grad_output × V^T
         for (int i = 0; i < seq_len; i++) {
             for (int j = 0; j < seq_len; j++) {
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (int d = 0; d < (int)head_dim; d++) {
                     sum += grad_output[i * embed_dim + h * head_dim + d] *
                            values[j * embed_dim + h * head_dim + d];
@@ -1109,7 +1109,7 @@ static void attention_backward_full(
         // 4. Gradient w.r.t. Q: grad_Q = (grad_scores × K) / sqrt(d_k)
         for (int i = 0; i < seq_len; i++) {
             for (int d = 0; d < (int)head_dim; d++) {
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (int j = 0; j < seq_len; j++) {
                     sum += grad_scores[h * seq_len * seq_len + i * seq_len + j] *
                            keys[j * embed_dim + h * head_dim + d];
@@ -1121,7 +1121,7 @@ static void attention_backward_full(
         // 5. Gradient w.r.t. K: grad_K = (grad_scores^T × Q) / sqrt(d_k)
         for (int j = 0; j < seq_len; j++) {
             for (int d = 0; d < (int)head_dim; d++) {
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (int i = 0; i < seq_len; i++) {
                     sum += grad_scores[h * seq_len * seq_len + i * seq_len + j] *
                            queries[i * embed_dim + h * head_dim + d];
@@ -1407,15 +1407,15 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                 for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
                 
                 CLLMLayerNorm* ln = &model->layer_norms[layer];
-                float mean = 0.0f, var = 0.0f;
+                double mean = 0.0, var = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
                 mean /= embed_dim;
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float diff = layer_out[d] - mean;
+                    double diff = layer_out[d] - mean;
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                double std = prime_sqrt(var + 1e-5);
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
                 }
@@ -1451,7 +1451,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                     cllm_compute_embedding_lazy(model, v);
                 }
                 
-                float score = 0.0f;
+                double score = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];
                 }
@@ -1512,20 +1512,20 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
             double* logits = &training->logits[idx * vocab_size];
             double* grad = &grad_logits[idx * vocab_size];
             
-            float max_logit = logits[0];
+            double max_logit = logits[0];
             for (uint32_t v = 1; v < vocab_size; v++) {
                 if (logits[v] > max_logit) max_logit = logits[v];
             }
             
-            float sum_exp = 0.0f;
+            double sum_exp = 0.0;
             for (uint32_t v = 0; v < vocab_size; v++) {
-                sum_exp += prime_expf(logits[v] - max_logit);
+                sum_exp += prime_exp(logits[v] - max_logit);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                float softmax_v = prime_expf(logits[v] - max_logit) / sum_exp;
+                double softmax_v = prime_exp(logits[v] - max_logit) / sum_exp;
                 grad[v] = softmax_v;
-                if (v == target) grad[v] -= 1.0f;
+                if (v == target) grad[v] -= 1.0;
                 grad[v] /= (batch_size * seq_len);
             }
         }
@@ -1540,7 +1540,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
             double* hidden = &training->final_hidden[idx * embed_dim];
             
             for (uint32_t d = 0; d < embed_dim; d++) {
-                float sum = 0.0f;
+                double sum = 0.0;
                 for (uint32_t v = 0; v < vocab_size; v++) {
                     sum += grad_log[v] * model->embeddings.embeddings[v * embed_dim + d];
                 }
@@ -1573,33 +1573,33 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
                 double* hidden = &ff_hidden[idx * ff->hidden_dim];
                 
                 // LayerNorm backward
-                float mean = 0.0f, var = 0.0f;
+                double mean = 0.0, var = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += input[d];
                 mean /= embed_dim;
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float diff = input[d] - mean;
+                    double diff = input[d] - mean;
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                double std = prime_sqrt(var + 1e-5);
                 
-                float grad_var = 0.0f, grad_mean = 0.0f;
+                double grad_var = 0.0, grad_mean = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float x_norm = (input[d] - mean) / std;
+                    double x_norm = (input[d] - mean) / std;
                     if (training->ln_grads[layer].gamma) {
                         training->ln_grads[layer].gamma[d] += grad[d] * x_norm;
                     }
                     if (training->ln_grads[layer].beta) {
                         training->ln_grads[layer].beta[d] += grad[d];
                     }
-                    float grad_x_norm = grad[d] * ln->gamma[d];
-                    grad_var += grad_x_norm * (input[d] - mean) * -0.5f * prime_powf(std, -3.0f);
-                    grad_mean += grad_x_norm * (-1.0f / std);
+                    double grad_x_norm = grad[d] * ln->gamma[d];
+                    grad_var += grad_x_norm * (input[d] - mean) * -0.5 * prime_pow(std, -3.0);
+                    grad_mean += grad_x_norm * (-1.0 / std);
                 }
                 
                 for (uint32_t d = 0; d < embed_dim; d++) {
-                    float grad_x_norm = grad[d] * ln->gamma[d];
-                    grad[d] = grad_x_norm / std + grad_var * 2.0f * (input[d] - mean) / embed_dim + grad_mean / embed_dim;
+                    double grad_x_norm = grad[d] * ln->gamma[d];
+                    grad[d] = grad_x_norm / std + grad_var * 2.0 * (input[d] - mean) / embed_dim + grad_mean / embed_dim;
                 }
                 
                 
@@ -1664,8 +1664,8 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
                 }
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float tanh_val = hidden[h];
-                    grad_hidden[h] *= (1.0f - tanh_val * tanh_val);
+                    double tanh_val = hidden[h];
+                    grad_hidden[h] *= (1.0 - tanh_val * tanh_val);
                 }
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
