@@ -316,41 +316,17 @@ void cllm_init_attention_layer(AttentionLayer* attn) {
     
     // Initialize query lattice
     if (attn->query_lattice) {
-        int total = d_model * d_model;
-        double* temp = (double*)malloc(total * sizeof(double));
-        if (temp) {
-            cllm_init_xavier_uniform(temp, d_model, d_model);
-            for (int i = 0; i < total; i++) {
-// DISABLED - USE BigFixed version:                 attn->query_lattice[i] = (float)temp[i];
-            }
-            free(temp);
-        }
+        cllm_init_xavier_uniform(attn->query_lattice, d_model, d_model);
     }
     
     // Initialize key lattice
     if (attn->key_lattice) {
-        int total = d_model * d_model;
-        double* temp = (double*)malloc(total * sizeof(double));
-        if (temp) {
-            cllm_init_xavier_uniform(temp, d_model, d_model);
-            for (int i = 0; i < total; i++) {
-// DISABLED - USE BigFixed version:                 attn->key_lattice[i] = (float)temp[i];
-            }
-            free(temp);
-        }
+        cllm_init_xavier_uniform(attn->key_lattice, d_model, d_model);
     }
     
     // Initialize value lattice
     if (attn->value_lattice) {
-        int total = d_model * d_model;
-        double* temp = (double*)malloc(total * sizeof(double));
-        if (temp) {
-            cllm_init_xavier_uniform(temp, d_model, d_model);
-            for (int i = 0; i < total; i++) {
-// DISABLED - USE BigFixed version:                 attn->value_lattice[i] = (float)temp[i];
-            }
-            free(temp);
-        }
+        cllm_init_xavier_uniform(attn->value_lattice, d_model, d_model);
     }
 }
 
@@ -369,39 +345,23 @@ void cllm_init_feedforward_layer(FeedForwardLayer* ffn) {
     
     // Initialize first layer (input_dim -> hidden_dim)
     if (ffn->w1_lattice) {
-        int total = input_dim * hidden_dim;
-        double* temp = (double*)malloc(total * sizeof(double));
-        if (temp) {
-            cllm_init_he_normal(temp, input_dim, hidden_dim);
-            for (int i = 0; i < total; i++) {
-// DISABLED - USE BigFixed version:                 ffn->w1_lattice[i] = (float)temp[i];
-            }
-            free(temp);
-        }
+        cllm_init_he_normal(ffn->w1_lattice, input_dim, hidden_dim);
     }
     
     if (ffn->bias1) {
         for (int i = 0; i < hidden_dim; i++) {
-// DISABLED - USE BigFixed version:             ffn->bias1[i] = 0.0f;
+            ffn->bias1[i] = 0.0;
         }
     }
     
     // Initialize second layer (hidden_dim -> output_dim)
     if (ffn->w2_lattice) {
-        int total = hidden_dim * output_dim;
-        double* temp = (double*)malloc(total * sizeof(double));
-        if (temp) {
-            cllm_init_he_normal(temp, hidden_dim, output_dim);
-            for (int i = 0; i < total; i++) {
-// DISABLED - USE BigFixed version:                 ffn->w2_lattice[i] = (float)temp[i];
-            }
-            free(temp);
-        }
+        cllm_init_he_normal(ffn->w2_lattice, hidden_dim, output_dim);
     }
     
     if (ffn->bias2) {
         for (int i = 0; i < output_dim; i++) {
-// DISABLED - USE BigFixed version:             ffn->bias2[i] = 0.0f;
+            ffn->bias2[i] = 0.0;
         }
     }
 }
@@ -419,14 +379,14 @@ void cllm_init_layernorm(LayerNorm* ln) {
     // Initialize scale to 1.0
     if (ln->gamma) {
         for (int i = 0; i < size; i++) {
-// DISABLED - USE BigFixed version:             ln->gamma[i] = 1.0f;
+            ln->gamma[i] = 1.0;
         }
     }
     
     // Initialize shift to 0.0
     if (ln->beta) {
         for (int i = 0; i < size; i++) {
-// DISABLED - USE BigFixed version:             ln->beta[i] = 0.0f;
+            ln->beta[i] = 0.0;
         }
     }
 }
@@ -444,14 +404,14 @@ void cllm_init_cllm_layernorm(CLLMLayerNorm* ln) {
     // Initialize scale to 1.0
     if (ln->gamma) {
         for (int i = 0; i < dim; i++) {
-// DISABLED - USE BigFixed version:             ln->gamma[i] = 1.0f;
+            ln->gamma[i] = 1.0;
         }
     }
     
     // Initialize shift to 0.0
     if (ln->beta) {
         for (int i = 0; i < dim; i++) {
-// DISABLED - USE BigFixed version:             ln->beta[i] = 0.0f;
+            ln->beta[i] = 0.0;
         }
     }
 }
