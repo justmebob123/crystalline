@@ -52,12 +52,18 @@ Redesign model management to enable concurrent operations while keeping Models T
 - ✅ Path generation works
 - ✅ All operations successful
 
-### Phase 3.2: Training Tab Refactor (3-4 hours)
-- [ ] Add per-tab model state
-- [ ] Remove model_manager calls
-- [ ] Implement load/save/free
-- [ ] Add training stats tracking
-- [ ] Test training independently
+### Phase 3.2: Training Tab Refactor (3-4 hours) 🔄 IN PROGRESS
+- [x] Part A: Add TrainingTabState structure (30 min) ✅ COMPLETE
+  - Added TrainingTabState typedef with model ownership fields
+  - Added training state fields (training, thread, flags)
+  - Added statistics structure with sphere stats
+  - Added tab_state to g_training_ui
+  - Build successful: 0 errors, 0 warnings
+- [ ] Part B: Implement model management functions (1 hour) - NEXT
+- [ ] Part C: Implement training functions (1-2 hours)
+- [ ] Part D: Remove model_manager calls (30 min)
+- [ ] Part E: Update statistics display (30 min)
+- [ ] Part F: Test training independently (1 hour)
 
 ### Phase 3.3: LLM Tab Refactor (2-3 hours)
 - [ ] Add per-tab model state

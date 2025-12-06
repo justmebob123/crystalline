@@ -62,6 +62,38 @@ typedef struct {
     float phase_alignment;
 } TrainingVisualization;
 
+// Training Tab State - Owns its model independently
+typedef struct {
+    // Model ownership (OWNED BY THIS TAB)
+    CLLMModel* model;                // NULL when not training
+    char model_path[512];
+    char model_name[256];
+    bool model_loaded;
+    
+    // Training state (OWNED BY THIS TAB)
+    CLLMTraining* training;          // NULL when not training
+    pthread_t training_thread;
+    bool is_training;
+    bool should_stop;
+    
+    // Training statistics (UPDATED BY TRAINING THREAD)
+    struct {
+        int current_epoch;
+        int total_epochs;
+        float current_loss;
+        float best_loss;
+        uint64_t batches_processed;
+        uint64_t tokens_processed;
+        time_t training_start_time;
+        time_t last_update_time;
+        
+        // Sphere statistics
+        int active_spheres;
+        uint64_t sphere_batches[12];
+        float sphere_losses[12];
+    } stats;
+} TrainingTabState;
+
 // UI State
 static struct {
     // Panels
@@ -101,6 +133,9 @@ static struct {
     // State
     bool initialized;
     char selected_model[256];
+    
+    // NEW: Training tab state (owns model independently)
+    TrainingTabState tab_state;
     
 } g_training_ui = {0};
 
