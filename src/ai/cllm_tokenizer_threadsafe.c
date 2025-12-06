@@ -115,7 +115,9 @@ typedef struct {
     uint32_t vocab_idx;
 } TokenHashEntry;
 
-#define HASH_TABLE_SIZE 65536  // Power of 2 for fast modulo
+// Aligned with mathematical framework's vector culmination: 3 × 12³ × (250/9) = 144,000
+// Using 2^17 = 131,072 (closest power of 2) for efficient modulo operations
+#define HASH_TABLE_SIZE 131072  // 2^17, aligned with 144,000 vector culmination point
 
 static uint32_t hash_token_for_lookup(const char* token) {
     uint32_t hash = 5381;

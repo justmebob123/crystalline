@@ -500,6 +500,11 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     printf("Expected speedup: 20-400x for loss, 2-5x for convergence\n");
     printf("========================================================================\n");
     
+    // CRITICAL: Initialize total_batches to prevent segfault
+    // This must be set before training begins
+    training->total_batches = 0;  // Will be set when dataset is loaded
+    training->num_tokens = 0;     // Will be set when dataset is loaded
+    
     training->start_time = time(NULL);
     
     return training;
@@ -1738,6 +1743,21 @@ int cllm_train(CLLMTraining* training) {
     printf("Total tokens: %zu\n", training->num_tokens);
     printf("Total batches per epoch: %d\n", training->total_batches);
     printf("\n");
+    
+    // CRITICAL: Defensive check to prevent segfault
+    if (training->total_batches == 0) {
+        fprintf(stderr, "ERROR: Cannot train with zero batches!\n");
+        fprintf(stderr, "  Total tokens: %zu\n", training->num_tokens);
+        fprintf(stderr, "  Batch size: %d\n", training->config.batch_size);
+        fprintf(stderr, "  Sequence length: %d\n", training->config.sequence_length);
+        fprintf(stderr, "  Expected batches: %zu\n", 
+                training->num_tokens / (training->config.batch_size * training->config.sequence_length));
+        fprintf(stderr, "\nThis usually means:\n");
+        fprintf(stderr, "  1. Dataset is too small for the batch configuration\n");
+        fprintf(stderr, "  2. total_batches was not properly initialized\n");
+        fprintf(stderr, "  3. Dataset loading failed silently\n");
+        return -1;
+    }
     
     for (int epoch = 0; epoch < training->config.num_epochs; epoch++) {
         training->current_epoch = epoch;

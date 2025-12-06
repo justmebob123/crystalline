@@ -337,6 +337,21 @@ int cmd_train(int argc, char** argv) {
     training->tokens = dataset->tokens;
     training->num_tokens = dataset->num_tokens;
     
+    // CRITICAL: Calculate total_batches to prevent segfault
+    training->total_batches = dataset->num_tokens / (config.batch_size * config.sequence_length);
+    if (training->total_batches == 0 && dataset->num_tokens > 0) {
+        fprintf(stderr, "ERROR: Dataset too small for given batch_size and sequence_length\n");
+        fprintf(stderr, "  Total tokens: %zu\n", dataset->num_tokens);
+        fprintf(stderr, "  Batch size: %d\n", config.batch_size);
+        fprintf(stderr, "  Sequence length: %d\n", config.sequence_length);
+        fprintf(stderr, "  Tokens per batch: %d\n", config.batch_size * config.sequence_length);
+        fprintf(stderr, "  Suggestion: Reduce batch_size or sequence_length\n");
+        cllm_token_dataset_free(dataset);
+        cllm_free_model(model);
+        cllm_free_tokenizer(tokenizer);
+        return 1;
+    }
+    
     // Determine threading mode with proper CPU detection
     int training_threads = num_threads;
     if (training_threads == 0) {

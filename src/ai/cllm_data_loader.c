@@ -311,7 +311,9 @@ static void* vocab_sphere_worker(void* arg) {
     
     // Pre-allocate a large buffer for tokenization to reduce malloc contention
     // This is thread-local, so no contention between threads
-    size_t buffer_size = 4 * 1024 * 1024;  // 4MB buffer per thread (handles up to 4MB documents)
+    // Base buffer size aligned with mathematical framework's vector culmination
+    // 144,000 bytes = 3 × 12³ × (250/9) from the lattice formula
+    size_t buffer_size = 144000;  // Vector culmination point
     char* thread_buffer = (char*)malloc(buffer_size);
     if (!thread_buffer) {
         fprintf(stderr, "[Sphere %d] Failed to allocate thread buffer\n", ctx->symmetry_group);
@@ -326,17 +328,22 @@ static void* vocab_sphere_worker(void* arg) {
         // Copy document to thread-local buffer (avoid strdup malloc contention)
         size_t doc_len = strlen(doc);
         if (doc_len >= buffer_size) {
-            // Document too large - reallocate buffer dynamically
-            size_t new_size = doc_len + 1024;  // Add 1KB padding
+            // Document too large - use recursive 3-growth aligned with mathematical framework
+            // Formula: 3^d growth (self-similarity from 3)
+            size_t new_size = buffer_size;
+            while (new_size < doc_len + 1024) {
+                new_size *= 3;  // Recursive 3-growth: 3^d = 3^(d-1) · 3
+            }
+            
             char* new_buffer = (char*)realloc(thread_buffer, new_size);
             if (!new_buffer) {
-                fprintf(stderr, "[Sphere %d] Document %zu too large (%zu bytes), failed to reallocate, skipping\n", 
-                        ctx->symmetry_group, i, doc_len);
+                fprintf(stderr, "[Sphere %d] Document %zu too large (%zu bytes), failed to reallocate to %zu bytes, skipping\n", 
+                        ctx->symmetry_group, i, doc_len, new_size);
                 continue;
             }
             thread_buffer = new_buffer;
             buffer_size = new_size;
-            fprintf(stderr, "[Sphere %d] Reallocated buffer to %zu bytes for document %zu\n",
+            fprintf(stderr, "[Sphere %d] Reallocated buffer using 3^d growth to %zu bytes for document %zu\n",
                     ctx->symmetry_group, buffer_size, i);
         }
         
