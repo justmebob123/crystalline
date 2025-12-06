@@ -189,11 +189,17 @@ static void on_send_clicked(void* data) {
     const char* input_text = crystalline_input_get_text(llm_ui.message_input);
     if (!input_text || strlen(input_text) == 0) return;
     
+    // CRITICAL FIX: Copy input text before clearing the input field
+    // The input_text pointer becomes invalid after clearing
+    char input_copy[MAX_MESSAGE_LENGTH];
+    strncpy(input_copy, input_text, sizeof(input_copy) - 1);
+    input_copy[sizeof(input_copy) - 1] = '\0';
+    
     printf("=== SEND BUTTON CLICKED ===\n");
-    printf("Input: %s\n", input_text);
+    printf("Input: %s\n", input_copy);
     
     // Add user message to chat
-    add_chat_message(input_text, true);
+    add_chat_message(input_copy, true);
     
     // Clear input
     crystalline_input_set_text(llm_ui.message_input, "");
@@ -202,7 +208,7 @@ static void on_send_clicked(void* data) {
     if (state->cllm_inference) {
         char response[MAX_MESSAGE_LENGTH];
         extern int app_generate_text(AppState* state, const char* prompt, char* output, size_t output_size);
-        int result = app_generate_text(state, input_text, response, sizeof(response));
+        int result = app_generate_text(state, input_copy, response, sizeof(response));
         
         if (result > 0) {
             add_chat_message(response, false);

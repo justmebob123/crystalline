@@ -94,7 +94,7 @@ float crystalline_gcd_similarity(uint32_t token1, uint32_t token2) {
     
     // Normalize to [0, 1]
     uint32_t max_val = token1 > token2 ? token1 : token2;
-    return (float)shared / (float)max_val;
+    return (double)shared / (double)max_val;
 }
 
 /**
@@ -111,7 +111,7 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
     
     // Ulam spiral: start at origin, spiral outward
     int n = (int)token_id;
-    int k = (int)prime_sqrtf((float)n);
+    int k = (int)prime_sqrt((double)n);
     int ring = (k + 1) / 2;
     int offset = n - (2*ring - 1) * (2*ring - 1);
     
@@ -142,7 +142,7 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
     
     int dx = pos1.x - pos2.x;
     int dy = pos1.y - pos2.y;
-    return prime_sqrtf((float)(dx*dx + dy*dy));
+    return prime_sqrt((double)(dx*dx + dy*dy));
 }
 
 /**
@@ -745,7 +745,7 @@ void cllm_optimizer_step(CLLMTraining* training) {
     training->accumulation_step = 0;
     
     // Scale gradients by 1/accum_steps
-    float gradient_scale = 1.0f / (float)accum_steps;
+    double gradient_scale = 1.0 / (double)accum_steps;
     
     float lr = training->config.learning_rate;
     CLLMModel* model = training->model;

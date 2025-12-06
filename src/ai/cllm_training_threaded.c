@@ -477,7 +477,7 @@ float cllm_forward_training_threaded(
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                float std = prime_sqrtf(var + 1e-5f);
+                double std = prime_sqrt(var + 1e-5);
                 (void)std;  // Reserved for future use
                 for (uint32_t d = 0; d < embed_dim; d++) {
 // DISABLED - USE BigFixed version:                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
@@ -2802,7 +2802,7 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     // Average gradients across valid spheres only
     if (valid_spheres > 0) {
         for (size_t i = 0; i < system->gradient_size; i++) {
-            system->accumulated_gradients[i] /= (float)valid_spheres;
+            system->accumulated_gradients[i] /= (double)valid_spheres;
         }
     }
     
@@ -3102,7 +3102,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         }
     }
     
-    float avg_loss = (valid_workers > 0) ? epoch_loss / valid_workers : 0.0f;
+    float avg_loss = (valid_workers > 0) ? epoch_loss / (double)valid_workers : 0.0f;
     
     // UI Integration: Update final loss and invoke callbacks
     if (system->metrics) {
