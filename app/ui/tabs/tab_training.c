@@ -197,6 +197,156 @@ static void scan_training_directory(const char* dir_path) {
 }
 
 /**
+ * Model Management Functions
+ */
+
+/**
+ * Load a model for training
+ */
+static bool training_tab_load_model(const char* model_name) {
+    if (!model_name || !model_name[0]) {
+        fprintf(stderr, "No model name provided\n");
+        return false;
+    }
+    
+    // Unload existing model if any
+    training_tab_unload_model();
+    
+    // Build model path
+    char model_path[512];
+    extern bool model_registry_get_path(const char* name, char* path_out);
+    if (!model_registry_get_path(model_name, model_path)) {
+        fprintf(stderr, "Failed to get path for model: %s\n", model_name);
+        return false;
+    }
+    
+    // Load model
+    printf("Loading model: %s\n", model_path);
+    extern CLLMModel* cllm_read_model(const char* path);
+    CLLMModel* model = cllm_read_model(model_path);
+    if (!model) {
+        fprintf(stderr, "Failed to load model: %s\n", model_path);
+        return false;
+    }
+    
+    // Store in tab state
+    g_training_ui.tab_state.model = model;
+    snprintf(g_training_ui.tab_state.model_path, 512, "%s", model_path);
+    snprintf(g_training_ui.tab_state.model_name, 256, "%s", model_name);
+    g_training_ui.tab_state.model_loaded = true;
+    
+    printf("✓ Model loaded: %s (%zu vocab, %zu dim, %u layers)\n",
+           model_name, model->vocab_size, model->embedding_dim, model->num_layers);
+    
+    return true;
+}
+
+/**
+ * Create a new model for training
+ */
+static bool training_tab_create_model(const char* model_name, const CLLMConfig* config) {
+    if (!model_name || !config) {
+        return false;
+    }
+    
+    // Unload existing model if any
+    training_tab_unload_model();
+    
+    // Create model
+    printf("Creating model: %s\n", model_name);
+    extern CLLMModel* cllm_create_model(const CLLMConfig* config);
+    CLLMModel* model = cllm_create_model(config);
+    if (!model) {
+        fprintf(stderr, "Failed to create model\n");
+        return false;
+    }
+    
+    // Build model path
+    char model_path[512];
+    extern bool model_registry_get_path(const char* name, char* path_out);
+    if (!model_registry_get_path(model_name, model_path)) {
+        fprintf(stderr, "Failed to get path for model: %s\n", model_name);
+        extern void cllm_free_model(CLLMModel* model);
+        cllm_free_model(model);
+        return false;
+    }
+    
+    // Store in tab state
+    g_training_ui.tab_state.model = model;
+    snprintf(g_training_ui.tab_state.model_path, 512, "%s", model_path);
+    snprintf(g_training_ui.tab_state.model_name, 256, "%s", model_name);
+    g_training_ui.tab_state.model_loaded = true;
+    
+    // Save to disk
+    extern int cllm_write_model(const CLLMModel* model, const char* path);
+    if (cllm_write_model(model, model_path) != 0) {
+        fprintf(stderr, "Warning: Failed to save model to disk\n");
+    }
+    
+    // Register in registry
+    extern bool model_registry_register(const char* name, const char* path);
+    model_registry_register(model_name, model_path);
+    
+    printf("✓ Model created: %s\n", model_name);
+    
+    return true;
+}
+
+/**
+ * Save the current model
+ */
+static bool training_tab_save_model(void) {
+    if (!g_training_ui.tab_state.model_loaded || !g_training_ui.tab_state.model) {
+        fprintf(stderr, "No model loaded\n");
+        return false;
+    }
+    
+    printf("Saving model: %s\n", g_training_ui.tab_state.model_path);
+    
+    extern int cllm_write_model(const CLLMModel* model, const char* path);
+    if (cllm_write_model(g_training_ui.tab_state.model, g_training_ui.tab_state.model_path) != 0) {
+        fprintf(stderr, "Failed to save model\n");
+        return false;
+    }
+    
+    // Refresh registry metadata
+    extern bool model_registry_refresh(const char* name);
+    model_registry_refresh(g_training_ui.tab_state.model_name);
+    
+    printf("✓ Model saved\n");
+    return true;
+}
+
+/**
+ * Unload the current model
+ */
+static void training_tab_unload_model(void) {
+    if (!g_training_ui.tab_state.model_loaded) {
+        return;
+    }
+    
+    // Stop training if active (will be implemented in Part C)
+    // if (g_training_ui.tab_state.is_training) {
+    //     training_tab_stop_training();
+    // }
+    
+    // Free model
+    if (g_training_ui.tab_state.model) {
+        printf("Unloading model: %s\n", g_training_ui.tab_state.model_name);
+        extern void cllm_free_model(CLLMModel* model);
+        cllm_free_model(g_training_ui.tab_state.model);
+        g_training_ui.tab_state.model = NULL;
+    }
+    
+    // Clear state
+    g_training_ui.tab_state.model_loaded = false;
+    g_training_ui.tab_state.model_name[0] = '\0';
+    g_training_ui.tab_state.model_path[0] = '\0';
+    
+    printf("✓ Model unloaded\n");
+}
+
+/**
  * Button callbacks
  */
 static void on_scan_clicked(void* data) {
