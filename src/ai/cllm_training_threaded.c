@@ -1014,8 +1014,14 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
            index, (void*)batch, (void*)&queue->batches[index]);
     fflush(stdout);
     
-    // Store the batch and update tail
+    // CRITICAL FIX: Store the batch BEFORE incrementing tail
+    // This ensures workers won't see an incremented tail with NULL batch
     atomic_store(&queue->batches[index], batch);
+    
+    // Memory barrier to ensure batch is visible before tail increment
+    atomic_thread_fence(memory_order_release);
+    
+    // Now increment tail - workers can now see this batch
     atomic_store(&queue->tail, tail + 1);
     atomic_fetch_add(&queue->total_pushed, 1);
     
@@ -1036,16 +1042,9 @@ static CLLMBatch* work_queue_pop(WorkQueue* queue) {
         
         // Check if queue is empty
         if (head >= tail) {
-            // Queue empty - check if epoch done
-            if (atomic_load(&queue->epoch_done)) {
-                return NULL;  // No more work
-            }
-            
-            // Spin briefly
-            for (int i = 0; i < 100; i++) {
-                __asm__ __volatile__("pause" ::: "memory");  // CPU hint for spin-wait
-            }
-            continue;
+            // Queue empty - just return NULL
+            // Don't check epoch_done here - let the worker decide what to do
+            return NULL;
         }
         
         // Try to claim this work item using CAS
@@ -1053,11 +1052,20 @@ static CLLMBatch* work_queue_pop(WorkQueue* queue) {
         if (atomic_compare_exchange_weak(&queue->head, &head, new_head)) {
             // Successfully claimed - get the batch
             size_t index = head % MAX_WORK_ITEMS;
+            
+            // Memory barrier to ensure we see the batch that was stored
+            atomic_thread_fence(memory_order_acquire);
+            
             CLLMBatch* batch = atomic_exchange(&queue->batches[index], NULL);
             
             if (batch) {
                 atomic_fetch_add(&queue->total_popped, 1);
+                printf("[DEBUG] work_queue_pop: Worker got batch at index=%zu, batch=%p\n", index, (void*)batch);
+                fflush(stdout);
                 return batch;
+            } else {
+                printf("[DEBUG] work_queue_pop: WARNING - claimed index=%zu but batch was NULL!\n", index);
+                fflush(stdout);
             }
         }
         
@@ -2027,6 +2035,17 @@ static void* sphere_worker_thread_dynamic(void* arg) {
     bool cymatic_enabled = (system->batch_barrier != NULL && system->epoch_barrier != NULL);
     
     while (atomic_load(&system->running)) {
+        // CRITICAL FIX: Reset batches_processed counter when new epoch starts
+        // Detect new epoch by checking if epoch_done was just reset to 0
+        static _Thread_local int last_epoch_done = 0;
+        int current_epoch_done = atomic_load(&system->work_queue->epoch_done);
+        if (last_epoch_done == 1 && current_epoch_done == 0) {
+            // New epoch started - reset counter
+            batches_processed = 0;
+            printf("[Worker %d] New epoch detected, reset batches_processed\n", ctx->sphere_id);
+        }
+        last_epoch_done = current_epoch_done;
+        
         // PHASE 5: Wait at batch barrier (432 Hz) before pulling work
         if (cymatic_enabled) {
             cymatic_barrier_wait(system->batch_barrier);
@@ -2037,7 +2056,11 @@ static void* sphere_worker_thread_dynamic(void* arg) {
             // This worker has processed its assigned share
             // Wait for epoch to complete
             if (atomic_load(&system->work_queue->epoch_done)) {
-                break;
+                // CRITICAL FIX: Don't exit! Wait for next epoch
+                // Reset batches_processed counter for next epoch
+                // The main thread will reset epoch_done and assign new batches
+                usleep(1000);  // 1ms
+                continue;  // Continue waiting for next epoch
             }
             // Yield CPU while waiting
             sched_yield();
@@ -2054,7 +2077,18 @@ static void* sphere_worker_thread_dynamic(void* arg) {
                 size_t head = atomic_load(&system->work_queue->head);
                 size_t tail = atomic_load(&system->work_queue->tail);
                 if (head >= tail) {
-                    break;  // Epoch complete and queue empty
+                    // Epoch complete and queue empty
+                    // CRITICAL FIX: Don't exit! Wait for next epoch instead
+                    // The main thread will reset epoch_done and push new batches
+                    
+                    // UI Integration: Update thread state to IDLE
+                    if (system->metrics) {
+                        cllm_metrics_update_thread_state(system->metrics, ctx->sphere_id, THREAD_STATE_IDLE);
+                    }
+                    
+                    // Sleep briefly to avoid busy-waiting
+                    usleep(1000);  // 1ms
+                    continue;  // Continue waiting for next epoch
                 }
             }
             
