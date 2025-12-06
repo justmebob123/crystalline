@@ -19,6 +19,8 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #define MAX_LINE_LENGTH 65536
 #define MAX_DOCUMENT_SIZE (100 * 1024 * 1024)  // 100MB max per document
@@ -275,13 +277,105 @@ int cllm_data_loader_load_directory(CLLMDataLoader* loader, const char* dirname)
 /**
  * Build Vocabulary from Loaded Documents
  */
+// Thread-safe vocabulary building structure
+typedef struct {
+    CLLMTokenizer* tokenizer;
+    const char** documents;
+    size_t start_idx;
+    size_t end_idx;
+    pthread_mutex_t* vocab_mutex;
+} VocabBuildTask;
+
+static void* vocab_build_worker(void* arg) {
+    VocabBuildTask* task = (VocabBuildTask*)arg;
+    
+    // Process assigned documents
+    for (size_t i = task->start_idx; i < task->end_idx; i++) {
+        const char* text = task->documents[i];
+        if (!text) continue;
+        
+        char* text_copy = strdup(text);
+        if (!text_copy) continue;
+        
+        char* token = strtok(text_copy, " \t\n\r");
+        
+        while (token) {
+            // Convert to lowercase
+            for (char* p = token; *p; p++) {
+                *p = tolower(*p);
+            }
+            
+            // Add to vocabulary (thread-safe)
+            pthread_mutex_lock(task->vocab_mutex);
+            cllm_add_token(task->tokenizer, token);
+            pthread_mutex_unlock(task->vocab_mutex);
+            
+            token = strtok(NULL, " \t\n\r");
+        }
+        
+        free(text_copy);
+    }
+    
+    return NULL;
+}
+
 void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     if (!loader || !loader->tokenizer) return;
     
     printf("Building vocabulary from %zu documents...\n", loader->num_documents);
     
-    for (size_t i = 0; i < loader->num_documents; i++) {
-        cllm_build_vocab(loader->tokenizer, loader->documents[i]);
+    // Determine number of threads (use all available cores)
+    int num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_threads < 1) num_threads = 1;
+    if (num_threads > 12) num_threads = 12;  // Cap at 12 for 12-fold symmetry
+    
+    // For small document counts, use single-threaded
+    if (loader->num_documents < (size_t)num_threads * 2) {
+        for (size_t i = 0; i < loader->num_documents; i++) {
+            cllm_build_vocab(loader->tokenizer, loader->documents[i]);
+        }
+    } else {
+        // Parallel vocabulary building
+        printf("Using %d threads for vocabulary building...\n", num_threads);
+        
+        pthread_t* threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
+        VocabBuildTask* tasks = (VocabBuildTask*)malloc(num_threads * sizeof(VocabBuildTask));
+        pthread_mutex_t vocab_mutex = PTHREAD_MUTEX_INITIALIZER;
+        
+        if (!threads || !tasks) {
+            free(threads);
+            free(tasks);
+            // Fallback to single-threaded
+            for (size_t i = 0; i < loader->num_documents; i++) {
+                cllm_build_vocab(loader->tokenizer, loader->documents[i]);
+            }
+        } else {
+            // Divide documents among threads
+            size_t docs_per_thread = loader->num_documents / num_threads;
+            size_t remainder = loader->num_documents % num_threads;
+            
+            size_t current_idx = 0;
+            for (int i = 0; i < num_threads; i++) {
+                tasks[i].tokenizer = loader->tokenizer;
+                tasks[i].documents = (const char**)loader->documents;
+                tasks[i].start_idx = current_idx;
+                tasks[i].end_idx = current_idx + docs_per_thread + (i < (int)remainder ? 1 : 0);
+                tasks[i].vocab_mutex = &vocab_mutex;
+                
+                pthread_create(&threads[i], NULL, vocab_build_worker, &tasks[i]);
+                
+                current_idx = tasks[i].end_idx;
+            }
+            
+            // Wait for all threads to complete
+            for (int i = 0; i < num_threads; i++) {
+                pthread_join(threads[i], NULL);
+            }
+            
+            pthread_mutex_destroy(&vocab_mutex);
+            free(threads);
+            free(tasks);
+        }
     }
     
     loader->total_tokens = 0;
