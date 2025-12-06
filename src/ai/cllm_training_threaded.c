@@ -554,7 +554,7 @@ void cllm_backward_training_threaded(
             double* logits = &local_ctx->logits[idx * vocab_size];
             double* grad = &grad_logits[idx * vocab_size];
             
-            float max_logit = logits[0];
+            double max_logit = logits[0];
             for (uint32_t v = 1; v < vocab_size; v++) {
                 if (logits[v] > max_logit) max_logit = logits[v];
             }
@@ -593,7 +593,7 @@ void cllm_backward_training_threaded(
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
-                float grad_v = grad_logit[v];
+                double grad_v = grad_logit[v];
                 
                 // Accumulate to gradient_buffer (lock-free segment)
                 for (uint32_t d = 0; d < embed_dim; d++) {
