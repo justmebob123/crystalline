@@ -20,16 +20,10 @@ void cllm_progress_init(CLLMProgress* progress, const char* phase_name, size_t t
     progress->total = total;
     progress->start_time = time(NULL);
     progress->last_update = 0;
-    progress->update_interval_ms = 100;  // Update every 100ms max
+    progress->update_interval_ms = 500;  // Update every 500ms to reduce flicker
     
-    // Print initial progress bar
-    printf("\n");
-    printf("╔════════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║ %-74s ║\n", phase_name);
-    printf("╠════════════════════════════════════════════════════════════════════════════╣\n");
-    printf("║ Progress: [                                                    ] 0.0%%      ║\n");
-    printf("║ Elapsed:  0s | ETA: calculating... | Speed: 0 items/s                     ║\n");
-    printf("╚════════════════════════════════════════════════════════════════════════════╝\n");
+    // Print initial header (no box, simpler format)
+    printf("\n=== %s ===\n", phase_name);
     fflush(stdout);
 }
 
@@ -100,10 +94,10 @@ void cllm_progress_print(CLLMProgress* progress) {
         snprintf(eta_str, sizeof(eta_str), "calculating...");
     }
     
-    // Create progress bar (60 characters wide)
-    char bar[61];
-    int filled = (int)(60.0 * percent / 100.0);
-    for (int i = 0; i < 60; i++) {
+    // Create progress bar (50 characters wide)
+    char bar[51];
+    int filled = (int)(50.0 * percent / 100.0);
+    for (int i = 0; i < 50; i++) {
         if (i < filled) {
             bar[i] = '=';
         } else if (i == filled && percent > 0 && percent < 100) {
@@ -112,7 +106,7 @@ void cllm_progress_print(CLLMProgress* progress) {
             bar[i] = ' ';
         }
     }
-    bar[60] = '\0';
+    bar[50] = '\0';
     
     // Format speed
     char speed_str[32];
@@ -124,12 +118,10 @@ void cllm_progress_print(CLLMProgress* progress) {
         snprintf(speed_str, sizeof(speed_str), "%.2f items/s", speed);
     }
     
-    // Move cursor up 3 lines and print updated progress
-    printf("\033[3A");  // Move up 3 lines
-    printf("\r║ Progress: [%s] %5.1f%%      ║\n", bar, percent);
-    printf("\r║ Elapsed: %6s | ETA: %12s | Speed: %-20s ║\n", 
+    // Simple single-line progress (no cursor movement to avoid conflicts)
+    printf("\r[%s] %5.1f%% | %zu/%zu | Elapsed: %s | ETA: %s | Speed: %s   ", 
+           bar, percent, progress->current, progress->total,
            elapsed_str, eta_str, speed_str);
-    printf("\r╚════════════════════════════════════════════════════════════════════════════╝");
     fflush(stdout);
 }
 
@@ -166,10 +158,8 @@ void cllm_progress_complete(CLLMProgress* progress) {
         snprintf(speed_str, sizeof(speed_str), "%.2f items/s", speed);
     }
     
-    // Print completed progress bar
-    printf("\033[3A");  // Move up 3 lines
-    printf("\r║ Progress: [============================================================] 100.0%% OK  ║\n");
-    printf("\r║ Completed in %6s | Average speed: %-35s ║\n", elapsed_str, speed_str);
-    printf("\r╚════════════════════════════════════════════════════════════════════════════╝\n");
+    // Print completion message (simple, no cursor movement)
+    printf("\r[==================================================] 100.0%% | %zu/%zu | Completed in %s | Avg: %s   \n", 
+           progress->total, progress->total, elapsed_str, speed_str);
     fflush(stdout);
 }

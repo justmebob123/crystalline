@@ -1,4 +1,4 @@
-# Complete Preprocessing Pipeline Parallelization
+# Complete Preprocessing Pipeline with Progress Tracking
 
 ## 1. Fix Segmentation Fault (CRITICAL - BLOCKING) ✅
 - [x] Add total_batches calculation in cllm_training_init()
@@ -29,14 +29,25 @@
 - [x] Fix segfault (nested function issue) - Commit: 142284c
 - [ ] Test parallel tokenization performance (USER ACTION REQUIRED)
 
-## 5. Complete Pipeline Status
+## 5. Add Progress Tracking System ✅
+- [x] Create cllm_progress.h and cllm_progress.c
+- [x] Implement progress bars with ASCII characters
+- [x] Add ETA calculation and display
+- [x] Add elapsed time tracking
+- [x] Add processing speed display
+- [x] Integrate into vocabulary building
+- [x] Integrate into dataset tokenization
+- [x] Commit: 737f9d2
+- [ ] Test progress display (USER ACTION REQUIRED)
+
+## 6. Complete Pipeline Status
 - [x] Document loading (parallel file I/O)
-- [x] Vocabulary building (parallel with 12-fold symmetry)
+- [x] Vocabulary building (parallel with 12-fold symmetry + progress tracking)
 - [x] Vocabulary consolidation (O(1) hash table)
-- [x] Dataset tokenization (parallel with 12-fold symmetry)
+- [x] Dataset tokenization (parallel with 12-fold symmetry + progress tracking)
 - [x] Training (already parallel with 12-fold symmetry)
 
-## 6. User Testing Required
+## 7. User Testing Required
 All code changes complete. Ready for testing on Saturn:
 
 ```bash
@@ -52,4 +63,6 @@ Expected improvements:
 - ✅ All documents processed (no "too large" messages)
 - ✅ Fast vocabulary consolidation (seconds, not minutes)
 - ✅ Parallel dataset tokenization (~8x faster on 8-core system)
+- ✅ Progress bars with ETAs for each phase
+- ✅ Clear visibility into processing status
 - ✅ Overall preprocessing time reduced by ~80-90%

@@ -344,8 +344,9 @@ static void* vocab_sphere_worker(void* arg) {
             }
             thread_buffer = new_buffer;
             buffer_size = new_size;
-            fprintf(stderr, "[Sphere %d] Reallocated buffer using 3^d growth to %zu bytes for document %zu\n",
-                    ctx->symmetry_group, buffer_size, i);
+            // Suppress verbose output during progress tracking
+            // fprintf(stderr, "[Sphere %d] Reallocated buffer using 3^d growth to %zu bytes for document %zu\n",
+            //         ctx->symmetry_group, buffer_size, i);
         }
         
         memcpy(thread_buffer, doc, doc_len + 1);
@@ -372,7 +373,8 @@ static void* vocab_sphere_worker(void* arg) {
     
     free(thread_buffer);
     
-    printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
+    // Suppress verbose output during progress tracking
+    // printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
     return NULL;
 }
 
