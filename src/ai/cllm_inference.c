@@ -271,6 +271,14 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     for (int pos = 0; pos < seq_len; pos++) {
         double* in_vec = &input[pos * embed_dim];
         
+        // Check input for NaN
+        for (uint32_t i = 0; i < embed_dim; i++) {
+            if (prime_isnan(in_vec[i])) {
+                fprintf(stderr, "ERROR: NaN in input at pos=%d, i=%u\n", pos, i);
+                in_vec[i] = 0.0;
+            }
+        }
+        
         for (uint32_t h = 0; h < num_heads; h++) {
             for (uint32_t d = 0; d < head_dim; d++) {
                 double q_sum = 0.0, k_sum = 0.0, v_sum = 0.0;
@@ -278,6 +286,20 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
                 for (uint32_t i = 0; i < head_dim; i++) {
                     size_t w_idx = h * head_dim * head_dim + d * head_dim + i;
                     double in_val = in_vec[h * head_dim + i];
+                    
+                    // Check weights for NaN
+                    if (prime_isnan(layer->query_lattice[w_idx])) {
+                        fprintf(stderr, "ERROR: NaN in query weight at h=%u, d=%u, i=%u\n", h, d, i);
+                        layer->query_lattice[w_idx] = 0.0;
+                    }
+                    if (prime_isnan(layer->key_lattice[w_idx])) {
+                        fprintf(stderr, "ERROR: NaN in key weight at h=%u, d=%u, i=%u\n", h, d, i);
+                        layer->key_lattice[w_idx] = 0.0;
+                    }
+                    if (prime_isnan(layer->value_lattice[w_idx])) {
+                        fprintf(stderr, "ERROR: NaN in value weight at h=%u, d=%u, i=%u\n", h, d, i);
+                        layer->value_lattice[w_idx] = 0.0;
+                    }
                     
                     q_sum += layer->query_lattice[w_idx] * in_val;
                     k_sum += layer->key_lattice[w_idx] * in_val;
@@ -291,41 +313,33 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
         }
     }
     
-    // Compute attention scores using theta_n() for positional encoding
+    // Compute attention scores with numerical stability
     double scale = 1.0 / prime_sqrt((double)head_dim);
+    const double EPSILON = 1e-10;
+    const double MAX_SCORE = 10.0;  // Clip scores to prevent overflow
     
     for (uint32_t h = 0; h < num_heads; h++) {
         for (int i = 0; i < seq_len; i++) {
             double* q = &Q[i * embed_dim + h * head_dim];
             
-            // Calculate angular position for query using theta_n()
-            // theta_n(n, k, lambda, omega, p, q, use_ratio)
-            double theta_q = theta_n(i, h, "", 432, 2, 1, false);
-            
             for (int j = 0; j < seq_len; j++) {
                 double* k = &K[j * embed_dim + h * head_dim];
                 
-                // Calculate angular position for key
-                double theta_k = theta_n(j, h, "", 432, 2, 1, false);
-                
-                // Compute dot product with angular position encoding
+                // Simple dot product attention (no rotary encoding for now to avoid NaN)
                 double score = 0.0;
                 for (uint32_t d = 0; d < head_dim; d++) {
-                    // Apply rotary position encoding using theta
-                    double angle = theta_q - theta_k;
-                    double cos_val = prime_cos(angle);
-                    
-                    // Rotate query and key using cosine (simplified rotary encoding)
-                    double q_rot = q[d] * cos_val;
-                    double k_rot = k[d] * cos_val;
-                    
-                    score += q_rot * k_rot;
+                    score += q[d] * k[d];
                 }
                 
-                scores[i * seq_len + j] = score * scale;
+                // Scale and clip to prevent overflow
+                score = score * scale;
+                if (score > MAX_SCORE) score = MAX_SCORE;
+                if (score < -MAX_SCORE) score = -MAX_SCORE;
+                
+                scores[i * seq_len + j] = score;
             }
             
-            // Softmax over scores for this query
+            // Softmax over scores for this query with numerical stability
             double max_score = scores[i * seq_len];
             for (int j = 1; j < seq_len; j++) {
                 if (scores[i * seq_len + j] > max_score) {
@@ -335,10 +349,17 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
             
             double sum_exp = 0.0;
             for (int j = 0; j < seq_len; j++) {
-                scores[i * seq_len + j] = prime_exp(scores[i * seq_len + j] - max_score);
-                sum_exp += scores[i * seq_len + j];
+                double exp_val = prime_exp(scores[i * seq_len + j] - max_score);
+                // Check for NaN or inf
+                if (prime_isnan(exp_val) || prime_isinf(exp_val)) {
+                    exp_val = 0.0;
+                }
+                scores[i * seq_len + j] = exp_val;
+                sum_exp += exp_val;
             }
             
+            // Normalize with epsilon to prevent division by zero
+            sum_exp = sum_exp + EPSILON;
             for (int j = 0; j < seq_len; j++) {
                 scores[i * seq_len + j] /= sum_exp;
             }
@@ -352,13 +373,33 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
         for (int i = 0; i < seq_len; i++) {
             for (int j = 0; j < seq_len; j++) {
                 double attn_weight = scores[i * seq_len + j];
+                
+                // Check for NaN in attention weights
+                if (prime_isnan(attn_weight)) {
+                    fprintf(stderr, "ERROR: NaN in attention weight at head=%u, i=%d, j=%d\n", h, i, j);
+                    attn_weight = 1.0 / seq_len;
+                }
+                
                 double* v = &V[j * embed_dim + h * head_dim];
                 double* out = &output[i * embed_dim + h * head_dim];
                 
                 for (uint32_t d = 0; d < head_dim; d++) {
-                    out[d] += attn_weight * v[d];
+                    double val = attn_weight * v[d];
+                    if (prime_isnan(val)) {
+                        fprintf(stderr, "ERROR: NaN in output computation at head=%u, i=%d, j=%d, d=%u\n", h, i, j, d);
+                        val = 0.0;
+                    }
+                    out[d] += val;
                 }
             }
+        }
+    }
+    
+    // Final NaN check on output
+    for (int i = 0; i < seq_len * (int)embed_dim; i++) {
+        if (prime_isnan(output[i])) {
+            fprintf(stderr, "ERROR: NaN in final output at index %d\n", i);
+            output[i] = 0.0;
         }
     }
     
