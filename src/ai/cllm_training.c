@@ -1382,6 +1382,12 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                 double* attn_out = &training->attention_outputs[layer][idx * embed_dim];
                 double* ff_out = &training->ff_outputs[layer][idx * embed_dim];
                 double* layer_out = &training->layer_outputs[layer][idx * embed_dim];
+                double* input = &training->layer_inputs[layer][idx * embed_dim];
+                
+                // CRITICAL FIX: Add residual connection #1 (attention + input)
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    attn_out[d] += input[d];
+                }
                 
                 // FeedForward with SIMD double-precision optimization
                 FeedForwardLayer* ff = &model->ff_layers[layer];
@@ -1405,9 +1411,12 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                     ff_out[o] += ff->bias2[o];
                 }
                 
-                // Residual + LayerNorm
-                for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
+                // CRITICAL FIX: Add residual connection #2 (feedforward + attention)
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    layer_out[d] = attn_out[d] + ff_out[d];
+                }
                 
+                // Apply LayerNorm
                 CLLMLayerNorm* ln = &model->layer_norms[layer];
                 double mean = 0.0, var = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
@@ -1670,16 +1679,34 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
                     grad_hidden[h] *= (1.0 - tanh_val * tanh_val);
                 }
                 
-                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    for (uint32_t i = 0; i < embed_dim; i++) {
-                        if (training->ff_grads[layer].w1_lattice) {
-                            training->ff_grads[layer].w1_lattice[i * ff->hidden_dim + h] += input[i] * grad_hidden[h];
+                // Gradient w.r.t. attention output (input to feedforward)
+                double* grad_attn = (double*)calloc(embed_dim, sizeof(double));
+                if (grad_attn) {
+                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                        for (uint32_t i = 0; i < embed_dim; i++) {
+                            if (training->ff_grads[layer].w1_lattice) {
+                                training->ff_grads[layer].w1_lattice[i * ff->hidden_dim + h] += input[i] * grad_hidden[h];
+                            }
+                            grad_attn[i] += ff->w1_lattice[i * ff->hidden_dim + h] * grad_hidden[h];
                         }
-                        grad[i] += ff->w1_lattice[i * ff->hidden_dim + h] * grad_hidden[h];
+                        if (training->ff_grads[layer].bias1) {
+                            training->ff_grads[layer].bias1[h] += grad_hidden[h];
+                        }
                     }
-                    if (training->ff_grads[layer].bias1) {
-                        training->ff_grads[layer].bias1[h] += grad_hidden[h];
+                    
+                    // CRITICAL FIX: Add residual gradient flow
+                    // Gradient flows through both feedforward path AND residual connection
+                    // grad_layer_input = grad_attn + grad (from residual #2)
+                    for (uint32_t i = 0; i < embed_dim; i++) {
+                        grad[i] = grad_attn[i] + grad[i];  // Combine gradients from both paths
                     }
+                    
+                    // Gradient also flows through residual #1 (attention + input)
+                    // This means gradient w.r.t. layer input gets contribution from attention path
+                    // The grad[i] now contains gradient w.r.t. attention output
+                    // It will flow to layer input through the residual connection
+                    
+                    free(grad_attn);
                 }
                 
                 free(grad_hidden);
