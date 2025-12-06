@@ -52,19 +52,19 @@ Redesign model management to enable concurrent operations while keeping Models T
 - ✅ Path generation works
 - ✅ All operations successful
 
-### Phase 3.2: Training Tab Refactor (3-4 hours) 🔄 IN PROGRESS
+### Phase 3.2: Training Tab Refactor (3-4 hours) ✅ COMPLETE
 - [x] Part A: Add TrainingTabState structure (30 min) ✅ COMPLETE
 - [x] Part B: Implement model management functions (1 hour) ✅ COMPLETE
 - [x] Part C: Implement training functions (1-2 hours) ✅ COMPLETE
 - [x] Part D: Remove model_manager calls (30 min) ✅ COMPLETE
-  - Updated on_start_clicked() to use training_tab functions
-  - Updated on_save_clicked() to use training_tab_save_model()
-  - Updated dropdown callbacks to use model_registry
-  - Replaced model_manager include with model_registry
-  - Removed all model_manager calls
+- [x] Part E: Update statistics display (30 min) ✅ COMPLETE
+  - Updated visualization data to use tab_state.stats
+  - Updated sphere statistics display to use tab_state.stats
+  - Replaced state->training_metrics with tab_state
+  - Replaced state->sphere_stats with tab_state.stats
+  - Display now shows: active_spheres, batches_processed, tokens_processed
   - Build successful: 0 errors, 0 warnings
-- [ ] Part E: Update statistics display (30 min) - NEXT
-- [ ] Part F: Test training independently (1 hour)
+- [ ] Part F: Test training independently (1 hour) - NEXT
 
 ### Phase 3.3: LLM Tab Refactor (2-3 hours)
 - [ ] Add per-tab model state

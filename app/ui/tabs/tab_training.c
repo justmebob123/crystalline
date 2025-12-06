@@ -964,18 +964,12 @@ void update_training_visualization(AppState* state) {
         return;  // Don't access freed memory
     }
     
-    // Update from training metrics
-    if (state->training_metrics) {
-        g_training_ui.viz_data.current_epoch = state->training_metrics->training.current_epoch;
-        // PHASE 2: Read total_epochs from state->training_epochs (slider value)
-        // training_metrics->training.total_epochs is never set by training system
-        g_training_ui.viz_data.total_epochs = state->training_epochs;
-        g_training_ui.viz_data.current_loss = state->training_metrics->training.current_loss;
-        
-        // Update best loss
-        if (g_training_ui.viz_data.current_loss < g_training_ui.viz_data.best_loss) {
-            g_training_ui.viz_data.best_loss = g_training_ui.viz_data.current_loss;
-        }
+    // Update from training tab state
+    if (g_training_ui.tab_state.is_training) {
+        g_training_ui.viz_data.current_epoch = g_training_ui.tab_state.stats.current_epoch;
+        g_training_ui.viz_data.total_epochs = g_training_ui.tab_state.stats.total_epochs;
+        g_training_ui.viz_data.current_loss = g_training_ui.tab_state.stats.current_loss;
+        g_training_ui.viz_data.best_loss = g_training_ui.tab_state.stats.best_loss;
         
         // Add to loss history
         if (g_training_ui.viz_data.loss_count < 100) {
@@ -1166,15 +1160,17 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     metrics_text_y += 25;
     
     char perf[128];
-    snprintf(perf, sizeof(perf), "Active Threads: %d", state->sphere_stats.active_spheres);
+    snprintf(perf, sizeof(perf), "Active Threads: %d", g_training_ui.tab_state.stats.active_spheres);
     draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
     metrics_text_y += 18;
     
-    snprintf(perf, sizeof(perf), "Total Batches: %d", state->sphere_stats.total_batches);
+    snprintf(perf, sizeof(perf), "Total Batches: %llu", 
+             (unsigned long long)g_training_ui.tab_state.stats.batches_processed);
     draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
     metrics_text_y += 18;
     
-    snprintf(perf, sizeof(perf), "Gradient Norm: %.4f", state->sphere_stats.total_gradient_norm);
+    snprintf(perf, sizeof(perf), "Tokens Processed: %llu", 
+             (unsigned long long)g_training_ui.tab_state.stats.tokens_processed);
     draw_text(renderer, perf, metrics_text_x, metrics_text_y, text_color);
     metrics_text_y += 25;
     
