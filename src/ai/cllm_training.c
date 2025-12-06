@@ -135,6 +135,7 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
 /**
  * Compute distance between tokens in Ulam spiral
  */
+__attribute__((unused))
 static float ulam_distance(uint32_t token1, uint32_t token2) {
     UlamPosition pos1 = compute_ulam_position(token1);
     UlamPosition pos2 = compute_ulam_position(token2);
@@ -757,6 +758,7 @@ void cllm_optimizer_step(CLLMTraining* training) {
         opt_config.beta1 = 0.9;
         opt_config.beta2 = 0.999;
         opt_config.epsilon = 1e-8;
+        (void)opt_config;  // Suppress unused warning - TODO: Implement full weight collection
         
         // For now, use fallback SGD until we properly collect all weights
         // TODO: Implement full weight collection

@@ -247,7 +247,7 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
 void cllm_precompute_all_embeddings(CLLMModel* model) {
     if (!model) return;
     
-    printf("Pre-computing all embeddings for %u tokens...\n", model->vocab_size);
+    printf("Pre-computing all embeddings for %lu tokens...\n", (unsigned long)model->vocab_size);
     fflush(stdout);
     
     for (uint32_t token_id = 0; token_id < model->vocab_size; token_id++) {
@@ -255,10 +255,10 @@ void cllm_precompute_all_embeddings(CLLMModel* model) {
         
         // Progress indicator every 100 tokens
         if ((token_id + 1) % 100 == 0) {
-            printf("\r  Computed %u/%u embeddings...", token_id + 1, model->vocab_size);
+            printf("\r  Computed %lu/%lu embeddings...", (unsigned long)(token_id + 1), (unsigned long)model->vocab_size);
             fflush(stdout);
         }
     }
-    printf("\r✓ Pre-computed all %u embeddings\n", model->vocab_size);
+    printf("\r✓ Pre-computed all %lu embeddings\n", (unsigned long)model->vocab_size);
     fflush(stdout);
 }

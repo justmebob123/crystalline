@@ -188,6 +188,7 @@ CacheAwareDistribution plimpton_create_cache_distribution(PlimptonIntegrationCon
                                                          uint64_t* work_sizes) {
     (void)ctx;
     (void)parent_id;
+    (void)child_ids;
     
     // Detect CPU topology
     CpuTopology topology = detect_cpu_topology();
