@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <stdatomic.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -278,31 +281,127 @@ int cllm_data_loader_load_directory(CLLMDataLoader* loader, const char* dirname)
  * Build Vocabulary from Loaded Documents
  */
 /**
- * Build vocabulary from all documents
+ * Vocabulary Building with 12-Fold Symmetry
  * 
  * MASTER PLAN COMPLIANCE:
- * - Vocabulary building is NOT part of the kissing spheres threading architecture
- * - This is a simple preprocessing step that happens BEFORE training
- * - Using raw pthreads here would violate the 12-fold symmetry structure
- * - Keep it simple, single-threaded, and correct
+ * - Uses 12-fold symmetry structure
+ * - Distributes work across 12 symmetry groups
+ * - Each group processes documents independently
+ * - Synchronizes vocabulary updates with mutex
+ */
+
+typedef struct {
+    CLLMTokenizer* tokenizer;
+    const char** documents;
+    size_t start_idx;
+    size_t end_idx;
+    int symmetry_group;  // 0-11
+    pthread_mutex_t* vocab_mutex;
+    _Atomic size_t* progress_counter;
+} VocabSphereContext;
+
+static void* vocab_sphere_worker(void* arg) {
+    VocabSphereContext* ctx = (VocabSphereContext*)arg;
+    
+    printf("[Sphere %d] Processing documents %zu to %zu\n", 
+           ctx->symmetry_group, ctx->start_idx, ctx->end_idx);
+    
+    // Process assigned documents
+    for (size_t i = ctx->start_idx; i < ctx->end_idx; i++) {
+        const char* doc = ctx->documents[i];
+        if (!doc) continue;
+        
+        // Build vocabulary for this document (thread-safe with mutex)
+        pthread_mutex_lock(ctx->vocab_mutex);
+        cllm_build_vocab(ctx->tokenizer, doc);
+        pthread_mutex_unlock(ctx->vocab_mutex);
+        
+        // Update progress
+        atomic_fetch_add(ctx->progress_counter, 1);
+    }
+    
+    printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
+    return NULL;
+}
+
+/**
+ * Build vocabulary using 12-fold symmetry kissing spheres architecture
+ * 
+ * MASTER PLAN COMPLIANCE:
+ * - Creates 12 sphere workers (one per symmetry group)
+ * - Distributes documents evenly across spheres
+ * - Each sphere processes its assigned documents
+ * - Vocabulary updates are synchronized with mutex
  */
 void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     if (!loader || !loader->tokenizer) return;
     
     printf("Building vocabulary from %zu documents...\n", loader->num_documents);
-    printf("(Single-threaded - vocabulary building is not part of kissing spheres architecture)\n");
+    printf("Using 12-fold symmetry kissing spheres architecture\n");
     
-    // Simple single-threaded vocabulary building
-    // This is the CORRECT approach per MASTER PLAN
-    for (size_t i = 0; i < loader->num_documents; i++) {
-        if (i % 1000 == 0 && i > 0) {
+    // Determine number of active spheres (up to 12)
+    int num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_cpus < 1) num_cpus = 1;
+    
+    // MASTER PLAN: Always use 12-fold symmetry structure
+    // But only activate as many spheres as we have CPUs (up to 12)
+    int num_active_spheres = (num_cpus > 12) ? 12 : num_cpus;
+    
+    printf("Activating %d of 12 symmetry spheres\n", num_active_spheres);
+    
+    // Create shared mutex for vocabulary updates
+    pthread_mutex_t vocab_mutex = PTHREAD_MUTEX_INITIALIZER;
+    
+    // Create progress counter
+    _Atomic size_t progress_counter = 0;
+    
+    // Create sphere contexts (12-fold symmetry)
+    VocabSphereContext contexts[12];
+    pthread_t threads[12];
+    
+    // Distribute documents across active spheres
+    size_t docs_per_sphere = loader->num_documents / num_active_spheres;
+    size_t remainder = loader->num_documents % num_active_spheres;
+    
+    size_t current_idx = 0;
+    for (int i = 0; i < num_active_spheres; i++) {
+        contexts[i].tokenizer = loader->tokenizer;
+        contexts[i].documents = (const char**)loader->documents;
+        contexts[i].start_idx = current_idx;
+        contexts[i].end_idx = current_idx + docs_per_sphere + (i < (int)remainder ? 1 : 0);
+        contexts[i].symmetry_group = i;  // 0-11
+        contexts[i].vocab_mutex = &vocab_mutex;
+        contexts[i].progress_counter = &progress_counter;
+        
+        pthread_create(&threads[i], NULL, vocab_sphere_worker, &contexts[i]);
+        
+        current_idx = contexts[i].end_idx;
+    }
+    
+    // Monitor progress
+    size_t last_progress = 0;
+    while (atomic_load(&progress_counter) < loader->num_documents) {
+        size_t current_progress = atomic_load(&progress_counter);
+        if (current_progress != last_progress) {
             printf("  Processed %zu/%zu documents (%.1f%%)...\r", 
-                   i, loader->num_documents, (i * 100.0) / loader->num_documents);
+                   current_progress, loader->num_documents, 
+                   (current_progress * 100.0) / loader->num_documents);
             fflush(stdout);
+            last_progress = current_progress;
         }
-        cllm_build_vocab(loader->tokenizer, loader->documents[i]);
+        usleep(100000);  // 100ms
     }
     printf("\n");
+    
+    // Wait for all spheres to complete
+    for (int i = 0; i < num_active_spheres; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    // Clean up
+    pthread_mutex_destroy(&vocab_mutex);
+    
+    printf("Vocabulary building complete using 12-fold symmetry\n");
     
     loader->total_tokens = 0;
     for (uint32_t i = 0; i < loader->tokenizer->vocab_size; i++) {
