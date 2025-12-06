@@ -453,7 +453,15 @@ void update_crawler_tab(AppState* state) {
  * Render Crawler Tab
  */
 void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
-    if (!g_crawler_ui.initialized) return;
+    // Initialize on first draw if not already initialized
+    if (!g_crawler_ui.initialized) {
+        printf("WARNING: Crawler tab not initialized, initializing now...\n");
+        init_crawler_tab(state);
+        if (!g_crawler_ui.initialized) {
+            printf("ERROR: Failed to initialize crawler tab\n");
+            return;
+        }
+    }
     
     // Render panels
     if (g_crawler_ui.list_panel) {

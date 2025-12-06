@@ -2,6 +2,8 @@
 #include "ui/tabs/tab_models.h"
 #include "ui/tabs/tab_training.h"
 #include "ui/tabs/tab_video.h"
+#include "ui/tabs/tab_crawler.h"
+#include "ui/tabs/tab_llm.h"
 
 /**
  * Initialize all UI tabs that require setup
@@ -22,6 +24,10 @@ void init_all_tabs(AppState* state) {
     // Training Tab
     printf("Initializing Training tab...\n");
     init_training_tab(state);
+    
+    // Crawler Tab
+    printf("Initializing Crawler tab...\n");
+    init_crawler_tab(state);
     
     // Video Tab
     printf("Initializing Video tab...\n");
