@@ -248,6 +248,7 @@ static bool training_tab_load_model(const char* model_name) {
 /**
  * Create a new model for training
  */
+static bool training_tab_create_model(const char* model_name, const CLLMConfig* config) __attribute__((unused));
 static bool training_tab_create_model(const char* model_name, const CLLMConfig* config) {
     if (!model_name || !config) {
         return false;
@@ -365,14 +366,37 @@ static void* training_thread_func(void* arg) {
     
     printf("=== TRAINING THREAD STARTED ===\n");
     
-    // Get threaded training system from training context
-    ThreadedTrainingSystem* system = threaded_get_system(tab->training);
+    // Create batch iterator
+    CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+        tab->training->tokens,
+        tab->training->num_tokens,
+        tab->training->config.batch_size,
+        tab->training->config.sequence_length,
+        0,  // no shuffle
+        0   // keep incomplete batches
+    );
     
-    if (!system) {
-        fprintf(stderr, "ERROR: Failed to get threaded training system\n");
+    if (!batch_iterator) {
+        fprintf(stderr, "ERROR: Failed to create batch iterator\n");
         tab->is_training = false;
         return NULL;
     }
+    
+    // Create threaded training system
+    ThreadedTrainingSystem* system = threaded_training_create(
+        tab->training,
+        batch_iterator,
+        0  // auto-detect CPU cores
+    );
+    
+    if (!system) {
+        fprintf(stderr, "ERROR: Failed to create threaded training system\n");
+        cllm_batch_iterator_free(batch_iterator);
+        tab->is_training = false;
+        return NULL;
+    }
+    
+    printf("✓ Threaded training system created\n");
     
     // Training loop
     for (int epoch = 0; epoch < tab->stats.total_epochs && !tab->should_stop; epoch++) {
@@ -403,6 +427,9 @@ static void* training_thread_func(void* arg) {
     training_tab_save_model();
     
     // Cleanup
+    threaded_training_free(system);
+    cllm_batch_iterator_free(batch_iterator);
+    
     tab->is_training = false;
     printf("✓ Training thread completed\n");
     
@@ -682,15 +709,14 @@ static void on_model_selected(int index, void* data) {
     if (!state || !g_training_ui.model_dropdown) return;
     
     // Get selected model name from model registry
-    extern const char* model_registry_get_name_at_index(uint32_t index);
-    const char* model_name = model_registry_get_name_at_index((uint32_t)index);
-    if (model_name) {
-        strncpy(g_training_ui.selected_model, model_name, sizeof(g_training_ui.selected_model) - 1);
+    const ModelMetadata* metadata = model_registry_get_at_index((uint32_t)index);
+    if (metadata) {
+        strncpy(g_training_ui.selected_model, metadata->name, sizeof(g_training_ui.selected_model) - 1);
         g_training_ui.selected_model[sizeof(g_training_ui.selected_model) - 1] = '\0';
         printf("MODEL SELECTED: '%s' (index %d)\n", g_training_ui.selected_model, index);
         printf("  This model will be used when you click START\n");
     } else {
-        printf("ERROR: Could not get model name for index %d\n", index);
+        printf("ERROR: Could not get model metadata for index %d\n", index);
     }
 }
 
@@ -1001,15 +1027,13 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     // Populate model dropdown if empty (after model registry initializes)
     static bool models_populated = false;
     if (!models_populated && g_training_ui.model_dropdown) {
-        extern uint32_t model_registry_count(void);
-        extern const char* model_registry_get_name_at_index(uint32_t index);
-        
         uint32_t model_count = model_registry_count();
         if (model_count > 0) {
             char** model_names = malloc(model_count * sizeof(char*));
             if (model_names) {
                 for (uint32_t i = 0; i < model_count; i++) {
-                    model_names[i] = (char*)model_registry_get_name_at_index(i);
+                    const ModelMetadata* metadata = model_registry_get_at_index(i);
+                    model_names[i] = metadata ? (char*)metadata->name : "";
                 }
                 crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
                 printf("MODEL DROPDOWN: Populated with %u models\n", model_count);
@@ -1181,8 +1205,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
     
     if (training_system) {
         // Get entropy context
-        extern void* threaded_training_get_entropy_context(void* system);
-        void* entropy_ctx = threaded_training_get_entropy_context(training_system);
+        void* entropy_ctx = threaded_training_get_entropy_context((ThreadedTrainingSystem*)training_system);
         
         if (entropy_ctx) {
             // Get model entropy stats
@@ -1222,8 +1245,7 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         }
         
         // Get adaptive hierarchy context
-        extern void* threaded_training_get_adaptive_hierarchy(void* system);
-        void* hierarchy_ctx = threaded_training_get_adaptive_hierarchy(training_system);
+        void* hierarchy_ctx = threaded_training_get_adaptive_hierarchy((ThreadedTrainingSystem*)training_system);
         
         if (hierarchy_ctx) {
             metrics_text_y += 25;
@@ -1235,10 +1257,9 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         }
         
         // Get cymatic timing stats
-        extern int threaded_training_get_cymatic_stats(void* system, uint64_t* epoch_syncs, uint64_t* batch_syncs);
         uint64_t epoch_syncs = 0, batch_syncs = 0;
         
-        if (threaded_training_get_cymatic_stats(training_system, &epoch_syncs, &batch_syncs) == 0) {
+        if (threaded_training_get_cymatic_stats((ThreadedTrainingSystem*)training_system, &epoch_syncs, &batch_syncs) == 0) {
             metrics_text_y += 25;
             draw_text(renderer, "CYMATIC TIMING", metrics_text_x, metrics_text_y, (SDL_Color){100, 150, 200, 255});
             metrics_text_y += 25;
