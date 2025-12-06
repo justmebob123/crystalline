@@ -286,7 +286,7 @@ typedef struct {
     pthread_mutex_t* vocab_mutex;
 } VocabBuildTask;
 
-#define TOKEN_BATCH_SIZE 1000
+#define TOKEN_BATCH_SIZE 10000  // Larger batch = less lock contention
 
 static void* vocab_build_worker(void* arg) {
     VocabBuildTask* task = (VocabBuildTask*)arg;
