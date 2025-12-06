@@ -148,7 +148,7 @@ int cmd_train(int argc, char** argv) {
     };
     
     int opt;
-    while ((opt = getopt_long(argc, argv, "d:m:o:v:e:l:h:E:b:s:r:t:c:S:H", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "d:m:o:v:e:l:H:E:b:s:r:t:c:S:", long_options, NULL)) != -1) {
         switch (opt) {
             case 'd': data_file = optarg; break;
             case 'm': model_file = optarg; break;
@@ -192,10 +192,123 @@ int cmd_train(int argc, char** argv) {
     printf("  Threads:        %d %s\n", num_threads, num_threads == 0 ? "(auto)" : "");
     printf("\n");
     
-    // TODO: Implement actual training
-    printf("Training implementation coming soon...\n");
-    printf("This will use the kissing spheres architecture from cllm_training_threaded.c\n");
+    // Step 1: Load or create model
+    CLLMModel* model = NULL;
+    if (model_file) {
+        printf("Loading model from %s...\n", model_file);
+        model = cllm_read_model(model_file);
+        if (!model) {
+            fprintf(stderr, "Failed to load model\n");
+            return 1;
+        }
+        printf("Model loaded\n\n");
+    } else {
+        printf("Creating new model...\n");
+        CLLMConfig* config = cllm_create_config(vocab_size, embed_dim, num_layers, num_heads, embed_dim * 4);
+        if (!config) {
+            fprintf(stderr, "Failed to create config\n");
+            return 1;
+        }
+        model = cllm_create_model(config);
+        cllm_free_config(config);
+        if (!model) {
+            fprintf(stderr, "Failed to create model\n");
+            return 1;
+        }
+        printf("Model created\n\n");
+    }
     
+    // Step 2: Load training data
+    printf("Loading training data from %s...\n", data_file);
+    CLLMTokenizer* tokenizer = cllm_create_tokenizer(vocab_size);
+    if (!tokenizer) {
+        fprintf(stderr, "Failed to create tokenizer\n");
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    CLLMDataLoader* loader = cllm_data_loader_create(tokenizer);
+    if (!loader) {
+        fprintf(stderr, "Failed to create data loader\n");
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    if (cllm_data_loader_load_file(loader, data_file) != 0) {
+        fprintf(stderr, "Failed to load data file\n");
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    TokenDataset* dataset = cllm_data_loader_create_dataset(loader);
+    if (!dataset) {
+        fprintf(stderr, "Failed to create dataset\n");
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    printf("Dataset loaded: %zu tokens\n\n", dataset->num_tokens);
+    
+    // Step 3: Create training context
+    printf("Initializing training...\n");
+    CLLMTrainingConfig config = {
+        .num_epochs = epochs,
+        .batch_size = batch_size,
+        .sequence_length = seq_len,
+        .learning_rate = learning_rate,
+        .gradient_accumulation_steps = 1,
+        .save_every = save_interval,
+        .use_mixed_precision = false
+    };
+    
+    CLLMTraining* training = cllm_training_init(model, &config);
+    if (!training) {
+        fprintf(stderr, "Failed to initialize training\n");
+        cllm_token_dataset_free(dataset);
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    training->tokens = dataset->tokens;
+    training->num_tokens = dataset->num_tokens;
+    training->total_batches = (dataset->num_tokens / (batch_size * seq_len));
+    printf("Training initialized\n\n");
+    
+    // Step 4: Train
+    printf("Starting training...\n");
+    int result = cllm_train(training);
+    if (result != 0) {
+        fprintf(stderr, "Training failed\n");
+        cllm_training_cleanup(training);
+        cllm_token_dataset_free(dataset);
+        cllm_data_loader_free(loader);
+        cllm_free_tokenizer(tokenizer);
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    // Step 5: Save model
+    printf("\nSaving model to %s...\n", output_file);
+    if (cllm_write_model(model, output_file) != 0) {
+        fprintf(stderr, "Failed to save model\n");
+    } else {
+        printf("Model saved successfully\n");
+    }
+    
+    // Cleanup
+    cllm_training_cleanup(training);
+    cllm_token_dataset_free(dataset);
+    cllm_data_loader_free(loader);
+    cllm_free_tokenizer(tokenizer);
+    cllm_free_model(model);
+    
+    printf("\n=== Training Complete ===\n");
     return 0;
 }
 
@@ -293,10 +406,94 @@ int cmd_infer(int argc, char** argv) {
     }
     printf("\n");
     
-    // TODO: Implement actual inference
-    printf("Inference implementation coming soon...\n");
-    printf("This will use the inference system from cllm_inference.c\n");
+    // Load model
+    printf("Loading model...\n");
+    CLLMModel* model = cllm_read_model(model_file);
+    if (!model) {
+        fprintf(stderr, "Failed to load model from %s\n", model_file);
+        return 1;
+    }
+    printf("Model loaded\n\n");
     
+    // Create inference context
+    CLLMInference* inference = cllm_inference_init(model);
+    if (!inference) {
+        fprintf(stderr, "Failed to initialize inference\n");
+        cllm_free_model(model);
+        return 1;
+    }
+    
+    // Set generation parameters
+    cllm_set_temperature(inference, temperature);
+    cllm_set_top_p(inference, top_p);
+    cllm_set_max_tokens(inference, max_tokens);
+    
+    if (interactive) {
+        // Interactive mode
+        printf("Interactive mode (type 'quit' to exit)\n\n");
+        char input[1024];
+        char output[4096];
+        
+        while (1) {
+            printf("> ");
+            fflush(stdout);
+            
+            if (!fgets(input, sizeof(input), stdin)) {
+                break;
+            }
+            
+            // Remove newline
+            input[strcspn(input, "\n")] = 0;
+            
+            if (strcmp(input, "quit") == 0 || strcmp(input, "exit") == 0) {
+                break;
+            }
+            
+            if (strlen(input) == 0) {
+                continue;
+            }
+            
+            // Generate
+            int tokens = cllm_generate(inference, input, output, sizeof(output));
+            if (tokens > 0) {
+                printf("%s\n\n", output);
+            } else {
+                printf("Generation failed\n\n");
+            }
+        }
+    } else {
+        // Single prompt mode
+        char output[4096];
+        printf("Generating...\n");
+        int tokens = cllm_generate(inference, prompt, output, sizeof(output));
+        
+        if (tokens > 0) {
+            printf("\nGenerated text:\n");
+            printf("%s\n", output);
+            printf("\nTokens generated: %d\n", tokens);
+            
+            // Save to file if requested
+            if (output_file) {
+                FILE* f = fopen(output_file, "w");
+                if (f) {
+                    fprintf(f, "%s\n", output);
+                    fclose(f);
+                    printf("Output saved to: %s\n", output_file);
+                }
+            }
+        } else {
+            fprintf(stderr, "Generation failed\n");
+            cllm_inference_cleanup(inference);
+            cllm_free_model(model);
+            return 1;
+        }
+    }
+    
+    // Cleanup
+    cllm_inference_cleanup(inference);
+    cllm_free_model(model);
+    
+    printf("\n=== Inference Complete ===\n");
     return 0;
 }
 
@@ -368,4 +565,3 @@ int main(int argc, char** argv) {
         return 1;
     }
 }
-</file_path>

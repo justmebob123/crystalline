@@ -39,6 +39,10 @@ float prime_sqrtf(float x) {
 float prime_expf(float x) {
     if (x == 0.0f) return 1.0f;
     
+    // Clamp to prevent overflow/underflow
+    if (x > 88.0f) return 3.4e38f;  // Max float
+    if (x < -88.0f) return 0.0f;
+    
     // For large x, use exp(x) = exp(x/2)²
     if (x > 10.0f || x < -10.0f) {
         float half = prime_expf(x * 0.5f);
