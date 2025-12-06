@@ -2,12 +2,36 @@
  * SIMD Utilities for CLLM Training
  * 
  * Provides vectorized operations using AVX2 for significant speedup
+ * Supports both float and double precision
  */
 
 #include <immintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include "../include/cllm_cache.h"
+
+/**
+ * AVX2 dot product for doubles (4 doubles at a time)
+ * Requires: n must be multiple of 4
+ */
+double dot_product_avx2_double(const double* a, const double* b, int n) {
+    __m256d sum = _mm256_setzero_pd();
+    
+    for (int i = 0; i < n; i += 4) {
+        __m256d va = _mm256_loadu_pd(&a[i]);
+        __m256d vb = _mm256_loadu_pd(&b[i]);
+        sum = _mm256_fmadd_pd(va, vb, sum);
+    }
+    
+    // Horizontal sum
+    __m128d sum_high = _mm256_extractf128_pd(sum, 1);
+    __m128d sum_low = _mm256_castpd256_pd128(sum);
+    __m128d sum128 = _mm_add_pd(sum_high, sum_low);
+    
+    sum128 = _mm_hadd_pd(sum128, sum128);
+    
+    return _mm_cvtsd_f64(sum128);
+}
 
 /**
  * AVX2 dot product (8 floats at a time)
@@ -41,6 +65,25 @@ float dot_product_scalar(const float* a, const float* b, int n) {
     for (int i = 0; i < n; i++) {
         sum += a[i] * b[i];
     }
+    return sum;
+}
+
+/**
+ * Adaptive dot product for doubles (uses AVX2 when possible)
+ */
+double dot_product_double(const double* a, const double* b, int n) {
+    int n_vec = (n / 4) * 4;  // Round down to multiple of 4
+    
+    double sum = 0.0;
+    if (n_vec > 0) {
+        sum = dot_product_avx2_double(a, b, n_vec);
+    }
+    
+    // Handle remainder
+    for (int i = n_vec; i < n; i++) {
+        sum += a[i] * b[i];
+    }
+    
     return sum;
 }
 
@@ -134,6 +177,15 @@ void vector_scale(float* result, const float* a, float scalar, int n) {
  * x is n-dimensional vector
  * result is m-dimensional vector
  */
+/**
+ * SIMD matrix-vector multiplication for doubles: result = A * x
+ */
+void simd_matrix_vector_multiply_double(double* result, const double* A, const double* x, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        result[i] = dot_product_double(&A[i * n], x, n);
+    }
+}
+
 void simd_matrix_vector_multiply(float* result, const float* A, const float* x, int m, int n) {
     for (int i = 0; i < m; i++) {
         result[i] = dot_product(&A[i * n], x, n);

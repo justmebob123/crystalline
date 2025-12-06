@@ -8,6 +8,17 @@
  */
 
 /**
+ * Compute dot product of two double vectors
+ * Uses AVX2 when possible, falls back to scalar for remainder
+ * 
+ * @param a First vector
+ * @param b Second vector
+ * @param n Length of vectors
+ * @return Dot product a·b
+ */
+double dot_product_double(const double* a, const double* b, int n);
+
+/**
  * Compute dot product of two vectors
  * Uses AVX2 when possible, falls back to scalar for remainder
  * 
@@ -67,6 +78,18 @@ void vector_add(float* result, const float* a, const float* b, int n);
  * @param n Length of vectors
  */
 void vector_scale(float* result, const float* a, float scalar, int n);
+
+/**
+ * SIMD matrix-vector multiplication for doubles: result = A * x
+ * Uses AVX2 for vectorization
+ * 
+ * @param result Result vector [m]
+ * @param A Matrix [m x n] in row-major order
+ * @param x Input vector [n]
+ * @param m Number of rows in A
+ * @param n Number of columns in A
+ */
+void simd_matrix_vector_multiply_double(double* result, const double* A, const double* x, int m, int n);
 
 /**
  * SIMD matrix-vector multiplication: result = A * x

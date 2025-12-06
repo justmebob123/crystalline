@@ -1290,24 +1290,26 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
                 double* ff_out = &training->ff_outputs[layer][idx * embed_dim];
                 double* layer_out = &training->layer_outputs[layer][idx * embed_dim];
                 
-                // FeedForward
+                // FeedForward with SIMD double-precision optimization
                 FeedForwardLayer* ff = &model->ff_layers[layer];
                 double* ff_hidden = &training->ff_hidden[layer][idx * ff->hidden_dim];
                 
+                // Use SIMD matrix-vector multiply for W1 (double precision)
+                extern void simd_matrix_vector_multiply_double(double* result, const double* A, const double* x, int m, int n);
+                simd_matrix_vector_multiply_double(ff_hidden, ff->w1_lattice, attn_out, ff->hidden_dim, embed_dim);
+                
+                // Add bias and apply activation
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                    float sum = ff->bias1[h];
-                    for (uint32_t i = 0; i < embed_dim; i++) {
-                        sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
-                    }
-                    ff_hidden[h] = prime_tanhf(sum);
+                    ff_hidden[h] += ff->bias1[h];
+                    ff_hidden[h] = prime_tanhf(ff_hidden[h]);
                 }
                 
+                // Use SIMD matrix-vector multiply for W2 (double precision)
+                simd_matrix_vector_multiply_double(ff_out, ff->w2_lattice, ff_hidden, embed_dim, ff->hidden_dim);
+                
+                // Add bias
                 for (uint32_t o = 0; o < embed_dim; o++) {
-                    float sum = ff->bias2[o];
-                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-                        sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
-                    }
-                    ff_out[o] = sum;
+                    ff_out[o] += ff->bias2[o];
                 }
                 
                 // Residual + LayerNorm
