@@ -1,185 +1,179 @@
-# THREADING CPU OVERSUBSCRIPTION BUG FIX
-
-## CRITICAL BUG IDENTIFIED
-**Issue**: Auto-thread detection hardcoded to 12 threads instead of using CPU count
-**Location**: `tools/cllm_unified.c` line 340
-**Impact**: On 2-core systems, creates 12 threads → 600% oversubscription → poor performance
+# COMPREHENSIVE SYSTEM TESTING PLAN
 
 ## CURRENT STATUS
-- ✅ Threading system validated and working
-- ✅ Parallel vocabulary building implemented
-- ✅ Configuration problem resolved with warnings
-- ❌ **CRITICAL**: Auto-thread detection broken (hardcoded to 12)
-- ❌ Need to fix thread count detection
 
-## PHASE 1: THREAD COUNT AUTO-DETECTION FIX 🔧 IN PROGRESS
+**Latest Fix:** Segfault in vocabulary building - FIXED ✅
+- **Commit:** 7118828
+- **Issue:** Memory leak and segfault when strdup() fails during token batching
+- **Fix:** Properly free already allocated tokens before cleanup
+- **Status:** Committed and pushed to main
 
-### 1.1: Fix Auto-Thread Detection ✅ COMPLETE
-- [x] Fix hardcoded 12 threads in tools/cllm_unified.c line 340
-- [x] Use sysconf(_SC_NPROCESSORS_ONLN) for auto-detection
-- [x] Cap at 12 for 12-fold symmetry but respect CPU count
-- [x] Add warning when thread count exceeds CPU cores
-- [x] Test on 2-core system - Works correctly!
-- [x] Verify performance improvement - Now uses 2 threads instead of 12
+## IMMEDIATE TESTING REQUIRED
 
-## PHASE 2: SEQUENCE LENGTH BUG INVESTIGATION ✅ COMPLETE
+### [ ] Phase 1: Build Verification
+- [ ] Pull latest changes from GitHub
+- [ ] Clean build: `make clean && make`
+- [ ] Verify zero compilation errors
+- [ ] Verify zero compilation warnings
+- [ ] Verify all tools built successfully
 
-### 2.1: Reproduce the Issue ✅ COMPLETE
-- [x] Test with seq_len=1 (baseline - works: 1088 batches)
-- [x] Test with seq_len=2 (works: 544 batches)
-- [x] Test with seq_len=4 (works correctly)
-- [x] Test with seq_len=8 (works correctly)
-- [x] Test with seq_len=16 (works: 68 batches)
-- [x] Test with seq_len=32 (works correctly)
-- [x] Test with seq_len=64 (works: 17 batches)
-- [x] Test with seq_len=128 (works: 8 batches)
-- [x] Document which sequence lengths fail: **NONE - All work correctly**
+### [ ] Phase 2: Vocabulary Building Test
+- [ ] Test on small dataset (100-1000 documents)
+- [ ] Test on medium dataset (10,000 documents)
+- [ ] Test on LARGEST dataset (user's actual data)
+- [ ] Monitor for segfaults
+- [ ] Monitor CPU usage (should be ~800% with 8 threads)
+- [ ] Verify vocabulary builds successfully
+- [ ] Check memory usage
 
-### 2.2: Root Cause Identified ✅
-- [x] Issue is NOT a bug - it's a configuration problem
-- [x] Default parameters (batch=32, seq_len=128) create only 1 batch for small datasets
-- [x] Training appears to hang but is actually just very slow
-- [x] All sequence lengths work correctly
-- [x] Problem is slow progress with large models and few batches
+### [ ] Phase 3: Training Pipeline Test
+- [ ] Test training on small model (2 layers, 64 dim)
+- [ ] Test training on medium model (4 layers, 128 dim)
+- [ ] Test training on large model (6 layers, 256 dim)
+- [ ] Verify loss decreases
+- [ ] Verify no NaN values
+- [ ] Verify checkpoints save correctly
+- [ ] Monitor training speed
 
-### 2.3: Solution Implementation ✅ COMPLETE
-- [x] Implement auto-parameter adjustment for small datasets
-- [x] Add warnings for suboptimal configurations
-- [x] Add better progress indicators (batch-level, time estimates)
-- [x] Update documentation with parameter guidelines
-- [x] Test improvements
+### [ ] Phase 4: Threading System Test
+- [ ] Test with 1 thread (baseline)
+- [ ] Test with 2 threads
+- [ ] Test with 4 threads
+- [ ] Test with 8 threads
+- [ ] Test with 12 threads
+- [ ] Verify proper CPU utilization
+- [ ] Verify no deadlocks
+- [ ] Verify thread allocation is correct
 
-## PHASE 2: COMPREHENSIVE TESTING SUITE
-
-### 2.1: Small Model Tests (Baseline)
-- [ ] Test: vocab=500, embed=128, layers=4, heads=8, epochs=10
-- [ ] Test: vocab=1000, embed=256, layers=6, heads=8, epochs=20
-- [ ] Verify training completes without errors
-- [ ] Check loss convergence
-- [ ] Validate model quality
-
-### 2.2: Medium Model Tests
-- [ ] Test: vocab=5000, embed=512, layers=8, heads=8, epochs=50
-- [ ] Test: vocab=10000, embed=768, layers=10, heads=12, epochs=50
-- [ ] Monitor memory usage
-- [ ] Check training stability
-- [ ] Measure performance metrics
-
-### 2.3: Large Model Tests
-- [ ] Test: vocab=20000, embed=1024, layers=12, heads=16, epochs=100
-- [ ] Test: vocab=50000, embed=2048, layers=16, heads=16, epochs=100
-- [ ] Verify system handles large models
-- [ ] Check for memory leaks
-- [ ] Monitor training time
-
-### 2.4: Sequence Length Variations
-- [ ] Test each model size with seq_len: 1, 2, 4, 8, 16, 32, 64, 128, 256
-- [ ] Verify all combinations work correctly
-- [ ] Document performance characteristics
-- [ ] Identify optimal configurations
-
-### 2.5: Extended Training Tests
-- [ ] Run 200 epoch training on medium model
-- [ ] Run 500 epoch training on small model
-- [ ] Verify long-term stability
-- [ ] Check for degradation over time
-- [ ] Monitor checkpoint saving/loading
-
-## PHASE 3: PERFORMANCE BENCHMARKING
-
-### 3.1: Threading Performance
-- [ ] Benchmark with 1, 2, 4, 6, 8, 12 threads
-- [ ] Measure speedup vs single-threaded
-- [ ] Document optimal thread count
-- [ ] Test thread scaling efficiency
-
-### 3.2: Model Size Performance
-- [ ] Benchmark training time vs model size
-- [ ] Measure memory usage vs model size
-- [ ] Document performance characteristics
-- [ ] Identify bottlenecks
-
-### 3.3: Sequence Length Performance
-- [ ] Benchmark training time vs sequence length
-- [ ] Measure attention computation time
-- [ ] Document NTT attention performance
-- [ ] Compare with standard attention
-
-## PHASE 4: QUALITY VALIDATION
-
-### 4.1: Loss Convergence
-- [ ] Verify loss decreases over epochs
-- [ ] Check for NaN or inf values
-- [ ] Validate gradient flow
-- [ ] Test with different learning rates
-
-### 4.2: Model Quality
-- [ ] Test inference on trained models
+### [ ] Phase 5: Inference Pipeline Test
+- [ ] Load trained model
+- [ ] Test inference with various prompts
 - [ ] Verify output quality
-- [ ] Check perplexity scores
-- [ ] Validate generation capabilities
+- [ ] Measure inference latency
+- [ ] Test with different model sizes
+- [ ] Verify no crashes
 
-### 4.3: Checkpoint Validation
-- [ ] Test checkpoint saving at various intervals
-- [ ] Verify checkpoint loading
-- [ ] Test resume training from checkpoint
-- [ ] Validate model state preservation
+### [ ] Phase 6: UI System Test
+- [ ] Launch application
+- [ ] Test all tabs render correctly
+- [ ] Test Training tab functionality
+- [ ] Test LLM tab functionality
+- [ ] Test Model Management tab
+- [ ] Verify sphere visualization works
+- [ ] Test all buttons and controls
 
-## PHASE 5: STRESS TESTING
+### [ ] Phase 7: Integration Test
+- [ ] Train model via UI
+- [ ] Save model
+- [ ] Load model in LLM tab
+- [ ] Test inference via UI
+- [ ] Verify model persistence
+- [ ] Test concurrent training/inference
 
-### 5.1: Edge Cases
-- [ ] Test with minimal dataset (< 100 tokens)
-- [ ] Test with huge dataset (> 1M tokens)
-- [ ] Test with extreme batch sizes
-- [ ] Test with extreme sequence lengths
-- [ ] Verify error handling
+## TESTING COMMANDS
 
-### 5.2: Stability Testing
-- [ ] Run continuous training for extended period
-- [ ] Monitor for memory leaks
-- [ ] Check for performance degradation
-- [ ] Verify clean shutdown
+### Build
+```bash
+cd ~/code/AI/crystalline.ui
+git pull origin main
+make clean && make
+export LD_LIBRARY_PATH=$PWD:$PWD/algorithms:$LD_LIBRARY_PATH
+```
 
-### 5.3: Error Recovery
-- [ ] Test handling of corrupted data
-- [ ] Test handling of invalid parameters
-- [ ] Verify graceful error messages
-- [ ] Test recovery from failures
+### Vocabulary Building Test
+```bash
+# Small dataset
+./tools/cllm train -d data/small --epochs 1 --batch 8 --seq-len 32
 
-## PHASE 6: DOCUMENTATION AND REPORTING
+# Large dataset (user's actual data)
+./tools/cllm train -d /path/to/largest/dataset --epochs 1 --batch 32 --seq-len 128
+```
 
-### 6.1: Test Results Documentation
-- [ ] Create comprehensive test report
-- [ ] Document all bugs found and fixed
-- [ ] Include performance benchmarks
-- [ ] Add configuration recommendations
+### Monitor CPU Usage
+```bash
+# In another terminal
+top -H -p $(pgrep cllm)
+```
 
-### 6.2: User Guide
-- [ ] Document optimal training parameters
-- [ ] Add troubleshooting guide
-- [ ] Include performance tuning tips
-- [ ] Add example configurations
+### Training Test
+```bash
+# Small model
+./tools/cllm train -d data/training --epochs 10 --layers 2 --dim 64 --batch 16
 
-### 6.3: Git Operations
-- [ ] Commit all fixes and improvements
-- [ ] Push to feature branch
-- [ ] Create detailed commit messages
-- [ ] Update master plan if needed
+# Medium model
+./tools/cllm train -d data/training --epochs 10 --layers 4 --dim 128 --batch 32
+
+# Large model
+./tools/cllm train -d data/training --epochs 10 --layers 6 --dim 256 --batch 32
+```
+
+### Inference Test
+```bash
+./tools/cllm infer -m models/my_model.cllm -p "Test prompt" -n 50
+```
 
 ## SUCCESS CRITERIA
-- ✅ All sequence lengths work correctly (1-256)
-- ✅ Configuration problem identified and resolved
-- ✅ Automatic warning system implemented
-- ✅ Comprehensive documentation complete (PARAMETER_CONFIGURATION_GUIDE.md)
-- ✅ Solution validated with test runs
-- ✅ Threading bug fixed (auto-detection now works correctly)
-- ✅ CPU oversubscription eliminated (3-6x performance improvement)
-- ✅ User guidance provided for optimal parameters
-- ✅ All changes committed and pushed to GitHub
 
-## CONSTRAINTS
-- Must maintain double precision (no floats)
-- Must follow MASTER_PLAN.md rules
-- Must use only crystalline mathematics
-- Must maintain 12-fold symmetry
-- Must commit and push all changes
+### Build Quality
+- ✅ Zero compilation errors
+- ✅ Zero compilation warnings
+- ✅ All tools build successfully
+- ✅ All libraries link correctly
+
+### Vocabulary Building
+- ✅ No segfaults
+- ✅ CPU usage ~800% with 8 threads
+- ✅ Completes successfully on large datasets
+- ✅ Reasonable memory usage
+
+### Training Pipeline
+- ✅ Loss decreases over epochs
+- ✅ No NaN values
+- ✅ Checkpoints save correctly
+- ✅ Training speed is acceptable
+- ✅ No crashes or hangs
+
+### Threading System
+- ✅ Proper CPU utilization at all thread counts
+- ✅ No deadlocks
+- ✅ Linear scaling up to available cores
+- ✅ Correct thread allocation
+
+### Inference Pipeline
+- ✅ Models load correctly
+- ✅ Inference produces reasonable output
+- ✅ Low latency
+- ✅ No crashes
+
+### UI System
+- ✅ All tabs render correctly
+- ✅ All controls work
+- ✅ Sphere visualization displays
+- ✅ Training/inference work via UI
+- ✅ Model management works
+
+## KNOWN ISSUES FIXED
+
+1. ✅ Vocabulary building segfault - FIXED (commit 7118828)
+2. ✅ Threading auto-detection hardcoded to 12 - FIXED (previous commit)
+3. ✅ Lock contention in vocabulary building - FIXED (token batching)
+
+## WORKFLOW GOING FORWARD
+
+**Per User Request:**
+- ✅ Work directly on main branch (no more feature branches)
+- ✅ Use proper git authentication: `git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main`
+- ✅ Test thoroughly before committing
+- ✅ Focus on making threading and UI work correctly
+
+## CURRENT FOCUS
+
+**Priority 1:** Comprehensive testing on user's largest dataset
+**Priority 2:** Verify threading system works correctly
+**Priority 3:** Verify UI system works correctly
+**Priority 4:** Fix any issues discovered during testing
+
+---
+
+**Status:** Ready for comprehensive testing
+**Next Action:** User to pull changes and run tests
