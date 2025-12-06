@@ -288,16 +288,37 @@ CLLMModel* cllm_read_model(const char* filepath) {
         return NULL;
     }
     
-    // Read embeddings
+    // Read embeddings - CRITICAL: This overwrites the NaN values from lazy init
     if (model->embeddings.embeddings) {
         size_t emb_size = model->vocab_size * model->embedding_dim;
-        if (fread(model->embeddings.embeddings, sizeof(double), emb_size, file) != emb_size) {
-            fprintf(stderr, "Failed to read embeddings\n");
-            cllm_free_model(model);
+        printf("DEBUG: About to read %zu embeddings from file\n", emb_size);
+        printf("DEBUG: First embedding before read: %f\n", model->embeddings.embeddings[0]);
+        
+        size_t read_count = fread(model->embeddings.embeddings, sizeof(double), emb_size, file);
+        printf("DEBUG: Read %zu embeddings (expected %zu)\n", read_count, emb_size);
+        printf("DEBUG: First embedding after read: %f\n", model->embeddings.embeddings[0]);
+        
+        if (read_count != emb_size) {
+            fprintf(stderr, "Failed to read embeddings: got %zu, expected %zu\n", read_count, emb_size);
+            cllm_free(model);
             fclose(file);
             return NULL;
         }
-        printf("  Loaded embeddings: %zu floats\n", emb_size);
+        
+        // Verify embeddings are not NaN after loading
+        int nan_count = 0;
+        for (size_t i = 0; i < emb_size && nan_count < 10; i++) {
+            if (prime_isnan(model->embeddings.embeddings[i])) {
+                nan_count++;
+                fprintf(stderr, "WARNING: NaN in loaded embedding at index %zu\n", i);
+            }
+        }
+        if (nan_count > 0) {
+            fprintf(stderr, "ERROR: Loaded model has %d NaN embeddings after file read!\n", nan_count);
+        } else {
+            printf("✓ All embeddings loaded successfully (no NaN)\n");
+        }
+        printf("  Loaded embeddings: %zu doubles\n", emb_size);
     }
     
     // Read lattice transforms

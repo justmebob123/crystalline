@@ -215,7 +215,7 @@ void cllm_detokenize(CLLMInference* inference, uint32_t* tokens, int num_tokens,
 }
 
 // Apply positional encoding
-void cllm_apply_positional_encoding(CLLMInference* inference, float* hidden_states, int position) {
+void cllm_apply_positional_encoding(CLLMInference* inference, double* hidden_states, int position) {
     if (!inference || !hidden_states) return;
     
     CLLMModel* model = inference->model;
@@ -490,7 +490,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     }
     
     // Apply positional encoding
-    cllm_apply_positional_encoding(inference, (float*)inference->hidden_states, num_tokens - 1);
+    cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
     
     // Pass through transformer layers using standard operations
     if (model->attention_layers && model->ff_layers && model->layer_norms) {

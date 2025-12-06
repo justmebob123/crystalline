@@ -47,7 +47,7 @@ CLLMInference* cllm_inference_init(CLLMModel* model);
 int cllm_tokenize(CLLMInference* inference, const char* text, uint32_t* tokens, int max_tokens);
 void cllm_detokenize(CLLMInference* inference, uint32_t* tokens, int num_tokens, char* output, int max_length);
 void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* embedding);
-void cllm_apply_positional_encoding(CLLMInference* inference, float* embedding, int position);
+void cllm_apply_positional_encoding(CLLMInference* inference, double* embedding, int position);
 
 /* Embedding layer functions */
 void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output);
