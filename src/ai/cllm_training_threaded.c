@@ -1709,15 +1709,17 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // Create epoch barrier with Schumann resonance (7.83 Hz)
     // +1 for control thread
+    // CRITICAL FIX: Barriers should only include worker threads, NOT main thread
+    // Main thread doesn't participate in barrier synchronization
     system->epoch_barrier = cymatic_barrier_create(
-        system->num_worker_spheres + 1,
+        system->num_worker_spheres,  // Only workers, not main thread
         CYMATIC_FREQ_SCHUMANN,
         false  // Not adaptive - strict synchronization
     );
     
     // Create batch barrier with 432 Hz
     system->batch_barrier = cymatic_barrier_create(
-        system->num_worker_spheres + 1,
+        system->num_worker_spheres,  // Only workers, not main thread
         CYMATIC_FREQ_432_HZ,
         false  // Not adaptive - strict synchronization
     );
@@ -1918,7 +1920,7 @@ static void* control_thread_func(void* arg) {
     printf("[Node Zero] NEVER processes batches - only coordinates\n");
     
     // PHASE 5: Cymatic timing enabled
-    bool cymatic_enabled = (system->batch_barrier != NULL && system->epoch_barrier != NULL);
+    bool cymatic_enabled __attribute__((unused)) = false;
     if (cymatic_enabled) {
         printf("[Node Zero] Cymatic timing synchronization ENABLED\n");
     }
@@ -2032,7 +2034,7 @@ static void* sphere_worker_thread_dynamic(void* arg) {
     const double CHECK_INTERVAL = 1.0;  // Check workload every 1 second
     
     // PHASE 5: Cymatic timing enabled
-    bool cymatic_enabled = (system->batch_barrier != NULL && system->epoch_barrier != NULL);
+    bool cymatic_enabled __attribute__((unused)) = false;
     
     while (atomic_load(&system->running)) {
         // CRITICAL FIX: Reset batches_processed counter when new epoch starts
@@ -2047,9 +2049,11 @@ static void* sphere_worker_thread_dynamic(void* arg) {
         last_epoch_done = current_epoch_done;
         
         // PHASE 5: Wait at batch barrier (432 Hz) before pulling work
-        if (cymatic_enabled) {
-            cymatic_barrier_wait(system->batch_barrier);
-        }
+        // DISABLED: Barrier causes deadlock - workers wait for each other
+        // TODO: Fix barrier logic or remove entirely
+//         if (false &amp;&amp; cymatic_enabled) {
+//             cymatic_barrier_wait(system->batch_barrier);
+//         }
         
         // PHASE 4: Check if we've reached our assigned batch limit (Plimpton work distribution)
         if (ctx->assigned_batches > 0 && batches_processed >= ctx->assigned_batches) {
@@ -2129,9 +2133,11 @@ static void* sphere_worker_thread_dynamic(void* arg) {
         atomic_fetch_add(&system->workers_completed, 1);
         
         // PHASE 5: Wait at epoch barrier (Schumann 7.83 Hz) after batch completion
-        if (cymatic_enabled) {
-            cymatic_barrier_wait(system->epoch_barrier);
-        }
+        // DISABLED: Barrier causes deadlock - workers wait for each other
+        // TODO: Fix barrier logic or remove entirely
+//         if (false &amp;&amp; cymatic_enabled) {
+//             cymatic_barrier_wait(system->epoch_barrier);
+//         }
         
         // Periodic workload check for dynamic spawning
         double current_time = get_current_time_seconds();
@@ -2974,17 +2980,25 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
             printf("  ✓ Work distribution complete\n");
         } else {
             fprintf(stderr, "WARNING: Failed to calculate entropy work distribution, using uniform distribution\n");
-            // Fallback: uniform distribution
+            // Fallback: uniform distribution with proper remainder handling
             int batches_per_worker = total_batches_in_epoch / system->num_worker_spheres;
+            int remainder = total_batches_in_epoch % system->num_worker_spheres;
+            
             for (int i = 0; i < system->num_worker_spheres; i++) {
-                system->sphere_contexts[i]->assigned_batches = batches_per_worker;
+                // Give extra batch to first 'remainder' workers
+                system->sphere_contexts[i]->assigned_batches = batches_per_worker + (i < remainder ? 1 : 0);
+                printf("    [Worker %d] Assigned %d batches\n", i, system->sphere_contexts[i]->assigned_batches);
             }
         }
     } else {
-        // No entropy distribution available - use uniform distribution
+        // No entropy distribution available - use uniform distribution with proper remainder handling
         int batches_per_worker = total_batches_in_epoch / system->num_worker_spheres;
+        int remainder = total_batches_in_epoch % system->num_worker_spheres;
+        
         for (int i = 0; i < system->num_worker_spheres; i++) {
-            system->sphere_contexts[i]->assigned_batches = batches_per_worker;
+            // Give extra batch to first 'remainder' workers
+            system->sphere_contexts[i]->assigned_batches = batches_per_worker + (i < remainder ? 1 : 0);
+            printf("    [Worker %d] Assigned %d batches\n", i, system->sphere_contexts[i]->assigned_batches);
         }
     }
     
