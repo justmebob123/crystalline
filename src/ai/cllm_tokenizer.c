@@ -55,11 +55,17 @@ CLLMTokenizer* cllm_create_tokenizer(uint32_t max_vocab_size) {
     // 12-fold symmetry partitions for thread-safe parallel vocabulary building
     uint32_t partition_capacity = max_vocab_size / 12 + 10000;  // Extra space per partition
     
+    printf("Initializing 12-fold symmetry tokenizer:\n");
+    printf("  Max vocab size: %u\n", max_vocab_size);
+    printf("  Partition capacity: %u tokens each\n", partition_capacity);
+    printf("  Total capacity: %u tokens across 12 partitions\n", partition_capacity * 12);
+    
     for (int i = 0; i < 12; i++) {
         tokenizer->vocab_partitions[i] = (char**)calloc(partition_capacity, sizeof(char*));
         tokenizer->count_partitions[i] = (uint32_t*)calloc(partition_capacity, sizeof(uint32_t));
         
         if (!tokenizer->vocab_partitions[i] || !tokenizer->count_partitions[i]) {
+            fprintf(stderr, "ERROR: Failed to allocate partition %d (capacity=%u)\n", i, partition_capacity);
             // Cleanup on failure
             for (int j = 0; j <= i; j++) {
                 free(tokenizer->vocab_partitions[j]);
@@ -73,6 +79,8 @@ CLLMTokenizer* cllm_create_tokenizer(uint32_t max_vocab_size) {
         tokenizer->partition_capacities[i] = partition_capacity;
         pthread_mutex_init(&tokenizer->partition_locks[i], NULL);
     }
+    
+    printf("  Successfully allocated all 12 partitions\n");
     
     tokenizer->consolidated = 0;
     

@@ -67,10 +67,20 @@ uint32_t cllm_add_token_to_partition(CLLMTokenizer* tokenizer, const char* token
     }
     
     uint32_t idx = tokenizer->partition_sizes[partition_id];
+    
+    // Verify we have space
+    if (idx >= tokenizer->partition_capacities[partition_id]) {
+        fprintf(stderr, "[ERROR] Partition %d overflow: idx=%u, capacity=%u\n",
+                partition_id, idx, tokenizer->partition_capacities[partition_id]);
+        pthread_mutex_unlock(&tokenizer->partition_locks[partition_id]);
+        return TOKEN_UNK;
+    }
+    
     char* token_copy = strdup(token);
     
     if (!token_copy) {
         // strdup failed - out of memory
+        fprintf(stderr, "[ERROR] strdup failed for token in partition %d\n", partition_id);
         pthread_mutex_unlock(&tokenizer->partition_locks[partition_id]);
         return TOKEN_UNK;
     }
