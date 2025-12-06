@@ -1,71 +1,55 @@
-# DEPTH-23 SIMD ANALYSIS - COMPLETE
+# EMERGENCY FIX - Wiring ALL Unwired Algorithms
 
-## CRITICAL DISCOVERY
-Found and FIXED major architectural bug:
-- SIMD functions existed but only for float
-- Training pipeline uses double precision
-- SIMD was never properly integrated (float/double mismatch)
-- This caused extremely slow training (scalar loops instead of SIMD)
+## IMMEDIATE ACTION - Phase 1: Wire Type-Compatible Algorithms (NOW)
 
-## PHASE 1: SIMD DOUBLE-PRECISION IMPLEMENTATION ✓
-- [x] Discovered SIMD only had float implementations
-- [x] Implemented dot_product_avx2_double() for AVX2 doubles
-- [x] Implemented dot_product_double() adaptive function
-- [x] Implemented simd_matrix_vector_multiply_double()
-- [x] Added declarations to cllm_simd_utils.h
-- [x] Integrated SIMD into forward pass (cllm_training.c)
-- [x] Rebuilt and tested successfully
+### 1.1 Wire Loss Functions into Training [COMPLETE]
+- [x] Add algorithms/include/loss_functions.h to cllm_training.c
+- [x] Replace cllm_compute_loss() with loss_cross_entropy()
+- [x] Add LossConfig to CLLMTraining structure
+- [x] Update loss computation in training loop
+- [x] Build successful - no errors
+- [ ] Test and verify correctness
+- [ ] Benchmark speedup
 
-## PHASE 2: TRAINING VERIFICATION ✓
-- [x] Trained model with SIMD optimization
-- [x] Training completed in 7 seconds (was taking minutes before)
-- [x] Loss decreased properly: 12.8 → 8.0
-- [x] Gradients non-zero and working
-- [x] Model saved successfully
-- [x] Vocabulary saved successfully
+### 1.2 Wire Optimizers into Training
+- [ ] Add algorithms/include/optimizers.h to cllm_training.c
+- [ ] Replace inline SGD with optimizer_step()
+- [ ] Add OptimizerState to CLLMTraining structure
+- [ ] Support Adam, RMSprop, Momentum
+- [ ] Add learning rate scheduling
+- [ ] Test convergence
 
-## PHASE 3: INFERENCE VERIFICATION ✓
-- [x] Loaded trained model
-- [x] Loaded vocabulary
-- [x] Generated real words ("rush sun")
-- [x] Inference working correctly
+### 1.3 Wire Gradient Buffer into Training
+- [ ] Add algorithms/include/backprop.h to cllm_training.c
+- [ ] Replace inline gradient accumulation with GradientBuffer
+- [ ] Add gradient clipping and validation
+- [ ] Test numerical stability
 
-## PHASE 4: VALGRIND ANALYSIS (IN PROGRESS)
-- [x] Started valgrind training run
-- [ ] Wait for completion
-- [ ] Analyze memory leaks
-- [ ] Fix any issues found
+## Phase 2: Create Double-Precision Versions (Like SIMD Fix)
 
-## PHASE 5: GDB ANALYSIS
-- [ ] Run training under gdb
-- [ ] Check for crashes
-- [ ] Fix any issues
+### 2.1 NTT Attention Double Version
+- [ ] Create ntt_attention_forward_double() in algorithms/src/ntt_attention.c
+- [ ] Use __m256d for AVX2 double operations
+- [ ] Add to algorithms/include/ntt_attention.h
+- [ ] Create cllm_attention_ntt_forward_double() wrapper
+- [ ] Wire into cllm_attention_forward()
 
-## PHASE 6: FULL DATASET TRAINING
-- [ ] Train on complete dataset (all 17 files)
-- [ ] Use larger model now that SIMD works
-- [ ] Test with 4 layers, 128 dims
-- [ ] Verify performance improvement
+### 2.2 Angular Attention Double Version
+- [ ] Create angular_attention_forward_double()
+- [ ] Use __m256d for AVX2 double operations
+- [ ] Wire into attention computation
 
-## PHASE 7: COMMIT AND PUSH
-- [ ] Commit SIMD fixes
-- [ ] Push to GitHub
-- [ ] Document changes
+### 2.3 Lattice Embeddings Double Version
+- [ ] Create lattice_embeddings_init_geometric_double()
+- [ ] Wire into model initialization
 
-## SUCCESS CRITERIA
-- ✓ SIMD double-precision implemented
-- ✓ Training uses SIMD (7 seconds vs minutes)
-- ✓ Loss decreases properly
-- ✓ Inference generates real words
-- [ ] Zero memory leaks (valgrind)
-- [ ] Zero crashes (gdb)
-- [ ] Full dataset training successful
+## Phase 3: Complete Integration
+- [ ] Test all wired algorithms
+- [ ] Benchmark performance improvements
+- [ ] Verify model quality
+- [ ] Update documentation
 
-## PERFORMANCE IMPROVEMENT
-- Before SIMD: Training stuck/extremely slow
-- After SIMD: 7 seconds for 5 epochs
-- Estimated speedup: 10-20x
-
-## CURRENT STATUS
-Phase 3 COMPLETE ✓ - SIMD working!
-Phase 4 IN PROGRESS - Valgrind running
+## Phase 4: Continue Depth-23 Audit
+- [ ] Check for other unwired functions
+- [ ] Verify all algorithm integrations
+- [ ] Fix any remaining issues

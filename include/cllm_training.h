@@ -15,6 +15,11 @@
 /* Local includes */
 #include "cllm.h"
 
+/* Algorithm layer includes (WIRED) */
+#include "../algorithms/include/loss_functions.h"
+#include "../algorithms/include/optimizers.h"
+#include "../algorithms/include/backprop.h"
+
 /* Type definitions */
 
 /*
@@ -142,6 +147,11 @@ typedef struct {
     
     int cached_seq_len;              // Cached sequence length
     int store_attention_weights;     // Flag to enable full attention backward (1=enabled, 0=simplified)
+    
+    // Algorithm layer integration (WIRED)
+    LossConfig loss_config;          // Loss function configuration from algorithms layer
+    OptimizerState* optimizer_state_alg;  // Optimizer state from algorithms layer
+    GradientBuffer* gradient_buffer; // Gradient buffer from algorithms layer
 } CLLMTraining;
 
 /* Loss computation functions */
