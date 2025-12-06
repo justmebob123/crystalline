@@ -53,6 +53,107 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
         }
     }
     
+    // CRITICAL: Clip attention gradients
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        if (training->attention_grads) {
+            uint64_t attn_size = model->embedding_dim * model->embedding_dim;
+            
+            // Clip query gradients
+            if (training->attention_grads[layer].query_lattice) {
+                float grad_norm = 0.0f;
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    double g = training->attention_grads[layer].query_lattice[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrtf(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    float scale = max_grad_norm / grad_norm;
+                    for (uint64_t i = 0; i < attn_size; i++) {
+                        training->attention_grads[layer].query_lattice[i] *= scale;
+                    }
+                }
+            }
+            
+            // Clip key gradients
+            if (training->attention_grads[layer].key_lattice) {
+                float grad_norm = 0.0f;
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    double g = training->attention_grads[layer].key_lattice[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrtf(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    float scale = max_grad_norm / grad_norm;
+                    for (uint64_t i = 0; i < attn_size; i++) {
+                        training->attention_grads[layer].key_lattice[i] *= scale;
+                    }
+                }
+            }
+            
+            // Clip value gradients
+            if (training->attention_grads[layer].value_lattice) {
+                float grad_norm = 0.0f;
+                for (uint64_t i = 0; i < attn_size; i++) {
+                    double g = training->attention_grads[layer].value_lattice[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrtf(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    float scale = max_grad_norm / grad_norm;
+                    for (uint64_t i = 0; i < attn_size; i++) {
+                        training->attention_grads[layer].value_lattice[i] *= scale;
+                    }
+                }
+            }
+        }
+    }
+    
+    // CRITICAL: Clip feedforward gradients
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        if (training->ff_grads && model->ff_layers) {
+            FeedForwardLayer* ff = &model->ff_layers[layer];
+            
+            // Clip W1 gradients
+            if (training->ff_grads[layer].w1_lattice) {
+                size_t w1_size = ff->input_dim * ff->hidden_dim;
+                float grad_norm = 0.0f;
+                for (size_t i = 0; i < w1_size; i++) {
+                    double g = training->ff_grads[layer].w1_lattice[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrtf(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    float scale = max_grad_norm / grad_norm;
+                    for (size_t i = 0; i < w1_size; i++) {
+                        training->ff_grads[layer].w1_lattice[i] *= scale;
+                    }
+                }
+            }
+            
+            // Clip W2 gradients
+            if (training->ff_grads[layer].w2_lattice) {
+                size_t w2_size = ff->hidden_dim * ff->output_dim;
+                float grad_norm = 0.0f;
+                for (size_t i = 0; i < w2_size; i++) {
+                    double g = training->ff_grads[layer].w2_lattice[i];
+                    grad_norm += g * g;
+                }
+                grad_norm = prime_sqrtf(grad_norm);
+                
+                if (grad_norm > max_grad_norm) {
+                    float scale = max_grad_norm / grad_norm;
+                    for (size_t i = 0; i < w2_size; i++) {
+                        training->ff_grads[layer].w2_lattice[i] *= scale;
+                    }
+                }
+            }
+        }
+    }
+    
     // Scale gradients by 1/accum_steps
     float gradient_scale = 1.0f / (float)accum_steps;
     (void)gradient_scale;  // Currently unused - reserved for future gradient scaling
