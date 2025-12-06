@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
+#include "../include/cllm_training_threaded.h"
 #include "../include/ai/cllm_hierarchical_training.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_tokenizer.h"
@@ -297,20 +298,98 @@ int cmd_train(int argc, char** argv) {
     training->tokens = dataset->tokens;
     training->num_tokens = dataset->num_tokens;
     
-    // Train the model
-    printf("Starting training with %d threads...\n\n", num_threads == 0 ? 12 : num_threads);
+    // Determine threading mode
+    int actual_threads = (num_threads == 0) ? 12 : num_threads;
+    bool use_threading = (actual_threads > 1);
     
-    // Run the training loop
-    int train_result = cllm_train(training);
-    if (train_result != 0) {
-        fprintf(stderr, "Error: Training failed\n");
-        training->tokens = NULL;
-        cllm_training_free(training);
-        cllm_token_dataset_free(dataset);
-        cllm_data_loader_free(loader);
-        cllm_free_tokenizer(tokenizer);
-        cllm_free_model(model);
-        return 1;
+    if (use_threading) {
+        printf("Starting THREADED training with %d threads...\n", actual_threads);
+        printf("Using kissing spheres architecture\n\n");
+        
+        // Create batch iterator for threaded training
+        CLLMBatchIterator* batch_iter = cllm_batch_iterator_create(
+            dataset->tokens,
+            dataset->num_tokens,
+            config.batch_size,
+            config.sequence_length,
+            0,  // shuffle = false
+            1   // drop_last = true
+        );
+        
+        if (!batch_iter) {
+            fprintf(stderr, "Error: Failed to create batch iterator\n");
+            training->tokens = NULL;
+            cllm_training_free(training);
+            cllm_token_dataset_free(dataset);
+            cllm_data_loader_free(loader);
+            cllm_free_tokenizer(tokenizer);
+            cllm_free_model(model);
+            return 1;
+        }
+        
+        // Create threaded training system
+        ThreadedTrainingSystem* threaded_system = threaded_training_create(
+            training,
+            batch_iter,
+            actual_threads
+        );
+        
+        if (!threaded_system) {
+            fprintf(stderr, "Error: Failed to create threaded training system\n");
+            cllm_batch_iterator_free(batch_iter);
+            training->tokens = NULL;
+            cllm_training_free(training);
+            cllm_token_dataset_free(dataset);
+            cllm_data_loader_free(loader);
+            cllm_free_tokenizer(tokenizer);
+            cllm_free_model(model);
+            return 1;
+        }
+        
+        printf("✓ Threaded training system created\n");
+        printf("✓ Kissing spheres initialized\n\n");
+        
+        // Training loop with threading
+        for (int epoch = 0; epoch < config.num_epochs; epoch++) {
+            printf("Epoch %d/%d\n", epoch + 1, config.num_epochs);
+            
+            float epoch_loss = threaded_train_epoch_lockfree(threaded_system, epoch);
+            
+            printf("Epoch %d complete: Average Loss = %.4f\n\n", epoch + 1, epoch_loss);
+            
+            // Save checkpoint
+            if ((epoch + 1) % config.save_every == 0) {
+                char checkpoint_path[256];
+                snprintf(checkpoint_path, sizeof(checkpoint_path), 
+                        "checkpoint_epoch_%d.cllm", epoch + 1);
+                cllm_write_model(model, checkpoint_path);
+                printf("Checkpoint saved: %s\n", checkpoint_path);
+            }
+        }
+        
+        // Cleanup threaded system
+        threaded_training_free(threaded_system);
+        cllm_batch_iterator_free(batch_iter);
+        
+        printf("\nTraining complete!\n");
+        printf("Final loss: %.4f\n", training->current_loss);
+        printf("Best loss: %.4f\n", training->best_loss);
+        
+    } else {
+        printf("Starting SINGLE-THREADED training...\n\n");
+        
+        // Run the simple training loop
+        int train_result = cllm_train(training);
+        if (train_result != 0) {
+            fprintf(stderr, "Error: Training failed\n");
+            training->tokens = NULL;
+            cllm_training_free(training);
+            cllm_token_dataset_free(dataset);
+            cllm_data_loader_free(loader);
+            cllm_free_tokenizer(tokenizer);
+            cllm_free_model(model);
+            return 1;
+        }
     }
     
     // Save final model
