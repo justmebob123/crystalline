@@ -1,75 +1,98 @@
-# TODO: Deep UI Analysis and Crawler Tab Diagnosis
+# TODO: Model Management Redesign - Refined Approach
 
 ## Overview
-Comprehensive analysis of UI library, all tabs, and diagnosis of crawler tab black box issue.
+Redesign model management to enable concurrent operations while keeping Models Tab as a unified management/monitoring UI.
 
-## Phase 1: Documentation Review ✅ COMPLETE
-- [x] Read MASTER_PLAN.md
-- [x] Read AUDIT.md
-- [x] Read SECONDARY_OBJECTIVES.md
-- [x] Understand architectural principles
-- [x] Understand crystalline UI system
+## User Requirements (CRITICAL)
+- ✅ KEEP Models Tab for unified model management UI
+- ✅ KEEP model statistics, properties, metadata display
+- ✅ KEEP model management features (create, rename, delete)
+- ✅ KEEP training state tracking and display
+- ✅ KEEP unified view of all models
+- ❌ REMOVE global coordination layer preventing concurrent ops
+- ❌ REMOVE locks blocking training + inference
+- ✅ ENABLE concurrent training and inference
 
-## Phase 2: UI Library Analysis 🔄 IN PROGRESS
-- [ ] Examine crystalline UI library structure
-- [ ] Analyze core UI elements (elements.c)
-- [ ] Review panel rendering system
-- [ ] Review button rendering system
-- [ ] Review text rendering system
-- [ ] Review input field rendering system
-- [ ] Document UI component hierarchy
+## Phase 1: Architecture Design ✅ COMPLETE
+- [x] Analyze CLI tool architecture
+- [x] Analyze current UI model manager
+- [x] Identify problems with current approach
+- [x] Design refined solution
+- [x] Document analysis
 
-## Phase 3: Working Tabs Analysis (Reference)
-- [ ] Analyze Training Tab implementation
-- [ ] Analyze LLM Tab implementation
-- [ ] Document what works correctly
-- [ ] Identify common patterns
-- [ ] Extract best practices
+## Phase 2: Refined Design ✅ COMPLETE
+- [x] Design Models Tab as monitoring UI (not coordination)
+- [x] Design per-tab model ownership
+- [x] Design training state tracking
+- [x] Design model metadata system
+- [x] Create implementation plan
+- [x] Get user approval
 
-## Phase 4: Crawler Tab Diagnosis ✅ COMPLETE
-- [x] Examine crawler tab source code
-- [x] Compare with working tabs (Training, LLM)
-- [x] Identify rendering differences
-- [x] Check panel initialization
-- [x] Check event handling
-- [x] Check drawing functions
-- [x] Identify root cause of black box
+## Phase 3: Implementation 🔄 IN PROGRESS
 
-**ROOT CAUSE FOUND:**
-- `init_crawler_tab()` is NEVER called (missing from tab_init.c)
-- `render_crawler_tab()` returns immediately if not initialized
-- Result: Black screen because nothing is drawn
+### Phase 3.1: Model Registry (2-3 hours) ✅ COMPLETE
+- [x] Create include/cllm_model_registry.h
+- [x] Create src/ai/cllm_model_registry.c
+- [x] Implement registry_init()
+- [x] Implement registry_scan()
+- [x] Implement registry_get()
+- [x] Implement registry_rename()
+- [x] Implement registry_delete()
+- [x] Update Makefile (automatic via wildcard)
+- [x] Build successful (zero errors)
+- [x] Test registry operations (all tests passed!)
 
-## Phase 5: Fix Implementation ✅ COMPLETE
-- [x] Design fix based on diagnosis
-- [x] Option 1: Add init_crawler_tab() to tab_init.c
-- [x] Option 2: Add lazy initialization to render_crawler_tab() (defensive)
-- [ ] Test crawler tab rendering
-- [ ] Verify functionality
-- [ ] Document changes
+**Registry Test Results:**
+- ✅ Scanned models directory
+- ✅ Found and registered final_model.cllm
+- ✅ Read metadata correctly (500 vocab, 128 dim, 4 layers)
+- ✅ Get by name works
+- ✅ Get by index works
+- ✅ Exists check works
+- ✅ Path generation works
+- ✅ All operations successful
 
-**FIX IMPLEMENTED:**
-- Added #include "ui/tabs/tab_crawler.h" to tab_init.c
-- Added init_crawler_tab(state) call in init_all_tabs()
-- Added defensive lazy initialization in render_crawler_tab()
-- Both primary and fallback initialization now in place
+### Phase 3.2: Training Tab Refactor (3-4 hours)
+- [ ] Add per-tab model state
+- [ ] Remove model_manager calls
+- [ ] Implement load/save/free
+- [ ] Add training stats tracking
+- [ ] Test training independently
 
-## Phase 6: Build and Verify ✅ COMPLETE
-- [x] Clean build
-- [x] Fixed missing function declarations
-- [x] Added tab_llm.h header file
-- [x] Build successful with only minor warnings
-- [ ] Test crawler tab rendering (requires running app)
-- [ ] Verify no regressions
-- [ ] Commit changes
+### Phase 3.3: LLM Tab Refactor (2-3 hours)
+- [ ] Add per-tab model state
+- [ ] Remove model_manager calls
+- [ ] Implement load/unload
+- [ ] Add inference stats tracking
+- [ ] Test inference independently
 
-## Phase 7: Documentation 🔄 IN PROGRESS
-- [ ] Create comprehensive analysis document
-- [ ] Document root cause
-- [ ] Document fix implementation
-- [ ] Document lessons learned
+### Phase 3.4: Models Tab Refactor (4-5 hours)
+- [ ] Use registry instead of manager
+- [ ] Add training stats display
+- [ ] Add status indicators
+- [ ] Implement management operations
+- [ ] Test Models Tab display
+
+### Phase 3.5: Crawler Tab Refactor (2-3 hours)
+- [ ] Add per-tab model state
+- [ ] Remove model_manager calls
+- [ ] Add crawler stats tracking
+- [ ] Test crawler independently
+
+### Phase 3.6: Cleanup (1-2 hours)
+- [ ] Remove coordination code
+- [ ] Update model_manager to registry
+- [ ] Clean up unused code
+- [ ] Update documentation
+
+## Phase 4: Testing & Verification
+- [ ] Test concurrent training + inference
+- [ ] Test model statistics display
+- [ ] Test model management features
+- [ ] Verify memory usage
+- [ ] Test all tabs independently
 
 ## Status
-**Current Focus:** Phase 7 - Documentation
+**Current Focus:** Phase 2 - Refined Design
 **Blocker:** None
-**Next Action:** Create analysis document and commit changes
+**Next Action:** Design refined architecture with Models Tab as monitoring UI
