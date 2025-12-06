@@ -54,28 +54,16 @@ Redesign model management to enable concurrent operations while keeping Models T
 
 ### Phase 3.2: Training Tab Refactor (3-4 hours) 🔄 IN PROGRESS
 - [x] Part A: Add TrainingTabState structure (30 min) ✅ COMPLETE
-  - Added TrainingTabState typedef with model ownership fields
-  - Added training state fields (training, thread, flags)
-  - Added statistics structure with sphere stats
-  - Added tab_state to g_training_ui
-  - Build successful: 0 errors, 0 warnings
 - [x] Part B: Implement model management functions (1 hour) ✅ COMPLETE
-  - Implemented training_tab_load_model() - loads model from registry
-  - Implemented training_tab_create_model() - creates new model
-  - Implemented training_tab_save_model() - saves model to disk
-  - Implemented training_tab_unload_model() - frees model memory
-  - All functions use model registry instead of model manager
-  - Build successful: 0 errors, 0 warnings
 - [x] Part C: Implement training functions (1-2 hours) ✅ COMPLETE
-  - Implemented training_thread_func() - runs training loop with kissing spheres
-  - Implemented training_tab_start_training() - initializes and starts training
-  - Implemented training_tab_stop_training() - stops training and cleans up
-  - Training thread updates tab_state.stats in real-time
-  - Auto-save every 5 epochs
-  - Proper cleanup on completion
+- [x] Part D: Remove model_manager calls (30 min) ✅ COMPLETE
+  - Updated on_start_clicked() to use training_tab functions
+  - Updated on_save_clicked() to use training_tab_save_model()
+  - Updated dropdown callbacks to use model_registry
+  - Replaced model_manager include with model_registry
+  - Removed all model_manager calls
   - Build successful: 0 errors, 0 warnings
-- [ ] Part D: Remove model_manager calls (30 min) - NEXT
-- [ ] Part E: Update statistics display (30 min)
+- [ ] Part E: Update statistics display (30 min) - NEXT
 - [ ] Part F: Test training independently (1 hour)
 
 ### Phase 3.3: LLM Tab Refactor (2-3 hours)

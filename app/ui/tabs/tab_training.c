@@ -21,7 +21,7 @@
 #include "../../training_thread.h"
 #include "../../time_format.h"
 #include "cllm_training.h"
-#include "cllm_model_manager.h"
+#include "cllm_model_registry.h"
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -582,102 +582,47 @@ static void on_start_clicked(void* data) {
     
     printf("=== START BUTTON CLICKED ===\n");
     
-    if (state->training_in_progress) {
+    if (g_training_ui.tab_state.is_training) {
         // Stop training
         printf("Stopping training...\n");
-        extern void stop_training_thread(AppState* state);
-        stop_training_thread(state);
+        training_tab_stop_training();
     } else {
         // Start training
         printf("Starting training...\n");
         
         // Load model if needed
-        if (!state->cllm_model && g_training_ui.selected_model[0]) {
+        if (!g_training_ui.tab_state.model_loaded && g_training_ui.selected_model[0]) {
             printf("Loading selected model: '%s'\n", g_training_ui.selected_model);
-            
-            // First, check if model is accessible (already loaded)
-            extern bool model_manager_get_status(const char* name, bool* is_accessible, bool* is_training, uint32_t* read_count);
-            bool is_accessible = false;
-            bool is_training = false;
-            uint32_t read_count = 0;
-            
-            if (model_manager_get_status(g_training_ui.selected_model, &is_accessible, &is_training, &read_count)) {
-                if (!is_accessible) {
-                    // Model exists but not loaded - load it now
-                    printf("Model not loaded yet, loading from disk...\n");
-                    extern bool model_manager_reload(const char* name);
-                    if (!model_manager_reload(g_training_ui.selected_model)) {
-                        printf("ERROR: Failed to load model '%s' from disk\n", g_training_ui.selected_model);
-                        return;
-                    }
-                    printf("✓ Model loaded from disk\n");
-                }
-                
-                // Now acquire write access
-                state->cllm_model = model_manager_acquire_write(g_training_ui.selected_model);
-                if (state->cllm_model) {
-                    printf("✓ Model acquired for training\n");
-                } else {
-                    printf("ERROR: Failed to acquire model '%s'\n", g_training_ui.selected_model);
-                }
-            } else {
-                printf("ERROR: Model '%s' not found in model manager\n", g_training_ui.selected_model);
+            if (!training_tab_load_model(g_training_ui.selected_model)) {
+                printf("ERROR: Failed to load model '%s'\n", g_training_ui.selected_model);
+                return;
             }
         } else if (!g_training_ui.selected_model[0]) {
             printf("ERROR: No model selected! Please select a model from the dropdown first.\n");
+            return;
         }
         
-        // Initialize training if needed
-        if (!state->cllm_training && state->cllm_model) {
-            CLLMTrainingConfig config = {
-                .num_epochs = state->training_epochs,
-                .batch_size = state->training_batch_size,
-                .sequence_length = state->training_sequence_length,
-                .learning_rate = state->training_learning_rate,
-                .weight_decay = 0.01f,
-                .gradient_clip = 1.0f,
-                .warmup_steps = 100,
-                .save_every = 5,
-                .eval_interval = 100,
-                .max_steps = 10000,
-                .gradient_accumulation_steps = 8,
-                .use_mixed_precision = 1,
-                .loss_scale = 1024.0f,
-                .loss_scale_growth = 2.0f,
-                .loss_scale_backoff = 0.5f,
-                .loss_scale_window = 2000
-            };
-            strcpy(config.optimizer, "adam");
-            
-            state->cllm_training = cllm_training_init(state->cllm_model, &config);
-            
-            // Load training data
-            if (state->cllm_training) {
-                for (int i = 0; i < g_training_ui.file_count; i++) {
-                    if (g_training_ui.files[i].selected) {
-                        cllm_load_training_data(state->cllm_training, g_training_ui.files[i].filepath);
-                    }
-                }
-            }
+        // Start training
+        if (!training_tab_start_training(state)) {
+            printf("ERROR: Failed to start training\n");
         }
-        
-        // Start training thread
-        extern int start_training_thread(AppState* state);
-        start_training_thread(state);
     }
 }
 
 static void on_save_clicked(void* data) {
-    AppState* state = (AppState*)data;
-    if (!state || !state->cllm_model) return;
+    (void)data;  // Unused
     
-    system("mkdir -p checkpoints");
-    char checkpoint_path[512];
-    snprintf(checkpoint_path, sizeof(checkpoint_path), 
-            "checkpoints/checkpoint_epoch_%d.cllm", state->training_current_epoch);
-    extern int cllm_write_model(CLLMModel* model, const char* path);
-    if (cllm_write_model(state->cllm_model, checkpoint_path) == 0) {
-        printf("✓ Checkpoint saved: %s\n", checkpoint_path);
+    if (!g_training_ui.tab_state.model_loaded) {
+        printf("ERROR: No model loaded to save\n");
+        return;
+    }
+    
+    printf("=== SAVE BUTTON CLICKED ===\n");
+    
+    if (training_tab_save_model()) {
+        printf("✓ Model saved successfully\n");
+    } else {
+        printf("ERROR: Failed to save model\n");
     }
 }
 
@@ -735,9 +680,9 @@ static void on_model_selected(int index, void* data) {
     AppState* state = (AppState*)data;
     if (!state || !g_training_ui.model_dropdown) return;
     
-    // Get selected model name from model_manager
-    extern char* model_manager_get_name_at_index(uint32_t index);
-    char* model_name = model_manager_get_name_at_index((uint32_t)index);
+    // Get selected model name from model registry
+    extern const char* model_registry_get_name_at_index(uint32_t index);
+    const char* model_name = model_registry_get_name_at_index((uint32_t)index);
     if (model_name) {
         strncpy(g_training_ui.selected_model, model_name, sizeof(g_training_ui.selected_model) - 1);
         g_training_ui.selected_model[sizeof(g_training_ui.selected_model) - 1] = '\0';
@@ -1058,18 +1003,18 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         init_training_tab(state);
     }
     
-    // Populate model dropdown if empty (after model_manager initializes)
+    // Populate model dropdown if empty (after model registry initializes)
     static bool models_populated = false;
     if (!models_populated && g_training_ui.model_dropdown) {
-        extern uint32_t model_manager_count(void);
-        extern char* model_manager_get_name_at_index(uint32_t index);
+        extern uint32_t model_registry_count(void);
+        extern const char* model_registry_get_name_at_index(uint32_t index);
         
-        uint32_t model_count = model_manager_count();
+        uint32_t model_count = model_registry_count();
         if (model_count > 0) {
             char** model_names = malloc(model_count * sizeof(char*));
             if (model_names) {
                 for (uint32_t i = 0; i < model_count; i++) {
-                    model_names[i] = model_manager_get_name_at_index(i);
+                    model_names[i] = (char*)model_registry_get_name_at_index(i);
                 }
                 crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
                 printf("MODEL DROPDOWN: Populated with %u models\n", model_count);
