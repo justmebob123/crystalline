@@ -26,12 +26,13 @@
 
 ## Phase 2: Create Double-Precision Versions (Like SIMD Fix) [IN PROGRESS]
 
-### 2.1 NTT Attention Double Version [STARTING NOW]
-- [ ] Create ntt_attention_forward_double() in algorithms/src/ntt_attention.c
-- [ ] Use __m256d for AVX2 double operations (4 doubles at a time)
-- [ ] Add to algorithms/include/ntt_attention.h
-- [ ] Create cllm_attention_ntt_forward_double() wrapper
-- [ ] Wire into cllm_attention_forward()
+### 2.1 NTT Attention Double Version [COMPLETE ✓]
+- [x] Create ntt_attention_forward_double() in algorithms/src/ntt_attention.c
+- [x] Add ntt_attention_single_head_double() and ntt_attention_multi_head_double()
+- [x] Add to algorithms/include/ntt_attention.h
+- [x] Build successful - no errors
+- [x] Committed and pushed (8c4da1a)
+- [ ] Wire into cllm_attention_forward() - NEXT STEP
 - [ ] Test and benchmark (expected: 10-100x speedup)
 
 ### 2.2 Angular Attention Double Version
