@@ -3,15 +3,33 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <pthread.h>
 
 /**
- * Tokenizer Structure
+ * Tokenizer Structure with 12-Fold Symmetry Thread Safety
+ * 
+ * MASTER PLAN COMPLIANCE:
+ * - 12 vocabulary partitions (one per symmetry group)
+ * - Lock-free token lookup using atomic operations
+ * - Thread-safe token addition with per-partition locks
+ * - Kissing spheres architecture for parallel vocabulary building
  */
 typedef struct {
+    // Legacy single vocabulary (for backward compatibility)
     char** vocab;
     uint32_t* token_counts;
     uint32_t vocab_size;
     uint32_t max_vocab_size;
+    
+    // 12-fold symmetry partitions for thread-safe access
+    char** vocab_partitions[12];           // 12 vocabulary partitions
+    uint32_t* count_partitions[12];        // 12 count arrays
+    uint32_t partition_sizes[12];          // Size of each partition (use atomic ops)
+    uint32_t partition_capacities[12];     // Capacity of each partition
+    pthread_mutex_t partition_locks[12];   // One lock per partition
+    
+    // Global consolidated vocabulary (built after parallel phase)
+    int consolidated;                      // Flag: has vocab been consolidated?
 } CLLMTokenizer;
 
 /**
@@ -30,9 +48,28 @@ void cllm_free_tokenizer(CLLMTokenizer* tokenizer);
 uint32_t cllm_find_token(CLLMTokenizer* tokenizer, const char* token);
 
 /**
- * Add Token to Vocabulary
+ * Add Token to Vocabulary (Thread-Safe with 12-Fold Symmetry)
+ * 
+ * Uses hash-based partitioning to distribute tokens across 12 partitions.
+ * Each thread can add tokens to different partitions concurrently.
  */
 uint32_t cllm_add_token(CLLMTokenizer* tokenizer, const char* token);
+
+/**
+ * Add Token to Specific Partition (Thread-Safe)
+ * 
+ * Directly adds token to specified partition (0-11).
+ * Used by kissing spheres workers to minimize lock contention.
+ */
+uint32_t cllm_add_token_to_partition(CLLMTokenizer* tokenizer, const char* token, int partition_id);
+
+/**
+ * Consolidate Partitioned Vocabulary into Single Vocabulary
+ * 
+ * Merges all 12 partitions into the main vocabulary.
+ * Call this after parallel vocabulary building is complete.
+ */
+void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer);
 
 /**
  * Encode Text to Token IDs

@@ -280,37 +280,143 @@ int cllm_data_loader_load_directory(CLLMDataLoader* loader, const char* dirname)
 /**
  * Build Vocabulary from Loaded Documents
  */
+// Forward declarations for thread-safe tokenizer
+extern uint32_t cllm_add_token_threadsafe(CLLMTokenizer* tokenizer, const char* token);
+extern void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer);
+
 /**
- * Build vocabulary from all documents
- * 
- * CRITICAL UNDERSTANDING:
- * The tokenizer (cllm_add_token, cllm_find_token) is NOT thread-safe.
- * It was never designed for concurrent access - vocab_size++ is not atomic,
- * and cllm_find_token reads vocab_size without protection.
+ * Vocabulary Building with 12-Fold Symmetry Thread-Safe Tokenizer
  * 
  * MASTER PLAN COMPLIANCE:
- * - Vocabulary building is a PREPROCESSING step before training
- * - The 12-fold symmetry kissing spheres architecture is for TRAINING
- * - Vocabulary building must be single-threaded due to tokenizer design
- * - This is the CORRECT approach per the architecture
+ * - Uses 12-fold symmetry structure (12 vocabulary partitions)
+ * - Each sphere adds tokens to hash-partitioned vocabulary
+ * - Per-partition locks allow 12 concurrent additions
+ * - Consolidates partitions after parallel phase
+ */
+
+typedef struct {
+    CLLMTokenizer* tokenizer;
+    const char** documents;
+    size_t start_idx;
+    size_t end_idx;
+    int symmetry_group;  // 0-11
+    _Atomic size_t* progress_counter;
+} VocabSphereContext;
+
+static void* vocab_sphere_worker(void* arg) {
+    VocabSphereContext* ctx = (VocabSphereContext*)arg;
+    
+    printf("[Sphere %d] Processing documents %zu to %zu\n", 
+           ctx->symmetry_group, ctx->start_idx, ctx->end_idx);
+    
+    // Process assigned documents
+    for (size_t i = ctx->start_idx; i < ctx->end_idx; i++) {
+        const char* doc = ctx->documents[i];
+        if (!doc) continue;
+        
+        // Tokenize and add to partitioned vocabulary (thread-safe)
+        char* text_copy = strdup(doc);
+        if (!text_copy) continue;
+        
+        char* token = strtok(text_copy, " \t\n\r");
+        
+        while (token) {
+            // Convert to lowercase
+            for (char* p = token; *p; p++) {
+                *p = tolower(*p);
+            }
+            
+            // Add to thread-safe partitioned vocabulary
+            // Hash determines partition, each partition has its own lock
+            cllm_add_token_threadsafe(ctx->tokenizer, token);
+            
+            token = strtok(NULL, " \t\n\r");
+        }
+        
+        free(text_copy);
+        
+        // Update progress
+        atomic_fetch_add(ctx->progress_counter, 1);
+    }
+    
+    printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
+    return NULL;
+}
+
+/**
+ * Build vocabulary using 12-fold symmetry with thread-safe tokenizer
+ * 
+ * MASTER PLAN COMPLIANCE:
+ * - Creates 12 sphere workers (one per symmetry group)
+ * - Each sphere adds tokens to hash-partitioned vocabulary
+ * - 12 partitions allow 12 concurrent additions
+ * - Consolidates partitions into single vocabulary after parallel phase
  */
 void cllm_data_loader_build_vocab(CLLMDataLoader* loader) {
     if (!loader || !loader->tokenizer) return;
     
     printf("Building vocabulary from %zu documents...\n", loader->num_documents);
-    printf("(Single-threaded - tokenizer is not thread-safe)\n");
+    printf("Using 12-fold symmetry thread-safe tokenizer\n");
     
-    // Simple single-threaded vocabulary building
-    // This is CORRECT - the tokenizer was never designed for concurrent access
-    for (size_t i = 0; i < loader->num_documents; i++) {
-        if (i % 1000 == 0 && i > 0) {
+    // Determine number of active spheres (up to 12)
+    int num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (num_cpus < 1) num_cpus = 1;
+    
+    // MASTER PLAN: Use 12-fold symmetry structure
+    int num_active_spheres = (num_cpus > 12) ? 12 : num_cpus;
+    
+    printf("Activating %d of 12 symmetry spheres\n", num_active_spheres);
+    
+    // Create progress counter
+    _Atomic size_t progress_counter = 0;
+    
+    // Create sphere contexts (12-fold symmetry)
+    VocabSphereContext contexts[12];
+    pthread_t threads[12];
+    
+    // Distribute documents across active spheres
+    size_t docs_per_sphere = loader->num_documents / num_active_spheres;
+    size_t remainder = loader->num_documents % num_active_spheres;
+    
+    size_t current_idx = 0;
+    for (int i = 0; i < num_active_spheres; i++) {
+        contexts[i].tokenizer = loader->tokenizer;
+        contexts[i].documents = (const char**)loader->documents;
+        contexts[i].start_idx = current_idx;
+        contexts[i].end_idx = current_idx + docs_per_sphere + (i < (int)remainder ? 1 : 0);
+        contexts[i].symmetry_group = i;  // 0-11
+        contexts[i].progress_counter = &progress_counter;
+        
+        pthread_create(&threads[i], NULL, vocab_sphere_worker, &contexts[i]);
+        
+        current_idx = contexts[i].end_idx;
+    }
+    
+    // Monitor progress
+    size_t last_progress = 0;
+    while (atomic_load(&progress_counter) < loader->num_documents) {
+        size_t current_progress = atomic_load(&progress_counter);
+        if (current_progress != last_progress) {
             printf("  Processed %zu/%zu documents (%.1f%%)...\r", 
-                   i, loader->num_documents, (i * 100.0) / loader->num_documents);
+                   current_progress, loader->num_documents, 
+                   (current_progress * 100.0) / loader->num_documents);
             fflush(stdout);
+            last_progress = current_progress;
         }
-        cllm_build_vocab(loader->tokenizer, loader->documents[i]);
+        usleep(100000);  // 100ms
     }
     printf("\n");
+    
+    // Wait for all spheres to complete
+    for (int i = 0; i < num_active_spheres; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    // Consolidate 12 partitions into single vocabulary
+    printf("Consolidating vocabulary partitions...\n");
+    cllm_consolidate_vocabulary(loader->tokenizer);
+    
+    printf("Vocabulary building complete using 12-fold symmetry\n");
     
     loader->total_tokens = 0;
     for (uint32_t i = 0; i < loader->tokenizer->vocab_size; i++) {

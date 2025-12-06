@@ -52,6 +52,30 @@ CLLMTokenizer* cllm_create_tokenizer(uint32_t max_vocab_size) {
         return NULL;
     }
     
+    // 12-fold symmetry partitions for thread-safe parallel vocabulary building
+    uint32_t partition_capacity = max_vocab_size / 12 + 10000;  // Extra space per partition
+    
+    for (int i = 0; i < 12; i++) {
+        tokenizer->vocab_partitions[i] = (char**)calloc(partition_capacity, sizeof(char*));
+        tokenizer->count_partitions[i] = (uint32_t*)calloc(partition_capacity, sizeof(uint32_t));
+        
+        if (!tokenizer->vocab_partitions[i] || !tokenizer->count_partitions[i]) {
+            // Cleanup on failure
+            for (int j = 0; j <= i; j++) {
+                free(tokenizer->vocab_partitions[j]);
+                free(tokenizer->count_partitions[j]);
+            }
+            cllm_free_tokenizer(tokenizer);
+            return NULL;
+        }
+        
+        tokenizer->partition_sizes[i] = 0;
+        tokenizer->partition_capacities[i] = partition_capacity;
+        pthread_mutex_init(&tokenizer->partition_locks[i], NULL);
+    }
+    
+    tokenizer->consolidated = 0;
+    
     // Add special tokens
     tokenizer->vocab[TOKEN_PAD] = strdup("<PAD>");
     tokenizer->vocab[TOKEN_UNK] = strdup("<UNK>");
@@ -80,6 +104,22 @@ void cllm_free_tokenizer(CLLMTokenizer* tokenizer) {
     
     if (tokenizer->token_counts) {
         free(tokenizer->token_counts);
+    }
+    
+    // Free 12-fold symmetry partitions
+    for (int i = 0; i < 12; i++) {
+        if (tokenizer->vocab_partitions[i]) {
+            for (uint32_t j = 0; j < tokenizer->partition_sizes[i]; j++) {
+                if (tokenizer->vocab_partitions[i][j]) {
+                    free(tokenizer->vocab_partitions[i][j]);
+                }
+            }
+            free(tokenizer->vocab_partitions[i]);
+        }
+        if (tokenizer->count_partitions[i]) {
+            free(tokenizer->count_partitions[i]);
+        }
+        pthread_mutex_destroy(&tokenizer->partition_locks[i]);
     }
     
     free(tokenizer);
