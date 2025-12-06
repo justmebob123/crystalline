@@ -145,20 +145,20 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
  * Uses GCD-based similarity (O(log n) vs O(n) for dot product)
  */
 /**
- * Compute loss using algorithm layer (WIRED)
+ * Compute loss - REVERTED TO WORKING VERSION
  * 
- * This now uses the loss_cross_entropy() function from algorithms/loss_functions.c
- * which provides:
- * - Better numerical stability
- * - Label smoothing support
- * - Gradient clipping
- * - 20-400x speedup from GCD optimizations
+ * The algorithm layer loss function was causing NaN.
+ * Using the original working cross-entropy implementation.
  */
 float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                         uint32_t* target_tokens, int num_tokens) {
+    (void)input_tokens;  // Unused
+    
     if (!training || !target_tokens) return 0.0f;
     if (!training->model || !training->logits) return 0.0f;
     
+    float total_loss = 0.0f;
+    int count = 0;
     uint32_t vocab_size = training->model->vocab_size;
     
     // Safety: limit num_tokens to prevent buffer overflow
@@ -168,18 +168,7 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         safe_num_tokens = training->config.batch_size * training->config.sequence_length;
     }
     
-    // Prepare predictions and targets for algorithm layer
-    // We need to compute softmax probabilities from logits
-    double* predictions = (double*)calloc(safe_num_tokens * vocab_size, sizeof(double));
-    double* targets = (double*)calloc(safe_num_tokens * vocab_size, sizeof(double));
-    
-    if (!predictions || !targets) {
-        free(predictions);
-        free(targets);
-        return 0.0f;
-    }
-    
-    // Convert logits to probabilities and create one-hot targets
+    // Compute cross-entropy loss from logits
     for (int i = 0; i < safe_num_tokens; i++) {
         uint32_t target = target_tokens[i];
         
@@ -190,41 +179,45 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         
         // Get logits for this position
         double* logits = &training->logits[i * vocab_size];
-        double* probs = &predictions[i * vocab_size];
         
-        // Compute softmax (numerically stable)
+        // Compute softmax (numerically stable with clamping)
         double max_logit = logits[0];
         for (uint32_t v = 1; v < vocab_size; v++) {
             if (logits[v] > max_logit) max_logit = logits[v];
         }
         
+        // Clamp to prevent overflow
+        if (max_logit > 50.0) max_logit = 50.0;
+        if (max_logit < -50.0) max_logit = -50.0;
+        
         double sum_exp = 0.0;
         for (uint32_t v = 0; v < vocab_size; v++) {
-            probs[v] = prime_exp(logits[v] - max_logit);
-            sum_exp += probs[v];
+            double shifted = logits[v] - max_logit;
+            if (shifted > 50.0) shifted = 50.0;
+            if (shifted < -50.0) shifted = -50.0;
+            sum_exp += prime_exp(shifted);
         }
         
-        // Normalize
-        if (sum_exp > 1e-10) {
-            for (uint32_t v = 0; v < vocab_size; v++) {
-                probs[v] /= sum_exp;
-            }
-        }
+        // Avoid log(0)
+        if (sum_exp < 1e-10) sum_exp = 1e-10;
         
-        // Create one-hot target
-        targets[i * vocab_size + target] = 1.0;
+        // Cross-entropy: -log(softmax(logits[target]))
+        double shifted_target = logits[target] - max_logit;
+        if (shifted_target > 50.0) shifted_target = 50.0;
+        if (shifted_target < -50.0) shifted_target = -50.0;
+        
+        double log_prob = shifted_target - prime_log(sum_exp);
+        double loss_val = -log_prob;
+        
+        // Clamp loss to reasonable range
+        if (loss_val > 100.0) loss_val = 100.0;
+        if (loss_val < 0.0) loss_val = 0.0;
+        
+        total_loss += loss_val;
+        count++;
     }
     
-    // Use algorithm layer loss function (WIRED)
-    LossResult result = loss_cross_entropy(predictions, targets, 
-                                          safe_num_tokens,  // batch_size
-                                          vocab_size,       // num_classes
-                                          &training->loss_config);
-    
-    free(predictions);
-    free(targets);
-    
-    return (float)result.loss_value;
+    return count > 0 ? total_loss / count : 0.0f;
 }
 
 /**
