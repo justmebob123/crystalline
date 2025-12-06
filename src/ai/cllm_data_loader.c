@@ -469,6 +469,65 @@ typedef struct {
     size_t capacity;
 } TokenDataset;
 
+// Thread-local token buffer for parallel tokenization
+typedef struct {
+    uint32_t* tokens;
+    size_t num_tokens;
+    size_t capacity;
+} ThreadTokenBuffer;
+
+// Worker context for parallel tokenization
+typedef struct {
+    CLLMDataLoader* loader;
+    ThreadTokenBuffer* buffer;
+    size_t start_doc;
+    size_t end_doc;
+    int thread_id;
+    _Atomic size_t* progress_counter;
+} TokenizeWorkerContext;
+
+// Worker function for parallel tokenization
+static void* tokenize_worker(void* arg) {
+    TokenizeWorkerContext* ctx = (TokenizeWorkerContext*)arg;
+    
+    for (size_t i = ctx->start_doc; i < ctx->end_doc; i++) {
+        uint32_t num_tokens;
+        uint32_t* doc_tokens = cllm_tokenizer_encode(ctx->loader->tokenizer,
+                                                     ctx->loader->documents[i],
+                                                     &num_tokens);
+        
+        if (doc_tokens) {
+            // Expand buffer if needed
+            while (ctx->buffer->num_tokens + num_tokens > ctx->buffer->capacity) {
+                ctx->buffer->capacity *= 2;
+                uint32_t* new_tokens = (uint32_t*)realloc(ctx->buffer->tokens,
+                                                          ctx->buffer->capacity * sizeof(uint32_t));
+                if (!new_tokens) {
+                    free(doc_tokens);
+                    return NULL;
+                }
+                ctx->buffer->tokens = new_tokens;
+            }
+            
+            // Copy tokens to thread buffer
+            memcpy(ctx->buffer->tokens + ctx->buffer->num_tokens, doc_tokens,
+                   num_tokens * sizeof(uint32_t));
+            ctx->buffer->num_tokens += num_tokens;
+            
+            free(doc_tokens);
+        }
+        
+        // Update progress
+        size_t current = atomic_fetch_add(ctx->progress_counter, 1) + 1;
+        if (current % 100 == 0) {
+            printf("  Processed %zu/%zu documents\r", current, ctx->loader->num_documents);
+            fflush(stdout);
+        }
+    }
+    
+    return NULL;
+}
+
 TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
     if (!loader || !loader->tokenizer) return NULL;
     
@@ -534,12 +593,6 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
         printf("Using %d-thread parallel tokenization (%zu documents)\n", num_cpus, loader->num_documents);
         
         // Create per-thread token buffers
-        typedef struct {
-            uint32_t* tokens;
-            size_t num_tokens;
-            size_t capacity;
-        } ThreadTokenBuffer;
-        
         ThreadTokenBuffer* thread_buffers = (ThreadTokenBuffer*)calloc(num_cpus, sizeof(ThreadTokenBuffer));
         if (!thread_buffers) {
             free(dataset->tokens);
@@ -561,61 +614,10 @@ TokenDataset* cllm_data_loader_create_dataset(CLLMDataLoader* loader) {
             thread_buffers[t].num_tokens = 0;
         }
         
-        // Thread worker context
-        typedef struct {
-            CLLMDataLoader* loader;
-            ThreadTokenBuffer* buffer;
-            size_t start_doc;
-            size_t end_doc;
-            int thread_id;
-            _Atomic size_t* progress_counter;
-        } TokenizeWorkerContext;
-        
+        // Thread worker contexts
         _Atomic size_t progress_counter = 0;
         pthread_t* threads = (pthread_t*)malloc(num_cpus * sizeof(pthread_t));
         TokenizeWorkerContext* contexts = (TokenizeWorkerContext*)malloc(num_cpus * sizeof(TokenizeWorkerContext));
-        
-        // Worker function
-        void* tokenize_worker(void* arg) {
-            TokenizeWorkerContext* ctx = (TokenizeWorkerContext*)arg;
-            
-            for (size_t i = ctx->start_doc; i < ctx->end_doc; i++) {
-                uint32_t num_tokens;
-                uint32_t* doc_tokens = cllm_tokenizer_encode(ctx->loader->tokenizer,
-                                                             ctx->loader->documents[i],
-                                                             &num_tokens);
-                
-                if (doc_tokens) {
-                    // Expand buffer if needed
-                    while (ctx->buffer->num_tokens + num_tokens > ctx->buffer->capacity) {
-                        ctx->buffer->capacity *= 2;
-                        uint32_t* new_tokens = (uint32_t*)realloc(ctx->buffer->tokens,
-                                                                  ctx->buffer->capacity * sizeof(uint32_t));
-                        if (!new_tokens) {
-                            free(doc_tokens);
-                            return NULL;
-                        }
-                        ctx->buffer->tokens = new_tokens;
-                    }
-                    
-                    // Copy tokens to thread buffer
-                    memcpy(ctx->buffer->tokens + ctx->buffer->num_tokens, doc_tokens,
-                           num_tokens * sizeof(uint32_t));
-                    ctx->buffer->num_tokens += num_tokens;
-                    
-                    free(doc_tokens);
-                }
-                
-                // Update progress
-                size_t current = atomic_fetch_add(ctx->progress_counter, 1) + 1;
-                if (current % 100 == 0) {
-                    printf("  Processed %zu/%zu documents\r", current, ctx->loader->num_documents);
-                    fflush(stdout);
-                }
-            }
-            
-            return NULL;
-        }
         
         // Launch threads
         size_t docs_per_thread = loader->num_documents / num_cpus;
