@@ -300,25 +300,89 @@ typedef struct {
     _Atomic size_t* progress_counter;
 } VocabSphereContext;
 
+#define TOKEN_BATCH_SIZE 10000  // Batch tokens to reduce lock contention
+
 static void* vocab_sphere_worker(void* arg) {
     VocabSphereContext* ctx = (VocabSphereContext*)arg;
     
     printf("[Sphere %d] Processing documents %zu to %zu\n", 
            ctx->symmetry_group, ctx->start_idx, ctx->end_idx);
     
+    // Allocate token batch buffer
+    char** token_batch = (char**)malloc(TOKEN_BATCH_SIZE * sizeof(char*));
+    if (!token_batch) {
+        fprintf(stderr, "[Sphere %d] Failed to allocate token batch\n", ctx->symmetry_group);
+        return NULL;
+    }
+    size_t batch_count = 0;
+    
     // Process assigned documents
     for (size_t i = ctx->start_idx; i < ctx->end_idx; i++) {
         const char* doc = ctx->documents[i];
         if (!doc) continue;
         
-        // Build vocabulary for this document (thread-safe with mutex)
-        pthread_mutex_lock(ctx->vocab_mutex);
-        cllm_build_vocab(ctx->tokenizer, doc);
-        pthread_mutex_unlock(ctx->vocab_mutex);
+        // Tokenize locally (no lock needed)
+        char* text_copy = strdup(doc);
+        if (!text_copy) continue;
         
+        char* token = strtok(text_copy, " \t\n\r");
+        
+        while (token) {
+            // Convert to lowercase
+            for (char* p = token; *p; p++) {
+                *p = tolower(*p);
+            }
+            
+            // Add to batch
+            token_batch[batch_count] = strdup(token);
+            if (!token_batch[batch_count]) {
+                // Allocation failed - flush current batch and continue
+                if (batch_count > 0) {
+                    pthread_mutex_lock(ctx->vocab_mutex);
+                    for (size_t j = 0; j < batch_count; j++) {
+                        cllm_add_token(ctx->tokenizer, token_batch[j]);
+                        free(token_batch[j]);
+                    }
+                    pthread_mutex_unlock(ctx->vocab_mutex);
+                    batch_count = 0;
+                }
+                free(text_copy);
+                goto next_document;
+            }
+            batch_count++;
+            
+            // Flush batch when full (coarse-grained locking)
+            if (batch_count >= TOKEN_BATCH_SIZE) {
+                pthread_mutex_lock(ctx->vocab_mutex);
+                for (size_t j = 0; j < batch_count; j++) {
+                    cllm_add_token(ctx->tokenizer, token_batch[j]);
+                    free(token_batch[j]);
+                }
+                pthread_mutex_unlock(ctx->vocab_mutex);
+                batch_count = 0;
+            }
+            
+            token = strtok(NULL, " \t\n\r");
+        }
+        
+        free(text_copy);
+        
+    next_document:
         // Update progress
         atomic_fetch_add(ctx->progress_counter, 1);
     }
+    
+    // Flush remaining tokens
+    if (batch_count > 0) {
+        pthread_mutex_lock(ctx->vocab_mutex);
+        for (size_t j = 0; j < batch_count; j++) {
+            cllm_add_token(ctx->tokenizer, token_batch[j]);
+            free(token_batch[j]);
+        }
+        pthread_mutex_unlock(ctx->vocab_mutex);
+    }
+    
+    free(token_batch);
     
     printf("[Sphere %d] Completed processing\n", ctx->symmetry_group);
     return NULL;
