@@ -50,14 +50,20 @@
 - Output quality: Basic but functional (needs more training data)
 
 ## Phase 6: Additional Bugs to Fix 🔄
-- [ ] Grep for ALL float usage and convert to double
+- [x] Grep for ALL float usage and convert to double (DONE: 7 fixes)
+- [x] Fixed UI inference USE-AFTER-FREE bug
+- [x] Fixed NaN gradients from float/double mismatch
+- [x] Verify optimizer applies gradients correctly (FIXED)
 - [ ] Check SIMD code for double precision support
 - [ ] Verify loss computation is correct
-- [ ] Check gradient flow in backward pass
-- [ ] Verify optimizer applies gradients correctly
 - [ ] Run valgrind for memory issues
 - [ ] Run gdb for debugging
 - [ ] Run strace for system call analysis
+
+**CRITICAL BUGS FIXED**:
+1. UI inference failure (USE-AFTER-FREE in tab_llm.c)
+2. NaN gradients (float/double mismatch in training)
+3. 7 float→double conversions in training pipeline
 
 ## Implementation Plan
 
