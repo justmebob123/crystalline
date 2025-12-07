@@ -4,6 +4,7 @@
 #include "cllm_integration.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_model_manager.h"
+#include "../include/cllm_model_registry.h"
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"
@@ -137,6 +138,18 @@ AppState* init_app(void) {
         printf("Model manager initialized successfully\n");
     }
     printf("=== Model Manager Ready ===\n\n");
+    
+    // Initialize model registry
+    printf("=== Initializing Model Registry ===\n");
+    if (!model_registry_init("./models")) {
+        printf("WARNING: Failed to initialize model registry\n");
+    } else {
+        printf("Model registry initialized successfully\n");
+        // Scan for models
+        int model_count = model_registry_scan();
+        printf("Found %d models in registry\n", model_count);
+    }
+    printf("=== Model Registry Ready ===\n\n");
     
     loading_screen_update(&g_loading_screen, LOAD_STAGE_SERVICES, 0.5f);
     loading_screen_render(state->renderer, &g_loading_screen, 255);
@@ -342,6 +355,9 @@ void cleanup(AppState* state) {
     // CRITICAL: Cleanup model manager (fixes 395MB leak)
     extern void model_manager_cleanup(void);
     model_manager_cleanup();
+    
+    // Cleanup model registry
+    model_registry_cleanup();
     
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);
