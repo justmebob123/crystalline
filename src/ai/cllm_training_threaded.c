@@ -2806,8 +2806,16 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
     int eta_mins = (int)((eta_seconds - eta_hours * 3600) / 60);
     int eta_secs = (int)(eta_seconds - eta_hours * 3600 - eta_mins * 60);
     
-    // Get current loss (if available)
-    float current_loss = system->epoch_loss / (batches_done > 0 ? batches_done : 1);
+    // Get current loss from sphere contexts
+    float total_loss = 0.0f;
+    int active_spheres = 0;
+    for (int i = 0; i < system->num_worker_spheres; i++) {
+        if (system->sphere_contexts[i] && system->sphere_contexts[i]->batches_processed > 0) {
+            total_loss += system->sphere_contexts[i]->batch_loss;
+            active_spheres++;
+        }
+    }
+    float current_loss = (active_spheres > 0) ? total_loss / active_spheres : 0.0f;
     
     // Print progress line
     printf("\rEpoch %d/%d | Batch %zu/%zu (%.1f%%) | Loss: %.4f | %.1f batch/s | ETA: %02d:%02d:%02d",
