@@ -32,6 +32,7 @@ SOURCES = src/numerical.c \
           src/qk_mapping.c \
           src/iterative_search.c \
           src/validation.c \
+          src/mathematical_formulas.c \
           src/bigfixed_math_wrappers.c
 
 # Object files
