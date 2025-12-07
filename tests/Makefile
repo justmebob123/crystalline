@@ -39,12 +39,17 @@ DIAGNOSTIC_TESTS = \
         quick_inference_check \
         profile_kissing_spheres
 
+# Kissing spheres tests
+KISSING_SPHERES_TESTS = \
+        test_kissing_spheres_visualization \
+        test_kissing_spheres_integration
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS)
 
-.PHONY: all unit integration performance validation diagnostic clean run-unit run-integration run-performance run-validation run-diagnostic run-all
+.PHONY: all unit integration performance validation diagnostic kissing-spheres clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-all
 
-all: unit integration diagnostic
+all: unit integration diagnostic kissing-spheres
 
 unit: $(UNIT_TESTS)
 
@@ -55,6 +60,8 @@ performance: $(PERFORMANCE_TESTS)
 validation: $(VALIDATION_TESTS)
 
 diagnostic: $(DIAGNOSTIC_TESTS)
+
+kissing-spheres: $(KISSING_SPHERES_TESTS)
 
 # Unit test compilation
 $(UNIT_DIR)/test_softmax_backward: $(UNIT_DIR)/test_softmax_backward.c
@@ -216,3 +223,26 @@ run-diagnostic: $(DIAGNOSTIC_TESTS)
 		echo ""; \
 	done
 	@echo "✓ Diagnostic tests completed"
+
+# Kissing spheres tests
+test_kissing_spheres_visualization: test_kissing_spheres_visualization.c
+	@echo "Building test_kissing_spheres_visualization..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_kissing_spheres_visualization built"
+
+test_kissing_spheres_integration: test_kissing_spheres_integration.c
+	@echo "Building test_kissing_spheres_integration..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_kissing_spheres_integration built"
+
+run-kissing-spheres: $(KISSING_SPHERES_TESTS)
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "Running Kissing Spheres Tests"
+	@echo "════════════════════════════════════════════════════════════"
+	@for test in $(KISSING_SPHERES_TESTS); do \
+		echo ""; \
+		./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All kissing spheres tests completed"
