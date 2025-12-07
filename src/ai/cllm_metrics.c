@@ -157,7 +157,7 @@ void cllm_metrics_update_training(
     metrics->training.current_loss = loss;
     
     // Update best loss
-    if (loss < metrics->training.best_loss || metrics->training.best_loss == 0.0f) {
+    if (loss < metrics->training.best_loss || metrics->training.best_loss == 0.0) {
         metrics->training.best_loss = loss;
     }
 }
@@ -270,7 +270,7 @@ void cllm_metrics_print(const CLLMMetrics* metrics) {
     
     printf("\nPerformance:\n");
     printf("  Cache hit rate: %.2f%%\n", 
-           metrics->performance.cache_hit_rate * 100.0f);
+           metrics->performance.cache_hit_rate * 100.0);
     printf("  Memory used: %.2f MB\n",
            metrics->performance.memory_used_bytes / (1024.0f * 1024.0f));
     printf("  Memory peak: %.2f MB\n",
@@ -362,7 +362,7 @@ void cllm_metrics_update_loss(CLLMMetrics* metrics, float loss) {
     metrics->training.current_loss = loss;
     
     // Update best loss if this is better
-    if (loss < metrics->training.best_loss || metrics->training.best_loss == 0.0f) {
+    if (loss < metrics->training.best_loss || metrics->training.best_loss == 0.0) {
         metrics->training.best_loss = loss;
     }
 }

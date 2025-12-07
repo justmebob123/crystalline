@@ -195,7 +195,7 @@ bool cllm_validate_layer_norms(const CLLMModel* model) {
         }
         
         // Check epsilon is reasonable
-        if (model->layer_norms[i].epsilon <= 0.0f || model->layer_norms[i].epsilon > 1e-3f) {
+        if (model->layer_norms[i].epsilon <= 0.0 || model->layer_norms[i].epsilon > 1e-3f) {
             fprintf(stderr, "LayerNorm %u: Invalid epsilon value: %e\n", i, model->layer_norms[i].epsilon);
             return false;
         }
@@ -327,7 +327,7 @@ bool cllm_validate_gradients(CLLMModel* model, const double* gradients, size_t n
     }
     
     // Check gradient magnitudes
-    float max_grad = 0.0f;
+    float max_grad = 0.0;
     float min_grad = 1.0e30f;  // Large finite value instead of INFINITY
     double sum_grad = 0.0;
     
@@ -346,7 +346,7 @@ bool cllm_validate_gradients(CLLMModel* model, const double* gradients, size_t n
     printf("  Mean: %.6e\n", mean_grad);
     
     // Check for exploding gradients
-    if (max_grad > 100.0f) {
+    if (max_grad > 100.0) {
         fprintf(stderr, "Warning: Large gradient detected (%.6e)\n", max_grad);
         return false;
     }
@@ -387,7 +387,7 @@ bool cllm_validate_inference_output(const float* logits, size_t vocab_size) {
     printf("Logit range: [%.6f, %.6f]\n", min_logit, max_logit);
     
     // Check for reasonable range
-    if (max_logit - min_logit > 100.0f) {
+    if (max_logit - min_logit > 100.0) {
         fprintf(stderr, "Warning: Very large logit range\n");
     }
     

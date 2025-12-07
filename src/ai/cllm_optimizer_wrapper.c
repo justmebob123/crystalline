@@ -294,10 +294,10 @@ void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
             double grad = training->gradients[i];
             
             // Update biased first moment estimate
-            m[i] = beta1 * m[i] + (1.0f - beta1) * grad;
+            m[i] = beta1 * m[i] + (1.0 - beta1) * grad;
             
             // Update biased second raw moment estimate
-            v[i] = beta2 * v[i] + (1.0f - beta2) * grad * grad;
+            v[i] = beta2 * v[i] + (1.0 - beta2) * grad * grad;
             
             // Compute bias-corrected first moment estimate
             double m_hat = m[i] / bias_correction1;

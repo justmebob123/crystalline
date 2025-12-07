@@ -167,7 +167,7 @@ static uint32_t fast_gcd_cached(PrimeFactorCache* cache, uint32_t a, uint32_t b)
  */
 static void compute_ulam_position(uint32_t token_id, float* x, float* y, float* z) {
     if (token_id == 0) {
-        *x = *y = *z = 0.0f;
+        *x = *y = *z = 0.0;
         return;
     }
     
@@ -177,7 +177,7 @@ static void compute_ulam_position(uint32_t token_id, float* x, float* y, float* 
     
     *x = radius * prime_cosf(angle);
     *y = radius * prime_sinf(angle);
-    *z = prime_logf((float)token_id + 1.0f);
+    *z = prime_logf((float)token_id + 1.0);
 }
 
 /**
@@ -275,7 +275,7 @@ uint32_t cvp_find_closest_token(CLLMModel* model, const float* query_embedding) 
     
     // Find token with minimum Euclidean distance
     for (uint32_t v = 0; v < vocab_size; v++) {
-        float distance = 0.0f;
+        float distance = 0.0;
         for (uint32_t d = 0; d < embed_dim; d++) {
             float diff = query_embedding[d] - embeddings[v * embed_dim + d];
             distance += diff * diff;
@@ -308,7 +308,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
     
     // Find embedding with minimum length
     for (uint32_t v = 0; v < vocab_size; v++) {
-        float length = 0.0f;
+        float length = 0.0;
         for (uint32_t d = 0; d < embed_dim; d++) {
             float val = embeddings[v * embed_dim + d];
             length += val * val;
@@ -371,7 +371,7 @@ void crystalline_advanced_free(CrystallineAdvancedState* state) {
  */
 float crystalline_advanced_similarity(CrystallineAdvancedState* state, 
                                      uint32_t token1, uint32_t token2) {
-    if (!state || token1 == 0 || token2 == 0) return 0.0f;
+    if (!state || token1 == 0 || token2 == 0) return 0.0;
     
     // Use cached GCD if enabled
     if (state->use_cached_gcd) {

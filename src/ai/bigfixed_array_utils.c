@@ -112,7 +112,7 @@ void bigfixed_array_to_float(float* dest, BigFixed** src, size_t size) {
                 dest[i] = (float)atof(str);
                 free(str);
             } else {
-                dest[i] = 0.0f;
+                dest[i] = 0.0;
             }
         }
     }

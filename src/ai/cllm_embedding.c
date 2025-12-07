@@ -53,7 +53,7 @@ void cllm_apply_lattice_transform(float* embedding, double* transform, int dim) 
     
     // Matrix-vector multiplication: result = transform * embedding
     for (int i = 0; i < dim; i++) {
-        float sum = 0.0f;
+        float sum = 0.0;
         for (int j = 0; j < dim; j++) {
             sum += transform[i * dim + j] * embedding[j];
         }
@@ -152,7 +152,7 @@ void cllm_project_to_vocab(CLLMInference* inf, float* hidden_state, float* logit
     
     // Compute logits as dot product with each embedding
     for (uint32_t i = 0; i < vocab_size; i++) {
-        float dot = 0.0f;
+        float dot = 0.0;
         size_t offset = i * embedding_dim;
         
         for (uint32_t j = 0; j < embedding_dim; j++) {
@@ -173,9 +173,9 @@ void cllm_project_to_vocab(CLLMInference* inf, float* hidden_state, float* logit
  * @return L2 norm of the embedding
  */
 float cllm_embedding_norm(float* embedding, int dim) {
-    if (!embedding || dim <= 0) return 0.0f;
+    if (!embedding || dim <= 0) return 0.0;
     
-    float sum = 0.0f;
+    float sum = 0.0;
     for (int i = 0; i < dim; i++) {
         sum += embedding[i] * embedding[i];
     }

@@ -30,7 +30,7 @@ extern void* lattice_sphere_worker_thread(void* arg);
 static float get_cpu_load() {
     struct sysinfo info;
     if (sysinfo(&info) != 0) {
-        return 0.0f;
+        return 0.0;
     }
     
     // Load average is scaled by 65536

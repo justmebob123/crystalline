@@ -93,7 +93,7 @@ static void simd_zero_gradients_avx2(float* restrict gradients, size_t size) {
     
     // Handle remaining elements
     for (; i < size; i++) {
-        gradients[i] = 0.0f;
+        gradients[i] = 0.0;
     }
 }
 

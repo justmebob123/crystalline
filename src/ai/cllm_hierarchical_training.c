@@ -283,7 +283,7 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
     // Zero local gradients
     memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(float));
     
-    float total_loss = 0.0f;
+    float total_loss = 0.0;
     int tokens_processed = 0;
     int sequences_processed = 0;
     
@@ -376,7 +376,7 @@ static void process_batch_on_sphere(CLLMLatticeHierarchy* sphere,
     }
     
     // Calculate average loss for this batch
-    float batch_loss = (sequences_processed > 0) ? total_loss / sequences_processed : 0.0f;
+    float batch_loss = (sequences_processed > 0) ? total_loss / sequences_processed : 0.0;
     
     // Store statistics
     // TODO: Store in proper structure
@@ -451,7 +451,7 @@ static SphereTrainingContext* sphere_training_context_create(
     }
     
     ctx->tokens_processed = 0;
-    ctx->total_loss = 0.0f;
+    ctx->total_loss = 0.0;
     
     return ctx;
 }
@@ -1104,7 +1104,7 @@ HierarchicalTrainingSystem* hierarchical_training_create(CLLMTraining* training,
  * Train one epoch using hierarchical system
  */
 float hierarchical_train_epoch(HierarchicalTrainingSystem* system) {
-    if (!system || !system->root) return 0.0f;
+    if (!system || !system->root) return 0.0;
     
     printf("\n=== HIERARCHICAL TRAINING EPOCH ===\n");
     printf("Hierarchy structure:\n");

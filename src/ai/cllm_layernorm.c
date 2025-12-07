@@ -36,8 +36,8 @@ void cllm_layer_norm_init(CLLMLayerNorm* ln, uint32_t dim, float epsilon) {
     
     // Initialize gamma to 1.0 and beta to 0.0
     for (uint32_t i = 0; i < dim; i++) {
-        ln->gamma[i] = 1.0f;
-        ln->beta[i] = 0.0f;
+        ln->gamma[i] = 1.0;
+        ln->beta[i] = 0.0;
     }
 }
 

@@ -110,16 +110,16 @@ void cllm_attention_standard_forward(
     }
     
     // Calculate scale factor
-    float scale = 1.0f / prime_sqrt((float)head_dim);
+    double scale = 1.0 / prime_sqrt((double)head_dim);
     
     // Allocate attention scores
-    float* scores = calloc(seq_len * seq_len, sizeof(float));
+    double* scores = calloc(seq_len * seq_len, sizeof(double));
     if (!scores) return;
     
     // Compute attention scores: Q * K^T / sqrt(d_k)
     for (uint32_t i = 0; i < seq_len; i++) {
         for (uint32_t j = 0; j < seq_len; j++) {
-            float score = 0.0f;
+            double score = 0.0;
             for (uint32_t d = 0; d < head_dim; d++) {
                 score += query[i * head_dim + d] * key[j * head_dim + d];
             }
@@ -129,23 +129,23 @@ void cllm_attention_standard_forward(
     
     // Apply softmax to each row
     for (uint32_t i = 0; i < seq_len; i++) {
-        float* row = &scores[i * seq_len];
+        double* row = &scores[i * seq_len];
         
         // Find max for numerical stability
-        float max_score = row[0];
+        double max_score = row[0];
         for (uint32_t j = 1; j < seq_len; j++) {
             if (row[j] > max_score) max_score = row[j];
         }
         
         // Compute exp and sum
-        float sum = 0.0f;
+        double sum = 0.0;
         for (uint32_t j = 0; j < seq_len; j++) {
             row[j] = prime_exp(row[j] - max_score);
             sum += row[j];
         }
         
         // Normalize
-        if (sum > 0.0f) {
+        if (sum > 0.0) {
             for (uint32_t j = 0; j < seq_len; j++) {
                 row[j] /= sum;
             }
@@ -156,7 +156,7 @@ void cllm_attention_standard_forward(
     memset(output, 0, seq_len * head_dim * sizeof(float));
     for (uint32_t i = 0; i < seq_len; i++) {
         for (uint32_t j = 0; j < seq_len; j++) {
-            float weight = scores[i * seq_len + j];
+            double weight = scores[i * seq_len + j];
             for (uint32_t d = 0; d < head_dim; d++) {
                 output[i * head_dim + d] += weight * value[j * head_dim + d];
             }
@@ -191,9 +191,9 @@ void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim)
     
     // Initialize with random data
     for (uint32_t i = 0; i < seq_len * head_dim; i++) {
-        query[i] = (float)rand() / RAND_MAX - 0.5f;
-        key[i] = (float)rand() / RAND_MAX - 0.5f;
-        value[i] = (float)rand() / RAND_MAX - 0.5f;
+        query[i] = (float)rand() / RAND_MAX - 0.5;
+        key[i] = (float)rand() / RAND_MAX - 0.5;
+        value[i] = (float)rand() / RAND_MAX - 0.5;
     }
     
     // Benchmark standard attention
@@ -222,14 +222,14 @@ void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim)
     printf("\n");
     
     // Verify correctness (outputs should be similar)
-    float max_diff = 0.0f;
+    double max_diff = 0.0;
     for (uint32_t i = 0; i < seq_len * head_dim; i++) {
-        float diff = prime_fabsf(output_ntt[i] - output_std[i]);
+        double diff = prime_fabsf(output_ntt[i] - output_std[i]);
         if (diff > max_diff) max_diff = diff;
     }
     printf("  Max Difference:     %.6f\n", max_diff);
     
-    if (max_diff < 0.01f) {
+    if (max_diff < 0.01) {
         printf("  ✓ Correctness verified (difference < 0.01)\n");
     } else {
         printf("  ⚠ Large difference detected (may need tuning)\n");

@@ -61,7 +61,7 @@ float dot_product_avx2(const float* a, const float* b, int n) {
  * Fallback for non-multiple-of-8 sizes
  */
 float dot_product_scalar(const float* a, const float* b, int n) {
-    float sum = 0.0f;
+    float sum = 0.0;
     for (int i = 0; i < n; i++) {
         sum += a[i] * b[i];
     }
@@ -94,7 +94,7 @@ double dot_product_double(const double* a, const double* b, int n) {
 float dot_product(const float* a, const float* b, int n) {
     int n_vec = (n / 8) * 8;  // Round down to multiple of 8
     
-    float sum = 0.0f;
+    float sum = 0.0;
     if (n_vec > 0) {
         sum = dot_product_avx2(a, b, n_vec);
     }
@@ -255,7 +255,7 @@ void simd_matrix_multiply_transposed(float* C, const float* A, const float* B, i
     // This is more cache-friendly than explicitly transposing A
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            float sum = 0.0f;
+            float sum = 0.0;
             
             // Vectorized dot product
             int k = 0;

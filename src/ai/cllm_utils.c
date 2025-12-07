@@ -88,7 +88,7 @@ bool cllm_validate_config(const CLLMConfig* config) {
     }
     
     // Check reasonable ranges
-    if (config->dropout < 0.0f || config->dropout > 1.0f) {
+    if (config->dropout < 0.0 || config->dropout > 1.0) {
         fprintf(stderr, "Error: dropout must be in [0, 1]\n");
         return false;
     }

@@ -143,7 +143,7 @@ int cllm_model_init_metadata(CLLMModel* model, const char* name) {
     //     model->training_config.sequence_length = 64;
     //     model->training_config.num_epochs = 10;
     //     model->training_config.weight_decay = 0.01f;
-    //     model->training_config.gradient_clip = 1.0f;
+    //     model->training_config.gradient_clip = 1.0;
     
     // NOTE: Training history is now stored in separate files
     // in models/<name>_history/ directory (see model_history_manager.h)

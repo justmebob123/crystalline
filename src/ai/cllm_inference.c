@@ -10,7 +10,7 @@
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
 #define TEMPERATURE_MIN 0.1f
-#define TEMPERATURE_MAX 2.0f
+#define TEMPERATURE_MAX 2.0
 
 // Initialize inference context
 CLLMInference* cllm_inference_init(CLLMModel* model) {
@@ -26,8 +26,8 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
     }
     
     inference->model = model;
-    inference->temperature = 1.0f;
-    inference->top_p = 0.9f;
+    inference->temperature = 1.0;
+    inference->top_p = 0.9;
     inference->top_k = 50;
     inference->max_tokens = 50;
     
@@ -441,7 +441,7 @@ void cllm_attention_forward_enhanced(
     cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
     
     // Add neighbor influence if model and token_ids are provided
-    if (model && token_ids && model->lattice_points && neighbor_strength > 0.0f) {
+    if (model && token_ids && model->lattice_points && neighbor_strength > 0.0) {
         uint32_t embed_dim = layer->num_heads * layer->head_dim;
         
         // Add neighbor influence for each token in the sequence
@@ -722,8 +722,8 @@ void cllm_set_temperature(CLLMInference* inference, float temperature) {
 
 void cllm_set_top_p(CLLMInference* inference, float top_p) {
     if (inference) {
-        if (top_p < 0.0f) top_p = 0.0f;
-        if (top_p > 1.0f) top_p = 1.0f;
+        if (top_p < 0.0) top_p = 0.0;
+        if (top_p > 1.0) top_p = 1.0;
         inference->top_p = top_p;
     }
 }

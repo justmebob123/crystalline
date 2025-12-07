@@ -81,7 +81,7 @@ void cllm_init_ring_patterns(uint32_t max_dim) {
  */
 float cllm_get_embedding_from_pattern(uint32_t token_id, uint32_t dim, 
                                       uint32_t symmetry_group, uint32_t vocab_size __attribute__((unused))) {
-    if (!g_patterns_initialized) return 0.0f;
+    if (!g_patterns_initialized) return 0.0;
     
     // Determine which ring this token belongs to
     // Based on Babylonian clock structure

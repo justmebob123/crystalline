@@ -41,7 +41,7 @@
 typedef struct CLLMBatch {
     uint32_t* input_ids;        // [batch_size * seq_len]
     uint32_t* target_ids;       // [batch_size * seq_len]
-    float* attention_mask;      // [batch_size * seq_len]
+    double* attention_mask;     // [batch_size * seq_len] - DOUBLE PRECISION
     uint32_t batch_size;
     uint32_t seq_len;
     uint32_t num_valid_tokens;  // Total non-padding tokens
@@ -77,7 +77,7 @@ CLLMBatch* cllm_batch_create(uint32_t batch_size, uint32_t seq_len) {
     
     batch->input_ids = (uint32_t*)calloc(total_size, sizeof(uint32_t));
     batch->target_ids = (uint32_t*)calloc(total_size, sizeof(uint32_t));
-    batch->attention_mask = (float*)calloc(total_size, sizeof(float));
+    batch->attention_mask = (double*)calloc(total_size, sizeof(double));
     
     if (!batch->input_ids || !batch->target_ids || !batch->attention_mask) {
         cllm_batch_free(batch);
@@ -183,13 +183,13 @@ CLLMBatch* cllm_batch_iterator_next(CLLMBatchIterator* iter) {
                 // Valid token
                 batch->input_ids[idx] = iter->tokens[token_pos];
                 batch->target_ids[idx] = iter->tokens[token_pos + 1];
-                batch->attention_mask[idx] = 1.0f;
+                batch->attention_mask[idx] = 1.0;
                 batch->num_valid_tokens++;
             } else {
                 // Padding
                 batch->input_ids[idx] = PAD_TOKEN;
                 batch->target_ids[idx] = PAD_TOKEN;
-                batch->attention_mask[idx] = 0.0f;
+                batch->attention_mask[idx] = 0.0;
             }
         }
     }
@@ -244,12 +244,12 @@ CLLMBatch* cllm_create_batch_from_tokens(uint32_t* tokens, size_t num_tokens,
             if (token_idx < num_tokens - 1) {
                 batch->input_ids[idx] = tokens[token_idx];
                 batch->target_ids[idx] = tokens[token_idx + 1];
-                batch->attention_mask[idx] = 1.0f;
+                batch->attention_mask[idx] = 1.0;
                 batch->num_valid_tokens++;
             } else {
                 batch->input_ids[idx] = PAD_TOKEN;
                 batch->target_ids[idx] = PAD_TOKEN;
-                batch->attention_mask[idx] = 0.0f;
+                batch->attention_mask[idx] = 0.0;
             }
         }
     }
@@ -271,7 +271,7 @@ void cllm_batch_print_stats(CLLMBatch* batch) {
     printf("  Padding tokens: %u\n", 
            batch->batch_size * batch->seq_len - batch->num_valid_tokens);
     printf("  Padding ratio: %.2f%%\n",
-           100.0f * (1.0f - (float)batch->num_valid_tokens / 
+           100.0 * (1.0 - (double)batch->num_valid_tokens / 
                     (batch->batch_size * batch->seq_len)));
 }
 
@@ -290,7 +290,7 @@ int cllm_batch_validate(CLLMBatch* batch) {
     uint32_t counted_valid = 0;
     
     for (size_t i = 0; i < total_size; i++) {
-        if (batch->attention_mask[i] > 0.5f) {
+        if (batch->attention_mask[i] > 0.5) {
             counted_valid++;
             // Valid tokens should not be PAD_TOKEN
             if (batch->input_ids[i] == PAD_TOKEN || batch->target_ids[i] == PAD_TOKEN) {
@@ -468,7 +468,7 @@ void cllm_batch_print_symmetry_distribution(
         if (group_counts[i] > 0) {
             printf("  Group %2d: %5d tokens (%.1f%%)\n",
                    i, group_counts[i],
-                   100.0f * group_counts[i] / total);
+                   100.0 * group_counts[i] / total);
         }
     }
     printf("  Total: %d tokens\n", total);

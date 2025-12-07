@@ -133,7 +133,7 @@ void cllm_embeddings_init_lattice(CLLMModel* model) {
     // Verify embeddings are in valid range
     int out_of_range = 0;
     for (uint32_t i = 0; i < vocab_size * embedding_dim; i++) {
-        if (embeddings[i] < -1.0f || embeddings[i] > 1.0f) {
+        if (embeddings[i] < -1.0 || embeddings[i] > 1.0) {
             out_of_range++;
         }
     }
@@ -176,9 +176,9 @@ void cllm_verify_embedding_symmetry(CLLMModel* model) {
             
             if (group_i == group_j) {
                 // Compute cosine similarity
-                float dot = 0.0f;
-                float norm_i = 0.0f;
-                float norm_j = 0.0f;
+                float dot = 0.0;
+                float norm_i = 0.0;
+                float norm_j = 0.0;
                 
                 for (uint32_t d = 0; d < embedding_dim; d++) {
                     float val_i = embeddings[i * embedding_dim + d];

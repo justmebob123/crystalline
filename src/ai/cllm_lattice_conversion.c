@@ -91,7 +91,7 @@ void cllm_bigfixed_to_embedding(float* embedding, BigFixed* vector, int dim) {
 }
 
 float cllm_test_conversion_accuracy(float* input, int n, int precision) {
-    if (!input || n <= 0) return -1.0f;
+    if (!input || n <= 0) return -1.0;
     
     BigFixed* bigfixed = (BigFixed*)malloc(n * sizeof(BigFixed));
     float* output = (float*)malloc(n * sizeof(float));
@@ -99,13 +99,13 @@ float cllm_test_conversion_accuracy(float* input, int n, int precision) {
     if (!bigfixed || !output) {
         if (bigfixed) free(bigfixed);
         if (output) free(output);
-        return -1.0f;
+        return -1.0;
     }
     
     cllm_float_to_bigfixed(bigfixed, input, n, precision);
     cllm_bigfixed_to_float(output, bigfixed, n);
     
-    float max_error = 0.0f;
+    float max_error = 0.0;
     for (int i = 0; i < n; i++) {
         float error = prime_fabsf(output[i] - input[i]);
         if (error > max_error) {

@@ -133,7 +133,7 @@ void free_validation_set(ValidationSet* val_set) {
 float evaluate_validation(CLLMTraining* training, ValidationSet* val_set) {
     if (!training || !val_set) return INFINITY;
     
-    float total_loss = 0.0f;
+    float total_loss = 0.0;
     int num_batches = 0;
     
     int batch_size = val_set->batch_size;
@@ -267,7 +267,7 @@ int check_early_stopping(EarlyStoppingState* state, float val_loss) {
     if (!state) return 0;
     
     // Calculate improvement in basis points
-    float improvement = (state->best_val_loss - val_loss) / state->best_val_loss * 10000.0f;
+    float improvement = (state->best_val_loss - val_loss) / state->best_val_loss * 10000.0;
     
     if (improvement > state->min_delta_threshold) {
         // Significant improvement
@@ -325,7 +325,7 @@ float get_learning_rate(LRScheduler* scheduler) {
         return scheduler->min_lr;
     }
     
-    float cosine_decay = 0.5f * (1.0f + prime_cosf(M_PI * decay_step / decay_steps));
+    float cosine_decay = 0.5 * (1.0 + prime_cosf(M_PI * decay_step / decay_steps));
     return scheduler->min_lr + (scheduler->initial_lr - scheduler->min_lr) * cosine_decay;
 }
 
@@ -352,7 +352,7 @@ void clip_gradients(CLLMTraining* training, float max_norm) {
     uint32_t num_layers = model->num_layers;
     
     // Compute gradient norm
-    float grad_norm = 0.0f;
+    float grad_norm = 0.0;
     
     // Embedding gradients
     if (training->gradients) {

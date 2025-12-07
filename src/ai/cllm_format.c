@@ -52,10 +52,10 @@ void cllm_prime_to_lattice(uint64_t prime, float coords[3], float* angle, float*
     uint64_t p = prime;
     
     // Angle based on prime modulo symmetry order
-    *angle = (2.0f * PI * (p % SYMMETRY_ORDER)) / SYMMETRY_ORDER;
+    *angle = (2.0 * PI * (p % SYMMETRY_ORDER)) / SYMMETRY_ORDER;
     
     // Radius based on golden ratio spiral
-    *radius = prime_powf(GOLDEN_RATIO, prime_logf(p) / prime_logf(2.0f));
+    *radius = prime_powf(GOLDEN_RATIO, prime_logf(p) / prime_logf(2.0));
     
     // 3D coordinates
     coords[0] = *radius * prime_cosf(*angle);
@@ -126,7 +126,7 @@ void cllm_lattice_point_create(CLLMLatticePoint* point, uint32_t point_id,
     point->symmetry_group = prime % SYMMETRY_ORDER;
     
     // Calculate resonance (based on prime properties)
-    point->resonance = 1.0f / prime_logf(prime + 1);
+    point->resonance = 1.0 / prime_logf(prime + 1);
 }
 
 // Calculate distance between lattice points

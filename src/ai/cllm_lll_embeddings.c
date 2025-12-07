@@ -93,7 +93,7 @@ static float** apply_lll_reduction(float** cov_matrix, int dim, int target_dim) 
             memcpy(basis[i], cov_matrix[i], dim * sizeof(float));
             
             // Normalize
-            float norm = 0.0f;
+            float norm = 0.0;
             for (int j = 0; j < dim; j++) {
                 norm += basis[i][j] * basis[i][j];
             }
@@ -126,7 +126,7 @@ static float** compute_pseudo_inverse(float** basis, int reduced_dim, int origin
     
     // Normalize columns
     for (int j = 0; j < reduced_dim; j++) {
-        float norm = 0.0f;
+        float norm = 0.0;
         for (int i = 0; i < original_dim; i++) {
             norm += inverse[i][j] * inverse[i][j];
         }
@@ -218,7 +218,7 @@ void lll_project_embedding(LLLEmbeddingReducer* reducer, const double* embedding
     
     // reduced = basis * embedding
     for (int i = 0; i < reducer->reduced_dim; i++) {
-        reduced[i] = 0.0f;
+        reduced[i] = 0.0;
         for (int j = 0; j < reducer->original_dim; j++) {
             reduced[i] += reducer->basis[i][j] * embedding[j];
         }
@@ -233,7 +233,7 @@ void lll_reconstruct_embedding(LLLEmbeddingReducer* reducer, const float* reduce
     
     // embedding = inverse_basis * reduced
     for (int i = 0; i < reducer->original_dim; i++) {
-        embedding[i] = 0.0f;
+        embedding[i] = 0.0;
         for (int j = 0; j < reducer->reduced_dim; j++) {
             embedding[i] += reducer->inverse_basis[i][j] * reduced[j];
         }

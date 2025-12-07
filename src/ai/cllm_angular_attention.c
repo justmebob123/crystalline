@@ -55,7 +55,7 @@ float cllm_attention_score_angular(CLLMModel* model,
                                    uint32_t key_token,
                                    uint32_t head_idx) {
     if (!model || query_token >= model->vocab_size || key_token >= model->vocab_size) {
-        return 0.0f;
+        return 0.0;
     }
     
     CLLMToken* q_token = &model->tokens[query_token];
@@ -289,7 +289,7 @@ void cllm_compare_attention_methods(CLLMModel* model,
     );
     
     // Standard dot product attention score
-    float dot_product = 0.0f;
+    float dot_product = 0.0;
     for (uint32_t i = 0; i < embed_dim; i++) {
         dot_product += query_embedding[i] * key_embedding[i];
     }
