@@ -7,6 +7,7 @@ LDFLAGS = -L.. -L../.. -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..:$$
 # Test executables
 TESTS = test_sphere_threading \
         test_visualization \
+        test_memory_management \
         test_sphere_packing \
         test_threading \
         test_shared_memory \
@@ -81,3 +82,8 @@ clean:
 	@echo "Cleaning algorithms test executables..."
 	@rm -f $(TESTS)
 	@echo "✓ Algorithms tests cleaned"
+
+test_memory_management: test_memory_management.c
+	@echo "Building test_memory_management..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_memory_management built"
