@@ -129,9 +129,34 @@ Redesign model management to enable concurrent operations while keeping Models T
 - [ ] Test all tabs independently
 
 ## Status
-**Current Focus:** Phase 4 - Testing & Verification
-**Blocker:** None
-**Next Action:** Test concurrent training + inference, verify all tabs work independently
+**Current Focus:** CRITICAL - Crawler Tab Missing Functionality
+**Blocker:** Crawler tab rewrite removed major features
+**Next Action:** Restore missing crawler tab functionality
+
+## ⚠️ CRITICAL ISSUE DISCOVERED
+**Crawler Tab Analysis Complete - Major Functionality Missing**
+
+The Crystalline UI rewrite of the crawler tab **removed significant functionality**:
+
+### Missing Features:
+1. ❌ Prime Configuration Panel (frequency, selection, delay min/max)
+2. ❌ SQLite URL Manager Integration (persistent storage)
+3. ❌ URL Pattern Selection (href, onclick, data-attr, meta-refresh)
+4. ❌ Activity Log (10-line scrolling log)
+5. ❌ Save/Load Config buttons
+6. ❌ 3-column layout (reduced to 2-column)
+7. ❌ Input validation with visual feedback
+8. ❌ URL statistics (total, pending, crawled, blocked)
+
+### Current Implementation:
+- Simple in-memory URL array (no persistence)
+- Basic start/stop/clear buttons
+- No prime-based randomization
+- No configuration persistence
+
+**Impact:** HIGH - Core crawler features removed
+**Documentation:** See CRAWLER_TAB_MISSING_FUNCTIONALITY.md
+**Action Required:** Restore missing functionality immediately
 
 ## Phase 3 Summary - COMPLETE! 🎉
 All phases of the model management redesign are now complete:
