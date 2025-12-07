@@ -179,6 +179,11 @@ static struct {
     CrystallineInput* input_timeout;
     CrystallineInput* input_max_redirects;
     CrystallineButton* btn_advanced_toggle;
+    
+    // Activity Log
+    CrystallineTextArea* activity_log;
+    char activity_messages[10][256];  // Store last 10 messages
+    int activity_count;
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -208,6 +213,11 @@ static void add_url_to_list(const char* url) {
         crystalline_list_set_items(g_crawler_ui.url_list, g_crawler_ui.urls, g_crawler_ui.url_count);
     }
     
+    // Log to activity
+    char log_msg[256];
+    snprintf(log_msg, sizeof(log_msg), "Added URL (total: %d)", g_crawler_ui.url_count);
+    add_activity_log_message(log_msg);
+    
     printf("Added URL: %s (total: %d)\n", url, g_crawler_ui.url_count);
 }
 
@@ -228,6 +238,10 @@ static void clear_url_list(void) {
     // Update list UI
     if (g_crawler_ui.url_list) {
         crystalline_list_set_items(g_crawler_ui.url_list, NULL, 0);
+    }
+    
+    // Log to activity
+    add_activity_log_message("Cleared all URLs");
     }
     
     printf("Cleared all URLs\n");
@@ -274,6 +288,7 @@ static void on_start_clicked(void* data) {
     if (start_crawler_thread(state, start_url, mode, g_crawler_ui.selected_model) == 0) {
         g_crawler_ui.crawler_running = true;
         printf("Crawler started successfully\n");
+        add_activity_log_message("Crawler started");
     } else {
         printf("Failed to start crawler\n");
     }
@@ -295,6 +310,7 @@ static void on_stop_clicked(void* data) {
     
     g_crawler_ui.crawler_running = false;
     printf("Crawler stopped\n");
+    add_activity_log_message("Crawler stopped");
 }
 
 static void on_clear_clicked(void* data) {
@@ -369,6 +385,46 @@ static void on_advanced_options_toggle(void* data) {
             // Note: CrystallineButton doesn't have a set_text function, so we'll just log
             printf("Advanced Options %s\n", g_crawler_ui.show_advanced_options ? "expanded" : "collapsed");
         }
+    }
+}
+
+/**
+ * Add message to activity log with timestamp
+ */
+static void add_activity_log_message(const char* message) {
+    if (!message) return;
+    
+    // Get current time
+    time_t now = time(NULL);
+    struct tm* tm_info = localtime(&now);
+    char timestamp[32];
+    strftime(timestamp, sizeof(timestamp), "%H:%M:%S", tm_info);
+    
+    // Shift messages up if at capacity
+    if (g_crawler_ui.activity_count >= 10) {
+        for (int i = 0; i < 9; i++) {
+            strcpy(g_crawler_ui.activity_messages[i], g_crawler_ui.activity_messages[i + 1]);
+        }
+        g_crawler_ui.activity_count = 9;
+    }
+    
+    // Add new message with timestamp
+    snprintf(g_crawler_ui.activity_messages[g_crawler_ui.activity_count],
+             sizeof(g_crawler_ui.activity_messages[0]),
+             "[%s] %s", timestamp, message);
+    g_crawler_ui.activity_count++;
+    
+    // Update activity log text area if it exists
+    if (g_crawler_ui.activity_log) {
+        // Build combined text from all messages
+        char combined_text[2560] = {0};
+        for (int i = 0; i < g_crawler_ui.activity_count; i++) {
+            strcat(combined_text, g_crawler_ui.activity_messages[i]);
+            if (i < g_crawler_ui.activity_count - 1) {
+                strcat(combined_text, "\n");
+            }
+        }
+        crystalline_textarea_set_text(g_crawler_ui.activity_log, combined_text);
     }
 }
 
@@ -1067,7 +1123,7 @@ void init_crawler_tab(AppState* state) {
     
     // Activity Log (10-line scrolling)
     int activity_log_h = col3_h - (col3_elem_y - col3_y) - 20;
-    CrystallineTextArea* activity_log = crystalline_textarea_create(
+    g_crawler_ui.activity_log = crystalline_textarea_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         col3_content_x + col3_content_w / 2.0f,
         col3_elem_y + activity_log_h / 2.0f,
@@ -1075,11 +1131,10 @@ void init_crawler_tab(AppState* state) {
         activity_log_h,
         font
     );
-    crystalline_textarea_add_message(activity_log,
-        CRYSTALLINE_MESSAGE_SYSTEM,
-        "Activity Log",
-        "");
-    (void)activity_log;
+    
+    // Initialize activity log
+    g_crawler_ui.activity_count = 0;
+    add_activity_log_message("Crawler initialized");
     
     // Initialize state
     g_crawler_ui.initialized = true;
@@ -1220,6 +1275,11 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
     // Render stats display
     if (g_crawler_ui.stats_display) {
         crystalline_textarea_render(g_crawler_ui.stats_display, renderer);
+    }
+    
+    // Render activity log
+    if (g_crawler_ui.activity_log) {
+        crystalline_textarea_render(g_crawler_ui.activity_log, renderer);
     }
     
     // Render prime configuration inputs

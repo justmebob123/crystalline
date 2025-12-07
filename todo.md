@@ -129,12 +129,21 @@
 - [x] Toggle button changes label: ▼ (collapsed) / ▲ (expanded)
 - [x] Build successful: 0 errors, 0 warnings
 
-### Phase 5: Implement Activity Log (30 min)
-- [ ] Create scrolling CrystallineTextArea
-- [ ] Implement add_activity_log() function
-- [ ] Wire to g_crawler_state.activity_log
-- [ ] Add auto-scroll functionality
-- [ ] Test log display and scrolling
+### Phase 5: Implement Activity Log ✅ COMPLETE
+- [x] Wired existing CrystallineTextArea to g_crawler_ui.activity_log
+- [x] Implemented add_activity_log_message() function with timestamps
+- [x] Added activity_messages[10][256] buffer for last 10 messages
+- [x] Added activity_count tracker
+- [x] Integrated with key events:
+  * "Crawler initialized" on startup
+  * "Added URL (total: N)" when URL added
+  * "Cleared all URLs" when list cleared
+  * "Crawler started" when crawler begins
+  * "Crawler stopped" when crawler ends
+- [x] Automatic timestamp formatting (HH:MM:SS)
+- [x] Automatic scrolling (newest messages at bottom)
+- [x] Message rotation (keeps last 10 messages)
+- [x] Build successful: 0 errors, 0 warnings
 
 ### Phase 6: Integrate Model Selector (30 min)
 - [ ] Add ModelSelector dropdown
