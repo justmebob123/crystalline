@@ -308,8 +308,13 @@ typedef struct {
 static void* vocab_sphere_worker(void* arg) {
     VocabSphereContext* ctx = (VocabSphereContext*)arg;
     
+    // Debug output wrapped in CLLM_DEBUG (suppressed during normal operation)
+    #ifdef CLLM_DEBUG
     printf("[Sphere %d] Processing documents %zu to %zu\n", 
            ctx->symmetry_group, ctx->start_idx, ctx->end_idx);
+    #else
+    (void)ctx->symmetry_group;  // Suppress unused warning
+    #endif
     
     // Pre-allocate a large buffer for tokenization to reduce malloc contention
     // This is thread-local, so no contention between threads

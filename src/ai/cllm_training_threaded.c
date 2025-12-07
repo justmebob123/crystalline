@@ -3246,11 +3246,13 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         if (wait_iterations % 1000 == 0) {
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
-            int done = atomic_load(&system->work_queue->epoch_done);
 #ifdef CLLM_DEBUG
+            int done = atomic_load(&system->work_queue->epoch_done);
             printf("  [DEBUG] Wait iteration %d: pushed=%zu, popped=%zu, epoch_done=%d, pending=%zu\n",
                    wait_iterations, pushed, popped, done, pending);
             fflush(stdout);
+#else
+            (void)pending; (void)pushed; (void)popped;  // Suppress unused warnings
 #endif
         }
         

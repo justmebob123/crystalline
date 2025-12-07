@@ -130,42 +130,38 @@ static void display_progress(void) {
         snprintf(speed_str, sizeof(speed_str), "%.2f/s", speed);
     }
     
-    // Clear previous display (move cursor up 6 lines and clear)
+    // Use carriage return for single-line progress (no box artifacts)
     if (g_progress.last_update_ms > 0) {
-        printf("\033[6A\033[J");  // Move up 6 lines and clear to end of screen
+        printf("\r");  // Return to start of line
+    } else {
+        printf("\n");  // First time, add newline
     }
     
-    // Print the progress display
-    printf("╔══════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║ CLLM Training Pipeline                            Overall: %5.1f%% ║\n", 
-           g_progress.overall_progress);
-    printf("╠══════════════════════════════════════════════════════════════════════════╣\n");
-    
-    // Phase line with training info if applicable
+    // Single-line progress display (no boxes to avoid artifacts)
     if (g_progress.current_phase == CLLM_PHASE_TRAINING && g_progress.total_epochs > 0) {
-        printf("║ Phase %d/5: %-40s Epoch %d/%d ║\n", 
+        if (g_progress.current_loss > 0) {
+            printf("Training [%s] %5.1f%% | Epoch %d/%d | %zu/%zu | Time: %s | ETA: %s | Speed: %s | Loss: %.4f",
+                   phase_bar, phase_percent,
+                   g_progress.current_epoch, g_progress.total_epochs,
+                   g_progress.phase_current, g_progress.phase_total,
+                   program_elapsed_str, phase_eta_str, speed_str, g_progress.current_loss);
+        } else {
+            printf("Training [%s] %5.1f%% | Epoch %d/%d | %zu/%zu | Time: %s | ETA: %s | Speed: %s",
+                   phase_bar, phase_percent,
+                   g_progress.current_epoch, g_progress.total_epochs,
+                   g_progress.phase_current, g_progress.phase_total,
+                   program_elapsed_str, phase_eta_str, speed_str);
+        }
+    } else {
+        printf("Phase %d/5: %s [%s] %5.1f%% | %zu/%zu | Time: %s | ETA: %s | Speed: %s",
                (int)g_progress.current_phase, g_progress.phase_name,
-               g_progress.current_epoch, g_progress.total_epochs);
-    } else {
-        printf("║ Phase %d/5: %-57s ║\n", 
-               (int)g_progress.current_phase, g_progress.phase_name);
-    }
-    
-    // Progress bar line
-    printf("║ [%s] %5.1f%% ║\n", phase_bar, phase_percent);
-    
-    // Stats line with training loss if applicable
-    if (g_progress.current_phase == CLLM_PHASE_TRAINING && g_progress.current_loss > 0) {
-        printf("║ %zu/%zu | Time: %s | ETA: %s | Speed: %s | Loss: %.4f    ║\n",
-               g_progress.phase_current, g_progress.phase_total,
-               program_elapsed_str, phase_eta_str, speed_str, g_progress.current_loss);
-    } else {
-        printf("║ %zu/%zu | Time: %s | ETA: %s | Speed: %s                    ║\n",
+               phase_bar, phase_percent,
                g_progress.phase_current, g_progress.phase_total,
                program_elapsed_str, phase_eta_str, speed_str);
     }
     
-    printf("╚══════════════════════════════════════════════════════════════════════════╝\n");
+    // Clear to end of line to remove any leftover characters
+    printf("\033[K");
     
     fflush(stdout);
 }
@@ -185,9 +181,8 @@ void cllm_global_progress_init(void) {
     
     g_initialized = 1;
     
-    // Print initial display
-    printf("\n");  // Add newline before progress display
-    display_progress();
+    // Print initial message (no display yet to avoid artifacts)
+    printf("Initializing CLLM Training Pipeline...\n");
 }
 
 // Start a new phase
@@ -298,6 +293,10 @@ void cllm_global_progress_display(void) {
 // Cleanup
 void cllm_global_progress_cleanup(void) {
     if (!g_initialized) return;
+    
+    // Print final newline to move past progress line
+    printf("\n");
+    fflush(stdout);
     
     pthread_mutex_destroy(&g_progress.lock);
     g_initialized = 0;
