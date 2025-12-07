@@ -19,6 +19,9 @@
 #include <ctype.h>
 #include <stdio.h>
 
+// External fast lookup function from cllm_tokenizer_threadsafe.c
+extern uint32_t cllm_find_token_fast(CLLMTokenizer* tokenizer, const char* token);
+
 // Special token IDs
 #define TOKEN_PAD 0
 #define TOKEN_UNK 1
@@ -83,6 +86,8 @@ CLLMTokenizer* cllm_create_tokenizer(uint32_t max_vocab_size) {
     printf("  Successfully allocated all 12 partitions\n");
     
     tokenizer->consolidated = 0;
+    tokenizer->hash_table = NULL;
+    tokenizer->hash_table_size = 0;
     
     // Add special tokens
     tokenizer->vocab[TOKEN_PAD] = strdup("<PAD>");
@@ -129,9 +134,15 @@ void cllm_free_tokenizer(CLLMTokenizer* tokenizer) {
         }
         pthread_mutex_destroy(&tokenizer->partition_locks[i]);
     }
+    // Free persistent hash table (if exists)
+    if (tokenizer->hash_table) {
+        free(tokenizer->hash_table);
+    }
+
     
     free(tokenizer);
 }
+    
 
 /**
  * Find Token in Vocabulary
@@ -218,8 +229,8 @@ uint32_t* cllm_tokenizer_encode(CLLMTokenizer* tokenizer, const char* text, uint
             *p = tolower(*p);
         }
         
-        // Find or add token
-        uint32_t token_id = cllm_find_token(tokenizer, token);
+        // Find token using fast O(1) hash lookup (falls back to linear if not consolidated)
+        uint32_t token_id = cllm_find_token_fast(tokenizer, token);
         tokens[count++] = token_id;
         
         token = strtok(NULL, " \t\n\r");

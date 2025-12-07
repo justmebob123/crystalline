@@ -217,9 +217,42 @@ void cllm_consolidate_vocabulary(CLLMTokenizer* tokenizer) {
         }
     }
     
-    free(hash_table);
-    
+    // CRITICAL: Keep hash table for O(1) lookups during tokenization
+    // DO NOT free(hash_table) - store it in tokenizer for future use
+    tokenizer->hash_table = (void*)hash_table;
+    tokenizer->hash_table_size = HASH_TABLE_SIZE;
     tokenizer->consolidated = 1;
+    
     printf("Consolidated vocabulary: %u unique tokens (hash collisions: %u)\n", 
            tokenizer->vocab_size, collisions);
+    printf("Hash table retained for O(1) token lookups during tokenization\n");
+}
+/**
+ * Fast Token Lookup Using Hash Table (O(1) average case)
+ * 
+ * Thread-safe read-only operation after consolidation.
+ * Uses the persistent hash table built during consolidation.
+ */
+uint32_t cllm_find_token_fast(CLLMTokenizer* tokenizer, const char* token) {
+    if (!tokenizer || !token) return TOKEN_UNK;
+    
+    // If not consolidated yet, fall back to linear search
+    if (!tokenizer->consolidated || !tokenizer->hash_table) {
+        return cllm_find_token(tokenizer, token);
+    }
+    
+    TokenHashEntry* hash_table = (TokenHashEntry*)tokenizer->hash_table;
+    uint32_t hash = hash_token_for_lookup(token);
+    uint32_t original_hash = hash;
+    
+    // Linear probing to find token
+    while (hash_table[hash].token != NULL) {
+        if (strcmp(hash_table[hash].token, token) == 0) {
+            return hash_table[hash].vocab_idx;
+        }
+        hash = (hash + 1) % tokenizer->hash_table_size;
+        if (hash == original_hash) break;  // Wrapped around, not found
+    }
+    
+    return TOKEN_UNK;
 }

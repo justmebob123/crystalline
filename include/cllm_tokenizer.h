@@ -30,6 +30,10 @@ typedef struct {
     
     // Global consolidated vocabulary (built after parallel phase)
     int consolidated;                      // Flag: has vocab been consolidated?
+    
+    // Persistent hash table for O(1) token lookup (built during consolidation)
+    void* hash_table;                      // TokenHashEntry* (opaque to avoid exposing internals)
+    uint32_t hash_table_size;              // Size of hash table
 } CLLMTokenizer;
 
 /**
@@ -43,9 +47,17 @@ CLLMTokenizer* cllm_create_tokenizer(uint32_t max_vocab_size);
 void cllm_free_tokenizer(CLLMTokenizer* tokenizer);
 
 /**
- * Find Token in Vocabulary
+ * Find Token in Vocabulary (Linear Search - O(n))
+ * Use cllm_find_token_fast() for O(1) lookups after consolidation
  */
 uint32_t cllm_find_token(CLLMTokenizer* tokenizer, const char* token);
+
+/**
+ * Fast Token Lookup Using Hash Table (O(1) average case)
+ * Thread-safe read-only operation after vocabulary consolidation.
+ * Falls back to linear search if vocabulary not yet consolidated.
+ */
+uint32_t cllm_find_token_fast(CLLMTokenizer* tokenizer, const char* token);
 
 /**
  * Add Token to Vocabulary (Thread-Safe with 12-Fold Symmetry)
