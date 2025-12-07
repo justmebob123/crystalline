@@ -133,30 +133,43 @@ Redesign model management to enable concurrent operations while keeping Models T
 **Blocker:** Crawler tab rewrite removed major features
 **Next Action:** Restore missing crawler tab functionality
 
-## ⚠️ CRITICAL ISSUE DISCOVERED
-**Crawler Tab Analysis Complete - Major Functionality Missing**
+## ⚠️ CRITICAL ISSUE DISCOVERED - CRAWLER TAB
+**Analysis Complete - 309 Lines of Functionality Missing (32% reduction)**
 
-The Crystalline UI rewrite of the crawler tab **removed significant functionality**:
-
-### Missing Features:
-1. ❌ Prime Configuration Panel (frequency, selection, delay min/max)
-2. ❌ SQLite URL Manager Integration (persistent storage)
-3. ❌ URL Pattern Selection (href, onclick, data-attr, meta-refresh)
-4. ❌ Activity Log (10-line scrolling log)
-5. ❌ Save/Load Config buttons
-6. ❌ 3-column layout (reduced to 2-column)
-7. ❌ Input validation with visual feedback
-8. ❌ URL statistics (total, pending, crawled, blocked)
+### Original Implementation (commit 7f6e854^):
+- **953 lines** with full feature set
+- 3-column layout
+- 10 major feature areas
+- Complete SQLite integration
+- Prime-based randomization
+- Content filtering
+- Advanced options
 
 ### Current Implementation:
-- Simple in-memory URL array (no persistence)
-- Basic start/stop/clear buttons
-- No prime-based randomization
-- No configuration persistence
+- **644 lines** - simplified version
+- 2-column layout
+- Basic features only
+- Missing 8 out of 10 feature areas
 
-**Impact:** HIGH - Core crawler features removed
-**Documentation:** See CRAWLER_TAB_MISSING_FUNCTIONALITY.md
-**Action Required:** Restore missing functionality immediately
+### Missing Features (Detailed):
+1. ❌ Prime Configuration Panel (5 inputs + toggle + validation)
+2. ❌ URL Pattern Selection (4 checkboxes)
+3. ❌ Content Filtering (4 radio buttons for extraction modes)
+4. ❌ Advanced Options Panel (collapsible with 4 inputs)
+5. ❌ Activity Log (10-line scrolling log)
+6. ❌ Save/Load Config buttons
+7. ❌ Reset URLs button
+8. ❌ Model Selector dropdown (proper implementation)
+9. ❌ 3-column layout
+10. ❌ Input validation indicators (OK/X)
+
+### Documentation:
+- CRAWLER_TAB_MISSING_FUNCTIONALITY.md - Initial analysis
+- CRAWLER_TAB_RESTORATION_PLAN.md - Detailed restoration plan
+
+**Impact:** CRITICAL - 32% of functionality removed
+**Action Required:** Full restoration using Approach 3 (Hybrid)
+**Estimated Time:** 3-4 hours
 
 ## Phase 3 Summary - COMPLETE! 🎉
 All phases of the model management redesign are now complete:
