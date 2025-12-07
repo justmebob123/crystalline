@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/prime_float_math.h"
-#include "../include/cllm_crystalline_attention.h"
+#include "../include/cllm_attention.h"
 #include "../include/prime_float_math.h"
 
 #define PI 3.14159265358979323846
