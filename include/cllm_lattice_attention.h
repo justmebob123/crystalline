@@ -46,9 +46,9 @@ extern "C" {
 int cllm_attention_kissing_spheres(
     CLLMModel* model,
     uint32_t token_id,
-    const float* query,
-    float* output,
-    float* attention_weights  // Optional, can be NULL
+    const double* query,
+    double* output,
+    double* attention_weights  // Optional, can be NULL
 );
 
 /**
@@ -69,8 +69,8 @@ int cllm_attention_kissing_spheres_batch(
     CLLMModel* model,
     const uint32_t* token_ids,
     uint32_t batch_size,
-    const float* queries,
-    float* outputs
+    const double* queries,
+    double* outputs
 );
 
 /**
@@ -88,7 +88,7 @@ int cllm_attention_kissing_spheres_batch(
 int cllm_compute_kissing_spheres_weights(
     CLLMModel* model,
     uint32_t token_id,
-    float* weights
+    double* weights
 );
 
 /**
@@ -113,7 +113,7 @@ int cllm_attention_hybrid_kissing_spheres(
     uint32_t token_id,
     const double* input,
     double* output,
-    float ks_weight
+    double ks_weight
 );
 
 /**
@@ -128,9 +128,9 @@ int cllm_attention_hybrid_kissing_spheres(
  */
 int cllm_kissing_spheres_attention_stats(
     CLLMModel* model,
-    float* avg_weight,
-    float* max_weight,
-    float* min_weight
+    double* avg_weight,
+    double* max_weight,
+    double* min_weight
 );
 
 #ifdef __cplusplus

@@ -23,25 +23,25 @@ void cllm_feedforward_free(FeedForwardLayer* layer);
  * @param x Input value
  * @return GELU(x)
  */
-static float gelu(float x) {
-    const float sqrt_2_over_pi = 0.7978845608f; // sqrt(2/π)
-    const float coeff = 0.044715f;
+static double gelu(double x) {
+    const double sqrt_2_over_pi = 0.7978845608; // sqrt(2/π)
+    const double coeff = 0.044715;
     
-    float x_cubed = x * x * x;
-    float inner = sqrt_2_over_pi * (x + coeff * x_cubed);
+    double x_cubed = x * x * x;
+    double inner = sqrt_2_over_pi * (x + coeff * x_cubed);
     
     // tanh approximation
-    float tanh_val;
-    if (inner > 5.0f) {
-        tanh_val = 1.0f;
-    } else if (inner < -5.0f) {
-        tanh_val = -1.0f;
+    double tanh_val;
+    if (inner > 5.0) {
+        tanh_val = 1.0;
+    } else if (inner < -5.0) {
+        tanh_val = -1.0;
     } else {
-        float exp_2x = prime_exp(2.0f * inner);
-        tanh_val = (exp_2x - 1.0f) / (exp_2x + 1.0f);
+        double exp_2x = prime_exp(2.0 * inner);
+        tanh_val = (exp_2x - 1.0) / (exp_2x + 1.0);
     }
     
-    return 0.5f * x * (1.0f + tanh_val);
+    return 0.5 * x * (1.0 + tanh_val);
 }
 
 /**
@@ -50,7 +50,7 @@ static float gelu(float x) {
  * @param x Input/output array
  * @param size Array size
  */
-void cllm_activation_gelu(float* x, int size) {
+void cllm_activation_gelu(double* x, int size) {
     if (!x || size <= 0) return;
     
     for (int i = 0; i < size; i++) {
@@ -64,12 +64,12 @@ void cllm_activation_gelu(float* x, int size) {
  * @param x Input/output array
  * @param size Array size
  */
-void cllm_activation_relu(float* x, int size) {
+void cllm_activation_relu(double* x, int size) {
     if (!x || size <= 0) return;
     
     for (int i = 0; i < size; i++) {
-        if (x[i] < 0.0f) {
-            x[i] = 0.0f;
+        if (x[i] < 0.0) {
+            x[i] = 0.0;
         }
     }
 }
@@ -91,7 +91,7 @@ void cllm_activation_relu(float* x, int size) {
  * @param layer Feed-forward layer parameters
  * @param data Input/output vector [input_dim]
  */
-void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
+void cllm_feedforward_inplace(FeedForwardLayer* layer, double* data) {
     if (!layer || !data) return;
     
     if (layer->input_dim != layer->output_dim) {
@@ -99,10 +99,10 @@ void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
         return;
     }
     
-    float* temp = (float*)malloc(layer->input_dim * sizeof(float));
+    double* temp = (double*)malloc(layer->input_dim * sizeof(double));
     if (!temp) return;
     
-    memcpy(temp, data, layer->input_dim * sizeof(float));
+    memcpy(temp, data, layer->input_dim * sizeof(double));
     // TODO: Implement proper feedforward
     
     free(temp);
@@ -116,8 +116,8 @@ void cllm_feedforward_inplace(FeedForwardLayer* layer, float* data) {
  * @param output Output matrix [batch_size x output_dim]
  * @param batch_size Number of vectors
  */
-void cllm_feedforward_batch(FeedForwardLayer* layer, float* input, 
-                            float* output, int batch_size) {
+void cllm_feedforward_batch(FeedForwardLayer* layer, double* input, 
+                            double* output, int batch_size) {
     if (!layer || !input || !output || batch_size <= 0) return;
     
     // Suppress unused variable warnings - these will be used when batch processing is implemented
@@ -162,16 +162,16 @@ void cllm_feedforward_init(FeedForwardLayer* layer, uint32_t input_dim,
     
     // Initialize weights to small random values
     for (size_t i = 0; i < w1_size; i++) {
-        layer->w1_lattice[i] = ((float)rand() / RAND_MAX) * 0.02f - 0.01f;
+        layer->w1_lattice[i] = ((double)rand() / RAND_MAX) * 0.02 - 0.01;
     }
     for (size_t i = 0; i < w2_size; i++) {
-        layer->w2_lattice[i] = ((float)rand() / RAND_MAX) * 0.02f - 0.01f;
+        layer->w2_lattice[i] = ((double)rand() / RAND_MAX) * 0.02 - 0.01;
     }
     for (size_t i = 0; i < hidden_dim; i++) {
-        layer->bias1[i] = 0.0f;
+        layer->bias1[i] = 0.0;
     }
     for (size_t i = 0; i < output_dim; i++) {
-        layer->bias2[i] = 0.0f;
+        layer->bias2[i] = 0.0;
     }
 }
 

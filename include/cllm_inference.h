@@ -118,12 +118,12 @@ void cllm_layer_norm_free(CLLMLayerNorm* ln);
 void cllm_layer_norm_stats(float* input, uint32_t dim, float* mean, float* variance);
 
 /* Lattice embedding functions */
-void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius);
-void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, float* coords);
+void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius);
+void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, double* coords);
 void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime, uint32_t embedding_dim, double* output);
 void cllm_generate_lattice_embeddings(CLLMModel* model);
-void cllm_generate_lattice_transform(float* transform, int dim);
-float cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1, uint32_t token2_id, uint64_t prime2);
+void cllm_generate_lattice_transform(double* transform, int dim);
+double cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1, uint32_t token2_id, uint64_t prime2);
 void cllm_find_lattice_neighbors(uint32_t token_id, uint64_t prime, uint32_t* all_tokens, uint64_t* all_primes, uint32_t num_tokens, int k, uint32_t* neighbors);
 
 /* Positional encoding functions */

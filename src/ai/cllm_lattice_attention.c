@@ -19,11 +19,11 @@
 /**
  * Softmax function for normalizing attention weights
  */
-static void softmax(float* weights, int size) {
+static void softmax(double* weights, int size) {
     if (!weights || size <= 0) return;
     
     // Find max for numerical stability
-    float max_val = weights[0];
+    double max_val = weights[0];
     for (int i = 1; i < size; i++) {
         if (weights[i] > max_val) {
             max_val = weights[i];
@@ -31,14 +31,14 @@ static void softmax(float* weights, int size) {
     }
     
     // Compute exp(x - max) and sum
-    float sum = 0.0f;
+    double sum = 0.0;
     for (int i = 0; i < size; i++) {
         weights[i] = prime_expf(weights[i] - max_val);
         sum += weights[i];
     }
     
     // Normalize
-    if (sum > 0.0f) {
+    if (sum > 0.0) {
         for (int i = 0; i < size; i++) {
             weights[i] /= sum;
         }
@@ -51,7 +51,7 @@ static void softmax(float* weights, int size) {
 int cllm_compute_kissing_spheres_weights(
     CLLMModel* model,
     uint32_t token_id,
-    float* weights
+    double* weights
 ) {
     if (!model || !weights) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_compute_kissing_spheres_weights\n");
@@ -77,7 +77,7 @@ int cllm_compute_kissing_spheres_weights(
         uint32_t neighbor_id = point->neighbors[i];
         
         if (neighbor_id >= model->vocab_size) {
-            weights[i] = 0.0f;
+            weights[i] = 0.0;
             continue;
         }
         
@@ -96,12 +96,12 @@ int cllm_compute_kissing_spheres_weights(
         );
         
         // Convert to attention weight (positive values)
-        weights[i] = (float)prime_fabsf((float)interaction);
+        weights[i] = (double)prime_fabsf((double)interaction);
     }
     
     // Fill remaining weights with zeros if fewer than 12 neighbors
     for (uint32_t i = point->num_neighbors; i < 12; i++) {
-        weights[i] = 0.0f;
+        weights[i] = 0.0;
     }
     
     // Normalize using softmax
@@ -116,9 +116,9 @@ int cllm_compute_kissing_spheres_weights(
 int cllm_attention_kissing_spheres(
     CLLMModel* model,
     uint32_t token_id,
-    const float* query,
-    float* output,
-    float* attention_weights
+    const double* query,
+    double* output,
+    double* attention_weights
 ) {
     if (!model || !query || !output) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_attention_kissing_spheres\n");
@@ -139,18 +139,18 @@ int cllm_attention_kissing_spheres(
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Compute attention weights
-    float weights[12];
+    double weights[12];
     if (cllm_compute_kissing_spheres_weights(model, token_id, weights) != 0) {
         return -1;
     }
     
     // Copy weights to output if requested
     if (attention_weights) {
-        memcpy(attention_weights, weights, 12 * sizeof(float));
+        memcpy(attention_weights, weights, 12 * sizeof(double));
     }
     
     // Initialize output to zero
-    memset(output, 0, embed_dim * sizeof(float));
+    memset(output, 0, embed_dim * sizeof(double));
     
     // Accumulate weighted neighbor embeddings
     for (uint32_t i = 0; i < point->num_neighbors && i < 12; i++) {
@@ -158,15 +158,15 @@ int cllm_attention_kissing_spheres(
         
         if (neighbor_id >= model->vocab_size) continue;
         
-        float weight = weights[i];
+        double weight = weights[i];
         double* neighbor_embedding_double = &model->embeddings.embeddings[
             neighbor_id * embed_dim
         ];
         
-        // Convert to float for processing
-        float neighbor_embedding[embed_dim];
+        // Convert to double for processing
+        double neighbor_embedding[embed_dim];
         for (uint32_t d = 0; d < embed_dim; d++) {
-            neighbor_embedding[d] = (float)neighbor_embedding_double[d];
+            neighbor_embedding[d] = (double)neighbor_embedding_double[d];
         }
         
         // Add weighted neighbor contribution
@@ -185,8 +185,8 @@ int cllm_attention_kissing_spheres_batch(
     CLLMModel* model,
     const uint32_t* token_ids,
     uint32_t batch_size,
-    const float* queries,
-    float* outputs
+    const double* queries,
+    double* outputs
 ) {
     if (!model || !token_ids || !queries || !outputs) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_attention_kissing_spheres_batch\n");
@@ -198,8 +198,8 @@ int cllm_attention_kissing_spheres_batch(
     // Process each token in the batch
     for (uint32_t b = 0; b < batch_size; b++) {
         uint32_t token_id = token_ids[b];
-        const float* query = &queries[b * embed_dim];
-        float* output = &outputs[b * embed_dim];
+        const double* query = &queries[b * embed_dim];
+        double* output = &outputs[b * embed_dim];
         
         if (cllm_attention_kissing_spheres(model, token_id, query, output, NULL) != 0) {
             fprintf(stderr, "ERROR: Failed to compute attention for token %u in batch\n", token_id);
@@ -219,14 +219,14 @@ int cllm_attention_hybrid_kissing_spheres(
     uint32_t token_id,
     const double* input,
     double* output,
-    float ks_weight
+    double ks_weight
 ) {
     if (!layer || !model || !input || !output) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_attention_hybrid_kissing_spheres\n");
         return -1;
     }
     
-    if (ks_weight < 0.0f || ks_weight > 1.0f) {
+    if (ks_weight < 0.0 || ks_weight > 1.0) {
         fprintf(stderr, "ERROR: ks_weight must be in range [0.0, 1.0]\n");
         return -1;
     }
@@ -243,15 +243,15 @@ int cllm_attention_hybrid_kissing_spheres(
     cllm_attention_forward(layer, (double*)input, std_output, NULL, NULL, 1);
     
     // Compute kissing spheres attention
-    float* ks_output = (float*)calloc(embed_dim, sizeof(float));
+    double* ks_output = (double*)calloc(embed_dim, sizeof(double));
     if (!ks_output) {
         fprintf(stderr, "ERROR: Failed to allocate memory for kissing spheres attention output\n");
         free(std_output);
         return -1;
     }
     
-    // Convert input to float for kissing spheres attention
-    float* query_float = (float*)malloc(embed_dim * sizeof(float));
+    // Convert input to double for kissing spheres attention
+    double* query_float = (double*)malloc(embed_dim * sizeof(double));
     if (!query_float) {
         fprintf(stderr, "ERROR: Failed to allocate memory for query conversion\n");
         free(std_output);
@@ -260,7 +260,7 @@ int cllm_attention_hybrid_kissing_spheres(
     }
     
     for (uint32_t i = 0; i < embed_dim; i++) {
-        query_float[i] = (float)input[i];
+        query_float[i] = (double)input[i];
     }
     
     if (cllm_attention_kissing_spheres(model, token_id, query_float, ks_output, NULL) != 0) {
@@ -271,7 +271,7 @@ int cllm_attention_hybrid_kissing_spheres(
     }
     
     // Combine outputs: output = (1 - ks_weight) * std_output + ks_weight * ks_output
-    float std_weight = 1.0f - ks_weight;
+    double std_weight = 1.0 - ks_weight;
     for (uint32_t i = 0; i < embed_dim; i++) {
         output[i] = std_weight * std_output[i] + ks_weight * (double)ks_output[i];
     }
@@ -288,9 +288,9 @@ int cllm_attention_hybrid_kissing_spheres(
  */
 int cllm_kissing_spheres_attention_stats(
     CLLMModel* model,
-    float* avg_weight,
-    float* max_weight,
-    float* min_weight
+    double* avg_weight,
+    double* max_weight,
+    double* min_weight
 ) {
     if (!model || !avg_weight || !max_weight || !min_weight) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_kissing_spheres_attention_stats\n");
@@ -302,9 +302,9 @@ int cllm_kissing_spheres_attention_stats(
         return -1;
     }
     
-    float sum = 0.0f;
-    float max_val = -1.0f;
-    float min_val = 2.0f;
+    double sum = 0.0;
+    double max_val = -1.0;
+    double min_val = 2.0;
     uint32_t count = 0;
     
     // Sample weights from first 100 tokens (or all if fewer)
@@ -312,7 +312,7 @@ int cllm_kissing_spheres_attention_stats(
                            model->num_lattice_points : 100;
     
     for (uint32_t i = 0; i < sample_size; i++) {
-        float weights[12];
+        double weights[12];
         if (cllm_compute_kissing_spheres_weights(model, i, weights) != 0) {
             continue;
         }
@@ -325,7 +325,7 @@ int cllm_kissing_spheres_attention_stats(
         }
     }
     
-    *avg_weight = (count > 0) ? sum / count : 0.0f;
+    *avg_weight = (count > 0) ? sum / count : 0.0;
     *max_weight = max_val;
     *min_weight = min_val;
     

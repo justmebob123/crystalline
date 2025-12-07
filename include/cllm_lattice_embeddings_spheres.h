@@ -43,7 +43,7 @@ extern "C" {
 int cllm_embedding_refine_with_neighbors(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength
+    double influence_strength
 );
 
 /**
@@ -60,7 +60,7 @@ int cllm_embedding_refine_with_neighbors(
  */
 int cllm_embeddings_refine_all_with_neighbors(
     CLLMModel* model,
-    float influence_strength
+    double influence_strength
 );
 
 /**
@@ -79,8 +79,8 @@ int cllm_embeddings_refine_all_with_neighbors(
 int cllm_embedding_compute_with_neighbors(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength,
-    float* output
+    double influence_strength,
+    double* output
 );
 
 /**
@@ -97,7 +97,7 @@ int cllm_embedding_compute_with_neighbors(
  */
 int cllm_embeddings_init_with_neighbors(
     CLLMModel* model,
-    float influence_strength
+    double influence_strength
 );
 
 /**
@@ -116,8 +116,8 @@ int cllm_embeddings_init_with_neighbors(
 int cllm_embedding_compute_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float* influence_vector,
-    float* weights
+    double* influence_vector,
+    double* weights
 );
 
 /**
@@ -134,9 +134,9 @@ int cllm_embedding_compute_neighbor_influence(
  */
 int cllm_embedding_neighbor_influence_stats(
     CLLMModel* model,
-    float* avg_influence,
-    float* max_influence,
-    float* min_influence
+    double* avg_influence,
+    double* max_influence,
+    double* min_influence
 );
 
 /**
@@ -155,7 +155,7 @@ int cllm_embedding_neighbor_influence_stats(
 int cllm_embeddings_iterative_refinement(
     CLLMModel* model,
     int num_iterations,
-    float influence_strength
+    double influence_strength
 );
 
 #ifdef __cplusplus

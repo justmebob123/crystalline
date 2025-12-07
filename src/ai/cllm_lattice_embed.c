@@ -65,7 +65,7 @@ static uint64_t get_nth_prime(uint32_t n) {
  * @param angle Output: spiral angle in radians
  * @param radius Output: radial distance from center
  */
-void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius) {
+void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius) {
     if (!angle || !radius) return;
     
     // Find prime index
@@ -77,16 +77,16 @@ void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius) {
     }
     
     // Ulam spiral: radius grows with square root of index
-    *radius = prime_sqrt((float)prime_index);
+    *radius = prime_sqrt((double)prime_index);
     
     // Angle based on golden angle for optimal packing
     // Golden angle = 2π / φ² ≈ 137.5°
-    float golden_angle = 2.0f * PI / (PHI * PHI);
-    *angle = golden_angle * (float)prime_index;
+    double golden_angle = 2.0 * PI / (PHI * PHI);
+    *angle = golden_angle * (double)prime_index;
     
     // Normalize angle to [0, 2π)
-    while (*angle >= 2.0f * PI) {
-        *angle -= 2.0f * PI;
+    while (*angle >= 2.0 * PI) {
+        *angle -= 2.0 * PI;
     }
 }
 
@@ -97,7 +97,7 @@ void cllm_compute_spiral_position(uint64_t prime, float* angle, float* radius) {
  * @param prime Associated prime number
  * @param coords Output: 3D coordinates [x, y, z]
  */
-void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, float* coords) {
+void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, double* coords) {
     if (!coords) return;
     
     // Use clock-based mapping instead of spiral
@@ -131,7 +131,7 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
     if (!output || embedding_dim == 0) return;
     
     // Get lattice coordinates
-    float coords[3];
+    double coords[3];
     cllm_map_token_to_lattice(token_id, prime, coords);
     
     // Get symmetry group
@@ -140,28 +140,28 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
     // Generate embedding using Fourier features
     // This creates a smooth, continuous embedding space
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        float freq = (float)(i + 1);
+        double freq = (double)(i + 1);
         
         // Combine spatial coordinates with different frequencies
-        float spatial = prime_sin(freq * coords[0] / 10.0f) * 0.3f +
-                       prime_cos(freq * coords[1] / 10.0f) * 0.3f +
-                       prime_sin(freq * coords[2] / 10.0f) * 0.3f;
+        double spatial = prime_sin(freq * coords[0] / 10.0) * 0.3 +
+                       prime_cos(freq * coords[1] / 10.0) * 0.3 +
+                       prime_sin(freq * coords[2] / 10.0) * 0.3;
         
         // Add symmetry-based component
-        float symmetry_phase = 2.0f * PI * (float)symmetry / (float)SYMMETRY_ORDER;
-        float symmetry_component = prime_cos(freq * symmetry_phase) * 0.1f;
+        double symmetry_phase = 2.0 * PI * (double)symmetry / (double)SYMMETRY_ORDER;
+        double symmetry_component = prime_cos(freq * symmetry_phase) * 0.1;
         
         output[i] = spatial + symmetry_component;
     }
     
     // Normalize to unit length
-    float norm = 0.0f;
+    double norm = 0.0;
     for (uint32_t i = 0; i < embedding_dim; i++) {
         norm += output[i] * output[i];
     }
     norm = prime_sqrt(norm);
     
-    if (norm > 1e-8f) {
+    if (norm > 1e-8) {
         for (uint32_t i = 0; i < embedding_dim; i++) {
             output[i] /= norm;
         }
@@ -194,7 +194,7 @@ void cllm_generate_lattice_embeddings(CLLMModel* model) {
             model->tokens[token_id].prime_encoding = prime;
             
             // Store lattice coordinates
-            float coords[3];
+            double coords[3];
             cllm_map_token_to_lattice(token_id, prime, coords);
             model->tokens[token_id].lattice_coords[0] = coords[0];
             model->tokens[token_id].lattice_coords[1] = coords[1];
@@ -221,27 +221,27 @@ void cllm_generate_lattice_embeddings(CLLMModel* model) {
  * @param transform Output transformation matrix [dim x dim]
  * @param dim Embedding dimension
  */
-void cllm_generate_lattice_transform(float* transform, int dim) {
+void cllm_generate_lattice_transform(double* transform, int dim) {
     if (!transform || dim <= 0) return;
     
     // Initialize to identity
-    memset(transform, 0, dim * dim * sizeof(float));
+    memset(transform, 0, dim * dim * sizeof(double));
     for (int i = 0; i < dim; i++) {
-        transform[i * dim + i] = 1.0f;
+        transform[i * dim + i] = 1.0;
     }
     
     // Apply golden ratio-based rotations
     // This creates a transformation that preserves lattice structure
     for (int i = 0; i < dim - 1; i++) {
-        float angle = 2.0f * PI * PHI * (float)i / (float)dim;
-        float cos_a = prime_cos(angle);
-        float sin_a = prime_sin(angle);
+        double angle = 2.0 * PI * PHI * (double)i / (double)dim;
+        double cos_a = prime_cos(angle);
+        double sin_a = prime_sin(angle);
         
         // Apply Givens rotation in plane (i, i+1)
-        float temp_ii = transform[i * dim + i];
-        float temp_i_ip1 = transform[i * dim + (i + 1)];
-        float temp_ip1_i = transform[(i + 1) * dim + i];
-        float temp_ip1_ip1 = transform[(i + 1) * dim + (i + 1)];
+        double temp_ii = transform[i * dim + i];
+        double temp_i_ip1 = transform[i * dim + (i + 1)];
+        double temp_ip1_i = transform[(i + 1) * dim + i];
+        double temp_ip1_ip1 = transform[(i + 1) * dim + (i + 1)];
         
         transform[i * dim + i] = cos_a * temp_ii - sin_a * temp_ip1_i;
         transform[i * dim + (i + 1)] = cos_a * temp_i_ip1 - sin_a * temp_ip1_ip1;
@@ -259,16 +259,16 @@ void cllm_generate_lattice_transform(float* transform, int dim) {
  * @param prime2 Second token's prime
  * @return Euclidean distance in lattice space
  */
-float cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1,
+double cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1,
                            uint32_t token2_id, uint64_t prime2) {
-    float coords1[3], coords2[3];
+    double coords1[3], coords2[3];
     
     cllm_map_token_to_lattice(token1_id, prime1, coords1);
     cllm_map_token_to_lattice(token2_id, prime2, coords2);
     
-    float dx = coords1[0] - coords2[0];
-    float dy = coords1[1] - coords2[1];
-    float dz = coords1[2] - coords2[2];
+    double dx = coords1[0] - coords2[0];
+    double dy = coords1[1] - coords2[1];
+    double dz = coords1[2] - coords2[2];
     
     return prime_sqrt(dx * dx + dy * dy + dz * dz);
 }
@@ -290,13 +290,13 @@ void cllm_find_lattice_neighbors(uint32_t token_id, uint64_t prime,
     if (!all_tokens || !all_primes || !neighbors || k <= 0) return;
     
     // Allocate distance array
-    float* distances = (float*)malloc(num_tokens * sizeof(float));
+    double* distances = (double*)malloc(num_tokens * sizeof(double));
     if (!distances) return;
     
     // Compute distances to all tokens
     for (uint32_t i = 0; i < num_tokens; i++) {
         if (all_tokens[i] == token_id) {
-            distances[i] = 1e9f;  // Exclude self
+            distances[i] = 1e9;  // Exclude self
         } else {
             distances[i] = cllm_lattice_token_distance(token_id, prime,
                                                 all_tokens[i], all_primes[i]);
@@ -306,7 +306,7 @@ void cllm_find_lattice_neighbors(uint32_t token_id, uint64_t prime,
     // Find k smallest distances (simple selection)
     for (int i = 0; i < k && i < (int)num_tokens; i++) {
         int min_idx = 0;
-        float min_dist = distances[0];
+        double min_dist = distances[0];
         
         for (uint32_t j = 1; j < num_tokens; j++) {
             if (distances[j] < min_dist) {
@@ -316,7 +316,7 @@ void cllm_find_lattice_neighbors(uint32_t token_id, uint64_t prime,
         }
         
         neighbors[i] = all_tokens[min_idx];
-        distances[min_idx] = 1e9f;  // Mark as used
+        distances[min_idx] = 1e9;  // Mark as used
     }
     
     free(distances);

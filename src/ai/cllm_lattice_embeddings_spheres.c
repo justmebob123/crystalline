@@ -22,7 +22,7 @@
 static int compute_neighbor_weights(
     CLLMModel* model,
     uint32_t token_id,
-    float* weights
+    double* weights
 ) {
     if (!model || !weights) return -1;
     
@@ -39,7 +39,7 @@ static int compute_neighbor_weights(
         uint32_t neighbor_id = point->neighbors[i];
         
         if (neighbor_id >= model->vocab_size) {
-            weights[i] = 0.0f;
+            weights[i] = 0.0;
             continue;
         }
         
@@ -58,19 +58,19 @@ static int compute_neighbor_weights(
         );
         
         // Use absolute value and normalize
-        weights[i] = (float)prime_fabsf((float)interaction);
+        weights[i] = (double)prime_fabsf((double)interaction);
         sum += weights[i];
     }
     
     // Fill remaining weights
     for (uint32_t i = point->num_neighbors; i < 12; i++) {
-        weights[i] = 0.0f;
+        weights[i] = 0.0;
     }
     
     // Normalize to sum to 1.0
     if (sum > 0.0) {
         for (int i = 0; i < 12; i++) {
-            weights[i] /= (float)sum;
+            weights[i] /= (double)sum;
         }
     }
     
@@ -83,8 +83,8 @@ static int compute_neighbor_weights(
 int cllm_embedding_compute_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float* influence_vector,
-    float* weights
+    double* influence_vector,
+    double* weights
 ) {
     if (!model || !influence_vector) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_embedding_compute_neighbor_influence\n");
@@ -105,18 +105,18 @@ int cllm_embedding_compute_neighbor_influence(
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Compute weights
-    float neighbor_weights[12];
+    double neighbor_weights[12];
     if (compute_neighbor_weights(model, token_id, neighbor_weights) != 0) {
         return -1;
     }
     
     // Copy weights if requested
     if (weights) {
-        memcpy(weights, neighbor_weights, 12 * sizeof(float));
+        memcpy(weights, neighbor_weights, 12 * sizeof(double));
     }
     
     // Initialize influence vector to zero
-    memset(influence_vector, 0, embed_dim * sizeof(float));
+    memset(influence_vector, 0, embed_dim * sizeof(double));
     
     // Accumulate weighted neighbor embeddings
     for (uint32_t i = 0; i < point->num_neighbors && i < 12; i++) {
@@ -124,14 +124,14 @@ int cllm_embedding_compute_neighbor_influence(
         
         if (neighbor_id >= model->vocab_size) continue;
         
-        float weight = neighbor_weights[i];
+        double weight = neighbor_weights[i];
         double* neighbor_embedding = &model->embeddings.embeddings[
             neighbor_id * embed_dim
         ];
         
         // Add weighted contribution
         for (uint32_t d = 0; d < embed_dim; d++) {
-            influence_vector[d] += weight * (float)neighbor_embedding[d];
+            influence_vector[d] += weight * (double)neighbor_embedding[d];
         }
     }
     
@@ -144,15 +144,15 @@ int cllm_embedding_compute_neighbor_influence(
 int cllm_embedding_compute_with_neighbors(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength,
-    float* output
+    double influence_strength,
+    double* output
 ) {
     if (!model || !output) {
         fprintf(stderr, "ERROR: Invalid parameters to cllm_embedding_compute_with_neighbors\n");
         return -1;
     }
     
-    if (influence_strength < 0.0f || influence_strength > 1.0f) {
+    if (influence_strength < 0.0 || influence_strength > 1.0) {
         fprintf(stderr, "ERROR: influence_strength must be in range [0.0, 1.0]\n");
         return -1;
     }
@@ -170,7 +170,7 @@ int cllm_embedding_compute_with_neighbors(
     ];
     
     // Compute neighbor influence
-    float* influence_vector = (float*)malloc(embed_dim * sizeof(float));
+    double* influence_vector = (double*)malloc(embed_dim * sizeof(double));
     if (!influence_vector) {
         fprintf(stderr, "ERROR: Failed to allocate influence vector\n");
         return -1;
@@ -182,9 +182,9 @@ int cllm_embedding_compute_with_neighbors(
     }
     
     // Combine: output = (1 - strength) * original + strength * influence
-    float original_weight = 1.0f - influence_strength;
+    double original_weight = 1.0 - influence_strength;
     for (uint32_t d = 0; d < embed_dim; d++) {
-        output[d] = original_weight * (float)original_embedding[d] + 
+        output[d] = original_weight * (double)original_embedding[d] + 
                     influence_strength * influence_vector[d];
     }
     
@@ -198,7 +198,7 @@ int cllm_embedding_compute_with_neighbors(
 int cllm_embedding_refine_with_neighbors(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) {
         fprintf(stderr, "ERROR: Invalid model\n");
@@ -213,7 +213,7 @@ int cllm_embedding_refine_with_neighbors(
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Compute refined embedding
-    float* refined_embedding = (float*)malloc(embed_dim * sizeof(float));
+    double* refined_embedding = (double*)malloc(embed_dim * sizeof(double));
     if (!refined_embedding) {
         fprintf(stderr, "ERROR: Failed to allocate refined embedding\n");
         return -1;
@@ -240,7 +240,7 @@ int cllm_embedding_refine_with_neighbors(
  */
 int cllm_embeddings_refine_all_with_neighbors(
     CLLMModel* model,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) {
         fprintf(stderr, "ERROR: Invalid model\n");
@@ -252,13 +252,13 @@ int cllm_embeddings_refine_all_with_neighbors(
         return -1;
     }
     
-    printf("Refining all embeddings with neighbor influence (strength=%.2f)...\n", 
+    printf("Refining all embeddings with neighbor influence (strength=%.2.0)...\n", 
            influence_strength);
     
     // Create temporary buffer for all refined embeddings
     uint32_t embed_dim = model->embeddings.embedding_dim;
     size_t total_size = model->num_lattice_points * embed_dim;
-    float* refined_embeddings = (float*)malloc(total_size * sizeof(float));
+    double* refined_embeddings = (double*)malloc(total_size * sizeof(double));
     if (!refined_embeddings) {
         fprintf(stderr, "ERROR: Failed to allocate refined embeddings buffer\n");
         return -1;
@@ -266,7 +266,7 @@ int cllm_embeddings_refine_all_with_neighbors(
     
     // Compute all refined embeddings
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
-        float* output = &refined_embeddings[i * embed_dim];
+        double* output = &refined_embeddings[i * embed_dim];
         if (cllm_embedding_compute_with_neighbors(model, i, influence_strength, output) != 0) {
             fprintf(stderr, "ERROR: Failed to refine embedding for token %u\n", i);
             free(refined_embeddings);
@@ -277,7 +277,7 @@ int cllm_embeddings_refine_all_with_neighbors(
     // Update all embeddings at once
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
         double* embedding = &model->embeddings.embeddings[i * embed_dim];
-        float* refined = &refined_embeddings[i * embed_dim];
+        double* refined = &refined_embeddings[i * embed_dim];
         for (uint32_t d = 0; d < embed_dim; d++) {
             embedding[d] = (double)refined[d];
         }
@@ -293,7 +293,7 @@ int cllm_embeddings_refine_all_with_neighbors(
  */
 int cllm_embeddings_init_with_neighbors(
     CLLMModel* model,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) {
         fprintf(stderr, "ERROR: Invalid model\n");
@@ -317,9 +317,9 @@ int cllm_embeddings_init_with_neighbors(
  */
 int cllm_embedding_neighbor_influence_stats(
     CLLMModel* model,
-    float* avg_influence,
-    float* max_influence,
-    float* min_influence
+    double* avg_influence,
+    double* max_influence,
+    double* min_influence
 ) {
     if (!model || !avg_influence || !max_influence || !min_influence) {
         fprintf(stderr, "ERROR: Invalid parameters\n");
@@ -332,15 +332,15 @@ int cllm_embedding_neighbor_influence_stats(
     }
     
     uint32_t embed_dim = model->embeddings.embedding_dim;
-    float* influence_vector = (float*)malloc(embed_dim * sizeof(float));
+    double* influence_vector = (double*)malloc(embed_dim * sizeof(double));
     if (!influence_vector) {
         fprintf(stderr, "ERROR: Failed to allocate influence vector\n");
         return -1;
     }
     
     double sum = 0.0;
-    float max_val = 0.0f;
-    float min_val = 1e10f;
+    double max_val = 0.0;
+    double min_val = 1e10;
     uint32_t count = 0;
     
     // Sample first 100 tokens
@@ -353,7 +353,7 @@ int cllm_embedding_neighbor_influence_stats(
         }
         
         // Compute magnitude of influence
-        float magnitude = 0.0f;
+        double magnitude = 0.0;
         for (uint32_t d = 0; d < embed_dim; d++) {
             magnitude += influence_vector[d] * influence_vector[d];
         }
@@ -365,7 +365,7 @@ int cllm_embedding_neighbor_influence_stats(
         count++;
     }
     
-    *avg_influence = (count > 0) ? (float)(sum / count) : 0.0f;
+    *avg_influence = (count > 0) ? (double)(sum / count) : 0.0;
     *max_influence = max_val;
     *min_influence = min_val;
     
@@ -379,7 +379,7 @@ int cllm_embedding_neighbor_influence_stats(
 int cllm_embeddings_iterative_refinement(
     CLLMModel* model,
     int num_iterations,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) {
         fprintf(stderr, "ERROR: Invalid model\n");
@@ -391,7 +391,7 @@ int cllm_embeddings_iterative_refinement(
         return -1;
     }
     
-    printf("Applying iterative neighbor refinement (%d iterations, strength=%.2f)...\n",
+    printf("Applying iterative neighbor refinement (%d iterations, strength=%.2.0)...\n",
            num_iterations, influence_strength);
     
     for (int iter = 0; iter < num_iterations; iter++) {

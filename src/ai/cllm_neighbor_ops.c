@@ -26,21 +26,21 @@
 /**
  * Softmax normalization
  */
-static void softmax(float* weights, int size) {
+static void softmax(double* weights, int size) {
     if (!weights || size <= 0) return;
     
-    float max_val = weights[0];
+    double max_val = weights[0];
     for (int i = 1; i < size; i++) {
         if (weights[i] > max_val) max_val = weights[i];
     }
     
-    float sum = 0.0f;
+    double sum = 0.0;
     for (int i = 0; i < size; i++) {
         weights[i] = prime_expf(weights[i] - max_val);
         sum += weights[i];
     }
     
-    if (sum > 0.0f) {
+    if (sum > 0.0) {
         for (int i = 0; i < size; i++) {
             weights[i] /= sum;
         }
@@ -53,7 +53,7 @@ static void softmax(float* weights, int size) {
 int cllm_internal_compute_neighbor_weights(
     CLLMModel* model,
     uint32_t token_id,
-    float* weights
+    double* weights
 ) {
     if (!model || !weights) return -1;
     if (token_id >= model->vocab_size) return -1;
@@ -67,7 +67,7 @@ int cllm_internal_compute_neighbor_weights(
         uint32_t neighbor_id = point->neighbors[i];
         
         if (neighbor_id >= model->vocab_size) {
-            weights[i] = 0.0f;
+            weights[i] = 0.0;
             continue;
         }
         
@@ -83,12 +83,12 @@ int cllm_internal_compute_neighbor_weights(
             phi_i
         );
         
-        weights[i] = (float)prime_fabsf((float)interaction);
+        weights[i] = (double)prime_fabsf((double)interaction);
     }
     
     // Fill remaining weights
     for (uint32_t i = point->num_neighbors; i < 12; i++) {
-        weights[i] = 0.0f;
+        weights[i] = 0.0;
     }
     
     // Normalize
@@ -108,17 +108,17 @@ int cllm_internal_add_neighbor_attention(
     uint32_t token_id,
     double* output,
     uint32_t embed_dim,
-    float strength
+    double strength
 ) {
     if (!model || !output) return -1;
     if (token_id >= model->vocab_size) return -1;
     if (!model->lattice_points || token_id >= model->num_lattice_points) return -1;
-    if (strength < 0.0f || strength > 1.0f) return -1;
+    if (strength < 0.0 || strength > 1.0) return -1;
     
     CLLMLatticePoint* point = &model->lattice_points[token_id];
     
     // Compute weights
-    float weights[12];
+    double weights[12];
     if (cllm_internal_compute_neighbor_weights(model, token_id, weights) != 0) {
         return -1;
     }
@@ -137,7 +137,7 @@ int cllm_internal_add_neighbor_attention(
             uint32_t neighbor_id = point->neighbors[i];
             if (neighbor_id >= model->vocab_size) continue;
             
-            float weight = weights[i] * strength;
+            double weight = weights[i] * strength;
             double* neighbor_embedding = &model->embeddings.embeddings[
                 neighbor_id * embed_dim
             ];
@@ -177,7 +177,7 @@ int cllm_internal_add_neighbor_attention(
         uint32_t neighbor_id = point->neighbors[i];
         if (neighbor_id >= model->vocab_size) continue;
         
-        float weight = weights[i] * strength;
+        double weight = weights[i] * strength;
         double* neighbor_embedding = &model->embeddings.embeddings[
             neighbor_id * embed_dim
         ];
@@ -197,8 +197,8 @@ int cllm_internal_add_neighbor_attention(
 int cllm_internal_compute_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float* influence_vector,
-    float* weights
+    double* influence_vector,
+    double* weights
 ) {
     if (!model || !influence_vector) return -1;
     if (token_id >= model->vocab_size) return -1;
@@ -208,17 +208,17 @@ int cllm_internal_compute_neighbor_influence(
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Compute weights
-    float neighbor_weights[12];
+    double neighbor_weights[12];
     if (cllm_internal_compute_neighbor_weights(model, token_id, neighbor_weights) != 0) {
         return -1;
     }
     
     if (weights) {
-        memcpy(weights, neighbor_weights, 12 * sizeof(float));
+        memcpy(weights, neighbor_weights, 12 * sizeof(double));
     }
     
     // Initialize influence vector
-    memset(influence_vector, 0, embed_dim * sizeof(float));
+    memset(influence_vector, 0, embed_dim * sizeof(double));
     
     // Accumulate weighted neighbor embeddings (SIMD optimized)
 #ifdef __AVX2__
@@ -227,7 +227,7 @@ int cllm_internal_compute_neighbor_influence(
         uint32_t neighbor_id = point->neighbors[i];
         if (neighbor_id >= model->vocab_size) continue;
         
-        float weight = neighbor_weights[i];
+        double weight = neighbor_weights[i];
         double* neighbor_embedding = &model->embeddings.embeddings[
             neighbor_id * embed_dim
         ];
@@ -273,7 +273,7 @@ int cllm_internal_compute_neighbor_influence(
         
         // Handle remaining dimensions (scalar)
         for (; d < embed_dim; d++) {
-            influence_vector[d] += weight * (float)neighbor_embedding[d];
+            influence_vector[d] += weight * (double)neighbor_embedding[d];
         }
     }
 #else
@@ -282,13 +282,13 @@ int cllm_internal_compute_neighbor_influence(
         uint32_t neighbor_id = point->neighbors[i];
         if (neighbor_id >= model->vocab_size) continue;
         
-        float weight = neighbor_weights[i];
+        double weight = neighbor_weights[i];
         double* neighbor_embedding = &model->embeddings.embeddings[
             neighbor_id * embed_dim
         ];
         
         for (uint32_t d = 0; d < embed_dim; d++) {
-            influence_vector[d] += weight * (float)neighbor_embedding[d];
+            influence_vector[d] += weight * (double)neighbor_embedding[d];
         }
     }
 #endif
@@ -302,16 +302,16 @@ int cllm_internal_compute_neighbor_influence(
 int cllm_internal_apply_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) return -1;
     if (token_id >= model->vocab_size) return -1;
-    if (influence_strength < 0.0f || influence_strength > 1.0f) return -1;
+    if (influence_strength < 0.0 || influence_strength > 1.0) return -1;
     
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Compute influence vector
-    float* influence_vector = (float*)malloc(embed_dim * sizeof(float));
+    double* influence_vector = (double*)malloc(embed_dim * sizeof(double));
     if (!influence_vector) return -1;
     
     if (cllm_internal_compute_neighbor_influence(model, token_id, influence_vector, NULL) != 0) {
@@ -321,7 +321,7 @@ int cllm_internal_apply_neighbor_influence(
     
     // Apply influence: embedding = (1-strength)*original + strength*influence
     double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
-    float original_weight = 1.0f - influence_strength;
+    double original_weight = 1.0 - influence_strength;
     
     for (uint32_t d = 0; d < embed_dim; d++) {
         embedding[d] = original_weight * embedding[d] + 
@@ -341,18 +341,18 @@ int cllm_internal_apply_neighbor_influence_all(
 ) {
     if (!model) return -1;
     if (!model->lattice_points) return -1;
-    if (influence_strength < 0.0f || influence_strength > 1.0f) return -1;
+    if (influence_strength < 0.0 || influence_strength > 1.0) return -1;
     
     uint32_t embed_dim = model->embeddings.embedding_dim;
     size_t total_size = model->num_lattice_points * embed_dim;
     
     // Create temporary buffer for refined embeddings
-    float* refined_embeddings = (float*)malloc(total_size * sizeof(float));
+    double* refined_embeddings = (double*)malloc(total_size * sizeof(double));
     if (!refined_embeddings) return -1;
     
     // Compute all refined embeddings
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
-        float* influence_vector = &refined_embeddings[i * embed_dim];
+        double* influence_vector = &refined_embeddings[i * embed_dim];
         
         if (cllm_internal_compute_neighbor_influence(model, i, influence_vector, NULL) != 0) {
             free(refined_embeddings);
@@ -361,10 +361,10 @@ int cllm_internal_apply_neighbor_influence_all(
         
         // Blend with original
         double* original = &model->embeddings.embeddings[i * embed_dim];
-        float original_weight = 1.0f - influence_strength;
+        double original_weight = 1.0 - influence_strength;
         
         for (uint32_t d = 0; d < embed_dim; d++) {
-            influence_vector[d] = original_weight * (float)original[d] + 
+            influence_vector[d] = original_weight * (double)original[d] + 
                                  influence_strength * influence_vector[d];
         }
     }
@@ -372,7 +372,7 @@ int cllm_internal_apply_neighbor_influence_all(
     // Update all embeddings
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
         double* embedding = &model->embeddings.embeddings[i * embed_dim];
-        float* refined = &refined_embeddings[i * embed_dim];
+        double* refined = &refined_embeddings[i * embed_dim];
         
         for (uint32_t d = 0; d < embed_dim; d++) {
             embedding[d] = (double)refined[d];

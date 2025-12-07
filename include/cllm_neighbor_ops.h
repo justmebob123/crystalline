@@ -37,7 +37,7 @@ extern "C" {
 int cllm_internal_compute_neighbor_weights(
     CLLMModel* model,
     uint32_t token_id,
-    float* weights
+    double* weights
 );
 
 /**
@@ -57,7 +57,7 @@ int cllm_internal_add_neighbor_attention(
     uint32_t token_id,
     double* output,
     uint32_t embed_dim,
-    float strength
+    double strength
 );
 
 /**
@@ -73,7 +73,7 @@ int cllm_internal_add_neighbor_attention(
 int cllm_internal_apply_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float influence_strength
+    double influence_strength
 );
 
 /**
@@ -104,8 +104,8 @@ int cllm_internal_apply_neighbor_influence_all(
 int cllm_internal_compute_neighbor_influence(
     CLLMModel* model,
     uint32_t token_id,
-    float* influence_vector,
-    float* weights
+    double* influence_vector,
+    double* weights
 );
 
 #ifdef __cplusplus
