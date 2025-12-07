@@ -99,14 +99,21 @@
 - [x] Add checkbox click handling to handle_crawler_tab_mouse_down()
 - [x] Build successful: 0 errors, 0 warnings
 
-### Phase 3: Implement Content Filtering Radio Buttons (1 hour)
-- [ ] Create custom radio button rendering function
-- [ ] Add radio for EXTRACT_ALL
-- [ ] Add radio for EXTRACT_HUMAN_TEXT
-- [ ] Add radio for EXTRACT_METADATA
-- [ ] Add radio for EXTRACT_MIXED
-- [ ] Wire to g_crawler_state.extraction_mode
-- [ ] Test radio button exclusivity
+### Phase 3: Implement Content Filtering Radio Buttons ✅ COMPLETE
+- [x] Create SimpleRadioButton structure
+- [x] Create render_radio_button() function with circular SDL rendering
+- [x] Create radio_button_contains_point() for click detection
+- [x] Add 4 radio buttons to g_crawler_ui structure
+- [x] Initialize radio buttons with labels and values:
+  * EXTRACT_ALL (default)
+  * EXTRACT_HUMAN_TEXT
+  * EXTRACT_METADATA
+  * EXTRACT_MIXED
+- [x] Wire to g_crawler_ui.extraction_mode
+- [x] Add radio button rendering to render_crawler_tab()
+- [x] Add radio button click handling with exclusivity
+- [x] Update on_start_clicked() to use selected extraction mode
+- [x] Build successful: 0 errors, 0 warnings
 
 ### Phase 4: Implement Advanced Options Panel (30 min)
 - [ ] Create collapsible panel with CrystallinePanel

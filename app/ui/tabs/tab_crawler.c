@@ -100,6 +100,14 @@ typedef struct {
     bool* checked;
 } SimpleCheckbox;
 
+// Simple radio button structure
+typedef struct {
+    SDL_Rect bounds;
+    const char* label;
+    int value;
+    int* selected_value;
+} SimpleRadioButton;
+
 // UI Structure for Crystalline components
 static struct {
     // Panels
@@ -132,6 +140,9 @@ static struct {
     // URL Pattern Checkboxes (Column 1)
     SimpleCheckbox pattern_checkboxes[4];
     
+    // Content Filtering Radio Buttons (Column 1)
+    SimpleRadioButton filter_radio_buttons[4];
+    
     // State
     bool initialized;
     bool crawler_running;
@@ -151,6 +162,9 @@ static struct {
     bool pattern_onclick;
     bool pattern_data_attr;
     bool pattern_meta_refresh;
+    
+    // Content Filtering State
+    int extraction_mode;  // ExtractionMode enum value
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -239,7 +253,11 @@ static void on_start_clicked(void* data) {
     extern int start_crawler_thread(AppState* state, const char* start_url, 
                                    ExtractionMode extraction_mode, const char* model_name);
     
-    if (start_crawler_thread(state, start_url, EXTRACT_ALL, g_crawler_ui.selected_model) == 0) {
+    // Use the selected extraction mode from UI
+    ExtractionMode mode = (ExtractionMode)g_crawler_ui.extraction_mode;
+    printf("Using extraction mode: %d\n", mode);
+    
+    if (start_crawler_thread(state, start_url, mode, g_crawler_ui.selected_model) == 0) {
         g_crawler_ui.crawler_running = true;
         printf("Crawler started successfully\n");
     } else {
@@ -381,6 +399,82 @@ static bool checkbox_contains_point(SimpleCheckbox* checkbox, int x, int y) {
     
     return (x >= box.x &amp;&amp; x < box.x + box.w &amp;&amp;
             y >= box.y &amp;&amp; y < box.y + box.h);
+}
+
+/**
+ * Render a simple radio button
+ */
+static void render_radio_button(SDL_Renderer* renderer, SimpleRadioButton* radio, TTF_Font* font) {
+    if (!radio || !renderer || !font) return;
+    
+    // Radio button circle
+    int circle_size = 20;
+    int center_x = radio->bounds.x + circle_size / 2;
+    int center_y = radio->bounds.y + circle_size / 2;
+    int radius = circle_size / 2;
+    
+    // Draw circle outline (simple approximation with rectangles)
+    SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
+    for (int w = 0; w < radius * 2; w++) {
+        for (int h = 0; h < radius * 2; h++) {
+            int dx = radius - w;
+            int dy = radius - h;
+            if ((dx*dx + dy*dy) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, center_x + dx, center_y + dy);
+            }
+        }
+    }
+    
+    // Draw filled circle if selected
+    if (radio->selected_value &amp;&amp; *radio->selected_value == radio->value) {
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        int inner_radius = radius - 4;
+        for (int w = 0; w < inner_radius * 2; w++) {
+            for (int h = 0; h < inner_radius * 2; h++) {
+                int dx = inner_radius - w;
+                int dy = inner_radius - h;
+                if ((dx*dx + dy*dy) <= (inner_radius * inner_radius)) {
+                    SDL_RenderDrawPoint(renderer, center_x + dx, center_y + dy);
+                }
+            }
+        }
+    }
+    
+    // Draw label
+    if (radio->label) {
+        SDL_Color text_color = {200, 200, 200, 255};
+        SDL_Surface* surface = TTF_RenderText_Blended(font, radio->label, text_color);
+        if (surface) {
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+            if (texture) {
+                SDL_Rect text_rect = {
+                    radio->bounds.x + circle_size + 10,
+                    radio->bounds.y,
+                    surface->w,
+                    surface->h
+                };
+                SDL_RenderCopy(renderer, texture, NULL, &amp;text_rect);
+                SDL_DestroyTexture(texture);
+            }
+            SDL_FreeSurface(surface);
+        }
+    }
+}
+
+/**
+ * Check if point is inside radio button
+ */
+static bool radio_button_contains_point(SimpleRadioButton* radio, int x, int y) {
+    if (!radio) return false;
+    
+    int circle_size = 20;
+    int center_x = radio->bounds.x + circle_size / 2;
+    int center_y = radio->bounds.y + circle_size / 2;
+    int radius = circle_size / 2;
+    
+    int dx = x - center_x;
+    int dy = y - center_y;
+    return (dx*dx + dy*dy) <= (radius * radius);
 }
 
 /**
@@ -605,9 +699,36 @@ void init_crawler_tab(AppState* state) {
     }
     
     // Content Filtering (4 radio buttons)
-    // TODO: Implement custom radio button rendering
-    // For now, using text labels to show structure
-    col1_elem_y += 120;  // Space for 4 checkboxes
+    col1_elem_y += 10;  // Small spacing after checkboxes
+    
+    // Initialize content filtering radio buttons
+    const char* filter_labels[] = {
+        "Extract All",
+        "Human Text Only",
+        "Metadata Only",
+        "Mixed (Content + Meta)"
+    };
+    int filter_values[] = {
+        EXTRACT_ALL,
+        EXTRACT_HUMAN_TEXT,
+        EXTRACT_METADATA,
+        EXTRACT_MIXED
+    };
+    
+    // Set default extraction mode
+    g_crawler_ui.extraction_mode = EXTRACT_ALL;
+    
+    int radio_spacing = 30;
+    for (int i = 0; i < 4; i++) {
+        g_crawler_ui.filter_radio_buttons[i].bounds.x = col1_content_x;
+        g_crawler_ui.filter_radio_buttons[i].bounds.y = col1_elem_y;
+        g_crawler_ui.filter_radio_buttons[i].bounds.w = col1_content_w;
+        g_crawler_ui.filter_radio_buttons[i].bounds.h = 20;
+        g_crawler_ui.filter_radio_buttons[i].label = filter_labels[i];
+        g_crawler_ui.filter_radio_buttons[i].value = filter_values[i];
+        g_crawler_ui.filter_radio_buttons[i].selected_value = &amp;g_crawler_ui.extraction_mode;
+        col1_elem_y += radio_spacing;
+    }
     
     // Advanced Options Panel (collapsible)
     // TODO: Implement collapsible panel with toggle
@@ -1017,12 +1138,15 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_input_render(g_crawler_ui.delay_max_input, renderer);
     }
     
-    // Render URL pattern checkboxes
+    // Render URL pattern checkboxes and content filtering radio buttons
     extern TTF_Font* get_global_font();
     TTF_Font* font = get_global_font();
     if (font) {
         for (int i = 0; i < 4; i++) {
             render_checkbox(renderer, &amp;g_crawler_ui.pattern_checkboxes[i], font);
+        }
+        for (int i = 0; i < 4; i++) {
+            render_radio_button(renderer, &amp;g_crawler_ui.filter_radio_buttons[i], font);
         }
     }
 }
@@ -1069,6 +1193,17 @@ void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state)
                 *g_crawler_ui.pattern_checkboxes[i].checked = !(*g_crawler_ui.pattern_checkboxes[i].checked);
                 printf("Toggled pattern checkbox %d: %s\n", i, 
                        *g_crawler_ui.pattern_checkboxes[i].checked ? "ON" : "OFF");
+            }
+        }
+    }
+    
+    // Handle radio button clicks
+    for (int i = 0; i < 4; i++) {
+        if (radio_button_contains_point(&g_crawler_ui.filter_radio_buttons[i], mouse_x, mouse_y)) {
+            // Select radio button
+            if (g_crawler_ui.filter_radio_buttons[i].selected_value) {
+                *g_crawler_ui.filter_radio_buttons[i].selected_value = g_crawler_ui.filter_radio_buttons[i].value;
+                printf("Selected extraction mode: %d\n", g_crawler_ui.extraction_mode);
             }
         }
     }
