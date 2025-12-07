@@ -221,7 +221,8 @@ uint32_t* cllm_tokenizer_encode(CLLMTokenizer* tokenizer, const char* text, uint
     }
     
     uint32_t count = 0;
-    char* token = strtok(text_copy, " \t\n\r");
+    char* saveptr = NULL;  // For strtok_r thread safety
+    char* token = strtok_r(text_copy, " \t\n\r", &saveptr);
     
     while (token && count < max_tokens) {
         // Convert to lowercase
@@ -233,7 +234,7 @@ uint32_t* cllm_tokenizer_encode(CLLMTokenizer* tokenizer, const char* text, uint
         uint32_t token_id = cllm_find_token_fast(tokenizer, token);
         tokens[count++] = token_id;
         
-        token = strtok(NULL, " \t\n\r");
+        token = strtok_r(NULL, " \t\n\r", &saveptr);
     }
     
     free(text_copy);
