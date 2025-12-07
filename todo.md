@@ -18,13 +18,13 @@
 - [x] Build and test (0 errors, 0 warnings)
 - [x] Commit: "Add neighbor-influenced embeddings"
 
-## PHASE 3: SYMMETRY-BASED BATCH DISTRIBUTION
-- [ ] Add cllm_batch_assign_by_symmetry() to cllm_batch.c
-- [ ] Implement symmetry group detection
-- [ ] Optimize batch assignment to spheres
-- [ ] Update training system to use symmetry-based distribution
-- [ ] Build and test
-- [ ] Commit: "Optimize batch distribution by symmetry groups"
+## PHASE 3: SYMMETRY-BASED BATCH DISTRIBUTION ✅ COMPLETE
+- [x] Add cllm_batch_assign_by_symmetry() to cllm_batch.c
+- [x] Implement symmetry group detection
+- [x] Optimize batch assignment to spheres
+- [x] Add statistics and visualization functions
+- [x] Build and test (0 errors, 0 warnings)
+- [x] Commit: "Optimize batch distribution by symmetry groups"
 
 ## PHASE 4: UNIFIED KISSING SPHERES API
 - [ ] Create include/cllm_kissing_spheres_api.h

@@ -10,6 +10,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+// Forward declaration for CLLMModel (defined in cllm.h)
+struct CLLMModel;
+
 /**
  * Batch Structure
  */
@@ -101,5 +104,55 @@ void cllm_batch_print_stats(CLLMBatch* batch);
  * Checks batch integrity, returns 1 if valid, 0 otherwise
  */
 int cllm_batch_validate(CLLMBatch* batch);
+
+/**
+ * Assign batch tokens to spheres based on symmetry groups
+ * 
+ * Analyzes the batch and determines which sphere should process each token
+ * based on the token's symmetry group. This enables better load balancing
+ * by distributing tokens according to their geometric properties.
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model with token symmetry information
+ * @param sphere_assignments Output array [batch_size * seq_len] with sphere IDs
+ * @param num_spheres Number of available spheres (typically 12)
+ * 
+ * @return 0 on success, -1 on error
+ */
+int cllm_batch_assign_by_symmetry(
+    CLLMBatch* batch,
+    struct CLLMModel* model,
+    int* sphere_assignments,
+    int num_spheres
+);
+
+/**
+ * Get batch distribution statistics by symmetry group
+ * 
+ * Analyzes how tokens in the batch are distributed across symmetry groups.
+ * Useful for understanding load balance and batch composition.
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model
+ * @param group_counts Output array [12] with token counts per group
+ * 
+ * @return 0 on success, -1 on error
+ */
+int cllm_batch_symmetry_stats(
+    CLLMBatch* batch,
+    struct CLLMModel* model,
+    int* group_counts
+);
+
+/**
+ * Print batch symmetry distribution
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model
+ */
+void cllm_batch_print_symmetry_distribution(
+    CLLMBatch* batch,
+    struct CLLMModel* model
+);
 
 #endif // CLLM_BATCH_H

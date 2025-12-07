@@ -314,3 +314,146 @@ int cllm_batch_validate(CLLMBatch* batch) {
     
     return 1;
 }
+
+/**
+ * Assign batch tokens to spheres based on symmetry groups
+ * 
+ * Analyzes the batch and determines which sphere should process each token
+ * based on the token's symmetry group. This enables better load balancing
+ * by distributing tokens according to their geometric properties.
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model with token symmetry information
+ * @param sphere_assignments Output array [batch_size * seq_len] with sphere IDs
+ * @param num_spheres Number of available spheres (typically 12)
+ * 
+ * @return 0 on success, -1 on error
+ */
+int cllm_batch_assign_by_symmetry(
+    CLLMBatch* batch,
+    CLLMModel* model,
+    int* sphere_assignments,
+    int num_spheres
+) {
+    if (!batch || !model || !sphere_assignments) {
+        fprintf(stderr, "ERROR: Invalid parameters to cllm_batch_assign_by_symmetry\n");
+        return -1;
+    }
+    
+    if (num_spheres <= 0 || num_spheres > 12) {
+        fprintf(stderr, "ERROR: num_spheres must be between 1 and 12\n");
+        return -1;
+    }
+    
+    // Assign each token to a sphere based on its symmetry group
+    for (uint32_t i = 0; i < batch->batch_size * batch->seq_len; i++) {
+        uint32_t token_id = batch->input_ids[i];
+        
+        // Skip padding tokens
+        if (token_id == PAD_TOKEN) {
+            sphere_assignments[i] = -1;  // No sphere assignment
+            continue;
+        }
+        
+        // Get token's symmetry group
+        uint32_t symmetry_group;
+        if (token_id < model->vocab_size && model->tokens) {
+            symmetry_group = model->tokens[token_id].symmetry_group;
+        } else {
+            // Fallback: use modulo
+            symmetry_group = token_id % 12;
+        }
+        
+        // Assign to sphere based on symmetry group
+        // If we have fewer spheres than groups, distribute evenly
+        sphere_assignments[i] = (int)(symmetry_group % num_spheres);
+    }
+    
+    return 0;
+}
+
+/**
+ * Get batch distribution statistics by symmetry group
+ * 
+ * Analyzes how tokens in the batch are distributed across symmetry groups.
+ * Useful for understanding load balance and batch composition.
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model
+ * @param group_counts Output array [12] with token counts per group
+ * 
+ * @return 0 on success, -1 on error
+ */
+int cllm_batch_symmetry_stats(
+    CLLMBatch* batch,
+    CLLMModel* model,
+    int* group_counts
+) {
+    if (!batch || !model || !group_counts) {
+        fprintf(stderr, "ERROR: Invalid parameters to cllm_batch_symmetry_stats\n");
+        return -1;
+    }
+    
+    // Initialize counts
+    memset(group_counts, 0, 12 * sizeof(int));
+    
+    // Count tokens in each symmetry group
+    for (uint32_t i = 0; i < batch->batch_size * batch->seq_len; i++) {
+        uint32_t token_id = batch->input_ids[i];
+        
+        // Skip padding tokens
+        if (token_id == PAD_TOKEN) continue;
+        
+        // Get symmetry group
+        uint32_t symmetry_group;
+        if (token_id < model->vocab_size && model->tokens) {
+            symmetry_group = model->tokens[token_id].symmetry_group;
+        } else {
+            symmetry_group = token_id % 12;
+        }
+        
+        if (symmetry_group < 12) {
+            group_counts[symmetry_group]++;
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * Print batch symmetry distribution
+ * 
+ * @param batch Batch to analyze
+ * @param model CLLM model
+ */
+void cllm_batch_print_symmetry_distribution(
+    CLLMBatch* batch,
+    CLLMModel* model
+) {
+    if (!batch || !model) return;
+    
+    int group_counts[12];
+    if (cllm_batch_symmetry_stats(batch, model, group_counts) != 0) {
+        return;
+    }
+    
+    printf("\nBatch Symmetry Distribution:\n");
+    int total = 0;
+    for (int i = 0; i < 12; i++) {
+        total += group_counts[i];
+    }
+    
+    if (total == 0) {
+        printf("  No valid tokens in batch\n");
+        return;
+    }
+    
+    for (int i = 0; i < 12; i++) {
+        if (group_counts[i] > 0) {
+            printf("  Group %2d: %5d tokens (%.1f%%)\n",
+                   i, group_counts[i],
+                   100.0f * group_counts[i] / total);
+        }
+    }
+    printf("  Total: %d tokens\n", total);
+}
