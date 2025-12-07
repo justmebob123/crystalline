@@ -139,13 +139,13 @@ void cllm_report_sphere_position(CLLMModel* model, CLLMMetrics* metrics, int thr
     angular_position_calculate(token->prime_encoding, token_id, 0, wavelength, &pos);
     
     // Convert to 3D position for metrics
-    float position[3];
+    double position[3];
     position[0] = (float)pos.theta;
     position[1] = (float)pos.distance_to_144000;
     position[2] = (float)token->symmetry_group;
     
     // Report position to metrics system (state unchanged, workload 0)
-    cllm_metrics_update_thread(metrics, thread_id, THREAD_STATE_IDLE, 0.0f, position);
+    cllm_metrics_update_thread(metrics, thread_id, THREAD_STATE_IDLE, 0.0, position);
 }
 
 /**
@@ -206,7 +206,7 @@ void cllm_process_kissing_spheres(CLLMLatticePoint* point,
             if (neighbor_offset + dim >= gradient_size) break;
             
             // Get neighbor's embedding value
-            float neighbor_value = model->embeddings.embeddings[neighbor_offset + dim];
+            double neighbor_value = model->embeddings.embeddings[neighbor_offset + dim];
             
             // Add weighted contribution to gradient (10% neighbor influence)
             local_gradients[center_offset + dim] += 

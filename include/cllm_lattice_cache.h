@@ -51,7 +51,7 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model);
  * @param influence_strength Influence strength (0.0-1.0, default 0.2)
  * @return 0 on success, -1 on error
  */
-int cllm_embedding_refine(CLLMModel* model, float influence_strength);
+int cllm_embedding_refine(CLLMModel* model, double influence_strength);
 
 /**
  * Cleanup cache (call on shutdown)

@@ -337,7 +337,7 @@ int cllm_internal_apply_neighbor_influence(
  */
 int cllm_internal_apply_neighbor_influence_all(
     CLLMModel* model,
-    float influence_strength
+    double influence_strength
 ) {
     if (!model) return -1;
     if (!model->lattice_points) return -1;

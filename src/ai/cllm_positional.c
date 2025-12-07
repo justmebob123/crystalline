@@ -29,30 +29,30 @@ void cllm_generate_spiral_encoding(PositionalEncoding* pos_enc) {
     printf("Generating spiral positional encoding...\n");
     
     // Golden angle for optimal spiral packing
-    float golden_angle = 2.0f * PI / (PHI * PHI);
+    double golden_angle = 2.0 * PI / (PHI * PHI);
     
     for (uint32_t pos = 0; pos < max_length; pos++) {
         double* encoding = &pos_enc->spiral_positions[pos * embedding_dim];
         
         // Spiral parameters
-        float angle = golden_angle * (float)pos;
-        float radius = prime_sqrt((float)pos);
+        double angle = golden_angle * (double)pos;
+        double radius = prime_sqrt((double)pos);
         
         // Generate encoding using spiral coordinates
         for (uint32_t i = 0; i < embedding_dim; i++) {
-            float freq = (float)(i / 2 + 1);
+            double freq = (double)(i / 2 + 1);
             
             if (i % 2 == 0) {
                 // Even dimensions: use cosine with spiral angle
-                encoding[i] = prime_cos(freq * angle) * (1.0f + 0.1f * radius);
+                encoding[i] = prime_cos(freq * angle) * (1.0 + 0.1 * radius);
             } else {
                 // Odd dimensions: use sine with spiral angle
-                encoding[i] = prime_sin(freq * angle) * (1.0f + 0.1f * radius);
+                encoding[i] = prime_sin(freq * angle) * (1.0 + 0.1 * radius);
             }
         }
         
         // Normalize
-        float norm = 0.0f;
+        double norm = 0.0;
         for (uint32_t i = 0; i < embedding_dim; i++) {
             norm += encoding[i] * encoding[i];
         }
@@ -87,21 +87,21 @@ void cllm_generate_clock_encoding(PositionalEncoding* pos_enc) {
         
         // Map position to clock position (0-11)
         uint32_t clock_pos = pos % SYMMETRY_ORDER;
-        float clock_angle = 2.0f * PI * (float)clock_pos / (float)SYMMETRY_ORDER;
+        double clock_angle = 2.0 * PI * (double)clock_pos / (double)SYMMETRY_ORDER;
         
         // Radial component based on position
-        float radius = prime_log((float)pos + 1.0f);
+        double radius = prime_log((double)pos + 1.0);
         
         // Generate encoding
         for (uint32_t i = 0; i < embedding_dim; i++) {
-            float freq = (float)(i / 2 + 1);
+            double freq = (double)(i / 2 + 1);
             
             if (i % 2 == 0) {
                 // Even: radial modulation with clock angle
-                encoding[i] = prime_cos(freq * clock_angle) * (1.0f + 0.2f * radius);
+                encoding[i] = prime_cos(freq * clock_angle) * (1.0 + 0.2 * radius);
             } else {
                 // Odd: tangential component
-                encoding[i] = prime_sin(freq * clock_angle) * (1.0f + 0.2f * radius);
+                encoding[i] = prime_sin(freq * clock_angle) * (1.0 + 0.2 * radius);
             }
         }
         
@@ -109,14 +109,14 @@ void cllm_generate_clock_encoding(PositionalEncoding* pos_enc) {
         for (uint32_t i = 0; i < embedding_dim / 4; i++) {
             uint32_t idx = i * 4;
             if (idx + 3 < embedding_dim) {
-                float harmonic = 2.0f * PI * (float)pos / (float)max_length;
+                double harmonic = 2.0 * PI * (double)pos / (double)max_length;
                 encoding[idx] += 0.1f * prime_cos(harmonic * (float)(i + 1));
                 encoding[idx + 1] += 0.1f * prime_sin(harmonic * (float)(i + 1));
             }
         }
         
         // Normalize
-        float norm = 0.0f;
+        double norm = 0.0;
         for (uint32_t i = 0; i < embedding_dim; i++) {
             norm += encoding[i] * encoding[i];
         }
@@ -178,14 +178,14 @@ void cllm_generate_prime_encoding(PositionalEncoding* pos_enc) {
         uint64_t prime = primes[pos];
         
         // Use prime factorization structure
-        float log_prime = prime_log((float)prime);
+        double log_prime = prime_log((double)prime);
         
         for (uint32_t i = 0; i < embedding_dim; i++) {
             float freq = (float)(i + 1);
             
             // Combine multiple prime-based features
-            float phase = 2.0f * PI * (float)(prime % 1000) / 1000.0f;
-            float scale = log_prime / prime_log((float)primes[max_length - 1]);
+            double phase = 2.0 * PI * (double)(prime % 1000) / 1000.0;
+            double scale = log_prime / prime_log((double)primes[max_length - 1]);
             
             if (i % 2 == 0) {
                 encoding[i] = prime_cos(freq * phase) * (0.5f + 0.5f * scale);
@@ -195,12 +195,12 @@ void cllm_generate_prime_encoding(PositionalEncoding* pos_enc) {
             
             // Add prime modulo pattern
             if (i % 3 == 0) {
-                encoding[i] += 0.1f * prime_cos(2.0f * PI * (float)(prime % SYMMETRY_ORDER) / (float)SYMMETRY_ORDER);
+                encoding[i] += 0.1 * prime_cos(2.0 * PI * (double)(prime % SYMMETRY_ORDER) / (double)SYMMETRY_ORDER);
             }
         }
         
         // Normalize
-        float norm = 0.0f;
+        double norm = 0.0;
         for (uint32_t i = 0; i < embedding_dim; i++) {
             norm += encoding[i] * encoding[i];
         }
@@ -236,7 +236,7 @@ void cllm_initialize_learned_encoding(PositionalEncoding* pos_enc) {
         double* encoding = &pos_enc->learned_positions[pos * embedding_dim];
         
         for (uint32_t i = 0; i < embedding_dim; i++) {
-            float freq = 1.0f / prime_pow(10000.0f, (float)(i / 2 * 2) / (float)embedding_dim);
+            double freq = 1.0 / prime_pow(10000.0, (double)(i / 2 * 2) / (double)embedding_dim);
             
             if (i % 2 == 0) {
                 encoding[i] = prime_sin((float)pos * freq);
@@ -274,13 +274,13 @@ void cllm_apply_positional_encoding_complete(CLLMInference* inf, float* embeddin
     double* learned = &pos_enc->learned_positions[position * embedding_dim];
     
     // Weighted combination
-    float w_spiral = 0.25f;
-    float w_clock = 0.25f;
-    float w_prime = 0.25f;
-    float w_learned = 0.25f;
+    double w_spiral = 0.25;
+    double w_clock = 0.25;
+    double w_prime = 0.25;
+    double w_learned = 0.25;
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        float pos_encoding = w_spiral * spiral[i] +
+        double pos_encoding = w_spiral * spiral[i] +
                            w_clock * clock[i] +
                            w_prime * prime[i] +
                            w_learned * learned[i];

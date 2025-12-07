@@ -180,8 +180,8 @@ void cllm_metrics_update_thread(
     CLLMMetrics* metrics,
     int thread_id,
     ThreadState state,
-    float workload,
-    const float position[3]
+    double workload,
+    const double position[3]
 );
 
 /*

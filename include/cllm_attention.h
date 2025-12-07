@@ -158,7 +158,7 @@ void cllm_compute_attention_fourier(const float* attention_weights,
  */
 void cllm_apply_fourier_dampening(float* attention_weights,
                                   int seq_len,
-                                  float cutoff_freq);
+                                  double cutoff_freq);
 
 /**
  * Compute hyperdimensional distance

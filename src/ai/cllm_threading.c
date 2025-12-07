@@ -266,11 +266,11 @@ void cllm_threading_report_position(
     angular_position_calculate(token->prime_encoding, token_id, 0, wavelength, &pos);
     
     // Convert to 3D position for metrics
-    float position[3];
-    position[0] = (float)pos.theta;
-    position[1] = (float)pos.distance_to_144000;
-    position[2] = (float)token->symmetry_group;
+    double position[3];
+    position[0] = (double)pos.theta;
+    position[1] = (double)pos.distance_to_144000;
+    position[2] = (double)token->symmetry_group;
     
     // Report position to metrics system
-    cllm_metrics_update_thread(metrics, thread_id, THREAD_STATE_IDLE, 0.0f, position);
+    cllm_metrics_update_thread(metrics, thread_id, THREAD_STATE_IDLE, 0.0, position);
 }

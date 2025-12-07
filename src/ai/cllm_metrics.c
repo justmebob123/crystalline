@@ -117,8 +117,8 @@ void cllm_metrics_update_thread(
     CLLMMetrics* metrics,
     int thread_id,
     ThreadState state,
-    float workload,
-    const float position[3]
+    double workload,
+    const double position[3]
 ) {
     if (!metrics || thread_id < 0 || thread_id >= MAX_TRACKED_THREADS) return;
     
