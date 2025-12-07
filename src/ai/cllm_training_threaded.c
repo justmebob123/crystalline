@@ -1712,8 +1712,13 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         // Configure allocation
         AllocationConfig alloc_config;
         allocation_config_init_default(&alloc_config);
-        alloc_config.enforce_12fold = true;
+        // Disable 12-fold enforcement if we have fewer than 12 threads
+        alloc_config.enforce_12fold = (system->num_worker_spheres >= 12);
         alloc_config.strategy = ALLOCATION_PROPORTIONAL;
+        // Lower minimum threads per dimension for small thread counts
+        if (system->num_worker_spheres < 12) {
+            alloc_config.min_threads_per_dimension = 1;
+        }
         
         // Calculate thread allocation based on entropy
         bool alloc_success = calculate_thread_allocation(

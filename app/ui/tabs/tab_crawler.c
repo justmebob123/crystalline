@@ -195,6 +195,12 @@ static struct {
 /**
  * Add URL to list
  */
+
+// Forward declarations
+static void read_prime_config_from_ui(void);
+static void apply_prime_config_to_ui(void);
+static void add_activity_log_message(const char* message);
+
 static void add_url_to_list(const char* url) {
     if (!url || !url[0]) return;
     
@@ -245,7 +251,6 @@ static void clear_url_list(void) {
     
     // Log to activity
     add_activity_log_message("Cleared all URLs");
-    }
     
     printf("Cleared all URLs\n");
 }
@@ -383,8 +388,7 @@ static void on_advanced_options_toggle(void* data) {
         extern TTF_Font* get_global_font();
         TTF_Font* font = get_global_font();
         if (font) {
-            const char* label = g_crawler_ui.show_advanced_options ? 
-                "Advanced Options ▲" : "Advanced Options ▼";
+            (void)font; // Unused for now
             // Note: CrystallineButton doesn't have a set_text function, so we'll just log
             printf("Advanced Options %s\n", g_crawler_ui.show_advanced_options ? "expanded" : "collapsed");
         }
@@ -444,7 +448,9 @@ static void add_activity_log_message(const char* message) {
                 strcat(combined_text, "\n");
             }
         }
-        crystalline_textarea_set_text(g_crawler_ui.activity_log, combined_text);
+        // Clear and add all messages
+        crystalline_textarea_clear(g_crawler_ui.activity_log);
+        crystalline_textarea_add_message(g_crawler_ui.activity_log, CRYSTALLINE_MESSAGE_SYSTEM, combined_text, NULL);
     }
 }
 
@@ -465,12 +471,12 @@ static void render_checkbox(SDL_Renderer* renderer, SimpleCheckbox* checkbox, TT
     
     // Draw box outline
     SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
-    SDL_RenderDrawRect(renderer, &amp;box);
+    SDL_RenderDrawRect(renderer, &box);
     
     // Draw checkmark if checked
-    if (checkbox->checked &amp;&amp; *checkbox->checked) {
+    if (checkbox->checked && *checkbox->checked) {
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
-        SDL_RenderFillRect(renderer, &amp;box);
+        SDL_RenderFillRect(renderer, &box);
     }
     
     // Draw label
@@ -486,7 +492,7 @@ static void render_checkbox(SDL_Renderer* renderer, SimpleCheckbox* checkbox, TT
                     surface->w,
                     surface->h
                 };
-                SDL_RenderCopy(renderer, texture, NULL, &amp;text_rect);
+                SDL_RenderCopy(renderer, texture, NULL, &text_rect);
                 SDL_DestroyTexture(texture);
             }
             SDL_FreeSurface(surface);
@@ -508,8 +514,8 @@ static bool checkbox_contains_point(SimpleCheckbox* checkbox, int x, int y) {
         box_size
     };
     
-    return (x >= box.x &amp;&amp; x < box.x + box.w &amp;&amp;
-            y >= box.y &amp;&amp; y < box.y + box.h);
+    return (x >= box.x && x < box.x + box.w &&
+            y >= box.y && y < box.y + box.h);
 }
 
 /**
@@ -537,7 +543,7 @@ static void render_radio_button(SDL_Renderer* renderer, SimpleRadioButton* radio
     }
     
     // Draw filled circle if selected
-    if (radio->selected_value &amp;&amp; *radio->selected_value == radio->value) {
+    if (radio->selected_value && *radio->selected_value == radio->value) {
         SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
         int inner_radius = radius - 4;
         for (int w = 0; w < inner_radius * 2; w++) {
@@ -564,7 +570,7 @@ static void render_radio_button(SDL_Renderer* renderer, SimpleRadioButton* radio
                     surface->w,
                     surface->h
                 };
-                SDL_RenderCopy(renderer, texture, NULL, &amp;text_rect);
+                SDL_RenderCopy(renderer, texture, NULL, &text_rect);
                 SDL_DestroyTexture(texture);
             }
             SDL_FreeSurface(surface);
@@ -598,19 +604,19 @@ static void read_prime_config_from_ui(void) {
     
     // Read prime frequency
     const char* freq_text = crystalline_input_get_text(g_crawler_ui.prime_freq_input);
-    if (freq_text &amp;&amp; freq_text[0]) {
+    if (freq_text && freq_text[0]) {
         g_crawler_ui.prime_config.frequency_prime = (uint64_t)atoi(freq_text);
     }
     
     // Read delay min
     const char* delay_min_text = crystalline_input_get_text(g_crawler_ui.delay_min_input);
-    if (delay_min_text &amp;&amp; delay_min_text[0]) {
+    if (delay_min_text && delay_min_text[0]) {
         g_crawler_ui.prime_config.delay_min_prime = (uint64_t)atoi(delay_min_text);
     }
     
     // Read delay max
     const char* delay_max_text = crystalline_input_get_text(g_crawler_ui.delay_max_input);
-    if (delay_max_text &amp;&amp; delay_max_text[0]) {
+    if (delay_max_text && delay_max_text[0]) {
         g_crawler_ui.prime_config.delay_max_prime = (uint64_t)atoi(delay_max_text);
     }
     
@@ -769,7 +775,7 @@ void init_crawler_tab(AppState* state) {
     col1_elem_y += prime_input_spacing + 20;
     
     // Initialize prime config with defaults
-    prime_config_init_default(&amp;g_crawler_ui.prime_config);
+    prime_config_init_default(&g_crawler_ui.prime_config);
     g_crawler_ui.prime_enabled = true;
     
     // Apply default values to UI
@@ -786,10 +792,10 @@ void init_crawler_tab(AppState* state) {
         "Meta refresh"
     };
     bool* pattern_states[] = {
-        &amp;g_crawler_ui.pattern_href,
-        &amp;g_crawler_ui.pattern_onclick,
-        &amp;g_crawler_ui.pattern_data_attr,
-        &amp;g_crawler_ui.pattern_meta_refresh
+        &g_crawler_ui.pattern_href,
+        &g_crawler_ui.pattern_onclick,
+        &g_crawler_ui.pattern_data_attr,
+        &g_crawler_ui.pattern_meta_refresh
     };
     
     // Set default values
@@ -837,7 +843,7 @@ void init_crawler_tab(AppState* state) {
         g_crawler_ui.filter_radio_buttons[i].bounds.h = 20;
         g_crawler_ui.filter_radio_buttons[i].label = filter_labels[i];
         g_crawler_ui.filter_radio_buttons[i].value = filter_values[i];
-        g_crawler_ui.filter_radio_buttons[i].selected_value = &amp;g_crawler_ui.extraction_mode;
+        g_crawler_ui.filter_radio_buttons[i].selected_value = &g_crawler_ui.extraction_mode;
         col1_elem_y += radio_spacing;
     }
     
@@ -860,8 +866,8 @@ void init_crawler_tab(AppState* state) {
     
     // Initialize advanced options state
     g_crawler_ui.show_advanced_options = false;
-    snprintf(g_crawler_ui.get_parameters, sizeof(g_crawler_ui.get_parameters), "");
-    snprintf(g_crawler_ui.custom_headers, sizeof(g_crawler_ui.custom_headers), "");
+    g_crawler_ui.get_parameters[0] = '\0';
+    g_crawler_ui.custom_headers[0] = '\0';
     g_crawler_ui.timeout_seconds = 30;
     g_crawler_ui.max_redirects = 5;
     
@@ -1329,10 +1335,10 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
     TTF_Font* font = get_global_font();
     if (font) {
         for (int i = 0; i < 4; i++) {
-            render_checkbox(renderer, &amp;g_crawler_ui.pattern_checkboxes[i], font);
+            render_checkbox(renderer, &g_crawler_ui.pattern_checkboxes[i], font);
         }
         for (int i = 0; i < 4; i++) {
-            render_radio_button(renderer, &amp;g_crawler_ui.filter_radio_buttons[i], font);
+            render_radio_button(renderer, &g_crawler_ui.filter_radio_buttons[i], font);
         }
     }
     
