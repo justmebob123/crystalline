@@ -93,6 +93,13 @@ typedef struct {
 __attribute__((unused))
 static CrawlerTabState g_crawler_state = {0};
 
+// Simple checkbox structure
+typedef struct {
+    SDL_Rect bounds;
+    const char* label;
+    bool* checked;
+} SimpleCheckbox;
+
 // UI Structure for Crystalline components
 static struct {
     // Panels
@@ -122,6 +129,9 @@ static struct {
     CrystallineInput* delay_min_input;
     CrystallineInput* delay_max_input;
     
+    // URL Pattern Checkboxes (Column 1)
+    SimpleCheckbox pattern_checkboxes[4];
+    
     // State
     bool initialized;
     bool crawler_running;
@@ -135,6 +145,12 @@ static struct {
     // Prime Configuration State
     CrawlerPrimeConfig prime_config;
     bool prime_enabled;
+    
+    // URL Pattern State
+    bool pattern_href;
+    bool pattern_onclick;
+    bool pattern_data_attr;
+    bool pattern_meta_refresh;
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -301,6 +317,70 @@ static void on_load_config_clicked(void* data) {
     // TODO: Implement load config from JSON
     // For now, just print message
     printf("Load Config clicked - TODO: Implement JSON load\n");
+}
+
+/**
+ * Render a simple checkbox
+ */
+static void render_checkbox(SDL_Renderer* renderer, SimpleCheckbox* checkbox, TTF_Font* font) {
+    if (!checkbox || !renderer || !font) return;
+    
+    // Checkbox box
+    int box_size = 20;
+    SDL_Rect box = {
+        checkbox->bounds.x,
+        checkbox->bounds.y,
+        box_size,
+        box_size
+    };
+    
+    // Draw box outline
+    SDL_SetRenderDrawColor(renderer, 100, 150, 200, 255);
+    SDL_RenderDrawRect(renderer, &amp;box);
+    
+    // Draw checkmark if checked
+    if (checkbox->checked &amp;&amp; *checkbox->checked) {
+        SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
+        SDL_RenderFillRect(renderer, &amp;box);
+    }
+    
+    // Draw label
+    if (checkbox->label) {
+        SDL_Color text_color = {200, 200, 200, 255};
+        SDL_Surface* surface = TTF_RenderText_Blended(font, checkbox->label, text_color);
+        if (surface) {
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+            if (texture) {
+                SDL_Rect text_rect = {
+                    checkbox->bounds.x + box_size + 10,
+                    checkbox->bounds.y,
+                    surface->w,
+                    surface->h
+                };
+                SDL_RenderCopy(renderer, texture, NULL, &amp;text_rect);
+                SDL_DestroyTexture(texture);
+            }
+            SDL_FreeSurface(surface);
+        }
+    }
+}
+
+/**
+ * Check if point is inside checkbox
+ */
+static bool checkbox_contains_point(SimpleCheckbox* checkbox, int x, int y) {
+    if (!checkbox) return false;
+    
+    int box_size = 20;
+    SDL_Rect box = {
+        checkbox->bounds.x,
+        checkbox->bounds.y,
+        box_size,
+        box_size
+    };
+    
+    return (x >= box.x &amp;&amp; x < box.x + box.w &amp;&amp;
+            y >= box.y &amp;&amp; y < box.y + box.h);
 }
 
 /**
@@ -491,9 +571,38 @@ void init_crawler_tab(AppState* state) {
     apply_prime_config_to_ui();
     
     // URL Pattern Selection (4 checkboxes)
-    // TODO: Implement custom checkbox rendering
-    // For now, using text labels to show structure
     col1_elem_y += 30;  // Section spacing
+    
+    // Initialize pattern checkboxes
+    const char* pattern_labels[] = {
+        "href attributes",
+        "JavaScript onclick",
+        "Data attributes",
+        "Meta refresh"
+    };
+    bool* pattern_states[] = {
+        &amp;g_crawler_ui.pattern_href,
+        &amp;g_crawler_ui.pattern_onclick,
+        &amp;g_crawler_ui.pattern_data_attr,
+        &amp;g_crawler_ui.pattern_meta_refresh
+    };
+    
+    // Set default values
+    g_crawler_ui.pattern_href = true;
+    g_crawler_ui.pattern_onclick = true;
+    g_crawler_ui.pattern_data_attr = false;
+    g_crawler_ui.pattern_meta_refresh = false;
+    
+    int checkbox_spacing = 30;
+    for (int i = 0; i < 4; i++) {
+        g_crawler_ui.pattern_checkboxes[i].bounds.x = col1_content_x;
+        g_crawler_ui.pattern_checkboxes[i].bounds.y = col1_elem_y;
+        g_crawler_ui.pattern_checkboxes[i].bounds.w = col1_content_w;
+        g_crawler_ui.pattern_checkboxes[i].bounds.h = 20;
+        g_crawler_ui.pattern_checkboxes[i].label = pattern_labels[i];
+        g_crawler_ui.pattern_checkboxes[i].checked = pattern_states[i];
+        col1_elem_y += checkbox_spacing;
+    }
     
     // Content Filtering (4 radio buttons)
     // TODO: Implement custom radio button rendering
@@ -896,6 +1005,26 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
     if (g_crawler_ui.stats_display) {
         crystalline_textarea_render(g_crawler_ui.stats_display, renderer);
     }
+    
+    // Render prime configuration inputs
+    if (g_crawler_ui.prime_freq_input) {
+        crystalline_input_render(g_crawler_ui.prime_freq_input, renderer);
+    }
+    if (g_crawler_ui.delay_min_input) {
+        crystalline_input_render(g_crawler_ui.delay_min_input, renderer);
+    }
+    if (g_crawler_ui.delay_max_input) {
+        crystalline_input_render(g_crawler_ui.delay_max_input, renderer);
+    }
+    
+    // Render URL pattern checkboxes
+    extern TTF_Font* get_global_font();
+    TTF_Font* font = get_global_font();
+    if (font) {
+        for (int i = 0; i < 4; i++) {
+            render_checkbox(renderer, &amp;g_crawler_ui.pattern_checkboxes[i], font);
+        }
+    }
 }
 
 /**
@@ -914,9 +1043,34 @@ void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state)
         crystalline_input_handle_mouse(g_crawler_ui.url_input, &sdl_event);
     }
     
+    // Handle prime configuration inputs
+    if (g_crawler_ui.prime_freq_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.prime_freq_input, &sdl_event);
+    }
+    if (g_crawler_ui.delay_min_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.delay_min_input, &sdl_event);
+    }
+    if (g_crawler_ui.delay_max_input) {
+        crystalline_input_handle_mouse(g_crawler_ui.delay_max_input, &sdl_event);
+    }
+    
     // Handle list
     if (g_crawler_ui.url_list) {
         crystalline_list_handle_mouse(g_crawler_ui.url_list, &sdl_event);
+    }
+    
+    // Handle checkbox clicks
+    int mouse_x = event->x;
+    int mouse_y = event->y;
+    for (int i = 0; i < 4; i++) {
+        if (checkbox_contains_point(&g_crawler_ui.pattern_checkboxes[i], mouse_x, mouse_y)) {
+            // Toggle checkbox
+            if (g_crawler_ui.pattern_checkboxes[i].checked) {
+                *g_crawler_ui.pattern_checkboxes[i].checked = !(*g_crawler_ui.pattern_checkboxes[i].checked);
+                printf("Toggled pattern checkbox %d: %s\n", i, 
+                       *g_crawler_ui.pattern_checkboxes[i].checked ? "ON" : "OFF");
+            }
+        }
     }
     
     // Handle buttons

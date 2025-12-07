@@ -84,14 +84,20 @@
 - [x] Wire to on_start_clicked() to read config before crawling
 - [x] Build successful: 0 errors, 0 warnings
 
-### Phase 2: Implement URL Pattern Checkboxes (1 hour)
-- [ ] Create custom checkbox rendering function
-- [ ] Add checkbox for pattern_href
-- [ ] Add checkbox for pattern_onclick
-- [ ] Add checkbox for pattern_data_attr
-- [ ] Add checkbox for pattern_meta_refresh
-- [ ] Wire to g_crawler_state pattern flags
-- [ ] Test checkbox state management
+### Phase 2: Implement URL Pattern Checkboxes ✅ COMPLETE
+- [x] Create SimpleCheckbox structure
+- [x] Create render_checkbox() function with SDL rendering
+- [x] Create checkbox_contains_point() for click detection
+- [x] Add 4 checkboxes to g_crawler_ui structure
+- [x] Initialize checkboxes with labels and state pointers:
+  * pattern_href (default: ON)
+  * pattern_onclick (default: ON)
+  * pattern_data_attr (default: OFF)
+  * pattern_meta_refresh (default: OFF)
+- [x] Wire to g_crawler_ui pattern flags
+- [x] Add checkbox rendering to render_crawler_tab()
+- [x] Add checkbox click handling to handle_crawler_tab_mouse_down()
+- [x] Build successful: 0 errors, 0 warnings
 
 ### Phase 3: Implement Content Filtering Radio Buttons (1 hour)
 - [ ] Create custom radio button rendering function
