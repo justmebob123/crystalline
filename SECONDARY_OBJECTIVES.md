@@ -4,8 +4,8 @@
 This file contains detailed implementation tasks for completing the Crystalline CLLM integration.
 Refer to MASTER_PLAN.md for high-level objectives and architectural requirements.
 
-**LAST UPDATED:** 2024-12-01 - Comprehensive Architecture Analysis Complete
-**BUILD STATUS:** ✅ Zero errors, 78 warnings (pre-existing from BigFixed migration)
+**LAST UPDATED:** 2024-12-07 - Precision Audit Complete, Benchmark Tab Planning
+**BUILD STATUS:** ✅ Zero errors, 11 warnings (down from 78)
 
 ---
 
@@ -388,6 +388,93 @@ for (uint32_t i = 0; i < point->num_neighbors; i++) {
 - True spatial locality in training
 - Gradient flow through neighbor connections
 - 12-fold symmetry fully utilized
+
+---
+
+### OBJECTIVE 15B: Comprehensive Benchmark Tab Integration [HIGH PRIORITY]
+
+**Purpose:** Integrate all tests and benchmarks into UI benchmark tab with comprehensive visualization
+
+**Critical Understanding:**
+- ALL existing tests (187 tests) will be accessible through benchmark tab
+- Real-time performance monitoring and visualization
+- Historical tracking and comparison
+- Sub-menu organization by category
+- Export functionality for analysis
+
+**Benchmark Categories:**
+
+**1. Algorithm Benchmarks**
+- Sphere threading performance (various sizes)
+- Visualization rendering speed (2D/3D/crystalline)
+- Memory management efficiency
+- Lock-free queue throughput
+- Hierarchical prime generation speed
+- Batch processing performance
+
+**2. Model Benchmarks**
+- Model creation time (various configs)
+- Embedding initialization speed
+- Forward pass latency
+- Inference throughput (tokens/sec)
+- Memory usage per model size
+- Cache efficiency metrics
+
+**3. Training Benchmarks**
+- Training speed (samples/sec)
+- Gradient computation time
+- Backpropagation performance
+- Multi-threaded scaling (1-12 threads)
+- Batch size impact on speed
+- Convergence rate analysis
+
+**4. Precision Benchmarks**
+- Double vs float accuracy comparison
+- BigFixed precision validation
+- Numerical stability tests
+- Extreme value handling
+- Precision loss detection
+
+**5. Architecture-Specific Benchmarks**
+- 12-fold symmetry overhead
+- Kissing spheres neighbor lookup speed
+- Lattice formula computation time
+- Angular position calculation speed
+- NTT attention vs standard (when implemented)
+- Cymatic frequency modulation impact
+
+**Implementation Tasks:**
+- [ ] Design benchmark framework architecture
+- [ ] Create benchmarks/ directory structure
+- [ ] Implement benchmark runner with real-time updates
+- [ ] Create benchmark data collection system
+- [ ] Design UI layout for benchmark tab
+- [ ] Create sub-menu navigation system
+- [ ] Implement result visualization (charts/graphs)
+- [ ] Add benchmark history tracking
+- [ ] Create benchmark comparison tools
+- [ ] Integrate existing 187 tests into benchmark UI
+- [ ] Add benchmark export functionality (CSV, JSON)
+- [ ] Document benchmark usage and interpretation
+- [ ] Create baseline results for comparison
+- [ ] Implement performance regression detection
+
+**UI Integration:**
+- [ ] Design benchmark tab layout in app/ui/tabs/tab_benchmark.c
+- [ ] Create sub-menu system for categories
+- [ ] Implement real-time chart rendering
+- [ ] Add benchmark execution controls (start/stop/pause)
+- [ ] Create results table with sorting/filtering
+- [ ] Add historical comparison view
+- [ ] Implement export dialog
+- [ ] Add benchmark configuration panel
+
+**Expected Impact:**
+- Centralized performance monitoring
+- Easy identification of regressions
+- Historical performance tracking
+- Better understanding of system behavior
+- Simplified performance validation
 
 ---
 
@@ -1008,26 +1095,29 @@ typedef struct {
 1. ✅ OBJECTIVE 2B - Remove legacy loss functions (COMPLETE)
 2. ✅ OBJECTIVE 2C - Rename crystalline to default (COMPLETE)
 3. ✅ OBJECTIVE 27 - Crawler training integration (COMPLETE)
-4. **OBJECTIVE 26** - Model management UI improvements
-5. **OBJECTIVE 21** - Fix backwards "simple_loss" naming
-6. **OBJECTIVE 22** - Delete unused infrastructure files (83KB)
+4. 🚨 **OBJECTIVE 29** - Fix float-to-double precision issues (303 instances) - BLOCKING
+5. **OBJECTIVE 15B** - Benchmark tab integration (all tests → UI)
+6. **OBJECTIVE 26** - Model management UI improvements
+7. **OBJECTIVE 21** - Fix backwards "simple_loss" naming
+8. **OBJECTIVE 22** - Delete unused infrastructure files (83KB)
 
 **HIGH (Do Next):**
-7. **OBJECTIVE 25** - Fix remaining 78 build warnings
-8. OBJECTIVE 2D - Remove legacy code files
-9. OBJECTIVE 14, 15, 16 - Mathematical integration (COMPLETE)
+9. **OBJECTIVE 25** - Fix remaining build warnings (down to 11 from 78)
+10. OBJECTIVE 2D - Remove legacy code files
+11. ✅ OBJECTIVE 14, 15, 16 - Mathematical integration (COMPLETE)
+12. **OBJECTIVE 28** - Crystalline UI System (5/9 tabs complete)
 
 **MEDIUM (After High Priority):**
-10. **OBJECTIVE 23** - Remove misleading file name qualifiers
-11. **OBJECTIVE 24** - Investigate and consolidate duplicates
-12. OBJECTIVE 5A - Kissing spheres as only threading
-13. OBJECTIVE 8A - Remove conditional compilation
-14. OBJECTIVE 17 - NTT attention (performance)
-15. OBJECTIVE 18 - Cymatic resonance (quality)
+13. **OBJECTIVE 23** - Remove misleading file name qualifiers
+14. **OBJECTIVE 24** - Investigate and consolidate duplicates
+15. OBJECTIVE 5A - Kissing spheres as only threading
+16. OBJECTIVE 8A - Remove conditional compilation
+17. OBJECTIVE 17 - NTT attention (performance)
+18. OBJECTIVE 18 - Cymatic resonance (quality)
 
 **LOW (Future):**
-16. OBJECTIVE 19 - Analysis tools (validation)
-17. OBJECTIVE 20 - Comprehensive testing
+19. OBJECTIVE 19 - Analysis tools (validation)
+20. OBJECTIVE 20 - Comprehensive testing (migrating to benchmark tab)
 
 ---
 
@@ -1098,4 +1188,99 @@ typedef struct {
 - `app/ui/tabs/tab_*.c` - All converted tabs
 - `app/ui/model_selector.c` - Dropdown event handling
 - `CRYSTALLINE_UI_STANDARDS.md` - Usability standards
+
+---
+
+### OBJECTIVE 29: Fix Float-to-Double Precision Issues [CRITICAL PRIORITY]
+
+**Purpose:** Eliminate all float precision usage in AI code to ensure consistent double precision throughout
+
+**Status:** 🔄 IN PROGRESS (1 of 303 instances fixed)
+
+**Critical Understanding:**
+- Data structures (AttentionLayer, embeddings, gradients) use `double` ✅
+- Computation code (attention, training, optimizer) uses `float` ❌
+- Result: Implicit float-to-double conversions causing precision loss
+- Impact: Up to 8 decimal digits lost, training instability, numerical errors
+
+**Scope:**
+- **303 float literals** found across 20+ files in `src/ai/`
+- Major inconsistency between data structures and computations
+- Previous BigFixed migration claimed "NO float arithmetic" but missed these
+
+**Priority Files:**
+
+**Priority 1: CRITICAL (Immediate)**
+1. `src/ai/cllm_attention.c` - 25 float instances
+   - Float function signatures
+   - Float struct members (PlimptonRatio)
+   - Float constants (CYMATIC_FREQS)
+   - Float computations assigned to double variables
+
+2. `src/ai/cllm_training.c` - 27 float instances
+   - Float literals in gradient computations
+   - Float in loss calculations
+
+3. `src/ai/cllm_training_threaded.c` - 18 float instances
+   - Float in threaded gradient operations
+
+**Priority 2: HIGH (This Week)**
+4. `src/ai/infrastructure/cllm_optimizer.c` - 46 float instances
+5. `src/ai/cllm_optimizer.c` - 17 float instances
+6. `src/ai/cllm_symmetry.c` - 17 float instances
+7. `src/ai/cllm_root_word_modeling.c` - 16 float instances
+8. `src/ai/cllm_positional.c` - 14 float instances
+
+**Priority 3: MEDIUM (Next Week)**
+9. `src/ai/cllm_lattice_embed.c` - 10 float instances
+10. `src/ai/cllm_lattice_attention.c` - 10 float instances
+11. `src/ai/cllm_neighbor_ops.c` - 9 float instances
+12. `src/ai/cllm_feedforward.c` - 9 float instances
+13. `src/ai/cllm_lattice_embeddings_spheres.c` - 7 float instances
+
+**Fixes Applied:**
+- ✅ `src/ai/cllm_lattice_cache.c:205` - Changed float nan_value to double
+
+**Implementation Tasks:**
+- [x] Comprehensive precision audit (DONE - 303 instances found)
+- [x] Fix NaN initialization (DONE)
+- [ ] Fix cllm_attention.c (Priority 1)
+- [ ] Fix cllm_training.c (Priority 1)
+- [ ] Fix cllm_training_threaded.c (Priority 1)
+- [ ] Fix optimizer files (Priority 2)
+- [ ] Fix remaining files (Priority 3)
+- [ ] Create stress tests for large models
+- [ ] Verify zero precision loss
+- [ ] Test with vocab size > 1,000,000
+- [ ] Test with embedding dim > 10,000
+- [ ] Run Valgrind on all tests
+- [ ] Document precision requirements
+
+**Testing Requirements:**
+- [ ] All 187 tests must pass with double precision
+- [ ] Create precision validation tests
+- [ ] Test extreme values (near double max/min)
+- [ ] Verify no implicit conversions
+- [ ] Benchmark performance impact (should be minimal)
+
+**Documentation:**
+- ✅ CRITICAL_NAN_PRECISION_ISSUE.md - Detailed analysis
+- ✅ PRECISION_AUDIT_RESULTS.md - Complete audit results
+- ✅ NAN_WARNINGS_ANALYSIS.md - Expected behavior explanation
+- [ ] Update MASTER_PLAN.md with precision requirements
+- [ ] Create precision coding guidelines
+
+**Expected Impact:**
+- Consistent double precision throughout system
+- Improved numerical stability in training
+- Better gradient accuracy
+- No precision loss in computations
+- Support for larger models
+
+**Related Issues:**
+- Previous BigFixed migration incomplete
+- Float usage contradicts "NO float arithmetic" claim
+- Inconsistency between data structures and computations
+
+---
 
