@@ -255,6 +255,37 @@ static void on_add_url_clicked(void* data) {
     }
 }
 
+static void on_reset_urls_clicked(void* data) {
+    (void)data;
+    
+    if (g_crawler_ui.crawler_running) {
+        printf("Cannot reset URLs while crawler is running\n");
+        return;
+    }
+    
+    // Clear URL list
+    clear_url_list();
+    
+    // TODO: Clear URL manager database when integrated
+    printf("URLs reset\n");
+}
+
+static void on_save_config_clicked(void* data) {
+    (void)data;
+    
+    // TODO: Implement save config to JSON
+    // For now, just print message
+    printf("Save Config clicked - TODO: Implement JSON save\n");
+}
+
+static void on_load_config_clicked(void* data) {
+    (void)data;
+    
+    // TODO: Implement load config from JSON
+    // For now, just print message
+    printf("Load Config clicked - TODO: Implement JSON load\n");
+}
+
 /**
  * Initialize Crawler Tab
  */
@@ -515,7 +546,8 @@ void init_crawler_tab(AppState* state) {
         "Reset URLs",
         font
     );
-    (void)btn_reset_urls;  // Will wire callback later
+    crystalline_button_set_callback(btn_reset_urls, on_reset_urls_clicked, state);
+    (void)btn_reset_urls;
     elem_y += 70;
     
     // Save Config button
@@ -528,7 +560,8 @@ void init_crawler_tab(AppState* state) {
         "Save Config",
         font
     );
-    (void)btn_save_config;  // Will wire callback later
+    crystalline_button_set_callback(btn_save_config, on_save_config_clicked, state);
+    (void)btn_save_config;
     elem_y += 70;
     
     // Load Config button
@@ -541,7 +574,8 @@ void init_crawler_tab(AppState* state) {
         "Load Config",
         font
     );
-    (void)btn_load_config;  // Will wire callback later
+    crystalline_button_set_callback(btn_load_config, on_load_config_clicked, state);
+    (void)btn_load_config;
     elem_y += 80;
     
     // Sliders
