@@ -258,18 +258,132 @@ size_t cymatic_find_peaks(const double* signal, size_t len,
 void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_symmetry) {
     if (!signal || len == 0 || shape_symmetry == 0) return;
     
-    double phi = 1.618033988749895;  // Golden ratio
-    
     // Apply modulation based on geometric symmetry
     for (size_t i = 0; i < len; i++) {
         double t = (double)i / (double)len;
         
         // Calculate symmetry angle
-        double angle = t * (double)shape_symmetry * 2.0 * PRIME_PI;
+        double angle = t * (double)shape_symmetry * TWO_PI;
         
         // Apply golden ratio scaling
-        double scale = 1.0 + 0.1 * prime_cos(angle / phi);
+        double scale = 1.0 + 0.1 * prime_cos(angle / PHI);
         
         signal[i] *= scale;
     }
+}
+
+/* ============================================================================
+ * Harmonic FFT Analysis (from Python prototype)
+ * ============================================================================ */
+
+bool cymatic_harmonic_alignment(const double* signal, size_t len,
+                                const uint64_t* target_primes, size_t num_primes,
+                                uint32_t alignment_threshold) {
+    if (!signal || !target_primes || len == 0 || num_primes == 0) {
+        return false;
+    }
+    
+    // Perform FFT analysis (using DFT for now)
+    double* fft_magnitudes = (double*)malloc(len * sizeof(double));
+    if (!fft_magnitudes) {
+        return false;
+    }
+    
+    // Calculate FFT magnitudes
+    for (size_t k = 0; k < len; k++) {
+        double real = 0.0;
+        double imag = 0.0;
+        
+        for (size_t n = 0; n < len; n++) {
+            double angle = -TWO_PI * (double)k * (double)n / (double)len;
+            real += signal[n] * prime_cos(angle);
+            imag += signal[n] * prime_sin(angle);
+        }
+        
+        fft_magnitudes[k] = prime_sqrt(real * real + imag * imag);
+    }
+    
+    // Find top N peaks
+    size_t* peak_indices = (size_t*)malloc(num_primes * sizeof(size_t));
+    if (!peak_indices) {
+        free(fft_magnitudes);
+        return false;
+    }
+    
+    size_t num_peaks = cymatic_find_top_peaks(fft_magnitudes, len, 
+                                               peak_indices, num_primes);
+    
+    // Check alignment with target primes
+    size_t aligned_count = 0;
+    
+    for (size_t i = 0; i < num_peaks; i++) {
+        size_t peak_idx = peak_indices[i];
+        
+        for (size_t p = 0; p < num_primes; p++) {
+            // Check if peak index aligns with target prime frequency
+            size_t expected_idx = target_primes[p] % len;
+            
+            if (peak_idx >= expected_idx - alignment_threshold &&
+                peak_idx <= expected_idx + alignment_threshold) {
+                aligned_count++;
+                break;
+            }
+        }
+    }
+    
+    free(fft_magnitudes);
+    free(peak_indices);
+    
+    // Return true if >50% of primes show alignment
+    return (aligned_count * 2 > num_primes);
+}
+
+size_t cymatic_find_top_peaks(const double* fft_result, size_t len,
+                              size_t* peak_indices, size_t N) {
+    if (!fft_result || !peak_indices || len == 0 || N == 0) {
+        return 0;
+    }
+    
+    // Create array of (index, magnitude) pairs
+    typedef struct {
+        size_t index;
+        double magnitude;
+    } Peak;
+    
+    Peak* peaks = (Peak*)malloc(len * sizeof(Peak));
+    if (!peaks) {
+        return 0;
+    }
+    
+    for (size_t i = 0; i < len; i++) {
+        peaks[i].index = i;
+        peaks[i].magnitude = fft_result[i];
+    }
+    
+    // Sort by magnitude (descending) using simple selection sort
+    for (size_t i = 0; i < N && i < len; i++) {
+        size_t max_idx = i;
+        double max_mag = peaks[i].magnitude;
+        
+        for (size_t j = i + 1; j < len; j++) {
+            if (peaks[j].magnitude > max_mag) {
+                max_mag = peaks[j].magnitude;
+                max_idx = j;
+            }
+        }
+        
+        // Swap
+        if (max_idx != i) {
+            Peak temp = peaks[i];
+            peaks[i] = peaks[max_idx];
+            peaks[max_idx] = temp;
+        }
+        
+        peak_indices[i] = peaks[i].index;
+    }
+    
+    size_t found = (N < len) ? N : len;
+    free(peaks);
+    
+    return found;
 }

@@ -6,6 +6,7 @@
 #include "qk_mapping.h"
 #include "tensor_ops.h"
 #include "prime_math_custom.h"
+#include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>
 

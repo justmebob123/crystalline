@@ -5,10 +5,8 @@
 
 #include "tensor_ops.h"
 #include "prime_math_custom.h"
+#include "cllm_mathematical_constants.h"
 #include <stdlib.h>
-
-#define PHI 1.618033988749895
-#define TWO_PI 6.28318530717958647692
 
 double tensor_distance(const double* t1, const double* t2,
                        size_t dim, uint64_t p_mod) {

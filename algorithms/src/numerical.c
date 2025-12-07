@@ -328,3 +328,10 @@ double numerical_dot_product(const double* a, const double* b, size_t size) {
     }
     return dot;
 }
+
+double numerical_scalar_decay(double r, double C, double alpha) {
+    // decay(r) = C / (r^alpha + epsilon)
+    // epsilon prevents division by zero
+    double denominator = prime_pow(r, alpha) + 1e-10;
+    return C / denominator;
+}

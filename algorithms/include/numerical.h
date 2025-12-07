@@ -350,4 +350,22 @@ double numerical_dot_product(
     size_t size
 );
 
+/**
+ * @brief Calculate scalar decay with distance
+ * 
+ * Computes: decay(r) = C / (r^alpha + epsilon)
+ * 
+ * Used for distance-based weighting in:
+ * - Inverse distance weighting
+ * - Gravitational/electromagnetic decay
+ * - Influence functions
+ * - Kernel functions
+ * 
+ * @param r Distance/radius
+ * @param C Constant multiplier (default: 1.0)
+ * @param alpha Decay exponent (default: 2.0 for inverse square)
+ * @return Decay value
+ */
+double numerical_scalar_decay(double r, double C, double alpha);
+
 #endif /* NUMERICAL_H */

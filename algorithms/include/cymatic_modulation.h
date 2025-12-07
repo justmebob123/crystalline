@@ -149,6 +149,41 @@ size_t cymatic_find_peaks(const double* signal, size_t len,
  */
 void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_symmetry);
 
+/* ============================================================================
+ * Harmonic FFT Analysis
+ * ============================================================================ */
+
+/**
+ * @brief Detect harmonic alignment with target primes
+ * 
+ * Performs FFT analysis and checks if peaks align with target prime frequencies.
+ * This is useful for validating that a signal contains expected harmonic content.
+ * 
+ * @param signal Input signal
+ * @param len Signal length
+ * @param target_primes Array of target prime frequencies
+ * @param num_primes Number of target primes
+ * @param alignment_threshold Threshold for considering alignment (default: 5)
+ * @return true if harmonically aligned (>50% of primes show peaks)
+ */
+bool cymatic_harmonic_alignment(const double* signal, size_t len,
+                                const uint64_t* target_primes, size_t num_primes,
+                                uint32_t alignment_threshold);
+
+/**
+ * @brief Find top N frequency peaks in FFT result
+ * 
+ * Sorts FFT magnitude spectrum and returns indices of top N peaks.
+ * 
+ * @param fft_result FFT magnitude spectrum
+ * @param len Spectrum length
+ * @param peak_indices Output array for peak indices (pre-allocated, size N)
+ * @param N Number of peaks to find
+ * @return Number of peaks found
+ */
+size_t cymatic_find_top_peaks(const double* fft_result, size_t len,
+                              size_t* peak_indices, size_t N);
+
 #ifdef __cplusplus
 }
 #endif

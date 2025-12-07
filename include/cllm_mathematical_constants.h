@@ -128,11 +128,45 @@ extern const size_t CYMATIC_FREQUENCIES_COUNT;
 #define GOLDEN_RATIO 1.618033988749894848204586834365638117720309179805762862135
 #endif
 
+#ifndef PHI
+#define PHI GOLDEN_RATIO
+#endif
+
+/** Golden ratio squared: φ² */
+#ifndef PHI_SQUARED
+#define PHI_SQUARED 2.618033988749895
+#endif
+
+/** Golden ratio inverse: 1/φ = φ - 1 */
+#ifndef PHI_INVERSE
+#define PHI_INVERSE 0.618033988749895
+#endif
+
+/** Golden ratio cubed: φ³ */
+#ifndef PHI_CUBED
+#define PHI_CUBED 4.236067977499790
+#endif
+
 /**
  * Natural Logarithm of 3
  * ln(3) ≈ 1.0986122886681098
  */
 #define LN_3 1.0986122886681096613952891730059917642046077108666
+
+/** Natural logarithm of 2: ln(2) */
+#ifndef LN_2
+#define LN_2 0.69314718055994530942
+#endif
+
+/** Natural logarithm of 10: ln(10) */
+#ifndef LN_10
+#define LN_10 2.30258509299404568402
+#endif
+
+/** Euler's number: e */
+#ifndef E
+#define E 2.71828182845904523536
+#endif
 
 /**
  * Pi (π)
@@ -140,6 +174,25 @@ extern const size_t CYMATIC_FREQUENCIES_COUNT;
  */
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288419716939937510
+#endif
+
+#ifndef PI
+#define PI M_PI
+#endif
+
+/** Two pi: 2π */
+#ifndef TWO_PI
+#define TWO_PI 6.28318530717958647692
+#endif
+
+/** Half pi: π/2 */
+#ifndef HALF_PI
+#define HALF_PI 1.57079632679489661923
+#endif
+
+/** Pi squared: π² */
+#ifndef PI_SQUARED
+#define PI_SQUARED 9.86960440108935861883
 #endif
 
 // ============================================================================
@@ -189,6 +242,44 @@ void cllm_init_mathematical_constants(MathematicalConstantsBigFixed* constants);
  * Must be called at program shutdown
  */
 void cllm_free_mathematical_constants(MathematicalConstantsBigFixed* constants);
+
+// ============================================================================
+// MODULUS CONSTANTS
+// ============================================================================
+
+/** Prime modulus: 2³² + 13 */
+#ifndef P_MOD_32
+#define P_MOD_32 4294967309ULL
+#endif
+
+/** Prime modulus: 2⁶⁴ + 13 */
+#ifndef P_MOD_64
+#define P_MOD_64 18446744073709551629ULL
+#endif
+
+/** Machine epsilon for double precision */
+#ifndef EPSILON
+#define EPSILON 1e-10
+#endif
+
+/** Small value for numerical stability */
+#ifndef SMALL_VALUE
+#define SMALL_VALUE 1e-15
+#endif
+
+// ============================================================================
+// COMPOSITE CONSTANTS (Golden Ratio + Pi)
+// ============================================================================
+
+/** φ × π */
+#ifndef PHI_PI_SCALE
+#define PHI_PI_SCALE 5.08318530717958647692
+#endif
+
+/** φ × 2π */
+#ifndef PHI_TWO_PI
+#define PHI_TWO_PI 10.16637061435917295384
+#endif
 
 // ============================================================================
 // UTILITY FUNCTIONS

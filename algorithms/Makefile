@@ -30,6 +30,8 @@ SOURCES = src/numerical.c \
           src/loss_functions_bigfixed.c \
           src/tensor_ops.c \
           src/qk_mapping.c \
+          src/iterative_search.c \
+          src/validation.c \
           src/bigfixed_math_wrappers.c
 
 # Object files
