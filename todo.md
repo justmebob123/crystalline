@@ -181,5 +181,14 @@
 
 ## Phase 6: Test Unified CLLM Tool ⏳ PENDING
 
+## CRITICAL BUG FIXED ✅
+
+**Blocking Issue Resolved:** Shared memory segmentation fault
+- **Root Cause:** NULL function pointer dereference in shared_memory_free()
+- **Impact:** Would crash hierarchical kissing spheres implementation
+- **Fix:** Added NULL check before calling free_fn
+- **Verification:** All 63 algorithm tests passing (100%)
+- **Memory Safety:** Valgrind clean - zero leaks, zero errors
+
 ## Current Focus
-Starting Phase 1.1 - Creating generic sphere threading API in algorithms layer
+Phase 4.3 - Rename core CLLM files (kissing_spheres → lattice)
