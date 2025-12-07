@@ -271,65 +271,85 @@ void init_crawler_tab(AppState* state) {
         return;
     }
     
-    // Calculate layout using RENDER_WIDTH
+    // Calculate layout using RENDER_WIDTH - 3 COLUMN LAYOUT
     int content_width = RENDER_WIDTH;
     int content_height = WINDOW_HEIGHT - SUBMENU_HEIGHT;
     
-    // Split into left (70%) and right (30%)
-    int list_width = (int)(content_width * 0.70f);
-    int control_width = content_width - list_width;
+    // Split into 3 equal columns (33% each)
+    int col_width = content_width / 3;
+    int spacing = 10;
     
-    // Calculate TOP-LEFT positions first
-    int list_x = RENDER_OFFSET_X;
-    int list_y = SUBMENU_HEIGHT;
-    int list_w = list_width - 20;
-    int list_h = content_height - 20;
+    // Column 1: Configuration (Prime, Patterns, Filtering, Advanced)
+    int col1_x = RENDER_OFFSET_X;
+    int col1_y = SUBMENU_HEIGHT;
+    int col1_w = col_width - spacing * 2;
+    int col1_h = content_height - 20;
     
-    int control_x = RENDER_OFFSET_X + list_width + 10;
-    int control_y = SUBMENU_HEIGHT;
-    int control_w = control_width - 30;
-    int control_h = content_height - 20;
+    // Column 2: URL Management (Input, List, Controls)
+    int col2_x = RENDER_OFFSET_X + col_width;
+    int col2_y = SUBMENU_HEIGHT;
+    int col2_w = col_width - spacing * 2;
+    int col2_h = content_height - 20;
     
-    // Convert to CENTER coordinates for Crystalline UI
+    // Column 3: Status & Activity (Model, Stats, Log)
+    int col3_x = RENDER_OFFSET_X + col_width * 2;
+    int col3_y = SUBMENU_HEIGHT;
+    int col3_w = col_width - spacing * 2;
+    int col3_h = content_height - 20;
+    
+    // Create 3 panels using CENTER coordinates for Crystalline UI
     g_crawler_ui.list_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        list_x + list_w / 2.0f,
-        list_y + list_h / 2.0f,
-        list_w,
-        list_h,
-        "URL Queue",
+        col1_x + col1_w / 2.0f,
+        col1_y + col1_h / 2.0f,
+        col1_w,
+        col1_h,
+        "Configuration",
         font
     );
     
     g_crawler_ui.control_panel = crystalline_panel_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        control_x + control_w / 2.0f,
-        control_y + control_h / 2.0f,
-        control_w,
-        control_h,
-        "Controls",
+        col2_x + col2_w / 2.0f,
+        col2_y + col2_h / 2.0f,
+        col2_w,
+        col2_h,
+        "URL Management",
         font
     );
     
-    // Create URL list inside left panel
-    int list_content_x = list_x + 10;
-    int list_content_y = list_y + 40;
-    int list_content_w = list_w - 20;
-    int list_content_h = list_h - 50;
+    // Add third panel for status
+    CrystallinePanel* status_panel = crystalline_panel_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col3_x + col3_w / 2.0f,
+        col3_y + col3_h / 2.0f,
+        col3_w,
+        col3_h,
+        "Status & Activity",
+        font
+    );
+    (void)status_panel;  // Will be used later
     
+    // Column 2: URL Management
+    int col2_content_x = col2_x + 10;
+    int col2_content_y = col2_y + 40;
+    int col2_content_w = col2_w - 20;
+    
+    // URL list (takes most of column 2)
+    int url_list_h = col2_h - 400;
     g_crawler_ui.url_list = crystalline_list_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
-        list_content_x + list_content_w / 2.0f,
-        list_content_y + list_content_h / 2.0f,
-        list_content_w,
-        40,  // Item height
+        col2_content_x + col2_content_w / 2.0f,
+        col2_content_y + url_list_h / 2.0f,
+        col2_content_w,
+        40,
         font
     );
     
-    // Create control elements inside right panel (top-justified)
-    int elem_x = control_x + 10;
-    int elem_w = control_w - 20;
-    int elem_y = control_y + 40;
+    // Position for controls below list
+    int elem_x = col2_content_x;
+    int elem_w = col2_content_w;
+    int elem_y = col2_content_y + url_list_h + 20;
     
     // URL input field
     int input_h = 40;
@@ -432,8 +452,8 @@ void init_crawler_tab(AppState* state) {
     crystalline_slider_set_value(g_crawler_ui.slider_rate_limit, 2.0f);
     elem_y += 70;
     
-    // Stats display
-    int stats_h = control_h - (elem_y - control_y) - 20;
+    // Stats display (use remaining space in column 2)
+    int stats_h = col2_h - (elem_y - col2_y) - 20;
     g_crawler_ui.stats_display = crystalline_textarea_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         elem_x + elem_w / 2.0f,
