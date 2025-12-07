@@ -126,12 +126,18 @@ Redesign model management to enable concurrent operations while keeping Models T
 **Next Action:** Phase 3.5 - Crawler Tab Refactor
 
 ## Recent Fixes
-**Dropdown Population Fix (Critical)**
-- Fixed model dropdown not populating in LLM and Training tabs
-- Issue: Static flag prevented re-population after registry scan
-- Solution: Changed to track model count and scan registry on each render
-- Now dropdowns update dynamically when models are added/removed
+**Model Registry Initialization Fix (Critical)**
+- Fixed "Registry not initialized" error spam in terminal
+- Fixed model dropdowns not populating in LLM and Training tabs
+- Root cause: model_registry_init() was never called in main.c
+- Solution: Added registry initialization on application startup
+- Added registry cleanup on application shutdown
 - Build successful: 0 errors, 0 warnings
+
+**Previous Fix: Dropdown Population Logic**
+- Changed static bool flag to model count tracking
+- Added model_registry_scan() call on each render
+- Dropdowns now update dynamically when models change
 
 ## Summary of Training Tab Refactor
 The Training Tab has been successfully refactored to own its model independently:
