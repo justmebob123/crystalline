@@ -1,6 +1,6 @@
 # Architecture Refactoring - Active Session
 
-## Phase 1: Move Threading to Algorithms Layer 🔄 IN PROGRESS
+## Phase 1: Move Threading to Algorithms Layer ✅ COMPLETE
 
 ### 1.1: Create Generic Sphere Threading API ✅ COMPLETE
 - [x] Create `algorithms/include/sphere_threading.h`
@@ -26,10 +26,11 @@
 - [x] Backward compatibility wrappers for existing code
 - [x] Build verification successful
 
-### 1.5: Update Tests
-- [ ] Create `algorithms/tests/test_sphere_threading.c`
-- [ ] Update CLLM tests
-- [ ] Verify all tests pass
+### 1.5: Update Tests ✅ COMPLETE
+- [x] Create `algorithms/tests/test_sphere_threading.c`
+- [x] Create `algorithms/tests/Makefile`
+- [x] All 15 tests passing (100%)
+- [x] Verify all tests pass
 
 ## Phase 2: Create Unified Visualization Framework ⏳ PENDING
 
