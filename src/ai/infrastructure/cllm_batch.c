@@ -1,3 +1,30 @@
+/**
+ * @file infrastructure/cllm_batch.c
+ * @brief Low-Level Batch Infrastructure and Tensor Operations
+ * 
+ * This is the LOW-LEVEL INFRASTRUCTURE for batch processing.
+ * Provides tensor operations, batch splitting, and thread-safe management.
+ * 
+ * RELATIONSHIP TO OTHER FILES:
+ * - This file: Low-level infrastructure (tensors, splitting, queues)
+ * - src/ai/cllm_batch.c: High-level simple API for training loops
+ * 
+ * USE THIS WHEN:
+ * - Need multi-dimensional tensor operations (reshape, slice, etc.)
+ * - Splitting batches for parallel processing across threads
+ * - Thread-safe batch queue management
+ * - Reference-counted batch sharing between threads
+ * - Complex batch transformations
+ * 
+ * USE src/ai/cllm_batch.c WHEN:
+ * - Simple batch generation from tokens
+ * - Basic training loop batch iteration
+ * - Don't need advanced tensor operations
+ * 
+ * ANALOGY: This is like open() - powerful, flexible, but more complex.
+ *          src/ai/cllm_batch.c is like fopen() - simple and easy to use.
+ */
+
 #include "ai/cllm_batch.h"
 #include "prime_float_math.h"
 #include <stdlib.h>

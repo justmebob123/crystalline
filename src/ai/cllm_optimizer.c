@@ -1,6 +1,25 @@
-/*
- * CLLM Optimizer
- * Implements Adam optimizer and gradient operations
+/**
+ * @file cllm_optimizer.c
+ * @brief High-Level Optimizer Wrapper for Training
+ * 
+ * This is the SIMPLE, HIGH-LEVEL API for optimizer operations.
+ * Implements Adam optimizer and gradient operations for training loops.
+ * 
+ * RELATIONSHIP TO OTHER FILES:
+ * - This file: Simple optimizer wrapper for training
+ * - infrastructure/cllm_optimizer.c: Low-level optimizer infrastructure,
+ *   advanced algorithms, distributed optimization
+ * 
+ * USE THIS WHEN:
+ * - Simple training loop optimization
+ * - Basic Adam optimizer usage
+ * - Standard gradient updates
+ * 
+ * USE infrastructure/cllm_optimizer.c WHEN:
+ * - Advanced optimization algorithms
+ * - Distributed optimization across threads
+ * - Complex gradient accumulation strategies
+ * - Custom optimizer state management
  */
 
 #include <stdio.h>

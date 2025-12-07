@@ -1,10 +1,25 @@
 /**
- * CLLM Lattice-Based Embedding Initialization
+ * @file cllm_lattice_embeddings.c
+ * @brief Lattice-Based Embedding Initialization (L(n,d,k,λ) Formula)
  * 
  * Implements OBJECTIVE 14: Integrate L(n,d,k,λ) Lattice Formula into Training
  * 
- * This file replaces random embedding initialization with the crystalline
- * lattice formula L(n,d,k,λ) = 3^O(n,k,λ) · ∏cos(θ·φᵢ) · Γ(k) · ν(λ) · Γ(n,d)
+ * EMBEDDING STRATEGY: Geometric Lattice Formula
+ * - Uses L(n,d,k,λ) = 3^O(n,k,λ) · ∏cos(θ·φᵢ) · Γ(k) · ν(λ) · Γ(n,d)
+ * - Encodes geometric relationships through mathematical formula
+ * - Provides structured initialization instead of random
+ * 
+ * RELATIONSHIP TO OTHER EMBEDDING FILES:
+ * - cllm_lattice_embeddings.c: THIS FILE - L(n,d,k,λ) formula
+ * - cllm_clock_embeddings.c: Babylonian clock structure (12, 60, 60, 100)
+ * - cllm_lll_embeddings.c: LLL lattice reduction algorithm
+ * - cllm_embeddings.c: Main embedding layer implementation
+ * - cllm_embedding.c: Generic embedding utilities
+ * 
+ * USE THIS WHEN:
+ * - Want geometric lattice structure
+ * - Need formula-based initialization
+ * - Prefer mathematical structure over clock positions
  */
 
 #include <stdio.h>

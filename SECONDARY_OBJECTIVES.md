@@ -136,23 +136,77 @@ Refer to MASTER_PLAN.md for high-level objectives and architectural requirements
 
 ---
 
-### OBJECTIVE 5A: Kissing Spheres as ONLY Threading [MEDIUM PRIORITY]
+### OBJECTIVE 5A: Kissing Spheres as ONLY Threading [HIGH PRIORITY - NEXT AFTER 24]
 
-**Purpose:** Remove all non-kissing-spheres threading code
+**Purpose:** Remove all non-kissing-spheres threading code and make it the only threading model
 
-**Tasks:**
-- [ ] Remove ALL fallbacks to old threading
-- [ ] Make kissing spheres mandatory (no single-threaded fallback)
-- [ ] Remove `cllm_train_epoch_mt()` completely
-- [ ] Update tools to require kissing spheres
-- [ ] Document kissing spheres as the only threading model
-- [ ] Remove any single-threaded training paths
-- [ ] Ensure all training goes through kissing spheres
+**Critical Requirement:** MUST verify kissing spheres is properly integrated BEFORE removing old threading
+
+**Phase 1: Verification (MUST DO FIRST)**
+- [ ] Verify kissing spheres implementation is complete
+  - [ ] Check src/ai/cllm_kissing_spheres.c - core implementation
+  - [ ] Check src/ai/cllm_training_threaded.c - integration
+  - [ ] Verify 12-fold symmetry enforcement
+  - [ ] Verify node zero (control thread) never processes batches
+  - [ ] Verify shared memory structure works correctly
+- [ ] Test kissing spheres threading with actual training
+  - [ ] Run training with kissing spheres enabled
+  - [ ] Verify performance is acceptable
+  - [ ] Verify no crashes or deadlocks
+  - [ ] Verify results are correct
+- [ ] Document current kissing spheres architecture
+  - [ ] Thread allocation strategy
+  - [ ] Work distribution mechanism
+  - [ ] Synchronization points
+  - [ ] Memory layout
+
+**Phase 2: Identify Old Threading Code**
+- [ ] Find all references to old threading functions
+  - [ ] Search for cllm_train_epoch_mt()
+  - [ ] Search for single-threaded training paths
+  - [ ] Search for threading fallbacks
+  - [ ] Search for conditional threading code
+- [ ] List all files that need updates
+  - [ ] tools/train_model.c - CLI tool
+  - [ ] src/ai/cllm_training.c - training functions
+  - [ ] src/crawler/continuous_training.c - crawler training
+  - [ ] Any other files with threading logic
+- [ ] Identify config flags that enable/disable threading
+  - [ ] enable_kissing_spheres flags
+  - [ ] use_threading flags
+  - [ ] Any other threading-related flags
+
+**Phase 3: Remove Old Threading (ONLY AFTER VERIFICATION)**
+- [ ] Remove cllm_train_epoch_mt() function
+- [ ] Remove single-threaded training paths
+- [ ] Remove threading fallbacks
+- [ ] Remove conditional threading code
+- [ ] Update all tools to use kissing spheres only
+- [ ] Remove threading-related config flags
+- [ ] Update documentation
+
+**Phase 4: Build and Test**
+- [ ] Build verification (0 errors, 0 warnings)
+- [ ] Test training with various configurations
+- [ ] Verify performance is maintained or improved
+- [ ] Commit: "Make kissing spheres the only threading model (OBJECTIVE 5A)"
+
+**Success Criteria:**
+- All kissing spheres verified working correctly
+- All old threading code removed
+- No fallbacks or conditional paths
+- All tools use kissing spheres
+- Build clean (0 errors, 0 warnings)
+- Training works correctly
+- Performance acceptable
 
 **Related Files:**
-- `tools/train_model.c` - Remove fallbacks
-- `src/ai/cllm_training_threaded.c` - Main implementation
-- `src/crawler/continuous_training.c` - Update to use kissing spheres
+- src/ai/cllm_kissing_spheres.c - Core implementation
+- src/ai/cllm_training_threaded.c - Main training integration
+- src/ai/cllm_training.c - Training functions
+- tools/train_model.c - CLI tool
+- src/crawler/continuous_training.c - Crawler training
+- include/cllm_training.h - Training API
 
 ---
 

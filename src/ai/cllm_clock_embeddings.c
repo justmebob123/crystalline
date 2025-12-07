@@ -1,8 +1,26 @@
 /**
- * Clock-Based Embedding Initialization
+ * @file cllm_clock_embeddings.c
+ * @brief Clock-Based Embedding Initialization (Babylonian Structure)
  * 
  * OPTIMIZED initialization using direct clock geometry instead of
  * computing L(n,d,k,λ) formula for every token.
+ * 
+ * EMBEDDING STRATEGY: Babylonian Clock Lattice
+ * - Uses 12, 60, 60, 100 ring structure
+ * - Maps tokens to clock positions deterministically
+ * - Encodes geometric relationships in embedding space
+ * 
+ * RELATIONSHIP TO OTHER EMBEDDING FILES:
+ * - cllm_clock_embeddings.c: THIS FILE - Babylonian clock structure
+ * - cllm_lattice_embeddings.c: Geometric lattice patterns (L(n,d,k,λ) formula)
+ * - cllm_lll_embeddings.c: LLL lattice reduction algorithm
+ * - cllm_embeddings.c: Main embedding layer implementation
+ * - cllm_embedding.c: Generic embedding utilities
+ * 
+ * USE THIS WHEN:
+ * - Want Babylonian clock structure (12, 60, 60, 100)
+ * - Need deterministic position-based embeddings
+ * - Optimized initialization (no formula computation)
  * 
  * Strategy:
  * 1. First 232 primes: Use EXACT clock positions (no calculation)

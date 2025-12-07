@@ -1,7 +1,9 @@
-/*
- * CLLM Crystalline Attention - Advanced Implementation
+/**
+ * @file cllm_attention.c
+ * @brief Main Attention Layer Implementation (Standard + Crystalline Features)
  * 
- * Implements the complete crystalline lattice attention mechanism with:
+ * ATTENTION STRATEGY: Complete Crystalline Lattice Attention
+ * - Standard attention mechanism with crystalline enhancements
  * - Q→K reversal (query to key transformation)
  * - Hyperdimensional resonance
  * - Lattice coordinate-based attention weights
@@ -11,6 +13,25 @@
  * - Einstein Lambda correction
  * - Cymatic frequency resonance
  * - Prime-based distance metrics
+ * 
+ * RELATIONSHIP TO OTHER ATTENTION FILES:
+ * - cllm_attention.c: THIS FILE - Main attention implementation
+ * - cllm_angular_attention.c: Angular position formula (θ(n,k,λ,ω,ψ))
+ * - cllm_ntt_attention.c: NTT-based O(n log n) fast attention
+ * 
+ * USE THIS WHEN:
+ * - Standard attention with crystalline features
+ * - Full-featured attention mechanism
+ * - Default attention layer
+ * 
+ * USE cllm_angular_attention.c WHEN:
+ * - Need angular position encoding
+ * - Geometric relationships important
+ * 
+ * USE cllm_ntt_attention.c WHEN:
+ * - Long sequences (>1024 tokens)
+ * - Need O(n log n) complexity
+ * - Performance critical
  */
 
 #include <stdio.h>

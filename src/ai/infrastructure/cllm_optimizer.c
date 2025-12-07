@@ -1,8 +1,26 @@
 /**
- * CLLM Optimizer System - Implementation
+ * @file infrastructure/cllm_optimizer.c
+ * @brief Low-Level Optimizer Infrastructure
  * 
- * Implements various optimization algorithms for training.
+ * This is the LOW-LEVEL INFRASTRUCTURE for optimization.
+ * Implements various optimization algorithms with advanced features.
  * All mathematical operations use crystalline library (prime_* functions).
+ * 
+ * RELATIONSHIP TO OTHER FILES:
+ * - This file: Low-level optimizer infrastructure (advanced algorithms)
+ * - src/ai/cllm_optimizer.c: High-level simple wrapper for training
+ * 
+ * USE THIS WHEN:
+ * - Advanced optimization algorithms (Adam, RMSprop, etc.)
+ * - Distributed optimization across threads
+ * - Complex gradient accumulation
+ * - Custom optimizer state management
+ * - Performance-critical optimization
+ * 
+ * USE src/ai/cllm_optimizer.c WHEN:
+ * - Simple training loop optimization
+ * - Basic Adam optimizer
+ * - Don't need advanced features
  */
 
 #include "ai/cllm_optimizer.h"

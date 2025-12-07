@@ -1,7 +1,28 @@
 /**
- * CLLM Batch Generation
+ * @file cllm_batch.c
+ * @brief High-Level Batch Generation API for Training
  * 
- * Generates training batches with proper padding and attention masking
+ * This is the SIMPLE, HIGH-LEVEL API for batch generation.
+ * Generates training batches with proper padding and attention masking.
+ * 
+ * RELATIONSHIP TO OTHER FILES:
+ * - This file: Simple batch generation for training loops
+ * - infrastructure/cllm_batch.c: Low-level tensor operations, batch splitting,
+ *   thread-safe queues, reference counting
+ * 
+ * USE THIS WHEN:
+ * - Creating training batches from token sequences
+ * - Iterating over tokens to generate batches
+ * - Simple batch validation
+ * 
+ * USE infrastructure/cllm_batch.c WHEN:
+ * - Need multi-dimensional tensor operations
+ * - Splitting batches for parallel processing
+ * - Thread-safe batch queue management
+ * - Reference-counted batch sharing
+ * 
+ * ANALOGY: This is like fopen() - simple and easy to use.
+ *          infrastructure/cllm_batch.c is like open() - powerful but complex.
  */
 
 #include "cllm_training.h"

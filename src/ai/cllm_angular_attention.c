@@ -1,7 +1,23 @@
 /**
- * CLLM Angular Position-Based Attention (CLLM-Specific Wrapper)
+ * @file cllm_angular_attention.c
+ * @brief Angular Position-Based Attention (θ(n,k,λ,ω,ψ) Formula)
  * 
  * Implements OBJECTIVE 15: Integrate θ(n,k,λ,ω,ψ) Angular Position into Attention
+ * 
+ * ATTENTION STRATEGY: Angular Position Encoding
+ * - Uses θ(n,k,λ,ω,ψ) angular position formula
+ * - Encodes geometric relationships in attention weights
+ * - Integrates 12-fold symmetry and cymatic patterns
+ * 
+ * RELATIONSHIP TO OTHER ATTENTION FILES:
+ * - cllm_angular_attention.c: THIS FILE - Angular position formula
+ * - cllm_attention.c: Main attention layer (standard implementation)
+ * - cllm_ntt_attention.c: NTT-based O(n log n) fast attention
+ * 
+ * USE THIS WHEN:
+ * - Want geometric position encoding in attention
+ * - Need angular relationships between tokens
+ * - Prefer formula-based attention weights
  * 
  * This file is a THIN WRAPPER around the general angular attention algorithm
  * in the algorithms layer. It extracts CLLM-specific data and calls the

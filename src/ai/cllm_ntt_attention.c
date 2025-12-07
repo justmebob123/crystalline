@@ -1,5 +1,28 @@
 /**
- * CLLM NTT Attention Wrapper
+ * @file cllm_ntt_attention.c
+ * @brief NTT-Based O(n log n) Fast Attention
+ * 
+ * ATTENTION STRATEGY: Number Theoretic Transform (NTT)
+ * - O(n log n) complexity vs O(n²) standard attention
+ * - Uses NTT for fast convolution
+ * - Ideal for long sequences (>1024 tokens)
+ * - Maintains attention quality with better performance
+ * 
+ * RELATIONSHIP TO OTHER ATTENTION FILES:
+ * - cllm_ntt_attention.c: THIS FILE - Fast O(n log n) attention
+ * - cllm_attention.c: Main attention (O(n²) but full-featured)
+ * - cllm_angular_attention.c: Angular position formula
+ * 
+ * USE THIS WHEN:
+ * - Long sequences (>1024 tokens)
+ * - Performance is critical
+ * - Need O(n log n) complexity
+ * - Can trade some features for speed
+ * 
+ * USE cllm_attention.c WHEN:
+ * - Short sequences (<1024 tokens)
+ * - Need all crystalline features
+ * - Performance not critical
  * 
  * CLLM-specific wrapper around the general NTT attention algorithm.
  * 
