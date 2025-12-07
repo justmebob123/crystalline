@@ -101,31 +101,81 @@
 
 ## Phase 4: Remove Naming Redundancy 🔄 IN PROGRESS
 
-### 4.1: Analyze Current Naming
-- [ ] List all files with "kissing_spheres" in name
-- [ ] Identify functions with redundant naming
-- [ ] Create renaming plan
+### 4.1: Analysis and Planning ✅ COMPLETE
+- [x] List all files with "kissing_spheres" in name (13 files found)
+- [x] Identify duplicate functions (neighbor finding logic)
+- [x] Create detailed overlap analysis
+- [x] Document critical designs to preserve
+- [x] Create refactoring strategy
 
-### 4.2: Rename CLLM Layer Files
-- [ ] Rename `cllm_kissing_spheres.h` → `cllm_lattice.h`
-- [ ] Rename `cllm_kissing_spheres.c` → `cllm_lattice.c`
-- [ ] Rename `cllm_kissing_spheres_visualization.h` → `cllm_visualization.h`
-- [ ] Rename `cllm_kissing_spheres_visualization.c` → `cllm_visualization.c`
-- [ ] Update all references in code
+### 4.2: Eliminate Duplicate Neighbor Finding Logic
+- [ ] Update cllm_kissing_spheres.c to use sphere_find_neighbor_by_geometry()
+- [ ] Add include for algorithms/sphere_threading.h
+- [ ] Remove static find_neighbor_by_clock_geometry() function
+- [ ] Verify build succeeds
+- [ ] Run all tests (52 tests should pass)
+- [ ] Commit changes
 
-### 4.3: Rename Test Files
-- [ ] Rename test files to match new naming
-- [ ] Update test references
+### 4.3: Rename Core CLLM Files
+- [ ] Rename src/ai/cllm_kissing_spheres.c → src/ai/cllm_lattice.c
+- [ ] Rename include/ai/cllm_kissing_spheres.h → include/ai/cllm_lattice.h
+- [ ] Update all #include statements
+- [ ] Update Makefile references
+- [ ] Verify build succeeds
+- [ ] Run all tests
+- [ ] Commit changes
 
-### 4.4: Update Build System
-- [ ] Update Makefiles
-- [ ] Update include paths
-- [ ] Verify clean build
+### 4.4: Analyze and Refactor Visualization Files
+- [ ] Analyze cllm_kissing_spheres_visualization.c
+- [ ] Compare with algorithms/visualization.c
+- [ ] Determine if wrapper needed or direct use possible
+- [ ] Rename or merge as appropriate
+- [ ] Update references
+- [ ] Verify build and tests
+- [ ] Commit changes
 
-### 4.5: Update Documentation
-- [ ] Update README references
-- [ ] Update code comments
-- [ ] Update API documentation
+### 4.5: Analyze and Refactor Attention Files
+- [ ] Analyze cllm_kissing_spheres_attention.c
+- [ ] Compare with cllm_attention.c
+- [ ] Identify unique functionality
+- [ ] Merge or rename as appropriate
+- [ ] Update references
+- [ ] Verify build and tests
+- [ ] Commit changes
+
+### 4.6: Analyze and Refactor Embeddings Files
+- [ ] Analyze cllm_kissing_spheres_embeddings.c
+- [ ] Compare with algorithms/lattice_embeddings.c
+- [ ] Identify unique functionality
+- [ ] Merge or rename as appropriate
+- [ ] Update references
+- [ ] Verify build and tests
+- [ ] Commit changes
+
+### 4.7: Update Test Files
+- [ ] Rename test_kissing_spheres_integration.c → test_lattice_integration.c
+- [ ] Rename test_kissing_spheres_visualization.c → test_lattice_visualization.c
+- [ ] Update profile_kissing_spheres.c → profile_lattice.c
+- [ ] Update all test references
+- [ ] Verify all tests pass
+- [ ] Commit changes
+
+### 4.8: Update Tools
+- [ ] Rename validate_kissing_spheres.c → validate_lattice.c
+- [ ] Update tool references
+- [ ] Rebuild all tools
+- [ ] Verify tools work correctly
+- [ ] Commit changes
+
+### 4.9: Final Verification
+- [ ] Run complete build: make clean && make
+- [ ] Verify zero errors
+- [ ] Verify no new warnings
+- [ ] Run all 52 tests
+- [ ] Verify all tests pass
+- [ ] Check for any remaining "kissing_spheres" references
+- [ ] Update documentation
+- [ ] Final commit and push
 
 ## Phase 5: Comprehensive Testing ⏳ PENDING
 
