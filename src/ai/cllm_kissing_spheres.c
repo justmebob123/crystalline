@@ -19,57 +19,10 @@
 #include "../include/prime_float_math.h"
 #include "../include/cllm_metrics.h"  // UI Integration: Sphere position reporting
 #include "../include/clock_lattice.h"  // Babylonian clock structure
+#include "../../algorithms/include/sphere_threading.h"  // Generic sphere threading
 
 // Old compute_lattice_distance removed - no longer needed with geometric pattern
-
-/**
- * Find neighbor deterministically using clock structure
- * 
- * Uses the Babylonian clock pattern to find neighbors instantly.
- * No distance calculations needed - neighbors are determined by geometry!
- * 
- * @param vocab_size Total vocabulary size
- * @param point_id Reference point ID
- * @param target_group Target symmetry group (0-11)
- * @return Token ID of neighbor in target group
- */
-static uint32_t find_neighbor_by_clock_geometry(uint32_t vocab_size, uint32_t point_id, uint32_t target_group) {
-    // Map point to clock position
-    BabylonianClockPosition pos = map_prime_index_to_clock((int)point_id);
-    
-    // Calculate positions per ring
-    uint32_t positions_in_ring;
-    if (pos.ring == 0) positions_in_ring = 12;
-    else if (pos.ring == 1 || pos.ring == 2) positions_in_ring = 60;
-    else if (pos.ring == 3) positions_in_ring = 100;
-    else positions_in_ring = 1000;
-    
-    // Neighbor offset based on target symmetry group
-    // Each group gets evenly spaced neighbors around the ring
-    uint32_t offset = (positions_in_ring * target_group) / 12;
-    
-    // Calculate neighbor position in same ring
-    uint32_t neighbor_pos = (pos.position + offset) % positions_in_ring;
-    
-    // Convert back to token ID
-    // Calculate base index for this ring
-    uint32_t base_index = 0;
-    if (pos.ring == 0) base_index = 0;
-    else if (pos.ring == 1) base_index = 12;
-    else if (pos.ring == 2) base_index = 12 + 60;
-    else if (pos.ring == 3) base_index = 12 + 60 + 60;
-    else base_index = 12 + 60 + 60 + 100 + (pos.ring - 4) * 1000;
-    
-    uint32_t neighbor_id = base_index + neighbor_pos;
-    
-    // Ensure within bounds
-    if (neighbor_id >= vocab_size) {
-        // Wrap to beginning if out of bounds
-        neighbor_id = neighbor_id % vocab_size;
-    }
-    
-    return neighbor_id;
-}
+// Old find_neighbor_by_clock_geometry removed - now using sphere_find_neighbor_by_geometry from algorithms layer
 
 /**
  * Initialize kissing spheres (12 neighbors per point)
@@ -96,8 +49,9 @@ void cllm_initialize_kissing_spheres(CLLMModel* model) {
         
         // Each point gets exactly 12 neighbors (one per symmetry group)
         // Neighbors are determined by clock geometry, not distance!
+        // Using generic sphere_find_neighbor_by_geometry from algorithms layer
         for (uint32_t group = 0; group < 12; group++) {
-            uint32_t neighbor_id = find_neighbor_by_clock_geometry(
+            uint32_t neighbor_id = sphere_find_neighbor_by_geometry(
                 model->vocab_size, 
                 point_id, 
                 group
