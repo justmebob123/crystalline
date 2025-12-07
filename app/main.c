@@ -1013,8 +1013,8 @@ void render(AppState* state) {
     render_left_sidebar(state->renderer, state);
     render_submenu(state->renderer, state);
     
-    // Get layout for current tab
-    TabLayout layout = get_tab_layout(state->current_tab, WINDOW_WIDTH, WINDOW_HEIGHT);
+    // Get layout for current tab (reserved for future layout-based rendering)
+    // TabLayout layout = get_tab_layout(state->current_tab, WINDOW_WIDTH, WINDOW_HEIGHT);
     
     switch (state->current_tab) {
         case TAB_PRIME_SPIRAL:

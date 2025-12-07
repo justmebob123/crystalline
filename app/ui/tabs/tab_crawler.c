@@ -87,6 +87,10 @@ typedef struct {
     bool crawler_running;
 } CrawlerTabState;
 
+// Note: CrawlerTabState is defined for future advanced features (prime config,
+// URL patterns, content filtering, activity log, etc.) but not yet integrated.
+// Current implementation uses g_crawler_ui for basic functionality.
+__attribute__((unused))
 static CrawlerTabState g_crawler_state = {0};
 
 // UI Structure for Crystalline components
@@ -124,96 +128,8 @@ static struct {
     int url_capacity;
 } g_crawler_ui = {0};
 
-// UI Buttons (for new features)
-static UIButton btn_add_url;
-static UIButton btn_clear_url;
-static UIButton btn_start_crawler;
-static UIButton btn_reset_urls;
-static UIButton btn_save_config;
-static UIButton btn_load_config;
-
-// Model selector
-static ModelSelector* crawler_model_selector = NULL;
-static char crawler_selected_model_name[256] = {0};
-
-// Model selector callback
-static void on_crawler_model_selected(const char* model_name, void* user_data) {
-    AppState* state = (AppState*)user_data;
-    if (!state || !model_name) return;
-    
-    // Store selected model name (not loaded until crawling starts)
-    printf("Crawler tab: Model '%s' selected (not loaded yet)\n", model_name);
-    strncpy(crawler_selected_model_name, model_name, sizeof(crawler_selected_model_name) - 1);
-    crawler_selected_model_name[sizeof(crawler_selected_model_name) - 1] = '\0';
-}
-
-/**
- * Initialize crawler tab state
- */
-static void init_crawler_tab_state(void) {
-    if (g_crawler_state.inputs_initialized) return;
-    
-    // Initialize prime config with defaults
-    prime_config_init_default(&g_crawler_state.prime_config);
-    g_crawler_state.prime_enabled = true;
-    
-    // Initialize URL manager with SQLite database
-    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler");
-    if (!g_crawler_state.url_manager) {
-        fprintf(stderr, "ERROR: Failed to create URL manager\n");
-    }
-    
-    // Enable all URL patterns by default
-    g_crawler_state.pattern_href = true;
-    g_crawler_state.pattern_onclick = true;
-    g_crawler_state.pattern_data_attr = true;
-    g_crawler_state.pattern_meta_refresh = true;
-    
-    // Set default extraction mode
-    g_crawler_state.extraction_mode = EXTRACT_ALL;
-    
-    // Initialize advanced options
-    g_crawler_state.show_advanced_options = false;
-    g_crawler_state.get_parameters[0] = '\0';
-    g_crawler_state.custom_headers[0] = '\0';
-    g_crawler_state.timeout_seconds = 30;
-    g_crawler_state.max_redirects = 5;
-    
-    g_crawler_state.inputs_registered = false;
-    g_crawler_state.inputs_initialized = true;
-    g_crawler_state.crawler_running = false;
-}
-
-/**
- * Helper functions
- */
-static bool rect_contains_point(SDL_Rect rect, int x, int y) {
-    return (x >= rect.x && x < rect.x + rect.w &&
-            y >= rect.y && y < rect.y + rect.h);
-}
-
-static bool check_crawler_running(void) {
-    extern int is_crawler_running(void);
-    return is_crawler_running() != 0;
-}
-
-static void add_activity_log(const char* message) {
-    if (!message) return;
-    
-    // Shift existing messages down
-    if (g_crawler_state.activity_count >= 10) {
-        for (int i = 0; i < 9; i++) {
-            strncpy(g_crawler_state.activity_log[i], g_crawler_state.activity_log[i + 1], 255);
-            g_crawler_state.activity_log[i][255] = '\0';
-        }
-        g_crawler_state.activity_count = 9;
-    }
-    
-    // Add new message at the end
-    strncpy(g_crawler_state.activity_log[g_crawler_state.activity_count], message, 255);
-    g_crawler_state.activity_log[g_crawler_state.activity_count][255] = '\0';
-    g_crawler_state.activity_count++;
-}
+// Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
+// fully integrated into the UI. They are kept for future enhancement.
 
 /**
  * Add URL to list
@@ -601,6 +517,7 @@ void cleanup_crawler_tab(void) {
  * Update Crawler Tab (called every frame)
  */
 void update_crawler_tab(AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
     
     // Update stats display if crawler is running
@@ -676,6 +593,7 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
  * Event handlers following standardized pattern
  */
 void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
     
     SDL_Event sdl_event = {0};
@@ -719,6 +637,7 @@ void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state)
 }
 
 void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
     
     SDL_Event sdl_event = {0};
@@ -762,6 +681,7 @@ void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
 }
 
 void handle_crawler_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
     
     SDL_Event sdl_event = {0};

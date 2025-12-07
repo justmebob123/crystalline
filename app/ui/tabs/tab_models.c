@@ -392,6 +392,7 @@ void cleanup_models_tab(void) {
  * Render Models Tab
  */
 void render_models_tab(SDL_Renderer* renderer, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_models_ui.initialized) return;
     
     // Render panels
@@ -431,6 +432,7 @@ void render_models_tab(SDL_Renderer* renderer, AppState* state) {
  * Event handlers following standardized pattern
  */
 void handle_models_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_models_ui.initialized) return;
     
     SDL_Event sdl_event = {0};
@@ -458,6 +460,7 @@ void handle_models_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) 
 }
 
 void handle_models_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_models_ui.initialized) return;
     
     SDL_Event sdl_event = {0};
@@ -485,6 +488,7 @@ void handle_models_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
 }
 
 void handle_models_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state) {
+    (void)state;  // Unused in current implementation
     if (!g_models_ui.initialized) return;
     
     SDL_Event sdl_event = {0};

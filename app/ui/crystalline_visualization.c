@@ -131,6 +131,7 @@ static void draw_circle_outline(SDL_Renderer* renderer, int cx, int cy, int radi
  * Draw text (placeholder - uses SDL_RenderDrawPoint for simple text)
  */
 static void draw_text_simple(SDL_Renderer* renderer, const char* text, int x, int y, SDL_Color color) {
+    (void)text;  // Text parameter reserved for future TTF implementation
     // Simple text rendering - just draw a small indicator
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_Rect rect = {x, y, 8, 12};

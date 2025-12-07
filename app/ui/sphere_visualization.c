@@ -67,7 +67,9 @@ static void draw_circle_outline(SDL_Renderer* renderer, int cx, int cy, int radi
 
 /**
  * Get color based on activity level (0.0 to 1.0)
+ * Note: Currently unused but kept for future activity-based coloring
  */
+__attribute__((unused))
 static SDL_Color get_activity_color(float activity) {
     SDL_Color color;
     
@@ -585,7 +587,6 @@ static void draw_spheres_2d(SDL_Renderer* renderer, AppState* state,
                            int center_x, int center_y, int arrangement_radius, 
                            int sphere_radius, int max_batches) {
     SDL_Color text_color = {220, 220, 220, 255};
-    SDL_Color grid_color = {50, 50, 60, 255};
     SDL_Color control_color = {150, 100, 200, 255};  // Purple for control threads
     SDL_Color ghost_color = {40, 40, 50, 255};       // Gray for inactive positions
     
