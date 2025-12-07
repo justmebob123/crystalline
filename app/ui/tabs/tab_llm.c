@@ -158,15 +158,6 @@ static void llm_tab_unload_model(void) {
         }
     }
     
-    // Free inference state (stored in global AppState - needs fixing)
-    extern AppState* get_app_state(void);
-    AppState* state = get_app_state();
-    if (state && state->cllm_inference) {
-        extern void cllm_inference_cleanup(CLLMInference* inference);
-        cllm_inference_cleanup(state->cllm_inference);
-        state->cllm_inference = NULL;
-    }
-    
     // Free model
     if (llm_ui.tab_state.model) {
         printf("Unloading model: %s\n", llm_ui.tab_state.model_name);
@@ -181,6 +172,10 @@ static void llm_tab_unload_model(void) {
     llm_ui.tab_state.model_path[0] = '\0';
     
     printf("✓ Model unloaded\n");
+    
+    // NOTE: Inference state cleanup happens in on_model_selected() and cleanup_llm_tab()
+    // where AppState is available. This is a design issue that should be fixed by
+    // moving inference state into LLMTabState instead of global AppState.
 }
 
 /**
