@@ -147,6 +147,13 @@
 - Build: 0 errors, 0 warnings
 - Ready for testing with 11K documents
 
+### ✅ Entropy Work Distribution Fix (CRITICAL)
+- **ROOT CAUSE:** `calculate_thread_allocation()` was never called
+- **ISSUE:** `entropy_allocation` was created but never populated with dimension allocations
+- **FIX:** Added call to `calculate_thread_allocation()` during system initialization
+- **RESULT:** Entropy-based work distribution now properly calculates active dimensions
+- Build: 0 errors, 0 warnings
+
 ### ✅ Phase 1: Prime Configuration (COMPLETE)
 - 3 input fields wired to state
 - Helper functions for read/apply

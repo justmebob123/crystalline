@@ -1708,10 +1708,30 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     // Create entropy allocation plan
     system->entropy_allocation = (ThreadAllocationPlan*)calloc(1, sizeof(ThreadAllocationPlan));
-    if (system->entropy_allocation) {
-        system->entropy_allocation->total_available_threads = system->num_worker_spheres;
-        system->entropy_allocation->enforce_12fold = true;
-        printf("  ✓ Entropy-based thread allocation initialized\n");
+    if (system->entropy_allocation && system->entropy_context) {
+        // Configure allocation
+        AllocationConfig alloc_config;
+        allocation_config_init_default(&alloc_config);
+        alloc_config.enforce_12fold = true;
+        alloc_config.strategy = ALLOCATION_PROPORTIONAL;
+        
+        // Calculate thread allocation based on entropy
+        bool alloc_success = calculate_thread_allocation(
+            system->entropy_context,
+            system->num_worker_spheres,
+            &alloc_config,
+            system->entropy_allocation
+        );
+        
+        if (alloc_success) {
+            printf("  ✓ Entropy-based thread allocation calculated:\n");
+            printf("    Total threads: %d\n", system->entropy_allocation->total_allocated_threads);
+            printf("    Active dimensions: %u\n", system->entropy_allocation->active_dimensions);
+        } else {
+            fprintf(stderr, "WARNING: Failed to calculate entropy allocation, using defaults\n");
+            system->entropy_allocation->total_available_threads = system->num_worker_spheres;
+            system->entropy_allocation->enforce_12fold = true;
+        }
     } else {
         fprintf(stderr, "WARNING: Failed to create entropy allocation plan\n");
     }
