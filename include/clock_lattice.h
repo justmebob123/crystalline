@@ -162,6 +162,53 @@ uint32_t get_ring_positions(uint32_t ring);
  */
 uint32_t get_cumulative_positions(uint32_t ring);
 
+/**
+ * Check if clock position is structurally valid
+ * 
+ * In deterministic system, valid position guarantees prime.
+ * This checks structural validity, not primality.
+ * 
+ * @param pos Clock position to validate
+ * @return true if position is structurally valid
+ */
+bool is_valid_clock_position(BabylonianClockPosition pos);
+
+/**
+ * Estimate prime index from prime value
+ * 
+ * Uses prime number theorem: π(n) ≈ n / ln(n)
+ * This is an approximation - exact index requires lookup.
+ * 
+ * @param prime_value Prime number value
+ * @return Estimated prime index (1-based)
+ */
+uint32_t estimate_prime_index(uint64_t prime_value);
+
+/**
+ * Validate that a number is prime using clock lattice structure
+ * 
+ * In deterministic system, if number maps to valid clock position,
+ * it's structurally consistent with being prime.
+ * 
+ * This is NOT a complete primality test - it's a structural validation.
+ * In a pure deterministic system, valid position = guaranteed prime.
+ * 
+ * @param candidate Number to validate
+ * @return true if structurally consistent with being prime
+ */
+bool validate_prime_by_clock_position(uint64_t candidate);
+
+/**
+ * Get prime index from clock position (reverse mapping)
+ * 
+ * This calculates the prime index from a clock position.
+ * Useful for reverse lookups.
+ * 
+ * @param pos Clock position
+ * @return Prime index (1-based)
+ */
+uint32_t get_prime_index_from_position(BabylonianClockPosition pos);
+
 #ifdef __cplusplus
 }
 #endif

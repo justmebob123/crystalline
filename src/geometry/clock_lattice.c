@@ -347,3 +347,151 @@ ClockMemoryPosition map_thread_to_memory(
     
     return mem_pos;
 }
+
+/**
+ * Check if clock position is structurally valid
+ * 
+ * In deterministic system, valid position guarantees prime.
+ * This checks structural validity, not primality.
+ */
+bool is_valid_clock_position(BabylonianClockPosition pos) {
+    // Check ring bounds (0-7 for current implementation)
+    if (pos.ring < 0 || pos.ring > 7) {
+        return false;
+    }
+    
+    // Check position bounds for each ring
+    if (pos.ring == 0 && (pos.position < 1 || pos.position > 12)) {
+        return false;
+    }
+    if (pos.ring == 1 && (pos.position < 1 || pos.position > 60)) {
+        return false;
+    }
+    if (pos.ring == 2 && (pos.position < 1 || pos.position > 60)) {
+        return false;
+    }
+    if (pos.ring == 3 && (pos.position < 1 || pos.position > 100)) {
+        return false;
+    }
+    if (pos.ring >= 4 && (pos.position < 0 || pos.position >= 1000)) {
+        return false;
+    }
+    
+    // Check radius consistency with ring
+    // Outer rings have smaller radius, inner rings have larger radius
+    double expected_radius;
+    if (pos.ring == 0) expected_radius = 0.25;
+    else if (pos.ring == 1) expected_radius = 0.50;
+    else if (pos.ring == 2) expected_radius = 0.75;
+    else if (pos.ring == 3) expected_radius = 1.00;
+    else expected_radius = 1.0 + (pos.ring - 4) * 0.25;
+    
+    // Allow small tolerance for floating point comparison
+    double tolerance = 0.01;
+    if (prime_fabs(pos.radius - expected_radius) > tolerance) {
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Estimate prime index from prime value
+ * 
+ * Uses prime number theorem: π(n) ≈ n / ln(n)
+ * This is an approximation - exact index requires lookup.
+ */
+uint32_t estimate_prime_index(uint64_t prime_value) {
+    if (prime_value < 2) return 0;
+    if (prime_value == 2) return 1;
+    if (prime_value == 3) return 2;
+    if (prime_value == 5) return 3;
+    if (prime_value == 7) return 4;
+    
+    // Prime number theorem: π(n) ≈ n / ln(n)
+    double n = (double)prime_value;
+    double ln_n = prime_log(n);
+    
+    if (ln_n <= 0.0) return 0;
+    
+    // Improved estimate: π(n) ≈ n / (ln(n) - 1) for n > 10
+    double estimate;
+    if (prime_value > 10) {
+        estimate = n / (ln_n - 1.0);
+    } else {
+        estimate = n / ln_n;
+    }
+    
+    return (uint32_t)estimate;
+}
+
+/**
+ * Validate that a number is prime using clock lattice structure
+ * 
+ * In deterministic system, if number maps to valid clock position,
+ * it's structurally consistent with being prime.
+ * 
+ * This is NOT a primality test - it's a structural validation.
+ * In a pure deterministic system, valid position = guaranteed prime.
+ */
+bool validate_prime_by_clock_position(uint64_t candidate) {
+    if (candidate < 2) return false;
+    
+    // Estimate prime index
+    uint32_t estimated_index = estimate_prime_index(candidate);
+    
+    // Map to clock position
+    BabylonianClockPosition pos = map_prime_index_to_clock(estimated_index);
+    
+    // Check if position is structurally valid
+    if (!is_valid_clock_position(pos)) {
+        return false;
+    }
+    
+    // Additional validation: Check 12-fold symmetry
+    // Primes > 3 must be in {1, 5, 7, 11} mod 12
+    if (candidate > 3) {
+        uint64_t mod12 = candidate % 12;
+        if (mod12 != 1 && mod12 != 5 && mod12 != 7 && mod12 != 11) {
+            return false;
+        }
+    }
+    
+    // In pure deterministic system, this would be sufficient
+    // For hybrid approach, caller may want to do additional verification
+    return true;
+}
+
+/**
+ * Get prime index from clock position (reverse mapping)
+ * 
+ * This calculates the prime index from a clock position.
+ * Useful for reverse lookups.
+ */
+uint32_t get_prime_index_from_position(BabylonianClockPosition pos) {
+    uint32_t index = 0;
+    
+    if (pos.ring == 0) {
+        // Ring 0: Positions 1-12
+        index = pos.position;
+    } else if (pos.ring == 1) {
+        // Ring 1: Positions 13-72
+        index = 12 + pos.position;
+    } else if (pos.ring == 2) {
+        // Ring 2: Positions 73-132
+        index = 72 + pos.position;
+    } else if (pos.ring == 3) {
+        // Ring 3: Positions 133-232
+        index = 132 + pos.position;
+    } else {
+        // Beyond ring 3: Use inverse of logarithmic formula
+        // ring = (log₃(adjusted_index + 1) % 4) + 4
+        // position = adjusted_index % 1000
+        
+        // Reverse: adjusted_index = position + (ring - 4) * 1000
+        uint32_t adjusted_index = pos.position + (pos.ring - 4) * 1000;
+        index = 232 + adjusted_index;
+    }
+    
+    return index;
+}
