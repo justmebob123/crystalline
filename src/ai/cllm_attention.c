@@ -54,21 +54,23 @@
 #define GAMMA_BURST 40.0
 
 // Cymatic frequencies (Hz)
-static const float CYMATIC_FREQS[] = {432.0f, 528.0f, 639.0f, 741.0f, 852.0f, 963.0f};
+// PRECISION FIX: Changed from double to double for consistency
+static const double CYMATIC_FREQS[] = {432.0, 528.0, 639.0, 741.0, 852.0, 963.0};
 static const int NUM_CYMATIC_FREQS = 6;
 
 // Plimpton ratios (from Babylonian tablet)
+// PRECISION FIX: Changed from double to double for consistency
 typedef struct {
-    float p;
-    float q;
-    float ratio;
+    double p;
+    double q;
+    double ratio;
 } PlimptonRatio;
 
 static const PlimptonRatio PLIMPTON_RATIOS[] = {
-    {2.0f, 1.0f, 0.75f},      // (4-1)/(4+1) = 3/5
-    {3.0f, 2.0f, 0.384615f},  // (9-4)/(9+4) = 5/13
-    {4.0f, 3.0f, 0.28f},      // (16-9)/(16+9) = 7/25
-    {5.0f, 4.0f, 0.219512f},  // (25-16)/(25+16) = 9/41
+    {2.0, 1.0, 0.75},      // (4-1)/(4+1) = 3/5
+    {3.0, 2.0, 0.384615},  // (9-4)/(9+4) = 5/13
+    {4.0, 3.0, 0.28},      // (16-9)/(16+9) = 7/25
+    {5.0, 4.0, 0.219512},  // (25-16)/(25+16) = 9/41
 };
 static const int NUM_PLIMPTON_RATIOS = 4;
 
@@ -86,13 +88,14 @@ static const int NUM_PLIMPTON_RATIOS = 4;
  * @param prime2 Prime associated with second point
  * @return Lattice distance
  */
-static float compute_lattice_distance(const float* coords1, const float* coords2,
+// PRECISION FIX: Changed from double to double for consistency with AttentionLayer
+static double compute_lattice_distance(const double* coords1, const double* coords2,
                                       uint64_t prime1, uint64_t prime2) {
     // Euclidean distance in 3D lattice space
-    float dx = coords1[0] - coords2[0];
-    float dy = coords1[1] - coords2[1];
-    float dz = coords1[2] - coords2[2];
-    float euclidean = prime_sqrt(dx*dx + dy*dy + dz*dz);
+    double dx = coords1[0] - coords2[0];
+    double dy = coords1[1] - coords2[1];
+    double dz = coords1[2] - coords2[2];
+    double euclidean = prime_sqrt(dx*dx + dy*dy + dz*dz);
     
     // Prime factorization distance
     // If primes are coprime (gcd=1), they're maximally different
@@ -105,7 +108,7 @@ static float compute_lattice_distance(const float* coords1, const float* coords2
         gcd = temp;
     }
     
-    float prime_similarity = (gcd == 1) ? 1.0f : (1.0f / (float)gcd);
+    double prime_similarity = (gcd == 1) ? 1.0 : (1.0 / (double)gcd);
     
     // Combined distance with prime weighting
     return euclidean * prime_similarity;
@@ -120,22 +123,22 @@ static float compute_lattice_distance(const float* coords1, const float* coords2
  * @param seq_len Sequence length
  * @param k Twist parameter (affects sign)
  */
-static void apply_mobius_transform(float* scores, int seq_len, int k) {
+static void apply_mobius_transform(double* scores, int seq_len, int k) {
     if (!scores || seq_len <= 0) return;
     
     // Möbius parameters based on k
-    float a = 1.0f;
-    float b = (k % 2 == 0) ? 1.0f : -1.0f;  // Twist based on parity
-    float c = 0.5f;
-    float d = 1.0f;
+    double a = 1.0;
+    double b = (k % 2 == 0) ? 1.0 : -1.0;  // Twist based on parity
+    double c = 0.5;
+    double d = 1.0;
     
     // Apply transformation: f(z) = (az + b) / (cz + d)
     for (int i = 0; i < seq_len; i++) {
-        float z = scores[i];
-        float numerator = a * z + b;
-        float denominator = c * z + d;
+        double z = scores[i];
+        double numerator = a * z + b;
+        double denominator = c * z + d;
         
-        if (prime_fabs(denominator) > 1e-8f) {
+        if (prime_fabs(denominator) > 1e-8) {
             scores[i] = numerator / denominator;
         }
     }
@@ -151,7 +154,7 @@ static void apply_mobius_transform(float* scores, int seq_len, int k) {
  * @param seq_len Sequence length
  * @param position Current position in sequence
  */
-static void apply_plimpton_correction(float* weights, int seq_len, int position) {
+static void apply_plimpton_correction(double* weights, int seq_len, int position) {
     if (!weights || seq_len <= 0) return;
     
     // Select Plimpton ratio based on position
@@ -164,8 +167,8 @@ static void apply_plimpton_correction(float* weights, int seq_len, int position)
         int dist = abs(i - position);
         
         // Apply Pythagorean scaling: weight * (p²-q²)/(p²+q²)
-        float scale = ratio.ratio * prime_exp(-dist * EINSTEIN_LAMBDA);
-        weights[i] *= (1.0f + scale);
+        double scale = ratio.ratio * prime_exp(-dist * EINSTEIN_LAMBDA);
+        weights[i] *= (1.0 + scale);
     }
 }
 
@@ -179,21 +182,21 @@ static void apply_plimpton_correction(float* weights, int seq_len, int position)
  * @param seq_len Sequence length
  * @param position Current position
  */
-static void apply_cymatic_resonance(float* weights, int seq_len, int position) {
+static void apply_cymatic_resonance(double* weights, int seq_len, int position) {
     if (!weights || seq_len <= 0) return;
     
     for (int i = 0; i < seq_len; i++) {
-        float resonance = 0.0f;
+        double resonance = 0.0;
         
         // Sum resonance from all cymatic frequencies
         for (int f = 0; f < NUM_CYMATIC_FREQS; f++) {
-            float freq = CYMATIC_FREQS[f];
-            float phase = 2.0f * PI * freq * (float)(i - position) / (float)seq_len;
-            resonance += prime_cos(phase) / (float)NUM_CYMATIC_FREQS;
+            double freq = CYMATIC_FREQS[f];
+            double phase = 2.0 * PI * freq * (double)(i - position) / (double)seq_len;
+            resonance += prime_cos(phase) / (double)NUM_CYMATIC_FREQS;
         }
         
         // Apply resonance modulation
-        weights[i] *= (1.0f + 0.1f * resonance);
+        weights[i] *= (1.0 + 0.1 * resonance);
     }
 }
 
@@ -206,14 +209,14 @@ static void apply_cymatic_resonance(float* weights, int seq_len, int position) {
  * @param weights Attention weights [seq_len]
  * @param seq_len Sequence length
  */
-static void apply_schumann_dampening(float* weights, int seq_len) {
+static void apply_schumann_dampening(double* weights, int seq_len) {
     if (!weights || seq_len <= 0) return;
     
-    float damping_factor = SCHUMANN_RESONANCE / 100.0f;
+    double damping_factor = SCHUMANN_RESONANCE / 100.0;
     
     for (int i = 0; i < seq_len; i++) {
         // Exponential dampening based on Schumann resonance
-        float damping = prime_exp(-damping_factor * (float)i);
+        double damping = prime_exp(-damping_factor * (double)i);
         weights[i] *= damping;
     }
 }
@@ -228,13 +231,13 @@ static void apply_schumann_dampening(float* weights, int seq_len) {
  * @param seq_len Sequence length
  * @param position Current position
  */
-static void apply_gamma_burst(float* weights, int seq_len, int position) {
+static void apply_gamma_burst(double* weights, int seq_len, int position) {
     if (!weights || seq_len <= 0) return;
     
     for (int i = 0; i < seq_len; i++) {
         // Gamma burst at 40 Hz
-        float phase = 2.0f * PI * GAMMA_BURST * (float)(i - position) / (float)seq_len;
-        float burst = 1.0f + 0.2f * prime_cos(phase);
+        double phase = 2.0 * PI * GAMMA_BURST * (double)(i - position) / (double)seq_len;
+        double burst = 1.0 + 0.2 * prime_cos(phase);
         weights[i] *= burst;
     }
 }
@@ -256,19 +259,19 @@ static void apply_gamma_burst(float* weights, int seq_len, int position) {
  * @param lattice_coords Lattice coordinates [3]
  * @param prime Associated prime number
  */
-static void query_to_key_reversal(const float* query, float* key_space,
-                                  int head_dim, const float* lattice_coords,
+static void query_to_key_reversal(const double* query, double* key_space,
+                                  int head_dim, const double* lattice_coords,
                                   uint64_t prime) {
     if (!query || !key_space || head_dim <= 0) return;
     
     // Step 1: Rotate query by golden angle (φ-based)
-    float golden_angle = 2.0f * PI / (PHI * PHI);
-    float rotation_angle = golden_angle * (float)(prime % 360);
+    double golden_angle = 2.0 * PI / (PHI * PHI);
+    double rotation_angle = golden_angle * (double)(prime % 360);
     
     for (int i = 0; i < head_dim; i++) {
-        float angle = rotation_angle * (float)i / (float)head_dim;
-        float cos_a = prime_cos(angle);
-        float sin_a = prime_sin(angle);
+        double angle = rotation_angle * (double)i / (double)head_dim;
+        double cos_a = prime_cos(angle);
+        double sin_a = prime_sin(angle);
         
         // Rotate in 2D subspace
         int j = (i + 1) % head_dim;
@@ -278,12 +281,12 @@ static void query_to_key_reversal(const float* query, float* key_space,
     // Step 2: Apply lattice coordinate transformation
     if (lattice_coords) {
         for (int i = 0; i < head_dim && i < 3; i++) {
-            key_space[i] += lattice_coords[i] * 0.1f;
+            key_space[i] += lattice_coords[i] * 0.1;
         }
     }
     
     // Step 3: Apply prime-based scaling
-    float prime_scale = 1.0f / prime_sqrt((float)prime);
+    double prime_scale = 1.0 / prime_sqrt((double)prime);
     for (int i = 0; i < head_dim; i++) {
         key_space[i] *= prime_scale;
     }
@@ -307,24 +310,24 @@ static void query_to_key_reversal(const float* query, float* key_space,
  * @param key_prime Key prime number
  * @return Resonance score
  */
-static float compute_hyperdimensional_resonance(const float* query, const float* key,
+static double compute_hyperdimensional_resonance(const double* query, const double* key,
                                                int head_dim,
-                                               const float* query_coords,
-                                               const float* key_coords,
+                                               const double* query_coords,
+                                               const double* key_coords,
                                                uint64_t query_prime,
                                                uint64_t key_prime) {
     // 1. Standard dot product
-    float dot_product = 0.0f;
+    double dot_product = 0.0;
     for (int i = 0; i < head_dim; i++) {
         dot_product += query[i] * key[i];
     }
     
     // 2. Lattice distance (inverse relationship)
-    float lattice_dist = 1.0f;
+    double lattice_dist = 1.0;
     if (query_coords && key_coords) {
         lattice_dist = compute_lattice_distance(query_coords, key_coords,
                                                 query_prime, key_prime);
-        lattice_dist = 1.0f / (1.0f + lattice_dist);  // Inverse for similarity
+        lattice_dist = 1.0 / (1.0 + lattice_dist);  // Inverse for similarity
     }
     
     // 3. Prime similarity (coprimality)
@@ -335,14 +338,14 @@ static float compute_hyperdimensional_resonance(const float* query, const float*
         b = gcd % b;
         gcd = temp;
     }
-    float prime_similarity = (gcd == 1) ? 0.5f : (1.0f / (float)gcd);
+    double prime_similarity = (gcd == 1) ? 0.5 : (1.0 / (double)gcd);
     
     // 4. Fourier phase alignment
-    float phase_diff = 2.0f * PI * (float)(query_prime - key_prime) / (float)(query_prime + key_prime);
-    float phase_alignment = (1.0f + prime_cos(phase_diff)) / 2.0f;
+    double phase_diff = 2.0 * PI * (double)(query_prime - key_prime) / (double)(query_prime + key_prime);
+    double phase_alignment = (1.0 + prime_cos(phase_diff)) / 2.0;
     
     // Combine all components
-    float resonance = dot_product * lattice_dist * (1.0f + prime_similarity) * phase_alignment;
+    double resonance = dot_product * lattice_dist * (1.0 + prime_similarity) * phase_alignment;
     
     return resonance;
 }
@@ -368,9 +371,9 @@ static float compute_hyperdimensional_resonance(const float* query, const float*
  * @param seq_len Sequence length
  */
 void cllm_crystalline_attention_forward(AttentionLayer* layer,
-                                       const float* input,
-                                       float* output,
-                                       const float* lattice_coords,
+                                       const double* input,
+                                       double* output,
+                                       const double* lattice_coords,
                                        const uint64_t* token_primes,
                                        int seq_len) {
     if (!layer || !input || !output || seq_len <= 0) return;
@@ -380,11 +383,11 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
     uint32_t embedding_dim = num_heads * head_dim;
     
     // Allocate working buffers
-    float* queries = (float*)calloc(seq_len * embedding_dim, sizeof(float));
-    float* keys = (float*)calloc(seq_len * embedding_dim, sizeof(float));
-    float* values = (float*)calloc(seq_len * embedding_dim, sizeof(float));
-    float* key_space = (float*)calloc(head_dim, sizeof(float));
-    float* attention_scores = (float*)calloc(seq_len, sizeof(float));
+    double* queries = (double*)calloc(seq_len * embedding_dim, sizeof(double));
+    double* keys = (double*)calloc(seq_len * embedding_dim, sizeof(double));
+    double* values = (double*)calloc(seq_len * embedding_dim, sizeof(double));
+    double* key_space = (double*)calloc(head_dim, sizeof(double));
+    double* attention_scores = (double*)calloc(seq_len, sizeof(double));
     
     if (!queries || !keys || !values || !key_space || !attention_scores) {
         free(queries);
@@ -397,7 +400,7 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
     
     // Project input to Q, K, V (simplified - using lattice weights)
     for (int pos = 0; pos < seq_len; pos++) {
-        const float* input_vec = &input[pos * embedding_dim];
+        const double* input_vec = &input[pos * embedding_dim];
         
            // BIGFIXED IMPLEMENTATION - NO FLOATS
            // Use dot_product_bigfixed() from algorithms layer
@@ -456,7 +459,7 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
                       big_fixed_free(temp);
                       big_fixed_free(input_bf);
                       
-                   // Store results (convert to float for now - will be removed when queries/keys/values are BigFixed**)
+                   // Store results (convert to double for now - will be removed when queries/keys/values are BigFixed**)
                    queries[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(q_sum);
                    keys[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(k_sum);
                    values[pos * embedding_dim + h * head_dim + d] = big_fixed_to_double(v_sum);
@@ -470,12 +473,12 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
     }
     
     // Apply crystalline attention for each position and head
-    memset(output, 0, seq_len * embedding_dim * sizeof(float));
+    memset(output, 0, seq_len * embedding_dim * sizeof(double));
     
     for (int pos = 0; pos < seq_len; pos++) {
         for (uint32_t h = 0; h < num_heads; h++) {
-            const float* query = &queries[pos * embedding_dim + h * head_dim];
-            const float* pos_coords = lattice_coords ? &lattice_coords[pos * 3] : NULL;
+            const double* query = &queries[pos * embedding_dim + h * head_dim];
+            const double* pos_coords = lattice_coords ? &lattice_coords[pos * 3] : NULL;
             uint64_t pos_prime = token_primes ? token_primes[pos] : 2;
             
             // Apply Q→K reversal
@@ -483,8 +486,8 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
             
             // Compute attention scores using hyperdimensional resonance
             for (int i = 0; i < seq_len; i++) {
-                const float* key = &keys[i * embedding_dim + h * head_dim];
-                const float* key_coords = lattice_coords ? &lattice_coords[i * 3] : NULL;
+                const double* key = &keys[i * embedding_dim + h * head_dim];
+                const double* key_coords = lattice_coords ? &lattice_coords[i * 3] : NULL;
                 uint64_t key_prime = token_primes ? token_primes[i] : 2;
                 
                 attention_scores[i] = compute_hyperdimensional_resonance(
@@ -502,27 +505,27 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
             apply_gamma_burst(attention_scores, seq_len, pos);
             
             // Softmax normalization
-            float max_score = attention_scores[0];
+            double max_score = attention_scores[0];
             for (int i = 1; i < seq_len; i++) {
                 if (attention_scores[i] > max_score) max_score = attention_scores[i];
             }
             
-            float sum = 0.0f;
+            double sum = 0.0;
             for (int i = 0; i < seq_len; i++) {
                 attention_scores[i] = prime_exp(attention_scores[i] - max_score);
                 sum += attention_scores[i];
             }
             
-            if (sum > 1e-8f) {
+            if (sum > 1e-8) {
                 for (int i = 0; i < seq_len; i++) {
                     attention_scores[i] /= sum;
                 }
             }
             
             // Apply attention to values
-            float* head_output = &output[pos * embedding_dim + h * head_dim];
+            double* head_output = &output[pos * embedding_dim + h * head_dim];
             for (int i = 0; i < seq_len; i++) {
-                const float* value = &values[i * embedding_dim + h * head_dim];
+                const double* value = &values[i * embedding_dim + h * head_dim];
                 for (uint32_t d = 0; d < head_dim; d++) {
                     head_output[d] += attention_scores[i] * value[d];
                 }
@@ -547,11 +550,11 @@ void cllm_crystalline_attention_forward(AttentionLayer* layer,
  * @param gradients Gradient array
  * @param size Array size
  */
-void cllm_apply_einstein_correction(float* gradients, size_t size) {
+void cllm_apply_einstein_correction(double* gradients, size_t size) {
     if (!gradients || size == 0) return;
     
     for (size_t i = 0; i < size; i++) {
         // Apply Lambda correction: g' = g * (1 - Λ)
-        gradients[i] *= (1.0f - EINSTEIN_LAMBDA);
+        gradients[i] *= (1.0 - EINSTEIN_LAMBDA);
     }
 }
