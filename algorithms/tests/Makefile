@@ -6,6 +6,7 @@ LDFLAGS = -L.. -L../.. -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..:$$
 
 # Test executables
 TESTS = test_sphere_threading \
+        test_visualization \
         test_sphere_packing \
         test_threading \
         test_shared_memory \
@@ -22,6 +23,11 @@ test_sphere_threading: test_sphere_threading.c
 	@echo "Building test_sphere_threading..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ test_sphere_threading built"
+
+test_visualization: test_visualization.c
+	@echo "Building test_visualization..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_visualization built"
 
 test_sphere_packing: test_sphere_packing.c
 	@echo "Building test_sphere_packing..."

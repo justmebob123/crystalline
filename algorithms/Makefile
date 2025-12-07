@@ -18,6 +18,10 @@ SOURCES = src/numerical.c \
           src/lock_free_queue.c \
           src/sphere_packing.c \
           src/sphere_threading.c \
+          src/visualization.c \
+          src/visualization_2d.c \
+          src/visualization_3d.c \
+          src/visualization_crystalline.c \
           src/hierarchical_primes.c \
           src/hierarchical_structures.c \
           src/batch_processing.c \
