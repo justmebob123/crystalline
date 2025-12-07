@@ -1,25 +1,95 @@
 /**
- * Crawler Tab - Complete Rewrite Using Pure Crystalline UI System
+ * Crawler Tab - Full Featured Implementation with Crystalline UI
  * 
- * This is a COMPLETE REWRITE using the Crystalline UI system.
- * NO legacy code, NO old component system, NO manual SDL rendering.
+ * Features:
+ * - Prime Configuration (frequency, selection, delay min/max)
+ * - URL Pattern Selection (4 types)
+ * - Content Filtering (4 extraction modes)
+ * - Advanced Options (GET params, headers, timeout, redirects)
+ * - SQLite URL Manager (persistent storage)
+ * - Activity Log (10-line scrolling)
+ * - Configuration Persistence (save/load)
+ * - Model Selector
  * 
  * Layout:
- * - Left Panel (70%): URL list with status and progress
- * - Right Panel (30%): Control buttons and settings
+ * - Column 1 (33%): Prime Config + URL Patterns
+ * - Column 2 (33%): URL Management + Controls
+ * - Column 3 (33%): Status + Activity Log
  */
 
 #include "../../app_common.h"
+#include "../../input_manager.h"
+#include "../../crawler_thread.h"
+#include "../layout_manager.h"
+#include "../model_selector.h"
 #include "../crystalline/elements.h"
 #include "../crystalline/global_layout.h"
 #include "../button_sizes.h"
-#include "../../crawler_thread.h"
 #include "crawler.h"
 #include "cllm_model_registry.h"
+#include "../../../src/crawler/prime_randomization.h"
+#include "../../../src/crawler/link_management.h"
+#include "../../../src/crawler/url_patterns.h"
+#include "../../../src/crawler/crawler_url_manager.h"
+#include "../../../src/crawler/content_filter.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-// UI State
+// UI Button structure
+typedef struct {
+    SDL_Rect bounds;
+    char label[64];
+    bool enabled;
+    bool visible;
+} UIButton;
+
+// Crawler tab state
+typedef struct {
+    // Prime Configuration
+    CrawlerPrimeConfig prime_config;
+    bool prime_enabled;
+    
+    // URL Management (SQLite database)
+    CrawlerURLManager* url_manager;
+    int link_list_scroll;
+    bool show_add_confirmation;
+    int confirmation_timer;
+    
+    // URL Pattern Selection
+    bool pattern_href;
+    bool pattern_onclick;
+    bool pattern_data_attr;
+    bool pattern_meta_refresh;
+    
+    // Content Filtering
+    ExtractionMode extraction_mode;
+    SDL_Rect radio_extract_all;
+    SDL_Rect radio_extract_human;
+    SDL_Rect radio_extract_metadata;
+    SDL_Rect radio_extract_mixed;
+    
+    // Advanced Options
+    bool show_advanced_options;
+    char get_parameters[256];
+    char custom_headers[512];
+    int timeout_seconds;
+    int max_redirects;
+    SDL_Rect advanced_toggle_rect;
+    
+    // Activity Log
+    char activity_log[10][256];
+    int activity_count;
+    
+    // UI State
+    bool inputs_initialized;
+    bool inputs_registered;
+    bool crawler_running;
+} CrawlerTabState;
+
+static CrawlerTabState g_crawler_state = {0};
+
+// UI Structure for Crystalline components
 static struct {
     // Panels
     CrystallinePanel* list_panel;
@@ -52,31 +122,97 @@ static struct {
     char** urls;
     int url_count;
     int url_capacity;
-    
 } g_crawler_ui = {0};
 
+// UI Buttons (for new features)
+static UIButton btn_add_url;
+static UIButton btn_clear_url;
+static UIButton btn_start_crawler;
+static UIButton btn_reset_urls;
+static UIButton btn_save_config;
+static UIButton btn_load_config;
+
+// Model selector
+static ModelSelector* crawler_model_selector = NULL;
+static char crawler_selected_model_name[256] = {0};
+
+// Model selector callback
+static void on_crawler_model_selected(const char* model_name, void* user_data) {
+    AppState* state = (AppState*)user_data;
+    if (!state || !model_name) return;
+    
+    // Store selected model name (not loaded until crawling starts)
+    printf("Crawler tab: Model '%s' selected (not loaded yet)\n", model_name);
+    strncpy(crawler_selected_model_name, model_name, sizeof(crawler_selected_model_name) - 1);
+    crawler_selected_model_name[sizeof(crawler_selected_model_name) - 1] = '\0';
+}
+
 /**
- * Update crawler statistics display
+ * Initialize crawler tab state
  */
-static void update_stats_display(void) {
-    if (!g_crawler_ui.stats_display) return;
+static void init_crawler_tab_state(void) {
+    if (g_crawler_state.inputs_initialized) return;
     
-    // Format stats text
-    char stats_text[1024];
-    snprintf(stats_text, sizeof(stats_text),
-        "Status: %s\n\n"
-        "URLs in queue: %d\n\n"
-        "Note: Crawler statistics will be\n"
-        "displayed here when crawling starts.",
-        g_crawler_ui.crawler_running ? "Running" : "Stopped",
-        g_crawler_ui.url_count
-    );
+    // Initialize prime config with defaults
+    prime_config_init_default(&g_crawler_state.prime_config);
+    g_crawler_state.prime_enabled = true;
     
-    crystalline_textarea_clear(g_crawler_ui.stats_display);
-    crystalline_textarea_add_message(g_crawler_ui.stats_display,
-        CRYSTALLINE_MESSAGE_SYSTEM,
-        stats_text,
-        "");
+    // Initialize URL manager with SQLite database
+    g_crawler_state.url_manager = crawler_url_manager_create("data/crawler");
+    if (!g_crawler_state.url_manager) {
+        fprintf(stderr, "ERROR: Failed to create URL manager\n");
+    }
+    
+    // Enable all URL patterns by default
+    g_crawler_state.pattern_href = true;
+    g_crawler_state.pattern_onclick = true;
+    g_crawler_state.pattern_data_attr = true;
+    g_crawler_state.pattern_meta_refresh = true;
+    
+    // Set default extraction mode
+    g_crawler_state.extraction_mode = EXTRACT_ALL;
+    
+    // Initialize advanced options
+    g_crawler_state.show_advanced_options = false;
+    g_crawler_state.get_parameters[0] = '\0';
+    g_crawler_state.custom_headers[0] = '\0';
+    g_crawler_state.timeout_seconds = 30;
+    g_crawler_state.max_redirects = 5;
+    
+    g_crawler_state.inputs_registered = false;
+    g_crawler_state.inputs_initialized = true;
+    g_crawler_state.crawler_running = false;
+}
+
+/**
+ * Helper functions
+ */
+static bool rect_contains_point(SDL_Rect rect, int x, int y) {
+    return (x >= rect.x && x < rect.x + rect.w &&
+            y >= rect.y && y < rect.y + rect.h);
+}
+
+static bool check_crawler_running(void) {
+    extern int is_crawler_running(void);
+    return is_crawler_running() != 0;
+}
+
+static void add_activity_log(const char* message) {
+    if (!message) return;
+    
+    // Shift existing messages down
+    if (g_crawler_state.activity_count >= 10) {
+        for (int i = 0; i < 9; i++) {
+            strncpy(g_crawler_state.activity_log[i], g_crawler_state.activity_log[i + 1], 255);
+            g_crawler_state.activity_log[i][255] = '\0';
+        }
+        g_crawler_state.activity_count = 9;
+    }
+    
+    // Add new message at the end
+    strncpy(g_crawler_state.activity_log[g_crawler_state.activity_count], message, 255);
+    g_crawler_state.activity_log[g_crawler_state.activity_count][255] = '\0';
+    g_crawler_state.activity_count++;
 }
 
 /**
@@ -403,6 +539,30 @@ void init_crawler_tab(AppState* state) {
     g_crawler_ui.url_capacity = 0;
     
     printf("Crawler Tab initialized successfully\n");
+}
+
+/**
+ * Update crawler statistics display
+ */
+static void update_stats_display(void) {
+    if (!g_crawler_ui.stats_display) return;
+    
+    // Format stats text
+    char stats_text[1024];
+    snprintf(stats_text, sizeof(stats_text),
+        "Status: %s\n\n"
+        "URLs in queue: %d\n\n"
+        "Note: Crawler statistics will be\n"
+        "displayed here when crawling starts.",
+        g_crawler_ui.crawler_running ? "Running" : "Stopped",
+        g_crawler_ui.url_count
+    );
+    
+    crystalline_textarea_clear(g_crawler_ui.stats_display);
+    crystalline_textarea_add_message(g_crawler_ui.stats_display,
+        CRYSTALLINE_MESSAGE_SYSTEM,
+        stats_text,
+        "");
 }
 
 /**
