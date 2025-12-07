@@ -209,6 +209,46 @@ bool validate_prime_by_clock_position(uint64_t candidate);
  */
 uint32_t get_prime_index_from_position(BabylonianClockPosition pos);
 
+/**
+ * Get prime at specific index (HYBRID DETERMINISTIC SYSTEM)
+ * 
+ * This is the main function for deterministic prime generation.
+ * 
+ * Strategy:
+ * 1. For first 232 primes: O(1) lookup table
+ * 2. For cached primes: O(1) cache lookup  
+ * 3. For new primes: Generate with sieve, validate with clock lattice
+ * 
+ * @param index Prime index (1-based: 1 = first prime = 2)
+ * @return Prime value, or 0 on error
+ */
+uint64_t get_prime_at_index_deterministic(uint32_t index);
+
+/**
+ * Get multiple primes at once (batch operation)
+ * 
+ * More efficient than calling get_prime_at_index_deterministic() multiple times.
+ * 
+ * @param start_index First prime index (1-based)
+ * @param count Number of primes to get
+ * @param output Output array (must have space for count primes)
+ * @return Number of primes retrieved
+ */
+uint32_t get_primes_batch(uint32_t start_index, uint32_t count, uint64_t* output);
+
+/**
+ * Cleanup prime cache (call on shutdown)
+ */
+void cleanup_prime_cache(void);
+
+/**
+ * Get cache statistics (for debugging/monitoring)
+ * 
+ * @param size Output: number of primes in cache
+ * @param capacity Output: cache capacity
+ */
+void get_prime_cache_stats(uint32_t* size, uint32_t* capacity);
+
 #ifdef __cplusplus
 }
 #endif

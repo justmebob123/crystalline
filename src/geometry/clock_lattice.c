@@ -7,18 +7,31 @@
  * - Modular arithmetic relationships
  * - Sacred geometry (π at 3 o'clock, 144,000 vector)
  * - Clock-to-sphere folding via stereographic projection
+ * - DETERMINISTIC PRIME GENERATION (Phase 2)
  * 
  * The ancient proverb (0→1→2→3→∞):
  * - 0 begets 1: Outside ring (∞/0) creates center (unity)
  * - 1 begets 2: Unity creates duality (radius/line)
  * - 2 begets 3: Line + point = triangle
  * - 3 leads to all things: Triangle → sphere, π crosses to next sphere
+ * 
+ * DETERMINISTIC PRINCIPLE:
+ * In a deterministic system, structure IS validation.
+ * The clock lattice defines primes through position, not testing.
  */
 
 #include "clock_lattice.h"
 #include "prime_float_math.h"
 #include "prime_types.h"
+#include "prime_lookup_table.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Prime cache for dynamic generation
+static uint64_t* prime_cache = NULL;
+static uint32_t cache_size = 0;
+static uint32_t cache_capacity = 0;
 
 /**
  * Map prime index to clock position
@@ -35,7 +48,7 @@
 BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
     BabylonianClockPosition pos;
     
-    if (prime_index < 12) {
+    if (prime_index <= 12) {
         // Ring 0: Hours (12 positions) - OUTER
         pos.ring = 0;
         pos.position = prime_index;
@@ -44,7 +57,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.angle = (pos.position - 3) * (2.0 * PRIME_PI / 12.0);
         pos.radius = 0.25;  // Outer ring (25% from center)
         
-    } else if (prime_index < 72) {
+    } else if (prime_index <= 72) {
         // Ring 1: Minutes (60 positions)
         pos.ring = 1;
         pos.position = prime_index - 12;
@@ -52,14 +65,14 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
         pos.radius = 0.50;  // 50% from center
         
-    } else if (prime_index < 132) {
+    } else if (prime_index <= 132) {
         // Ring 2: Seconds (60 positions)
         pos.ring = 2;
         pos.position = prime_index - 72;
         pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
         pos.radius = 0.75;  // 75% from center
         
-    } else if (prime_index < 232) {
+    } else if (prime_index <= 232) {
         // Ring 3: Milliseconds (100 positions) - INNER
         pos.ring = 3;
         pos.position = prime_index - 132;
@@ -400,24 +413,35 @@ bool is_valid_clock_position(BabylonianClockPosition pos) {
  * 
  * Uses prime number theorem: π(n) ≈ n / ln(n)
  * This is an approximation - exact index requires lookup.
+ * 
+ * For small primes, use lookup table for exact results.
  */
 uint32_t estimate_prime_index(uint64_t prime_value) {
     if (prime_value < 2) return 0;
-    if (prime_value == 2) return 1;
-    if (prime_value == 3) return 2;
-    if (prime_value == 5) return 3;
-    if (prime_value == 7) return 4;
     
-    // Prime number theorem: π(n) ≈ n / ln(n)
+    // For first 232 primes, use exact lookup
+    if (prime_value <= 1459) {  // 232nd prime
+        for (uint32_t i = 0; i < 232; i++) {
+            if (PRIME_LOOKUP_TABLE[i] == prime_value) {
+                return i + 1;  // Return 1-based index
+            }
+            if (PRIME_LOOKUP_TABLE[i] > prime_value) {
+                return i;  // Return closest index
+            }
+        }
+    }
+    
+    // For larger primes, use prime number theorem
+    // π(n) ≈ n / ln(n) - improved approximation
     double n = (double)prime_value;
     double ln_n = prime_log(n);
     
     if (ln_n <= 0.0) return 0;
     
-    // Improved estimate: π(n) ≈ n / (ln(n) - 1) for n > 10
+    // Improved estimate: π(n) ≈ n / (ln(n) - 1.08366) for n > 10
     double estimate;
     if (prime_value > 10) {
-        estimate = n / (ln_n - 1.0);
+        estimate = n / (ln_n - 1.08366);
     } else {
         estimate = n / ln_n;
     }
@@ -494,4 +518,202 @@ uint32_t get_prime_index_from_position(BabylonianClockPosition pos) {
     }
     
     return index;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 2: DETERMINISTIC PRIME GENERATION (HYBRID SYSTEM)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Initialize prime cache
+ */
+static void init_prime_cache(void) {
+    if (prime_cache != NULL) return;
+    
+    // Start with capacity for 1000 primes
+    cache_capacity = 1000;
+    prime_cache = (uint64_t*)malloc(cache_capacity * sizeof(uint64_t));
+    
+    if (prime_cache) {
+        // Copy first 232 primes from lookup table
+        memcpy(prime_cache, PRIME_LOOKUP_TABLE, 232 * sizeof(uint64_t));
+        cache_size = 232;
+    }
+}
+
+/**
+ * Cleanup prime cache
+ */
+void cleanup_prime_cache(void) {
+    if (prime_cache) {
+        free(prime_cache);
+        prime_cache = NULL;
+        cache_size = 0;
+        cache_capacity = 0;
+    }
+}
+
+/**
+ * Expand prime cache to include more primes
+ * 
+ * Uses crystalline sieve to generate primes, validates with clock lattice.
+ */
+static bool expand_prime_cache(uint32_t target_index) {
+    if (prime_cache == NULL) {
+        init_prime_cache();
+    }
+    
+    if (target_index <= cache_size) {
+        return true;  // Already have enough
+    }
+    
+    // Estimate limit needed for target_index
+    // Using: p_n ≈ n * (ln(n) + ln(ln(n)))
+    double fn = (double)target_index;
+    double ln_n = prime_log(fn);
+    double ln_ln_n = (ln_n > 1.0) ? prime_log(ln_n) : 1.0;
+    uint64_t limit = (uint64_t)(fn * (ln_n + ln_ln_n) * 1.2);  // 20% margin
+    
+    // Generate primes using simple sieve
+    // (In production, would use crystalline_segmented_sieve from cllm_crystalline_sieve.c)
+    uint64_t candidate = (cache_size > 0) ? prime_cache[cache_size - 1] + 2 : 2;
+    
+    while (cache_size < target_index && candidate <= limit) {
+        // Simple primality test
+        bool is_prime = true;
+        if (candidate <= 1) {
+            is_prime = false;
+        } else if (candidate <= 3) {
+            is_prime = true;
+        } else if (candidate % 2 == 0 || candidate % 3 == 0) {
+            is_prime = false;
+        } else {
+            for (uint64_t i = 5; i * i <= candidate; i += 6) {
+                if (candidate % i == 0 || candidate % (i + 2) == 0) {
+                    is_prime = false;
+                    break;
+                }
+            }
+        }
+        
+        if (is_prime) {
+            // Validate with clock lattice
+            if (validate_prime_by_clock_position(candidate)) {
+                // Expand cache if needed
+                if (cache_size >= cache_capacity) {
+                    cache_capacity *= 2;
+                    uint64_t* new_cache = (uint64_t*)realloc(prime_cache, 
+                                                             cache_capacity * sizeof(uint64_t));
+                    if (!new_cache) {
+                        return false;
+                    }
+                    prime_cache = new_cache;
+                }
+                
+                prime_cache[cache_size++] = candidate;
+            }
+        }
+        
+        candidate += (candidate == 2) ? 1 : 2;  // Skip even numbers
+    }
+    
+    return (cache_size >= target_index);
+}
+
+/**
+ * Get prime at specific index (HYBRID DETERMINISTIC SYSTEM)
+ * 
+ * This is the main function for deterministic prime generation.
+ * 
+ * Strategy:
+ * 1. For first 232 primes: O(1) lookup table
+ * 2. For cached primes: O(1) cache lookup
+ * 3. For new primes: Generate with sieve, validate with clock lattice
+ * 
+ * @param index Prime index (1-based: 1 = first prime = 2)
+ * @return Prime value, or 0 on error
+ */
+uint64_t get_prime_at_index_deterministic(uint32_t index) {
+    if (index == 0) return 0;
+    
+    // Fast path: First 232 primes (O(1) lookup)
+    if (index <= 232) {
+        return PRIME_LOOKUP_TABLE[index - 1];
+    }
+    
+    // Initialize cache if needed
+    if (prime_cache == NULL) {
+        init_prime_cache();
+    }
+    
+    // Check cache
+    if (index <= cache_size) {
+        return prime_cache[index - 1];
+    }
+    
+    // Need to generate more primes
+    if (!expand_prime_cache(index)) {
+        return 0;  // Failed to generate
+    }
+    
+    // Return from cache
+    if (index <= cache_size) {
+        return prime_cache[index - 1];
+    }
+    
+    return 0;  // Should not reach here
+}
+
+/**
+ * Get multiple primes at once (batch operation)
+ * 
+ * More efficient than calling get_prime_at_index_deterministic() multiple times.
+ * 
+ * @param start_index First prime index (1-based)
+ * @param count Number of primes to get
+ * @param output Output array (must have space for count primes)
+ * @return Number of primes retrieved
+ */
+uint32_t get_primes_batch(uint32_t start_index, uint32_t count, uint64_t* output) {
+    if (start_index == 0 || count == 0 || output == NULL) {
+        return 0;
+    }
+    
+    uint32_t end_index = start_index + count - 1;
+    
+    // Ensure cache has enough primes
+    if (end_index > 232) {
+        if (prime_cache == NULL) {
+            init_prime_cache();
+        }
+        if (end_index > cache_size) {
+            if (!expand_prime_cache(end_index)) {
+                // Partial failure - return what we have
+                end_index = cache_size;
+                count = (end_index >= start_index) ? (end_index - start_index + 1) : 0;
+            }
+        }
+    }
+    
+    // Copy primes to output
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t index = start_index + i;
+        if (index <= 232) {
+            output[i] = PRIME_LOOKUP_TABLE[index - 1];
+        } else if (index <= cache_size) {
+            output[i] = prime_cache[index - 1];
+        } else {
+            return i;  // Couldn't get all requested primes
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * Get cache statistics (for debugging/monitoring)
+ */
+void get_prime_cache_stats(uint32_t* size, uint32_t* capacity) {
+    if (size) *size = cache_size;
+    if (capacity) *capacity = cache_capacity;
 }
