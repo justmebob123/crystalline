@@ -330,7 +330,68 @@ void init_crawler_tab(AppState* state) {
     );
     (void)status_panel;  // Will be used later
     
-    // Column 2: URL Management
+    // ========================================================================
+    // COLUMN 1: CONFIGURATION INPUTS
+    // ========================================================================
+    
+    int col1_content_x = col1_x + 10;
+    int col1_content_y = col1_y + 40;
+    int col1_content_w = col1_w - 20;
+    int col1_elem_y = col1_content_y;
+    
+    // Prime Configuration Section (5 inputs)
+    // Note: Using Crystalline inputs for now, will add custom rendering later
+    int prime_input_h = 35;
+    int prime_input_spacing = 45;
+    
+    // Prime Frequency input
+    CrystallineInput* prime_freq_input = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + prime_input_h / 2.0f,
+        col1_content_w,
+        prime_input_h,
+        "Prime Frequency",
+        font
+    );
+    crystalline_input_set_text(prime_freq_input, "7");
+    col1_elem_y += prime_input_spacing;
+    
+    // Delay Min input
+    CrystallineInput* delay_min_input = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + prime_input_h / 2.0f,
+        col1_content_w,
+        prime_input_h,
+        "Delay Min (ms)",
+        font
+    );
+    crystalline_input_set_text(delay_min_input, "100");
+    col1_elem_y += prime_input_spacing;
+    
+    // Delay Max input
+    CrystallineInput* delay_max_input = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + prime_input_h / 2.0f,
+        col1_content_w,
+        prime_input_h,
+        "Delay Max (ms)",
+        font
+    );
+    crystalline_input_set_text(delay_max_input, "500");
+    col1_elem_y += prime_input_spacing + 20;
+    
+    // Suppress unused warnings for now
+    (void)prime_freq_input;
+    (void)delay_min_input;
+    (void)delay_max_input;
+    
+    // ========================================================================
+    // COLUMN 2: URL MANAGEMENT
+    // ========================================================================
+    
     int col2_content_x = col2_x + 10;
     int col2_content_y = col2_y + 40;
     int col2_content_w = col2_w - 20;
