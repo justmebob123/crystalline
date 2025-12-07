@@ -13,7 +13,7 @@
  * 
  * Usage:
  *   ThreadedTrainingSystem* system = threaded_training_create(training, batch_iterator, num_threads);
- *   float loss = threaded_train_epoch_lockfree(system);
+ *   double loss = threaded_train_epoch_lockfree(system);
  *   threaded_training_free(system);
  * 
  * This is NOT an optional "threaded" version - it's the main implementation.
@@ -94,7 +94,7 @@ struct SphereTrainingContext {
     
     // Batch processing
     CLLMBatch* current_batch;
-    float batch_loss;
+    double batch_loss;
     int batches_processed;
     
     // Synchronization
@@ -213,7 +213,7 @@ struct ThreadedTrainingSystem {
     atomic_int workers_completed;    // Count of workers who completed batch
     
     // Statistics
-    float epoch_loss;
+    double epoch_loss;
     int total_batches;
     atomic_int running;  // MUST be atomic - accessed by multiple threads without lock!
     
@@ -402,12 +402,12 @@ void thread_local_training_free(ThreadLocalTrainingContext* ctx) {
  * Same as cllm_forward_training() but uses thread-local activation buffers.
  * This allows multiple threads to execute in parallel without locking.
  */
-float cllm_forward_training_threaded(
+double cllm_forward_training_threaded(
     CLLMTraining* training,
     ThreadLocalTrainingContext* local_ctx,
     uint32_t* input_tokens
 ) {
-    if (!training || !local_ctx || !input_tokens) return 0.0f;
+    if (!training || !local_ctx || !input_tokens) return 0.0;
     #ifdef CLLM_DEBUG
     printf("    [DEBUG] Entered cllm_forward_training_threaded\n");
 #endif
@@ -443,13 +443,13 @@ float cllm_forward_training_threaded(
         printf("    [DEBUG] Processing layer %d\n", layer);
 #endif
         fflush(stdout);
-        memcpy(local_ctx->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+        memcpy(local_ctx->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(double));
         
         // Apply multi-head attention (simplified for thread-local context)
         // TODO: Implement full attention with thread-local caching
         // For now, just copy input to output (identity mapping)
         memcpy(local_ctx->attention_outputs[layer], layer_input, 
-               batch_size * seq_len * embed_dim * sizeof(float));
+               batch_size * seq_len * embed_dim * sizeof(double));
         
         // Process feedforward
         for (int b = 0; b < batch_size; b++) {
@@ -465,7 +465,7 @@ float cllm_forward_training_threaded(
                 (void)ff_hidden;  // Reserved for future use
                 
                 for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-// DISABLED - USE BigFixed version:                     float sum = ff->bias1[h];
+// DISABLED - USE BigFixed version:                     double sum = ff->bias1[h];
                     for (uint32_t i = 0; i < embed_dim; i++) {
 // DISABLED - USE BigFixed version:                         sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
                     }
@@ -473,7 +473,7 @@ float cllm_forward_training_threaded(
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
-// DISABLED - USE BigFixed version:                     float sum = ff->bias2[o];
+// DISABLED - USE BigFixed version:                     double sum = ff->bias2[o];
                     for (uint32_t h = 0; h < ff->hidden_dim; h++) {
 // DISABLED - USE BigFixed version:                         sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
                     }
@@ -508,7 +508,7 @@ float cllm_forward_training_threaded(
 #endif
     fflush(stdout);
     // Copy final hidden (to thread-local buffer)
-    memcpy(local_ctx->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(float));
+    memcpy(local_ctx->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(double));
     
     // Project to vocabulary (write to thread-local logits)
     for (int b = 0; b < batch_size; b++) {
@@ -528,7 +528,7 @@ float cllm_forward_training_threaded(
         }
     }
     
-    return 0.0f;
+    return 0.0;
 }
 
 /**
@@ -558,9 +558,9 @@ void cllm_backward_training_threaded(
     double* grad_layer = local_ctx->grad_layer;
     
     // Zero the buffers
-    memset(grad_logits, 0, batch_size * seq_len * vocab_size * sizeof(float));
-    memset(grad_hidden, 0, batch_size * seq_len * embed_dim * sizeof(float));
-    memset(grad_layer, 0, batch_size * seq_len * embed_dim * sizeof(float));
+    memset(grad_logits, 0, batch_size * seq_len * vocab_size * sizeof(double));
+    memset(grad_hidden, 0, batch_size * seq_len * embed_dim * sizeof(double));
+    memset(grad_layer, 0, batch_size * seq_len * embed_dim * sizeof(double));
     
     // Gradient of cross-entropy w.r.t. logits (using thread-local logits)
     for (int b = 0; b < batch_size; b++) {
@@ -643,11 +643,11 @@ void cllm_backward_training_threaded(
                 
                 // Simplified backward through layer norm
                 // grad_out = grad_in (skip layer norm for now to avoid complexity)
-                memcpy(grad_out, grad_in, embed_dim * sizeof(float));
+                memcpy(grad_out, grad_in, embed_dim * sizeof(double));
                 
                 // Simplified backward through feedforward
                 // Just propagate gradients (skip weight updates for now)
-                memcpy(grad_in, grad_out, embed_dim * sizeof(float));
+                memcpy(grad_in, grad_out, embed_dim * sizeof(double));
                 
                 // Simplified backward through attention
                 // Just propagate gradients (skip weight updates for now)
@@ -699,7 +699,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->has_work = 0;
     ctx->work_complete = 0;
     ctx->current_batch = NULL;
-    ctx->batch_loss = 0.0f;
+    ctx->batch_loss = 0.0;
     ctx->batches_processed = 0;
     
     
@@ -865,7 +865,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
     memset(ctx->local_gradients, 0, ctx->gradient_size * sizeof(double));
     
     // Process each sequence in the batch
-    float total_loss = 0.0f;
+    double total_loss = 0.0;
     int valid_sequences = 0;
     
     for (uint32_t seq = 0; seq < batch->batch_size; seq++) {
@@ -874,7 +874,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // Check if this sequence has valid tokens
         int has_valid = 0;
         for (uint32_t i = 0; i < batch->seq_len; i++) {
-            if (batch->attention_mask[offset + i] > 0.5f) {
+            if (batch->attention_mask[offset + i] > 0.5) {
                 has_valid = 1;
                 break;
             }
@@ -895,7 +895,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // PURE CRYSTALLINE LOSS (ASI Design - Phase 1)
         // Uses learned prime encodings and lattice positions
         // This is deterministic GCD-based loss, not standard cross-entropy
-        float seq_loss = cllm_compute_loss(
+        double seq_loss = cllm_compute_loss(
             training,
             &batch->input_ids[offset],
             &batch->target_ids[offset],
@@ -919,7 +919,7 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         valid_sequences++;
     }
     
-    ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0f;
+    ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0;
     ctx->batches_processed++;
     
     // PHASE 7: Record sphere statistics
@@ -1431,7 +1431,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     }
     
     printf("  ✓ Created shared gradient buffer: %.2f MB\n", 
-           (system->gradient_size * sizeof(double)) / (1024.0f * 1024.0f));
+           (system->gradient_size * sizeof(double)) / (1024.0 * 1024.0));
     
     // Allocate accumulated gradients buffer (temporary until shared memory fully integrated)
     system->accumulated_gradients = (double*)calloc(system->gradient_size, sizeof(double));
@@ -1654,7 +1654,7 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         }
     }
     
-    system->epoch_loss = 0.0f;
+    system->epoch_loss = 0.0;
     system->total_batches = 0;
     
     // Initialize progress tracking
@@ -2832,7 +2832,7 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
     int eta_secs = (int)(eta_seconds - eta_hours * 3600 - eta_mins * 60);
     
     // Get current loss from sphere contexts
-    float total_loss = 0.0f;
+    double total_loss = 0.0;
     int active_spheres = 0;
     for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i] && system->sphere_contexts[i]->batches_processed > 0) {
@@ -2840,7 +2840,7 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
             active_spheres++;
         }
     }
-    float current_loss = (active_spheres > 0) ? total_loss / active_spheres : 0.0f;
+    double current_loss = (active_spheres > 0) ? total_loss / active_spheres : 0.0;
     
     // Print progress line
     printf("\rEpoch %d/%d | Batch %zu/%zu (%.1f%%) | Loss: %.4f | %.1f batch/s | ETA: %02d:%02d:%02d",
@@ -3024,7 +3024,7 @@ void threaded_training_set_total_epochs(ThreadedTrainingSystem* system, int tota
     }
 }
 
-float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch) {
+double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch) {
 #ifdef CLLM_DEBUG
     printf("[DEBUG] threaded_train_epoch_lockfree: ENTRY - system=%p, epoch=%d\n", (void*)system, current_epoch);
     fflush(stdout);
@@ -3032,7 +3032,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     if (!system) {
         fprintf(stderr, "[ERROR] threaded_train_epoch_lockfree: system is NULL\n");
-        return 0.0f;
+        return 0.0;
     }
     
 #ifdef CLLM_DEBUG
@@ -3059,14 +3059,14 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     if (!system->batch_iterator) {
         fprintf(stderr, "[ERROR] batch_iterator is NULL!\n");
-        return 0.0f;
+        return 0.0;
     }
     
     cllm_batch_iterator_reset(system->batch_iterator);
     
     if (!batch_queue_start_prefetch(system)) {
         fprintf(stderr, "ERROR: Failed to start batch pre-fetching\n");
-        return 0.0f;
+        return 0.0;
     }
     
     printf("Batch pre-fetching enabled + Lock-free work queue active\n\n");
@@ -3095,7 +3095,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         cllm_metrics_update_training_progress(system->metrics, current_epoch, 0, total_batches_in_epoch);
         system->metrics->training.elapsed_time_seconds = 0.0;
         system->metrics->training.estimated_time_remaining_seconds = 0.0;
-        system->metrics->training.batches_per_second = 0.0f;
+        system->metrics->training.batches_per_second = 0.0;
     }
     
     // PHASE 6: Calculate entropy-based work distribution BEFORE pushing batches
@@ -3186,12 +3186,12 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     if (!system->work_queue) {
         fprintf(stderr, "[ERROR] work_queue is NULL!\n");
-        return 0.0f;
+        return 0.0;
     }
     
     if (!system->batch_queue) {
         fprintf(stderr, "[ERROR] batch_queue is NULL!\n");
-        return 0.0f;
+        return 0.0;
     }
     
     while (1) {
@@ -3225,7 +3225,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
                 // Calculate timing metrics
                 double elapsed = difftime(time(NULL), epoch_start_time);
                 if (elapsed > 0.1) {  // Avoid division by zero
-                    float batches_per_sec = batches_pushed / elapsed;
+                    double batches_per_sec = batches_pushed / elapsed;
                     double remaining = (total_batches_in_epoch - batches_pushed) / batches_per_sec;
                     
                     system->metrics->training.elapsed_time_seconds = elapsed;
@@ -3335,7 +3335,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     pthread_mutex_unlock(&system->model_lock);
     
     // Calculate average loss
-    float epoch_loss = 0.0f;
+    double epoch_loss = 0.0;
     int valid_workers = 0;
     for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i]->batches_processed > 0) {
@@ -3344,7 +3344,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         }
     }
     
-    float avg_loss = (valid_workers > 0) ? epoch_loss / (double)valid_workers : 0.0f;
+    double avg_loss = (valid_workers > 0) ? epoch_loss / (double)valid_workers : 0.0;
     
     // UI Integration: Update final loss and invoke callbacks
     if (system->metrics) {
@@ -3378,7 +3378,7 @@ void threaded_training_print_stats(ThreadedTrainingSystem* system) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         printf("  Sphere %2d (Group %2d): %d batches processed, avg loss: %.4f\n",
                ctx->sphere_id, ctx->symmetry_group, ctx->batches_processed,
-               ctx->batches_processed > 0 ? ctx->batch_loss / ctx->batches_processed : 0.0f);
+               ctx->batches_processed > 0 ? ctx->batch_loss / ctx->batches_processed : 0.0);
     }
     
     printf("\n");
@@ -3401,7 +3401,7 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
     
     if (avg_loss) {
         *avg_loss = ctx->batches_processed > 0 ? 
-                    ctx->batch_loss / ctx->batches_processed : 0.0f;
+                    ctx->batch_loss / ctx->batches_processed : 0.0;
     }
     
     return 0;

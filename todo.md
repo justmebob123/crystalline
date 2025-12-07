@@ -241,23 +241,26 @@
 - [x] Search for all float declarations in src/ai/ (DONE - found in 20+ files)
 - [x] Search for all 0.0f literals (DONE - 303 instances found)
 - [x] Search for all (float) casts (DONE - documented)
-- [x] Fix Priority 1 files: cllm_attention.c (DONE - 25 instances)
-- [x] Fix Priority 1 files: cllm_training.c (DONE - 27 instances)
-- [x] Fix Priority 2 file: cllm_optimizer.c (DONE - 46+17 instances)
-- [x] Fix related files: cllm_loss.c (DONE - 4 instances)
-- [x] Fix headers: cllm_training.h, cllm_loss.h (DONE)
-- [ ] Fix Priority 1: cllm_training_threaded.c (18 instances) - PENDING
-- [ ] Fix Priority 2: cllm_symmetry.c, cllm_root_word_modeling.c, etc.
+- [x] Fix Priority 1 files: ALL COMPLETE (3/3 files)
+  - [x] cllm_attention.c (25 instances) - FIXED
+  - [x] cllm_training.c (27 instances) - FIXED
+  - [x] cllm_training_threaded.c (18 instances) - FIXED
+- [x] Fix Priority 2 file: cllm_optimizer.c (63 instances) - FIXED
+- [x] Fix related files: cllm_loss.c (4 instances) - FIXED
+- [x] Fix headers: cllm_training.h, cllm_loss.h, cllm_training_threaded.h - FIXED
+- [ ] Fix Priority 2: cllm_symmetry.c, cllm_root_word_modeling.c, etc. - PENDING
 - [ ] Verify no precision loss in any computation
 
-**PROGRESS UPDATE:**
+**MILESTONE ACHIEVED: Priority 1 Complete (100%)**
 - ✅ cllm_attention.c (25 instances) - FIXED
 - ✅ cllm_training.c (27 instances) - FIXED
+- ✅ cllm_training_threaded.c (18 instances) - FIXED
 - ✅ cllm_optimizer.c (63 instances) - FIXED
 - ✅ cllm_loss.c (4 instances) - FIXED
-- ✅ Headers updated (cllm_training.h, cllm_loss.h)
-- Total fixed: ~119 of 303 instances (39%)
+- ✅ Headers updated (cllm_training.h, cllm_loss.h, cllm_training_threaded.h)
+- Total fixed: ~137 of 303 instances (45%)
 - Build status: ✅ Zero errors, 11 warnings (no new warnings)
+- **All critical training and attention paths now use double precision**
 
 ### 7.4: High-Complexity Stress Tests
 - [ ] Create test with vocab size > 1,000,000 (exceeds float range)

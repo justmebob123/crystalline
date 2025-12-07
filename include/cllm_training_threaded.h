@@ -104,7 +104,8 @@ void thread_local_training_free(ThreadLocalTrainingContext* ctx);
  * These functions use thread-local activation buffers instead of shared CLLMTraining buffers.
  * This allows multiple threads to execute forward/backward passes in parallel without locking.
  */
-float cllm_forward_training_threaded(
+// PRECISION FIX: Changed from float to double for consistency
+double cllm_forward_training_threaded(
     CLLMTraining* training,
     ThreadLocalTrainingContext* local_ctx,
     uint32_t* input_tokens
@@ -140,7 +141,8 @@ void threaded_training_free(ThreadedTrainingSystem* system);
  * @return Average epoch loss
  */
 void threaded_training_set_total_epochs(ThreadedTrainingSystem* system, int total_epochs);
-float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch);
+// PRECISION FIX: Changed from float to double for consistency
+double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch);
 
 /**
  * Print threading statistics
