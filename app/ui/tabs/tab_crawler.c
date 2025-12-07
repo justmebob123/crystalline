@@ -388,6 +388,33 @@ void init_crawler_tab(AppState* state) {
     (void)delay_min_input;
     (void)delay_max_input;
     
+    // URL Pattern Selection (4 checkboxes)
+    // TODO: Implement custom checkbox rendering
+    // For now, using text labels to show structure
+    col1_elem_y += 30;  // Section spacing
+    
+    // Content Filtering (4 radio buttons)
+    // TODO: Implement custom radio button rendering
+    // For now, using text labels to show structure
+    col1_elem_y += 120;  // Space for 4 checkboxes
+    
+    // Advanced Options Panel (collapsible)
+    // TODO: Implement collapsible panel with toggle
+    // For now, adding a button placeholder
+    col1_elem_y += 140;  // Space for 4 radio buttons
+    
+    int adv_btn_h = 40;
+    CrystallineButton* btn_advanced = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + adv_btn_h / 2.0f,
+        col1_content_w,
+        adv_btn_h,
+        "Advanced Options",
+        font
+    );
+    (void)btn_advanced;  // Will wire callback later
+    
     // ========================================================================
     // COLUMN 2: URL MANAGEMENT
     // ========================================================================
@@ -527,6 +554,63 @@ void init_crawler_tab(AppState* state) {
         CRYSTALLINE_MESSAGE_SYSTEM,
         "Crawler ready",
         "");
+    
+    // ========================================================================
+    // COLUMN 3: STATUS & ACTIVITY
+    // ========================================================================
+    
+    int col3_content_x = col3_x + 10;
+    int col3_content_y = col3_y + 40;
+    int col3_content_w = col3_w - 20;
+    int col3_elem_y = col3_content_y;
+    
+    // Model Selector (TODO: Integrate ModelSelector component)
+    // For now, add a placeholder button
+    int model_btn_h = 40;
+    CrystallineButton* btn_model_select = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col3_content_x + col3_content_w / 2.0f,
+        col3_elem_y + model_btn_h / 2.0f,
+        col3_content_w,
+        model_btn_h,
+        "Select Model",
+        font
+    );
+    (void)btn_model_select;
+    col3_elem_y += model_btn_h + 20;
+    
+    // Status Display
+    int status_display_h = 150;
+    CrystallineTextArea* status_display = crystalline_textarea_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col3_content_x + col3_content_w / 2.0f,
+        col3_elem_y + status_display_h / 2.0f,
+        col3_content_w,
+        status_display_h,
+        font
+    );
+    crystalline_textarea_add_message(status_display,
+        CRYSTALLINE_MESSAGE_SYSTEM,
+        "Status: Ready",
+        "");
+    (void)status_display;
+    col3_elem_y += status_display_h + 20;
+    
+    // Activity Log (10-line scrolling)
+    int activity_log_h = col3_h - (col3_elem_y - col3_y) - 20;
+    CrystallineTextArea* activity_log = crystalline_textarea_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col3_content_x + col3_content_w / 2.0f,
+        col3_elem_y + activity_log_h / 2.0f,
+        col3_content_w,
+        activity_log_h,
+        font
+    );
+    crystalline_textarea_add_message(activity_log,
+        CRYSTALLINE_MESSAGE_SYSTEM,
+        "Activity Log",
+        "");
+    (void)activity_log;
     
     // Initialize state
     g_crawler_ui.initialized = true;
