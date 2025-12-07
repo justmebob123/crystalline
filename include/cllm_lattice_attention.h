@@ -1,5 +1,5 @@
 /**
- * @file cllm_kissing_spheres_attention.h
+ * @file cllm_lattice_attention.h
  * @brief Kissing Spheres Attention Mechanism
  * 
  * Implements attention where each token attends to its 12 kissing sphere neighbors.

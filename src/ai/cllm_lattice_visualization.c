@@ -1,4 +1,4 @@
-#include "cllm_kissing_spheres_visualization.h"
+#include "cllm_lattice_visualization.h"
 #include "prime_math.h"
 #include "prime_float_math.h"
 #include <stdlib.h>

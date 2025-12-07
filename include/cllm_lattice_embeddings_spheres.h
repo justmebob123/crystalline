@@ -1,5 +1,5 @@
 /**
- * @file cllm_kissing_spheres_embeddings.h
+ * @file cllm_lattice_embeddings_spheres.h
  * @brief Neighbor-Influenced Embeddings using Kissing Spheres
  * 
  * Enhances token embeddings by incorporating influence from their 12 kissing

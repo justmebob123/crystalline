@@ -37,12 +37,12 @@ DIAGNOSTIC_TESTS = \
         test_token_init \
         test_hierarchical \
         quick_inference_check \
-        profile_kissing_spheres
+        profile_lattice
 
 # Kissing spheres tests
 KISSING_SPHERES_TESTS = \
-        test_kissing_spheres_visualization \
-        test_kissing_spheres_integration
+        test_lattice_visualization \
+        test_lattice_integration
 
 # All tests
 ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS)
@@ -208,10 +208,10 @@ quick_inference_check: quick_inference_check.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ quick_inference_check built"
 
-profile_kissing_spheres: profile_kissing_spheres.c
-	@echo "Building profile_kissing_spheres..."
+profile_lattice: profile_lattice.c
+	@echo "Building profile_lattice..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-	@echo "✓ profile_kissing_spheres built"
+	@echo "✓ profile_lattice built"
 
 run-diagnostic: $(DIAGNOSTIC_TESTS)
 	@echo ""
@@ -225,15 +225,15 @@ run-diagnostic: $(DIAGNOSTIC_TESTS)
 	@echo "✓ Diagnostic tests completed"
 
 # Kissing spheres tests
-test_kissing_spheres_visualization: test_kissing_spheres_visualization.c
-	@echo "Building test_kissing_spheres_visualization..."
+test_lattice_visualization: test_lattice_visualization.c
+	@echo "Building test_lattice_visualization..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-	@echo "✓ test_kissing_spheres_visualization built"
+	@echo "✓ test_lattice_visualization built"
 
-test_kissing_spheres_integration: test_kissing_spheres_integration.c
-	@echo "Building test_kissing_spheres_integration..."
+test_lattice_integration: test_lattice_integration.c
+	@echo "Building test_lattice_integration..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-	@echo "✓ test_kissing_spheres_integration built"
+	@echo "✓ test_lattice_integration built"
 
 run-kissing-spheres: $(KISSING_SPHERES_TESTS)
 	@echo ""

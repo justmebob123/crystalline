@@ -10,7 +10,7 @@
 #include <assert.h>
 #include "../include/cllm.h"
 #include "../include/ai/cllm_lattice.h"
-#include "../include/cllm_kissing_spheres_visualization.h"
+#include "../include/cllm_lattice_visualization.h"
 #include "../include/cllm_neighbor_ops.h"
 
 // Test 1: Initialize kissing spheres

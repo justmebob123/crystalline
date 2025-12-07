@@ -6,7 +6,7 @@
  * sphere neighbors using the L(n,d,k,λ) lattice formula for attention weights.
  */
 
-#include "cllm_kissing_spheres_attention.h"
+#include "cllm_lattice_attention.h"
 #include "cllm_inference.h"
 #include "prime_lattice_core.h"
 #include "cllm_angular_position.h"

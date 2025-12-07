@@ -7,7 +7,7 @@
  * its 12 geometric neighbors.
  */
 
-#include "cllm_kissing_spheres_embeddings.h"
+#include "cllm_lattice_embeddings_spheres.h"
 #include "cllm_mathematical_constants.h"
 #include "prime_lattice_core.h"
 #include "prime_float_math.h"
