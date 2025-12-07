@@ -137,12 +137,12 @@ void cllm_free_positional_encoding(PositionalEncoding* pos_enc);
 
 /* Symmetry functions */
 uint32_t cllm_compute_symmetry_group(uint64_t prime);
-void cllm_apply_symmetry_transform(float* embedding, int symmetry_group, int dim);
-void cllm_apply_inverse_symmetry_transform(float* embedding, int symmetry_group, int dim);
-void cllm_compute_symmetry_invariants(float* embedding, int dim, float* features, int num_features);
-void cllm_apply_equivariant_transform(float* embedding, int symmetry_group, float* transform_matrix, int dim);
-float cllm_symmetry_compatibility(float* embedding1, int symmetry1, float* embedding2, int symmetry2, int dim);
-void cllm_generate_symmetry_attention_mask(int* symmetry_groups, int seq_len, float* mask);
+void cllm_apply_symmetry_transform(double* embedding, int symmetry_group, int dim);
+void cllm_apply_inverse_symmetry_transform(double* embedding, int symmetry_group, int dim);
+void cllm_compute_symmetry_invariants(double* embedding, int dim, double* features, int num_features);
+void cllm_apply_equivariant_transform(double* embedding, int symmetry_group, double* transform_matrix, int dim);
+double cllm_symmetry_compatibility(double* embedding1, int symmetry1, double* embedding2, int symmetry2, int dim);
+void cllm_generate_symmetry_attention_mask(int* symmetry_groups, int seq_len, double* mask);
 
 /* Forward pass and generation */
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);

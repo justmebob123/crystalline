@@ -24,12 +24,12 @@ CLLMModel* create_minimal_model() {
     // Allocate embeddings
     model->embeddings.vocab_size = model->vocab_size;
     model->embeddings.embedding_dim = model->embedding_dim;
-    model->embeddings.embeddings = (float*)calloc(
-        model->vocab_size * model->embedding_dim, sizeof(float));
+    model->embeddings.embeddings = (double*)calloc(
+        model->vocab_size * model->embedding_dim, sizeof(double));
     
     // Initialize embeddings with small random values
     for (size_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
-        model->embeddings.embeddings[i] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+        model->embeddings.embeddings[i] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
     }
     
     // Allocate attention layers
@@ -40,15 +40,15 @@ CLLMModel* create_minimal_model() {
     uint32_t dim = model->attention_layers[0].num_heads * model->attention_layers[0].head_dim;
     size_t weight_size = dim * dim;
     
-    model->attention_layers[0].query_lattice = (float*)calloc(weight_size, sizeof(float));
-    model->attention_layers[0].key_lattice = (float*)calloc(weight_size, sizeof(float));
-    model->attention_layers[0].value_lattice = (float*)calloc(weight_size, sizeof(float));
+    model->attention_layers[0].query_lattice = (double*)calloc(weight_size, sizeof(double));
+    model->attention_layers[0].key_lattice = (double*)calloc(weight_size, sizeof(double));
+    model->attention_layers[0].value_lattice = (double*)calloc(weight_size, sizeof(double));
     
     // Initialize with small random values
     for (size_t j = 0; j < weight_size; j++) {
-        model->attention_layers[0].query_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
-        model->attention_layers[0].key_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
-        model->attention_layers[0].value_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+        model->attention_layers[0].query_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
+        model->attention_layers[0].key_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
+        model->attention_layers[0].value_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
     }
     
     // Allocate feedforward layers
@@ -60,29 +60,29 @@ CLLMModel* create_minimal_model() {
     size_t w1_size = model->ff_layers[0].input_dim * model->ff_layers[0].hidden_dim;
     size_t w2_size = model->ff_layers[0].hidden_dim * model->ff_layers[0].output_dim;
     
-    model->ff_layers[0].w1_lattice = (float*)calloc(w1_size, sizeof(float));
-    model->ff_layers[0].w2_lattice = (float*)calloc(w2_size, sizeof(float));
-    model->ff_layers[0].bias1 = (float*)calloc(model->ff_layers[0].hidden_dim, sizeof(float));
-    model->ff_layers[0].bias2 = (float*)calloc(model->ff_layers[0].output_dim, sizeof(float));
+    model->ff_layers[0].w1_lattice = (double*)calloc(w1_size, sizeof(double));
+    model->ff_layers[0].w2_lattice = (double*)calloc(w2_size, sizeof(double));
+    model->ff_layers[0].bias1 = (double*)calloc(model->ff_layers[0].hidden_dim, sizeof(double));
+    model->ff_layers[0].bias2 = (double*)calloc(model->ff_layers[0].output_dim, sizeof(double));
     
     // Initialize with small random values
     for (size_t j = 0; j < w1_size; j++) {
-        model->ff_layers[0].w1_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+        model->ff_layers[0].w1_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
     }
     for (size_t j = 0; j < w2_size; j++) {
-        model->ff_layers[0].w2_lattice[j] = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+        model->ff_layers[0].w2_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
     }
     
     // Allocate layer norms
     model->layer_norms = (CLLMLayerNorm*)calloc(model->num_layers, sizeof(CLLMLayerNorm));
     model->layer_norms[0].dim = model->embedding_dim;
-    model->layer_norms[0].gamma = (float*)calloc(model->embedding_dim, sizeof(float));
-    model->layer_norms[0].beta = (float*)calloc(model->embedding_dim, sizeof(float));
+    model->layer_norms[0].gamma = (double*)calloc(model->embedding_dim, sizeof(double));
+    model->layer_norms[0].beta = (double*)calloc(model->embedding_dim, sizeof(double));
     
     // Initialize gamma to 1, beta to 0
     for (uint32_t j = 0; j < model->embedding_dim; j++) {
-        model->layer_norms[0].gamma[j] = 1.0f;
-        model->layer_norms[0].beta[j] = 0.0f;
+        model->layer_norms[0].gamma[j] = 1.0;
+        model->layer_norms[0].beta[j] = 0.0;
     }
     
     return model;

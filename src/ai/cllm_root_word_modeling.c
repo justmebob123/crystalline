@@ -151,24 +151,24 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     }
     
     // Ulam spiral: radius grows with square root of index
-    float radius = prime_sqrt((float)prime_index + 1.0f);
+    double radius = prime_sqrt((double)prime_index + 1.0);
     
     // Golden angle for optimal packing (use macros from prime_types.h)
-    float golden_angle = 2.0f * PI / (PHI * PHI);
-    float angle = golden_angle * (float)prime_index;
+    double golden_angle = 2.0 * PI / (PHI * PHI);
+    double angle = golden_angle * (double)prime_index;
     
     // Normalize angle
-    while (angle >= 2.0f * PI) {
-        angle -= 2.0f * PI;
+    while (angle >= 2.0 * PI) {
+        angle -= 2.0 * PI;
     }
     
     // Convert to 3D coordinates
     coords[0] = radius * prime_cos(angle);
     coords[1] = radius * prime_sin(angle);
-    coords[2] = prime_log((float)prime + 1.0f);
+    coords[2] = prime_log((double)prime + 1.0);
     
     // Add token-specific perturbation
-    float token_phase = 2.0f * PI * (float)token_id / 1000.0f;
+    double token_phase = 2.0 * PI * (double)token_id / 1000.0;
     coords[0] += 0.1f * prime_cos(token_phase);
     coords[1] += 0.1f * prime_sin(token_phase);
     coords[2] += 0.1f * prime_sin(token_phase * PHI);
@@ -189,19 +189,19 @@ static uint64_t compute_gcd(uint64_t a, uint64_t b) {
 /**
  * Compute semantic similarity using prime factorization
  */
-float cllm_compute_prime_similarity(uint64_t prime1, uint64_t prime2) {
-    if (prime1 == prime2) return 1.0f;
+double cllm_compute_prime_similarity(uint64_t prime1, uint64_t prime2) {
+    if (prime1 == prime2) return 1.0;
     
     // Compute GCD
     uint64_t gcd = compute_gcd(prime1, prime2);
     
     // Coprime (gcd = 1): Maximally different
     if (gcd == 1) {
-        return 0.0f;
+        return 0.0;
     }
     
     // Share factors: Similarity based on GCD
-    float similarity = (float)gcd / (float)(prime1 < prime2 ? prime1 : prime2);
+    double similarity = (double)gcd / (double)(prime1 < prime2 ? prime1 : prime2);
     return similarity;
 }
 
@@ -267,21 +267,21 @@ int cllm_compute_morphological_relationship(uint64_t token1_prime,
 /**
  * Compute hyperdimensional distance
  */
-float cllm_compute_hyperdimensional_distance(const float* coords1,
-                                             const float* coords2,
+double cllm_compute_hyperdimensional_distance(const double* coords1,
+                                             const double* coords2,
                                              uint64_t prime1,
                                              uint64_t prime2) {
-    if (!coords1 || !coords2) return 0.0f;
+    if (!coords1 || !coords2) return 0.0;
     
     // Euclidean distance in 3D
-    float dx = coords1[0] - coords2[0];
-    float dy = coords1[1] - coords2[1];
-    float dz = coords1[2] - coords2[2];
-    float euclidean = prime_sqrt(dx*dx + dy*dy + dz*dz);
+    double dx = coords1[0] - coords2[0];
+    double dy = coords1[1] - coords2[1];
+    double dz = coords1[2] - coords2[2];
+    double euclidean = prime_sqrt(dx*dx + dy*dy + dz*dz);
     
     // Prime distance
     uint64_t gcd = compute_gcd(prime1, prime2);
-    float prime_dist = (gcd == 1) ? 1.0f : (1.0f / (float)gcd);
+    double prime_dist = (gcd == 1) ? 1.0 : (1.0 / (double)gcd);
     
     // Combined distance
     return euclidean * prime_dist;
@@ -297,11 +297,11 @@ void cllm_apply_symmetry_operation(float* weights, int seq_len, int symmetry_typ
     
     if (operation < 12) {
         // Rotation (12-fold symmetry)
-        float angle = 2.0f * 3.14159265358979323846f * (float)operation / 12.0f;
+        double angle = 2.0 * 3.14159265358979323846 * (double)operation / 12.0;
         
         for (int i = 0; i < seq_len; i++) {
-            float phase = angle * (float)i / (float)seq_len;
-            float rotation = (1.0f + prime_cos(phase)) / 2.0f;
+            double phase = angle * (double)i / (double)seq_len;
+            double rotation = (1.0 + prime_cos(phase)) / 2.0;
             weights[i] *= rotation;
         }
     } else {
@@ -312,7 +312,7 @@ void cllm_apply_symmetry_operation(float* weights, int seq_len, int symmetry_typ
         for (int i = 0; i < seq_len; i++) {
             int reflected_i = seq_len - 1 - i;
             if (i < reflected_i) {
-                float temp = weights[i];
+                double temp = weights[i];
                 weights[i] = weights[reflected_i];
                 weights[reflected_i] = temp;
             }
@@ -333,11 +333,11 @@ void cllm_compute_attention_fourier(const float* attention_weights,
     // Use PI macro from prime_types.h
     
     for (int k = 0; k < seq_len; k++) {
-        float real = 0.0f;
-        float imag = 0.0f;
+        double real = 0.0;
+        double imag = 0.0;
         
         for (int n = 0; n < seq_len; n++) {
-            float angle = -2.0f * PI * (float)k * (float)n / (float)seq_len;
+            double angle = -2.0 * PI * (double)k * (double)n / (double)seq_len;
             real += attention_weights[n] * prime_cos(angle);
             imag += attention_weights[n] * prime_sin(angle);
         }
@@ -352,7 +352,7 @@ void cllm_compute_attention_fourier(const float* attention_weights,
  */
 void cllm_apply_fourier_dampening(float* attention_weights,
                                   int seq_len,
-                                  float cutoff_freq) {
+                                  double cutoff_freq) {
     if (!attention_weights || seq_len <= 0) return;
     
     // Compute Fourier transform
@@ -363,15 +363,15 @@ void cllm_apply_fourier_dampening(float* attention_weights,
     
     // Apply low-pass filter
     for (int i = 0; i < seq_len; i++) {
-        float freq = (float)i / (float)seq_len;
+        double freq = (double)i / (double)seq_len;
         if (freq > cutoff_freq) {
-            fourier[i] *= prime_exp(-(freq - cutoff_freq) * 10.0f);
+            fourier[i] *= prime_exp(-(freq - cutoff_freq) * 10.0);
         }
     }
     
     // Inverse transform (simplified - just scale by filtered magnitudes)
     for (int i = 0; i < seq_len; i++) {
-        float scale = fourier[i] / (fourier[0] + 1e-8f);
+        double scale = fourier[i] / (fourier[0] + 1e-8);
         attention_weights[i] *= scale;
     }
     

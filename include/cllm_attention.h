@@ -114,7 +114,7 @@ uint64_t cllm_get_token_prime(uint32_t token_id);
  * @param prime2 Second token's prime
  * @return Similarity score [0, 1]
  */
-float cllm_compute_prime_similarity(uint64_t prime1, uint64_t prime2);
+double cllm_compute_prime_similarity(uint64_t prime1, uint64_t prime2);
 
 /**
  * Apply symmetry operation to attention weights
@@ -175,8 +175,8 @@ void cllm_apply_fourier_dampening(float* attention_weights,
  * @param prime2 Second point's prime
  * @return Hyperdimensional distance
  */
-float cllm_compute_hyperdimensional_distance(const float* coords1,
-                                             const float* coords2,
+double cllm_compute_hyperdimensional_distance(const double* coords1,
+                                             const double* coords2,
                                              uint64_t prime1,
                                              uint64_t prime2);
 
