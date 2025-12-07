@@ -32,13 +32,13 @@ extern "C" {
  * @param avg_spatial_sim Output: average spatial similarity
  * @return Average loss
  */
-float cllm_compute_loss_detailed(
+double cllm_compute_loss_detailed(
     CLLMModel* model,
     uint32_t* input_tokens,
     uint32_t* target_tokens,
     int num_tokens,
-    float* avg_gcd_sim,
-    float* avg_spatial_sim
+    double* avg_gcd_sim,
+    double* avg_spatial_sim
 );
 
 /**
@@ -49,8 +49,8 @@ float cllm_compute_loss_detailed(
  * @param vocab_size Vocabulary size
  * @param grad_output Output gradients [vocab_size] (caller must allocate)
  */
-void cllm_compute_loss_gradient(float* logits, uint32_t target, 
-                                int vocab_size, float* grad_output);
+void cllm_compute_loss_gradient(double* logits, uint32_t target, 
+                                int vocab_size, double* grad_output);
 
 /**
  * Compute perplexity from loss
@@ -58,7 +58,7 @@ void cllm_compute_loss_gradient(float* logits, uint32_t target,
  * @param loss Loss value
  * @return Perplexity value
  */
-float cllm_compute_perplexity(float loss);
+double cllm_compute_perplexity(double loss);
 
 /**
  * Compute accuracy
@@ -69,7 +69,7 @@ float cllm_compute_perplexity(float loss);
  * @param vocab_size Vocabulary size
  * @return Accuracy (0 to 1)
  */
-float cllm_compute_accuracy(float* logits, uint32_t* targets,
+double cllm_compute_accuracy(double* logits, uint32_t* targets,
                            int batch_size, int vocab_size);
 
 /**
@@ -82,7 +82,7 @@ float cllm_compute_accuracy(float* logits, uint32_t* targets,
  * @param k Top-k value
  * @return Top-k accuracy (0 to 1)
  */
-float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets,
+double cllm_compute_top_k_accuracy(double* logits, uint32_t* targets,
                                   int batch_size, int vocab_size, int k);
 
 #ifdef __cplusplus

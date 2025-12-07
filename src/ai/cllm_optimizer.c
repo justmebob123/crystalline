@@ -36,11 +36,11 @@
  * @param size Number of parameters
  * @param max_norm Maximum gradient norm
  */
-void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm) {
-    if (!gradients || size == 0 || max_norm <= 0.0f) return;
+void cllm_apply_gradient_clipping(double* gradients, size_t size, double max_norm) {
+    if (!gradients || size == 0 || max_norm <= 0.0) return;
     
     // Compute global norm
-    float norm = 0.0f;
+    double norm = 0.0;
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
@@ -48,7 +48,7 @@ void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm)
     
     // Clip if necessary
     if (norm > max_norm) {
-        float scale = max_norm / norm;
+        double scale = max_norm / norm;
         for (size_t i = 0; i < size; i++) {
             gradients[i] *= scale;
         }
@@ -66,8 +66,8 @@ void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm)
  * @param size Number of parameters
  * @param clip_value Maximum absolute value
  */
-void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_value) {
-    if (!gradients || size == 0 || clip_value <= 0.0f) return;
+void cllm_clip_gradients_by_value(double* gradients, size_t size, double clip_value) {
+    if (!gradients || size == 0 || clip_value <= 0.0) return;
     
     for (size_t i = 0; i < size; i++) {
         if (gradients[i] > clip_value) {
@@ -99,23 +99,23 @@ void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_valu
  */
 // Legacy float-based Adam update - unused (kept for reference)
 __attribute__((unused))
-static void adam_update_params(float* weights, float* gradients, float* m, float* v,
-                               size_t size, float learning_rate, float beta1, float beta2,
-                               float epsilon, float bias_correction1, float bias_correction2) {
+static void adam_update_params(double* weights, double* gradients, double* m, double* v,
+                               size_t size, double learning_rate, double beta1, double beta2,
+                               double epsilon, double bias_correction1, double bias_correction2) {
     if (!weights || !gradients || !m || !v) return;
     
     for (size_t i = 0; i < size; i++) {
         // Update biased first moment estimate
-        m[i] = beta1 * m[i] + (1.0f - beta1) * gradients[i];
+        m[i] = beta1 * m[i] + (1.0 - beta1) * gradients[i];
         
         // Update biased second raw moment estimate
-        v[i] = beta2 * v[i] + (1.0f - beta2) * gradients[i] * gradients[i];
+        v[i] = beta2 * v[i] + (1.0 - beta2) * gradients[i] * gradients[i];
         
         // Compute bias-corrected first moment estimate
-        float m_hat = m[i] / bias_correction1;
+        double m_hat = m[i] / bias_correction1;
         
         // Compute bias-corrected second raw moment estimate
-        float v_hat = v[i] / bias_correction2;
+        double v_hat = v[i] / bias_correction2;
         
         // Update parameters
         weights[i] -= learning_rate * m_hat / (prime_sqrt(v_hat) + epsilon);
@@ -135,22 +135,22 @@ static void adam_update_params(float* weights, float* gradients, float* m, float
  * @param training Training state
  * @param learning_rate Learning rate (α)
  */
-void cllm_adam_step(CLLMTraining* training, float learning_rate) {
+void cllm_adam_step(CLLMTraining* training, double learning_rate) {
     if (!training || !training->model) return;
     
     CLLMModel* model = training->model;
     
     // Adam hyperparameters
-    float beta1 = 0.9f;
-    float beta2 = 0.999f;
-    float epsilon = 1e-8f;
+    double beta1 = 0.9;
+    double beta2 = 0.999;
+    double epsilon = 1e-8f;
     
     // Update step count
     int t = training->current_step + 1;
     
     // Bias correction terms
-    float bias_correction1 = 1.0f - prime_pow(beta1, (float)t);
-    float bias_correction2 = 1.0f - prime_pow(beta2, (float)t);
+    double bias_correction1 = 1.0 - prime_pow(beta1, (float)t);
+    double bias_correction2 = 1.0 - prime_pow(beta2, (float)t);
     
     // Skip if no gradients allocated
     if (!training->gradients || !training->optimizer_state) {
@@ -183,7 +183,7 @@ void cllm_adam_step(CLLMTraining* training, float learning_rate) {
  * @param learning_rate Learning rate
  * @param momentum Momentum coefficient (typically 0.9)
  */
-void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum) {
+void cllm_sgd_momentum_step(CLLMTraining* training, double learning_rate, double momentum) {
     // LEGACY FLOAT CODE - DISABLED
     // Use BigFixed optimizer functions instead
     (void)training;
@@ -202,17 +202,17 @@ void cllm_update_learning_rate(CLLMTraining* training) {
     
     int step = training->current_step;
     int warmup_steps = training->config.warmup_steps;
-    float base_lr = training->config.initial_learning_rate;  // Use preserved initial LR
-    float min_lr = training->config.min_lr > 0 ? training->config.min_lr : 1e-6f;
+    double base_lr = training->config.initial_learning_rate;  // Use preserved initial LR
+    double min_lr = training->config.min_lr > 0 ? training->config.min_lr : 1e-6f;
     
-    float lr;
+    double lr;
     
     // Linear warmup phase (applies to all schedulers)
     if (step < warmup_steps && warmup_steps > 0) {
         // Warmup from min_lr to base_lr over warmup_steps
         // At step 0: lr = min_lr + small amount
         // At step warmup_steps-1: lr = base_lr
-        float warmup_progress = (float)(step + 1) / (float)warmup_steps;
+        double warmup_progress = (float)(step + 1) / (float)warmup_steps;
         lr = min_lr + (base_lr - min_lr) * warmup_progress;
         
         // DEBUG
@@ -233,9 +233,9 @@ void cllm_update_learning_rate(CLLMTraining* training) {
         int steps_since_warmup = step - warmup_steps;
         
         if (decay_steps > 0) {
-            float progress = (float)steps_since_warmup / (float)decay_steps;
-            if (progress > 1.0f) progress = 1.0f;
-            lr = min_lr + (base_lr - min_lr) * 0.5f * (1.0f + prime_cos(3.14159265f * progress));
+            double progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0) progress = 1.0;
+            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + prime_cos(3.14159265 * progress));
         } else {
             lr = base_lr;
         }
@@ -245,8 +245,8 @@ void cllm_update_learning_rate(CLLMTraining* training) {
         int steps_since_warmup = step - warmup_steps;
         
         if (decay_steps > 0) {
-            float progress = (float)steps_since_warmup / (float)decay_steps;
-            if (progress > 1.0f) progress = 1.0f;
+            double progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0) progress = 1.0;
             lr = base_lr - (base_lr - min_lr) * progress;
         } else {
             lr = base_lr;
@@ -254,7 +254,7 @@ void cllm_update_learning_rate(CLLMTraining* training) {
     } else if (strcmp(scheduler, "step") == 0) {
         // Step decay - reduce by factor every N steps
         int decay_steps = training->config.lr_decay_steps > 0 ? training->config.lr_decay_steps : 1000;
-        float decay_factor = training->config.lr_decay_factor > 0 ? training->config.lr_decay_factor : 0.1f;
+        double decay_factor = training->config.lr_decay_factor > 0 ? training->config.lr_decay_factor : 0.1;
         
         int steps_since_warmup = step - warmup_steps;
         int num_decays = steps_since_warmup / decay_steps;
@@ -273,9 +273,9 @@ void cllm_update_learning_rate(CLLMTraining* training) {
         int steps_since_warmup = step - warmup_steps;
         
         if (decay_steps > 0) {
-            float progress = (float)steps_since_warmup / (float)decay_steps;
-            if (progress > 1.0f) progress = 1.0f;
-            lr = min_lr + (base_lr - min_lr) * 0.5f * (1.0f + prime_cos(3.14159265f * progress));
+            double progress = (float)steps_since_warmup / (float)decay_steps;
+            if (progress > 1.0) progress = 1.0;
+            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + prime_cos(3.14159265 * progress));
         } else {
             lr = base_lr;
         }
@@ -297,12 +297,12 @@ void cllm_update_learning_rate(CLLMTraining* training) {
  * @param weight_decay Weight decay coefficient
  * @param learning_rate Learning rate
  */
-void cllm_apply_weight_decay(float* weights, size_t size, 
-                            float weight_decay, float learning_rate) {
-    if (!weights || size == 0 || weight_decay <= 0.0f) return;
+void cllm_apply_weight_decay(double* weights, size_t size, 
+                            double weight_decay, double learning_rate) {
+    if (!weights || size == 0 || weight_decay <= 0.0) return;
     
     for (size_t i = 0; i < size; i++) {
-        weights[i] *= (1.0f - learning_rate * weight_decay);
+        weights[i] *= (1.0 - learning_rate * weight_decay);
     }
 }
 
@@ -312,7 +312,7 @@ void cllm_apply_weight_decay(float* weights, size_t size,
  * @param gradients Gradient array [size]
  * @param size Number of parameters
  */
-void cllm_zero_gradients(float* gradients, size_t size) {
+void cllm_zero_gradients(double* gradients, size_t size) {
     if (!gradients || size == 0) return;
     memset(gradients, 0, size * sizeof(float));
 }
@@ -324,10 +324,10 @@ void cllm_zero_gradients(float* gradients, size_t size) {
  * @param size Number of parameters
  * @return L2 norm of gradients
  */
-float cllm_compute_gradient_norm(float* gradients, size_t size) {
-    if (!gradients || size == 0) return 0.0f;
+double cllm_compute_gradient_norm(double* gradients, size_t size) {
+    if (!gradients || size == 0) return 0.0;
     
-    float norm = 0.0f;
+    double norm = 0.0;
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
@@ -343,7 +343,7 @@ float cllm_compute_gradient_norm(float* gradients, size_t size) {
  * @param current_grads Current gradients [size]
  * @param size Number of parameters
  */
-void cllm_accumulate_gradients(float* accumulated_grads, float* current_grads, size_t size) {
+void cllm_accumulate_gradients(double* accumulated_grads, double* current_grads, size_t size) {
     if (!accumulated_grads || !current_grads || size == 0) return;
     
     for (size_t i = 0; i < size; i++) {
@@ -358,7 +358,7 @@ void cllm_accumulate_gradients(float* accumulated_grads, float* current_grads, s
  * @param size Number of parameters
  * @param scale Scale factor
  */
-void cllm_scale_gradients(float* gradients, size_t size, float scale) {
+void cllm_scale_gradients(double* gradients, size_t size, double scale) {
     if (!gradients || size == 0) return;
     
     for (size_t i = 0; i < size; i++) {
@@ -373,7 +373,7 @@ void cllm_scale_gradients(float* gradients, size_t size, float scale) {
  * @param size Number of parameters
  * @return 1 if NaN/Inf found, 0 otherwise
  */
-int cllm_check_gradients_valid(float* gradients, size_t size) {
+int cllm_check_gradients_valid(double* gradients, size_t size) {
     if (!gradients || size == 0) return 0;
     
     for (size_t i = 0; i < size; i++) {
@@ -400,11 +400,11 @@ int cllm_check_gradients_valid(float* gradients, size_t size) {
  * @param size Number of parameters
  * @param decay Decay rate (typically 0.999)
  */
-void cllm_update_ema_weights(float* ema_weights, float* current_weights,
-                            size_t size, float decay) {
+void cllm_update_ema_weights(double* ema_weights, double* current_weights,
+                            size_t size, double decay) {
     if (!ema_weights || !current_weights || size == 0) return;
     
     for (size_t i = 0; i < size; i++) {
-        ema_weights[i] = decay * ema_weights[i] + (1.0f - decay) * current_weights[i];
+        ema_weights[i] = decay * ema_weights[i] + (1.0 - decay) * current_weights[i];
     }
 }

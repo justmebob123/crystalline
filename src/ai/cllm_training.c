@@ -86,8 +86,8 @@ static uint32_t gcd(uint32_t a, uint32_t b) {
  * Prime-based similarity using GCD
  * Much faster than dot product for related tokens
  */
-float crystalline_gcd_similarity(uint32_t token1, uint32_t token2) {
-    if (token1 == 0 || token2 == 0) return 0.0f;
+double crystalline_gcd_similarity(uint32_t token1, uint32_t token2) {
+    if (token1 == 0 || token2 == 0) return 0.0;
     
     // Compute GCD (shared prime factors)
     uint32_t shared = gcd(token1, token2);
@@ -136,7 +136,7 @@ static UlamPosition compute_ulam_position(uint32_t token_id) {
  * Compute distance between tokens in Ulam spiral
  */
 __attribute__((unused))
-static float ulam_distance(uint32_t token1, uint32_t token2) {
+static double ulam_distance(uint32_t token1, uint32_t token2) {
     UlamPosition pos1 = compute_ulam_position(token1);
     UlamPosition pos2 = compute_ulam_position(token2);
     
@@ -155,14 +155,14 @@ static float ulam_distance(uint32_t token1, uint32_t token2) {
  * The algorithm layer loss function was causing NaN.
  * Using the original working cross-entropy implementation.
  */
-float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
+double cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, 
                         uint32_t* target_tokens, int num_tokens) {
     (void)input_tokens;  // Unused
     
-    if (!training || !target_tokens) return 0.0f;
-    if (!training->model || !training->logits) return 0.0f;
+    if (!training || !target_tokens) return 0.0;
+    if (!training->model || !training->logits) return 0.0;
     
-    float total_loss = 0.0f;
+    double total_loss = 0.0;
     int count = 0;
     uint32_t vocab_size = training->model->vocab_size;
     
@@ -222,7 +222,7 @@ float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         count++;
     }
     
-    return count > 0 ? total_loss / count : 0.0f;
+    return count > 0 ? total_loss / count : 0.0;
 }
 
 /**
@@ -275,7 +275,7 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     training->master_weights = NULL;
     training->fp16_activations = NULL;
     training->fp16_gradients = NULL;
-    training->current_loss_scale = config->loss_scale > 0 ? config->loss_scale : 1024.0f;
+    training->current_loss_scale = config->loss_scale > 0 ? config->loss_scale : 1024.0;
     training->loss_scale_steps = 0;
     
     // Allocate master weights for mixed precision if enabled
@@ -752,7 +752,7 @@ void cllm_optimizer_step(CLLMTraining* training) {
     // Scale gradients by 1/accum_steps
     double gradient_scale = 1.0 / (double)accum_steps;
     
-    float lr = training->config.learning_rate;
+    double lr = training->config.learning_rate;
     CLLMModel* model = training->model;
     
     // USE ALGORITHM LAYER OPTIMIZER - WIRED
@@ -778,7 +778,7 @@ void cllm_optimizer_step(CLLMTraining* training) {
     if (model->embeddings.embeddings && training->gradients) {
         for (size_t i = 0; i < embed_params; i++) {
             model->embeddings.embeddings[i] -= lr * training->gradients[i] * gradient_scale;
-            training->gradients[i] = 0.0f;  // Clear gradient after update
+            training->gradients[i] = 0.0;  // Clear gradient after update
         }
     }
     
@@ -791,21 +791,21 @@ void cllm_optimizer_step(CLLMTraining* training) {
             if (training->attention_grads[layer].query_lattice && model->attention_layers[layer].query_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
                     model->attention_layers[layer].query_lattice[i] -= lr * training->attention_grads[layer].query_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].query_lattice[i] = 0.0f;
+                    training->attention_grads[layer].query_lattice[i] = 0.0;
                 }
             }
             
             if (training->attention_grads[layer].key_lattice && model->attention_layers[layer].key_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
                     model->attention_layers[layer].key_lattice[i] -= lr * training->attention_grads[layer].key_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].key_lattice[i] = 0.0f;
+                    training->attention_grads[layer].key_lattice[i] = 0.0;
                 }
             }
             
             if (training->attention_grads[layer].value_lattice && model->attention_layers[layer].value_lattice) {
                 for (uint64_t i = 0; i < attn_size; i++) {
                     model->attention_layers[layer].value_lattice[i] -= lr * training->attention_grads[layer].value_lattice[i] * gradient_scale;
-                    training->attention_grads[layer].value_lattice[i] = 0.0f;
+                    training->attention_grads[layer].value_lattice[i] = 0.0;
                 }
             }
         }
@@ -820,28 +820,28 @@ void cllm_optimizer_step(CLLMTraining* training) {
             if (training->ff_grads[layer].w1_lattice && ff->w1_lattice) {
                 for (uint32_t i = 0; i < input_dim * hidden_dim; i++) {
                     ff->w1_lattice[i] -= lr * training->ff_grads[layer].w1_lattice[i] * gradient_scale;
-                    training->ff_grads[layer].w1_lattice[i] = 0.0f;
+                    training->ff_grads[layer].w1_lattice[i] = 0.0;
                 }
             }
             
             if (training->ff_grads[layer].w2_lattice && ff->w2_lattice) {
                 for (uint32_t i = 0; i < hidden_dim * output_dim; i++) {
                     ff->w2_lattice[i] -= lr * training->ff_grads[layer].w2_lattice[i] * gradient_scale;
-                    training->ff_grads[layer].w2_lattice[i] = 0.0f;
+                    training->ff_grads[layer].w2_lattice[i] = 0.0;
                 }
             }
             
             if (training->ff_grads[layer].bias1 && ff->bias1) {
                 for (uint32_t i = 0; i < hidden_dim; i++) {
                     ff->bias1[i] -= lr * training->ff_grads[layer].bias1[i] * gradient_scale;
-                    training->ff_grads[layer].bias1[i] = 0.0f;
+                    training->ff_grads[layer].bias1[i] = 0.0;
                 }
             }
             
             if (training->ff_grads[layer].bias2 && ff->bias2) {
                 for (uint32_t i = 0; i < output_dim; i++) {
                     ff->bias2[i] -= lr * training->ff_grads[layer].bias2[i] * gradient_scale;
-                    training->ff_grads[layer].bias2[i] = 0.0f;
+                    training->ff_grads[layer].bias2[i] = 0.0;
                 }
             }
         }
@@ -1188,13 +1188,13 @@ static void attention_backward_full(
 
 // Train for one epoch
 // Forward declarations
-float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
+double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer);
 
-float cllm_train_epoch(CLLMTraining* training) {
-    if (!training) return 0.0f;
+double cllm_train_epoch(CLLMTraining* training) {
+    if (!training) return 0.0;
     
-    float epoch_loss = 0.0f;
+    double epoch_loss = 0.0;
     int num_batches = 0;
     
     uint32_t* input_tokens = (uint32_t*)malloc(training->config.batch_size * 
@@ -1214,22 +1214,22 @@ float cllm_train_epoch(CLLMTraining* training) {
         // DIAGNOSTIC: Check weight initialization (first batch only)
         if (training->current_epoch == 0 && num_batches == 0) {
             CLLMModel* model = training->model;
-            float sum_embed = 0.0f, sum_attn = 0.0f, sum_ff = 0.0f;
+            double sum_embed = 0.0, sum_attn = 0.0, sum_ff = 0.0;
             int count = 100;
             
             for (int i = 0; i < count; i++) {
-                sum_embed += prime_fabsf(model->embeddings.embeddings[i]);
+                sum_embed += prime_fabs(model->embeddings.embeddings[i]);
             }
             
             if (model->attention_layers && model->attention_layers[0].query_lattice) {
                 for (int i = 0; i < count; i++) {
-                    sum_attn += prime_fabsf(model->attention_layers[0].query_lattice[i]);
+                    sum_attn += prime_fabs(model->attention_layers[0].query_lattice[i]);
                 }
             }
             
             if (model->ff_layers && model->ff_layers[0].w1_lattice) {
                 for (int i = 0; i < count; i++) {
-                    sum_ff += prime_fabsf(model->ff_layers[0].w1_lattice[i]);
+                    sum_ff += prime_fabs(model->ff_layers[0].w1_lattice[i]);
                 }
             }
             
@@ -1242,7 +1242,7 @@ float cllm_train_epoch(CLLMTraining* training) {
         cllm_forward_training(training, input_tokens);
         
         // Compute loss using GCD-based similarity (O(log n) vs O(n) for dot product)
-        float loss = cllm_compute_loss(training, input_tokens, target_tokens, 
+        double loss = cllm_compute_loss(training, input_tokens, target_tokens, 
                                                    training->config.batch_size * training->config.sequence_length);
         epoch_loss += loss;
         num_batches++;
@@ -1253,12 +1253,12 @@ float cllm_train_epoch(CLLMTraining* training) {
         // DIAGNOSTIC: Check gradient magnitudes
         if (num_batches == 1 || num_batches % 5 == 0) {
             CLLMModel* model = training->model;
-            float max_embed_grad = 0.0f, sum_embed_grad = 0.0f;
+            double max_embed_grad = 0.0, sum_embed_grad = 0.0;
             int nonzero_embed = 0;
             size_t embed_size = model->vocab_size * model->embedding_dim;
             
             for (size_t i = 0; i < embed_size && i < 10000; i++) {
-                float g = prime_fabsf(training->gradients[i]);
+                double g = prime_fabs(training->gradients[i]);
                 if (g > 1e-10f) {
                     nonzero_embed++;
                     sum_embed_grad += g;
@@ -1266,12 +1266,12 @@ float cllm_train_epoch(CLLMTraining* training) {
                 }
             }
             
-            float max_attn_grad = 0.0f;
+            double max_attn_grad = 0.0;
             int nonzero_attn = 0;
             if (training->attention_grads && model->num_layers > 0) {
                 size_t size = model->embedding_dim * model->embedding_dim;
                 for (size_t i = 0; i < size && i < 10000; i++) {
-                    float g = prime_fabsf(training->attention_grads[0].query_lattice[i]);
+                    double g = prime_fabs(training->attention_grads[0].query_lattice[i]);
                     if (g > 1e-10f) {
                         nonzero_attn++;
                         if (g > max_attn_grad) max_attn_grad = g;
@@ -1281,7 +1281,7 @@ float cllm_train_epoch(CLLMTraining* training) {
             
             printf("    Gradients: embed=%d (max=%.2e, avg=%.2e), attn=%d (max=%.2e)\n",
                    nonzero_embed, max_embed_grad,
-                   nonzero_embed > 0 ? sum_embed_grad / nonzero_embed : 0.0f,
+                   nonzero_embed > 0 ? sum_embed_grad / nonzero_embed : 0.0,
                    nonzero_attn, max_attn_grad);
         }
         
@@ -1309,16 +1309,16 @@ float cllm_train_epoch(CLLMTraining* training) {
     free(target_tokens);
     
     // Print epoch summary
-    printf("  Epoch complete: %d batches, average loss = %.4f\n", num_batches, num_batches > 0 ? epoch_loss / num_batches : 0.0f);
+    printf("  Epoch complete: %d batches, average loss = %.4f\n", num_batches, num_batches > 0 ? epoch_loss / num_batches : 0.0);
     
-    return num_batches > 0 ? epoch_loss / num_batches : 0.0f;
+    return num_batches > 0 ? epoch_loss / num_batches : 0.0;
 }
 
 /**
  * Forward pass with activation storage for training
  */
-float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
-    if (!training || !input_tokens) return 0.0f;
+double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
+    if (!training || !input_tokens) return 0.0;
     
     CLLMModel* model = training->model;
     int batch_size = training->config.batch_size;
@@ -1351,7 +1351,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     // Check embeddings for NaN
     if (check_embeddings_for_nan(training)) {
         fprintf(stderr, "CRITICAL: NaN detected in embeddings after initialization!\n");
-        return -1.0f;
+        return -1.0;
     }
 #endif
     
@@ -1376,7 +1376,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         // Check attention outputs for NaN
         if (check_attention_outputs_for_nan(training, layer)) {
             fprintf(stderr, "CRITICAL: NaN detected in attention output at layer %u!\n", layer);
-            return -1.0f;
+            return -1.0;
         }
 #endif
         
@@ -1442,7 +1442,7 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         // Check feedforward outputs for NaN
         if (check_feedforward_outputs_for_nan(training, layer)) {
             fprintf(stderr, "CRITICAL: NaN detected in feedforward output at layer %u!\n", layer);
-            return -1.0f;
+            return -1.0;
         }
 #endif
         
@@ -1480,11 +1480,11 @@ float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     // Check logits for NaN
     if (check_logits_for_nan(training)) {
         fprintf(stderr, "CRITICAL: NaN detected in logits!\n");
-        return -1.0f;
+        return -1.0;
     }
 #endif
     
-    return 0.0f;
+    return 0.0;
 }
 
 /**
@@ -1764,7 +1764,7 @@ int cllm_train(CLLMTraining* training) {
         
         printf("Epoch %d/%d\n", epoch + 1, training->config.num_epochs);
         
-        float epoch_loss = cllm_train_epoch(training);
+        double epoch_loss = cllm_train_epoch(training);
         
         printf("Epoch %d complete: Average Loss = %.4f\n\n", epoch + 1, epoch_loss);
         

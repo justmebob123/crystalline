@@ -26,12 +26,12 @@
  * CLLM Training Configuration
  */
 typedef struct {
-    float learning_rate;         // Learning rate
+    double learning_rate;         // Learning rate
     int batch_size;              // Batch size
     int num_epochs;              // Number of training epochs
     int max_steps;               // Maximum training steps
-    float weight_decay;          // Weight decay (L2 regularization)
-    float gradient_clip;         // Gradient clipping threshold
+    double weight_decay;          // Weight decay (L2 regularization)
+    double gradient_clip;         // Gradient clipping threshold
     int warmup_steps;            // Learning rate warmup steps
     int save_interval;           // Save checkpoint every N steps
     int save_every;              // Alternative save interval
@@ -41,19 +41,19 @@ typedef struct {
     
     // Learning rate scheduling
     char lr_scheduler[32];       // Scheduler type: "none", "linear", "cosine", "step"
-    float lr_decay_factor;       // Decay factor for step scheduler (default: 0.1)
+    double lr_decay_factor;       // Decay factor for step scheduler (default: 0.1)
     int lr_decay_steps;          // Steps between decay for step scheduler (default: 1000)
-    float min_lr;                // Minimum learning rate (default: 1e-6)
-    float initial_learning_rate; // Original learning rate (preserved for scheduling)
+    double min_lr;                // Minimum learning rate (default: 1e-6)
+    double initial_learning_rate; // Original learning rate (preserved for scheduling)
     
     // Gradient accumulation
     int gradient_accumulation_steps;  // Number of steps to accumulate gradients (default: 1)
     
     // Mixed precision training
     int use_mixed_precision;          // Enable FP16/FP32 mixed precision (default: 0)
-    float loss_scale;                 // Loss scaling factor for FP16 (default: 1024.0)
-    float loss_scale_growth;          // Growth factor for dynamic loss scaling (default: 2.0)
-    float loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
+    double loss_scale;                 // Loss scaling factor for FP16 (default: 1024.0)
+    double loss_scale_growth;          // Growth factor for dynamic loss scaling (default: 2.0)
+    double loss_scale_backoff;         // Backoff factor for dynamic loss scaling (default: 0.5)
     int loss_scale_window;            // Steps before increasing loss scale (default: 2000)
     
 } CLLMTrainingConfig;
@@ -72,8 +72,8 @@ typedef struct {
     // Training state
     int current_epoch;           // Current epoch
     int current_step;            // Current training step
-    float best_loss;             // Best validation loss
-    float current_loss;          // Current training loss
+    double best_loss;             // Best validation loss
+    double current_loss;          // Current training loss
     time_t start_time;           // Training start time
     
     // Gradient accumulation state
@@ -83,7 +83,7 @@ typedef struct {
     double* master_weights;       // FP32 master copy of weights (for mixed precision)
     uint16_t* fp16_activations;  // FP16 activation buffer
     uint16_t* fp16_gradients;    // FP16 gradient buffer
-    float current_loss_scale;    // Current dynamic loss scale
+    double current_loss_scale;    // Current dynamic loss scale
     int loss_scale_steps;        // Steps since last loss scale increase
     
     // Batch management
@@ -156,43 +156,44 @@ typedef struct {
 
 /* Loss computation functions */
 // OBJECTIVE 2B: Only crystalline loss remains - standard loss functions removed
-float cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
-float cllm_compute_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size);
-float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
+// PRECISION FIX: Changed from double to double for consistency
+double cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
+double cllm_compute_accuracy(double* logits, uint32_t* targets, int batch_size, int vocab_size);
+double cllm_compute_top_k_accuracy(double* logits, uint32_t* targets, int batch_size, int vocab_size, int k);
 
 /* Optimizer functions */
-void cllm_apply_gradient_clipping(float* gradients, size_t size, float max_norm);
-void cllm_clip_gradients_by_value(float* gradients, size_t size, float clip_value);
+void cllm_apply_gradient_clipping(double* gradients, size_t size, double max_norm);
+void cllm_clip_gradients_by_value(double* gradients, size_t size, double clip_value);
 /* Training initialization and cleanup */
 CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config);
 void cllm_training_free(CLLMTraining* training);
 void cllm_training_cleanup(CLLMTraining* training);
 
-void cllm_adam_step(CLLMTraining* training, float learning_rate);
-void cllm_sgd_momentum_step(CLLMTraining* training, float learning_rate, float momentum);
+void cllm_adam_step(CLLMTraining* training, double learning_rate);
+void cllm_sgd_momentum_step(CLLMTraining* training, double learning_rate, double momentum);
 void cllm_update_learning_rate(CLLMTraining* training);
-float cllm_get_learning_rate(CLLMTraining* training);
-float cllm_get_learning_rate_step_decay(CLLMTraining* training, int* decay_steps, int num_decay_steps, float decay_factor);
-float cllm_get_learning_rate_exponential(CLLMTraining* training, float decay_rate);
-float cllm_get_learning_rate_polynomial(CLLMTraining* training, float power);
+double cllm_get_learning_rate(CLLMTraining* training);
+double cllm_get_learning_rate_step_decay(CLLMTraining* training, int* decay_steps, int num_decay_steps, double decay_factor);
+double cllm_get_learning_rate_exponential(CLLMTraining* training, double decay_rate);
+double cllm_get_learning_rate_polynomial(CLLMTraining* training, double power);
 void cllm_print_lr_schedule(CLLMTraining* training);
 int cllm_adam_init(CLLMTraining* training);
-void cllm_apply_weight_decay(float* weights, size_t size, float weight_decay, float learning_rate);
-void cllm_zero_gradients(float* gradients, size_t size);
-float cllm_compute_gradient_norm(float* gradients, size_t size);
-void cllm_accumulate_gradients(float* accumulated_grads, float* current_grads, size_t size);
-void cllm_scale_gradients(float* gradients, size_t size, float scale);
-int cllm_check_gradients_valid(float* gradients, size_t size);
-void cllm_update_ema_weights(float* ema_weights, float* current_weights, size_t size, float decay);
+void cllm_apply_weight_decay(double* weights, size_t size, double weight_decay, double learning_rate);
+void cllm_zero_gradients(double* gradients, size_t size);
+double cllm_compute_gradient_norm(double* gradients, size_t size);
+void cllm_accumulate_gradients(double* accumulated_grads, double* current_grads, size_t size);
+void cllm_scale_gradients(double* gradients, size_t size, double scale);
+int cllm_check_gradients_valid(double* gradients, size_t size);
+void cllm_update_ema_weights(double* ema_weights, double* current_weights, size_t size, double decay);
 
 /* Backward pass functions */
-void cllm_layer_norm_backward(CLLMLayerNorm* ln, float* input, float* grad_output, float* grad_input, float* grad_gamma, float* grad_beta);
-void cllm_feedforward_backward(FeedForwardLayer* layer, float* input, float* hidden, float* grad_output, float* grad_input, float* grad_w1, float* grad_w2, float* grad_b1, float* grad_b2);
-void cllm_attention_backward(AttentionLayer* layer, float* input, float* grad_output, float* grad_input,
-                            float* grad_query_weights, float* grad_key_weights, float* grad_value_weights,
+void cllm_layer_norm_backward(CLLMLayerNorm* ln, double* input, double* grad_output, double* grad_input, double* grad_gamma, double* grad_beta);
+void cllm_feedforward_backward(FeedForwardLayer* layer, double* input, double* hidden, double* grad_output, double* grad_input, double* grad_w1, double* grad_w2, double* grad_b1, double* grad_b2);
+void cllm_attention_backward(AttentionLayer* layer, double* input, double* grad_output, double* grad_input,
+                            double* grad_query_weights, double* grad_key_weights, double* grad_value_weights,
                             int seq_len);
-void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, float* grad_output, float* grad_embeddings, int batch_size);
-void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, float* input, float* grad_output, float* grad_input, int seq_len);
+void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, double* grad_output, double* grad_embeddings, int batch_size);
+void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, double* input, double* grad_output, double* grad_input, int seq_len);
 void cllm_backward(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
 
 /* Function declarations */
@@ -200,14 +201,16 @@ int cllm_load_training_data(CLLMTraining* training, const char* filename);
 int cllm_get_batch(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens);
 void cllm_optimizer_step(CLLMTraining* training);
 void cllm_optimizer_step_adam(CLLMTraining* training);  // Adam optimizer with gradient accumulation
-float cllm_train_epoch(CLLMTraining* training);
+// PRECISION FIX: Changed from double to double for consistency
+double cllm_train_epoch(CLLMTraining* training);
 int cllm_train(CLLMTraining* training);
 int cllm_save_checkpoint(CLLMTraining* training, const char* filename);
 int cllm_load_checkpoint(CLLMTraining* training, const char* filename);
 void cllm_training_cleanup(CLLMTraining* training);
 
 /* Training step functions (used by multi-threading and production features) */
-float cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
+// PRECISION FIX: Changed from double to double for consistency
+double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer);
 
 #endif /* CLLM_TRAINING_H */

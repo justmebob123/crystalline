@@ -18,11 +18,11 @@
  * @param logits Input/output logits [size]
  * @param size Array size
  */
-static void softmax_inplace(float* logits, int size) {
+static void softmax_inplace(double* logits, int size) {
     if (!logits || size <= 0) return;
     
     // Find max for numerical stability
-    float max_logit = logits[0];
+    double max_logit = logits[0];
     for (int i = 1; i < size; i++) {
         if (logits[i] > max_logit) {
             max_logit = logits[i];
@@ -30,7 +30,7 @@ static void softmax_inplace(float* logits, int size) {
     }
     
     // Compute exp and sum
-    float sum = 0.0f;
+    double sum = 0.0;
     for (int i = 0; i < size; i++) {
         logits[i] = prime_exp(logits[i] - max_logit);
         sum += logits[i];
@@ -55,8 +55,8 @@ static void softmax_inplace(float* logits, int size) {
  * @param grad_output Output gradient [vocab_size]
  * @param vocab_size Vocabulary size
  */
-void cllm_compute_loss_gradient(float* logits, uint32_t target, 
-                                float* grad_output, int vocab_size) {
+void cllm_compute_loss_gradient(double* logits, uint32_t target, 
+                                double* grad_output, int vocab_size) {
     if (!logits || !grad_output || target >= (uint32_t)vocab_size || vocab_size <= 0) {
         return;
     }
@@ -66,7 +66,7 @@ void cllm_compute_loss_gradient(float* logits, uint32_t target,
     softmax_inplace(grad_output, vocab_size);
     
     // Subtract 1 from target position: grad = P - 1[target]
-    grad_output[target] -= 1.0f;
+    grad_output[target] -= 1.0;
 }
 
 /**
@@ -77,7 +77,7 @@ void cllm_compute_loss_gradient(float* logits, uint32_t target,
  * @param loss Loss value
  * @return Perplexity value
  */
-float cllm_compute_perplexity(float loss) {
+double cllm_compute_perplexity(double loss) {
     return prime_exp(loss);
 }
 
@@ -90,20 +90,20 @@ float cllm_compute_perplexity(float loss) {
  * @param vocab_size Vocabulary size
  * @return Accuracy (0 to 1)
  */
-float cllm_compute_accuracy(float* logits, uint32_t* targets,
+double cllm_compute_accuracy(double* logits, uint32_t* targets,
                            int batch_size, int vocab_size) {
     if (!logits || !targets || batch_size <= 0 || vocab_size <= 0) {
-        return 0.0f;
+        return 0.0;
     }
     
     int correct = 0;
     
     for (int i = 0; i < batch_size; i++) {
-        float* batch_logits = &logits[i * vocab_size];
+        double* batch_logits = &logits[i * vocab_size];
         
         // Find argmax
         int pred = 0;
-        float max_logit = batch_logits[0];
+        double max_logit = batch_logits[0];
         for (int j = 1; j < vocab_size; j++) {
             if (batch_logits[j] > max_logit) {
                 max_logit = batch_logits[j];
@@ -129,16 +129,16 @@ float cllm_compute_accuracy(float* logits, uint32_t* targets,
  * @param k Top-k value
  * @return Top-k accuracy (0 to 1)
  */
-float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets,
+double cllm_compute_top_k_accuracy(double* logits, uint32_t* targets,
                                   int batch_size, int vocab_size, int k) {
     if (!logits || !targets || batch_size <= 0 || vocab_size <= 0 || k <= 0) {
-        return 0.0f;
+        return 0.0;
     }
     
     int correct = 0;
     
     for (int i = 0; i < batch_size; i++) {
-        float* batch_logits = &logits[i * vocab_size];
+        double* batch_logits = &logits[i * vocab_size];
         uint32_t target = targets[i];
         
         // Find top-k predictions
@@ -148,7 +148,7 @@ float cllm_compute_top_k_accuracy(float* logits, uint32_t* targets,
         // Simple selection of top-k
         for (int j = 0; j < k && j < vocab_size; j++) {
             int max_idx = 0;
-            float max_val = -1e9f;
+            double max_val = -1e9f;
             
             for (int m = 0; m < vocab_size; m++) {
                 // Check if already selected
