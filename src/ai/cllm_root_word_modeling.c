@@ -22,7 +22,7 @@
 #include <string.h>
 #include "../include/prime_float_math.h"
 #include "../include/cllm_attention.h"
-#include "../include/prime_float_math.h"
+#include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
 
 #define PI 3.14159265358979323846
 #define PHI 1.618033988749895
@@ -64,20 +64,9 @@ static void init_prime_cache(void) {
     prime_cache_initialized = 1;
 }
 
-/**
- * Check if number is prime
- */
-static int is_prime(uint64_t n) {
-    if (n < 2) return 0;
-    if (n == 2) return 1;
-    if (n % 2 == 0) return 0;
-    
-    uint64_t sqrt_n = (uint64_t)prime_sqrt((double)n);
-    for (uint64_t i = 3; i <= sqrt_n; i += 2) {
-        if (n % i == 0) return 0;
-    }
-    return 1;
-}
+// REMOVED: Local is_prime() implementation
+// Internal code trusts the deterministic clock lattice structure
+// Use validate_prime_by_clock_position() directly
 
 /**
  * Get nth prime number
@@ -95,7 +84,8 @@ static uint64_t get_nth_prime(uint32_t n) {
     uint64_t candidate = prime_cache[PRIME_CACHE_SIZE - 1] + 2;
     
     while (count <= n) {
-        if (is_prime(candidate)) {
+        // Internal: Trust deterministic clock lattice
+        if (validate_prime_by_clock_position(candidate)) {
             if (count == n) return candidate;
             count++;
         }
@@ -215,7 +205,8 @@ uint32_t cllm_extract_root_word(uint32_t token_id, uint64_t prime) {
     init_prime_cache();
     
     // If prime, it's already a root
-    if (is_prime(prime)) {
+    // Internal: Trust deterministic clock lattice
+    if (validate_prime_by_clock_position(prime)) {
         return token_id;
     }
     

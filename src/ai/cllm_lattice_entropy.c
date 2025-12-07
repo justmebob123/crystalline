@@ -6,6 +6,7 @@
 #include "ai/cllm_lattice_entropy.h"
 #include "prime_lattice.h"
 #include "crystal_abacus.h"
+#include "clock_lattice.h"  // For validate_prime_by_clock_position()
 #include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
@@ -73,7 +74,8 @@ uint64_t count_primes_in_dimension(uint64_t n, uint32_t d) {
         // For small n, count exactly
         if (n < 100) {
             for (uint64_t i = 2; i <= n; i++) {
-                if (is_prime(i)) {
+                // Internal: Trust deterministic clock lattice
+                if (validate_prime_by_clock_position(i)) {
                     count++;
                 }
             }

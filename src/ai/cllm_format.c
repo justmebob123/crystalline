@@ -10,6 +10,7 @@
 #include "../include/cllm_format.h"
 #include "../include/cllm_utils.h"
 #include "../include/prime_float_math.h"
+#include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
 
 // Use GOLDEN_RATIO from prime_types.h (included via cllm_format.h)
 #ifndef GOLDEN_RATIO
@@ -63,24 +64,17 @@ void cllm_prime_to_lattice(uint64_t prime, float coords[3], float* angle, float*
     coords[2] = prime_logf(p) / prime_logf(GOLDEN_RATIO);  // Height based on prime magnitude
 }
 
-// Simple primality test helper
-static bool is_prime(uint64_t num) {
-    if (num < 2) return false;
-    if (num == 2) return true;
-    if (num % 2 == 0) return false;
-    
-    for (uint64_t i = 3; i * i <= num; i += 2) {
-        if (num % i == 0) return false;
-    }
-    return true;
-}
+// REMOVED: Local is_prime() implementation
+// Internal code trusts the deterministic clock lattice structure
+// Use validate_prime_by_clock_position() directly
 
 // Find nearest prime for a given number
 uint64_t cllm_nearest_prime(uint64_t n) {
     if (n < 2) return 2;
     
     // Search upward for next prime
-    while (!is_prime(n)) n++;
+    // Internal: Trust deterministic clock lattice
+    while (!validate_prime_by_clock_position(n)) n++;
     return n;
 }
 

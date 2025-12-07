@@ -16,23 +16,9 @@
 // Use PHI from prime_types.h
 #define SYMMETRY_ORDER 12
 
-/**
- * Check if a number is prime (simple trial division)
- * 
- * @param n Number to check
- * @return 1 if prime, 0 otherwise
- */
-static int is_prime(uint64_t n) {
-    if (n < 2) return 0;
-    if (n == 2) return 1;
-    if (n % 2 == 0) return 0;
-    
-    uint64_t sqrt_n = (uint64_t)prime_sqrt((double)n);
-    for (uint64_t i = 3; i <= sqrt_n; i += 2) {
-        if (n % i == 0) return 0;
-    }
-    return 1;
-}
+// REMOVED: Local is_prime() implementation
+// Internal code trusts the deterministic clock lattice structure
+// Use validate_prime_by_clock_position() directly
 
 /**
  * Get the nth prime number
@@ -47,7 +33,8 @@ static uint64_t get_nth_prime(uint32_t n) {
     uint64_t candidate = 3;
     
     while (count <= n) {
-        if (is_prime(candidate)) {
+        // Internal: Trust deterministic clock lattice
+        if (validate_prime_by_clock_position(candidate)) {
             if (count == n) return candidate;
             count++;
         }
@@ -72,7 +59,8 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
     uint32_t prime_index = 0;
     uint64_t p = 2;
     while (p < prime) {
-        if (is_prime(p)) prime_index++;
+        // Internal: Trust deterministic clock lattice
+        if (validate_prime_by_clock_position(p)) prime_index++;
         p++;
     }
     

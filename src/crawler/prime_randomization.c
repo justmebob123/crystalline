@@ -5,26 +5,14 @@
  */
 
 #include "prime_randomization.h"
+#include "../../include/clock_lattice.h"  // For validate_prime_by_clock_position()
 #include <stdlib.h>
 #include <time.h>
 // #include "../../include/prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only  // REMOVED: Not using any math.h functions
 
-/**
- * Check if a number is prime
- */
-bool is_prime(uint64_t n) {
-    if (n <= 1) return false;
-    if (n <= 3) return true;
-    if (n % 2 == 0 || n % 3 == 0) return false;
-    
-    for (uint64_t i = 5; i * i <= n; i += 6) {
-        if (n % i == 0 || n % (i + 2) == 0) {
-            return false;
-        }
-    }
-    
-    return true;
-}
+// REMOVED: Local is_prime() implementation
+// Internal code trusts the deterministic clock lattice structure
+// Use validate_prime_by_clock_position() directly
 
 /**
  * Get next prime number after n
@@ -33,7 +21,8 @@ uint64_t next_prime(uint64_t n) {
     if (n < 2) return 2;
     
     uint64_t candidate = n + 1;
-    while (!is_prime(candidate)) {
+    // Internal: Trust deterministic clock lattice
+    while (!validate_prime_by_clock_position(candidate)) {
         candidate++;
         if (candidate > n + 1000) {
             // Safety limit
@@ -51,7 +40,8 @@ uint64_t prev_prime(uint64_t n) {
     if (n <= 2) return 2;
     
     uint64_t candidate = n - 1;
-    while (candidate > 1 && !is_prime(candidate)) {
+    // Internal: Trust deterministic clock lattice
+    while (candidate > 1 && !validate_prime_by_clock_position(candidate)) {
         candidate--;
     }
     
@@ -86,7 +76,8 @@ uint64_t calculate_prime_delay(uint64_t min_prime, uint64_t max_prime, uint64_t 
     uint64_t delay = min_prime + offset;
     
     // Ensure delay is prime
-    if (!is_prime(delay)) {
+    // Internal: Trust deterministic clock lattice
+    if (!validate_prime_by_clock_position(delay)) {
         delay = next_prime(delay);
         if (delay > max_prime) {
             delay = prev_prime(max_prime);
@@ -117,11 +108,12 @@ bool prime_config_validate(const CrawlerPrimeConfig* config) {
     if (!config) return false;
     
     // Check if primes are actually prime
+    // Internal: Trust deterministic clock lattice
     if (config->use_prime_randomization) {
-        if (!is_prime(config->frequency_prime)) return false;
-        if (!is_prime(config->link_selection_prime)) return false;
-        if (!is_prime(config->delay_min_prime)) return false;
-        if (!is_prime(config->delay_max_prime)) return false;
+        if (!validate_prime_by_clock_position(config->frequency_prime)) return false;
+        if (!validate_prime_by_clock_position(config->link_selection_prime)) return false;
+        if (!validate_prime_by_clock_position(config->delay_min_prime)) return false;
+        if (!validate_prime_by_clock_position(config->delay_max_prime)) return false;
     }
     
     // Check if min < max
