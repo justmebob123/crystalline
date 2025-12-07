@@ -15,7 +15,7 @@
 #include "../button_sizes.h"
 #include "../../crawler_thread.h"
 #include "crawler.h"
-#include "cllm_model_manager.h"
+#include "cllm_model_registry.h"
 #include <stdio.h>
 #include <string.h>
 

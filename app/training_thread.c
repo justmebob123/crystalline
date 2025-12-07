@@ -19,7 +19,7 @@
 #include "../include/cllm_batch.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_metrics.h"  // UI Integration: Real-time metrics
-#include "../include/cllm_model_manager.h"  // Model management
+// Model management now handled by individual tabs via model_registry
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -646,12 +646,11 @@ void stop_training_thread(AppState* state) {
         printf("✓ Training thread stopped completely\n");
     }
     
-    // Release model write lock AFTER thread is stopped
+    // Model cleanup now handled by Training Tab
+    // Each tab owns its model independently
     if (state->cllm_model) {
-        const char* model_name = "default_model"; // TODO: Get from model selector
-        model_manager_release_write(model_name);
         state->cllm_model = NULL;
-        printf("✓ Model released\n");
+        printf("✓ Training thread stopped\n");
     }
 }
 

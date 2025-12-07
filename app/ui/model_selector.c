@@ -9,7 +9,7 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 #include "ui/model_selector.h"
-#include "cllm_model_manager.h"
+#include "cllm_model_registry.h"
 #include "../app_common.h"  // For draw_text function
 
 #define MAX_MODELS 32
@@ -80,15 +80,15 @@ void model_selector_update_list(ModelSelector* selector) {
     }
     selector->num_models = 0;
     
-    // CRITICAL FIX: Use thread-safe API to avoid race condition
-    uint32_t count = model_manager_count();
+    // Use model registry to get model list
+    uint32_t count = model_registry_count();
     
     if (count > 0) {
-        // Get model names one by one using thread-safe API
+        // Get model names one by one from registry
         for (uint32_t i = 0; i < count && i < MAX_MODELS; i++) {
-            char* name = model_manager_get_name_at_index(i);
-            if (name) {
-                selector->model_list[i] = name;  // Already allocated by strdup in get_name_at_index
+            const ModelMetadata* metadata = model_registry_get_at_index(i);
+            if (metadata && metadata->name[0] != '\0') {
+                selector->model_list[i] = strdup(metadata->name);  // Duplicate the name
                 selector->num_models++;
             }
         }

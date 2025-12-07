@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
-#include "../include/cllm_model_manager.h"
+#include "../include/cllm_model_registry.h"
 
 // Control thread handle
 static pthread_t g_control_thread = 0;
@@ -62,16 +62,15 @@ void* control_thread_main(void* arg) {
                 char model_path[512];
                 snprintf(model_path, sizeof(model_path), "models/%s", entry->d_name);
                 
-                // Read metadata only (fast - just header)
-                CLLMHeader* header = model_manager_read_metadata(model_path);
-                if (header) {
-                    uint64_t required_primes = header->num_lattice_points > 0 ? 
-                                               header->num_lattice_points : header->vocab_size;
+                // Read metadata from registry
+                const ModelMetadata* metadata = model_registry_get(entry->d_name);
+                if (metadata) {
+                    uint64_t required_primes = metadata->vocab_size;  // Use vocab_size as estimate
                     
                     printf("  Found: %s\n", entry->d_name);
-                    printf("    Vocab: %lu | Layers: %lu | Primes needed: %lu\n",
-                           (unsigned long)header->vocab_size,
-                           (unsigned long)header->num_layers,
+                    printf("    Vocab: %u | Layers: %u | Primes needed: %lu\n",
+                           metadata->vocab_size,
+                           metadata->num_layers,
                            (unsigned long)required_primes);
                     
                     // Check if abacus has enough primes
@@ -85,7 +84,6 @@ void* control_thread_main(void* arg) {
                                available_primes, (unsigned long)required_primes);
                     }
                     
-                    model_manager_free_metadata(header);
                     found_count++;
                 }
             }

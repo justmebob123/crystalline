@@ -293,22 +293,22 @@ void event_clear_queue(EventSystem* system) {
 
 void event_model_loaded(EventSystem* system, const char* model_name) {
     event_dispatch(system, EVENT_MODEL_LOADED, (void*)model_name, 
-                  model_name ? strlen(model_name) + 1 : 0, "model_manager");
+                  model_name ? strlen(model_name) + 1 : 0, "model_registry");
 }
 
 void event_model_created(EventSystem* system, const char* model_name) {
     event_dispatch(system, EVENT_MODEL_CREATED, (void*)model_name,
-                  model_name ? strlen(model_name) + 1 : 0, "model_manager");
+                  model_name ? strlen(model_name) + 1 : 0, "model_registry");
 }
 
 void event_model_saved(EventSystem* system, const char* model_path) {
     event_dispatch(system, EVENT_MODEL_SAVED, (void*)model_path,
-                  model_path ? strlen(model_path) + 1 : 0, "model_manager");
+                  model_path ? strlen(model_path) + 1 : 0, "model_registry");
 }
 
 void event_model_deleted(EventSystem* system, const char* model_name) {
     event_dispatch(system, EVENT_MODEL_DELETED, (void*)model_name,
-                  model_name ? strlen(model_name) + 1 : 0, "model_manager");
+                  model_name ? strlen(model_name) + 1 : 0, "model_registry");
 }
 
 void event_training_started(EventSystem* system) {

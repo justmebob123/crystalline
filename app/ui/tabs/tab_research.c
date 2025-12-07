@@ -7,7 +7,7 @@
 #include "../crystalline/color.h"
 #include "../../input_manager.h"
 #include "../model_selector.h"
-#include "../../../include/cllm_model_manager.h"
+#include "../../../include/cllm_model_registry.h"
 #include <SDL2/SDL_ttf.h>
 #include <dirent.h>
 #include <sys/stat.h>

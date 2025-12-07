@@ -3,7 +3,7 @@
 #include "app_common.h"
 #include "cllm_integration.h"
 #include "../include/cllm_format.h"
-#include "../include/cllm_model_manager.h"
+#include "../include/cllm_model_registry.h"
 #include "../include/cllm_model_registry.h"
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
@@ -130,14 +130,14 @@ AppState* init_app(void) {
     loading_screen_update(&g_loading_screen, LOAD_STAGE_SERVICES, 0.0f);
     loading_screen_render(state->renderer, &g_loading_screen, 255);
     
-    // Initialize global model manager
-    printf("\n=== Initializing Model Manager ===\n");
-    if (!model_manager_init("./models")) {
-        printf("WARNING: Failed to initialize model manager\n");
+    // Initialize model registry
+    printf("\n=== Initializing Model Registry ===\n");
+    if (!model_registry_init("./models")) {
+        printf("WARNING: Failed to initialize model registry\n");
     } else {
-        printf("Model manager initialized successfully\n");
+        printf("Model registry initialized successfully\n");
     }
-    printf("=== Model Manager Ready ===\n\n");
+    printf("=== Model Registry Ready ===\n\n");
     
     // Initialize model registry
     printf("=== Initializing Model Registry ===\n");
@@ -353,8 +353,7 @@ void cleanup(AppState* state) {
     app_cleanup_global_abacus();
     
     // CRITICAL: Cleanup model manager (fixes 395MB leak)
-    extern void model_manager_cleanup(void);
-    model_manager_cleanup();
+    model_registry_cleanup();
     
     // Cleanup model registry
     model_registry_cleanup();
