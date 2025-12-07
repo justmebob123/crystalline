@@ -7,10 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <stdbool.h>
 #include "../include/cllm_training.h"
-#include "../include/prime_float_math.h"
+#include "../include/prime_float_math.h"  // For prime_isinf()
 
 // Check if a double value is NaN
 static inline bool is_nan_double(double val) {
@@ -34,7 +33,7 @@ int check_array_for_nan_double(const double* array, size_t size, const char* nam
             fprintf(stderr, "NaN detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
-        if (isinf(array[i])) {
+        if (prime_isinf(array[i])) {
             fprintf(stderr, "Inf detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
@@ -50,7 +49,7 @@ int check_array_for_nan_float(const float* array, size_t size, const char* name)
             fprintf(stderr, "NaN detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
-        if (isinf(array[i])) {
+        if (prime_isinf(array[i])) {
             fprintf(stderr, "Inf detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }

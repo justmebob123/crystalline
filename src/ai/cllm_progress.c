@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <math.h>
 
 // Get current time in milliseconds
 static int64_t get_time_ms(void) {

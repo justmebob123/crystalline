@@ -124,6 +124,7 @@ int prime_isnan(double x);
 
 // Check if infinite
 int prime_isinff(float x);
+int prime_isinf(double x);
 
 #ifdef __cplusplus
 }
