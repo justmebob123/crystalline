@@ -121,9 +121,17 @@ Redesign model management to enable concurrent operations while keeping Models T
 - [ ] Test all tabs independently
 
 ## Status
-**Current Focus:** Phase 3.2 - Training Tab Refactor (COMPLETE!)
+**Current Focus:** Phase 3.4 - Models Tab Refactor (COMPLETE!)
 **Blocker:** None
-**Next Action:** Phase 3.3 - LLM Tab Refactor
+**Next Action:** Phase 3.5 - Crawler Tab Refactor
+
+## Recent Fixes
+**Dropdown Population Fix (Critical)**
+- Fixed model dropdown not populating in LLM and Training tabs
+- Issue: Static flag prevented re-population after registry scan
+- Solution: Changed to track model count and scan registry on each render
+- Now dropdowns update dynamically when models are added/removed
+- Build successful: 0 errors, 0 warnings
 
 ## Summary of Training Tab Refactor
 The Training Tab has been successfully refactored to own its model independently:
