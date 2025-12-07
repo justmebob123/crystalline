@@ -126,17 +126,22 @@ Redesign model management to enable concurrent operations while keeping Models T
 **Next Action:** Phase 3.5 - Crawler Tab Refactor
 
 ## Recent Fixes
-**Registry Scan Spam & Memory Leak Fix (Critical)**
+**Registry Scan Spam Fix (Critical) - VERIFIED**
 - Fixed terminal flooding with "Registered" messages (thousands per second)
-- Fixed memory leaks: 2.7MB model + 72 bytes inference state
 - Root cause: model_registry_scan() called on EVERY render frame
 - Solution: Changed to populate dropdown only once at initialization
-- Added inference state cleanup in llm_tab_unload_model()
 - Build successful: 0 errors, 0 warnings
+- TESTED: Full clean build completes successfully
+
+**Memory Leak Status:**
+- Inference state cleanup already happens in on_model_selected()
+- Design issue identified: inference state should be in tab state, not global AppState
+- Current workaround is functional but should be refactored later
 
 **Previous Fixes:**
 1. Model Registry Initialization - Added registry init in main.c
 2. Dropdown Population Logic - Changed to use registry instead of model_manager
+3. Compilation Error Fix - Removed undefined get_app_state() call
 
 ## Summary of Training Tab Refactor
 The Training Tab has been successfully refactored to own its model independently:
