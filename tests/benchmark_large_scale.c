@@ -7,7 +7,7 @@
 #include "ai/cllm_angular_attention.h"
 #include "ai/cllm_ntt_attention.h"
 #include "ai/cllm_cymatic_training.h"
-#include "ai/cllm_kissing_spheres.h"
+#include "ai/cllm_lattice.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

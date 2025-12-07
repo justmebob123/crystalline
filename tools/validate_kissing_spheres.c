@@ -11,7 +11,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_kissing_spheres.h"
+#include "../include/ai/cllm_lattice.h"
 
 void print_usage(const char* program_name) {
     printf("Usage: %s <model.cllm>\n", program_name);

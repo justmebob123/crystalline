@@ -19,7 +19,7 @@
 #include "../include/cllm_utils.h"
 #include "../include/ai/cllm_lattice_embeddings.h"
 #include "../include/ai/cllm_angular_attention.h"
-#include "../include/ai/cllm_kissing_spheres.h"
+#include "../include/ai/cllm_lattice.h"
 #include "../include/ai/cllm_ntt_attention.h"
 #include "../include/ai/cllm_cymatic_training.h"
 #include "../include/prime_float_math.h"

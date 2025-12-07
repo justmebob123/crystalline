@@ -15,7 +15,7 @@
 #include "../include/cllm_utils.h"
 #include "../include/cllm_training.h"
 #include "../include/ai/cllm_lattice_embeddings.h"
-#include "../include/ai/cllm_kissing_spheres.h"
+#include "../include/ai/cllm_lattice.h"
 
 int main(void) {
     printf("\n╔══════════════════════════════════════════════════════════╗\n");

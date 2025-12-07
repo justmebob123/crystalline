@@ -25,7 +25,7 @@
 #include "ai/cllm_lattice_hierarchy.h"
 #include "ai/cllm_message_queue.h"
 #include "ai/cllm_sphere_message.h"
-#include "ai/cllm_kissing_spheres.h"
+#include "ai/cllm_lattice.h"
 #include "cllm_batch.h"
 #include "prime_float_math.h"
 #include <stdlib.h>
