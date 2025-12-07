@@ -208,15 +208,22 @@
   * Legacy training files (OBJECTIVE 2D) already deleted ✅
   * Files need renaming per OBJECTIVE 23
 
-### Phase 2: Remove rainbow_table_v2.h ✅
-- [x] Analyze rainbow_table_v2.h content
-  * Draft/planning document for optimized rainbow table
-  * Uses index-based storage instead of BigInt (10x memory reduction)
-  * NOT implemented - just a header file
-- [x] Decision: Delete the file (no implementation exists)
-- [x] Verify existing prime_rainbow.h/c is the proper implementation
-- [x] Delete rainbow_table_v2.h
-- [x] Verified: No other _v2 naming in codebase (only sqlite3_prepare_v2 API calls)
+### Phase 2: Rainbow Table Optimization ✅ COMPLETE
+- [x] Analyzed rainbow_table_v2.h content
+  * Proposed: Index-based storage instead of BigInt (10x memory reduction)
+  * Proposed: Simple array instead of tree structure (2-5x speed improvement)
+  * Proposed: On-demand prime generation using deterministic functions
+- [x] Implemented optimizations in prime_rainbow.c
+  - [x] Added optimized array-based storage (RainbowEntry with indices)
+  - [x] Implemented index-based operations (add, get, find, contains)
+  - [x] On-demand prime generation using get_prime_at_index_deterministic()
+  - [x] Integrated with clock lattice for position mapping
+  - [x] Maintained backward compatibility with legacy tree structure
+  - [x] Added statistics function for memory tracking
+- [x] Updated prime_types.h with optimized structures
+- [x] Updated prime_rainbow.h with new API functions
+- [x] Build verification: 0 errors, 0 warnings ✅
+- [ ] Performance testing (future work)
 
 ### Phase 3: OBJECTIVE 2D - Remove Legacy Training Files ✅
 - [x] Verified: All legacy training files already deleted
@@ -286,13 +293,18 @@
 Based on SECONDARY_OBJECTIVES.md, remaining medium-priority tasks:
 
 **OBJECTIVE 24: Investigate and Consolidate Duplicates**
-- [ ] Compare cllm_batch.c vs infrastructure/cllm_batch.c
-- [ ] Compare cllm_optimizer.c vs infrastructure/cllm_optimizer.c
-- [ ] Analyze multiple embedding files
-- [ ] Analyze multiple attention files
-- [ ] Merge or document relationships
-- [ ] Build verification
-- [ ] Commit: "Consolidate duplicate functionality"
+- [ ] Step 1: Identify all duplicate files
+  - [ ] Find cllm_batch.c locations
+  - [ ] Find cllm_optimizer.c locations
+  - [ ] Find all embedding-related files
+  - [ ] Find all attention-related files
+- [ ] Step 2: Analyze each duplicate pair
+  - [ ] Compare implementations
+  - [ ] Determine which is canonical
+  - [ ] Document relationships
+- [ ] Step 3: Consolidate or remove duplicates
+- [ ] Step 4: Build verification
+- [ ] Step 5: Commit changes
 
 **OBJECTIVE 5A: Kissing Spheres as ONLY Threading**
 - [ ] Remove all fallbacks to old threading

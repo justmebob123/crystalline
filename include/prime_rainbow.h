@@ -37,11 +37,29 @@ int big_fast_prime_layer(BigInt *prime);
 
 // Prime storage functions - Rainbow Table as Complete Abacus
 PrimeRainbowTable* rainbow_table_get(void);  // Get the global rainbow table instance
+
+// OPTIMIZED: Index-based operations (NEW)
+int rainbow_table_add_prime_index(uint32_t prime_index);
+int rainbow_table_add_prime_value(uint64_t prime_value);
+uint64_t rainbow_table_get_prime_by_index(uint32_t table_index);
+uint32_t rainbow_table_get_prime_index(uint32_t table_index);
+const RainbowEntry* rainbow_table_get_entry(uint32_t table_index);
+
+// LEGACY: BigInt-based operations (deprecated, for backward compatibility)
 int rainbow_table_add_prime(BigInt* prime);
 BigInt* rainbow_table_get_prime(int index);
+
+// Common operations
 int rainbow_table_get_count(void);
 int rainbow_table_generate_primes(int target_count);
 int rainbow_table_load_important_primes(void);
+
+// Search operations
+int rainbow_table_find_prime(uint64_t prime_value);
+bool rainbow_table_contains_prime(uint64_t prime_value);
+
+// Statistics
+void rainbow_table_get_stats(uint32_t* count, uint32_t* capacity, size_t* memory_bytes);
 
 // Analysis functions
 double rainbow_table_check_stability(PrimeRainbowTable* table);

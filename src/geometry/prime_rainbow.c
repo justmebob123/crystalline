@@ -19,11 +19,23 @@ static bool g_rainbow_initialized = false;
 // RAINBOW TABLE INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Initial capacity for the optimized array
+#define RAINBOW_INITIAL_CAPACITY 1000
+
 void rainbow_table_init(void) {
     if (g_rainbow_initialized) return;
     
-    g_rainbow_table.root = NULL;
+    // NEW: Initialize optimized array-based storage
+    g_rainbow_table.entries = calloc(RAINBOW_INITIAL_CAPACITY, sizeof(RainbowEntry));
+    if (!g_rainbow_table.entries) {
+        fprintf(stderr, "Failed to allocate rainbow table entries\n");
+        return;
+    }
     g_rainbow_table.count = 0;
+    g_rainbow_table.capacity = RAINBOW_INITIAL_CAPACITY;
+    
+    // LEGACY: Initialize tree-based storage (for backward compatibility)
+    g_rainbow_table.root = NULL;
     g_rainbow_table.is_stable = true;
     
     // Initialize fold progression
@@ -38,12 +50,20 @@ void rainbow_table_init(void) {
     
     g_rainbow_initialized = true;
     
-    printf("Rainbow table initialized\n");
+    printf("Rainbow table initialized (optimized: array-based, capacity: %u)\n", 
+           g_rainbow_table.capacity);
 }
 
 void rainbow_table_cleanup(void) {
     if (!g_rainbow_initialized) return;
     
+    // NEW: Free optimized array-based storage
+    if (g_rainbow_table.entries) {
+        free(g_rainbow_table.entries);
+        g_rainbow_table.entries = NULL;
+    }
+    
+    // LEGACY: Free tree-based storage (for backward compatibility)
     // Recursive function to free tree nodes
     void free_node_recursive(PrimeRainbowNode* node) {
         if (!node) return;
@@ -56,10 +76,10 @@ void rainbow_table_cleanup(void) {
             free(node->children);
         }
         
-        // Free the prime
-        if (node->entry.prime) {
-            big_free(node->entry.prime);
-            free(node->entry.prime);
+        // Free the prime (legacy BigInt structure)
+        if (node->prime) {
+            big_free(node->prime);
+            free(node->prime);
         }
         
         // Free the node itself
@@ -71,6 +91,7 @@ void rainbow_table_cleanup(void) {
     
     g_rainbow_table.root = NULL;
     g_rainbow_table.count = 0;
+    g_rainbow_table.capacity = 0;
     g_rainbow_table.is_stable = false;
     
     g_rainbow_initialized = false;
@@ -199,24 +220,21 @@ int rainbow_table_add_prime(BigInt* prime) {
     
     if (!prime) return -1;
     
-    // Create new entry
-    RainbowEntry entry;
-    entry.prime = (BigInt*)malloc(sizeof(BigInt));
-    if (!entry.prime) return -1;
-    
-    // Copy the prime
-    big_init(entry.prime);
-    big_copy(entry.prime, prime);
-    
-    // Create new node
+    // LEGACY: Create new node with BigInt storage
     PrimeRainbowNode* node = (PrimeRainbowNode*)malloc(sizeof(PrimeRainbowNode));
     if (!node) {
-        big_free(entry.prime);
-        free(entry.prime);
         return -1;
     }
     
-    node->entry = entry;
+    // Allocate and copy the prime
+    node->prime = (BigInt*)malloc(sizeof(BigInt));
+    if (!node->prime) {
+        free(node);
+        return -1;
+    }
+    
+    big_init(node->prime);
+    big_copy(node->prime, prime);
     node->children = NULL;
     node->child_count = 0;
     node->capacity = 0;
@@ -231,8 +249,8 @@ int rainbow_table_add_prime(BigInt* prime) {
             g_rainbow_table.root->capacity * sizeof(PrimeRainbowNode*)
         );
         if (!g_rainbow_table.root->children) {
-            big_free(entry.prime);
-            free(entry.prime);
+            big_free(node->prime);
+            free(node->prime);
             free(node);
             g_rainbow_table.root = NULL;
             return -1;
@@ -247,8 +265,8 @@ int rainbow_table_add_prime(BigInt* prime) {
                 new_capacity * sizeof(PrimeRainbowNode*)
             );
             if (!new_children) {
-                big_free(entry.prime);
-                free(entry.prime);
+                big_free(node->prime);
+                free(node->prime);
                 free(node);
                 return -1;
             }
@@ -274,20 +292,20 @@ int rainbow_table_add_prime(BigInt* prime) {
  */
 BigInt* rainbow_table_get_prime(int index) {
     if (!g_rainbow_initialized) return NULL;
-    if (index < 0 || index >= g_rainbow_table.count) return NULL;
+    if (index < 0 || index >= (int)g_rainbow_table.count) return NULL;
     
     // Simple traversal for now (TODO: optimize with indexing)
     if (!g_rainbow_table.root) return NULL;
     
     if (index == 0) {
-        return g_rainbow_table.root->entry.prime;
+        return g_rainbow_table.root->prime;
     }
     
     // Traverse children
     int current_index = 1;
     for (int i = 0; i < g_rainbow_table.root->child_count; i++) {
         if (current_index == index) {
-            return g_rainbow_table.root->children[i]->entry.prime;
+            return g_rainbow_table.root->children[i]->prime;
         }
         current_index++;
     }
@@ -480,4 +498,170 @@ double rainbow_table_self_similarity(PrimeRainbowTable* table) {
     (void)table;
     // Self-similarity metric for fractal structure
     return PHI; // Golden ratio self-similarity
+}
+// ════════════════════════════════════════════════════════════════════════════
+// OPTIMIZED RAINBOW TABLE FUNCTIONS (Array-based, Index-based)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for deterministic prime generation
+extern uint64_t get_prime_at_index_deterministic(uint32_t index);
+extern uint32_t estimate_prime_index(uint64_t prime_value);
+
+/**
+ * Add prime by index to the optimized array
+ * 
+ * @param prime_index Prime index (1-based: 1st prime, 2nd prime, etc.)
+ * @return 0 on success, -1 on error
+ */
+int rainbow_table_add_prime_index(uint32_t prime_index) {
+    if (!g_rainbow_initialized) rainbow_table_init();
+    if (!g_rainbow_table.entries) return -1;
+    
+    // Expand capacity if needed
+    if (g_rainbow_table.count >= g_rainbow_table.capacity) {
+        uint32_t new_capacity = g_rainbow_table.capacity * 2;
+        RainbowEntry* new_entries = realloc(g_rainbow_table.entries, 
+                                            new_capacity * sizeof(RainbowEntry));
+        if (!new_entries) {
+            fprintf(stderr, "Failed to expand rainbow table capacity\n");
+            return -1;
+        }
+        g_rainbow_table.entries = new_entries;
+        g_rainbow_table.capacity = new_capacity;
+    }
+    
+    // Get prime value for clock lattice mapping
+    uint64_t prime_value = get_prime_at_index_deterministic(prime_index);
+    
+    // Map to clock lattice position
+    BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+    
+    // Create entry
+    RainbowEntry entry = {
+        .prime_index = prime_index,
+        .symmetry_group = (uint8_t)(prime_value % 12),
+        .ring = (uint8_t)pos.ring,
+        .position = (uint16_t)pos.position
+    };
+    
+    // Add to array
+    g_rainbow_table.entries[g_rainbow_table.count] = entry;
+    g_rainbow_table.count++;
+    
+    return 0;
+}
+
+/**
+ * Add prime by value to the optimized array
+ * 
+ * @param prime_value Prime value
+ * @return 0 on success, -1 on error
+ */
+int rainbow_table_add_prime_value(uint64_t prime_value) {
+    // Estimate the prime index
+    uint32_t prime_index = estimate_prime_index(prime_value);
+    
+    // Add by index
+    return rainbow_table_add_prime_index(prime_index);
+}
+
+/**
+ * Get prime value at table index
+ * 
+ * @param table_index Index in rainbow table (0-based)
+ * @return Prime value, or 0 on error
+ */
+uint64_t rainbow_table_get_prime_by_index(uint32_t table_index) {
+    if (!g_rainbow_initialized || !g_rainbow_table.entries || table_index >= g_rainbow_table.count) {
+        return 0;
+    }
+    
+    // Get prime index from entry
+    uint32_t prime_index = g_rainbow_table.entries[table_index].prime_index;
+    
+    // Generate prime on-demand
+    return get_prime_at_index_deterministic(prime_index);
+}
+
+/**
+ * Get prime index at table position
+ * 
+ * @param table_index Index in rainbow table (0-based)
+ * @return Prime index (1-based), or 0 on error
+ */
+uint32_t rainbow_table_get_prime_index(uint32_t table_index) {
+    if (!g_rainbow_initialized || !g_rainbow_table.entries || table_index >= g_rainbow_table.count) {
+        return 0;
+    }
+    
+    return g_rainbow_table.entries[table_index].prime_index;
+}
+
+/**
+ * Get entry at table index
+ * 
+ * @param table_index Index in rainbow table (0-based)
+ * @return Pointer to entry, or NULL on error
+ */
+const RainbowEntry* rainbow_table_get_entry(uint32_t table_index) {
+    if (!g_rainbow_initialized || !g_rainbow_table.entries || table_index >= g_rainbow_table.count) {
+        return NULL;
+    }
+    
+    return &g_rainbow_table.entries[table_index];
+}
+
+/**
+ * Find entry by prime value
+ * 
+ * @param prime_value Prime value to find
+ * @return Table index, or -1 if not found
+ */
+int rainbow_table_find_prime(uint64_t prime_value) {
+    if (!g_rainbow_initialized || !g_rainbow_table.entries) return -1;
+    
+    // Linear search (could be optimized with binary search if sorted)
+    for (uint32_t i = 0; i < g_rainbow_table.count; i++) {
+        uint64_t entry_prime = get_prime_at_index_deterministic(g_rainbow_table.entries[i].prime_index);
+        if (entry_prime == prime_value) {
+            return (int)i;
+        }
+    }
+    
+    return -1;
+}
+
+/**
+ * Check if prime is in table
+ * 
+ * @param prime_value Prime value to check
+ * @return true if in table, false otherwise
+ */
+bool rainbow_table_contains_prime(uint64_t prime_value) {
+    return rainbow_table_find_prime(prime_value) >= 0;
+}
+
+/**
+ * Get statistics about the rainbow table
+ * 
+ * @param count Output: number of entries
+ * @param capacity Output: allocated capacity
+ * @param memory_bytes Output: memory usage in bytes
+ */
+void rainbow_table_get_stats(uint32_t* count, uint32_t* capacity, size_t* memory_bytes) {
+    if (!g_rainbow_initialized) {
+        if (count) *count = 0;
+        if (capacity) *capacity = 0;
+        if (memory_bytes) *memory_bytes = 0;
+        return;
+    }
+    
+    if (count) *count = g_rainbow_table.count;
+    if (capacity) *capacity = g_rainbow_table.capacity;
+    if (memory_bytes) {
+        // Calculate memory usage
+        size_t entry_memory = g_rainbow_table.capacity * sizeof(RainbowEntry);
+        size_t struct_memory = sizeof(PrimeRainbowTable);
+        *memory_bytes = entry_memory + struct_memory;
+    }
 }
