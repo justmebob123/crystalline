@@ -1,113 +1,44 @@
-# Crystalline CLLM - Architecture Refactoring
+# Architecture Refactoring - Active Session
 
-## Critical Analysis Complete ✅
+## Phase 1: Move Threading to Algorithms Layer 🔄 IN PROGRESS
 
-**Finding:** The architecture has significant issues:
-1. **Naming Redundancy:** "kissing_spheres" is overused (it's THE ONLY threading model)
-2. **Layer Misplacement:** Generic algorithms incorrectly placed in CLLM layer
-3. **Missing Abstractions:** No unified visualization framework (2D/3D/Crystalline)
+### 1.1: Create Generic Sphere Threading API ✅ COMPLETE
+- [x] Create `algorithms/include/sphere_threading.h`
+- [x] Define `SphereThreadingModel` structure
+- [x] Define generic threading API functions
+- [x] Document 12-fold symmetry principles
 
-**Documents Created:**
-- [x] ARCHITECTURE_DEEP_ANALYSIS.md - Complete architectural analysis
-- [x] REFACTORING_TODO.md - Detailed refactoring plan
+### 1.2: Implement Generic Sphere Threading ✅ COMPLETE
+- [x] Create `algorithms/src/sphere_threading.c`
+- [x] Move initialization logic from `cllm_kissing_spheres.c`
+- [x] Move neighbor setup logic (clock geometry)
+- [x] Move cache optimization logic
+- [x] Implement generic work distribution
 
-## Architecture Refactoring Plan
+### 1.3: Update Algorithms Makefile ✅ COMPLETE
+- [x] Add `sphere_threading.o` to build
+- [x] Update dependencies
+- [x] Verify clean build
 
-### Phase 1: Move Threading to Algorithms Layer ⏳
-- [ ] Create `algorithms/include/sphere_threading.h`
-- [ ] Implement `algorithms/src/sphere_threading.c`
-- [ ] Create CLLM wrapper `cllm_threading.h/c`
+### 1.4: Create CLLM Threading Wrapper
+- [ ] Create `include/cllm_threading.h` (simplified)
+- [ ] Create `src/ai/cllm_threading.c` (wrapper)
 - [ ] Update all CLLM code to use new API
-- [ ] Create algorithms layer tests
+
+### 1.5: Update Tests
+- [ ] Create `algorithms/tests/test_sphere_threading.c`
+- [ ] Update CLLM tests
 - [ ] Verify all tests pass
 
-### Phase 2: Create Generic Visualization Framework ⏳
-- [ ] Create `algorithms/include/visualization.h`
-- [ ] Implement core visualization (`visualization.c`)
-- [ ] Implement 2D projection (`visualization_2d.c`)
-- [ ] Implement 3D projection (`visualization_3d.c`)
-- [ ] Implement Crystalline projection (`visualization_crystalline.c`)
-- [ ] Create CLLM visualization wrapper
-- [ ] Update UI layer to use new API
-- [ ] Create visualization tests
-- [ ] Verify all tests pass
+## Phase 2: Create Unified Visualization Framework ⏳ PENDING
 
-### Phase 3: Implement Memory Management ⏳
-- [ ] Create `algorithms/include/memory_management.h`
-- [ ] Implement sphere-based memory allocation
-- [ ] Implement cache optimization
-- [ ] Implement compression algorithms
-- [ ] Integrate with threading model
-- [ ] Create memory management tests
+## Phase 3: Implement Memory Management ⏳ PENDING
 
-### Phase 4: Remove Naming Redundancy ⏳
-- [ ] Rename CLLM files (remove "kissing_spheres")
-- [ ] Rename test files
-- [ ] Update all includes
-- [ ] Update function names
-- [ ] Update documentation
-- [ ] Verify clean build
+## Phase 4: Remove Naming Redundancy ⏳ PENDING
 
-### Phase 5: Comprehensive Testing ⏳
-- [ ] Test algorithms layer (threading, visualization, memory)
-- [ ] Test CLLM layer (integration with algorithms)
-- [ ] Test cross-layer communication
-- [ ] Test UI rendering
-- [ ] Verify 100% pass rate
-- [ ] Verify no regressions
+## Phase 5: Comprehensive Testing ⏳ PENDING
 
-### Phase 6: Test Unified CLLM Tool ⏳
-- [ ] Test training (small, medium, large models)
-- [ ] Test inference (generation, perplexity)
-- [ ] Test performance (speed, memory, cache)
-- [ ] Test stress scenarios
-- [ ] Verify convergence and quality
-- [ ] Document results
+## Phase 6: Test Unified CLLM Tool ⏳ PENDING
 
-### Phase 7: Documentation ⏳
-- [ ] Document algorithms APIs
-- [ ] Update architecture documentation
-- [ ] Create user guides
-- [ ] Add usage examples
-- [ ] Update README
-
-### Phase 8: Final Verification ⏳
-- [ ] Clean build verification
-- [ ] Test verification (100% pass)
-- [ ] Performance verification
-- [ ] Code quality verification
-- [ ] Documentation verification
-
-## Key Principles
-
-1. **Generic in Algorithms, Specific in CLLM**
-   - Threading model → algorithms layer
-   - Visualization framework → algorithms layer
-   - Memory management → algorithms layer
-   - CLLM-specific logic → CLLM layer
-
-2. **No Naming Redundancy**
-   - "kissing_spheres" → "sphere_threading" (it's THE ONLY model)
-   - "kissing_spheres_visualization" → "visualization"
-   - Simple, clear names
-
-3. **Unified Visualization**
-   - Single API for 2D, 3D, and Crystalline modes
-   - Algorithms layer: projection and statistics
-   - UI layer: rendering only
-
-4. **Reusability**
-   - Any application can use sphere threading
-   - Any application can use visualization
-   - Not CLLM-specific
-
-## Current Status
-
-**Analysis:** ✅ Complete  
-**Refactoring:** ⏳ Ready to begin  
-**Testing:** ⏳ Pending  
-**Documentation:** ⏳ Pending  
-
-**Next Action:** Begin Phase 1 - Move Threading to Algorithms Layer
-
-See REFACTORING_TODO.md for detailed task breakdown.
+## Current Focus
+Starting Phase 1.1 - Creating generic sphere threading API in algorithms layer

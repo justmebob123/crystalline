@@ -17,6 +17,7 @@ SOURCES = src/numerical.c \
           src/shared_memory.c \
           src/lock_free_queue.c \
           src/sphere_packing.c \
+          src/sphere_threading.c \
           src/hierarchical_primes.c \
           src/hierarchical_structures.c \
           src/batch_processing.c \
