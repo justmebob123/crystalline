@@ -13,7 +13,15 @@ AR = ar
 # Check if AVX2 is available (optional, gracefully degrades)
 SIMD_FLAGS := $(shell grep -q avx2 /proc/cpuinfo 2>/dev/null && echo "-mavx2 -mfma" || echo "")
 
-CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include $(SIMD_FLAGS)
+# Optional debug flag - set CLLM_DEBUG=1 to enable debug output
+# Example: make CLLM_DEBUG=1
+ifdef CLLM_DEBUG
+    DEBUG_FLAGS = -DCLLM_DEBUG
+else
+    DEBUG_FLAGS =
+endif
+
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include $(SIMD_FLAGS) $(DEBUG_FLAGS)
 LDFLAGS = 
 ARFLAGS = rcs
 

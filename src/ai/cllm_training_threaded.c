@@ -71,6 +71,7 @@ static void* control_thread_func(void* arg);
 static void accumulate_gradients(ThreadedTrainingSystem* system);
 static int validate_gradients(double* gradients, size_t size, const char* source);
 static void clip_gradients(double* gradients, size_t size, double max_norm);
+static void report_training_progress(ThreadedTrainingSystem* system, bool force);
 
 struct SphereTrainingContext {
     int sphere_id;
@@ -215,6 +216,15 @@ struct ThreadedTrainingSystem {
     float epoch_loss;
     int total_batches;
     atomic_int running;  // MUST be atomic - accessed by multiple threads without lock!
+    
+    // Progress tracking (for user-facing progress updates)
+    atomic_size_t batches_processed;     // Batches completed in current epoch
+    size_t total_batches_in_epoch;       // Total batches in current epoch
+    int current_epoch;                   // Current epoch number
+    int total_epochs;                    // Total epochs to train
+    time_t epoch_start_time;             // Epoch start timestamp
+    time_t last_progress_time;           // Last progress update timestamp
+    int progress_update_interval;        // Update every N batches (default 10)
 
     // Phase 4: Dynamic spawning
     atomic_uint sphere_id_counter;  // Global counter for assigning sphere IDs
@@ -398,7 +408,9 @@ float cllm_forward_training_threaded(
     uint32_t* input_tokens
 ) {
     if (!training || !local_ctx || !input_tokens) return 0.0f;
+    #ifdef CLLM_DEBUG
     printf("    [DEBUG] Entered cllm_forward_training_threaded\n");
+#endif
     fflush(stdout);
     
     CLLMModel* model = training->model;
@@ -421,11 +433,15 @@ float cllm_forward_training_threaded(
     }
     
     // Process through layers (all writes go to thread-local buffers)
+    #ifdef CLLM_DEBUG
     printf("    [DEBUG] Embeddings copied, starting layer processing (num_layers=%d)\n", model->num_layers);
+#endif
     fflush(stdout);
     double* layer_input = local_ctx->input_embeddings;
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        #ifdef CLLM_DEBUG
         printf("    [DEBUG] Processing layer %d\n", layer);
+#endif
         fflush(stdout);
         memcpy(local_ctx->layer_inputs[layer], layer_input, batch_size * seq_len * embed_dim * sizeof(float));
         
@@ -487,7 +503,9 @@ float cllm_forward_training_threaded(
         layer_input = local_ctx->layer_outputs[layer];
     }
     
+    #ifdef CLLM_DEBUG
     printf("    [DEBUG] All layers processed, computing logits\n");
+#endif
     fflush(stdout);
     // Copy final hidden (to thread-local buffer)
     memcpy(local_ctx->final_hidden, layer_input, batch_size * seq_len * embed_dim * sizeof(float));
@@ -1010,9 +1028,11 @@ static int work_queue_push(WorkQueue* queue, CLLMBatch* batch) {
     
     size_t index = tail % MAX_WORK_ITEMS;
     
+    #ifdef CLLM_DEBUG
     printf("[DEBUG] work_queue_push: index=%zu, batch=%p, &batches[index]=%p\n", 
            index, (void*)batch, (void*)&queue->batches[index]);
     fflush(stdout);
+#endif
     
     // CRITICAL FIX: Store the batch BEFORE incrementing tail
     // This ensures workers won't see an incremented tail with NULL batch
@@ -1060,12 +1080,16 @@ static CLLMBatch* work_queue_pop(WorkQueue* queue) {
             
             if (batch) {
                 atomic_fetch_add(&queue->total_popped, 1);
+#ifdef CLLM_DEBUG
                 printf("[DEBUG] work_queue_pop: Worker got batch at index=%zu, batch=%p\n", index, (void*)batch);
                 fflush(stdout);
+#endif
                 return batch;
             } else {
+#ifdef CLLM_DEBUG
                 printf("[DEBUG] work_queue_pop: WARNING - claimed index=%zu but batch was NULL!\n", index);
                 fflush(stdout);
+#endif
             }
         }
         
@@ -1632,6 +1656,15 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     
     system->epoch_loss = 0.0f;
     system->total_batches = 0;
+    
+    // Initialize progress tracking
+    atomic_init(&system->batches_processed, 0);
+    system->total_batches_in_epoch = 0;
+    system->current_epoch = 0;
+    system->total_epochs = 0;
+    system->epoch_start_time = 0;
+    system->last_progress_time = 0;
+    system->progress_update_interval = 10;  // Update every 10 batches
     
     printf("  ✓ Threaded training system created successfully\n");
     printf("    - 1 control thread (Node Zero)\n");
@@ -2732,11 +2765,73 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
 }
 
 /**
+ * Report training progress
+ * 
+ * Displays progress information including epoch, batch, loss, speed, and ETA.
+ * Called periodically during training (every N batches) or when forced.
+ * 
+ * @param system Training system
+ * @param force Force update even if interval not reached
+ */
+static void report_training_progress(ThreadedTrainingSystem* system, bool force) {
+    if (!system) return;
+    
+    time_t current_time = time(NULL);
+    size_t batches_done = atomic_load(&system->batches_processed);
+    
+    // Check if we should update (every N batches or forced)
+    if (!force && batches_done % system->progress_update_interval != 0) {
+        return;
+    }
+    
+    // Calculate progress percentage
+    double progress_pct = 0.0;
+    if (system->total_batches_in_epoch > 0) {
+        progress_pct = (double)batches_done / system->total_batches_in_epoch * 100.0;
+    }
+    
+    // Calculate speed (batches per second)
+    double elapsed = difftime(current_time, system->epoch_start_time);
+    double speed = elapsed > 0 ? batches_done / elapsed : 0.0;
+    
+    // Calculate ETA for current epoch
+    double eta_seconds = 0.0;
+    if (speed > 0 && system->total_batches_in_epoch > batches_done) {
+        size_t remaining = system->total_batches_in_epoch - batches_done;
+        eta_seconds = remaining / speed;
+    }
+    
+    // Format ETA
+    int eta_hours = (int)(eta_seconds / 3600);
+    int eta_mins = (int)((eta_seconds - eta_hours * 3600) / 60);
+    int eta_secs = (int)(eta_seconds - eta_hours * 3600 - eta_mins * 60);
+    
+    // Get current loss (if available)
+    float current_loss = system->epoch_loss / (batches_done > 0 ? batches_done : 1);
+    
+    // Print progress line
+    printf("\rEpoch %d/%d | Batch %zu/%zu (%.1f%%) | Loss: %.4f | %.1f batch/s | ETA: %02d:%02d:%02d",
+           system->current_epoch + 1,
+           system->total_epochs,
+           batches_done,
+           system->total_batches_in_epoch,
+           progress_pct,
+           current_loss,
+           speed,
+           eta_hours, eta_mins, eta_secs);
+    fflush(stdout);
+    
+    system->last_progress_time = current_time;
+}
+
+/**
  * Accumulate gradients from all spheres (using shared memory)
  * TODO: Implement gradient accumulation in future training enhancements
  */
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
+    #ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: ENTRY - system=%p\n", (void*)system);
+#endif
     fflush(stdout);
     
     if (!system) {
@@ -2744,59 +2839,79 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         return;
     }
     
+    #ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: accumulated_gradients=%p, gradient_size=%zu\n", 
            (void*)system->accumulated_gradients, system->gradient_size);
     fflush(stdout);
+#endif
     
     if (!system->accumulated_gradients) {
         fprintf(stderr, "[ERROR] accumulate_gradients: accumulated_gradients is NULL!\n");
         return;
     }
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: About to acquire lock\n");
     fflush(stdout);
+#endif
     
     // PHASE 3: Gradient accumulation with proper synchronization
     // Lock protects against concurrent reads from other threads (UI, crawler)
     // that call threaded_training_get_gradient_norm() while we're accumulating
     pthread_mutex_lock(&system->gradient_lock);
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: Lock acquired, starting accumulation\n");
     fflush(stdout);
+#endif
     
     // Zero accumulated gradients
+#ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
            (void*)system->accumulated_gradients, system->gradient_size * sizeof(double));
     fflush(stdout);
+#endif
     
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(double));
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: Gradients zeroed\n");
+#endif
     
     int valid_spheres = 0;
     
     // Sum gradients from all spheres
     for (int i = 0; i < system->num_worker_spheres; i++) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
+#ifdef CLLM_DEBUG
         printf("[DEBUG] accumulate_gradients: Processing sphere %d (ctx=%p)\n", i, (void*)ctx);
+#endif
         
         // Check if sphere has valid gradient storage (crystalline memory or legacy)
         if (!ctx) {
+#ifdef CLLM_DEBUG
             printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no ctx)\n", i);
+#endif
             continue;
         }
         
         if (!ctx->crystalline_memory && !ctx->local_gradients) {
+#ifdef CLLM_DEBUG
             printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no gradient storage)\n", i);
+#endif
             continue;
         }
         
+#ifdef CLLM_DEBUG
         printf("[DEBUG] accumulate_gradients: Sphere %d has gradient_size=%zu\n", i, ctx->gradient_size);
+#endif
         
         // Validate gradients before accumulation
         char source[64];
         snprintf(source, sizeof(source), "Sphere %d", i);
+#ifdef CLLM_DEBUG
         printf("[DEBUG] accumulate_gradients: Validating sphere %d gradients\n", i);
+#endif
         
         // Get gradients from crystalline memory or fallback to local_gradients
         double* gradient_source = NULL;
@@ -2825,7 +2940,9 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
             fprintf(stderr, "WARNING: Skipping sphere %d due to invalid gradients\n", i);
             continue;
         }
+#ifdef CLLM_DEBUG
         printf("[DEBUG] accumulate_gradients: Sphere %d gradients validated\n", i);
+#endif
         
         // Clip gradients to prevent overflow
         clip_gradients(gradient_source, gradient_count, 10.0);
@@ -2853,8 +2970,10 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
     
     pthread_mutex_unlock(&system->gradient_lock);
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] accumulate_gradients: Accumulation complete, lock released\n");
     fflush(stdout);
+#endif
 }
 
 /**
@@ -2866,17 +2985,27 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
  * Workers pull batches from work queue (no barriers!)
  * Main thread pushes batches and waits for completion
  */
+void threaded_training_set_total_epochs(ThreadedTrainingSystem* system, int total_epochs) {
+    if (system) {
+        system->total_epochs = total_epochs;
+    }
+}
+
 float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch) {
+#ifdef CLLM_DEBUG
     printf("[DEBUG] threaded_train_epoch_lockfree: ENTRY - system=%p, epoch=%d\n", (void*)system, current_epoch);
     fflush(stdout);
+#endif
     
     if (!system) {
         fprintf(stderr, "[ERROR] threaded_train_epoch_lockfree: system is NULL\n");
         return 0.0f;
     }
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] threaded_train_epoch_lockfree: system validated\n");
     fflush(stdout);
+#endif
     
     printf("\n=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===\n");
     printf("Epoch %d - Using %d worker threads (lock-free work queue)\n", current_epoch + 1, system->num_worker_spheres);
@@ -2890,8 +3019,10 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     work_queue_reset(system->work_queue);
     
     // PHASE 2A: Reset batch iterator and start pre-fetching
+#ifdef CLLM_DEBUG
     printf("[DEBUG] Before batch_iterator_reset: batch_iterator=%p\n", (void*)system->batch_iterator);
     fflush(stdout);
+#endif
     
     if (!system->batch_iterator) {
         fprintf(stderr, "[ERROR] batch_iterator is NULL!\n");
@@ -2915,6 +3046,16 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Timing tracking for progress estimates
     time_t epoch_start_time = time(NULL);
+    
+    // Initialize progress tracking
+    system->current_epoch = current_epoch;
+    system->total_batches_in_epoch = total_batches_in_epoch;
+    system->epoch_start_time = epoch_start_time;
+    system->last_progress_time = epoch_start_time;
+    atomic_store(&system->batches_processed, 0);
+    if (system->progress_update_interval == 0) {
+        system->progress_update_interval = 10;  // Default: update every 10 batches
+    }
     
     // UI Integration: Initialize epoch metrics
     if (system->metrics) {
@@ -3004,9 +3145,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     // Push all batches to work queue
     printf("Pushing batches to work queue...\n");
+#ifdef CLLM_DEBUG
     printf("[DEBUG] system=%p, work_queue=%p, batch_queue=%p\n", 
            (void*)system, (void*)system->work_queue, (void*)system->batch_queue);
     fflush(stdout);
+#endif
     
     if (!system->work_queue) {
         fprintf(stderr, "[ERROR] work_queue is NULL!\n");
@@ -3040,6 +3183,7 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
         }
         
         batches_pushed++;
+        atomic_store(&system->batches_processed, batches_pushed);
             
             // UI Integration: Update step progress
         if (system->metrics) {
@@ -3062,6 +3206,9 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
                }
         }
         
+        // Report training progress to console
+        report_training_progress(system, false);
+        
         // Log progress
         if (batches_pushed % 500 == 0) {
             size_t pending, pushed, popped;
@@ -3074,14 +3221,18 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     printf("All %d batches pushed to work queue\n", batches_pushed);
     fflush(stdout);
     
+#ifdef CLLM_DEBUG
     fprintf(stderr, "[DEBUG] About to set epoch_done\n");
+#endif
     fflush(stderr);
     
     // Signal epoch done - no more batches will be pushed
     // Workers can now exit when queue is empty
     atomic_store(&system->work_queue->epoch_done, 1);
     
+#ifdef CLLM_DEBUG
     fprintf(stderr, "[DEBUG] Set epoch_done=1, workers will exit when queue empty\n");
+#endif
     fflush(stderr);
     
     // Wait for all work to complete
@@ -3096,9 +3247,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
             int done = atomic_load(&system->work_queue->epoch_done);
+#ifdef CLLM_DEBUG
             printf("  [DEBUG] Wait iteration %d: pushed=%zu, popped=%zu, epoch_done=%d, pending=%zu\n",
                    wait_iterations, pushed, popped, done, pending);
             fflush(stdout);
+#endif
         }
         
         // Timeout after 10 seconds
@@ -3113,6 +3266,10 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     
     printf("=== EPOCH %d COMPLETE: All %zu batches processed! ===\n", current_epoch, total_batches_in_epoch);
     
+    // Final progress report for this epoch
+    report_training_progress(system, true);
+    printf("\n");  // New line after progress report
+    
     // Stop pre-fetch thread
     batch_queue_stop_prefetch(system);
     
@@ -3120,9 +3277,11 @@ float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_
     printf("Accumulating gradients...\n");
     fflush(stdout);  // Force output
     
+#ifdef CLLM_DEBUG
     printf("[DEBUG] Before accumulate: system=%p, accumulated_gradients=%p, gradient_size=%zu\n",
            (void*)system, (void*)system->accumulated_gradients, system->gradient_size);
     fflush(stdout);
+#endif
     
     accumulate_gradients(system);
     

@@ -139,6 +139,7 @@ void threaded_training_free(ThreadedTrainingSystem* system);
  * @param current_epoch Current epoch number (for metrics display)
  * @return Average epoch loss
  */
+void threaded_training_set_total_epochs(ThreadedTrainingSystem* system, int total_epochs);
 float threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current_epoch);
 
 /**

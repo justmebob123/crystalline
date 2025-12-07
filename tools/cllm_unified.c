@@ -86,6 +86,7 @@ void print_train_help() {
     printf("\n");
     printf("Output Options:\n");
     printf("  -c, --checkpoint DIR     Checkpoint directory (default: ./checkpoints)\n");
+    printf("      --verbose            Enable debug output (default: off)\n");
     printf("\n");
     printf("Examples:\n");
     printf("  cllm train -d ./data -E 10 -b 32\n");
@@ -107,6 +108,7 @@ int cmd_train(int argc, char** argv) {
     int seq_len = 128;
     int num_threads = 0;  // 0 = auto
     float learning_rate = 0.0001f;
+    int verbose = 0;  // Debug output disabled by default
     
     // Parse options
     static struct option long_options[] = {
@@ -121,12 +123,13 @@ int cmd_train(int argc, char** argv) {
         {"seq-len",    required_argument, 0, 's'},
         {"lr",         required_argument, 0, 'r'},
         {"threads",    required_argument, 0, 't'},
+        {"verbose",    no_argument,       0, 'V'},
         {"help",       no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
     
     int opt;
-    while ((opt = getopt_long(argc, argv, "d:c:v:e:l:H:E:b:s:r:t:h", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "d:c:v:e:l:H:E:b:s:r:t:Vh", long_options, NULL)) != -1) {
         switch (opt) {
             case 'd': data_dir = optarg; break;
             case 'c': checkpoint_dir = optarg; break;
@@ -139,6 +142,7 @@ int cmd_train(int argc, char** argv) {
             case 's': seq_len = atoi(optarg); break;
             case 'r': learning_rate = atof(optarg); break;
             case 't': num_threads = atoi(optarg); break;
+            case 'V': verbose = 1; break;
             case 'h': print_train_help(); return 0;
             default: print_train_help(); return 1;
         }
@@ -164,6 +168,7 @@ int cmd_train(int argc, char** argv) {
     printf("  Sequence len:   %d\n", seq_len);
     printf("  Learning rate:  %.6f\n", learning_rate);
     printf("  Threads:        %d %s\n", num_threads, num_threads == 0 ? "(auto)" : "");
+    printf("  Debug output:   %s\n", verbose ? "enabled (requires CLLM_DEBUG=1 build)" : "disabled");
     printf("\n");
     
     // Initialize global progress tracking
@@ -431,6 +436,9 @@ int cmd_train(int argc, char** argv) {
         size_t total_batches = cllm_batch_iterator_num_batches(batch_iter);
         cllm_global_progress_start_phase(CLLM_PHASE_TRAINING, "Training Model", 
                                          config.num_epochs * total_batches);
+        
+        // Set total epochs for progress tracking
+        threaded_training_set_total_epochs(threaded_system, config.num_epochs);
         
         // Training loop with threading
         for (int epoch = 0; epoch < config.num_epochs; epoch++) {
