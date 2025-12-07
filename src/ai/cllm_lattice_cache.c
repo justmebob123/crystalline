@@ -21,6 +21,9 @@
 #include <string.h>
 #include <pthread.h>
 
+// Forward declarations
+void cllm_precompute_all_embeddings(CLLMModel* model);
+
 // Cache structure for L_lattice values
 typedef struct {
     double L_values[12][512];  // [symmetry_group][dimension]
@@ -203,7 +206,27 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
     }
     
     printf("✓ Lazy initialization complete (instant)\n");
-    printf("  Embeddings will be computed on first access during training\n\n");
+    printf("  Embeddings will be computed on first access during training\n");
+    
+    // Add neighbor influence if lattice points exist
+    // This is THE way embeddings work (not optional)
+    if (model->lattice_points && model->num_lattice_points > 0) {
+        printf("\n=== Applying Neighbor Influence (12 Kissing Spheres) ===\n");
+        printf("This is the default behavior - embeddings are enhanced by neighbors\n");
+        
+        // First, pre-compute all embeddings so neighbors are available
+        cllm_precompute_all_embeddings(model);
+        
+        // Apply neighbor influence (20% strength by default)
+        extern int cllm_internal_apply_neighbor_influence_all(CLLMModel* model, float strength);
+        if (cllm_internal_apply_neighbor_influence_all(model, 0.2f) == 0) {
+            printf("✓ Neighbor influence applied successfully\n");
+        } else {
+            printf("⚠ Warning: Could not apply neighbor influence\n");
+        }
+    }
+    
+    printf("\n");
     return;
 }
 /**
@@ -241,6 +264,36 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
         // Store in embedding matrix
         embeddings[offset + dim] = (float)normalized;
     }
+}
+
+/**
+ * Refine embeddings using neighbor influence
+ * 
+ * Public API function - simplified name (no redundant "with_neighbors")
+ */
+int cllm_embedding_refine(CLLMModel* model, float influence_strength) {
+    if (!model) {
+        fprintf(stderr, "ERROR: Invalid model\n");
+        return -1;
+    }
+    
+    if (!model->lattice_points) {
+        fprintf(stderr, "ERROR: No lattice points - cannot apply neighbor influence\n");
+        return -1;
+    }
+    
+    printf("Refining embeddings with neighbor influence (strength=%.2f)...\n", 
+           influence_strength);
+    
+    // Use internal function
+    extern int cllm_internal_apply_neighbor_influence_all(CLLMModel* model, float strength);
+    int result = cllm_internal_apply_neighbor_influence_all(model, influence_strength);
+    
+    if (result == 0) {
+        printf("✓ Embeddings refined successfully\n");
+    }
+    
+    return result;
 }
 
 // Pre-compute all embeddings for training (avoids lazy initialization overhead)

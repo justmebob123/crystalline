@@ -41,6 +41,19 @@ double cllm_lattice_cache_get(uint64_t prime, uint32_t dim, uint32_t symmetry_gr
 void cllm_embeddings_init_lattice_cached(CLLMModel* model);
 
 /**
+ * Refine embeddings using neighbor influence
+ * 
+ * This applies the 12 kissing spheres neighbor influence to embeddings.
+ * Since kissing spheres is THE architecture, this is the standard way
+ * to refine embeddings (not an optional feature).
+ * 
+ * @param model CLLM model
+ * @param influence_strength Influence strength (0.0-1.0, default 0.2)
+ * @return 0 on success, -1 on error
+ */
+int cllm_embedding_refine(CLLMModel* model, float influence_strength);
+
+/**
  * Cleanup cache (call on shutdown)
  */
 void cllm_lattice_cache_cleanup(void);

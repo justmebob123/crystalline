@@ -26,14 +26,38 @@
 - [x] Build and test (0 errors, 0 warnings)
 - [x] Commit: "Optimize batch distribution by symmetry groups"
 
-## PHASE 4: UNIFIED KISSING SPHERES API (NEXT)
-- [ ] Create include/cllm_kissing_spheres_api.h
-- [ ] Implement src/ai/cllm_kissing_spheres_api.c
-- [ ] Create KissingSpheresContext structure
-- [ ] Implement unified initialization
-- [ ] Add unified forward/attention/embedding functions
+## PHASE 4: UNIFIED API &amp; NAMING CLEANUP (IN PROGRESS)
+
+### Step 1: Create Internal Helper Functions ✅ COMPLETE
+- [x] Create include/cllm_neighbor_ops.h (internal API)
+- [x] Implement src/ai/cllm_neighbor_ops.c (internal functions)
+- [x] Extract neighbor logic into reusable helpers
+- [x] Build with 0 errors, 0 warnings
+
+### Step 2: Integrate into Core APIs ✅ COMPLETE
+- [x] Enhanced cllm_embeddings_init_lattice_cached() with neighbor influence
+- [x] Added cllm_embedding_refine() - simplified public API
+- [x] Neighbor influence now applied by DEFAULT during initialization
+- [x] Removed redundant "with_neighbors" suffix
+- [x] Build with 0 errors, 0 warnings
+
+### Step 3: Enhance Attention (NEXT)
+- [ ] Add neighbor influence to cllm_attention_forward()
+- [ ] Make it default behavior (not optional)
+- [ ] Update documentation
 - [ ] Build and test
-- [ ] Commit: "Create unified kissing spheres API"
+
+### Step 4: Simplify Batch Naming (NEXT)
+- [ ] Rename cllm_batch_assign_by_symmetry() → cllm_batch_assign()
+- [ ] Update all callers
+- [ ] Build and test
+
+### Step 5: Deprecate Old APIs (FINAL)
+- [ ] Mark old kissing_spheres_* functions as deprecated
+- [ ] Update all callers to use new unified API
+- [ ] Remove deprecated files
+- [ ] Final build verification
+- [ ] Commit: "Complete unified API and naming cleanup"
 
 ## SESSION SUMMARY - PHASES 1-3 COMPLETE
 
