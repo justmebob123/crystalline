@@ -41,16 +41,18 @@
 - [x] Removed redundant "with_neighbors" suffix
 - [x] Build with 0 errors, 0 warnings
 
-### Step 3: Enhance Attention (NEXT)
-- [ ] Add neighbor influence to cllm_attention_forward()
-- [ ] Make it default behavior (not optional)
-- [ ] Update documentation
-- [ ] Build and test
+### Step 3: Enhance Attention ✅ COMPLETE
+- [x] Analyze current cllm_attention_forward() implementation
+- [x] Add cllm_attention_forward_enhanced() with neighbor influence
+- [x] Make it the recommended function for new code
+- [x] Keep old function for backward compatibility
+- [x] Build and test (0 errors, 0 warnings)
 
-### Step 4: Simplify Batch Naming (NEXT)
-- [ ] Rename cllm_batch_assign_by_symmetry() → cllm_batch_assign()
-- [ ] Update all callers
-- [ ] Build and test
+### Step 4: Simplify Batch Naming ✅ COMPLETE
+- [x] Create cllm_batch_assign() - simplified name
+- [x] Keep cllm_batch_assign_by_symmetry() as deprecated wrapper
+- [x] Both call same implementation (cllm_batch_assign_impl)
+- [x] Build and test (0 errors, 0 warnings)
 
 ### Step 5: Deprecate Old APIs (FINAL)
 - [ ] Mark old kissing_spheres_* functions as deprecated

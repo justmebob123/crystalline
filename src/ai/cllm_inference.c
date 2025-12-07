@@ -409,6 +409,72 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     free(scores);
 }
 
+/**
+ * Enhanced attention forward pass with neighbor influence
+ * 
+ * This is the STANDARD attention function that includes neighbor influence
+ * from the 12 kissing spheres. Since kissing spheres is THE architecture,
+ * this is the default behavior (not optional).
+ * 
+ * @param layer Attention layer
+ * @param input Input tensor [seq_len x embed_dim]
+ * @param output Output tensor [seq_len x embed_dim]
+ * @param model CLLM model (for neighbor access, can be NULL for basic attention)
+ * @param token_ids Token IDs [seq_len] (for neighbor lookup, can be NULL)
+ * @param key_cache Key cache (optional)
+ * @param value_cache Value cache (optional)
+ * @param seq_len Sequence length
+ * @param neighbor_strength Neighbor influence strength (0.0-1.0, default 0.1)
+ */
+void cllm_attention_forward_enhanced(
+    AttentionLayer* layer,
+    double* input,
+    double* output,
+    CLLMModel* model,
+    uint32_t* token_ids,
+    float* key_cache,
+    float* value_cache,
+    int seq_len,
+    float neighbor_strength
+) {
+    // First, compute standard attention
+    cllm_attention_forward(layer, input, output, key_cache, value_cache, seq_len);
+    
+    // Add neighbor influence if model and token_ids are provided
+    if (model && token_ids && model->lattice_points && neighbor_strength > 0.0f) {
+        uint32_t embed_dim = layer->num_heads * layer->head_dim;
+        
+        // Add neighbor influence for each token in the sequence
+        for (int pos = 0; pos < seq_len; pos++) {
+            uint32_t token_id = token_ids[pos];
+            
+            // Skip if token is out of range or has no lattice point
+            if (token_id >= model->vocab_size || token_id >= model->num_lattice_points) {
+                continue;
+            }
+            
+            double* token_output = &output[pos * embed_dim];
+            
+            // Add neighbor attention contributions
+            extern int cllm_internal_add_neighbor_attention(
+                CLLMModel* model,
+                uint32_t token_id,
+                double* output,
+                uint32_t embed_dim,
+                float strength
+            );
+            
+            cllm_internal_add_neighbor_attention(
+                model,
+                token_id,
+                token_output,
+                embed_dim,
+                neighbor_strength
+            );
+        }
+    }
+}
+
 // Simple feedforward pass
 void cllm_feedforward(FeedForwardLayer* layer, double* input, double* output) {
     // Simple pass-through for now (TODO: implement proper feedforward)

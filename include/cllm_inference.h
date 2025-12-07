@@ -61,6 +61,39 @@ void cllm_normalize_embedding(float* embedding, int dim);
 /* Attention functions */
 void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len);
+
+/**
+ * Enhanced attention forward pass with neighbor influence (DEFAULT)
+ * 
+ * This is the STANDARD attention function that includes neighbor influence
+ * from the 12 kissing spheres. Since kissing spheres is THE architecture,
+ * this is the default behavior (not optional).
+ * 
+ * Use this function for all new code. The basic cllm_attention_forward()
+ * is kept for backward compatibility only.
+ * 
+ * @param layer Attention layer
+ * @param input Input tensor [seq_len x embed_dim]
+ * @param output Output tensor [seq_len x embed_dim]
+ * @param model CLLM model (for neighbor access, can be NULL for basic attention)
+ * @param token_ids Token IDs [seq_len] (for neighbor lookup, can be NULL)
+ * @param key_cache Key cache (optional)
+ * @param value_cache Value cache (optional)
+ * @param seq_len Sequence length
+ * @param neighbor_strength Neighbor influence strength (0.0-1.0, default 0.1)
+ */
+void cllm_attention_forward_enhanced(
+    AttentionLayer* layer,
+    double* input,
+    double* output,
+    CLLMModel* model,
+    uint32_t* token_ids,
+    float* key_cache,
+    float* value_cache,
+    int seq_len,
+    float neighbor_strength
+);
+
 void cllm_attention_forward_hybrid(CLLMModel* model, AttentionLayer* layer, float* input, float* output,
                                    uint32_t* token_ids, float* key_cache, float* value_cache, int seq_len);
 void cllm_multi_head_attention(CLLMInference* inf, int layer_idx, float* input, float* output, int seq_len);

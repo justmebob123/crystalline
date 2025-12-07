@@ -106,11 +106,11 @@ void cllm_batch_print_stats(CLLMBatch* batch);
 int cllm_batch_validate(CLLMBatch* batch);
 
 /**
- * Assign batch tokens to spheres based on symmetry groups
+ * Assign batch tokens to spheres (using symmetry groups)
  * 
- * Analyzes the batch and determines which sphere should process each token
- * based on the token's symmetry group. This enables better load balancing
- * by distributing tokens according to their geometric properties.
+ * This is THE way to assign batches - using the token's symmetry group
+ * from the 12-fold kissing spheres structure. Since this is the only
+ * assignment method, the name is simplified (no "by_symmetry" suffix).
  * 
  * @param batch Batch to analyze
  * @param model CLLM model with token symmetry information
@@ -119,6 +119,18 @@ int cllm_batch_validate(CLLMBatch* batch);
  * 
  * @return 0 on success, -1 on error
  */
+int cllm_batch_assign(
+    CLLMBatch* batch,
+    struct CLLMModel* model,
+    int* sphere_assignments,
+    int num_spheres
+);
+
+/**
+ * DEPRECATED: Use cllm_batch_assign() instead
+ * Kept for backward compatibility only.
+ */
+__attribute__((deprecated("Use cllm_batch_assign() instead")))
 int cllm_batch_assign_by_symmetry(
     CLLMBatch* batch,
     struct CLLMModel* model,
