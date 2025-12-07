@@ -658,12 +658,24 @@ static void on_2d3d_toggle_clicked(void* data) {
     AppState* state = (AppState*)data;
     if (!state) return;
     
-    printf("=== 2D/3D TOGGLE CLICKED ===\n");
+    printf("=== VISUALIZATION MODE TOGGLE CLICKED ===\n");
     printf("Current mode: %d\n", state->sphere_viz_mode);
     
-    // Toggle between 2D and 3D
-    state->sphere_viz_mode = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? 
-                             SPHERE_VIZ_3D : SPHERE_VIZ_2D;
+    // Cycle through: 2D → 3D → CRYSTALLINE → 2D
+    switch (state->sphere_viz_mode) {
+        case SPHERE_VIZ_2D:
+            state->sphere_viz_mode = SPHERE_VIZ_3D;
+            break;
+        case SPHERE_VIZ_3D:
+            state->sphere_viz_mode = SPHERE_VIZ_CRYSTALLINE;
+            break;
+        case SPHERE_VIZ_CRYSTALLINE:
+            state->sphere_viz_mode = SPHERE_VIZ_2D;
+            break;
+        default:
+            state->sphere_viz_mode = SPHERE_VIZ_2D;
+            break;
+    }
     
     printf("New mode: %d\n", state->sphere_viz_mode);
 }
@@ -1092,9 +1104,23 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_progress_render(g_training_ui.training_progress, renderer);
     }
     
-    // Update 2D/3D toggle button label
+    // Update visualization mode toggle button label
     if (g_training_ui.btn_2d3d_toggle) {
-        const char* toggle_label = (state->sphere_viz_mode == SPHERE_VIZ_2D) ? "3D" : "2D";
+        const char* toggle_label;
+        switch (state->sphere_viz_mode) {
+            case SPHERE_VIZ_2D:
+                toggle_label = "3D";  // Shows what clicking will switch TO
+                break;
+            case SPHERE_VIZ_3D:
+                toggle_label = "CRYS";  // Crystalline
+                break;
+            case SPHERE_VIZ_CRYSTALLINE:
+                toggle_label = "2D";
+                break;
+            default:
+                toggle_label = "2D";
+                break;
+        }
         crystalline_button_set_label(g_training_ui.btn_2d3d_toggle, toggle_label);
     }
     

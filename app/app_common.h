@@ -142,8 +142,9 @@ typedef enum {
 
 // Sphere visualization modes (for Training Tab)
 typedef enum {
-    SPHERE_VIZ_2D,  // Flat circular arrangement (default)
-    SPHERE_VIZ_3D   // 3D arrangement with depth and perspective
+    SPHERE_VIZ_2D,          // Flat circular arrangement (default)
+    SPHERE_VIZ_3D,          // 3D arrangement with depth and perspective
+    SPHERE_VIZ_CRYSTALLINE  // Crystalline geometric patterns and memory structure
 } SphereVisualizationMode;
 
 // Sphere structure for 3D visualization

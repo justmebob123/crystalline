@@ -891,6 +891,10 @@ void draw_sphere_visualization(SDL_Renderer* renderer, AppState* state, SDL_Rect
     if (state->sphere_viz_mode == SPHERE_VIZ_3D) {
         draw_spheres_3d(renderer, state, bounds, center_x, center_y, 
                        arrangement_radius, sphere_radius, max_batches);
+    } else if (state->sphere_viz_mode == SPHERE_VIZ_CRYSTALLINE) {
+        // Draw crystalline geometric patterns and memory structure
+        draw_crystalline_visualization(renderer, &g_crystalline_viz_state, bounds);
+        return;  // Crystalline viz has its own statistics display
     } else {
         draw_spheres_2d(renderer, state, center_x, center_y, 
                        arrangement_radius, sphere_radius, max_batches);
