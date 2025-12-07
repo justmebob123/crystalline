@@ -503,6 +503,45 @@ void init_crawler_tab(AppState* state) {
         font
     );
     crystalline_button_set_callback(g_crawler_ui.btn_clear, on_clear_clicked, state);
+    elem_y += 70;
+    
+    // Reset URLs button
+    CrystallineButton* btn_reset_urls = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Reset URLs",
+        font
+    );
+    (void)btn_reset_urls;  // Will wire callback later
+    elem_y += 70;
+    
+    // Save Config button
+    CrystallineButton* btn_save_config = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Save Config",
+        font
+    );
+    (void)btn_save_config;  // Will wire callback later
+    elem_y += 70;
+    
+    // Load Config button
+    CrystallineButton* btn_load_config = crystalline_button_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        elem_x + elem_w / 2.0f,
+        elem_y + btn_h / 2.0f,
+        elem_w,
+        btn_h,
+        "Load Config",
+        font
+    );
+    (void)btn_load_config;  // Will wire callback later
     elem_y += 80;
     
     // Sliders
