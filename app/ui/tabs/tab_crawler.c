@@ -184,6 +184,9 @@ static struct {
     CrystallineTextArea* activity_log;
     char activity_messages[10][256];  // Store last 10 messages
     int activity_count;
+    
+    // Model Selector
+    ModelSelector* model_selector;
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -385,6 +388,23 @@ static void on_advanced_options_toggle(void* data) {
             // Note: CrystallineButton doesn't have a set_text function, so we'll just log
             printf("Advanced Options %s\n", g_crawler_ui.show_advanced_options ? "expanded" : "collapsed");
         }
+    }
+}
+
+/**
+ * Model selector callback
+ */
+static void on_crawler_model_selected(const char* model_name, void* user_data) {
+    (void)user_data;
+    
+    if (model_name) {
+        snprintf(g_crawler_ui.selected_model, sizeof(g_crawler_ui.selected_model), "%s", model_name);
+        
+        char log_msg[256];
+        snprintf(log_msg, sizeof(log_msg), "Selected model: %s", model_name);
+        add_activity_log_message(log_msg);
+        
+        printf("Crawler model selected: %s\n", model_name);
     }
 }
 
@@ -1089,20 +1109,26 @@ void init_crawler_tab(AppState* state) {
     int col3_content_w = col3_w - 20;
     int col3_elem_y = col3_content_y;
     
-    // Model Selector (TODO: Integrate ModelSelector component)
-    // For now, add a placeholder button
-    int model_btn_h = 40;
-    CrystallineButton* btn_model_select = crystalline_button_create(
-        CRYSTALLINE_STYLE_RECTANGULAR,
-        col3_content_x + col3_content_w / 2.0f,
-        col3_elem_y + model_btn_h / 2.0f,
+    // Model Selector
+    int model_selector_h = 40;
+    g_crawler_ui.model_selector = model_selector_create(
+        col3_content_x,
+        col3_elem_y,
         col3_content_w,
-        model_btn_h,
-        "Select Model",
-        font
+        model_selector_h
     );
-    (void)btn_model_select;
-    col3_elem_y += model_btn_h + 20;
+    
+    if (g_crawler_ui.model_selector) {
+        model_selector_update_list(g_crawler_ui.model_selector);
+        model_selector_set_callback(g_crawler_ui.model_selector, on_crawler_model_selected, state);
+        
+        // Set default selection if available
+        const char* selected = model_selector_get_selected(g_crawler_ui.model_selector);
+        if (selected) {
+            snprintf(g_crawler_ui.selected_model, sizeof(g_crawler_ui.selected_model), "%s", selected);
+        }
+    }
+    col3_elem_y += model_selector_h + 20;
     
     // Status Display
     int status_display_h = 150;
@@ -1282,6 +1308,11 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
         crystalline_textarea_render(g_crawler_ui.activity_log, renderer);
     }
     
+    // Render model selector
+    if (g_crawler_ui.model_selector) {
+        model_selector_render(g_crawler_ui.model_selector, renderer);
+    }
+    
     // Render prime configuration inputs
     if (g_crawler_ui.prime_freq_input) {
         crystalline_input_render(g_crawler_ui.prime_freq_input, renderer);
@@ -1333,6 +1364,13 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
 void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state) {
     (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
+    
+    // Handle model selector first (it needs raw coordinates)
+    if (g_crawler_ui.model_selector) {
+        if (model_selector_handle_button_down(g_crawler_ui.model_selector, event->x, event->y)) {
+            return;  // Event handled by model selector
+        }
+    }
     
     SDL_Event sdl_event = {0};
     sdl_event.type = SDL_MOUSEBUTTONDOWN;
@@ -1433,6 +1471,13 @@ void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
     (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
     
+    // Handle model selector first (for item selection)
+    if (g_crawler_ui.model_selector) {
+        if (model_selector_handle_button_up(g_crawler_ui.model_selector, event->x, event->y)) {
+            return;  // Event handled by model selector
+        }
+    }
+    
     SDL_Event sdl_event = {0};
     sdl_event.type = SDL_MOUSEBUTTONUP;
     sdl_event.button = *event;
@@ -1476,6 +1521,11 @@ void handle_crawler_tab_mouse_up(SDL_MouseButtonEvent* event, AppState* state) {
 void handle_crawler_tab_mouse_motion(SDL_MouseMotionEvent* event, AppState* state) {
     (void)state;  // Unused in current implementation
     if (!g_crawler_ui.initialized) return;
+    
+    // Handle model selector hover effects
+    if (g_crawler_ui.model_selector) {
+        model_selector_handle_motion(g_crawler_ui.model_selector, event->x, event->y);
+    }
     
     SDL_Event sdl_event = {0};
     sdl_event.type = SDL_MOUSEMOTION;
