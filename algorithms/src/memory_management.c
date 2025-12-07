@@ -38,6 +38,7 @@ static int is_power_of_2(size_t x) {
 /**
  * Align pointer to boundary
  */
+__attribute__((unused))
 static void* align_pointer(void* ptr, size_t alignment) {
     uintptr_t addr = (uintptr_t)ptr;
     uintptr_t aligned = (addr + alignment - 1) & ~(alignment - 1);

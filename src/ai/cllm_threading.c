@@ -249,7 +249,7 @@ void cllm_threading_stats(CLLMModel* model) {
 
 void cllm_threading_report_position(
     CLLMModel* model,
-    struct CLLMMetrics* metrics,
+    CLLMMetrics* metrics,
     int thread_id
 ) {
     if (!model || !metrics || thread_id < 0) return;

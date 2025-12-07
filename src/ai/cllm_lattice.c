@@ -24,6 +24,9 @@
 // Old compute_lattice_distance removed - no longer needed with geometric pattern
 // Old find_neighbor_by_clock_geometry removed - now using sphere_find_neighbor_by_geometry from algorithms layer
 
+// Forward declaration
+void cllm_optimize_neighbor_cache_locality(CLLMModel* model);
+
 /**
  * Initialize kissing spheres (12 neighbors per point)
  * 

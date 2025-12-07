@@ -22,6 +22,7 @@
  */
 
 #include "cllm.h"
+#include "cllm_metrics.h"
 #include "../algorithms/include/sphere_threading.h"
 
 #ifdef __cplusplus
@@ -152,10 +153,9 @@ void cllm_threading_stats(CLLMModel* model);
  * @param metrics Metrics system
  * @param thread_id Thread ID
  */
-struct CLLMMetrics;
 void cllm_threading_report_position(
     CLLMModel* model,
-    struct CLLMMetrics* metrics,
+    CLLMMetrics* metrics,
     int thread_id
 );
 

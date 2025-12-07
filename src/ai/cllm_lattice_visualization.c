@@ -68,7 +68,7 @@ void cllm_print_point_neighbors(
     fprintf(output, "%-10s %-15s %-15s\n", "Neighbor", "Symmetry", "Relation");
     fprintf(output, "----------------------------------------\n");
 
-    for (int i = 0; i < point->num_neighbors && i < 12; i++) {
+    for (uint32_t i = 0; i < point->num_neighbors && i < 12; i++) {
         uint32_t neighbor_id = point->neighbors[i];
         int neighbor_symmetry = cllm_get_point_symmetry_group(neighbor_id);
         int point_symmetry = cllm_get_point_symmetry_group(point_id);
@@ -101,7 +101,7 @@ LatticePointStatistics cllm_collect_point_statistics(
     
     // Calculate average neighbor distance
     double total_distance = 0.0;
-    for (int i = 0; i < point->num_neighbors && i < 12; i++) {
+    for (uint32_t i = 0; i < point->num_neighbors && i < 12; i++) {
         uint32_t neighbor_id = point->neighbors[i];
         int distance = abs((int)neighbor_id - point_id);
         total_distance += (double)distance;
@@ -241,7 +241,7 @@ void cllm_visualize_neighbor_connections(
     
     // List actual neighbor IDs
     fprintf(output, "Neighbor IDs:\n");
-    for (int i = 0; i < point->num_neighbors && i < 12; i++) {
+    for (uint32_t i = 0; i < point->num_neighbors && i < 12; i++) {
         uint32_t neighbor_id = point->neighbors[i];
         int symmetry = cllm_get_point_symmetry_group(neighbor_id);
         const char* color = cllm_get_symmetry_color(symmetry);
@@ -374,9 +374,9 @@ void cllm_export_visualization_json(
         fprintf(f, "      &quot;symmetry_group&quot;: %d,\n", stats.symmetry_group);
         fprintf(f, "      &quot;neighbors&quot;: [");
         
-        for (int j = 0; j < point->num_neighbors && j < 12; j++) {
+        for (uint32_t j = 0; j < point->num_neighbors && j < 12; j++) {
             fprintf(f, "%u", point->neighbors[j]);
-            if (j < point->num_neighbors - 1 && j < 11) {
+            if (j + 1 < point->num_neighbors && j < 11) {
                 fprintf(f, ", ");
             }
         }
@@ -424,7 +424,7 @@ int cllm_verify_lattice_structure(
                     i, point->num_neighbors);
         }
         
-        for (int j = 0; j < point->num_neighbors && j < 12; j++) {
+        for (uint32_t j = 0; j < point->num_neighbors && j < 12; j++) {
             uint32_t neighbor = point->neighbors[j];
             
             if (neighbor >= model->num_lattice_points) {
@@ -513,7 +513,7 @@ double cllm_estimate_cache_efficiency(
     
     for (size_t i = 0; i < model->num_lattice_points; i++) {
         CLLMLatticePoint* point = &model->lattice_points[i];
-        for (int j = 0; j < point->num_neighbors && j < 12; j++) {
+        for (uint32_t j = 0; j < point->num_neighbors && j < 12; j++) {
             uint32_t neighbor = point->neighbors[j];
             total_distance += abs((int)neighbor - (int)i);
             count++;
