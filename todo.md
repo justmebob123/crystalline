@@ -99,7 +99,33 @@
 - [x] Test cache optimization
 - [x] Verify all tests pass (19/19 tests passing - 100%)
 
-## Phase 4: Remove Naming Redundancy ⏳ PENDING
+## Phase 4: Remove Naming Redundancy 🔄 IN PROGRESS
+
+### 4.1: Analyze Current Naming
+- [ ] List all files with "kissing_spheres" in name
+- [ ] Identify functions with redundant naming
+- [ ] Create renaming plan
+
+### 4.2: Rename CLLM Layer Files
+- [ ] Rename `cllm_kissing_spheres.h` → `cllm_lattice.h`
+- [ ] Rename `cllm_kissing_spheres.c` → `cllm_lattice.c`
+- [ ] Rename `cllm_kissing_spheres_visualization.h` → `cllm_visualization.h`
+- [ ] Rename `cllm_kissing_spheres_visualization.c` → `cllm_visualization.c`
+- [ ] Update all references in code
+
+### 4.3: Rename Test Files
+- [ ] Rename test files to match new naming
+- [ ] Update test references
+
+### 4.4: Update Build System
+- [ ] Update Makefiles
+- [ ] Update include paths
+- [ ] Verify clean build
+
+### 4.5: Update Documentation
+- [ ] Update README references
+- [ ] Update code comments
+- [ ] Update API documentation
 
 ## Phase 5: Comprehensive Testing ⏳ PENDING
 
