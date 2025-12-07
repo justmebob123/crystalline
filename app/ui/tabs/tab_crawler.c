@@ -117,6 +117,11 @@ static struct {
     CrystallineTextArea* stats_display;
     CrystallineInput* url_input;
     
+    // Prime Configuration Inputs (Column 1)
+    CrystallineInput* prime_freq_input;
+    CrystallineInput* delay_min_input;
+    CrystallineInput* delay_max_input;
+    
     // State
     bool initialized;
     bool crawler_running;
@@ -126,6 +131,10 @@ static struct {
     char** urls;
     int url_count;
     int url_capacity;
+    
+    // Prime Configuration State
+    CrawlerPrimeConfig prime_config;
+    bool prime_enabled;
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -197,7 +206,15 @@ static void on_start_clicked(void* data) {
         return;
     }
     
+    // Read prime configuration from UI inputs
+    read_prime_config_from_ui();
+    
     printf("Starting crawler with %d URLs\n", g_crawler_ui.url_count);
+    printf("Prime Config: freq=%lu, delay_min=%lu, delay_max=%lu, enabled=%d\n",
+           g_crawler_ui.prime_config.frequency_prime,
+           g_crawler_ui.prime_config.delay_min_prime,
+           g_crawler_ui.prime_config.delay_max_prime,
+           g_crawler_ui.prime_enabled);
     
     // Use the first URL as start URL
     const char* start_url = g_crawler_ui.urls[0];
@@ -284,6 +301,61 @@ static void on_load_config_clicked(void* data) {
     // TODO: Implement load config from JSON
     // For now, just print message
     printf("Load Config clicked - TODO: Implement JSON load\n");
+}
+
+/**
+ * Read Prime Configuration from UI inputs
+ */
+static void read_prime_config_from_ui(void) {
+    if (!g_crawler_ui.prime_freq_input || !g_crawler_ui.delay_min_input || !g_crawler_ui.delay_max_input) {
+        return;
+    }
+    
+    // Read prime frequency
+    const char* freq_text = crystalline_input_get_text(g_crawler_ui.prime_freq_input);
+    if (freq_text &amp;&amp; freq_text[0]) {
+        g_crawler_ui.prime_config.frequency_prime = (uint64_t)atoi(freq_text);
+    }
+    
+    // Read delay min
+    const char* delay_min_text = crystalline_input_get_text(g_crawler_ui.delay_min_input);
+    if (delay_min_text &amp;&amp; delay_min_text[0]) {
+        g_crawler_ui.prime_config.delay_min_prime = (uint64_t)atoi(delay_min_text);
+    }
+    
+    // Read delay max
+    const char* delay_max_text = crystalline_input_get_text(g_crawler_ui.delay_max_input);
+    if (delay_max_text &amp;&amp; delay_max_text[0]) {
+        g_crawler_ui.prime_config.delay_max_prime = (uint64_t)atoi(delay_max_text);
+    }
+    
+    printf("Prime Config: freq=%lu, delay_min=%lu, delay_max=%lu\n",
+           g_crawler_ui.prime_config.frequency_prime,
+           g_crawler_ui.prime_config.delay_min_prime,
+           g_crawler_ui.prime_config.delay_max_prime);
+}
+
+/**
+ * Apply Prime Configuration to UI inputs
+ */
+static void apply_prime_config_to_ui(void) {
+    if (!g_crawler_ui.prime_freq_input || !g_crawler_ui.delay_min_input || !g_crawler_ui.delay_max_input) {
+        return;
+    }
+    
+    char buffer[32];
+    
+    // Set prime frequency
+    snprintf(buffer, sizeof(buffer), "%lu", g_crawler_ui.prime_config.frequency_prime);
+    crystalline_input_set_text(g_crawler_ui.prime_freq_input, buffer);
+    
+    // Set delay min
+    snprintf(buffer, sizeof(buffer), "%lu", g_crawler_ui.prime_config.delay_min_prime);
+    crystalline_input_set_text(g_crawler_ui.delay_min_input, buffer);
+    
+    // Set delay max
+    snprintf(buffer, sizeof(buffer), "%lu", g_crawler_ui.prime_config.delay_max_prime);
+    crystalline_input_set_text(g_crawler_ui.delay_max_input, buffer);
 }
 
 /**
@@ -376,7 +448,7 @@ void init_crawler_tab(AppState* state) {
     int prime_input_spacing = 45;
     
     // Prime Frequency input
-    CrystallineInput* prime_freq_input = crystalline_input_create(
+    g_crawler_ui.prime_freq_input = crystalline_input_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         col1_content_x + col1_content_w / 2.0f,
         col1_elem_y + prime_input_h / 2.0f,
@@ -385,11 +457,10 @@ void init_crawler_tab(AppState* state) {
         "Prime Frequency",
         font
     );
-    crystalline_input_set_text(prime_freq_input, "7");
     col1_elem_y += prime_input_spacing;
     
     // Delay Min input
-    CrystallineInput* delay_min_input = crystalline_input_create(
+    g_crawler_ui.delay_min_input = crystalline_input_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         col1_content_x + col1_content_w / 2.0f,
         col1_elem_y + prime_input_h / 2.0f,
@@ -398,11 +469,10 @@ void init_crawler_tab(AppState* state) {
         "Delay Min (ms)",
         font
     );
-    crystalline_input_set_text(delay_min_input, "100");
     col1_elem_y += prime_input_spacing;
     
     // Delay Max input
-    CrystallineInput* delay_max_input = crystalline_input_create(
+    g_crawler_ui.delay_max_input = crystalline_input_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         col1_content_x + col1_content_w / 2.0f,
         col1_elem_y + prime_input_h / 2.0f,
@@ -411,13 +481,14 @@ void init_crawler_tab(AppState* state) {
         "Delay Max (ms)",
         font
     );
-    crystalline_input_set_text(delay_max_input, "500");
     col1_elem_y += prime_input_spacing + 20;
     
-    // Suppress unused warnings for now
-    (void)prime_freq_input;
-    (void)delay_min_input;
-    (void)delay_max_input;
+    // Initialize prime config with defaults
+    prime_config_init_default(&amp;g_crawler_ui.prime_config);
+    g_crawler_ui.prime_enabled = true;
+    
+    // Apply default values to UI
+    apply_prime_config_to_ui();
     
     // URL Pattern Selection (4 checkboxes)
     // TODO: Implement custom checkbox rendering

@@ -64,11 +64,64 @@
 - [ ] If testing: Validate all tabs work correctly
 - [ ] If integration: Follow plan in DEEP_TAB_ANALYSIS.md
 
-## Session Complete ✅
-- [x] Fixed critical segfault (O(n) to O(1) token lookup)
-- [x] Completed deep tab analysis
-- [x] Documented all findings in DEEP_TAB_ANALYSIS.md
-- [x] Created SESSION_SUMMARY.md
+## Segfault Fix Complete ✅
+- [x] Fixed O(n) to O(1) token lookup with persistent hash table
+- [x] Fixed thread-safety issue: replaced strtok() with strtok_r()
+- [x] Build: 0 errors, 0 warnings
 - [x] All commits pushed to GitHub
+- [ ] **NEXT:** Test with 11K documents to verify fix
 
-**Status:** Ready for next phase (testing or Crawler Tab completion)
+## Crawler Tab Wiring - IN PROGRESS 🔧
+
+### Phase 1: Wire Prime Configuration ✅ COMPLETE
+- [x] Create CrystallineInput for prime_frequency
+- [x] Create CrystallineInput for delay_min
+- [x] Create CrystallineInput for delay_max
+- [x] Add prime_config to g_crawler_ui structure
+- [x] Create read_prime_config_from_ui() helper function
+- [x] Create apply_prime_config_to_ui() helper function
+- [x] Initialize with defaults using prime_config_init_default()
+- [x] Wire to on_start_clicked() to read config before crawling
+- [x] Build successful: 0 errors, 0 warnings
+
+### Phase 2: Implement URL Pattern Checkboxes (1 hour)
+- [ ] Create custom checkbox rendering function
+- [ ] Add checkbox for pattern_href
+- [ ] Add checkbox for pattern_onclick
+- [ ] Add checkbox for pattern_data_attr
+- [ ] Add checkbox for pattern_meta_refresh
+- [ ] Wire to g_crawler_state pattern flags
+- [ ] Test checkbox state management
+
+### Phase 3: Implement Content Filtering Radio Buttons (1 hour)
+- [ ] Create custom radio button rendering function
+- [ ] Add radio for EXTRACT_ALL
+- [ ] Add radio for EXTRACT_HUMAN_TEXT
+- [ ] Add radio for EXTRACT_METADATA
+- [ ] Add radio for EXTRACT_MIXED
+- [ ] Wire to g_crawler_state.extraction_mode
+- [ ] Test radio button exclusivity
+
+### Phase 4: Implement Advanced Options Panel (30 min)
+- [ ] Create collapsible panel with CrystallinePanel
+- [ ] Add input for GET parameters
+- [ ] Add input for custom headers
+- [ ] Add input for timeout seconds
+- [ ] Add input for max redirects
+- [ ] Wire to g_crawler_state advanced options
+- [ ] Test panel collapse/expand
+
+### Phase 5: Implement Activity Log (30 min)
+- [ ] Create scrolling CrystallineTextArea
+- [ ] Implement add_activity_log() function
+- [ ] Wire to g_crawler_state.activity_log
+- [ ] Add auto-scroll functionality
+- [ ] Test log display and scrolling
+
+### Phase 6: Integrate Model Selector (30 min)
+- [ ] Add ModelSelector dropdown
+- [ ] Wire to crawler_model_selected callback
+- [ ] Store selected model in state
+- [ ] Test model selection
+
+**Status:** Starting Phase 1
