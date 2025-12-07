@@ -121,9 +121,48 @@ Redesign model management to enable concurrent operations while keeping Models T
 - [ ] Test all tabs independently
 
 ## Status
-**Current Focus:** Phase 3.4 - Models Tab Refactor (COMPLETE!)
-**Blocker:** None
-**Next Action:** Phase 3.5 - Crawler Tab Refactor
+**Current Focus:** Critical UX Issue - Training Progress Reporting
+**Blocker:** User cannot see training progress (debug spam hiding useful info)
+**Next Action:** Implement progress reporting system
+
+## NEW CRITICAL TASK: Training Progress Reporting [IN PROGRESS]
+### Problem
+- Terminal flooded with debug output (28 debug statements per batch)
+- No real-time progress updates during epoch
+- Cannot determine: current batch, loss, speed, ETA
+- User training 1000 epochs but cannot track progress
+
+### Current Status
+- All 28 debug statements wrapped in #ifdef CLLM_DEBUG ✅
+- Need to add CLLM_DEBUG flag to Makefile
+- Need to add progress tracking to KissingSphereSystem
+- Need to add periodic progress updates
+
+### Solution Plan
+- [x] Phase 1: Wrap all debug output in #ifdef CLLM_DEBUG (30 min) - COMPLETE
+- [x] Phase 2: Add CLLM_DEBUG flag to Makefile (10 min) - COMPLETE
+- [x] Phase 3: Add progress tracking to ThreadedTrainingSystem (1 hour) - COMPLETE
+  * Progress tracking fields already existed in structure
+  * report_training_progress() function already implemented
+  * Added progress initialization at epoch start
+  * Added progress reporting during batch processing
+  * Added final progress report at epoch end
+  * Added threaded_training_set_total_epochs() setter function
+- [x] Phase 4: Add periodic progress updates (30 min) - COMPLETE
+  * Progress updates called every N batches (default: 10)
+  * Updates show: Epoch X/Y | Batch A/B (C%) | Loss: D | E batch/s | ETA: HH:MM:SS
+- [x] Phase 5: Update CLI tool with --verbose flag (30 min) - COMPLETE
+  * Added --verbose flag to enable debug output
+  * Updated help text to show verbose option
+  * Debug output disabled by default for clean progress display
+  * Note: Requires CLLM_DEBUG=1 build to actually show debug output
+- [x] Phase 6: Verify 360 layers configuration - COMPLETE
+  * Verified -l/--layers flag accepts 360 layers
+  * Configuration correctly displays: "Layers: 360"
+  * System properly uses specified layer count
+- [ ] Phase 7: Test and verify progress reporting (30 min) - NEXT
+
+See PROGRESS_REPORTING_IMPLEMENTATION_PLAN.md for details
 
 ## Recent Fixes
 **Registry Scan Spam Fix (Critical) - VERIFIED**
