@@ -165,6 +165,20 @@ static struct {
     
     // Content Filtering State
     int extraction_mode;  // ExtractionMode enum value
+    
+    // Advanced Options State
+    bool show_advanced_options;
+    char get_parameters[256];
+    char custom_headers[512];
+    int timeout_seconds;
+    int max_redirects;
+    
+    // Advanced Options Inputs
+    CrystallineInput* input_get_params;
+    CrystallineInput* input_custom_headers;
+    CrystallineInput* input_timeout;
+    CrystallineInput* input_max_redirects;
+    CrystallineButton* btn_advanced_toggle;
 } g_crawler_ui = {0};
 
 // Note: Advanced features (UIButton, ModelSelector, etc.) are defined but not yet
@@ -335,6 +349,27 @@ static void on_load_config_clicked(void* data) {
     // TODO: Implement load config from JSON
     // For now, just print message
     printf("Load Config clicked - TODO: Implement JSON load\n");
+}
+
+/**
+ * Toggle Advanced Options visibility
+ */
+static void on_advanced_options_toggle(void* data) {
+    (void)data;
+    
+    g_crawler_ui.show_advanced_options = !g_crawler_ui.show_advanced_options;
+    
+    // Update button label
+    if (g_crawler_ui.btn_advanced_toggle) {
+        extern TTF_Font* get_global_font();
+        TTF_Font* font = get_global_font();
+        if (font) {
+            const char* label = g_crawler_ui.show_advanced_options ? 
+                "Advanced Options ▲" : "Advanced Options ▼";
+            // Note: CrystallineButton doesn't have a set_text function, so we'll just log
+            printf("Advanced Options %s\n", g_crawler_ui.show_advanced_options ? "expanded" : "collapsed");
+        }
+    }
 }
 
 /**
@@ -731,21 +766,81 @@ void init_crawler_tab(AppState* state) {
     }
     
     // Advanced Options Panel (collapsible)
-    // TODO: Implement collapsible panel with toggle
-    // For now, adding a button placeholder
-    col1_elem_y += 140;  // Space for 4 radio buttons
+    col1_elem_y += 20;  // Small spacing after radio buttons
     
+    // Toggle button for Advanced Options
     int adv_btn_h = 40;
-    CrystallineButton* btn_advanced = crystalline_button_create(
+    g_crawler_ui.btn_advanced_toggle = crystalline_button_create(
         CRYSTALLINE_STYLE_RECTANGULAR,
         col1_content_x + col1_content_w / 2.0f,
         col1_elem_y + adv_btn_h / 2.0f,
         col1_content_w,
         adv_btn_h,
-        "Advanced Options",
+        "Advanced Options ▼",
         font
     );
-    (void)btn_advanced;  // Will wire callback later
+    crystalline_button_set_callback(g_crawler_ui.btn_advanced_toggle, on_advanced_options_toggle, state);
+    col1_elem_y += adv_btn_h + 10;
+    
+    // Initialize advanced options state
+    g_crawler_ui.show_advanced_options = false;
+    snprintf(g_crawler_ui.get_parameters, sizeof(g_crawler_ui.get_parameters), "");
+    snprintf(g_crawler_ui.custom_headers, sizeof(g_crawler_ui.custom_headers), "");
+    g_crawler_ui.timeout_seconds = 30;
+    g_crawler_ui.max_redirects = 5;
+    
+    // Create advanced options inputs (always created, visibility controlled by show_advanced_options)
+    int adv_input_h = 35;
+    int adv_input_spacing = 45;
+    
+    // GET Parameters input
+    g_crawler_ui.input_get_params = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + adv_input_h / 2.0f,
+        col1_content_w,
+        adv_input_h,
+        "GET Parameters",
+        font
+    );
+    col1_elem_y += adv_input_spacing;
+    
+    // Custom Headers input
+    g_crawler_ui.input_custom_headers = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + adv_input_h / 2.0f,
+        col1_content_w,
+        adv_input_h,
+        "Custom Headers",
+        font
+    );
+    col1_elem_y += adv_input_spacing;
+    
+    // Timeout input
+    g_crawler_ui.input_timeout = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + adv_input_h / 2.0f,
+        col1_content_w,
+        adv_input_h,
+        "Timeout (seconds)",
+        font
+    );
+    crystalline_input_set_text(g_crawler_ui.input_timeout, "30");
+    col1_elem_y += adv_input_spacing;
+    
+    // Max Redirects input
+    g_crawler_ui.input_max_redirects = crystalline_input_create(
+        CRYSTALLINE_STYLE_RECTANGULAR,
+        col1_content_x + col1_content_w / 2.0f,
+        col1_elem_y + adv_input_h / 2.0f,
+        col1_content_w,
+        adv_input_h,
+        "Max Redirects",
+        font
+    );
+    crystalline_input_set_text(g_crawler_ui.input_max_redirects, "5");
     
     // ========================================================================
     // COLUMN 2: URL MANAGEMENT
@@ -1149,6 +1244,27 @@ void render_crawler_tab(SDL_Renderer* renderer, AppState* state) {
             render_radio_button(renderer, &amp;g_crawler_ui.filter_radio_buttons[i], font);
         }
     }
+    
+    // Render advanced options toggle button
+    if (g_crawler_ui.btn_advanced_toggle) {
+        crystalline_button_render(g_crawler_ui.btn_advanced_toggle, renderer);
+    }
+    
+    // Render advanced options inputs (only if expanded)
+    if (g_crawler_ui.show_advanced_options) {
+        if (g_crawler_ui.input_get_params) {
+            crystalline_input_render(g_crawler_ui.input_get_params, renderer);
+        }
+        if (g_crawler_ui.input_custom_headers) {
+            crystalline_input_render(g_crawler_ui.input_custom_headers, renderer);
+        }
+        if (g_crawler_ui.input_timeout) {
+            crystalline_input_render(g_crawler_ui.input_timeout, renderer);
+        }
+        if (g_crawler_ui.input_max_redirects) {
+            crystalline_input_render(g_crawler_ui.input_max_redirects, renderer);
+        }
+    }
 }
 
 /**
@@ -1176,6 +1292,22 @@ void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state)
     }
     if (g_crawler_ui.delay_max_input) {
         crystalline_input_handle_mouse(g_crawler_ui.delay_max_input, &sdl_event);
+    }
+    
+    // Handle advanced options inputs (only if visible)
+    if (g_crawler_ui.show_advanced_options) {
+        if (g_crawler_ui.input_get_params) {
+            crystalline_input_handle_mouse(g_crawler_ui.input_get_params, &sdl_event);
+        }
+        if (g_crawler_ui.input_custom_headers) {
+            crystalline_input_handle_mouse(g_crawler_ui.input_custom_headers, &sdl_event);
+        }
+        if (g_crawler_ui.input_timeout) {
+            crystalline_input_handle_mouse(g_crawler_ui.input_timeout, &sdl_event);
+        }
+        if (g_crawler_ui.input_max_redirects) {
+            crystalline_input_handle_mouse(g_crawler_ui.input_max_redirects, &sdl_event);
+        }
     }
     
     // Handle list
@@ -1222,6 +1354,9 @@ void handle_crawler_tab_mouse_down(SDL_MouseButtonEvent* event, AppState* state)
         crystalline_button_handle_mouse(g_crawler_ui.btn_clear, &sdl_event);
     }
     
+    if (g_crawler_ui.btn_advanced_toggle) {
+        crystalline_button_handle_mouse(g_crawler_ui.btn_advanced_toggle, &sdl_event);
+    }
     // Handle sliders
     if (g_crawler_ui.slider_max_depth) {
         crystalline_slider_handle_mouse(g_crawler_ui.slider_max_depth, &sdl_event);

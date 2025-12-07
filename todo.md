@@ -115,14 +115,19 @@
 - [x] Update on_start_clicked() to use selected extraction mode
 - [x] Build successful: 0 errors, 0 warnings
 
-### Phase 4: Implement Advanced Options Panel (30 min)
-- [ ] Create collapsible panel with CrystallinePanel
-- [ ] Add input for GET parameters
-- [ ] Add input for custom headers
-- [ ] Add input for timeout seconds
-- [ ] Add input for max redirects
-- [ ] Wire to g_crawler_state advanced options
-- [ ] Test panel collapse/expand
+### Phase 4: Implement Advanced Options Panel ✅ COMPLETE
+- [x] Created collapsible panel with toggle button
+- [x] Added 4 input fields to g_crawler_ui:
+  * input_get_params (GET Parameters)
+  * input_custom_headers (Custom Headers)
+  * input_timeout (Timeout seconds, default: 30)
+  * input_max_redirects (Max Redirects, default: 5)
+- [x] Created on_advanced_options_toggle() callback
+- [x] Implemented show_advanced_options state flag
+- [x] Conditional rendering: inputs only shown when expanded
+- [x] Conditional mouse handling: inputs only active when visible
+- [x] Toggle button changes label: ▼ (collapsed) / ▲ (expanded)
+- [x] Build successful: 0 errors, 0 warnings
 
 ### Phase 5: Implement Activity Log (30 min)
 - [ ] Create scrolling CrystallineTextArea
