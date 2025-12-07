@@ -112,8 +112,8 @@ void shared_memory_free(SharedMemoryRegion* region) {
     // Destroy rwlock
     pthread_rwlock_destroy(&region->rwlock);
     
-    // Free data
-    if (region->data) {
+    // Free data (only if we have a free function)
+    if (region->data && region->free_fn) {
         region->free_fn(region->data);
     }
     
