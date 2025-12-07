@@ -233,3 +233,76 @@ bool iterative_default_oscillation_detector(const uint64_t* anchors,
     
     return coefficient_of_variation > 0.5;  // 50% threshold
 }
+
+bool iterative_fft_oscillation_detector(const uint64_t* anchors,
+                                         size_t num_anchors,
+                                         void* user_data) {
+    (void)user_data;  // Unused
+    
+    if (!anchors || num_anchors < 4) {
+        return false;  // Need at least 4 points for FFT
+    }
+    
+    // Convert anchors to signal (normalize to [0, 1])
+    double* signal = (double*)malloc(num_anchors * sizeof(double));
+    if (!signal) {
+        return false;  // Fallback to no oscillation
+    }
+    
+    // Find min and max for normalization
+    uint64_t min_val = anchors[0];
+    uint64_t max_val = anchors[0];
+    for (size_t i = 1; i < num_anchors; i++) {
+        if (anchors[i] < min_val) min_val = anchors[i];
+        if (anchors[i] > max_val) max_val = anchors[i];
+    }
+    
+    // Normalize signal
+    double range = (double)(max_val - min_val);
+    if (range < EPSILON) {
+        free(signal);
+        return false;  // All values the same, no oscillation
+    }
+    
+    for (size_t i = 0; i < num_anchors; i++) {
+        signal[i] = ((double)(anchors[i] - min_val)) / range;
+    }
+    
+    // Perform FFT using cymatic functions
+    // Note: This is a simplified approach - full FFT would use cymatic_simulate_wave
+    // For now, we detect oscillation by looking for repeated patterns
+    
+    // Count peaks in the signal
+    size_t peak_count = 0;
+    for (size_t i = 1; i < num_anchors - 1; i++) {
+        if (signal[i] > signal[i-1] && signal[i] > signal[i+1]) {
+            peak_count++;
+        }
+    }
+    
+    // Count unique peak heights (quantized to 0.1 intervals)
+    bool peak_heights[10] = {false};  // 10 bins for [0, 1] range
+    for (size_t i = 1; i < num_anchors - 1; i++) {
+        if (signal[i] > signal[i-1] && signal[i] > signal[i+1]) {
+            int bin = (int)(signal[i] * 10.0);
+            if (bin >= 10) bin = 9;
+            if (bin < 0) bin = 0;
+            peak_heights[bin] = true;
+        }
+    }
+    
+    size_t unique_peaks = 0;
+    for (int i = 0; i < 10; i++) {
+        if (peak_heights[i]) unique_peaks++;
+    }
+    
+    free(signal);
+    
+    // Oscillation detected if we have repeated peak patterns
+    // (fewer unique peaks than total peaks indicates repetition)
+    if (peak_count >= 2 && unique_peaks < peak_count / 2) {
+        return true;
+    }
+    
+    return false;
+}

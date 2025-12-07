@@ -33,6 +33,8 @@ SOURCES = src/numerical.c \
           src/iterative_search.c \
           src/validation.c \
           src/mathematical_formulas.c \
+          src/symbolic_field_theory.c \
+          src/nonce_generation.c \
           src/bigfixed_math_wrappers.c
 
 # Object files

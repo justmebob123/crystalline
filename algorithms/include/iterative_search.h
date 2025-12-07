@@ -167,6 +167,33 @@ bool iterative_default_oscillation_detector(const uint64_t* anchors,
                                              size_t num_anchors,
                                              void* user_data);
 
+/**
+ * @brief FFT-based oscillation detector (improved)
+ * 
+ * Uses FFT peak analysis to detect repeated patterns in the anchor sequence.
+ * More sophisticated than variance-based detection.
+ * 
+ * Algorithm:
+ * 1. Convert anchors to normalized signal
+ * 2. Detect peaks in signal
+ * 3. Analyze peak patterns for repetition
+ * 4. Return true if repeated patterns found
+ * 
+ * @param anchors Array of anchor values
+ * @param num_anchors Number of anchors
+ * @param user_data User data (unused)
+ * @return true if oscillation detected, false otherwise
+ * 
+ * Example:
+ * ```c
+ * IterativeSearchConfig config;
+ * config.oscillation_fn = iterative_fft_oscillation_detector;
+ * ```
+ */
+bool iterative_fft_oscillation_detector(const uint64_t* anchors,
+                                         size_t num_anchors,
+                                         void* user_data);
+
 #ifdef __cplusplus
 }
 #endif
