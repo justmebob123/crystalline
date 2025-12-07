@@ -115,3 +115,161 @@ void analyze_gradient_spectrum(
         spectrum[k] = real * real + imag * imag;
     }
 }
+
+/* ============================================================================
+ * Extended Cymatic Functions for Signal Processing
+ * ============================================================================ */
+
+void cymatic_simulate_wave(double* output, size_t len,
+                           const uint64_t* primes, size_t num_primes,
+                           uint32_t shape_symmetry) {
+    if (!output || !primes || len == 0 || num_primes == 0) return;
+    
+    // Initialize output
+    for (size_t i = 0; i < len; i++) {
+        output[i] = 0.0;
+    }
+    
+    // Generate wave pattern: Σ [sin(p[i] * x) + cos(p[i+1] * x)]
+    for (size_t i = 0; i < num_primes; i++) {
+        double freq = (double)primes[i];
+        
+        for (size_t x = 0; x < len; x++) {
+            double t = (double)x / (double)len;
+            
+            // Add sine component
+            output[x] += prime_sin(freq * t * 2.0 * PRIME_PI);
+            
+            // Add cosine component from next prime
+            if (i + 1 < num_primes) {
+                double freq2 = (double)primes[i + 1];
+                output[x] += prime_cos(freq2 * t * 2.0 * PRIME_PI);
+            }
+        }
+    }
+    
+    // Apply geometric symmetry modulation
+    if (shape_symmetry > 0) {
+        cymatic_geometric_modulation(output, len, shape_symmetry);
+    }
+    
+    // Normalize
+    double max_val = 0.0;
+    for (size_t i = 0; i < len; i++) {
+        double abs_val = output[i];
+        if (abs_val < 0.0) abs_val = -abs_val;
+        if (abs_val > max_val) max_val = abs_val;
+    }
+    
+    if (max_val > 0.0) {
+        for (size_t i = 0; i < len; i++) {
+            output[i] /= max_val;
+        }
+    }
+}
+
+bool cymatic_detect_alignment(const double* signal, size_t len,
+                               const uint64_t* target_primes, size_t num_primes) {
+    if (!signal || !target_primes || len == 0 || num_primes == 0) {
+        return false;
+    }
+    
+    size_t aligned_count = 0;
+    
+    for (size_t p = 0; p < num_primes; p++) {
+        double freq = (double)target_primes[p];
+        
+        // Check for peak at this frequency using simple correlation
+        double correlation = 0.0;
+        for (size_t i = 0; i < len; i++) {
+            double t = (double)i / (double)len;
+            double expected = prime_sin(freq * t * 2.0 * PRIME_PI);
+            correlation += signal[i] * expected;
+        }
+        
+        // Normalize correlation
+        correlation /= (double)len;
+        
+        // Consider aligned if correlation > 0.3
+        if (correlation > 0.3 || correlation < -0.3) {
+            aligned_count++;
+        }
+    }
+    
+    // Return true if >50% of primes show alignment
+    return (aligned_count * 2 > num_primes);
+}
+
+double cymatic_resonance_score(const double* signal, size_t len,
+                                const uint64_t* primes, size_t num_primes) {
+    if (!signal || !primes || len == 0 || num_primes == 0) {
+        return 0.0;
+    }
+    
+    double total_resonance = 0.0;
+    
+    for (size_t p = 0; p < num_primes; p++) {
+        double freq = (double)primes[p];
+        
+        // Measure signal strength at this frequency
+        double real = 0.0;
+        double imag = 0.0;
+        
+        for (size_t i = 0; i < len; i++) {
+            double t = (double)i / (double)len;
+            double angle = freq * t * 2.0 * PRIME_PI;
+            real += signal[i] * prime_cos(angle);
+            imag += signal[i] * prime_sin(angle);
+        }
+        
+        // Power at this frequency
+        double power = (real * real + imag * imag) / (double)(len * len);
+        total_resonance += power;
+    }
+    
+    // Normalize by number of primes
+    return total_resonance / (double)num_primes;
+}
+
+size_t cymatic_find_peaks(const double* signal, size_t len,
+                          size_t* peak_indices, size_t max_peaks,
+                          double threshold) {
+    if (!signal || !peak_indices || len < 3 || max_peaks == 0) {
+        return 0;
+    }
+    
+    size_t num_peaks = 0;
+    
+    // Find local maxima
+    for (size_t i = 1; i < len - 1 && num_peaks < max_peaks; i++) {
+        // Check if this is a local maximum
+        if (signal[i] > signal[i-1] && signal[i] > signal[i+1]) {
+            // Check if it exceeds threshold
+            if (signal[i] >= threshold) {
+                peak_indices[num_peaks] = i;
+                num_peaks++;
+            }
+        }
+    }
+    
+    return num_peaks;
+}
+
+void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_symmetry) {
+    if (!signal || len == 0 || shape_symmetry == 0) return;
+    
+    double phi = 1.618033988749895;  // Golden ratio
+    
+    // Apply modulation based on geometric symmetry
+    for (size_t i = 0; i < len; i++) {
+        double t = (double)i / (double)len;
+        
+        // Calculate symmetry angle
+        double angle = t * (double)shape_symmetry * 2.0 * PRIME_PI;
+        
+        // Apply golden ratio scaling
+        double scale = 1.0 + 0.1 * prime_cos(angle / phi);
+        
+        signal[i] *= scale;
+    }
+}

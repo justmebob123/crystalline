@@ -16,6 +16,7 @@
 #define STATISTICS_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 /* ============================================================================
@@ -238,5 +239,65 @@ double stats_sum(const double* values, size_t size);
  * @return Sum of squares
  */
 double stats_sum_of_squares(const double* values, size_t size);
+
+/* ============================================================================
+ * Entropy and Information Theory
+ * ============================================================================ */
+
+/**
+ * @brief Calculate Shannon entropy
+ * 
+ * Computes H = -Σ p(i) * log₂(p(i))
+ * 
+ * @param signal Input signal (will be normalized to probabilities)
+ * @param size Signal length
+ * @return Shannon entropy in bits
+ */
+double stats_shannon_entropy(const double* signal, size_t size);
+
+/**
+ * @brief Recursive entropy reduction
+ * 
+ * Reduces search space entropy by applying random cuts.
+ * Used for search space reduction in optimization and cryptography.
+ * 
+ * @param initial_bits Initial entropy in bits
+ * @param steps Number of reduction steps
+ * @param cut_min Minimum cut fraction (0.0 to 1.0)
+ * @param cut_max Maximum cut fraction (0.0 to 1.0)
+ * @return Reduced entropy in bits
+ */
+double stats_entropy_reduction(double initial_bits, uint32_t steps,
+                                double cut_min, double cut_max);
+
+/**
+ * @brief Compute modular probability distribution
+ * 
+ * Calculates: p[i] = (value % prime[i]) / prime[i]
+ * 
+ * @param value Input value
+ * @param primes Array of primes
+ * @param num_primes Number of primes
+ * @param prob_dist Output probability distribution (pre-allocated)
+ * @return Sum of probabilities
+ */
+double stats_modular_probability(uint64_t value, const uint64_t* primes,
+                                  size_t num_primes, double* prob_dist);
+
+/**
+ * @brief Compute entropy residuals from layered data
+ * 
+ * Calculates layer-wise entropy and folds into golden ratio bounds.
+ * 
+ * @param layers Array of layer values
+ * @param num_layers Number of layers
+ * @param primes Array of primes for modular calculations
+ * @param num_primes Number of primes
+ * @param phi_scale Golden ratio scale factor
+ * @return Entropy residual
+ */
+double stats_entropy_residuals(const uint64_t* layers, size_t num_layers,
+                                const uint64_t* primes, size_t num_primes,
+                                double phi_scale);
 
 #endif /* STATISTICS_H */

@@ -28,6 +28,8 @@ SOURCES = src/numerical.c \
           src/lattice_embeddings.c \
           src/lattice_embeddings_bigfixed.c \
           src/loss_functions_bigfixed.c \
+          src/tensor_ops.c \
+          src/qk_mapping.c \
           src/bigfixed_math_wrappers.c
 
 # Object files

@@ -2,6 +2,8 @@
 #define CYMATIC_MODULATION_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +74,80 @@ void analyze_gradient_spectrum(
     double* spectrum,
     uint32_t num_bins
 );
+
+/* ============================================================================
+ * Extended Cymatic Functions for Signal Processing
+ * ============================================================================ */
+
+/**
+ * @brief Simulate cymatic wave pattern
+ * 
+ * Generates wave pattern: Σ [sin(p[i] * x) + cos(p[i+1] * x)]
+ * 
+ * @param output Output signal (pre-allocated)
+ * @param len Signal length
+ * @param primes Prime frequencies
+ * @param num_primes Number of primes
+ * @param shape_symmetry Geometric symmetry (12=dodeca, 20=icosa, 6=cube)
+ */
+void cymatic_simulate_wave(double* output, size_t len,
+                           const uint64_t* primes, size_t num_primes,
+                           uint32_t shape_symmetry);
+
+/**
+ * @brief Detect harmonic alignment
+ * 
+ * Checks if signal has frequency peaks aligned with target primes.
+ * 
+ * @param signal Input signal
+ * @param len Signal length
+ * @param target_primes Target prime frequencies
+ * @param num_primes Number of target primes
+ * @return true if >50% of primes show alignment
+ */
+bool cymatic_detect_alignment(const double* signal, size_t len,
+                               const uint64_t* target_primes, size_t num_primes);
+
+/**
+ * @brief Calculate resonance score
+ * 
+ * Measures signal strength at prime frequencies.
+ * 
+ * @param signal Input signal
+ * @param len Signal length
+ * @param primes Prime frequencies
+ * @param num_primes Number of primes
+ * @return Resonance score (0.0 to 1.0)
+ */
+double cymatic_resonance_score(const double* signal, size_t len,
+                                const uint64_t* primes, size_t num_primes);
+
+/**
+ * @brief Find frequency peaks
+ * 
+ * Detects local maxima in signal.
+ * 
+ * @param signal Input signal
+ * @param len Signal length
+ * @param peak_indices Output peak indices (pre-allocated)
+ * @param max_peaks Maximum peaks to find
+ * @param threshold Minimum peak height
+ * @return Number of peaks found
+ */
+size_t cymatic_find_peaks(const double* signal, size_t len,
+                          size_t* peak_indices, size_t max_peaks,
+                          double threshold);
+
+/**
+ * @brief Apply geometric modulation
+ * 
+ * Modulates signal based on geometric symmetry.
+ * 
+ * @param signal Signal to modulate (modified in place)
+ * @param len Signal length
+ * @param shape_symmetry Symmetry order (12, 20, 6, etc.)
+ */
+void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_symmetry);
 
 #ifdef __cplusplus
 }

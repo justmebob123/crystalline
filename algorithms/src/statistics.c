@@ -330,3 +330,147 @@ double stats_sum_of_squares(const double* values, size_t size) {
     }
     return sum;
 }
+
+/* ============================================================================
+ * Entropy and Information Theory
+ * ============================================================================ */
+
+double stats_shannon_entropy(const double* signal, size_t size) {
+    if (!signal || size == 0) return 0.0;
+    
+    // Normalize to probabilities
+    double sum = 0.0;
+    for (size_t i = 0; i < size; i++) {
+        double val = signal[i];
+        if (val < 0.0) val = -val;  // Absolute value
+        sum += val;
+    }
+    
+    if (sum == 0.0) return 0.0;
+    
+    // Calculate Shannon entropy: H = -Σ p(i) * log₂(p(i))
+    double entropy = 0.0;
+    for (size_t i = 0; i < size; i++) {
+        double val = signal[i];
+        if (val < 0.0) val = -val;
+        double p = val / sum;
+        
+        if (p > 0.0) {
+            // Use prime_log2 for log base 2
+            double log2_p = prime_log2(p);
+            entropy -= p * log2_p;
+        }
+    }
+    
+    return entropy;
+}
+
+double stats_entropy_reduction(double initial_bits, uint32_t steps,
+                                double cut_min, double cut_max) {
+    if (steps == 0) return initial_bits;
+    if (cut_min < 0.0) cut_min = 0.0;
+    if (cut_max > 1.0) cut_max = 1.0;
+    if (cut_min >= cut_max) return initial_bits;
+    
+    double current_bits = initial_bits;
+    
+    for (uint32_t step = 0; step < steps; step++) {
+        // Random cut fraction between cut_min and cut_max
+        // Using golden ratio for deterministic "randomness"
+        double phi = 1.618033988749895;
+        double t = (double)(step + 1) * phi;
+        t = t - (uint64_t)t;  // Fractional part
+        
+        double cut_fraction = cut_min + t * (cut_max - cut_min);
+        
+        // Reduce entropy: new_bits = old_bits + log₂(1 - cut_fraction)
+        double reduction = prime_log2(1.0 - cut_fraction);
+        current_bits += reduction;  // reduction is negative
+        
+        if (current_bits < 0.0) current_bits = 0.0;
+    }
+    
+    return current_bits;
+}
+
+double stats_modular_probability(uint64_t value, const uint64_t* primes,
+                                  size_t num_primes, double* prob_dist) {
+    if (!primes || !prob_dist || num_primes == 0) return 0.0;
+    
+    double sum = 0.0;
+    
+    for (size_t i = 0; i < num_primes; i++) {
+        if (primes[i] == 0) {
+            prob_dist[i] = 0.0;
+            continue;
+        }
+        
+        uint64_t remainder = value % primes[i];
+        double p = (double)remainder / (double)primes[i];
+        prob_dist[i] = p;
+        sum += p;
+    }
+    
+    return sum;
+}
+
+double stats_entropy_residuals(const uint64_t* layers, size_t num_layers,
+                                const uint64_t* primes, size_t num_primes,
+                                double phi_scale) {
+    if (!layers || !primes || num_layers == 0 || num_primes == 0) {
+        return 0.0;
+    }
+    
+    double phi = 1.618033988749895;  // Golden ratio
+    double total_residual = 0.0;
+    
+    // Allocate temporary probability distribution
+    double* prob_dist = (double*)malloc(num_primes * sizeof(double));
+    if (!prob_dist) return 0.0;
+    
+    for (size_t layer = 0; layer < num_layers; layer++) {
+        // Calculate modular probability distribution
+        double sum = stats_modular_probability(layers[layer], primes, 
+                                               num_primes, prob_dist);
+        
+        // Calculate entropy for this layer
+        double layer_entropy = 0.0;
+        for (size_t i = 0; i < num_primes; i++) {
+            if (sum > 0.0 && prob_dist[i] > 0.0) {
+                double p = prob_dist[i] / sum;
+                double log2_p = prime_log2(p);
+                layer_entropy -= p * log2_p;
+            }
+        }
+        
+        // Fold into golden ratio bounds
+        // residual = entropy mod (φ * scale)
+        double bound = phi * phi_scale;
+        if (bound > 0.0) {
+            // Use prime_fmod for modular arithmetic
+            while (layer_entropy >= bound) {
+                layer_entropy -= bound;
+            }
+            while (layer_entropy < 0.0) {
+                layer_entropy += bound;
+            }
+        }
+        
+        total_residual += layer_entropy;
+    }
+    
+    free(prob_dist);
+    
+    // Final folding
+    double final_bound = phi * phi_scale * (double)num_layers;
+    if (final_bound > 0.0) {
+        while (total_residual >= final_bound) {
+            total_residual -= final_bound;
+        }
+        while (total_residual < 0.0) {
+            total_residual += final_bound;
+        }
+    }
+    
+    return total_residual;
+}
