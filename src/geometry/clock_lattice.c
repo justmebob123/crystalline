@@ -190,7 +190,7 @@ bool is_sacred_position(BabylonianClockPosition pos) {
  */
 void map_token_to_clock_lattice(uint32_t token_id __attribute__((unused)), 
                                 uint64_t prime, 
-                                int prime_index, float* coords) {
+                                int prime_index, double* coords) {
     // Get clock position
     BabylonianClockPosition clock_pos = map_prime_index_to_clock(prime_index);
     

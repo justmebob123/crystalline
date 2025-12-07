@@ -195,7 +195,7 @@ static inline void cllm_kissing_spheres_stats(CLLMModel* model) {
 
 static inline void cllm_report_sphere_position(
     CLLMModel* model,
-    struct CLLMMetrics* metrics,
+    CLLMMetrics* metrics,
     int thread_id
 ) {
     cllm_threading_report_position(model, metrics, thread_id);

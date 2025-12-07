@@ -80,7 +80,7 @@ bool is_sacred_position(BabylonianClockPosition pos);
  * @param coords Output: 3D coordinates [x, y, z]
  */
 void map_token_to_clock_lattice(uint32_t token_id, uint64_t prime, 
-                                int prime_index, float* coords);
+                                int prime_index, double* coords);
 
 /**
  * Get ring radius for visualization

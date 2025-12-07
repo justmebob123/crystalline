@@ -252,7 +252,7 @@ int cllm_embeddings_refine_all_with_neighbors(
         return -1;
     }
     
-    printf("Refining all embeddings with neighbor influence (strength=%.2.0)...\n", 
+    printf("Refining all embeddings with neighbor influence (strength=%.2f)...\n", 
            influence_strength);
     
     // Create temporary buffer for all refined embeddings
@@ -391,7 +391,7 @@ int cllm_embeddings_iterative_refinement(
         return -1;
     }
     
-    printf("Applying iterative neighbor refinement (%d iterations, strength=%.2.0)...\n",
+    printf("Applying iterative neighbor refinement (%d iterations, strength=%.2f)...\n",
            num_iterations, influence_strength);
     
     for (int iter = 0; iter < num_iterations; iter++) {
