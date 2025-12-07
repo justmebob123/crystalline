@@ -223,14 +223,137 @@
 - [x] Verify integration with refactored architecture (VERIFIED - fully compatible)
 - [x] Document results (PHASE_6_UNIFIED_TOOL_TEST_REPORT.md created)
 
-## CRITICAL BUG FIXED ✅
+## Phase 7: Fix NaN Precision Issues 🚨 CRITICAL - IN PROGRESS
 
-**Blocking Issue Resolved:** Shared memory segmentation fault
+### 7.1: Identify All Float-to-Double Conversions ✅ COMPLETE
+- [x] Scan entire codebase for float declarations (DONE - 303 instances found)
+- [x] Identify all NaN/Inf checks using float (DONE - documented)
+- [x] Document all precision-sensitive operations (DONE - PRECISION_AUDIT_RESULTS.md)
+- [x] Create comprehensive list of files to fix (DONE - 20+ files identified)
+
+### 7.2: Fix NaN Initialization in cllm_lattice_cache.c ✅ COMPLETE
+- [x] Change float nan_value to double nan_value (DONE)
+- [x] Verify all NaN checks use prime_isnan() double version (VERIFIED)
+- [ ] Test model creation with fixed code
+- [ ] Verify no NaN warnings in inference
+
+### 7.3: Comprehensive Precision Audit ✅ COMPLETE
+- [x] Search for all float declarations in src/ai/ (DONE - found in 20+ files)
+- [x] Search for all 0.0f literals (DONE - 303 instances found)
+- [x] Search for all (float) casts (DONE - documented)
+- [ ] Replace all with double precision equivalents (IN PROGRESS)
+- [ ] Verify no precision loss in any computation
+
+**CRITICAL FINDINGS:**
+- 303 float literals across 20+ files
+- Major inconsistency: data structures use double, computations use float
+- Priority 1 files: cllm_attention.c (25), cllm_training.c (27), cllm_training_threaded.c (18)
+- Priority 2 files: cllm_optimizer.c (46+17), cllm_symmetry.c (17), cllm_root_word_modeling.c (16)
+- See PRECISION_AUDIT_RESULTS.md for complete analysis
+
+### 7.4: High-Complexity Stress Tests
+- [ ] Create test with vocab size > 1,000,000 (exceeds float range)
+- [ ] Create test with embedding dim > 10,000
+- [ ] Create test with very large model (billions of parameters)
+- [ ] Test extreme values (near double max/min)
+- [ ] Verify zero precision loss in all tests
+
+### 7.5: Verification and Documentation
+- [ ] Run all 187 tests with fixes
+- [ ] Run Valgrind on stress tests
+- [ ] Create PRECISION_FIX_REPORT.md
+- [ ] Update MASTER_PLAN.md with precision requirements
+- [ ] Commit all fixes with detailed message
+
+## Phase 8: Comprehensive Benchmark Suite 🎯 HIGH PRIORITY
+
+### 8.1: Design Benchmark Architecture
+- [ ] Review SECONDARY_OBJECTIVES.md benchmark requirements
+- [ ] Design benchmark tab structure for UI
+- [ ] Plan benchmark categories and sub-menus
+- [ ] Define benchmark data format and storage
+- [ ] Create benchmark results visualization plan
+
+### 8.2: Core Benchmark Categories
+
+#### 8.2.1: Algorithm Benchmarks
+- [ ] Sphere threading performance (various sizes)
+- [ ] Visualization rendering speed (2D/3D/crystalline)
+- [ ] Memory management efficiency
+- [ ] Lock-free queue throughput
+- [ ] Hierarchical prime generation speed
+- [ ] Batch processing performance
+
+#### 8.2.2: Model Benchmarks
+- [ ] Model creation time (various configs)
+- [ ] Embedding initialization speed
+- [ ] Forward pass latency
+- [ ] Inference throughput (tokens/sec)
+- [ ] Memory usage per model size
+- [ ] Cache efficiency metrics
+
+#### 8.2.3: Training Benchmarks
+- [ ] Training speed (samples/sec)
+- [ ] Gradient computation time
+- [ ] Backpropagation performance
+- [ ] Multi-threaded scaling (1-12 threads)
+- [ ] Batch size impact on speed
+- [ ] Convergence rate analysis
+
+#### 8.2.4: Precision Benchmarks
+- [ ] Double vs float accuracy comparison
+- [ ] BigFixed precision validation
+- [ ] Numerical stability tests
+- [ ] Extreme value handling
+- [ ] Precision loss detection
+
+#### 8.2.5: Architecture-Specific Benchmarks
+- [ ] 12-fold symmetry overhead
+- [ ] Kissing spheres neighbor lookup speed
+- [ ] Lattice formula computation time
+- [ ] Angular position calculation speed
+- [ ] NTT attention vs standard (when implemented)
+- [ ] Cymatic frequency modulation impact
+
+### 8.3: Benchmark Implementation
+- [ ] Create `benchmarks/` directory structure
+- [ ] Implement benchmark framework
+- [ ] Create benchmark runner script
+- [ ] Implement result collection and storage
+- [ ] Create benchmark comparison tools
+
+### 8.4: UI Integration
+- [ ] Design benchmark tab layout
+- [ ] Create sub-menus for each category
+- [ ] Implement real-time benchmark execution
+- [ ] Create result visualization (charts/graphs)
+- [ ] Add benchmark history tracking
+- [ ] Implement benchmark comparison view
+
+### 8.5: Documentation and Validation
+- [ ] Document all benchmarks
+- [ ] Create benchmark usage guide
+- [ ] Validate benchmark accuracy
+- [ ] Create baseline results
+- [ ] Document performance expectations
+
+## CRITICAL BUGS
+
+### ✅ Bug #1: Shared Memory Segmentation Fault (FIXED)
 - **Root Cause:** NULL function pointer dereference in shared_memory_free()
 - **Impact:** Would crash hierarchical kissing spheres implementation
 - **Fix:** Added NULL check before calling free_fn
 - **Verification:** All 63 algorithm tests passing (100%)
 - **Memory Safety:** Valgrind clean - zero leaks, zero errors
 
+### 🚨 Bug #2: NaN Precision Loss (ACTIVE - BLOCKING)
+- **Root Cause:** Float-to-double conversion in NaN initialization
+- **Location:** `src/ai/cllm_lattice_cache.c:205`
+- **Issue:** `float nan_value = 0.0f / 0.0f;` then assigned to `double embeddings[i]`
+- **Impact:** Precision loss, NaN warnings in inference, potential computation errors
+- **Previous Fix:** Most NaN errors resolved by enforcing double precision
+- **Remaining:** This one instance still uses float for NaN marker
+- **Priority:** CRITICAL - Must fix before production use
+
 ## Current Focus
-✅ ALL PHASES COMPLETE - Architecture refactoring successfully finished!
+🚨 CRITICAL: Fix NaN precision issues and create comprehensive benchmark suite

@@ -200,7 +200,9 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
     double* embeddings = model->embeddings.embeddings;
     
     // Mark all embeddings as uninitialized using NaN (0.0/0.0)
-    float nan_value = 0.0f / 0.0f;
+    // CRITICAL FIX: Use double precision for NaN marker (not float)
+    // This ensures consistent precision throughout the system
+    double nan_value = 0.0 / 0.0;
     for (uint32_t i = 0; i < vocab_size * embedding_dim; i++) {
         embeddings[i] = nan_value;  // Special marker for uninitialized
     }
