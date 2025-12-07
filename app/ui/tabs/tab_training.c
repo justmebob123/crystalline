@@ -1024,31 +1024,22 @@ void draw_training_tab(SDL_Renderer* renderer, AppState* state) {
         init_training_tab(state);
     }
     
-    // Populate model dropdown (scan registry and update if needed)
-    static uint32_t last_model_count = 0;
-    if (g_training_ui.model_dropdown) {
-        // Scan registry to ensure we have latest models
-        model_registry_scan();
+    // Populate model dropdown once (registry already scanned at startup)
+    static bool dropdown_populated = false;
+    if (!dropdown_populated && g_training_ui.model_dropdown) {
         uint32_t model_count = model_registry_count();
         
-        // Update dropdown if model count changed
-        if (model_count != last_model_count) {
-            if (model_count > 0) {
-                char** model_names = malloc(model_count * sizeof(char*));
-                if (model_names) {
-                    for (uint32_t i = 0; i < model_count; i++) {
-                        const ModelMetadata* metadata = model_registry_get_at_index(i);
-                        model_names[i] = metadata ? (char*)metadata->name : "";
-                    }
-                    crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
-                    printf("TRAINING MODEL DROPDOWN: Populated with %u models\n", model_count);
-                    free(model_names);
-                    last_model_count = model_count;
+        if (model_count > 0) {
+            char** model_names = malloc(model_count * sizeof(char*));
+            if (model_names) {
+                for (uint32_t i = 0; i < model_count; i++) {
+                    const ModelMetadata* metadata = model_registry_get_at_index(i);
+                    model_names[i] = metadata ? (char*)metadata->name : "";
                 }
-            } else {
-                // No models available
-                crystalline_dropdown_set_options(g_training_ui.model_dropdown, NULL, 0);
-                last_model_count = 0;
+                crystalline_dropdown_set_options(g_training_ui.model_dropdown, model_names, (int)model_count);
+                printf("TRAINING MODEL DROPDOWN: Populated with %u models\n", model_count);
+                free(model_names);
+                dropdown_populated = true;
             }
         }
     }
