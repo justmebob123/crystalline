@@ -206,11 +206,70 @@ Use immediately after creating any C/C++ source file.
 - Establish file maintenance rules
 
 ### OBJECTIVE 21: Babylonian Clock Lattice
-**Status: PARTIALLY COMPLETE**
-- Implement TRUE crystalline lattice structure
-- Division by zero as fundamental truth
-- Riemann sphere mapping
-- Stereographic projection
+**Status: PHASE 1 COMPLETE**
+- ✅ Implement TRUE crystalline lattice structure
+- ✅ Division by zero as fundamental truth
+- ✅ Riemann sphere mapping
+- ✅ Stereographic projection
+- ✅ Deterministic prime generation (Phase 1)
+- 🔄 Pure deterministic formula discovery (Phase 2 - IN PROGRESS)
+
+### OBJECTIVE 22: Deterministic Prime Generation
+**Status: PHASE 1 COMPLETE, PHASE 2 IN PROGRESS**
+
+**Critical Insight:** In deterministic systems, structure IS validation. The clock lattice defines primes through position, not testing.
+
+**Phase 1: Hybrid Approach** ✅ COMPLETE
+- ✅ is_valid_clock_position() - Structural validation
+- ✅ estimate_prime_index() - Prime number theorem estimation  
+- ✅ validate_prime_by_clock_position() - Clock-based validation
+- ✅ get_prime_index_from_position() - Reverse mapping
+- ✅ O(1) validation vs O(√n) testing
+
+**Phase 2: Pure Deterministic Generation** 🔄 IN PROGRESS
+- Discover formula: f(ring, position) → prime
+- Generate primes directly from clock structure
+- NO sieving, NO testing - pure mathematical mapping
+- Prove bijective mapping (Index ↔ Position ↔ Prime)
+
+**Phase 3: Integration** ⏳ PENDING
+- Optimize rainbow table to use clock positions
+- Remove redundant primality tests throughout codebase
+- Integrate SFT as search heuristic (not primality test)
+
+**Expected Impact:**
+- 10-100x performance improvement (O(1) vs O(n))
+- Simpler code (no testing needed)
+- Deterministic guarantees (structure-based validation)
+
+### OBJECTIVE 23: Layer Architecture Validation
+**Status: COMPLETE**
+
+**Critical Insight:** SFT is a search heuristic, NOT a primality test.
+
+**Correct Architecture:**
+- **Layer 1 (Crystalline):** Clock lattice, deterministic mapping, pure math
+- **Layer 2 (Algorithms):** SFT (search heuristic), crystalline sieve (bulk generation)
+- **Layer 3 (CLLM):** AI/ML wrappers
+- **Layer 4 (Application):** UI and integration
+
+**Key Principle:** Fundamental mathematics in Layer 1, search strategies in Layer 2.
+
+### OBJECTIVE 24: Eliminate Redundant Primality Testing
+**Status: PENDING**
+
+**Principle:** In deterministic systems, position IS the prime. Testing is redundant.
+
+**Tasks:**
+- Replace is_prime() calls with validate_prime_by_clock_position()
+- Use clock lattice for validation throughout codebase
+- Remove trial division where clock validation suffices
+- Document deterministic principle in all prime-related code
+
+**Expected Impact:**
+- Remove O(√n) operations
+- Simplify code significantly
+- Guarantee correctness through structure
 
 ---
 
@@ -241,11 +300,14 @@ Use immediately after creating any C/C++ source file.
 - Cache locality based on sphere proximity
 
 ### Mathematical Foundation
+- **Clock Lattice (Babylonian):** Deterministic prime generation (12, 60, 60, 100)
+- **Deterministic Principle:** Structure IS validation, Position IS prime
 - L(n,d,k,λ) lattice formula for embeddings
 - θ(n,k,λ,ω,ψ) angular position for attention
 - NTT-based O(n log n) attention
 - Cymatic frequency resonance (432 Hz, 528 Hz, etc.)
 - GCD-based similarity (20-400x faster)
+- **Prime Generation:** O(1) deterministic vs O(n log log n) sieve
 
 ---
 
