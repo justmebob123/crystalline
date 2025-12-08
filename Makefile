@@ -383,7 +383,9 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/cllm_model_manager \
        tools/init_lattice_embeddings tools/benchmark_ntt_attention \
        tools/validate_lattice tools/analyze_cymatic_resonance \
-       tools/visualize_angular_positions tools/ui_layout_analyzer
+       tools/visualize_angular_positions tools/ui_layout_analyzer \
+       tools/benchmark_prime_validation \
+       tools/benchmark_prime_validation
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
@@ -556,6 +558,14 @@ tools/diagnose_inference: $(CLLM_LIB)
 	$(CC) $(CFLAGS) -o tools/diagnose_inference tools/diagnose_inference.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference diagnostic tool built: tools/diagnose_inference"
+
+tools/benchmark_prime_validation: $(CRYSTALLINE_LIB)
+	@echo "Building prime validation benchmark tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/benchmark_prime_validation tools/benchmark_prime_validation.c \
+		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Prime validation benchmark tool built: tools/benchmark_prime_validation"
+
 
 tools/fix_html_entities:
 	@echo "Building HTML entity fixer..."

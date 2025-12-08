@@ -460,29 +460,45 @@ uint32_t estimate_prime_index(uint64_t prime_value) {
  */
 bool validate_prime_by_clock_position(uint64_t candidate) {
     if (candidate < 2) return false;
+    if (candidate == 2 || candidate == 3) return true;
+    if (candidate % 2 == 0 || candidate % 3 == 0) return false;
     
-    // Estimate prime index
-    uint32_t estimated_index = estimate_prime_index(candidate);
-    
-    // Map to clock position
-    BabylonianClockPosition pos = map_prime_index_to_clock(estimated_index);
-    
-    // Check if position is structurally valid
-    if (!is_valid_clock_position(pos)) {
+    // Fast filter: Check 12-fold symmetry
+    // Primes > 3 must be in {1, 5, 7, 11} mod 12
+    uint64_t mod12 = candidate % 12;
+    if (mod12 != 1 && mod12 != 5 && mod12 != 7 && mod12 != 11) {
         return false;
     }
     
-    // Additional validation: Check 12-fold symmetry
-    // Primes > 3 must be in {1, 5, 7, 11} mod 12
-    if (candidate > 3) {
-        uint64_t mod12 = candidate % 12;
-        if (mod12 != 1 && mod12 != 5 && mod12 != 7 && mod12 != 11) {
+    // HYBRID APPROACH: The mod 12 check is necessary but not sufficient
+    // Until we discover the pure deterministic formula (OBJECTIVE 22 Phase 2),
+    // we must perform actual primality testing on candidates that pass the filter
+    //
+    // This gives us ~3x speedup over naive trial division while maintaining
+    // 100% accuracy. The mod 12 filter eliminates ~2/3 of candidates.
+    //
+    // Trial division using 6k±1 optimization
+    // All primes > 3 are of the form 6k±1
+    for (uint64_t i = 5; i * i <= candidate; i += 6) {
+        if (candidate % i == 0 || candidate % (i + 2) == 0) {
             return false;
         }
     }
     
-    // In pure deterministic system, this would be sufficient
-    // For hybrid approach, caller may want to do additional verification
+    // Optional: Estimate prime index and validate clock position
+    // This provides additional structural validation
+    uint32_t estimated_index = estimate_prime_index(candidate);
+    BabylonianClockPosition pos = map_prime_index_to_clock(estimated_index);
+    
+    // Check if position is structurally valid
+    // This is a sanity check - if the clock lattice theory is correct,
+    // all primes should map to valid positions
+    if (!is_valid_clock_position(pos)) {
+        // This should never happen for actual primes
+        // If it does, it indicates a problem with our clock lattice theory
+        return false;
+    }
+    
     return true;
 }
 
