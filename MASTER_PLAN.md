@@ -452,47 +452,57 @@ See OBJECTIVE_28_DETAILED_SPEC.md for complete specification.
 
 ---
 
-### OBJECTIVE 29: Universal Recovery Toolkit - Production-Grade Implementation
+### OBJECTIVE 29: Universal Recovery Toolkit - Production Systems
 **Status: DESIGN → IMPLEMENTATION (After OBJECTIVE 28)**
-**Priority: 🔴 CRITICAL - Production-Ready Universal Recovery System**
+**Priority: 🔴 CRITICAL - Production-Ready Recovery Systems**
 
-Create a world-class, production-ready universal recovery toolkit with fully functional, robust, feature-packed tools.
+Create **8 unified, production-ready recovery tools** that demonstrate the Universal Blind Recovery Algorithm.
 
 **Dependencies:** OBJECTIVE 28 (All 6 phases complete)
 
-**Revised Scope:**
-- **40 Fully Functional CLI Tools:** Complete implementations for every subcategory (5 per category × 8 categories)
-- **40 Comprehensive UI Tabs:** Full feature parity with CLI tools
-- **Every Failure Mode:** Recognize and handle ALL failure circumstances per category
-- **Real-Time Corruption:** Tools generate corruption internally, no pre-corrupted files
-- **Unabridged Solutions:** Complete solutions for every class of problem engineers/scientists face
-- **Production Quality:** Robust error handling, logging, validation, suitable for deployment
+**Key Principle:** TESTS simulate failures, TOOLS recover from them.
 
-**8 Categories (5 subcategories each = 40 total):**
-1. **Geometric Structures:** Platonic, Archimedean, Johnson, Geodesic, 4D Polytopes
-2. **Signal Processing:** Audio, Time Series, Frequency Domain, Multi-Channel, Oscillations
-3. **Image Processing:** Natural, Medical, Synthetic, Multi-Resolution, Video
-4. **Network Topology:** Social, Computer, Biological, Transportation, Abstract Graphs
-5. **Cryptographic Data:** Hash Chains, Merkle Trees, Blockchain, Signatures, Encrypted
-6. **Scientific Computing:** Molecular, Crystal, Quantum, Simulation, Experimental
-7. **Machine Learning:** NN Weights, Embeddings, Checkpoints, Datasets, Architecture
-8. **Platonic Demonstrations:** Euler's Formula, Symmetry Groups, Duals, Golden Ratio, Sphere Packing
+**The 8 Production Tools:**
+1. **geometric-recovery** - All geometric data types (Platonic, Archimedean, Johnson, Geodesic, 4D Polytopes)
+2. **signal-recovery** - All signal data types (Audio, Time Series, Frequency, Multi-Channel, Oscillations)
+3. **image-recovery** - All image data types (Natural, Medical, Synthetic, Multi-Resolution, Video)
+4. **network-recovery** - All network data types (Social, Computer, Biological, Transportation, Abstract)
+5. **crypto-recovery** - All cryptographic data types (Hash Chains, Merkle Trees, Blockchain, Signatures, Encrypted)
+6. **scientific-recovery** - All scientific data types (Molecular, Crystal, Quantum, Simulation, Experimental)
+7. **ml-recovery** - All ML data types (Weights, Embeddings, Checkpoints, Datasets, Architecture)
+8. **platonic-demo** - Educational demonstrations (Euler, Symmetry, Duals, Golden Ratio, Sphere Packing)
 
-**Timeline:** 20 weeks (5 months)
+**Each Tool Features:**
+- Load corrupted data (multiple formats)
+- Detect corruption type and severity
+- Apply appropriate recovery algorithm (Phase 1-6)
+- Validate recovery quality
+- Export recovered data (multiple formats)
+- Visualize before/after
+- Generate recovery report
+- CLI + UI tab
+
+**Test Suite (Separate):**
+- Generates clean test data for all categories
+- Simulates all failure modes (dropout, noise, corruption, etc.)
+- Runs recovery tools on corrupted data
+- Validates recovery quality
+- Automated testing and benchmarking
+
+**Timeline:** 18 weeks (4.5 months)
 
 **Deliverables:**
-- ~20,000 lines of code (40 CLI tools + 40 UI tabs + infrastructure)
-- ~10,000 lines of tests
-- ~15,000 lines of documentation
-- 40 fully functional tools with complete feature sets
+- ~8,000 lines of code (8 CLI tools + 8 UI tabs + common library)
+- ~5,000 lines of tests (data generators + failure simulators + test runners)
+- ~5,000 lines of documentation
 
 **Purpose:**
-1. **Production Readiness:** Professional-grade tools for real-world deployment
-2. **Comprehensive Coverage:** Every failure mode for every data type
-3. **Feature-Rich:** Robust, feature-packed implementations
-4. **Universal Application:** Tools for every class of problem
+1. **Production Systems:** Real tools for real recovery, not simulators
+2. **Demonstration Platform:** Show recovery algorithm in action
+3. **Comprehensive Coverage:** All data types, all failure modes
+4. **Professional Quality:** Robust, documented, deployable
 
-See OBJECTIVE_29_REVISED_COMPREHENSIVE.md for complete specification.
+See OBJECTIVE_29_CORRECT_SPECIFICATION.md for complete specification.
 
 ---
 
