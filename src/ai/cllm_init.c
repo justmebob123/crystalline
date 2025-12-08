@@ -20,7 +20,6 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "../include/prime_float_math.h"

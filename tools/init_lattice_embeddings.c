@@ -11,7 +11,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
+#include "../include/cllm_inference.h"
 
 void print_usage(const char* program_name) {
     printf("Usage: %s <input_model.cllm> <output_model.cllm>\n", program_name);

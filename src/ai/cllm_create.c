@@ -1,7 +1,6 @@
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_lattice_embeddings.h"  // PHASE 2: Lattice formula integration
 #include "../include/ai/cllm_platonic.h"  // Platonic solid models
 #include "../include/clock_lattice.h"     // Clock lattice mapping
 #include <stdlib.h>

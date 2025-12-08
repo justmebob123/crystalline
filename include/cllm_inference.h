@@ -58,6 +58,10 @@ void cllm_project_to_vocab(CLLMInference* inf, float* hidden_state, float* logit
 float cllm_embedding_norm(float* embedding, int dim);
 void cllm_normalize_embedding(float* embedding, int dim);
 
+/* Embedding initialization functions */
+void cllm_init_embeddings(CLLMModel* model);
+void cllm_init_embeddings_with_lattice(CLLMModel* model);  // Legacy wrapper
+
 /* Attention functions */
 void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len);
