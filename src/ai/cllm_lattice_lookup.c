@@ -113,7 +113,7 @@ float cllm_get_embedding_from_pattern(uint32_t token_id, uint32_t dim,
  * This is INSTANT - no L_lattice computation!
  */
 void cllm_embeddings_init_from_patterns(CLLMModel* model) {
-    if (!model || !model->embeddings.embeddings) {
+    if (!model || !model->embeddings) {
         fprintf(stderr, "ERROR: Invalid model or embeddings\n");
         return;
     }
@@ -128,7 +128,7 @@ void cllm_embeddings_init_from_patterns(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     // Fill embeddings using direct lookup
     for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {

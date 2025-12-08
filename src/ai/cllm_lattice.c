@@ -209,7 +209,7 @@ void cllm_process_kissing_spheres(CLLMLatticePoint* point,
             if (neighbor_offset + dim >= gradient_size) break;
             
             // Get neighbor's embedding value
-            double neighbor_value = model->embeddings.embeddings[neighbor_offset + dim];
+            double neighbor_value = model->embeddings[neighbor_offset + dim];
             
             // Add weighted contribution to gradient (10% neighbor influence)
             local_gradients[center_offset + dim] += 

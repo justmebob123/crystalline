@@ -268,7 +268,7 @@ uint32_t cvp_find_closest_token(CLLMModel* model, const float* query_embedding) 
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     uint32_t closest_token = 0;
     float min_distance = INFINITY;
@@ -301,7 +301,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     float* shortest = (float*)malloc(embed_dim * sizeof(float));
     float min_length = INFINITY;
@@ -405,7 +405,7 @@ void crystalline_prefetch_nearby(CrystallineAdvancedState* state,
     for (int i = 0; i < k; i++) {
         uint32_t nearby_token = nearby[i];
         if (nearby_token < model->vocab_size) {
-            double* embedding = &model->embeddings.embeddings[nearby_token * model->embedding_dim];
+            double* embedding = &model->embeddings[nearby_token * model->embedding_dim];
             __builtin_prefetch(embedding, 0, 3);  // Prefetch for read, high temporal locality
         }
     }

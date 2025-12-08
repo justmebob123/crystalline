@@ -248,7 +248,7 @@ int cllm_validate_model(CLLMModel* model) {
     }
     
     // Check embeddings
-    if (!model->embeddings.embeddings) {
+    if (!model->embeddings) {
         fprintf(stderr, "Error: Embeddings not allocated\n");
         return 0;
     }
@@ -316,10 +316,10 @@ int cllm_check_model_health(CLLMModel* model) {
     int issues = 0;
     
     // Check embeddings
-    if (model->embeddings.embeddings) {
+    if (model->embeddings) {
         uint32_t size = model->embeddings.vocab_size * model->embeddings.embedding_dim;
         for (uint32_t i = 0; i < size; i++) {
-            double val = model->embeddings.embeddings[i];  // FIXED: Use double, not float
+            double val = model->embeddings[i];  // FIXED: Use double, not float
             if (prime_isnan(val) || prime_isinf(val)) {  // FIXED: Use double versions
                 fprintf(stderr, "Warning: NaN/Inf in embeddings at index %u\n", i);
                 issues++;

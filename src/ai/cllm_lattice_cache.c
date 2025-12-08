@@ -180,7 +180,7 @@ double cllm_lattice_cache_get(uint64_t prime, uint32_t dim, uint32_t symmetry_gr
  * This is 285x faster than computing L_lattice() for every token-dimension pair.
  */
 void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
-    if (!model || !model->embeddings.embeddings) {
+    if (!model || !model->embeddings) {
         fprintf(stderr, "ERROR: Invalid model or embeddings\n");
         return;
     }
@@ -197,7 +197,7 @@ void cllm_embeddings_init_lattice_cached(CLLMModel* model) {
     // Mark all embeddings as uninitialized (NaN)
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     // Mark all embeddings as uninitialized using NaN (0.0/0.0)
     // CRITICAL FIX: Use double precision for NaN marker (not float)
@@ -240,7 +240,7 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id) {
     
     CLLMToken* token = &model->tokens[token_id];
     uint32_t embedding_dim = model->embeddings.embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     uint32_t offset = token_id * embedding_dim;
     
     // Check if already computed

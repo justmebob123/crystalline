@@ -188,7 +188,7 @@ typedef struct {
  * ============================================================================
  */
 
-// Clock position on 12-hour face
+// Legacy clock position on 12-hour face (DEPRECATED - use BabylonianClockPosition from clock_lattice.h)
 typedef struct {
     int degree;               // Degree on 361-circle (0-360)
     double angle_radians;     // Angle in radians
@@ -198,7 +198,7 @@ typedef struct {
     double theta;             // Theta angle (for lattice_core compatibility)
     double r;                 // Radial distance (for lattice_core compatibility)
     uint8_t clock_pos;        // Clock position as uint8_t (for lattice_core compatibility)
-} ClockPosition;
+} LegacyClockPosition;
 
 // Quadrant folding information
 typedef struct {
@@ -262,7 +262,7 @@ typedef LatticeEmbed15D LatticeEmbed;
 
 // Complete clock mapping with all lattice properties
 typedef struct {
-    ClockPosition clock;      // Basic clock position
+    LegacyClockPosition clock;      // Basic clock position (legacy)
     double theta;             // θ(n,k,λ,ω,ψ)
     double r;                 // r(p)
     double O_exp;             // O(n,k,λ)

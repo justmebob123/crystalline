@@ -235,7 +235,7 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
  * 2. Otherwise: Use clock lattice + L(n,d,k,λ) formula
  */
 void cllm_init_embeddings(CLLMModel* model) {
-    if (!model || !model->embeddings.embeddings) {
+    if (!model || !model->embeddings) {
         fprintf(stderr, "ERROR: Invalid model or embeddings\n");
         return;
     }
@@ -244,23 +244,23 @@ void cllm_init_embeddings(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     // Check if model uses Platonic geometry
-    if (model->use_platonic_geometry && model->token_clock_positions) {
+    if (model->token_positions) {
         printf("  Using Platonic geometry + clock lattice initialization\n");
-        printf("  Solid: %s\n", model->platonic_solid_type == 0 ? "none" :
-               model->platonic_solid_type == 1 ? "Tetrahedron" :
-               model->platonic_solid_type == 2 ? "Cube" :
-               model->platonic_solid_type == 3 ? "Octahedron" :
-               model->platonic_solid_type == 4 ? "Dodecahedron" : "Icosahedron");
+        printf("  Solid: %s\n", 
+               model->solid_type == PLATONIC_TETRAHEDRON ? "Tetrahedron" :
+               model->solid_type == PLATONIC_CUBE ? "Cube" :
+               model->solid_type == PLATONIC_OCTAHEDRON ? "Octahedron" :
+               model->solid_type == PLATONIC_DODECAHEDRON ? "Dodecahedron" : "Icosahedron");
         printf("  Vertices: %u → Embedding: %u\n", model->geometry.vertices, embedding_dim);
         
         // Use clock lattice positions for initialization
-        BabylonianClockPosition* positions = (BabylonianClockPosition*)model->token_clock_positions;
+        ClockPosition* positions = model->token_positions;
         
         for (uint32_t token = 0; token < vocab_size; token++) {
-            BabylonianClockPosition pos = positions[token];
+            ClockPosition pos = positions[token];
             
             for (uint32_t dim = 0; dim < embedding_dim; dim++) {
                 // Combine clock position with dimensional frequency
@@ -413,7 +413,7 @@ int cllm_embedding_compute_neighbor_influence(
         if (neighbor_id >= model->vocab_size) continue;
         
         double weight = neighbor_weights[i];
-        double* neighbor_embedding = &model->embeddings.embeddings[
+        double* neighbor_embedding = &model->embeddings[
             neighbor_id * embed_dim
         ];
         
@@ -453,7 +453,7 @@ int cllm_embedding_compute_with_neighbors(
     uint32_t embed_dim = model->embeddings.embedding_dim;
     
     // Get original embedding
-    double* original_embedding = &model->embeddings.embeddings[
+    double* original_embedding = &model->embeddings[
         token_id * embed_dim
     ];
     
@@ -514,7 +514,7 @@ int cllm_embedding_refine_with_neighbors(
     }
     
     // Update embedding in model
-    double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
+    double* embedding = &model->embeddings[token_id * embed_dim];
     for (uint32_t d = 0; d < embed_dim; d++) {
         embedding[d] = (double)refined_embedding[d];
     }
@@ -564,7 +564,7 @@ int cllm_embeddings_refine_all_with_neighbors(
     
     // Update all embeddings at once
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
-        double* embedding = &model->embeddings.embeddings[i * embed_dim];
+        double* embedding = &model->embeddings[i * embed_dim];
         double* refined = &refined_embeddings[i * embed_dim];
         for (uint32_t d = 0; d < embed_dim; d++) {
             embedding[d] = (double)refined[d];
@@ -591,7 +591,7 @@ int cllm_embeddings_init_with_neighbors(
     printf("Initializing embeddings with neighbor influence...\n");
     
     // First, ensure embeddings are initialized
-    if (!model->embeddings.embeddings) {
+    if (!model->embeddings) {
         fprintf(stderr, "ERROR: Embeddings not initialized\n");
         return -1;
     }
@@ -705,7 +705,7 @@ int cllm_embeddings_iterative_refinement(
 static float** compute_embedding_covariance(CLLMModel* model) {
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     
     // Allocate covariance matrix
     float** cov = (float**)malloc(embed_dim * sizeof(float*));
@@ -918,7 +918,7 @@ float* lll_project_all_embeddings(LLLEmbeddingReducer* reducer, CLLMModel* model
     float* reduced_embeddings = (float*)malloc(vocab_size * reducer->reduced_dim * sizeof(float));
     
     for (uint32_t v = 0; v < vocab_size; v++) {
-        double* original = &model->embeddings.embeddings[v * reducer->original_dim];
+        double* original = &model->embeddings[v * reducer->original_dim];
         float* reduced = &reduced_embeddings[v * reducer->reduced_dim];
         lll_project_embedding(reducer, original, reduced);
     }
@@ -942,7 +942,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
     uint32_t embedding_dim = model->embeddings.embedding_dim;
     
     // Copy embedding from embedding matrix
-    double* embedding_matrix = model->embeddings.embeddings;
+    double* embedding_matrix = model->embeddings;
     size_t offset = token_id * embedding_dim;
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
@@ -990,7 +990,7 @@ void cllm_update_embedding(CLLMModel* model, uint32_t token_id,
     }
     
     uint32_t embedding_dim = model->embedding_dim;
-    double* embeddings = model->embeddings.embeddings;
+    double* embeddings = model->embeddings;
     size_t offset = token_id * embedding_dim;
     
     // Apply gradient update with optional harmonic modulation

@@ -784,9 +784,9 @@ void cllm_optimizer_step(CLLMTraining* training) {
     uint32_t vocab_size = model->vocab_size;
     size_t embed_params = vocab_size * embedding_dim;
     
-    if (model->embeddings.embeddings && training->gradients) {
+    if (model->embeddings && training->gradients) {
         for (size_t i = 0; i < embed_params; i++) {
-            model->embeddings.embeddings[i] -= lr * training->gradients[i] * gradient_scale;
+            model->embeddings[i] -= lr * training->gradients[i] * gradient_scale;
             training->gradients[i] = 0.0;  // Clear gradient after update
         }
     }
@@ -1227,7 +1227,7 @@ double cllm_train_epoch(CLLMTraining* training) {
             int count = 100;
             
             for (int i = 0; i < count; i++) {
-                sum_embed += prime_fabs(model->embeddings.embeddings[i]);
+                sum_embed += prime_fabs(model->embeddings[i]);
             }
             
             if (model->attention_layers && model->attention_layers[0].query_lattice) {
@@ -1374,7 +1374,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
-            double* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            double* embed_src = &model->embeddings[token_id * embed_dim];
             
             // Check if embedding is NaN (lazy initialization needed)
             if (prime_isnan(embed_src[0])) {
@@ -1499,7 +1499,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             double* logits = &training->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings[v * embed_dim];
                 
                 // Check if vocab embedding is NaN (lazy initialization needed)
                 if (prime_isnan(vocab_embed[0])) {
@@ -1597,7 +1597,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
             for (uint32_t d = 0; d < embed_dim; d++) {
                 double sum = 0.0;
                 for (uint32_t v = 0; v < vocab_size; v++) {
-                    sum += grad_log[v] * model->embeddings.embeddings[v * embed_dim + d];
+                    sum += grad_log[v] * model->embeddings[v * embed_dim + d];
                 }
                 grad_hid[d] = sum;
             }

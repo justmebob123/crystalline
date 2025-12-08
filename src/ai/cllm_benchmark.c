@@ -48,6 +48,39 @@ void get_memory_usage(MemoryUsage* usage) {
     usage->heap_size_kb = 0; // Would need malloc_info on Linux
 }
 
+// Helper function to calculate total weights in model
+static size_t cllm_calculate_num_weights(CLLMModel* model) {
+    size_t total = 0;
+    
+    // Embeddings
+    total += model->vocab_size * model->embedding_dim;
+    
+    // Positional encoding
+    total += model->max_seq_len * model->embedding_dim;
+    
+    // Layers
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        // Attention weights (Q, K, V, output)
+        total += 4 * model->embedding_dim * model->embedding_dim;
+        
+        // Feed-forward weights
+        total += model->embedding_dim * model->hidden_dim;  // w1
+        total += model->hidden_dim * model->embedding_dim;  // w2
+        total += model->hidden_dim;  // b1
+        total += model->embedding_dim;  // b2
+        
+        // Layer norm (2 per layer)
+        total += 2 * model->embedding_dim;  // gamma
+        total += 2 * model->embedding_dim;  // beta
+    }
+    
+    // Output projection
+    total += model->embedding_dim * model->vocab_size;
+    total += model->vocab_size;  // bias
+    
+    return total;
+}
+
 // Benchmark results structure
 typedef struct {
     double inference_time_ms;
@@ -256,7 +289,7 @@ BenchmarkResults cllm_benchmark_training_step(CLLMModel* model, size_t batch_siz
     // Allocate buffers
     uint32_t* input_ids = (uint32_t*)malloc(batch_size * seq_length * sizeof(uint32_t));
     uint32_t* target_ids = (uint32_t*)malloc(batch_size * seq_length * sizeof(uint32_t));
-    float* gradients = (float*)malloc(model->num_weights * sizeof(float));
+    float* gradients = (float*)malloc(cllm_calculate_num_weights(model) * sizeof(float));
     
     if (!input_ids || !target_ids || !gradients) {
         fprintf(stderr, "Failed to allocate buffers\n");
@@ -285,8 +318,8 @@ BenchmarkResults cllm_benchmark_training_step(CLLMModel* model, size_t batch_siz
         // 4. Optimizer step
         
         // Dummy computation
-        for (size_t j = 0; j < model->num_weights; j++) {
-            gradients[j] = (float)j / model->num_weights;
+        for (size_t j = 0; j < cllm_calculate_num_weights(model); j++) {
+            gradients[j] = (float)j / cllm_calculate_num_weights(model);
         }
     }
     
@@ -329,7 +362,7 @@ void cllm_run_benchmark_suite(CLLMModel* model) {
     printf("  Vocabulary Size: %lu\n", (unsigned long)model->vocab_size);
     printf("  Embedding Dimension: %lu\n", (unsigned long)model->embedding_dim);
     printf("  Number of Layers: %u\n", model->num_layers);
-    printf("  Total Parameters: %lu\n", (unsigned long)model->num_weights);
+    printf("  Total Parameters: %lu\n", (unsigned long)cllm_calculate_num_weights(model));
     printf("\n");
     
     // Allocate test input
@@ -436,12 +469,12 @@ void cllm_generate_performance_report(CLLMModel* model, const char* output_file)
     fprintf(fp, "- Embedding Dimension: %lu\n", (unsigned long)model->embedding_dim);
     fprintf(fp, "- Number of Layers: %u\n", model->num_layers);
     fprintf(fp, "- Total Parameters: %lu (%.2f M)\n", 
-            (unsigned long)model->num_weights,
-            model->num_weights / 1000000.0);
+            (unsigned long)cllm_calculate_num_weights(model),
+            cllm_calculate_num_weights(model) / 1000000.0);
     fprintf(fp, "\n");
     
     fprintf(fp, "## Memory Footprint\n\n");
-    size_t model_size = model->num_weights * sizeof(float);
+    size_t model_size = cllm_calculate_num_weights(model) * sizeof(float);
     fprintf(fp, "- Model Weights: %.2f MB\n", model_size / (1024.0 * 1024.0));
     fprintf(fp, "- Tokens: %.2f KB\n", (model->vocab_size * sizeof(CLLMToken)) / 1024.0);
     fprintf(fp, "- Total Estimated: %.2f MB\n", 

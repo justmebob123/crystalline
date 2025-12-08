@@ -306,7 +306,7 @@ void cllm_adam_step_bigfixed(CLLMTraining* training, float learning_rate) {
             double v_hat = v[i] / bias_correction2;
             
             // Update parameters
-            model->embeddings.embeddings[i] -= learning_rate * m_hat / (prime_sqrt(v_hat) + epsilon);
+            model->embeddings[i] -= learning_rate * m_hat / (prime_sqrt(v_hat) + epsilon);
         }
     }
     

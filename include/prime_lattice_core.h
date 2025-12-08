@@ -27,7 +27,7 @@ int mobius_twist(int k);
 double theta_n(uint64_t n, int k, const char *lambda_phon,
                uint16_t omega, uint64_t p, uint64_t q, bool use_ratio);
 double r_n(uint64_t prime);
-void map_prime_to_clock_phonetic(uint64_t prime, ClockPosition *pos,
+void map_prime_to_clock_phonetic(uint64_t prime, LegacyClockPosition *pos,
                         const char *lambda_phon);
 uint64_t map_clock_to_prime(double theta, double r, uint8_t quadrant,
                             double tolerance, uint64_t max_search);

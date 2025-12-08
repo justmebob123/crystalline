@@ -188,11 +188,12 @@ void cllm_update_ema_weights(double* ema_weights, double* current_weights, size_
 
 /* Backward pass functions */
 void cllm_layer_norm_backward(CLLMLayerNorm* ln, double* input, double* grad_output, double* grad_input, double* grad_gamma, double* grad_beta);
-void cllm_feedforward_backward(FeedForwardLayer* layer, double* input, double* hidden, double* grad_output, double* grad_input, double* grad_w1, double* grad_w2, double* grad_b1, double* grad_b2);
-void cllm_attention_backward(AttentionLayer* layer, double* input, double* grad_output, double* grad_input,
-                            double* grad_query_weights, double* grad_key_weights, double* grad_value_weights,
-                            int seq_len);
-void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, double* grad_output, double* grad_embeddings, int batch_size);
+// Note: FeedForwardLayer, AttentionLayer, Embeddings are legacy types - using CLLMModel directly now
+// void cllm_feedforward_backward(FeedForwardLayer* layer, double* input, double* hidden, double* grad_output, double* grad_input, double* grad_w1, double* grad_w2, double* grad_b1, double* grad_b2);
+// void cllm_attention_backward(AttentionLayer* layer, double* input, double* grad_output, double* grad_input,
+//                             double* grad_query_weights, double* grad_key_weights, double* grad_value_weights,
+//                             int seq_len);
+// void cllm_embedding_backward(Embeddings* embeddings, uint32_t* token_ids, double* grad_output, double* grad_embeddings, int batch_size);
 void cllm_transformer_layer_backward(CLLMTraining* training, int layer_idx, double* input, double* grad_output, double* grad_input, int seq_len);
 void cllm_backward(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens);
 

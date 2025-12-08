@@ -428,7 +428,7 @@ double cllm_forward_training_threaded(
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
-            double* embed_src = &model->embeddings.embeddings[token_id * embed_dim];
+            double* embed_src = &model->embeddings[token_id * embed_dim];
             double* embed_dst = &local_ctx->input_embeddings[idx * embed_dim];
             memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
         }
@@ -520,7 +520,7 @@ double cllm_forward_training_threaded(
             double* logits = &local_ctx->logits[idx * vocab_size];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings[v * embed_dim];
                 double score = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) {
                     score += hidden[d] * vocab_embed[d];
@@ -612,7 +612,7 @@ void cllm_backward_training_threaded(
             double* grad_h = &grad_hidden[idx * embed_dim];
             
             for (uint32_t v = 0; v < vocab_size; v++) {
-                double* vocab_embed = &model->embeddings.embeddings[v * embed_dim];
+                double* vocab_embed = &model->embeddings[v * embed_dim];
                 double grad_v = grad_logit[v];
                 
                 // Accumulate to gradient_buffer (lock-free segment)

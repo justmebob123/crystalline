@@ -283,14 +283,14 @@ CLLMModel* cllm_read_model(const char* filepath) {
     }
     
     // Read embeddings - CRITICAL: This overwrites the NaN values from lazy init
-    if (model->embeddings.embeddings) {
+    if (model->embeddings) {
         size_t emb_size = model->vocab_size * model->embedding_dim;
         printf("DEBUG: About to read %zu embeddings from file\n", emb_size);
-        printf("DEBUG: First embedding before read: %f\n", model->embeddings.embeddings[0]);
+        printf("DEBUG: First embedding before read: %f\n", model->embeddings[0]);
         
-        size_t read_count = fread(model->embeddings.embeddings, sizeof(double), emb_size, file);
+        size_t read_count = fread(model->embeddings, sizeof(double), emb_size, file);
         printf("DEBUG: Read %zu embeddings (expected %zu)\n", read_count, emb_size);
-        printf("DEBUG: First embedding after read: %f\n", model->embeddings.embeddings[0]);
+        printf("DEBUG: First embedding after read: %f\n", model->embeddings[0]);
         
         if (read_count != emb_size) {
             fprintf(stderr, "Failed to read embeddings: got %zu, expected %zu\n", read_count, emb_size);
@@ -302,7 +302,7 @@ CLLMModel* cllm_read_model(const char* filepath) {
         // Verify embeddings are not NaN after loading
         int nan_count = 0;
         for (size_t i = 0; i < emb_size && nan_count < 10; i++) {
-            if (prime_isnan(model->embeddings.embeddings[i])) {
+            if (prime_isnan(model->embeddings[i])) {
                 nan_count++;
                 fprintf(stderr, "WARNING: NaN in loaded embedding at index %zu\n", i);
             }
@@ -469,9 +469,9 @@ int cllm_write_model(const CLLMModel* model, const char* filepath) {
     }
     
     // Write embeddings
-    if (model->embeddings.embeddings) {
+    if (model->embeddings) {
         size_t emb_size = model->vocab_size * model->embedding_dim;
-        if (fwrite(model->embeddings.embeddings, sizeof(double), emb_size, file) != emb_size) {
+        if (fwrite(model->embeddings, sizeof(double), emb_size, file) != emb_size) {
             fprintf(stderr, "Failed to write embeddings\n");
             fclose(file);
             return -1;

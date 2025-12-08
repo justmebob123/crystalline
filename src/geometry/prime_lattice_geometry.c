@@ -45,7 +45,7 @@ static uint64_t isqrt(uint64_t n) {
  * CLOCK FACE MAPPING
  * ============================================================================ */
 
-void map_prime_to_clock(uint64_t prime, ClockPosition *pos) {
+void map_prime_to_clock(uint64_t prime, LegacyClockPosition *pos) {
     if (!pos) return;
     
     // Map using 361-degree circle (19² = 361, squares to circles)
@@ -200,7 +200,7 @@ double sphere_gap(const LatticeSphere *s1, const LatticeSphere *s2) {
 int get_radial_line(uint64_t prime) {
     // Map prime to one of 12 radial lines
     // Uses clock position
-    ClockPosition pos;
+    LegacyClockPosition pos;
     map_prime_to_clock(prime, &pos);
     return pos.position;
 }

@@ -372,7 +372,7 @@ void free_kissing_spheres(KissingSphereConfig* config);
  * Projects a 12D hypersphere point onto the 2D clock face.
  * Preserves the 12-fold symmetry.
  */
-void map_12d_to_2d_clock(const Point12D* point_12d, ClockPosition* clock_2d);
+void map_12d_to_2d_clock(const Point12D* point_12d, LegacyClockPosition* clock_2d);
 
 /**
  * Map 12D point to 3D kissing spheres

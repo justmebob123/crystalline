@@ -138,7 +138,7 @@ int cllm_internal_add_neighbor_attention(
             if (neighbor_id >= model->vocab_size) continue;
             
             double weight = weights[i] * strength;
-            double* neighbor_embedding = &model->embeddings.embeddings[
+            double* neighbor_embedding = &model->embeddings[
                 neighbor_id * embed_dim
             ];
             
@@ -178,7 +178,7 @@ int cllm_internal_add_neighbor_attention(
         if (neighbor_id >= model->vocab_size) continue;
         
         double weight = weights[i] * strength;
-        double* neighbor_embedding = &model->embeddings.embeddings[
+        double* neighbor_embedding = &model->embeddings[
             neighbor_id * embed_dim
         ];
         
@@ -229,7 +229,7 @@ int cllm_internal_compute_neighbor_influence(
         if (neighbor_id >= model->vocab_size) continue;
         
         double weight = neighbor_weights[i];
-        double* neighbor_embedding = &model->embeddings.embeddings[
+        double* neighbor_embedding = &model->embeddings[
             neighbor_id * embed_dim
         ];
         
@@ -285,7 +285,7 @@ int cllm_internal_compute_neighbor_influence(
         if (neighbor_id >= model->vocab_size) continue;
         
         double weight = neighbor_weights[i];
-        double* neighbor_embedding = &model->embeddings.embeddings[
+        double* neighbor_embedding = &model->embeddings[
             neighbor_id * embed_dim
         ];
         
@@ -322,7 +322,7 @@ int cllm_internal_apply_neighbor_influence(
     }
     
     // Apply influence: embedding = (1-strength)*original + strength*influence
-    double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
+    double* embedding = &model->embeddings[token_id * embed_dim];
     double original_weight = 1.0 - influence_strength;
     
     for (uint32_t d = 0; d < embed_dim; d++) {
@@ -362,7 +362,7 @@ int cllm_internal_apply_neighbor_influence_all(
         }
         
         // Blend with original
-        double* original = &model->embeddings.embeddings[i * embed_dim];
+        double* original = &model->embeddings[i * embed_dim];
         double original_weight = 1.0 - influence_strength;
         
         for (uint32_t d = 0; d < embed_dim; d++) {
@@ -373,7 +373,7 @@ int cllm_internal_apply_neighbor_influence_all(
     
     // Update all embeddings
     for (uint32_t i = 0; i < model->num_lattice_points; i++) {
-        double* embedding = &model->embeddings.embeddings[i * embed_dim];
+        double* embedding = &model->embeddings[i * embed_dim];
         double* refined = &refined_embeddings[i * embed_dim];
         
         for (uint32_t d = 0; d < embed_dim; d++) {

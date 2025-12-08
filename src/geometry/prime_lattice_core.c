@@ -213,7 +213,7 @@ double r_n(uint64_t prime) {
     return log_val + dust * GROWTH_FACTOR;
 }
 
-void map_prime_to_clock_phonetic(uint64_t prime, ClockPosition *pos,
+void map_prime_to_clock_phonetic(uint64_t prime, LegacyClockPosition *pos,
                         const char *lambda_phon) {
     if (!pos) return;
     
@@ -263,7 +263,7 @@ uint64_t map_clock_to_prime(double theta, double r, uint8_t quadrant,
     for (uint64_t p = 2; p <= max_search; p++) {
         if (!is_prime_geometric_core(p)) continue;
         
-        ClockPosition pos;
+        LegacyClockPosition pos;
         map_prime_to_clock_phonetic(p, &pos, "dub");
         
         // Calculate Euclidean distance

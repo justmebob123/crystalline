@@ -22,6 +22,9 @@
 // Include clock lattice for complete type definition
 #include "clock_lattice.h"
 
+// Include optimizer types from algorithms layer
+#include "optimizers.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,13 +103,8 @@ typedef struct {
 // ============================================================================
 // OPTIMIZER TYPES
 // ============================================================================
-
-typedef enum {
-    OPTIMIZER_SGD = 0,
-    OPTIMIZER_ADAM = 1,
-    OPTIMIZER_RMSPROP = 2,
-    OPTIMIZER_ADAGRAD = 3
-} OptimizerType;
+// Note: OptimizerType is now defined in algorithms/include/optimizers.h
+// We include it here for compatibility
 
 // ============================================================================
 // FILE FORMAT STRUCTURES (for serialization)

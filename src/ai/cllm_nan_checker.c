@@ -178,10 +178,10 @@ bool check_gradients_for_nan(CLLMTraining* training) {
  * Check model weights for NaN
  */
 bool check_weights_for_nan(CLLMModel* model) {
-    if (!model || !model->embeddings.embeddings) return false;
+    if (!model || !model->embeddings) return false;
     
     size_t total_size = model->vocab_size * model->embedding_dim;
-    int nan_idx = check_array_for_nan_double(model->embeddings.embeddings, total_size, "model_weights");
+    int nan_idx = check_array_for_nan_double(model->embeddings, total_size, "model_weights");
     
     if (nan_idx >= 0) {
         fprintf(stderr, "NaN found in model weights at position %d\n", nan_idx);

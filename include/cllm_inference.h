@@ -18,6 +18,13 @@
 /* Type definitions */
 typedef struct { int idx; float prob; } IndexProb;
 
+/* Legacy type compatibility - these are now part of CLLMModel */
+typedef struct AttentionLayer AttentionLayer;
+typedef struct FeedForwardLayer FeedForwardLayer;
+typedef struct Embeddings Embeddings;
+typedef struct PositionalEncoding PositionalEncoding;
+typedef struct PositionalEncoding PositionalEncoding;
+
 /*
  * CLLM Inference Engine - Runtime inference state
  * Uses double* for working buffers (64-bit precision)

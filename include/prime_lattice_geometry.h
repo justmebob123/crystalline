@@ -18,7 +18,7 @@
 #include "prime_math_custom.h"
 
 /* Function declarations */
-void map_prime_to_clock(uint64_t prime, ClockPosition *pos);
+void map_prime_to_clock(uint64_t prime, LegacyClockPosition *pos);
 int map_to_361_circle(uint64_t value);
 int angle_to_clock_position(double angle_radians);
 bool is_on_boundary(uint64_t prime);

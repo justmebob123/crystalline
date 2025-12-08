@@ -113,9 +113,9 @@ bool cllm_validate_weights(const CLLMModel* model) {
     }
     
     // Check embeddings
-    if (model->embeddings.embeddings) {
+    if (model->embeddings) {
         size_t emb_size = model->embeddings.vocab_size * model->embeddings.embedding_dim;
-        if (!cllm_check_numerical_stability_double(model->embeddings.embeddings, emb_size, "Embeddings")) {
+        if (!cllm_check_numerical_stability_double(model->embeddings, emb_size, "Embeddings")) {
             return false;
         }
     }

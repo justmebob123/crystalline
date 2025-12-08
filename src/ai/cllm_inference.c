@@ -82,7 +82,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
         return;
     }
     
-    double* embedding = &model->embeddings.embeddings[token_id * embed_dim];
+    double* embedding = &model->embeddings[token_id * embed_dim];
     
     // Lazy initialization: compute embedding on first access
     if (prime_isnan(embedding[0])) {  // FIXED: Use double version for double*
@@ -529,7 +529,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         fprintf(stderr, "Error: logits is NULL\n");
         return;
     }
-    if (!model->embeddings.embeddings) {
+    if (!model->embeddings) {
         fprintf(stderr, "Error: embeddings is NULL\n");
         return;
     }
@@ -542,7 +542,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     }
     
     // Copy double embedding to double hidden_states
-    double* double_embedding = &model->embeddings.embeddings[last_token * embed_dim];
+    double* double_embedding = &model->embeddings[last_token * embed_dim];
     
     // CRITICAL FIX: Check for NaN embeddings and trigger lazy initialization
     if (prime_isnan(double_embedding[0])) {
@@ -588,7 +588,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Project to vocabulary - compute logits
     for (uint32_t i = 0; i < model->vocab_size; i++) {
         double logit_value = 0.0;
-        double* token_embed = &model->embeddings.embeddings[i * embed_dim];
+        double* token_embed = &model->embeddings[i * embed_dim];
         for (uint32_t j = 0; j < embed_dim; j++) {
             logit_value += inference->hidden_states[j] * (double)token_embed[j];
         }
