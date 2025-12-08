@@ -55,7 +55,9 @@ TRANS_SOURCES = $(wildcard $(SRC_TRANS)/*.c)
 GEOM_SOURCES = $(wildcard $(SRC_GEOM)/*.c)
 AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
 INFRASTRUCTURE_SOURCES = $(wildcard src/ai/infrastructure/*.c)
+PLATONIC_SOURCES = $(wildcard src/ai/platonic/*.c)
 AI_SOURCES += $(INFRASTRUCTURE_SOURCES)
+AI_SOURCES += $(PLATONIC_SOURCES)
 TOOLS_DIR = tools
 UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
 
@@ -608,3 +610,19 @@ tools/tetration_analysis: $(CRYSTALLINE_LIB)
 	$(CC) $(CFLAGS) -o tools/tetration_analysis tools/tetration_analysis.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Tetration analysis tool built: tools/tetration_analysis"
+# Add platonic objects to CLLM library
+CLLM_OBJECTS += $(PLATONIC_OBJECTS)
+
+# Platonic test tool
+tools/test_tetrahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Tetrahedron test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_tetrahedron tools/platonic/test_tetrahedron.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Tetrahedron test tool built: tools/test_tetrahedron"
+
+.PHONY: platonic-test
+platonic-test: tools/test_tetrahedron
+	@echo "Running Tetrahedron model tests..."
+	./tools/test_tetrahedron
+

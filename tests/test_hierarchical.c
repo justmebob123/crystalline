@@ -105,53 +105,30 @@ int main(int argc, char** argv) {
     printf("Step 4: Creating batch iterator\n");
     
     // Get tokens from loader
-    uint32_t* tokens = NULL;
-    size_t num_tokens = 0;
-    
-    // Extract tokens from loader
-    if (loader->documents && loader->num_documents > 0) {
-        // Concatenate all document tokens
-        size_t total = 0;
-        for (size_t i = 0; i < loader->num_documents; i++) {
-            total += loader->documents[i].num_tokens;
-        }
-        
-        tokens = (uint32_t*)malloc(total * sizeof(uint32_t));
-        if (!tokens) {
-            fprintf(stderr, "ERROR: Failed to allocate tokens\n");
-            cllm_training_free(training);
-            cllm_free_model(model);
-            cllm_data_loader_free(loader);
-            return 1;
-        }
-        
-        size_t offset = 0;
-        for (size_t i = 0; i < loader->num_documents; i++) {
-            memcpy(&tokens[offset], loader->documents[i].tokens,
-                   loader->documents[i].num_tokens * sizeof(uint32_t));
-            offset += loader->documents[i].num_tokens;
-        }
-        num_tokens = total;
-    }
-    
-    if (!tokens || num_tokens == 0) {
-        fprintf(stderr, "ERROR: No tokens loaded\n");
+    TokenDataset* dataset = cllm_data_loader_create_dataset(loader);
+    if (!dataset || dataset->num_tokens == 0) {
+        fprintf(stderr, "ERROR: Failed to create dataset\n");
         cllm_training_free(training);
         cllm_free_model(model);
         cllm_data_loader_free(loader);
         return 1;
     }
     
+    uint32_t* tokens = dataset->tokens;
+    size_t num_tokens = dataset->num_tokens;
+    
     CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
         tokens,
         num_tokens,
         train_config.batch_size,
-        train_config.sequence_length
+        train_config.sequence_length,
+        0,  // shuffle
+        1   // drop_last
     );
     
     if (!batch_iterator) {
         fprintf(stderr, "ERROR: Failed to create batch iterator\n");
-        free(tokens);
+        cllm_token_dataset_free(dataset);
         cllm_training_free(training);
         cllm_free_model(model);
         cllm_data_loader_free(loader);
@@ -192,7 +169,7 @@ int main(int argc, char** argv) {
     printf("Step 7: Cleanup\n");
     hierarchical_training_free(hier_system);
     cllm_batch_iterator_free(batch_iterator);
-    free(tokens);
+    cllm_token_dataset_free(dataset);
     cllm_training_free(training);
     cllm_free_model(model);
     cllm_data_loader_free(loader);
