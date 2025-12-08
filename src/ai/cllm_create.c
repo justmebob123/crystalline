@@ -102,13 +102,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     // PHASE 2: Initialize with crystalline lattice formula using CACHED values
     // This uses pre-computed L_lattice() values for 12 symmetry groups
     // OPTIMIZATION: 285x faster than computing L_lattice() for every token
-    printf("Initializing embeddings with CACHED crystalline lattice formula...\n");
-    
-    // Use the cached version for fast initialization
-    extern void cllm_embeddings_init_lattice_cached(CLLMModel* model);
-    cllm_embeddings_init_lattice_cached(model);
-    
-    printf("✓ Cached lattice-based embedding initialization complete\n");
+    // Initialize embeddings with consolidated implementation
+    extern void cllm_init_embeddings(CLLMModel* model);
+    cllm_init_embeddings(model);
     
     // Allocate attention layers
     model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));
