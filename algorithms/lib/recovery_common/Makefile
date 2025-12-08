@@ -10,7 +10,10 @@ SRCS = file_io.c \
        corruption_detection.c \
        algorithm_dispatcher.c \
        error_handling.c \
-       metrics.c
+       metrics.c \
+       validation.c \
+       logging.c \
+       visualization.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
