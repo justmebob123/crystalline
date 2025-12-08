@@ -520,6 +520,62 @@ CLLMModel* cllm_load_model(const char* filename);
  */
 CLLMConfig cllm_default_config(PlatonicSolidType solid_type, uint32_t vocab_size);
 
+// ============================================================================
+// BLIND RECOVERY SYSTEM (OBJECTIVE 26)
+// ============================================================================
+
+/**
+ * Recovery statistics structure
+ */
+typedef struct {
+    int total_corruptions;
+    int successful_recoveries;
+    int failed_recoveries;
+    double recovery_rate;
+    int best_method;
+} RecoveryStats;
+
+/**
+ * Detect corruption in model parameters
+ * @return Number of corrupted parameters detected
+ */
+int cllm_detect_corruption(CLLMModel* model);
+
+/**
+ * 26A: Structural Redundancy Recovery (Euler's formula)
+ */
+int cllm_recover_structural(CLLMModel* model);
+
+/**
+ * 26B: Symmetry-Based Reconstruction
+ */
+int cllm_recover_symmetry(CLLMModel* model);
+
+/**
+ * 26C: Prime-Based Validation
+ */
+int cllm_recover_prime(CLLMModel* model);
+
+/**
+ * 26D: Tetration Attractors
+ */
+int cllm_recover_tetration(CLLMModel* model);
+
+/**
+ * Comprehensive blind recovery (applies all methods)
+ */
+RecoveryStats cllm_blind_recovery(CLLMModel* model);
+
+/**
+ * Create backup of model parameters
+ */
+int cllm_create_backup(CLLMModel* model);
+
+/**
+ * Simulate corruption for testing (corrupts random parameters)
+ */
+int cllm_simulate_corruption(CLLMModel* model, double corruption_rate);
+
 #ifdef __cplusplus
 }
 #endif
