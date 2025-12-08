@@ -765,18 +765,7 @@ MultiScalarAnalysis* analyze_multi_scalar(
     uint32_t num_scalars
 );
 
-/**
- * Compute variance
- * 
- * @param structure Hyper-dimensional structure
- * @param variance_per_axis Output: variance per axis
- * @param variance_per_vertex Output: variance per vertex
- */
-void compute_variance(
-    const HyperDimensionalStructure* structure,
-    double* variance_per_axis,
-    double* variance_per_vertex
-);
+
 
 /**
  * Free hyper-dimensional structure
@@ -787,6 +776,148 @@ void free_hyperdimensional_structure(HyperDimensionalStructure* structure);
  * Free multi-scalar analysis
  */
 void free_multi_scalar_analysis(MultiScalarAnalysis* analysis);
+
+/**
+ * Check if hyper-dimensional structure is valid
+ */
+bool is_hyperdimensional_valid(const HyperDimensionalStructure* structure);
+
+/**
+ * Get dimension size
+ */
+uint32_t get_dimension_size(
+    const HyperDimensionalStructure* structure,
+    uint32_t dimension
+);
+
+/**
+ * Check if dimension is stable
+ */
+bool is_dimension_stable(
+    const HyperDimensionalStructure* structure,
+    uint32_t dimension
+);
+
+/**
+ * Get GCD between two dimensions
+ */
+uint64_t get_dimension_gcd(
+    const HyperDimensionalStructure* structure,
+    uint32_t dim1,
+    uint32_t dim2
+);
+
+/**
+ * Get total elements in structure
+ */
+uint64_t get_total_elements(const HyperDimensionalStructure* structure);
+
+/**
+ * Check if all dimensions are stable
+ */
+bool are_all_dimensions_stable(const HyperDimensionalStructure* structure);
+
+/**
+ * Get scalar analysis at index
+ */
+const ScalarAnalysis* get_scalar_analysis(
+    const MultiScalarAnalysis* analysis,
+    uint32_t scalar_index
+);
+
+/**
+ * Get cross-scalar correlation
+ */
+double get_cross_scalar_correlation(
+    const MultiScalarAnalysis* analysis,
+    uint32_t scalar1,
+    uint32_t scalar2
+);
+
+/**
+ * Check if all scalars are stable
+ */
+bool are_all_scalars_stable(const MultiScalarAnalysis* analysis);
+
+/**
+ * Compute average variance across scalars
+ */
+double compute_average_variance(
+    const MultiScalarAnalysis* analysis,
+    uint32_t dimension
+);
+
+/**
+ * Find most stable scalar
+ */
+uint32_t find_most_stable_scalar(const MultiScalarAnalysis* analysis);
+
+/**
+ * Compute multi-scalar consistency score
+ */
+double compute_multi_scalar_consistency(const MultiScalarAnalysis* analysis);
+
+/**
+ * Compute variance for structure
+ */
+void compute_variance(
+    const HyperDimensionalStructure* structure,
+    const double* structure_data,
+    double* variance_per_axis,
+    double* variance_per_vertex
+);
+
+/**
+ * Compute cross-correlation matrix
+ */
+double* compute_cross_correlation_matrix(
+    const HyperDimensionalStructure* structure,
+    const double* structure_data
+);
+
+/**
+ * Get correlation between dimensions
+ */
+double get_dimension_correlation(
+    const double* correlation_matrix,
+    uint32_t num_dimensions,
+    uint32_t dim1,
+    uint32_t dim2
+);
+
+/**
+ * Compute average correlation
+ */
+double compute_average_correlation(
+    const double* correlation_matrix,
+    uint32_t num_dimensions
+);
+
+/**
+ * Compute correlation strength
+ */
+double compute_correlation_strength(
+    const double* correlation_matrix,
+    uint32_t num_dimensions
+);
+
+/**
+ * Validate cross-dimensional consistency
+ */
+bool validate_cross_dimensional_consistency(
+    const double* correlation_matrix,
+    uint32_t num_dimensions
+);
+
+/**
+ * Detect corruption by variance
+ */
+bool detect_corruption_by_variance(
+    const HyperDimensionalStructure* structure,
+    const double* structure_data,
+    double threshold,
+    uint64_t* num_corrupted
+);
 
 // ============================================================================
 // HIGH-LEVEL API

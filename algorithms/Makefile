@@ -58,7 +58,11 @@ SOURCES = src/numerical.c \
           src/blind_recovery/recursive_stabilization.c \
           src/blind_recovery/stabilization_metrics.c \
           src/blind_recovery/model_expansion.c \
-          src/blind_recovery/self_similar_generation.c
+          src/blind_recovery/self_similar_generation.c \
+          src/blind_recovery/hyperdimensional_analysis.c \
+          src/blind_recovery/multi_scalar_analysis.c \
+          src/blind_recovery/variance_analysis.c \
+          src/blind_recovery/cross_correlation.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -141,3 +145,9 @@ test_phase5: tests/test_phase5.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase5 tests/test_phase5.c -L. -lalgorithms -L.. -lcrystalline -lm
 	@echo "Running Phase 5 tests..."
 	LD_LIBRARY_PATH=.:.../tests/test_phase5
+
+test_phase6: tests/test_phase6.c $(SHARED_LIB)
+	@echo "Building Phase 6 tests..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase6 tests/test_phase6.c -L. -lalgorithms -L.. -lcrystalline -lm
+	@echo "Running Phase 6 tests..."
+	LD_LIBRARY_PATH=.:.. ./tests/test_phase6
