@@ -23,7 +23,7 @@
 #include "clock_lattice.h"
 
 // Include optimizer types from algorithms layer
-#include "optimizers.h"
+#include "../algorithms/include/optimizers.h"
 
 #ifdef __cplusplus
 extern "C" {

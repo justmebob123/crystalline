@@ -44,8 +44,13 @@ KISSING_SPHERES_TESTS = \
         test_lattice_visualization \
         test_lattice_integration
 
+# Phase 2 tests (NEW - file I/O and training functions)
+PHASE2_TESTS = \
+        test_file_io \
+        test_training_functions
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS)
 
 .PHONY: all unit integration performance validation diagnostic kissing-spheres clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-all
 
@@ -246,3 +251,30 @@ run-kissing-spheres: $(KISSING_SPHERES_TESTS)
 	done
 	@echo ""
 	@echo "✓ All kissing spheres tests completed"
+
+# ============================================================================
+# PHASE 2 TESTS (File I/O and Training Functions)
+# ============================================================================
+
+test_file_io: test_file_io.c
+	@echo "Building test_file_io..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_file_io built"
+
+test_training_functions: test_training_functions.c
+	@echo "Building test_training_functions..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_training_functions built"
+
+run-phase2: $(PHASE2_TESTS)
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "Running Phase 2 Tests (File I/O & Training Functions)"
+	@echo "════════════════════════════════════════════════════════════"
+	@for test in $(PHASE2_TESTS); do \
+		echo ""; \
+		./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All Phase 2 tests completed"
+
