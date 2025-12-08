@@ -302,7 +302,7 @@ clean:
 	rm -f $(ALL_OBJECTS)
 	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
-                tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/validate_lattice \
+                tools/init_lattice_embeddings tools/benchmark_ntt_attention # tools/validate_lattice \
                 tools/analyze_cymatic_resonance tools/visualize_angular_positions tools/fix_html_entities
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
@@ -384,7 +384,7 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
        tools/cllm_model_manager \
        tools/init_lattice_embeddings tools/benchmark_ntt_attention \
-       tools/validate_lattice tools/analyze_cymatic_resonance \
+       # tools/validate_lattice tools/analyze_cymatic_resonance \
        tools/visualize_angular_positions tools/ui_layout_analyzer \
        tools/benchmark_prime_validation \
        tools/platonic_prime_resonance tools/tetration_analysis
@@ -449,12 +449,12 @@ tools/benchmark_ntt_attention: $(CLLM_LIB)
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ NTT benchmark tool built: tools/benchmark_ntt_attention"
 
-tools/validate_lattice: $(CLLM_LIB)
-	@echo "Building kissing spheres validator..."
-	@mkdir -p tools
-	$(CC) $(CFLAGS) -o tools/validate_lattice tools/validate_lattice.c \
-		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ Kissing spheres validator built: tools/validate_lattice"
+# tools/validate_lattice: $(CLLM_LIB)
+# 	@echo "Building kissing spheres validator..."
+# 	@mkdir -p tools
+# 	$(CC) $(CFLAGS) -o tools/validate_lattice tools/validate_lattice.c \
+# 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+# 	@echo "✓ Kissing spheres validator built: tools/validate_lattice"
 
 tools/analyze_cymatic_resonance: $(CLLM_LIB)
 	@echo "Building cymatic resonance analyzer..."

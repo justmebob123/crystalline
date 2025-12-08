@@ -32,7 +32,7 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
     inference->max_tokens = 50;
     
     // Allocate working memory using double*
-    uint32_t embed_dim = model->embeddings.embedding_dim;
+    uint32_t embed_dim = model->embedding_dim;
     uint32_t vocab_size = model->vocab_size;
     
     // Use standard malloc for double* arrays
@@ -75,7 +75,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
     if (!inference || !output) return;
     
     CLLMModel* model = inference->model;
-    uint32_t embed_dim = model->embeddings.embedding_dim;
+    uint32_t embed_dim = model->embedding_dim;
     
     if (token_id >= model->vocab_size) {
         memset(output, 0, embed_dim * sizeof(float));
@@ -219,15 +219,15 @@ void cllm_apply_positional_encoding(CLLMInference* inference, double* hidden_sta
     if (!inference || !hidden_states) return;
     
     CLLMModel* model = inference->model;
-    uint32_t embed_dim = model->embeddings.embedding_dim;
+    uint32_t embed_dim = model->embedding_dim;
     
-    if (position >= (int)model->pos_encoding.max_length) {
-        position = model->pos_encoding.max_length - 1;
+    if (position >= (int)model->max_seq_len) {
+        position = model->max_seq_len - 1;
     }
     
     // Add positional encoding if available
-    if (model->pos_encoding.spiral_positions) {
-        double* pos_enc = &model->pos_encoding.spiral_positions[position * embed_dim];
+    if (model->positional_encoding) {
+        double* pos_enc = &model->positional_encoding[position * embed_dim];
         for (uint32_t i = 0; i < embed_dim; i++) {
             hidden_states[i] += pos_enc[i];
         }
@@ -241,6 +241,7 @@ void cllm_apply_positional_encoding(CLLMInference* inference, double* hidden_sta
 // Forward pass
 
 // Simple attention forward pass
+#if 0  // LEGACY FUNCTION - Commented out during transformation
 void cllm_attention_forward(AttentionLayer* layer, double* input, double* output,
                            float* key_cache, float* value_cache, int seq_len) {
     (void)key_cache;  // TODO: Use for caching in future
@@ -408,6 +409,8 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     free(V);
     free(scores);
 }
+#endif  // LEGACY FUNCTION
+
 
 /**
  * Enhanced attention forward pass with neighbor influence
@@ -426,6 +429,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
  * @param seq_len Sequence length
  * @param neighbor_strength Neighbor influence strength (0.0-1.0, default 0.1)
  */
+#if 0  // LEGACY FUNCTION - Commented out during transformation
 void cllm_attention_forward_enhanced(
     AttentionLayer* layer,
     double* input,
@@ -474,6 +478,8 @@ void cllm_attention_forward_enhanced(
         }
     }
 }
+#endif  // LEGACY FUNCTION
+
 
 // Simple feedforward pass
 void cllm_feedforward(FeedForwardLayer* layer, double* input, double* output) {
@@ -483,31 +489,9 @@ void cllm_feedforward(FeedForwardLayer* layer, double* input, double* output) {
     }
 }
 
-// Simple layer norm
-void cllm_layer_norm(CLLMLayerNorm* ln, double* input, double* output) {
-    // Compute mean
-    double mean = 0.0;
-    for (uint32_t i = 0; i < ln->dim; i++) {
-        mean += input[i];
-    }
-    mean /= ln->dim;
-    
-    // Compute variance
-    double variance = 0.0;
-    for (uint32_t i = 0; i < ln->dim; i++) {
-        double diff = input[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= ln->dim;
-    
-    // Normalize
-    double std = prime_sqrt(variance + ln->epsilon);
-    for (uint32_t i = 0; i < ln->dim; i++) {
-        output[i] = (input[i] - mean) / std;
-        if (ln->gamma) output[i] *= ln->gamma[i];
-        if (ln->beta) output[i] += ln->beta[i];
-    }
-}
+// NOTE: cllm_layer_norm is now defined in cllm_layernorm.c with SIMD optimizations
+// This duplicate implementation has been removed to avoid linker errors
+// The SIMD-optimized version in cllm_layernorm.c provides 2-4x speedup
 
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     if (!inference || !tokens || num_tokens <= 0) return;
@@ -518,7 +502,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         return;
     }
     
-    uint32_t embed_dim = model->embeddings.embedding_dim;
+    uint32_t embed_dim = model->embedding_dim;
     
     // Check critical pointers
     if (!inference->hidden_states) {
@@ -558,6 +542,10 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Apply positional encoding
     cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
     
+    // TODO: Reimplement transformer layers using new CLLMModel structure
+    // The new structure has layers as an array with query_weights, key_weights, value_weights, etc.
+    // Need to integrate with cllm_attention.c (which has NTT support)
+    #if 0  // LEGACY TRANSFORMER LOOP - Needs reimplementation
     // Pass through transformer layers using double precision throughout
     if (model->attention_layers && model->ff_layers && model->layer_norms) {
         // Allocate attention output buffer
@@ -584,6 +572,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         
         free(attn_output);
     }
+    #endif  // LEGACY TRANSFORMER LOOP
     
     // Project to vocabulary - compute logits
     for (uint32_t i = 0; i < model->vocab_size; i++) {

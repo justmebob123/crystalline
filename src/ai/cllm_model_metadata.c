@@ -16,8 +16,8 @@
  */
 int cllm_model_get_epochs_trained(CLLMModel* model) {
     if (!model) return -1;
-    // Return training steps from metadata (epochs_trained field doesn't exist)
-    return (int)(model->training_meta.training_steps / 1000);  // Approximate epochs
+    // Return training steps from metrics (training_meta doesn't exist in new structure)
+    return (int)(model->metrics.total_steps / 1000);  // Approximate epochs
 }
 
 /**

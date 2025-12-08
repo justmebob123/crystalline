@@ -518,15 +518,28 @@ ContinuousTrainingState* continuous_training_init(const char* data_dir, const ch
                // Model doesn't exist, create it
                printf("%s Creating new model '%s' via model manager...\n", timestamp, model_name);
                
-               // Create default config for crawler
+               // Create default config for crawler (using new geometric structure)
                CLLMConfig default_config = {
-                   .vocab_size = 50000,      // Increased from 10K (supports larger vocabulary)
-                   .embedding_dim = 1024,    // Increased from 512 (better representations)
-                   .num_layers = 6,
-                   .num_heads = 8,
-                   .ff_dim = 4096,           // Increased from 2048 (more capacity)
-                   .max_seq_len = 1024,      // Increased from 512 (longer context)
-                   .dropout = 0.1f
+                   .solid_type = PLATONIC_CUBE,  // Use cube geometry
+                   .vocab_size = 50000,          // Increased from 10K (supports larger vocabulary)
+                   .max_seq_len = 1024,          // Increased from 512 (longer context)
+                   .embedding_dim = 0,           // Auto-calculate from geometry (8 vertices × 12 = 96)
+                   .hidden_dim = 0,              // Auto-calculate from geometry (12 edges × 12 = 144)
+                   .num_layers = 0,              // Auto-calculate from geometry (6 faces)
+                   .num_heads = 0,               // Auto-calculate (always 12)
+                   .enable_blind_recovery = true,
+                   .enable_harmonic_integration = true,
+                   .enable_ntt_attention = true,
+                   .enable_kissing_spheres = true,
+                   .num_threads = 0,             // Auto (13 for kissing spheres)
+                   .optimizer_type = OPTIMIZER_ADAM,
+                   .learning_rate = 0.001,
+                   .beta1 = 0.9,
+                   .beta2 = 0.999,
+                   .epsilon = 1e-8,
+                   .weight_decay = 0.01,
+                   .ntt_threshold_seq_len = 512,
+                   .ntt_auto_select = true
                };
                
                // Create model through model manager (returns ManagedModel* not int!)

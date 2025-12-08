@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     
     printf("Model loaded successfully.\n");
     printf("  Vocabulary size: %lu\n", (unsigned long)model->vocab_size);
-    printf("  Embedding dimension: %u\n", model->embeddings.embedding_dim);
+    printf("  Embedding dimension: %u\n", model->embedding_dim);
     printf("  Number of layers: %u\n", model->num_layers);
     printf("\n");
     

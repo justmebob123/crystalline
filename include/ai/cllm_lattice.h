@@ -39,10 +39,11 @@ void cllm_optimize_neighbor_cache_locality(CLLMModel* model);
  * @param local_gradients Gradient buffer [vocab_size x embedding_dim]
  * @param gradient_size Total gradient buffer size
  */
-void cllm_process_kissing_spheres(CLLMLatticePoint* point,
-                                  CLLMModel* model,
-                                  float* local_gradients,
-                                  size_t gradient_size);
+// LEGACY: Commented out - uses old CLLMLatticePoint structure
+// void cllm_process_kissing_spheres(CLLMLatticePoint* point,
+//                                   CLLMModel* model,
+//                                   float* local_gradients,
+//                                   size_t gradient_size);
 
 /**
  * Verify kissing spheres configuration

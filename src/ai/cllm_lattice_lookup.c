@@ -120,14 +120,14 @@ void cllm_embeddings_init_from_patterns(CLLMModel* model) {
     
     printf("\n=== Initializing Embeddings from Deterministic Patterns ===\n");
     printf("Vocabulary size: %lu\n", (unsigned long)model->vocab_size);
-    printf("Embedding dimension: %u\n", model->embeddings.embedding_dim);
+    printf("Embedding dimension: %u\n", model->embedding_dim);
     printf("Using direct geometric lookup - NO computation needed!\n\n");
     
     // Initialize patterns if needed
-    cllm_init_ring_patterns(model->embeddings.embedding_dim);
+    cllm_init_ring_patterns(model->embedding_dim);
     
     uint32_t vocab_size = model->vocab_size;
-    uint32_t embedding_dim = model->embeddings.embedding_dim;
+    uint32_t embedding_dim = model->embedding_dim;
     double* embeddings = model->embeddings;
     
     // Fill embeddings using direct lookup

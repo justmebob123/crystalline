@@ -118,13 +118,26 @@ static void cmd_create(int argc, char** argv) {
     printf("\n");
     
     CLLMConfig config = {
+        .solid_type = PLATONIC_CUBE,
         .vocab_size = vocab_size,
+        .max_seq_len = 512,
         .embedding_dim = embed_dim,
+        .hidden_dim = embed_dim * 4,
         .num_layers = num_layers,
         .num_heads = num_heads,
-        .ff_dim = embed_dim * 4,
-        .max_seq_len = 512,
-        .dropout = 0.1f
+        .enable_blind_recovery = true,
+        .enable_harmonic_integration = true,
+        .enable_ntt_attention = true,
+        .enable_kissing_spheres = true,
+        .num_threads = 0,
+        .optimizer_type = OPTIMIZER_ADAM,
+        .learning_rate = 0.001,
+        .beta1 = 0.9,
+        .beta2 = 0.999,
+        .epsilon = 1e-8,
+        .weight_decay = 0.01,
+        .ntt_threshold_seq_len = 512,
+        .ntt_auto_select = true
     };
     
     if (model_manager_create(model_name, &config) != 0) {
@@ -203,9 +216,9 @@ static void cmd_info(int argc, char** argv) {
         printf("  Vocabulary size:  %lu\n", (unsigned long)model->vocab_size);
         printf("  Embedding dim:    %lu\n", (unsigned long)model->embedding_dim);
         printf("  Num layers:       %u\n", model->num_layers);
-        printf("  Num heads:        %u\n", model->attention_layers[0].num_heads);
-        printf("  Head dim:         %u\n", model->attention_layers[0].head_dim);
-        printf("  FF hidden dim:    %u\n", model->ff_layers[0].hidden_dim);
+        printf("  Num heads:        %u\n", model->num_heads);
+        printf("  Hidden dim:       %u\n", model->hidden_dim);
+        printf("  Num layers:       %u\n", model->num_layers);
         printf("  Total params:     %lu\n", (unsigned long)model->header.total_params);
         
         model_manager_release_read(model_name);

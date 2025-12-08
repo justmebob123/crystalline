@@ -262,16 +262,29 @@ int cmd_train(int argc, char** argv) {
         printf("   Consider using a larger dataset for better model quality.\n\n");
     }
     
-    // Create model
+    // Create model with geometric foundation
     printf("Creating model...\n");
     CLLMConfig model_config = {
+        .solid_type = PLATONIC_CUBE,
         .vocab_size = tokenizer->vocab_size,
+        .max_seq_len = seq_len * 2,
         .embedding_dim = embed_dim,
+        .hidden_dim = embed_dim * 4,
         .num_layers = num_layers,
         .num_heads = num_heads,
-        .ff_dim = embed_dim * 4,
-        .max_seq_len = seq_len * 2,
-        .dropout = 0.1f
+        .enable_blind_recovery = true,
+        .enable_harmonic_integration = true,
+        .enable_ntt_attention = true,
+        .enable_kissing_spheres = true,
+        .num_threads = 0,
+        .optimizer_type = OPTIMIZER_ADAM,
+        .learning_rate = 0.001,
+        .beta1 = 0.9,
+        .beta2 = 0.999,
+        .epsilon = 1e-8,
+        .weight_decay = 0.01,
+        .ntt_threshold_seq_len = 512,
+        .ntt_auto_select = true
     };
     
     CLLMModel* model = cllm_create_model(&model_config);
@@ -765,13 +778,26 @@ int cmd_create(int argc, char** argv) {
     printf("\n");
     
     CLLMConfig config = {
+        .solid_type = PLATONIC_CUBE,
         .vocab_size = vocab_size,
+        .max_seq_len = 512,
         .embedding_dim = embed_dim,
+        .hidden_dim = embed_dim * 4,
         .num_layers = num_layers,
         .num_heads = num_heads,
-        .ff_dim = embed_dim * 4,
-        .max_seq_len = 512,
-        .dropout = 0.1f
+        .enable_blind_recovery = true,
+        .enable_harmonic_integration = true,
+        .enable_ntt_attention = true,
+        .enable_kissing_spheres = true,
+        .num_threads = 0,
+        .optimizer_type = OPTIMIZER_ADAM,
+        .learning_rate = 0.001,
+        .beta1 = 0.9,
+        .beta2 = 0.999,
+        .epsilon = 1e-8,
+        .weight_decay = 0.01,
+        .ntt_threshold_seq_len = 512,
+        .ntt_auto_select = true
     };
     
     CLLMModel* model = cllm_create_model(&config);

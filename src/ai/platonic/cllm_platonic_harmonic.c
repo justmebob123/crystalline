@@ -35,7 +35,7 @@ static const double CYMATIC_FREQUENCIES[] = {
     963.0   // Divine frequency
 };
 
-static const int NUM_CYMATIC_FREQUENCIES = 6;
+// NUM_CYMATIC_FREQUENCIES is already defined in cllm.h as a macro
 
 // ============================================================================
 // PLATONIC PRIME RESONANCE
@@ -49,7 +49,7 @@ static const uint64_t PLATONIC_PRIMES[] = {
     241   // Icosahedron
 };
 
-static const int NUM_PLATONIC_PRIMES = 5;
+// NUM_PLATONIC_PRIMES is already defined in cllm.h as a macro
 
 // ============================================================================
 // BABYLONIAN CLOCK RINGS

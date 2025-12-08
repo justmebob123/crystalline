@@ -89,33 +89,16 @@ ClockPosition calculate_clock_position(int symmetry_group) {
         return pos;
     }
     
-    // Map symmetry group to clock position
-    pos.position = symmetry_group;
-    pos.clock_pos = (uint8_t)symmetry_group;
+    // Map symmetry group to Babylonian clock position
+    pos.ring = 0;  // Hours ring (0-11)
+    pos.position = symmetry_group + 1;  // 1-based position (1-12)
     
-    // Calculate angle in radians (0 = 12 o'clock, clockwise)
-    pos.angle_radians = (symmetry_group * 2.0 * PRIME_PI) / 12.0;
-    pos.theta = pos.angle_radians;
+    // Calculate angle (12 o'clock = -π/2, increases clockwise)
+    // Convert from symmetry group (0-11) to angle
+    pos.angle = (symmetry_group * 2.0 * PRIME_PI) / 12.0 - (PRIME_PI / 2.0);
     
-    // Calculate degree (0-360)
-    pos.degree = (symmetry_group * 30) % 360; // 360/12 = 30 degrees per hour
-    
-    // Calculate quadrant (1-4)
-    if (symmetry_group >= 0 && symmetry_group < 3) {
-        pos.quadrant = 1;
-    } else if (symmetry_group >= 3 && symmetry_group < 6) {
-        pos.quadrant = 2;
-    } else if (symmetry_group >= 6 && symmetry_group < 9) {
-        pos.quadrant = 3;
-    } else {
-        pos.quadrant = 4;
-    }
-    
-    // Check if on 3 o'clock boundary
-    pos.on_boundary = (symmetry_group == 3);
-    
-    // Radial distance (all positions on unit circle)
-    pos.r = 1.0;
+    // Radius (normalized to 1.0 for sphere surface)
+    pos.radius = 1.0;
     
     return pos;
 }

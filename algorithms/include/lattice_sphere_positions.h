@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "prime_types.h"
+#include "../../include/clock_lattice.h"  // For BabylonianClockPosition
+
+// Define ClockPosition as BabylonianClockPosition for this file
+typedef BabylonianClockPosition ClockPosition;
 
 #ifdef __cplusplus
 extern "C" {

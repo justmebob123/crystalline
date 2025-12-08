@@ -461,12 +461,13 @@ double cllm_forward_training_threaded(
                 double* ff_out = &local_ctx->ff_outputs[layer][idx * embed_dim];
                 double* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
                 
-                // FeedForward
-                FeedForwardLayer* ff = &model->ff_layers[layer];
-                double* ff_hidden = &local_ctx->ff_hidden[layer][idx * ff->hidden_dim];
+                // FeedForward (using new structure)
+                double* ffn_w1 = model->layers[layer].ffn_w1;
+                double* ffn_b1 = model->layers[layer].ffn_b1;
+                double* ff_hidden = &local_ctx->ff_hidden[layer][idx * model->hidden_dim];
                 (void)ff_hidden;  // Reserved for future use
                 
-                for (uint32_t h = 0; h < ff->hidden_dim; h++) {
+                for (uint32_t h = 0; h < model->hidden_dim; h++) {
 // DISABLED - USE BigFixed version:                     double sum = ff->bias1[h];
                     for (uint32_t i = 0; i < embed_dim; i++) {
 // DISABLED - USE BigFixed version:                         sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
@@ -475,9 +476,9 @@ double cllm_forward_training_threaded(
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
-// DISABLED - USE BigFixed version:                     double sum = ff->bias2[o];
-                    for (uint32_t h = 0; h < ff->hidden_dim; h++) {
-// DISABLED - USE BigFixed version:                         sum += ff_hidden[h] * ff->w2_lattice[h * embed_dim + o];
+// DISABLED - USE BigFixed version:                     double sum = ffn_b1[o];
+                    for (uint32_t h = 0; h < model->hidden_dim; h++) {
+// DISABLED - USE BigFixed version:                         sum += ff_hidden[h] * model->layers[layer].ffn_w2[h * embed_dim + o];
                     }
 // DISABLED - USE BigFixed version:                     ff_out[o] = sum;
                 }
@@ -485,8 +486,10 @@ double cllm_forward_training_threaded(
                 // Residual + LayerNorm
                 for (uint32_t d = 0; d < embed_dim; d++) layer_out[d] = attn_out[d] + ff_out[d];
                 
-                CLLMLayerNorm* ln = &model->layer_norms[layer];
-                (void)ln;  // Reserved for future use
+                // Layer norm (using new structure - ln1_gamma, ln1_beta)
+                double* ln_gamma = model->layers[layer].ln1_gamma;
+                double* ln_beta = model->layers[layer].ln1_beta;
+                (void)ln_gamma; (void)ln_beta;  // Reserved for future use
                 double mean = 0.0, var = 0.0;
                 for (uint32_t d = 0; d < embed_dim; d++) mean += layer_out[d];
                 mean /= embed_dim;
@@ -1533,8 +1536,8 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
         
         // PHASE 8: Allocate thread-local training context for each worker
         CLLMModel* model = training->model;
-        int ff_hidden_dim = model->ff_layers ? model->ff_layers[0].hidden_dim : 1024;
-        int num_heads = 8;  // TODO: Get from model config
+        int ff_hidden_dim = model->hidden_dim;  // Use hidden_dim from new structure
+        int num_heads = model->num_heads;  // Use num_heads from new structure (always 12)
         
         system->sphere_contexts[i]->thread_local_training = thread_local_training_create(
             training->config.batch_size,

@@ -54,12 +54,13 @@ extern "C" {
  *                     Can be NULL, defaults to 2
  * @param seq_len Sequence length
  */
-void cllm_crystalline_attention_forward(AttentionLayer* layer,
-                                       const float* input,
-                                       float* output,
-                                       const float* lattice_coords,
-                                       const uint64_t* token_primes,
-                                       int seq_len);
+// LEGACY: Commented out - uses old AttentionLayer structure
+// void cllm_crystalline_attention_forward(AttentionLayer* layer,
+//                                        const float* input,
+//                                        float* output,
+//                                        const float* lattice_coords,
+//                                        const uint64_t* token_primes,
+//                                        int seq_len);
 
 /**
  * Apply Einstein Lambda correction to gradients

@@ -85,7 +85,7 @@ static bool read_model_metadata(const char* path, ModelMetadata* metadata) {
     metadata->embedding_dim = (uint32_t)header.embedding_dim;
     metadata->num_layers = (uint32_t)header.num_layers;
     metadata->num_heads = header.num_heads;
-    metadata->max_seq_len = header.context_length;
+    metadata->max_seq_len = header.max_seq_len;  // Use max_seq_len instead of context_length
     
     // Get file size
     struct stat st;
