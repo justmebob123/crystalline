@@ -699,82 +699,8 @@ bool stabilize_adaptive(
 double compute_stabilization_quality(const MultiScaleAnalysis* analysis);
 
 // ============================================================================
-// LAYER 5: DYNAMIC MODEL EXPANSION
+// LAYER 5: DYNAMIC MODEL EXPANSION (Removed - see Phase 5 below)
 // ============================================================================
-
-/**
- * Platonic solid types (for expansion)
- */
-typedef enum {
-    EXPANSION_TETRAHEDRON = 0,
-    EXPANSION_CUBE = 1,
-    EXPANSION_OCTAHEDRON = 2,
-    EXPANSION_DODECAHEDRON = 3,
-    EXPANSION_ICOSAHEDRON = 4
-} ExpansionSolidType;
-
-/**
- * Dynamic model
- */
-typedef struct {
-    ExpansionSolidType base_solid;  // Starting solid
-    uint32_t expansion_level;       // How many times expanded
-    uint32_t current_vertices;      // Current V
-    uint32_t current_edges;         // Current E
-    uint32_t current_faces;         // Current F
-    double* expansion_matrix;       // Transformation matrix [4×4]
-} DynamicModel;
-
-/**
- * Dimensional fold
- */
-typedef struct {
-    uint32_t source_dimension;
-    uint32_t target_dimension;
-    double folding_angle;          // Angle of fold (radians)
-    double folding_matrix[16];     // 4×4 transformation matrix
-    bool creates_new_dimension;    // Does fold create new dimension?
-} DimensionalFold;
-
-/**
- * Expand model dynamically
- * 
- * @param base_model Base model
- * @param expansion_level Number of expansion levels
- * @return Expanded model (caller must free)
- */
-DynamicModel* expand_model(
-    const DynamicModel* base_model,
-    uint32_t expansion_level
-);
-
-/**
- * Fold dimension
- * 
- * @param model Dynamic model
- * @param fold Dimensional fold
- */
-void fold_dimension(
-    DynamicModel* model,
-    const DimensionalFold* fold
-);
-
-/**
- * Generate next level of self-similar structure
- * 
- * @param current_level Current level
- * @param target_solid Target Platonic solid
- * @return Next level (caller must free)
- */
-DynamicModel* generate_next_level(
-    const DynamicModel* current_level,
-    ExpansionSolidType target_solid
-);
-
-/**
- * Free dynamic model
- */
-void free_dynamic_model(DynamicModel* model);
 
 // ============================================================================
 // LAYER 6: HYPER-DIMENSIONAL ANALYSIS
@@ -891,6 +817,200 @@ RecoveryStatistics blind_recovery_complete(
     uint32_t num_elements,
     uint32_t num_dimensions,
     double corruption_threshold
+);
+
+// ============================================================================
+// PHASE 5: DYNAMIC MODEL EXPANSION
+// ============================================================================
+
+/**
+ * Platonic solid types
+ */
+typedef enum {
+    PLATONIC_TETRAHEDRON = 0,
+    PLATONIC_CUBE = 1,
+    PLATONIC_OCTAHEDRON = 2,
+    PLATONIC_DODECAHEDRON = 3,
+    PLATONIC_ICOSAHEDRON = 4
+} PlatonicSolidType;
+
+/**
+ * Expansion metrics
+ */
+typedef struct {
+    double vertex_ratio;
+    double edge_ratio;
+    double face_ratio;
+    double corruption_reduction;
+    bool euler_maintained;
+    double quality_score;
+} ExpansionMetrics;
+
+/**
+ * Self-similar hierarchy
+ */
+typedef struct {
+    uint32_t num_levels;
+    StructuralMap** levels;
+} SelfSimilarHierarchy;
+
+/**
+ * Hierarchy metrics
+ */
+typedef struct {
+    uint32_t num_levels;
+    double self_similarity_score;
+    bool all_levels_valid;
+    double average_corruption;
+    uint32_t total_vertices;
+} HierarchyMetrics;
+
+/**
+ * Expand model to target Platonic solid
+ * 
+ * @param source Source structure
+ * @param target_solid Target Platonic solid type
+ * @return Expanded structure (caller must free)
+ */
+StructuralMap* expand_to_platonic_solid(
+    const StructuralMap* source,
+    PlatonicSolidType target_solid
+);
+
+/**
+ * Expand model by level
+ * 
+ * @param source Source structure
+ * @param expansion_level Expansion level (1, 2, 3, ...)
+ * @return Expanded structure (caller must free)
+ */
+StructuralMap* expand_model_by_level(
+    const StructuralMap* source,
+    uint32_t expansion_level
+);
+
+/**
+ * Check if expansion is valid
+ * 
+ * @param expanded Expanded structure
+ * @return true if valid (Euler's formula maintained)
+ */
+bool is_expansion_valid(const StructuralMap* expanded);
+
+/**
+ * Get expansion factor between Platonic solids
+ * 
+ * @param source Source solid type
+ * @param target Target solid type
+ * @return Expansion factor
+ */
+double get_expansion_factor(
+    PlatonicSolidType source,
+    PlatonicSolidType target
+);
+
+/**
+ * Get available expansions for a Platonic solid
+ * 
+ * @param source Source solid type
+ * @param targets Output array of target solid types
+ * @param max_targets Maximum number of targets
+ * @return Number of available expansions
+ */
+int get_available_expansions(
+    PlatonicSolidType source,
+    PlatonicSolidType* targets,
+    int max_targets
+);
+
+/**
+ * Compute expansion metrics
+ * 
+ * @param source Source structure
+ * @param expanded Expanded structure
+ * @param metrics Output metrics
+ */
+void compute_expansion_metrics(
+    const StructuralMap* source,
+    const StructuralMap* expanded,
+    ExpansionMetrics* metrics
+);
+
+/**
+ * Free expanded model
+ * 
+ * @param expanded Expanded structure
+ */
+void free_expanded_model(StructuralMap* expanded);
+
+/**
+ * Generate self-similar hierarchy
+ * 
+ * @param base Base structure
+ * @param num_levels Number of levels in hierarchy
+ * @return Self-similar hierarchy (caller must free)
+ */
+SelfSimilarHierarchy* generate_self_similar_hierarchy(
+    const StructuralMap* base,
+    uint32_t num_levels
+);
+
+/**
+ * Validate self-similar hierarchy
+ * 
+ * @param hierarchy Hierarchy to validate
+ * @return true if valid
+ */
+bool validate_self_similar_hierarchy(const SelfSimilarHierarchy* hierarchy);
+
+/**
+ * Compute self-similarity score
+ * 
+ * @param hierarchy Hierarchy
+ * @return Self-similarity score [0, 1]
+ */
+double compute_self_similarity_score(const SelfSimilarHierarchy* hierarchy);
+
+/**
+ * Get level from hierarchy
+ * 
+ * @param hierarchy Hierarchy
+ * @param level Level index
+ * @return Structure at level (NULL if invalid)
+ */
+const StructuralMap* get_hierarchy_level(
+    const SelfSimilarHierarchy* hierarchy,
+    uint32_t level
+);
+
+/**
+ * Free self-similar hierarchy
+ * 
+ * @param hierarchy Hierarchy to free
+ */
+void free_self_similar_hierarchy(SelfSimilarHierarchy* hierarchy);
+
+/**
+ * Apply recovery using hierarchy
+ * 
+ * @param hierarchy Hierarchy
+ * @param target_level Target level to recover
+ * @return true if successful
+ */
+bool recover_using_hierarchy(
+    SelfSimilarHierarchy* hierarchy,
+    uint32_t target_level
+);
+
+/**
+ * Compute hierarchy metrics
+ * 
+ * @param hierarchy Hierarchy
+ * @param metrics Output metrics
+ */
+void compute_hierarchy_metrics(
+    const SelfSimilarHierarchy* hierarchy,
+    HierarchyMetrics* metrics
 );
 
 #ifdef __cplusplus
