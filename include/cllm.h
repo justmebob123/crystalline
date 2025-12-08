@@ -84,6 +84,20 @@ typedef struct {
 } PlatonicGeometry;
 
 // ============================================================================
+// LAYER NORMALIZATION
+// ============================================================================
+
+/**
+ * Layer Normalization structure
+ */
+typedef struct {
+    uint32_t dim;           // Dimension to normalize
+    float epsilon;          // Small constant for numerical stability
+    double* gamma;          // Scale parameters [dim]
+    double* beta;           // Shift parameters [dim]
+} CLLMLayerNorm;
+
+// ============================================================================
 // OPTIMIZER TYPES
 // ============================================================================
 
