@@ -444,6 +444,14 @@ Use immediately after creating any C/C++ source file.
 
 ---
 
+### OBJECTIVE 28: General Blind Recovery Algorithm
+**Status: DESIGN → IMPLEMENTATION**
+**Priority: 🔴 CRITICAL - Universal Recovery System**
+
+See OBJECTIVE_28_DETAILED_SPEC.md for complete specification.
+
+---
+
 ---
 
 ## 📋 ARCHITECTURAL PRINCIPLES

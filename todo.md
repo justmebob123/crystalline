@@ -66,24 +66,60 @@ Need to implement:
 - [ ] 27C: Prime Resonance Alignment
 - [ ] 27D: Concentric Ring Mapping
 
+### Priority 5: General Blind Recovery Algorithm (OBJECTIVE 28)
+**Status:** Design complete, ready for implementation
+
+**NEW OBJECTIVE - CRITICAL PRIORITY**
+
+This is the universal blind recovery algorithm for the algorithms library.
+Unlike OBJECTIVE 26 (CLLM-specific), this is a general-purpose algorithm.
+
+Key Features:
+- [ ] Oscillation detection using FFT
+- [ ] Anchor-based triangulation
+- [ ] Iterative search with SFT integration
+- [ ] Recursive stabilization across scales
+- [ ] Dynamic model expansion
+- [ ] Hyper-dimensional analysis
+- [ ] Tetration tower convergence
+- [ ] Nonce-based search space exploration
+
+See OBJECTIVE_28_DETAILED_SPEC.md for complete specification (12-week implementation plan)
+
 ---
 
 ## 📋 EXECUTION PLAN
 
-### Step 1: Validate Current Platonic Implementation
-1. Run existing tests (11/11 should pass)
-2. Create validation test for all geometric properties
-3. Verify alignment with OBJECTIVE 25 requirements
-4. Document what's complete vs what's needed
+### Step 1: Complete OBJECTIVE 26 (CLLM Blind Recovery) ✅ 60%
+1. ✅ Create `src/ai/cllm_blind_recovery.c` (DONE)
+2. ✅ Implement 4 recovery mechanisms (DONE)
+3. ✅ Add recovery API to `include/cllm.h` (DONE)
+4. ✅ Create comprehensive tests (DONE)
+5. 🔄 Fix compilation errors (IN PROGRESS)
+6. ⏳ Compile and test
+7. ⏳ Benchmark recovery accuracy
 
-### Step 2: Implement Blind Recovery System
-1. Create `src/ai/cllm_blind_recovery.c`
-2. Implement 4 recovery mechanisms
-3. Add recovery API to `include/cllm.h`
-4. Create comprehensive tests
-5. Benchmark recovery accuracy
+### Step 2: Begin OBJECTIVE 28 (General Blind Recovery)
+**This is the main algorithm - CRITICAL PRIORITY**
 
-### Step 3: Complete Harmonic Integration
+Phase 1: Core Detection (Weeks 1-2)
+1. Create algorithms/src/blind_recovery/ directory structure
+2. Implement oscillation_detection.c (FFT-based)
+3. Implement structural_mapping.c (geometric analysis)
+4. Implement coprime_analysis.c (GCD matrix)
+5. Implement corruption_detection.c
+6. Unit tests for Phase 1
+
+Phase 2: Anchor System (Weeks 3-4)
+1. Implement anchor_selection.c
+2. Implement triangulation.c
+3. Implement anchor_adjustment.c
+4. Implement confidence_scoring.c
+5. Unit tests for Phase 2
+
+Phase 3-6: See OBJECTIVE_28_DETAILED_SPEC.md for complete roadmap
+
+### Step 3: Complete Harmonic Integration (OBJECTIVE 27)
 1. Implement Platonic Fourier transforms
 2. Add cymatic modulation to training loop
 3. Integrate prime resonance with attention
