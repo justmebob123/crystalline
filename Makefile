@@ -587,3 +587,17 @@ tools/platonic_prime_resonance: $(CRYSTALLINE_LIB)
 	$(CC) $(CFLAGS) -o tools/platonic_prime_resonance tools/platonic_prime_resonance.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Platonic prime resonance tool built: tools/platonic_prime_resonance"
+
+tools/analyze_million_primes: $(CRYSTALLINE_LIB)
+	@echo "Building million primes analysis tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/analyze_million_primes tools/analyze_million_primes.c \
+		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Million primes analysis tool built: tools/analyze_million_primes"
+
+tools/discover_platonic_solids: $(CRYSTALLINE_LIB)
+	@echo "Building Platonic solid discovery tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/discover_platonic_solids tools/discover_platonic_solids.c \
+		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Platonic solid discovery tool built: tools/discover_platonic_solids"
