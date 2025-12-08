@@ -11,10 +11,9 @@ FAILED_TESTS=0
 
 # Function to run a test
 run_test() {
-    local test_path=$1
-    local test_name=$(basename $test_path)
+    local test_name=$1
     
-    if [ ! -f "$test_path" ]; then
+    if [ ! -f "tests/$test_name" ]; then
         echo "⊘ SKIP: $test_name (not built)"
         return
     fi
@@ -22,7 +21,7 @@ run_test() {
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     
     echo "Running: $test_name"
-    if LD_LIBRARY_PATH=..:../algorithms:$LD_LIBRARY_PATH $test_path > /dev/null 2>&1; then
+    if (cd tests && LD_LIBRARY_PATH=..:../algorithms:$LD_LIBRARY_PATH ./$test_name > /dev/null 2>&1); then
         echo "✓ PASS: $test_name"
         PASSED_TESTS=$((PASSED_TESTS + 1))
     else
@@ -31,8 +30,6 @@ run_test() {
     fi
     echo ""
 }
-
-cd tests
 
 echo "=== Unit Tests ==="
 echo ""

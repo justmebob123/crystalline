@@ -3,7 +3,7 @@
  */
 
 #include "../include/prime_rainbow.h"
-#include "../include/cllm_inference.h"
+#include "../include/cllm_utils.h"
 #include <stdio.h>
 #include <time.h>
 
