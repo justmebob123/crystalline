@@ -208,6 +208,19 @@ void platonic_apply_symmetry(
 bool platonic_verify_euler(const PlatonicGeometry* geometry);
 
 // ============================================================================
+// INTERNAL GEOMETRY INITIALIZATION (for recovery)
+// ============================================================================
+
+/**
+ * Initialize geometry for each solid type (used by recovery mechanisms)
+ */
+bool platonic_tetrahedron_init_geometry(PlatonicModel* model);
+bool platonic_cube_init_geometry(PlatonicModel* model);
+bool platonic_octahedron_init_geometry(PlatonicModel* model);
+bool platonic_dodecahedron_init_geometry(PlatonicModel* model);
+bool platonic_icosahedron_init_geometry(PlatonicModel* model);
+
+// ============================================================================
 // BLIND RECOVERY API
 // ============================================================================
 
@@ -294,6 +307,24 @@ void platonic_cymatic_modulate(
     double* gradients,
     size_t gradient_size,
     double frequency_hz
+);
+
+/**
+ * Apply prime resonance alignment to attention
+ */
+void platonic_align_attention_resonance(
+    PlatonicModel* model,
+    double* attention_weights,
+    size_t attention_size
+);
+
+/**
+ * Map Babylonian clock rings to frequency bands
+ */
+void platonic_map_clock_to_frequencies(
+    PlatonicModel* model,
+    double* frequency_bands,
+    size_t num_bands
 );
 
 /**

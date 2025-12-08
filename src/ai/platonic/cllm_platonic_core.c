@@ -44,6 +44,9 @@ extern bool platonic_icosahedron_init_embeddings(PlatonicModel* model);
 extern bool platonic_icosahedron_init_layers(PlatonicModel* model);
 extern bool platonic_icosahedron_init_attention(PlatonicModel* model);
 
+// Recovery (declared in header, implemented in cllm_platonic_recovery.c)
+// These are already in the header file, no need to redeclare here
+
 // ============================================================================
 // GEOMETRIC CONSTANTS
 // ============================================================================
@@ -442,6 +445,10 @@ uint32_t platonic_model_infer(
         fprintf(stderr, "Error: NULL parameters\n");
         return 0;
     }
+    
+    // Suppress unused parameter warnings
+    (void)num_input_tokens;
+    (void)max_output_tokens;
     
     // TODO: Implement inference
     printf("[Inference implementation pending]\n");

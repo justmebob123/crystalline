@@ -622,7 +622,7 @@ tools/test_tetrahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "✓ Tetrahedron test tool built: tools/test_tetrahedron"
 
 .PHONY: platonic-test
-platonic-test: tools/test_tetrahedron tools/test_cube tools/test_octahedron tools/test_dodecahedron tools/test_icosahedron
+platonic-test: tools/test_tetrahedron tools/test_cube tools/test_octahedron tools/test_dodecahedron tools/test_icosahedron tools/test_blind_recovery tools/test_harmonic
 	@echo "Running Tetrahedron model tests..."
 	./tools/test_tetrahedron
 
@@ -654,3 +654,17 @@ tools/test_icosahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) $(CFLAGS) -o tools/test_icosahedron tools/platonic/test_icosahedron.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Icosahedron test tool built: tools/test_icosahedron"
+
+tools/test_blind_recovery: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Blind Recovery test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_blind_recovery tools/platonic/test_blind_recovery.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Blind Recovery test tool built: tools/test_blind_recovery"
+
+tools/test_harmonic: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Harmonic Integration test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_harmonic tools/platonic/test_harmonic.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Harmonic Integration test tool built: tools/test_harmonic"
