@@ -622,7 +622,7 @@ tools/test_tetrahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "✓ Tetrahedron test tool built: tools/test_tetrahedron"
 
 .PHONY: platonic-test
-platonic-test: tools/test_tetrahedron tools/test_cube
+platonic-test: tools/test_tetrahedron tools/test_cube tools/test_octahedron tools/test_dodecahedron tools/test_icosahedron
 	@echo "Running Tetrahedron model tests..."
 	./tools/test_tetrahedron
 
@@ -633,3 +633,24 @@ tools/test_cube: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) $(CFLAGS) -o tools/test_cube tools/platonic/test_cube.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Cube test tool built: tools/test_cube"
+
+tools/test_octahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Octahedron test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_octahedron tools/platonic/test_octahedron.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Octahedron test tool built: tools/test_octahedron"
+
+tools/test_dodecahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Dodecahedron test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_dodecahedron tools/platonic/test_dodecahedron.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Dodecahedron test tool built: tools/test_dodecahedron"
+
+tools/test_icosahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Icosahedron test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_icosahedron tools/platonic/test_icosahedron.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Icosahedron test tool built: tools/test_icosahedron"

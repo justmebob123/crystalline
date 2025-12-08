@@ -26,6 +26,24 @@ extern bool platonic_cube_init_embeddings(PlatonicModel* model);
 extern bool platonic_cube_init_layers(PlatonicModel* model);
 extern bool platonic_cube_init_attention(PlatonicModel* model);
 
+// Octahedron
+extern bool platonic_octahedron_init_geometry(PlatonicModel* model);
+extern bool platonic_octahedron_init_embeddings(PlatonicModel* model);
+extern bool platonic_octahedron_init_layers(PlatonicModel* model);
+extern bool platonic_octahedron_init_attention(PlatonicModel* model);
+
+// Dodecahedron
+extern bool platonic_dodecahedron_init_geometry(PlatonicModel* model);
+extern bool platonic_dodecahedron_init_embeddings(PlatonicModel* model);
+extern bool platonic_dodecahedron_init_layers(PlatonicModel* model);
+extern bool platonic_dodecahedron_init_attention(PlatonicModel* model);
+
+// Icosahedron
+extern bool platonic_icosahedron_init_geometry(PlatonicModel* model);
+extern bool platonic_icosahedron_init_embeddings(PlatonicModel* model);
+extern bool platonic_icosahedron_init_layers(PlatonicModel* model);
+extern bool platonic_icosahedron_init_attention(PlatonicModel* model);
+
 // ============================================================================
 // GEOMETRIC CONSTANTS
 // ============================================================================
@@ -230,12 +248,23 @@ PlatonicModel* platonic_model_create(const PlatonicModelConfig* config) {
                           platonic_cube_init_attention(model);
             break;
         case PLATONIC_OCTAHEDRON:
+            init_success = platonic_octahedron_init_geometry(model) &&
+                          platonic_octahedron_init_embeddings(model) &&
+                          platonic_octahedron_init_layers(model) &&
+                          platonic_octahedron_init_attention(model);
+            break;
         case PLATONIC_DODECAHEDRON:
+            init_success = platonic_dodecahedron_init_geometry(model) &&
+                          platonic_dodecahedron_init_embeddings(model) &&
+                          platonic_dodecahedron_init_layers(model) &&
+                          platonic_dodecahedron_init_attention(model);
+            break;
         case PLATONIC_ICOSAHEDRON:
-            fprintf(stderr, "Error: %s not yet implemented\n", 
-                    platonic_solid_name(config->solid_type));
-            platonic_model_free(model);
-            return NULL;
+            init_success = platonic_icosahedron_init_geometry(model) &&
+                          platonic_icosahedron_init_embeddings(model) &&
+                          platonic_icosahedron_init_layers(model) &&
+                          platonic_icosahedron_init_attention(model);
+            break;
         default:
             fprintf(stderr, "Error: Unknown solid type\n");
             platonic_model_free(model);
