@@ -42,6 +42,8 @@
 #include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
 #include "ai/cllm_cymatic_sync.h"           // PHASE 5: Cymatic timing synchronization
+#include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
+#include "cllm_mathematical_constants.h"  // For dimensional frequencies
 #include "prime_float_math.h"
 #include "prime_math.h"
 #include "prime_types.h"                 // For PRIME_PI
@@ -3327,6 +3329,45 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
     // Copy accumulated gradients to training object
     memcpy(system->training->gradients, system->accumulated_gradients, 
            system->gradient_size * sizeof(double));
+    
+    // Apply cymatic frequency modulation to gradients (optional)
+    // This modulates gradients with cymatic frequencies for smoother convergence
+    if (system->training->model && system->training->model->tokens) {
+        // Extract symmetry groups
+        uint32_t vocab_size = system->training->model->vocab_size;
+        uint32_t* symmetry_groups = (uint32_t*)malloc(vocab_size * sizeof(uint32_t));
+        if (symmetry_groups) {
+            for (uint32_t i = 0; i < vocab_size; i++) {
+                symmetry_groups[i] = system->training->model->tokens[i].symmetry_group;
+            }
+            
+            // Cymatic frequencies (Hz)
+            double frequencies[] = {432.0, 528.0, 639.0, 741.0, 852.0, 963.0};
+            uint32_t num_freqs = 6;
+            
+            // Get dimensional frequencies
+            uint64_t dimensional_freqs[12];
+            for (uint32_t i = 0; i < 12; i++) {
+                dimensional_freqs[i] = cllm_get_dimensional_frequency(i);
+            }
+            
+            // Apply cymatic modulation (10% strength)
+            // Use total_batches as training step counter
+            apply_cymatic_modulation(
+                (float*)system->training->gradients,
+                symmetry_groups,
+                vocab_size,
+                system->training->model->embedding_dim,
+                (uint32_t)system->training->total_batches,
+                frequencies,
+                num_freqs,
+                dimensional_freqs,
+                0.1
+            );
+            
+            free(symmetry_groups);
+        }
+    }
     
     // Apply gradients using Adam optimizer
     printf("Applying optimizer step...\n");

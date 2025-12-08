@@ -8,7 +8,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cllm.h"
-#include "../include/ai/cllm_cymatic_training.h"
+#include "../include/prime_float_math.h"
+#include "../include/cllm_mathematical_constants.h"
+#include "../../algorithms/include/cymatic_modulation.h"
+
+// Helper functions (previously in cllm_cymatic_training.c)
+static double cllm_get_cymatic_modulation(uint32_t training_step) {
+    double frequencies[] = {432.0, 528.0, 639.0, 741.0, 852.0, 963.0};
+    int num_freqs = 6;
+    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
+    double resonance = 0.0;
+    for (int f = 0; f < num_freqs; f++) {
+        double freq_phase = global_phase * frequencies[f] / 432.0;
+        resonance += prime_cos(freq_phase) / (double)num_freqs;
+    }
+    return resonance;
+}
+
+static void cllm_print_cymatic_stats(uint32_t training_step) {
+    printf("\n=== Cymatic Resonance Statistics (step %u) ===\n", training_step);
+    double modulation = cllm_get_cymatic_modulation(training_step);
+    printf("Current modulation: %.6f\n", modulation);
+    
+    double frequencies[] = {432.0, 528.0, 639.0, 741.0, 852.0, 963.0};
+    const char* names[] = {
+        "Universal (432 Hz)", "DNA Repair (528 Hz)", "Connection (639 Hz)",
+        "Awakening (741 Hz)", "Intuition (852 Hz)", "Divine (963 Hz)"
+    };
+    
+    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
+    printf("\nIndividual frequency contributions:\n");
+    for (int f = 0; f < 6; f++) {
+        double freq_phase = global_phase * frequencies[f] / 432.0;
+        double contribution = prime_cos(freq_phase);
+        printf("  %s: %.6f\n", names[f], contribution);
+    }
+    printf("\n");
+}
+
+static void cllm_compute_harmonics(double base_freq, uint32_t num_harmonics, double* harmonics) {
+    compute_cymatic_harmonics(base_freq, num_harmonics, harmonics, LATTICE_PHI);
+}
 
 void print_usage(const char* program_name) {
     printf("Usage: %s [options]\n", program_name);

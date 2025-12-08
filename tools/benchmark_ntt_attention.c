@@ -7,7 +7,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "../include/cllm_inference.h"
+#include "../include/prime_float_math.h"
+#include "../../algorithms/include/ntt_attention.h"
+
+// Simple benchmark implementation
+static void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim) {
+    printf("Benchmarking NTT Attention vs Standard Attention\n");
+    printf("Sequence Length: %u, Head Dimension: %u\n\n", seq_len, head_dim);
+    
+    // Allocate test data
+    size_t size = seq_len * head_dim;
+    float* query = calloc(size, sizeof(float));
+    float* key = calloc(size, sizeof(float));
+    float* value = calloc(size, sizeof(float));
+    float* output_ntt = calloc(size, sizeof(float));
+    
+    if (!query || !key || !value || !output_ntt) {
+        printf("ERROR: Memory allocation failed\n");
+        goto cleanup;
+    }
+    
+    // Initialize with random data
+    for (size_t i = 0; i < size; i++) {
+        query[i] = (float)rand() / RAND_MAX - 0.5f;
+        key[i] = (float)rand() / RAND_MAX - 0.5f;
+        value[i] = (float)rand() / RAND_MAX - 0.5f;
+    }
+    
+    // Benchmark NTT attention
+    clock_t start = clock();
+    double scale = 1.0 / prime_sqrt((double)head_dim);
+    ntt_attention_forward(output_ntt, query, key, value, seq_len, head_dim, scale);
+    clock_t end = clock();
+    double time_ntt = (double)(end - start) / CLOCKS_PER_SEC;
+    
+    // Estimate theoretical speedup
+    double theoretical_speedup = ntt_attention_estimate_speedup(seq_len);
+    
+    printf("Results:\n");
+    printf("  NTT Attention:      %.6f seconds\n", time_ntt);
+    printf("  Theoretical Speedup: %.2fx (vs O(n²))\n", theoretical_speedup);
+    printf("\n");
+    
+cleanup:
+    free(query);
+    free(key);
+    free(value);
+    free(output_ntt);
+}
 
 void print_usage(const char* program_name) {
     printf("Usage: %s [options]\n", program_name);
