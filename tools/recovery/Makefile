@@ -6,7 +6,7 @@ LDFLAGS = -L../../algorithms/lib/recovery_common -L../..
 LIBS = -lrecovery_common -lalgorithms -lcrystalline -lm
 
 # Tools
-TOOLS = geometric-recovery
+TOOLS = geometric-recovery signal-recovery image-recovery network-recovery crypto-recovery scientific-recovery ml-recovery platonic-demo
 
 # Default target
 all: $(TOOLS)
@@ -26,3 +26,37 @@ install: $(TOOLS)
 	cp $(TOOLS) ../../bin/
 
 .PHONY: all clean install
+# Build signal-recovery
+signal-recovery: signal-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build image-recovery
+image-recovery: image-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build network-recovery
+network-recovery: network-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build crypto-recovery
+crypto-recovery: crypto-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build scientific-recovery
+scientific-recovery: scientific-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build ml-recovery
+ml-recovery: ml-recovery.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
+
+# Build platonic-demo
+platonic-demo: platonic-demo.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+	@echo "Built $@"
