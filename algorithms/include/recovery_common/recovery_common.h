@@ -183,7 +183,7 @@ typedef struct {
 } CorruptionReport;
 
 // Detect corruption in data
-CorruptionReport* detect_corruption(DataType type, GenericData* data);
+CorruptionReport* detect_data_corruption(DataType type, GenericData* data);
 
 // Free corruption report
 void free_corruption_report(CorruptionReport* report);

@@ -17,6 +17,28 @@
  * - ML: PT, H5, NPY, ONNX, JSON
  */
 
+// Forward declarations for format-specific loaders/savers
+static bool load_obj(FILE* file, GeometricData* data);
+static bool load_stl(FILE* file, GeometricData* data);
+static bool load_ply(FILE* file, GeometricData* data);
+static bool load_wav(FILE* file, SignalData* data);
+static bool load_csv_signal(FILE* file, SignalData* data);
+static bool load_image(FILE* file, ImageData* data, FileFormat format);
+static bool load_network(FILE* file, NetworkData* data, FileFormat format);
+static bool load_pdb(FILE* file, ScientificData* data);
+static bool load_ml(FILE* file, MLData* data, FileFormat format);
+static bool load_json(FILE* file, GenericData* data, DataType* type);
+static bool save_obj(FILE* file, GeometricData* data);
+static bool save_stl(FILE* file, GeometricData* data);
+static bool save_ply(FILE* file, GeometricData* data);
+static bool save_wav(FILE* file, SignalData* data);
+static bool save_csv_signal(FILE* file, SignalData* data);
+static bool save_image(FILE* file, ImageData* data, FileFormat format);
+static bool save_network(FILE* file, NetworkData* data, FileFormat format);
+static bool save_pdb(FILE* file, ScientificData* data);
+static bool save_ml(FILE* file, MLData* data, FileFormat format);
+static bool save_json(FILE* file, GenericData* data, DataType type);
+
 // ============================================================================
 // FORMAT DETECTION
 // ============================================================================
@@ -364,62 +386,62 @@ void free_generic_data(DataType type, GenericData* data) {
 
 // These will be implemented in separate files for each format
 
-bool load_obj(FILE* file, GeometricData* data) {
-    // TODO: Implement OBJ loader
+static bool load_obj(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "OBJ loader not yet implemented");
     return false;
 }
 
-bool load_stl(FILE* file, GeometricData* data) {
-    // TODO: Implement STL loader
+static bool load_stl(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "STL loader not yet implemented");
     return false;
 }
 
-bool load_ply(FILE* file, GeometricData* data) {
-    // TODO: Implement PLY loader
+static bool load_ply(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "PLY loader not yet implemented");
     return false;
 }
 
-bool load_wav(FILE* file, SignalData* data) {
-    // TODO: Implement WAV loader
+static bool load_wav(FILE* file, SignalData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "WAV loader not yet implemented");
     return false;
 }
 
-bool load_csv_signal(FILE* file, SignalData* data) {
-    // TODO: Implement CSV signal loader
+static bool load_csv_signal(FILE* file, SignalData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "CSV signal loader not yet implemented");
     return false;
 }
 
-bool load_image(FILE* file, ImageData* data, FileFormat format) {
-    // TODO: Implement image loaders (JPG, PNG, TIFF)
+static bool load_image(FILE* file, ImageData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "Image loader not yet implemented");
     return false;
 }
 
-bool load_network(FILE* file, NetworkData* data, FileFormat format) {
-    // TODO: Implement network loaders (GML, GraphML)
+static bool load_network(FILE* file, NetworkData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "Network loader not yet implemented");
     return false;
 }
 
-bool load_pdb(FILE* file, ScientificData* data) {
-    // TODO: Implement PDB loader
+static bool load_pdb(FILE* file, ScientificData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "PDB loader not yet implemented");
     return false;
 }
 
-bool load_ml(FILE* file, MLData* data, FileFormat format) {
-    // TODO: Implement ML loaders (PT, H5, NPY)
+static bool load_ml(FILE* file, MLData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "ML loader not yet implemented");
     return false;
 }
 
-bool load_json(FILE* file, GenericData* data, DataType* type) {
-    // TODO: Implement JSON loader with type detection
+static bool load_json(FILE* file, GenericData* data, DataType* type) {
+    (void)file; (void)data; (void)type;
     set_error(ERROR_INVALID_FORMAT, "JSON loader not yet implemented");
     return false;
 }
@@ -428,62 +450,62 @@ bool load_json(FILE* file, GenericData* data, DataType* type) {
 // FORMAT-SPECIFIC SAVERS (Stubs - to be implemented)
 // ============================================================================
 
-bool save_obj(FILE* file, GeometricData* data) {
-    // TODO: Implement OBJ saver
+static bool save_obj(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "OBJ saver not yet implemented");
     return false;
 }
 
-bool save_stl(FILE* file, GeometricData* data) {
-    // TODO: Implement STL saver
+static bool save_stl(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "STL saver not yet implemented");
     return false;
 }
 
-bool save_ply(FILE* file, GeometricData* data) {
-    // TODO: Implement PLY saver
+static bool save_ply(FILE* file, GeometricData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "PLY saver not yet implemented");
     return false;
 }
 
-bool save_wav(FILE* file, SignalData* data) {
-    // TODO: Implement WAV saver
+static bool save_wav(FILE* file, SignalData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "WAV saver not yet implemented");
     return false;
 }
 
-bool save_csv_signal(FILE* file, SignalData* data) {
-    // TODO: Implement CSV signal saver
+static bool save_csv_signal(FILE* file, SignalData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "CSV signal saver not yet implemented");
     return false;
 }
 
-bool save_image(FILE* file, ImageData* data, FileFormat format) {
-    // TODO: Implement image savers (JPG, PNG, TIFF)
+static bool save_image(FILE* file, ImageData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "Image saver not yet implemented");
     return false;
 }
 
-bool save_network(FILE* file, NetworkData* data, FileFormat format) {
-    // TODO: Implement network savers (GML, GraphML)
+static bool save_network(FILE* file, NetworkData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "Network saver not yet implemented");
     return false;
 }
 
-bool save_pdb(FILE* file, ScientificData* data) {
-    // TODO: Implement PDB saver
+static bool save_pdb(FILE* file, ScientificData* data) {
+    (void)file; (void)data;
     set_error(ERROR_INVALID_FORMAT, "PDB saver not yet implemented");
     return false;
 }
 
-bool save_ml(FILE* file, MLData* data, FileFormat format) {
-    // TODO: Implement ML savers (PT, H5, NPY)
+static bool save_ml(FILE* file, MLData* data, FileFormat format) {
+    (void)file; (void)data; (void)format;
     set_error(ERROR_INVALID_FORMAT, "ML saver not yet implemented");
     return false;
 }
 
-bool save_json(FILE* file, GenericData* data, DataType type) {
-    // TODO: Implement JSON saver
+static bool save_json(FILE* file, GenericData* data, DataType type) {
+    (void)file; (void)data; (void)type;
     set_error(ERROR_INVALID_FORMAT, "JSON saver not yet implemented");
     return false;
 }
