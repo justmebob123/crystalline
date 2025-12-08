@@ -11,6 +11,22 @@
 #include <math.h>
 
 // ============================================================================
+// FORWARD DECLARATIONS FOR SOLID-SPECIFIC IMPLEMENTATIONS
+// ============================================================================
+
+// Tetrahedron
+extern bool platonic_tetrahedron_init_geometry(PlatonicModel* model);
+extern bool platonic_tetrahedron_init_embeddings(PlatonicModel* model);
+extern bool platonic_tetrahedron_init_layers(PlatonicModel* model);
+extern bool platonic_tetrahedron_init_attention(PlatonicModel* model);
+
+// Cube
+extern bool platonic_cube_init_geometry(PlatonicModel* model);
+extern bool platonic_cube_init_embeddings(PlatonicModel* model);
+extern bool platonic_cube_init_layers(PlatonicModel* model);
+extern bool platonic_cube_init_attention(PlatonicModel* model);
+
+// ============================================================================
 // GEOMETRIC CONSTANTS
 // ============================================================================
 
@@ -187,8 +203,7 @@ PlatonicModel* platonic_model_create(const PlatonicModelConfig* config) {
     printf("  Sphere packing: %.1f%%\n",
            platonic_sphere_packing_efficiency(config->solid_type) * 100.0);
     
-    // Initialize geometric structure (to be implemented per solid type)
-    // For now, allocate placeholder arrays
+    // Allocate geometric arrays
     model->vertex_positions = (double*)calloc(model->geometry.vertices * 3, sizeof(double));
     model->edge_connections = (uint32_t*)calloc(model->geometry.edges * 2, sizeof(uint32_t));
     model->face_vertices = (uint32_t*)calloc(model->geometry.faces * 4, sizeof(uint32_t));
@@ -199,11 +214,46 @@ PlatonicModel* platonic_model_create(const PlatonicModelConfig* config) {
         return NULL;
     }
     
+    // Initialize solid-specific geometry and weights
+    bool init_success = false;
+    switch (config->solid_type) {
+        case PLATONIC_TETRAHEDRON:
+            init_success = platonic_tetrahedron_init_geometry(model) &&
+                          platonic_tetrahedron_init_embeddings(model) &&
+                          platonic_tetrahedron_init_layers(model) &&
+                          platonic_tetrahedron_init_attention(model);
+            break;
+        case PLATONIC_CUBE:
+            init_success = platonic_cube_init_geometry(model) &&
+                          platonic_cube_init_embeddings(model) &&
+                          platonic_cube_init_layers(model) &&
+                          platonic_cube_init_attention(model);
+            break;
+        case PLATONIC_OCTAHEDRON:
+        case PLATONIC_DODECAHEDRON:
+        case PLATONIC_ICOSAHEDRON:
+            fprintf(stderr, "Error: %s not yet implemented\n", 
+                    platonic_solid_name(config->solid_type));
+            platonic_model_free(model);
+            return NULL;
+        default:
+            fprintf(stderr, "Error: Unknown solid type\n");
+            platonic_model_free(model);
+            return NULL;
+    }
+    
+    if (!init_success) {
+        fprintf(stderr, "Error: Failed to initialize %s model\n",
+                platonic_solid_name(config->solid_type));
+        platonic_model_free(model);
+        return NULL;
+    }
+    
     // Initialize recovery state
     model->is_corrupted = false;
     model->corruption_level = 0.0;
     
-    printf("✓ Platonic model created successfully\n");
+    printf("✓ Platonic model created successfully\n\n");
     
     return model;
 }

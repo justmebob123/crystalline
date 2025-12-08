@@ -622,7 +622,14 @@ tools/test_tetrahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "✓ Tetrahedron test tool built: tools/test_tetrahedron"
 
 .PHONY: platonic-test
-platonic-test: tools/test_tetrahedron
+platonic-test: tools/test_tetrahedron tools/test_cube
 	@echo "Running Tetrahedron model tests..."
 	./tools/test_tetrahedron
 
+
+tools/test_cube: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
+	@echo "Building Cube test tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/test_cube tools/platonic/test_cube.c \
+		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Cube test tool built: tools/test_cube"

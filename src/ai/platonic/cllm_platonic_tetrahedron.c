@@ -318,3 +318,34 @@ bool platonic_tetrahedron_verify_edges(const PlatonicModel* model) {
     
     return all_equal;
 }
+/**
+ * Initialize tetrahedron attention weights
+ * 
+ * Each of the 6 edges corresponds to an attention connection.
+ */
+bool platonic_tetrahedron_init_attention(PlatonicModel* model) {
+    if (!model) return false;
+    
+    printf("Initializing tetrahedron attention (6 edges)...\n");
+    
+    // Allocate attention weights
+    size_t attention_size = model->config.hidden_dim * model->config.hidden_dim;
+    size_t total_attention_size = 6 * attention_size;
+    
+    model->attention_weights = (double*)calloc(total_attention_size, sizeof(double));
+    
+    if (!model->attention_weights) {
+        fprintf(stderr, "Error: Failed to allocate attention weights\n");
+        return false;
+    }
+    
+    // Initialize attention weights with small random values
+    for (size_t i = 0; i < total_attention_size; i++) {
+        model->attention_weights[i] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
+    }
+    
+    printf("  ✓ Attention weights initialized: 6 edges × %zu = %zu values\n",
+           attention_size, total_attention_size);
+    
+    return true;
+}
