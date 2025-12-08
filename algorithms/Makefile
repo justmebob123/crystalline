@@ -127,3 +127,9 @@ test_phase3: tests/test_phase3.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase3 tests/test_phase3.c -L. -lalgorithms -L.. -lcrystalline -lm
 	@echo "Running Phase 3 tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase3
+
+test_phase4: tests/test_phase4_comprehensive.c $(SHARED_LIB)
+	@echo "Building Phase 4 comprehensive tests..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase4_comprehensive tests/test_phase4_comprehensive.c -L. -lalgorithms -L.. -lcrystalline -lm
+	@echo "Running Phase 4 comprehensive tests..."
+	LD_LIBRARY_PATH=..:. ./tests/test_phase4_comprehensive
