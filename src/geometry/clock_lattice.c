@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>  // For exp() in geometric_resonance()
 
 // Prime cache for dynamic generation
 static uint64_t* prime_cache = NULL;
@@ -481,7 +482,7 @@ static inline double geometric_resonance(uint64_t n) {
     
     for (int i = 0; i < NUM_PLATONIC_TARGETS; i++) {
         double dist = (double)n - (double)PLATONIC_TARGETS[i].target;
-        score += prime_exp(-(dist * dist) / sigma);
+        score += exp(-(dist * dist) / sigma);
     }
     
     return score;
@@ -502,24 +503,25 @@ bool validate_prime_by_clock_position(uint64_t candidate) {
         return false;
     }
     
-    // TIER 3: Geometric resonance pre-filter (O(1), ~40ns)
+    // TIER 3: Geometric resonance pre-filter (DISABLED - needs recalibration)
     // This is the Platonic prime innovation - use geometric structure
     // to quickly reject likely composites before expensive trial division
     //
-    // Threshold tuned through testing:
-    // - Too low: false negatives (reject actual primes)
-    // - Too high: no benefit (all candidates pass)
-    // - Optimal: ~0.001 (rejects ~90% of composites, 0% of primes)
+    // ISSUE: Current implementation causes false negatives for primes
+    // far from Platonic targets (e.g., 1009, 1013 have resonance ~0)
     //
-    // Note: This is disabled for small primes (< 1000) where trial division
-    // is already very fast. The benefit appears for larger primes.
+    // TODO: Recalibrate threshold or redesign resonance calculation
+    // to avoid rejecting valid primes far from Platonic targets.
+    //
+    // Disabled for now to maintain 100% accuracy.
+    /*
     if (candidate > 1000) {
         double resonance = geometric_resonance(candidate);
-        // Threshold of 0.001 empirically determined to have 0% false negative rate
         if (resonance < 0.001) {
             return false;  // Low resonance = likely composite
         }
     }
+    */
     
     // TIER 4: Trial division using 6k±1 optimization
     // Only reached by candidates that pass all filters above
