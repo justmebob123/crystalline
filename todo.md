@@ -73,21 +73,27 @@
 - [ ] Update cllm_inference.c to use new attention API
 
 ### 2.2 Add SIMD Operations (Vectorized Matrix Operations)
-- [ ] Profile current performance (identify hot paths)
-- [ ] Add AVX2 matrix multiplication to cllm_attention.c
-- [ ] Add AVX2 softmax to cllm_attention.c
+- [x] Add AVX2 matrix multiplication to cllm_attention.c
+- [x] Add AVX2 softmax to cllm_attention.c
+- [x] Add cache-aligned memory allocation (64-byte alignment)
+- [x] Update standard attention to use SIMD + aligned memory
+- [x] Update NTT attention to use aligned memory
+- [x] Verify compilation (0 errors, 0 warnings)
 - [ ] Add AVX2 layer normalization to cllm_layernorm.c
 - [ ] Add AVX2 embedding lookup to cllm_embedding.c
 - [ ] Add AVX2 feedforward to cllm_feedforward.c
+- [ ] Profile current performance (identify hot paths)
 - [ ] Test correctness (compare with non-SIMD)
 - [ ] Benchmark SIMD vs non-SIMD
 - [ ] Verify speedup (expect 2-4x)
 
 ### 2.3 Optimize Memory Layout (Better Cache Locality)
+- [x] Align all buffers to 64-byte cache lines (attention)
+- [x] Add aligned_alloc_64() and aligned_free_64() helpers
+- [x] Update attention to use cache-aligned allocations
 - [ ] Profile cache misses
-- [ ] Align all buffers to 64-byte cache lines
 - [ ] Convert hot structures to structure-of-arrays
-- [ ] Pre-allocate workspace buffers
+- [ ] Pre-allocate workspace buffers in model
 - [ ] Minimize allocations in training loop
 - [ ] Use memory pools for frequent allocations
 - [ ] Test memory usage
