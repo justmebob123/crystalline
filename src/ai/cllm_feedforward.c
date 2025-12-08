@@ -12,6 +12,17 @@
 #include "bigfixed_core.h"
 #include "bigfixed_array_utils.h"
 
+// FeedForwardLayer structure definition (local to this file)
+typedef struct FeedForwardLayer {
+    uint32_t input_dim;
+    uint32_t hidden_dim;
+    uint32_t output_dim;
+    double* w1_lattice;  // [input_dim × hidden_dim]
+    double* bias1;       // [hidden_dim]
+    double* w2_lattice;  // [hidden_dim × output_dim]
+    double* bias2;       // [output_dim]
+} FeedForwardLayer;
+
 // Forward declaration
 void cllm_feedforward_free(FeedForwardLayer* layer);
 

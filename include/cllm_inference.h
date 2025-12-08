@@ -20,10 +20,19 @@ typedef struct { int idx; float prob; } IndexProb;
 
 /* Legacy type compatibility - these are now part of CLLMModel */
 typedef struct AttentionLayer AttentionLayer;
-typedef struct FeedForwardLayer FeedForwardLayer;
 typedef struct Embeddings Embeddings;
 typedef struct PositionalEncoding PositionalEncoding;
-typedef struct PositionalEncoding PositionalEncoding;
+
+/* FeedForwardLayer structure definition */
+typedef struct FeedForwardLayer {
+    uint32_t input_dim;
+    uint32_t hidden_dim;
+    uint32_t output_dim;
+    double* w1;      // [input_dim × hidden_dim]
+    double* b1;      // [hidden_dim]
+    double* w2;      // [hidden_dim × output_dim]
+    double* b2;      // [output_dim]
+} FeedForwardLayer;
 
 /*
  * CLLM Inference Engine - Runtime inference state

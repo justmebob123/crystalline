@@ -278,6 +278,7 @@ double calculate_entropy_trend(const EntropyIntegrationContext* ctx) {
 
 /**
  * @brief Get entropy for lattice point
+ * TODO: Reimplement using new token_positions (ClockPosition) structure
  */
 double get_lattice_point_entropy(
     EntropyIntegrationContext* ctx,
@@ -287,21 +288,18 @@ double get_lattice_point_entropy(
         return 0.0;
     }
     
-    if (point_index >= ctx->model->num_lattice_points) {
+    if (point_index >= ctx->model->vocab_size) {  // Use vocab_size instead of num_lattice_points
         return 0.0;
     }
     
-    // Get lattice point
-    CLLMLatticePoint* point = &ctx->model->lattice_points[point_index];
-    
-    // Use point_id as position and symmetry_group as dimension
-    // symmetry_group is 0-11, we need 1-12 for dimension
-    uint32_t dimension = (point->symmetry_group % 12) + 1;
+    // TODO: Reimplement using token_positions
+    // For now, return a simple entropy calculation based on position
+    uint32_t dimension = (point_index % 12) + 1;
     
     // Calculate entropy for this point
     double entropy = calculate_lattice_entropy_cached(
         &ctx->entropy_ctx,
-        point->point_id,
+        point_index,
         dimension
     );
     

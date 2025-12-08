@@ -307,6 +307,13 @@ void cllm_init_embeddings(CLLMModel* model) {
 /**
  * Compute neighbor influence weights using L(n,d,k,λ)
  */
+// ============================================================================
+// LEGACY NEIGHBOR FUNCTIONS - COMMENTED OUT
+// These functions use old lattice_points structure which no longer exists
+// TODO: Reimplement using new token_positions (ClockPosition) structure
+// ============================================================================
+#if 0  // LEGACY CODE - DISABLED
+
 static int compute_neighbor_weights(
     CLLMModel* model,
     uint32_t token_id,
@@ -694,6 +701,9 @@ int cllm_embeddings_iterative_refinement(
     printf("✓ Iterative refinement complete\n");
     return 0;
 }
+#endif  // LEGACY CODE - DISABLED
+// ============================================================================
+
 
 // ============================================================================
 // LLL LATTICE REDUCTION
@@ -939,7 +949,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
     }
     
     CLLMModel* model = inf->model;
-    uint32_t embedding_dim = model->embeddings.embedding_dim;
+    uint32_t embedding_dim = model->embedding_dim;  // Direct field access
     
     // Copy embedding from embedding matrix
     double* embedding_matrix = model->embeddings;
@@ -958,7 +968,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
  * Add positional encoding to embeddings
  */
 void cllm_add_positional_encoding(CLLMModel* model, uint32_t position, double* embedding) {
-    if (!model || !embedding || position >= model->header.context_length) {
+    if (!model || !embedding || position >= model->max_seq_len) {  // Use max_seq_len instead of header.context_length
         return;
     }
     
