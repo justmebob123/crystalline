@@ -5,7 +5,7 @@ AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 LDFLAGS = -shared
 ARFLAGS = rcs
-INCLUDES = -I./include -I../include
+INCLUDES = -I./include -I./include/blind_recovery -I../include
 
 # Source files
 SOURCES = src/numerical.c \
@@ -41,7 +41,11 @@ SOURCES = src/numerical.c \
           src/mathematical_formulas.c \
           src/symbolic_field_theory.c \
           src/nonce_generation.c \
-          src/bigfixed_math_wrappers.c
+          src/bigfixed_math_wrappers.c \
+          src/blind_recovery/oscillation_detection.c \
+          src/blind_recovery/structural_mapping.c \
+          src/blind_recovery/coprime_analysis.c \
+          src/blind_recovery/corruption_detection.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
