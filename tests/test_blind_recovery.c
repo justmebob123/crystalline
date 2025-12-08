@@ -44,7 +44,7 @@ void test_corruption_detection() {
     // Create a simple cube model with blind recovery
     CLLMConfig config = cllm_default_config(PLATONIC_CUBE, 50);
     config.enable_blind_recovery = true;
-    config.blind_recovery_tolerance = 0.25; // 25% tolerance
+    config.corruption_tolerance = 0.25; // 25% tolerance
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
@@ -187,7 +187,7 @@ void test_comprehensive_recovery() {
     
     CLLMConfig config = cllm_default_config(PLATONIC_CUBE, 100);
     config.enable_blind_recovery = true;
-    config.blind_recovery_tolerance = 0.25;
+    config.corruption_tolerance = 0.25;
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
@@ -223,7 +223,7 @@ void test_high_corruption() {
     
     CLLMConfig config = cllm_default_config(PLATONIC_ICOSAHEDRON, 100);
     config.enable_blind_recovery = true;
-    config.blind_recovery_tolerance = 0.25;
+    config.corruption_tolerance = 0.25;
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
