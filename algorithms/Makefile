@@ -45,7 +45,11 @@ SOURCES = src/numerical.c \
           src/blind_recovery/oscillation_detection.c \
           src/blind_recovery/structural_mapping.c \
           src/blind_recovery/coprime_analysis.c \
-          src/blind_recovery/corruption_detection.c
+          src/blind_recovery/corruption_detection.c \
+          src/blind_recovery/anchor_selection.c \
+          src/blind_recovery/triangulation.c \
+          src/blind_recovery/anchor_adjustment.c \
+          src/blind_recovery/confidence_scoring.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -55,7 +59,7 @@ SHARED_LIB = libalgorithms.so
 STATIC_LIB = libalgorithms.a
 CRYSTALLINE_LIB = ../libcrystalline.so
 
-.PHONY: all static clean install
+.PHONY: all static clean install test test_phase1 test_phase2
 
 all: $(SHARED_LIB)
 
@@ -95,3 +99,18 @@ src/sphere_packing.o: src/sphere_packing.c include/sphere_packing.h
 src/hierarchical_primes.o: src/hierarchical_primes.c include/hierarchical_primes.h
 src/hierarchical_structures.o: src/hierarchical_structures.c include/hierarchical_structures.h
 src/batch_processing.o: src/batch_processing.c include/batch_processing.h
+
+# Test targets
+test: test_phase1 test_phase2
+
+test_phase1: tests/test_phase1.c $(SHARED_LIB)
+	@echo "Building Phase 1 tests..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1 tests/test_phase1.c -L. -lalgorithms -L.. -lcrystalline -lm
+	@echo "Running Phase 1 tests..."
+	LD_LIBRARY_PATH=..:. ./tests/test_phase1
+
+test_phase2: tests/test_phase2.c $(SHARED_LIB)
+	@echo "Building Phase 2 tests..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase2 tests/test_phase2.c -L. -lalgorithms -L.. -lcrystalline -lm
+	@echo "Running Phase 2 tests..."
+	LD_LIBRARY_PATH=..:. ./tests/test_phase2

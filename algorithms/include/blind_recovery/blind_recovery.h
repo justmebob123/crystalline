@@ -156,12 +156,12 @@ void free_coprime_matrix(uint64_t** matrix, uint32_t num_dimensions);
  * Anchor point for triangulation
  */
 typedef struct {
-    uint32_t vertex_id;
-    double position[3];            // 3D coordinates
+    uint32_t vertex_id;            // Vertex ID in original structure
+    double* position;              // [3] - 3D coordinates (dynamically allocated)
     double confidence;             // 0.0 to 1.0
-    bool is_corrupted;
-    uint32_t num_neighbors;
-    uint32_t* neighbor_ids;
+    bool is_corrupted;             // Whether anchor is corrupted
+    uint32_t num_neighbors;        // Number of neighbors
+    uint32_t* neighbor_ids;        // Neighbor vertex IDs
 } AnchorPoint;
 
 /**
@@ -175,43 +175,183 @@ typedef struct {
 } AnchorSystem;
 
 /**
- * Select optimal anchor points
- * 
- * @param structure Structural map
- * @param num_anchors Number of anchors to select
- * @param min_separation Minimum separation between anchors
- * @return Anchor system (caller must free)
+ * Recovery quality metrics
+ */
+typedef struct {
+    uint32_t total_vertices;
+    uint32_t corrupted_vertices;
+    uint32_t recovered_vertices;
+    double avg_confidence;
+    double min_confidence;
+    double max_confidence;
+    double avg_corrupted_confidence;
+    double recovery_rate;
+    double corruption_percentage;
+} RecoveryMetrics;
+
+/**
+ * Create anchor system with initial allocation
+ */
+AnchorSystem* create_anchor_system(uint32_t max_anchors);
+
+/**
+ * Select optimal anchor points using greedy maximum separation
  */
 AnchorSystem* select_anchors(
     const StructuralMap* structure,
-    uint32_t num_anchors,
-    double min_separation
+    const double* vertex_positions,
+    const double* confidence_scores,
+    uint32_t num_vertices
 );
 
 /**
- * Triangulate corrupted vertices from anchors
- * 
- * @param anchors Anchor system
- * @param structure Structural map
- * @param corruption_mask Which vertices are corrupted
+ * Validate anchor system quality
  */
-void triangulate_vertices(
+bool validate_anchor_system(const AnchorSystem* system);
+
+/**
+ * Recover single vertex using least-squares triangulation
+ */
+bool recover_vertex_triangulation(
     const AnchorSystem* anchors,
-    StructuralMap* structure,
-    const bool* corruption_mask
+    const double* expected_distances,
+    double* recovered_position,
+    double* confidence
 );
 
 /**
- * Adjust anchors to dampen oscillations
- * 
- * @param anchors Anchor system
- * @param oscillations Oscillation map
- * @param damping_factor Damping factor (0.0 to 1.0)
+ * Recover all corrupted vertices using triangulation
  */
-void adjust_anchors_for_stability(
-    AnchorSystem* anchors,
-    const OscillationMap* oscillations,
-    double damping_factor
+bool recover_all_vertices(
+    const AnchorSystem* anchors,
+    const StructuralMap* structure,
+    double* vertex_positions,
+    double* confidence_scores,
+    uint32_t num_vertices
+);
+
+/**
+ * Compute triangulation quality metrics
+ */
+void compute_triangulation_metrics(
+    const AnchorSystem* anchors,
+    const double* vertex_positions,
+    const double* confidence_scores,
+    uint32_t num_vertices,
+    double* avg_confidence,
+    double* min_confidence,
+    double* max_confidence
+);
+
+/**
+ * Detect if anchor may be corrupted
+ */
+bool detect_anchor_corruption(
+    const AnchorSystem* system,
+    uint32_t anchor_idx,
+    const double* vertex_positions,
+    uint32_t num_vertices
+);
+
+/**
+ * Refine anchor position using neighboring vertices
+ */
+bool refine_anchor_position(
+    AnchorPoint* anchor,
+    const double* vertex_positions,
+    const double* confidence_scores,
+    uint32_t num_vertices
+);
+
+/**
+ * Update anchor confidence scores based on recovery results
+ */
+void update_anchor_confidence(
+    AnchorSystem* system,
+    const double* vertex_positions,
+    const double* confidence_scores,
+    uint32_t num_vertices
+);
+
+/**
+ * Replace corrupted anchor with new candidate
+ */
+bool replace_corrupted_anchor(
+    AnchorSystem* system,
+    uint32_t anchor_idx,
+    const double* vertex_positions,
+    const double* confidence_scores,
+    const bool* corruption_mask,
+    uint32_t num_vertices
+);
+
+/**
+ * Perform iterative anchor adjustment
+ */
+uint32_t adjust_anchors_iterative(
+    AnchorSystem* system,
+    double* vertex_positions,
+    double* confidence_scores,
+    const bool* corruption_mask,
+    uint32_t num_vertices,
+    uint32_t max_iterations
+);
+
+/**
+ * Compute vertex confidence score
+ */
+double compute_vertex_confidence(
+    const double* vertex_position,
+    const AnchorSystem* anchors,
+    const double* expected_distances
+);
+
+/**
+ * Compute confidence scores for all vertices
+ */
+void compute_all_confidence_scores(
+    const double* vertex_positions,
+    const AnchorSystem* anchors,
+    const StructuralMap* structure,
+    double* confidence_scores,
+    uint32_t num_vertices
+);
+
+/**
+ * Compute global recovery metrics
+ */
+void compute_recovery_metrics(
+    const double* confidence_scores,
+    const bool* corruption_mask,
+    uint32_t num_vertices,
+    RecoveryMetrics* metrics
+);
+
+/**
+ * Validate recovery quality against thresholds
+ */
+bool validate_recovery_quality(
+    const RecoveryMetrics* metrics,
+    double min_recovery_rate,
+    double min_avg_confidence
+);
+
+/**
+ * Compute structural confidence based on Euler's formula
+ */
+double compute_structural_confidence(
+    const StructuralMap* structure,
+    uint32_t vertex_id
+);
+
+/**
+ * Update confidence scores iteratively
+ */
+void update_confidence_iterative(
+    double* confidence_scores,
+    const double* previous_scores,
+    uint32_t num_vertices,
+    double learning_rate
 );
 
 /**
