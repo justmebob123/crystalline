@@ -481,7 +481,7 @@ static inline double geometric_resonance(uint64_t n) {
     
     for (int i = 0; i < NUM_PLATONIC_TARGETS; i++) {
         double dist = (double)n - (double)PLATONIC_TARGETS[i].target;
-        score += exp(-(dist * dist) / sigma);
+        score += prime_exp(-(dist * dist) / sigma);
     }
     
     return score;
