@@ -632,6 +632,72 @@ bool is_converged(
  */
 void free_multi_scale_analysis(MultiScaleAnalysis* analysis);
 
+/**
+ * Get scale level by index
+ */
+const ScaleLevel* get_scale_level(
+    const MultiScaleAnalysis* analysis,
+    uint32_t scale_index
+);
+
+/**
+ * Check if scale is stable
+ */
+bool is_scale_stable(
+    const MultiScaleAnalysis* analysis,
+    uint32_t scale_index
+);
+
+/**
+ * Get coarsest stable scale
+ */
+uint32_t get_coarsest_stable_scale(const MultiScaleAnalysis* analysis);
+
+/**
+ * Get finest unstable scale
+ */
+uint32_t get_finest_unstable_scale(const MultiScaleAnalysis* analysis);
+
+/**
+ * Update scale stability
+ */
+void update_scale_stability(
+    MultiScaleAnalysis* analysis,
+    uint32_t scale_index,
+    bool is_stable
+);
+
+/**
+ * Stabilize structure at single scale
+ */
+bool stabilize_at_scale(
+    StructuralMap* structure,
+    ScaleLevel* scale,
+    uint32_t max_iterations
+);
+
+/**
+ * Stabilize iteratively across scales
+ */
+bool stabilize_iterative(
+    StructuralMap* structure,
+    MultiScaleAnalysis* analysis,
+    uint32_t max_iterations
+);
+
+/**
+ * Adaptive stabilization (chooses best strategy)
+ */
+bool stabilize_adaptive(
+    StructuralMap* structure,
+    MultiScaleAnalysis* analysis
+);
+
+/**
+ * Compute stabilization quality
+ */
+double compute_stabilization_quality(const MultiScaleAnalysis* analysis);
+
 // ============================================================================
 // LAYER 5: DYNAMIC MODEL EXPANSION
 // ============================================================================

@@ -53,7 +53,10 @@ SOURCES = src/numerical.c \
           src/blind_recovery/candidate_generation.c \
           src/blind_recovery/fitness_scoring.c \
           src/blind_recovery/iterative_refinement.c \
-          src/blind_recovery/convergence_detection.c
+          src/blind_recovery/convergence_detection.c \
+          src/blind_recovery/multi_scale_analysis.c \
+          src/blind_recovery/recursive_stabilization.c \
+          src/blind_recovery/stabilization_metrics.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
