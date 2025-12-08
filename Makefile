@@ -303,7 +303,7 @@ clean:
 	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention # tools/validate_lattice \
-                tools/analyze_cymatic_resonance tools/visualize_angular_positions tools/fix_html_entities
+                tools/fix_html_entities
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
