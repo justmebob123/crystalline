@@ -89,48 +89,48 @@ typedef struct {
 
 **Next**: Mark old files for deletion after full consolidation
 
-### 1.3 Consolidate Attention Implementations
+### 1.3 Integrate Blind Recovery into Training ✅ COMPLETE
 
-**Files to Modify**:
-- `src/ai/cllm_attention.c` - Make this the PRIMARY implementation
-- Integrate: cllm_lattice_attention.c, cllm_angular_attention.c, cllm_ntt_attention.c
+**File Modified**: `src/ai/cllm_training.c`
 
-**Changes**:
-- Add automatic NTT selection for long sequences
-- Integrate angular positions from clock lattice
-- Support geometric attention based on Platonic solid
-- Single API with multiple backends
+**Changes Implemented**:
+- ✅ Added corruption detection in cllm_train_epoch()
+- ✅ Checks Euler's formula every 10 batches
+- ✅ Logs corruption when detected
+- ✅ Only active when model->blind_recovery.enabled = true
+
+**Tasks Completed**:
+- [x] Add corruption checking to training loop
+- [x] Verify Euler's formula (V - E + F = 2)
+- [x] Log corruption detection
+- [x] Conditional activation based on feature flag
+- [x] Build and verify (0 errors, 0 warnings)
+
+### 1.4 Integrate Harmonic Modulation into Training ✅ COMPLETE
+
+**File Modified**: `src/ai/cllm_training.c`
+
+**Changes Implemented**:
+- ✅ Added harmonic modulation to learning rate in cllm_optimizer_step()
+- ✅ Modulates with primary frequency (432 Hz)
+- ✅ Smooth sinusoidal modulation: lr *= (1.0 + 0.05 * sin(...))
+- ✅ Only active when model->harmonic.enabled = true
+
+**Tasks Completed**:
+- [x] Add harmonic modulation to optimizer step
+- [x] Use primary frequency (432 Hz)
+- [x] Apply smooth sinusoidal modulation
+- [x] Conditional activation based on feature flag
+- [x] Build and verify (0 errors, 0 warnings)
+
+### 1.5 Test Training with Platonic Models - NEXT
 
 **Tasks**:
-- [ ] Modify cllm_attention.c to support all attention types
-- [ ] Add NTT attention backend (O(n log n))
-- [ ] Add angular position integration
-- [ ] Add automatic backend selection
-- [ ] Test performance improvements
-- [ ] Mark old implementations as deprecated
-- [ ] Build and verify
-
-### 1.4 Consolidate Training Implementations
-
-**Files to Modify**:
-- `src/ai/cllm_training.c` - Make this the PRIMARY implementation
-- Integrate: cllm_training_threaded.c, cllm_hierarchical_training.c, cllm_cymatic_training.c
-
-**Changes**:
-- Make kissing spheres threading the default
-- Integrate blind recovery checks
-- Integrate harmonic modulation
-- Single training loop with all features
-
-**Tasks**:
-- [ ] Modify cllm_training.c to be the single implementation
-- [ ] Integrate kissing spheres threading
-- [ ] Add blind recovery checks
-- [ ] Add harmonic modulation
-- [ ] Add Platonic geometry support
-- [ ] Test with all features enabled
-- [ ] Mark old implementations as deprecated
-- [ ] Build and verify
+- [ ] Create simple training test with Platonic model
+- [ ] Verify blind recovery triggers correctly
+- [ ] Measure convergence with harmonic modulation
+- [ ] Compare performance vs standard model
+- [ ] Document results
 
 ---
 
@@ -260,11 +260,12 @@ typedef struct {
 **What's Next (Realistic Approach)**:
 1. ✅ Phase 1.1: CLLMModel structure updated - DONE
 2. ✅ Phase 1.2: Embeddings consolidated - DONE
-3. ⏳ Phase 1.3: Integrate NTT attention into training loop
-4. ⏳ Phase 1.4: Enable blind recovery in training loop
-5. ⏳ Phase 1.5: Enable harmonic integration in training loop
+3. ✅ Phase 1.3: Blind recovery integrated into training - DONE
+4. ✅ Phase 1.4: Harmonic modulation integrated into training - DONE
+5. ⏳ Phase 1.5: Test training with Platonic models
 6. ⏳ Phase 2: Make kissing spheres threading the default
-7. ⏳ Phase 3: Delete redundant files after full integration
+7. ⏳ Phase 3: Integrate NTT attention for long sequences
+8. ⏳ Phase 4: Delete redundant files after full integration
 
 **Approach**:
 - MODIFY existing files (don't create new "unified" files)
