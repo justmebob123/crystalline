@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/ai/cllm_ntt_attention.h"
+#include "../include/cllm_inference.h"
 
 void print_usage(const char* program_name) {
     printf("Usage: %s [options]\n", program_name);
