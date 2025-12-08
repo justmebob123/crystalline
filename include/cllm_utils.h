@@ -46,6 +46,43 @@ CLLMModel* cllm_create_small_model(void);
 CLLMModel* cllm_create_medium_model(void);
 CLLMModel* cllm_create_large_model(void);
 
+// ============================================================================
+// PLATONIC GEOMETRY MODEL CREATION (OBJECTIVE 25)
+// ============================================================================
+
+/**
+ * Create a model based on Platonic solid geometry
+ * 
+ * Dimensions are automatically calculated from the Platonic solid:
+ * - embedding_dim = vertices × 12
+ * - ff_dim (hidden) = edges × 12
+ * - num_layers = faces
+ * - num_heads = 12 (always, for 12-fold symmetry)
+ * 
+ * @param solid_type Which Platonic solid (see ai/cllm_platonic.h for PlatonicSolidType)
+ * @param vocab_size Vocabulary size
+ * @param max_seq_len Maximum sequence length
+ * @param enable_blind_recovery Enable blind recovery (OBJECTIVE 26)
+ * @param enable_harmonic Enable harmonic integration (OBJECTIVE 27)
+ * @param enable_ntt Enable NTT attention (OBJECTIVE 13D)
+ * @return Newly created model with Platonic geometry, or NULL on failure
+ */
+CLLMModel* cllm_create_platonic_model(
+    int solid_type,
+    uint32_t vocab_size,
+    uint32_t max_seq_len,
+    bool enable_blind_recovery,
+    bool enable_harmonic,
+    bool enable_ntt
+);
+
+// Preset Platonic model configurations
+CLLMModel* cllm_create_tetrahedron_model(uint32_t vocab_size, uint32_t max_seq_len);
+CLLMModel* cllm_create_cube_model(uint32_t vocab_size, uint32_t max_seq_len);
+CLLMModel* cllm_create_octahedron_model(uint32_t vocab_size, uint32_t max_seq_len);
+CLLMModel* cllm_create_dodecahedron_model(uint32_t vocab_size, uint32_t max_seq_len);
+CLLMModel* cllm_create_icosahedron_model(uint32_t vocab_size, uint32_t max_seq_len);
+
 /*
  * Validation Utilities
  */

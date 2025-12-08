@@ -2,6 +2,8 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 #include "../include/ai/cllm_lattice_embeddings.h"  // PHASE 2: Lattice formula integration
+#include "../include/ai/cllm_platonic.h"  // Platonic solid models
+#include "../include/clock_lattice.h"     // Clock lattice mapping
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -318,6 +320,20 @@ void cllm_free_model(CLLMModel* model) {
         free(model->lattice_points);
     }
     
+    // Free Platonic model and clock lattice positions
+    // Note: platonic_model is NULL when using integrated geometry
+    if (model->platonic_model) {
+        platonic_model_free((PlatonicModel*)model->platonic_model);
+    }
+    
+    if (model->token_clock_positions) {
+        free(model->token_clock_positions);
+    }
+    
+    if (model->token_angular_positions) {
+        free(model->token_angular_positions);
+    }
+    
     free(model);
 }
 
@@ -441,4 +457,187 @@ CLLMModel* cllm_create_large_model(void) {
     };
     
     return cllm_create_model(&config);
+}
+
+// ============================================================================
+// PLATONIC GEOMETRY MODEL CREATION (OBJECTIVE 25)
+// ============================================================================
+
+/**
+ * Create a model based on Platonic solid geometry
+ * 
+ * Dimensions are automatically calculated from the Platonic solid:
+ * - embedding_dim = vertices × 12
+ * - ff_dim (hidden) = edges × 12
+ * - num_layers = faces
+ * - num_heads = 12 (always, for 12-fold symmetry)
+ * 
+ * @param solid_type Which Platonic solid (1-5)
+ * @param vocab_size Vocabulary size
+ * @param max_seq_len Maximum sequence length
+ * @param enable_blind_recovery Enable blind recovery (OBJECTIVE 26)
+ * @param enable_harmonic Enable harmonic integration (OBJECTIVE 27)
+ * @param enable_ntt Enable NTT attention (OBJECTIVE 13D)
+ * @return Newly created model with Platonic geometry, or NULL on failure
+ */
+CLLMModel* cllm_create_platonic_model(
+    PlatonicSolidType solid_type,
+    uint32_t vocab_size,
+    uint32_t max_seq_len,
+    bool enable_blind_recovery,
+    bool enable_harmonic,
+    bool enable_ntt
+) {
+    // Get geometry from Platonic solid type
+    PlatonicGeometry geom = platonic_get_geometry(solid_type);
+    
+    // Create CLLM configuration with dimensions from geometry
+    CLLMConfig config = {
+        .vocab_size = vocab_size,
+        .embedding_dim = geom.vertices * 12,  // V × 12
+        .num_layers = geom.faces,             // F layers
+        .num_heads = 12,                      // Always 12
+        .ff_dim = geom.edges * 12,            // E × 12
+        .max_seq_len = max_seq_len,
+        .dropout = 0.1f
+    };
+    
+    // Create standard CLLM model (this allocates all parameters)
+    CLLMModel* model = cllm_create_model(&config);
+    if (!model) {
+        return NULL;
+    }
+    
+    // Set Platonic geometry flags (don't create separate PlatonicModel to avoid duplication)
+    model->platonic_model = NULL;  // We're using integrated geometry, not separate model
+    model->platonic_solid_type = solid_type;
+    model->use_platonic_geometry = true;
+    
+    // Set geometry properties
+    model->geometry.vertices = geom.vertices;
+    model->geometry.edges = geom.edges;
+    model->geometry.faces = geom.faces;
+    model->geometry.symmetries = geom.symmetries;
+    model->geometry.has_golden_ratio = geom.has_golden_ratio;
+    // Calculate sphere packing efficiency based on solid type
+    double sphere_packing[] = {34.0, 52.0, 68.0, 74.0, 74.0}; // Tetra, Cube, Octa, Dodeca, Icosa
+    model->geometry.sphere_packing = sphere_packing[solid_type];
+    
+    // Initialize clock lattice positions for all tokens
+    model->token_clock_positions = calloc(vocab_size, sizeof(BabylonianClockPosition));
+    model->token_angular_positions = calloc(vocab_size, sizeof(double));
+    
+    if (!model->token_clock_positions || !model->token_angular_positions) {
+        fprintf(stderr, "Failed to allocate clock lattice positions\n");
+        if (model->token_clock_positions) free(model->token_clock_positions);
+        if (model->token_angular_positions) free(model->token_angular_positions);
+        cllm_free_model(model);
+        return NULL;
+    }
+    
+    // Map each token to clock lattice position
+    BabylonianClockPosition* positions = (BabylonianClockPosition*)model->token_clock_positions;
+    for (uint32_t i = 0; i < vocab_size; i++) {
+        positions[i] = map_prime_index_to_clock(i + 1);  // 1-based index
+        
+        // Compute angular position: θ(n,k,λ,ω,ψ)
+        // For now, use simple mapping based on clock position
+        double angle = positions[i].angle;
+        double radius = positions[i].radius;
+        model->token_angular_positions[i] = angle + radius * 0.1;
+    }
+    
+    // Set feature flags
+    model->blind_recovery.enabled = enable_blind_recovery;
+    model->blind_recovery.corruption_tolerance = 0.25;  // 25% tolerance
+    model->blind_recovery.recovery_method = 0;  // Auto
+    
+    model->harmonic.enabled = enable_harmonic;
+    model->harmonic.primary_frequency = 432.0;  // 432 Hz universal frequency
+    model->harmonic.use_fourier_transform = enable_harmonic;
+    model->harmonic.use_cymatic_modulation = enable_harmonic;
+    model->harmonic.use_prime_resonance = enable_harmonic;
+    
+    model->ntt_attention.enabled = enable_ntt;
+    model->ntt_attention.threshold_seq_len = 512;  // Use NTT for seq_len > 512
+    model->ntt_attention.auto_select = true;
+    
+    printf("✓ Created Platonic %s model:\n", platonic_solid_name(solid_type));
+    printf("  Vertices: %u → Embedding: %u\n", geom.vertices, config.embedding_dim);
+    printf("  Edges: %u → Hidden: %u\n", geom.edges, config.ff_dim);
+    printf("  Faces: %u → Layers: %u\n", geom.faces, config.num_layers);
+    printf("  Symmetries: %u\n", geom.symmetries);
+    printf("  Sphere packing: %.1f%%\n", model->geometry.sphere_packing);
+    if (geom.has_golden_ratio) {
+        printf("  Golden ratio: φ = 1.618034\n");
+    }
+    printf("  Blind recovery: %s\n", enable_blind_recovery ? "enabled" : "disabled");
+    printf("  Harmonic integration: %s\n", enable_harmonic ? "enabled" : "disabled");
+    printf("  NTT attention: %s\n", enable_ntt ? "enabled" : "disabled");
+    
+    return model;
+}
+
+/**
+ * Create Platonic models with preset configurations
+ */
+
+// Tetrahedron: Small, fast (48-dim embeddings, 4 layers)
+CLLMModel* cllm_create_tetrahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
+    return cllm_create_platonic_model(
+        PLATONIC_TETRAHEDRON,
+        vocab_size,
+        max_seq_len,
+        true,   // Enable blind recovery
+        true,   // Enable harmonic integration
+        false   // Disable NTT (small model)
+    );
+}
+
+// Cube: Balanced (96-dim embeddings, 6 layers)
+CLLMModel* cllm_create_cube_model(uint32_t vocab_size, uint32_t max_seq_len) {
+    return cllm_create_platonic_model(
+        PLATONIC_CUBE,
+        vocab_size,
+        max_seq_len,
+        true,   // Enable blind recovery
+        true,   // Enable harmonic integration
+        true    // Enable NTT
+    );
+}
+
+// Octahedron: Dual of cube (72-dim embeddings, 8 layers)
+CLLMModel* cllm_create_octahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
+    return cllm_create_platonic_model(
+        PLATONIC_OCTAHEDRON,
+        vocab_size,
+        max_seq_len,
+        true,   // Enable blind recovery
+        true,   // Enable harmonic integration
+        true    // Enable NTT
+    );
+}
+
+// Dodecahedron: Large, powerful (240-dim embeddings, 12 layers)
+CLLMModel* cllm_create_dodecahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
+    return cllm_create_platonic_model(
+        PLATONIC_DODECAHEDRON,
+        vocab_size,
+        max_seq_len,
+        true,   // Enable blind recovery
+        true,   // Enable harmonic integration
+        true    // Enable NTT
+    );
+}
+
+// Icosahedron: Maximum symmetry (144-dim embeddings, 20 layers)
+CLLMModel* cllm_create_icosahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
+    return cllm_create_platonic_model(
+        PLATONIC_ICOSAHEDRON,
+        vocab_size,
+        max_seq_len,
+        true,   // Enable blind recovery
+        true,   // Enable harmonic integration
+        true    // Enable NTT
+    );
 }

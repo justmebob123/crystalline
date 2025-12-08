@@ -223,6 +223,59 @@ typedef struct {
     
     // Training metadata
     TrainingMetadata training_meta;    // Training information
+    
+    // ========================================================================
+    // PLATONIC GEOMETRY INTEGRATION (OBJECTIVE 25)
+    // ========================================================================
+    
+    // Platonic solid configuration (optional - for geometric models)
+    void* platonic_model;        // PlatonicModel* (opaque pointer to avoid circular dependency)
+    uint32_t platonic_solid_type; // 0=none, 1=tetrahedron, 2=cube, 3=octahedron, 4=dodecahedron, 5=icosahedron
+    bool use_platonic_geometry;  // Enable Platonic architecture
+    
+    // Geometric properties (when using Platonic solids)
+    struct {
+        uint32_t vertices;       // Number of vertices (V)
+        uint32_t edges;          // Number of edges (E)
+        uint32_t faces;          // Number of faces (F)
+        uint32_t symmetries;     // Number of symmetries
+        bool has_golden_ratio;   // Uses golden ratio (dodecahedron/icosahedron)
+        double sphere_packing;   // Sphere packing efficiency (%)
+    } geometry;
+    
+    // Clock lattice mapping (OBJECTIVE 21)
+    void* token_clock_positions;    // ClockPosition* [vocab_size] - map tokens to Babylonian clock
+    double* token_angular_positions; // [vocab_size] - θ(n,k,λ,ω,ψ) angular positions
+    
+    // ========================================================================
+    // ADVANCED FEATURES
+    // ========================================================================
+    
+    // Blind recovery (OBJECTIVE 26)
+    struct {
+        bool enabled;            // Enable blind recovery
+        double corruption_tolerance; // Max corruption % (up to 25%)
+        uint32_t recovery_method; // 0=auto, 1=structural, 2=symmetry, 3=prime, 4=tetration
+        uint64_t last_recovery_time_ns; // Last recovery time
+        double last_corruption_level;   // Last detected corruption
+    } blind_recovery;
+    
+    // Harmonic integration (OBJECTIVE 27)
+    struct {
+        bool enabled;            // Enable harmonic integration
+        double primary_frequency; // Primary cymatic frequency (Hz) - default 432
+        bool use_fourier_transform; // Use Platonic Fourier transforms
+        bool use_cymatic_modulation; // Use cymatic frequency modulation
+        bool use_prime_resonance;    // Use prime resonance alignment
+    } harmonic;
+    
+    // NTT attention (OBJECTIVE 13D)
+    struct {
+        bool enabled;            // Enable NTT attention
+        uint32_t threshold_seq_len; // Sequence length threshold for NTT (default 512)
+        bool auto_select;        // Automatically select NTT for long sequences
+    } ntt_attention;
+    
 } CLLMModel;
 
 /*
