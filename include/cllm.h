@@ -157,11 +157,11 @@ typedef struct {
 typedef struct {
     uint32_t token_id;
     uint64_t prime_encoding;    // Prime number encoding
-    float lattice_coords[3];    // 3D lattice coordinates
-    float angle;                // Angular position
-    float radius;               // Radial distance
+    double lattice_coords[3];   // 3D lattice coordinates
+    double angle;               // Angular position
+    double radius;              // Radial distance
     char token_str[64];
-    float frequency;
+    double frequency;
     uint32_t symmetry_group;    // 0 to 11 (12-fold)
     uint8_t reserved[20];
 } CLLMToken;
