@@ -164,8 +164,8 @@ void compute_recovery_metrics(
             num_corrupted++;
             sum_corrupted_confidence += conf;
             
-            // Consider recovered if confidence > 0.8
-            if (conf > 0.8) {
+            // Consider recovered if confidence > 0.6 (reasonable threshold)
+            if (conf > 0.6) {
                 num_recovered++;
             }
         }

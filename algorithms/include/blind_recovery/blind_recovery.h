@@ -434,6 +434,137 @@ bool refine_structure(
  */
 void free_iterative_search(IterativeSearch* search);
 
+/**
+ * Generate candidates for all dimensions
+ */
+SearchCandidate** generate_candidates_all_dimensions(
+    uint64_t nonce,
+    uint32_t num_candidates_per_dim,
+    const StructuralMap* structure,
+    uint32_t* total_candidates
+);
+
+/**
+ * Free candidate array
+ */
+void free_candidates(SearchCandidate* candidates);
+
+/**
+ * Free all candidates
+ */
+void free_all_candidates(SearchCandidate** candidates, uint32_t num_dimensions);
+
+/**
+ * Score and sort candidates by fitness
+ */
+void score_and_sort_candidates(
+    SearchCandidate* candidates,
+    uint32_t num_candidates,
+    const StructuralMap* structure,
+    const OscillationMap* oscillations
+);
+
+/**
+ * Select top N candidates
+ */
+SearchCandidate* select_top_candidates(
+    const SearchCandidate* candidates,
+    uint32_t num_candidates,
+    uint32_t num_to_select
+);
+
+/**
+ * Compute average fitness of candidates
+ */
+double compute_average_fitness(
+    const SearchCandidate* candidates,
+    uint32_t num_candidates
+);
+
+/**
+ * Find best candidate
+ */
+const SearchCandidate* find_best_candidate(
+    const SearchCandidate* candidates,
+    uint32_t num_candidates
+);
+
+/**
+ * Create iterative search state
+ */
+IterativeSearch* create_iterative_search(
+    uint32_t max_iterations,
+    double convergence_threshold,
+    uint64_t nonce
+);
+
+/**
+ * Initialize search with candidates
+ */
+bool initialize_search_candidates(
+    IterativeSearch* search,
+    SearchCandidate* candidates,
+    uint32_t num_candidates
+);
+
+/**
+ * Perform multi-iteration refinement
+ */
+bool refine_structure_multi_pass(
+    StructuralMap* structure,
+    const OscillationMap* oscillations,
+    uint32_t num_passes,
+    uint32_t candidates_per_pass,
+    double convergence_threshold
+);
+
+/**
+ * Check if structure has converged
+ */
+bool is_structure_converged(
+    const StructuralMap* structure,
+    double threshold
+);
+
+/**
+ * Convergence history (opaque type)
+ */
+typedef struct ConvergenceHistory ConvergenceHistory;
+
+/**
+ * Create convergence history
+ */
+ConvergenceHistory* create_convergence_history(uint32_t size);
+
+/**
+ * Add to convergence history
+ */
+void add_to_convergence_history(ConvergenceHistory* history, double value);
+
+/**
+ * Check convergence with history
+ */
+bool is_converged_with_history(
+    const ConvergenceHistory* history,
+    double threshold,
+    double variance_threshold
+);
+
+/**
+ * Free convergence history
+ */
+void free_convergence_history(ConvergenceHistory* history);
+
+/**
+ * Detect early convergence
+ */
+bool detect_early_convergence(
+    const OscillationMap* oscillations,
+    const StructuralMap* structure,
+    ConvergenceHistory* history,
+    double threshold
+);
+
 // ============================================================================
 // LAYER 4: RECURSIVE STABILIZATION
 // ============================================================================

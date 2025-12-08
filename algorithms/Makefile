@@ -49,7 +49,11 @@ SOURCES = src/numerical.c \
           src/blind_recovery/anchor_selection.c \
           src/blind_recovery/triangulation.c \
           src/blind_recovery/anchor_adjustment.c \
-          src/blind_recovery/confidence_scoring.c
+          src/blind_recovery/confidence_scoring.c \
+          src/blind_recovery/candidate_generation.c \
+          src/blind_recovery/fitness_scoring.c \
+          src/blind_recovery/iterative_refinement.c \
+          src/blind_recovery/convergence_detection.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -114,3 +118,9 @@ test_phase2: tests/test_phase2.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase2 tests/test_phase2.c -L. -lalgorithms -L.. -lcrystalline -lm
 	@echo "Running Phase 2 tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase2
+
+test_phase3: tests/test_phase3.c $(SHARED_LIB)
+	@echo "Building Phase 3 tests..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase3 tests/test_phase3.c -L. -lalgorithms -L.. -lcrystalline -lm
+	@echo "Running Phase 3 tests..."
+	LD_LIBRARY_PATH=..:. ./tests/test_phase3

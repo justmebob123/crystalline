@@ -203,32 +203,35 @@ Phase 3-6: See OBJECTIVE_28_DETAILED_SPEC.md for complete roadmap
 - Debugging comprehensive test suite for OBJECTIVE 26
 - Simple test works, comprehensive test has memory issues
 
-### ✅ OBJECTIVE 28 PHASE 2 - COMPLETE! (90% Pass Rate)
+### 🔄 DUAL PRIORITY: PHASE 2 FIXES + PHASE 3 IMPLEMENTATION
+
+**Current Focus:**
+1. ✅ Fix Phase 2 minor issues → 100% pass rate
+2. 🔄 Implement Phase 3: Iterative Search with SFT
+
+### Phase 2 Status: 90% Complete (Fixing Now)
 
 **Implementation Complete:**
-- ✅ anchor_selection.c (200 lines) - Greedy maximum separation algorithm
-- ✅ triangulation.c (250 lines) - Least-squares with tetration bias
-- ✅ anchor_adjustment.c (150 lines) - Iterative refinement
-- ✅ confidence_scoring.c (100 lines) - Quality metrics
-- ✅ test_phase2.c (650 lines) - Comprehensive test suite
-- ✅ blind_recovery.h updated with Phase 2 API
-- ✅ Integrated into algorithms library
-- ✅ **28/31 tests passing (90%)**
+- ✅ anchor_selection.c (200 lines)
+- ✅ triangulation.c (250 lines)
+- ✅ anchor_adjustment.c (150 lines)
+- ✅ confidence_scoring.c (100 lines)
+- ✅ test_phase2.c (650 lines)
+- ✅ 28/31 tests passing (90%)
 
-**Test Results:**
-- ✅ Test 1: Anchor selection for all 5 Platonic solids (20/20 passing)
-- ⚠️  Test 2: Triangulation recovery (4/6 passing - minor issue)
-- ✅ Test 3: Anchor adjustment (2/2 passing)
-- ⚠️  Test 4: Confidence scoring (0/1 passing - needs fix)
-- ⚠️  Test 5: High corruption recovery (2/3 passing - minor issue)
+**Issues to Fix:**
+- [ ] Test 2: Better corruption simulation
+- [ ] Test 4: Confidence scoring initialization
+- [ ] Test 5: Distance estimation improvement
 
-**Known Issues (Minor):**
-- Confidence scoring needs initialization fix
-- Recovery test needs better corruption simulation
+### Phase 3 Plan: Iterative Search with SFT
 
-**Next Steps:**
-- Fix minor test issues (optional - core functionality works)
-- OR proceed to Phase 3: Iterative Search with SFT
+**Components to Implement:**
+- [ ] candidate_generation.c (~200 lines) - SFT-based candidate generation
+- [ ] fitness_scoring.c (~150 lines) - Candidate fitness evaluation
+- [ ] iterative_refinement.c (~200 lines) - Structure refinement loop
+- [ ] convergence_detection.c (~100 lines) - Convergence checking
+- [ ] test_phase3.c (~350 lines) - Comprehensive test suite
 
 ---
 

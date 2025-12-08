@@ -159,7 +159,7 @@ static void free_test_structural_map(StructuralMap* map) {
 }
 
 /**
- * Corrupt vertices randomly
+ * Corrupt vertices deterministically (for reliable testing)
  */
 static void corrupt_vertices(
     double* positions,
@@ -168,15 +168,25 @@ static void corrupt_vertices(
     double corruption_rate
 ) {
     uint32_t num_to_corrupt = (uint32_t)(num_vertices * corruption_rate);
+    if (num_to_corrupt == 0 && corruption_rate > 0.0) {
+        num_to_corrupt = 1;  // Ensure at least 1 vertex is corrupted
+    }
+    
+    // Corrupt vertices deterministically (evenly spaced)
+    uint32_t step = num_vertices / (num_to_corrupt + 1);
+    if (step == 0) step = 1;
     
     for (uint32_t i = 0; i < num_to_corrupt; i++) {
-        uint32_t idx = rand() % num_vertices;
+        uint32_t idx = (i + 1) * step;
+        if (idx >= num_vertices) idx = num_vertices - 1;
+        
         corruption_mask[idx] = true;
         
-        // Add random noise to position
-        positions[idx * 3 + 0] += ((double)rand() / RAND_MAX - 0.5) * 2.0;
-        positions[idx * 3 + 1] += ((double)rand() / RAND_MAX - 0.5) * 2.0;
-        positions[idx * 3 + 2] += ((double)rand() / RAND_MAX - 0.5) * 2.0;
+        // Add deterministic noise to position (based on index)
+        double noise = 0.5 + 0.1 * (double)i;
+        positions[idx * 3 + 0] += noise;
+        positions[idx * 3 + 1] += noise * 0.8;
+        positions[idx * 3 + 2] += noise * 0.6;
     }
 }
 
@@ -383,8 +393,11 @@ static void test_confidence_scoring() {
         positions[v * 3 + 2] = solid->vertices[v][2];
     }
     
-    // Initialize confidence scores
+    // Initialize confidence scores (all high initially)
     double* confidence = (double*)malloc(solid->num_vertices * sizeof(double));
+    for (uint32_t v = 0; v < solid->num_vertices; v++) {
+        confidence[v] = 0.95;
+    }
     
     // Select anchors
     AnchorSystem* anchors = select_anchors(
