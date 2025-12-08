@@ -385,7 +385,7 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/validate_lattice tools/analyze_cymatic_resonance \
        tools/visualize_angular_positions tools/ui_layout_analyzer \
        tools/benchmark_prime_validation \
-       tools/platonic_prime_resonance
+       tools/platonic_prime_resonance tools/tetration_analysis
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
@@ -601,3 +601,10 @@ tools/discover_platonic_solids: $(CRYSTALLINE_LIB)
 	$(CC) $(CFLAGS) -o tools/discover_platonic_solids tools/discover_platonic_solids.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Platonic solid discovery tool built: tools/discover_platonic_solids"
+
+tools/tetration_analysis: $(CRYSTALLINE_LIB)
+	@echo "Building tetration analysis tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/tetration_analysis tools/tetration_analysis.c \
+		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Tetration analysis tool built: tools/tetration_analysis"
