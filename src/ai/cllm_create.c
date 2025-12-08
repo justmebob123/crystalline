@@ -1,638 +1,603 @@
+/**
+ * @file cllm_create.c
+ * @brief CLLM Model Creation with Complete Geometric Foundation
+ * 
+ * COMPLETE TRANSFORMATION:
+ * - Platonic solid-based architecture (all 5 solids)
+ * - Automatic dimension derivation from geometry
+ * - Clock lattice mapping for all tokens and vertices
+ * - Blind recovery initialization
+ * - Harmonic integration initialization
+ * - NTT attention initialization
+ * - Kissing spheres threading initialization
+ * - Geometric weight initialization
+ */
+
 #include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
-#include "../include/ai/cllm_platonic.h"  // Platonic solid models
-#include "../include/clock_lattice.h"     // Clock lattice mapping
+#include "../include/ai/cllm_platonic.h"
+#include "../include/clock_lattice.h"
+#include "../include/prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../include/prime_float_math.h"
+#include <math.h>
+#include <time.h>
 
-// Create a model from configuration
-CLLMModel* cllm_create_model(const CLLMConfig* config) {
-    if (!config) return NULL;
+// External functions
+extern uint64_t crystalline_get_nth_prime(uint32_t n);
+extern PlatonicGeometry platonic_get_geometry(PlatonicSolidType solid_type);
+extern bool platonic_verify_euler(const PlatonicGeometry* geometry);
+extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Compute angular position θ(n,k,λ,ω,ψ) for a token
+ * This is the complete formula from the architecture
+ */
+static double compute_angular_position(uint32_t token_id, const CLLMModel* model) {
+    // Get prime for this token
+    uint64_t prime = crystalline_get_nth_prime(token_id);
     
-    // Validate configuration
-    if (config->vocab_size == 0 || config->embedding_dim == 0 || 
-        config->num_layers == 0 || config->num_heads == 0) {
-        fprintf(stderr, "Invalid model configuration\n");
+    // Parameters
+    double n = (double)token_id;
+    double k = (double)model->geometry.vertices;  // Use vertices as k
+    double lambda = (double)model->geometry.edges; // Use edges as λ
+    double omega = 2.0 * M_PI / 12.0;  // 12-fold symmetry
+    double psi = (double)(prime % 360) * M_PI / 180.0;  // Prime-based phase
+    
+    // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·sin(ωn + ψ)
+    double theta = (2.0 * M_PI * n / k) + (lambda / k) * prime_sin(omega * n + psi);
+    
+    return theta;
+}
+
+/**
+ * Initialize geometric weights based on Platonic solid structure
+ */
+static void initialize_geometric_weights(CLLMModel* model) {
+    // Use Xavier/Glorot initialization scaled by geometric properties
+    double scale = prime_sqrt(2.0 / (model->embedding_dim + model->hidden_dim));
+    
+    // Scale by golden ratio if applicable
+    if (model->geometry.has_golden_ratio) {
+        scale *= GOLDEN_RATIO;
+    }
+    
+    // Initialize embeddings
+    for (uint32_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
+        // Use prime-based initialization for better distribution
+        double r1 = (double)(rand() % 10000) / 10000.0;
+        double r2 = (double)(rand() % 10000) / 10000.0;
+        model->embeddings[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+    }
+    
+    // Initialize layer weights
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        // Attention weights
+        size_t attn_size = model->embedding_dim * model->embedding_dim;
+        for (size_t i = 0; i < attn_size; i++) {
+            double r1 = (double)(rand() % 10000) / 10000.0;
+            double r2 = (double)(rand() % 10000) / 10000.0;
+            double val = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+            
+            model->layers[layer].query_weights[i] = val;
+            model->layers[layer].key_weights[i] = val;
+            model->layers[layer].value_weights[i] = val;
+            model->layers[layer].output_weights[i] = val;
+        }
+        
+        // Feed-forward weights
+        size_t ffn_size1 = model->embedding_dim * model->hidden_dim;
+        for (size_t i = 0; i < ffn_size1; i++) {
+            double r1 = (double)(rand() % 10000) / 10000.0;
+            double r2 = (double)(rand() % 10000) / 10000.0;
+            model->layers[layer].ffn_w1[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+        }
+        
+        size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
+        for (size_t i = 0; i < ffn_size2; i++) {
+            double r1 = (double)(rand() % 10000) / 10000.0;
+            double r2 = (double)(rand() % 10000) / 10000.0;
+            model->layers[layer].ffn_w2[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+        }
+        
+        // Layer norm parameters (initialize to 1 and 0)
+        for (uint32_t i = 0; i < model->embedding_dim; i++) {
+            model->layers[layer].ln1_gamma[i] = 1.0;
+            model->layers[layer].ln1_beta[i] = 0.0;
+            model->layers[layer].ln2_gamma[i] = 1.0;
+            model->layers[layer].ln2_beta[i] = 0.0;
+        }
+    }
+    
+    // Initialize output weights
+    size_t output_size = model->embedding_dim * model->vocab_size;
+    for (size_t i = 0; i < output_size; i++) {
+        double r1 = (double)(rand() % 10000) / 10000.0;
+        double r2 = (double)(rand() % 10000) / 10000.0;
+        model->output_weights[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+    }
+}
+
+/**
+ * Allocate all model parameters
+ */
+static bool allocate_model_parameters(CLLMModel* model) {
+    // Embeddings
+    model->embeddings = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
+    if (!model->embeddings) return false;
+    
+    model->embeddings_grad = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
+    if (!model->embeddings_grad) return false;
+    
+    // Positional encoding
+    model->positional_encoding = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
+    if (!model->positional_encoding) return false;
+    
+    // Allocate layers
+    model->layers = (typeof(model->layers[0])*)calloc(model->num_layers, sizeof(model->layers[0]));
+    if (!model->layers) return false;
+    
+    // Allocate each layer's parameters
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        size_t attn_size = model->embedding_dim * model->embedding_dim;
+        size_t ffn_size1 = model->embedding_dim * model->hidden_dim;
+        size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
+        
+        // Attention weights
+        model->layers[i].query_weights = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].key_weights = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].value_weights = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].output_weights = (double*)calloc(attn_size, sizeof(double));
+        
+        // Attention gradients
+        model->layers[i].query_grad = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].key_grad = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].value_grad = (double*)calloc(attn_size, sizeof(double));
+        model->layers[i].output_grad = (double*)calloc(attn_size, sizeof(double));
+        
+        // Feed-forward weights
+        model->layers[i].ffn_w1 = (double*)calloc(ffn_size1, sizeof(double));
+        model->layers[i].ffn_w2 = (double*)calloc(ffn_size2, sizeof(double));
+        model->layers[i].ffn_b1 = (double*)calloc(model->hidden_dim, sizeof(double));
+        model->layers[i].ffn_b2 = (double*)calloc(model->embedding_dim, sizeof(double));
+        
+        // Feed-forward gradients
+        model->layers[i].ffn_w1_grad = (double*)calloc(ffn_size1, sizeof(double));
+        model->layers[i].ffn_w2_grad = (double*)calloc(ffn_size2, sizeof(double));
+        model->layers[i].ffn_b1_grad = (double*)calloc(model->hidden_dim, sizeof(double));
+        model->layers[i].ffn_b2_grad = (double*)calloc(model->embedding_dim, sizeof(double));
+        
+        // Layer norm parameters
+        model->layers[i].ln1_gamma = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln1_beta = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln2_gamma = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln2_beta = (double*)calloc(model->embedding_dim, sizeof(double));
+        
+        // Layer norm gradients
+        model->layers[i].ln1_gamma_grad = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln1_beta_grad = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln2_gamma_grad = (double*)calloc(model->embedding_dim, sizeof(double));
+        model->layers[i].ln2_beta_grad = (double*)calloc(model->embedding_dim, sizeof(double));
+        
+        // Check allocations
+        if (!model->layers[i].query_weights || !model->layers[i].key_weights ||
+            !model->layers[i].value_weights || !model->layers[i].output_weights ||
+            !model->layers[i].ffn_w1 || !model->layers[i].ffn_w2 ||
+            !model->layers[i].ffn_b1 || !model->layers[i].ffn_b2 ||
+            !model->layers[i].ln1_gamma || !model->layers[i].ln1_beta ||
+            !model->layers[i].ln2_gamma || !model->layers[i].ln2_beta) {
+            return false;
+        }
+    }
+    
+    // Output layer
+    model->output_weights = (double*)calloc(model->embedding_dim * model->vocab_size, sizeof(double));
+    model->output_bias = (double*)calloc(model->vocab_size, sizeof(double));
+    model->output_weights_grad = (double*)calloc(model->embedding_dim * model->vocab_size, sizeof(double));
+    model->output_bias_grad = (double*)calloc(model->vocab_size, sizeof(double));
+    
+    if (!model->output_weights || !model->output_bias) return false;
+    
+    return true;
+}
+
+// ============================================================================
+// MAIN MODEL CREATION FUNCTION
+// ============================================================================
+
+/**
+ * Create a CLLM model with complete geometric foundation
+ */
+CLLMModel* cllm_create_model(const CLLMConfig* config) {
+    if (!config) {
+        fprintf(stderr, "Error: NULL configuration\n");
         return NULL;
     }
     
-    // Check that embedding_dim is divisible by num_heads
-    if (config->embedding_dim % config->num_heads != 0) {
-        fprintf(stderr, "embedding_dim must be divisible by num_heads\n");
+    // Validate basic parameters
+    if (config->vocab_size == 0 || config->max_seq_len == 0) {
+        fprintf(stderr, "Error: Invalid vocab_size or max_seq_len\n");
         return NULL;
     }
     
     // Allocate model
     CLLMModel* model = (CLLMModel*)calloc(1, sizeof(CLLMModel));
     if (!model) {
-        fprintf(stderr, "Failed to allocate model\n");
+        fprintf(stderr, "Error: Failed to allocate model\n");
+        return NULL;
+    }
+    
+    // Seed random number generator
+    srand(time(NULL));
+    
+    // ========================================================================
+    // GEOMETRIC FOUNDATION
+    // ========================================================================
+    
+    printf("🔷 Initializing geometric foundation...\n");
+    
+    // Set Platonic solid type (default to CUBE if not specified or invalid)
+    if (config->solid_type < PLATONIC_TETRAHEDRON || config->solid_type > PLATONIC_ICOSAHEDRON) {
+        model->solid_type = PLATONIC_CUBE;  // Default to CUBE
+    } else {
+        model->solid_type = config->solid_type;
+    }
+    
+    // Get geometry for this solid
+    model->geometry = platonic_get_geometry(model->solid_type);
+    
+    // Verify Euler's formula: V - E + F = 2
+    if (!platonic_verify_euler(&model->geometry)) {
+        fprintf(stderr, "Error: Euler's formula verification failed!\n");
+        free(model);
+        return NULL;
+    }
+    
+    printf("  ✓ Platonic solid: ");
+    switch (model->solid_type) {
+        case PLATONIC_TETRAHEDRON: printf("Tetrahedron (4V, 6E, 4F)\n"); break;
+        case PLATONIC_CUBE: printf("Cube (8V, 12E, 6F)\n"); break;
+        case PLATONIC_OCTAHEDRON: printf("Octahedron (6V, 12E, 8F)\n"); break;
+        case PLATONIC_DODECAHEDRON: printf("Dodecahedron (20V, 30E, 12F)\n"); break;
+        case PLATONIC_ICOSAHEDRON: printf("Icosahedron (12V, 30E, 20F)\n"); break;
+        default: printf("Unknown\n");
+    }
+    
+    // Derive dimensions from geometry (or use config if specified)
+    model->embedding_dim = (config->embedding_dim > 0) ? config->embedding_dim : (model->geometry.vertices * 12);
+    model->hidden_dim = (config->hidden_dim > 0) ? config->hidden_dim : (model->geometry.edges * 12);
+    model->num_layers = (config->num_layers > 0) ? config->num_layers : model->geometry.faces;
+    model->num_heads = 12;  // Always 12 (12-fold symmetry)
+    
+    printf("  ✓ Dimensions: embedding=%u, hidden=%u, layers=%u, heads=%u\n",
+           model->embedding_dim, model->hidden_dim, model->num_layers, model->num_heads);
+    
+    // Validate Euler's formula
+    int euler = model->geometry.vertices - model->geometry.edges + model->geometry.faces;
+    model->metrics.euler_validation = (double)euler;
+    printf("  ✓ Euler's formula: V - E + F = %d (expected 2)\n", euler);
+    
+    if (euler != 2) {
+        fprintf(stderr, "Error: Euler's formula failed! Got %d, expected 2\n", euler);
+        free(model);
         return NULL;
     }
     
     // Set basic parameters
     model->vocab_size = config->vocab_size;
-    model->embedding_dim = config->embedding_dim;
-    model->num_layers = config->num_layers;
+    model->max_seq_len = config->max_seq_len;
     
-    // Initialize header
-    memcpy(model->header.magic, "CLLM", 4);
-    model->header.version = 1;
-    model->header.vocab_size = config->vocab_size;
-    model->header.embedding_dim = config->embedding_dim;
-    model->header.num_layers = config->num_layers;
-    model->header.num_heads = config->num_heads;
-    model->header.context_length = config->max_seq_len;
+    // ========================================================================
+    // CLOCK LATTICE MAPPING
+    // ========================================================================
     
-    // Allocate tokens array
-    model->tokens = (CLLMToken*)calloc(config->vocab_size, sizeof(CLLMToken));
-    if (!model->tokens) {
-        fprintf(stderr, "Failed to allocate tokens\n");
-        free(model);
-        return NULL;
-    }
+    printf("🕐 Initializing clock lattice mapping...\n");
     
-    // Initialize tokens with default values
-    for (uint32_t i = 0; i < config->vocab_size; i++) {
-        model->tokens[i].frequency = 0;
-        snprintf(model->tokens[i].token_str, sizeof(model->tokens[i].token_str), "token_%u", i);
-        
-        // CRITICAL FIX: Initialize prime_encoding (was left as 0 from calloc)
-        extern uint64_t crystalline_get_nth_prime(uint32_t n);
-        model->tokens[i].prime_encoding = crystalline_get_nth_prime(i);
-        
-        // CRITICAL FIX: Distribute across 12 symmetry groups (12-fold symmetry)
-        model->tokens[i].symmetry_group = i % 12;
-    }
+    // Allocate clock positions
+    model->vertex_positions = (ClockPosition*)calloc(model->geometry.vertices, sizeof(ClockPosition));
+    model->token_positions = (ClockPosition*)calloc(model->vocab_size, sizeof(ClockPosition));
+    model->token_angular_positions = (double*)calloc(model->vocab_size, sizeof(double));
     
-    // Calculate total weights needed
-    // Embedding weights: vocab_size * embedding_dim
-    uint64_t embedding_weights = config->vocab_size * config->embedding_dim;
-    
-    // Per-layer weights:
-    // - Attention: 3 * embedding_dim * embedding_dim (Q, K, V projections)
-    // - Feed-forward: 2 * embedding_dim * ff_dim + embedding_dim + ff_dim (weights + biases)
-    // - Layer norm: 4 * embedding_dim (2 layer norms per layer, each with gamma and beta)
-    uint64_t per_layer_weights = 
-        3 * config->embedding_dim * config->embedding_dim +
-        2 * config->embedding_dim * config->ff_dim +
-        config->embedding_dim + config->ff_dim +
-        4 * config->embedding_dim;
-    
-    model->num_weights = embedding_weights + config->num_layers * per_layer_weights;
-    model->header.total_params = model->num_weights;
-    
-    // Allocate weights
-    model->weights = (double*)calloc(model->num_weights, sizeof(double));
-    if (!model->weights) {
-        fprintf(stderr, "Failed to allocate weights\n");
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize embeddings
-    model->embeddings.vocab_size = config->vocab_size;
-    model->embeddings.embedding_dim = config->embedding_dim;
-    model->embeddings.embeddings = model->weights;
-    
-    // PHASE 2: Initialize with crystalline lattice formula using CACHED values
-    // This uses pre-computed L_lattice() values for 12 symmetry groups
-    // OPTIMIZATION: 285x faster than computing L_lattice() for every token
-    // Initialize embeddings with consolidated implementation
-    extern void cllm_init_embeddings(CLLMModel* model);
-    cllm_init_embeddings(model);
-    
-    // Allocate attention layers
-    model->attention_layers = (AttentionLayer*)calloc(config->num_layers, sizeof(AttentionLayer));
-    if (!model->attention_layers) {
-        fprintf(stderr, "Failed to allocate attention layers\n");
-        free(model->weights);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize attention layers
-    size_t weight_offset = embedding_weights;
-    uint32_t head_dim = config->embedding_dim / config->num_heads;
-    
-    for (uint32_t i = 0; i < config->num_layers; i++) {
-        model->attention_layers[i].layer_id = i;
-        model->attention_layers[i].num_heads = config->num_heads;
-        model->attention_layers[i].head_dim = head_dim;
-        
-        // Assign weight pointers with bounds checking
-        size_t qkv_size = config->embedding_dim * config->embedding_dim;
-        
-        // Verify we don't exceed allocated weight buffer
-        if (weight_offset + 3 * qkv_size > model->num_weights) {
-            fprintf(stderr, "Error: Weight offset exceeds allocated buffer at layer %u\n", i);
-            free(model->attention_layers);
-            free(model->weights);
-            free(model->tokens);
-            free(model);
-            return NULL;
-        }
-        
-        model->attention_layers[i].query_lattice = model->weights + weight_offset;
-        weight_offset += qkv_size;
-        model->attention_layers[i].key_lattice = model->weights + weight_offset;
-        weight_offset += qkv_size;
-        model->attention_layers[i].value_lattice = model->weights + weight_offset;
-        weight_offset += qkv_size;
-        
-        // Initialize attention weights with Xavier initialization (DOUBLE PRECISION)
-        double xavier_std = prime_sqrt(2.0 / (config->embedding_dim + config->embedding_dim));
-        for (size_t j = 0; j < qkv_size; j++) {
-            model->attention_layers[i].query_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-            model->attention_layers[i].key_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-            model->attention_layers[i].value_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * xavier_std;
-        }
-    }
-    
-    // Allocate feed-forward layers
-    model->ff_layers = (FeedForwardLayer*)calloc(config->num_layers, sizeof(FeedForwardLayer));
-    if (!model->ff_layers) {
-        fprintf(stderr, "Failed to allocate feed-forward layers\n");
-        free(model->attention_layers);
-        free(model->weights);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize feed-forward layers
-    for (uint32_t i = 0; i < config->num_layers; i++) {
-        model->ff_layers[i].layer_id = i;
-        model->ff_layers[i].input_dim = config->embedding_dim;
-        model->ff_layers[i].hidden_dim = config->ff_dim;
-        model->ff_layers[i].output_dim = config->embedding_dim;
-        
-        size_t w1_size = config->embedding_dim * config->ff_dim;
-        size_t w2_size = config->ff_dim * config->embedding_dim;
-        size_t total_ff_size = w1_size + config->ff_dim + w2_size + config->embedding_dim;
-        
-        // Verify we don't exceed allocated weight buffer
-        if (weight_offset + total_ff_size > model->num_weights) {
-            fprintf(stderr, "Error: Weight offset exceeds allocated buffer in FF layer %u\n", i);
-            free(model->ff_layers);
-            free(model->attention_layers);
-            free(model->weights);
-            free(model->tokens);
-            free(model);
-            return NULL;
-        }
-        
-        model->ff_layers[i].w1_lattice = model->weights + weight_offset;
-        weight_offset += w1_size;
-        model->ff_layers[i].bias1 = model->weights + weight_offset;
-        weight_offset += config->ff_dim;
-        model->ff_layers[i].w2_lattice = model->weights + weight_offset;
-        weight_offset += w2_size;
-        model->ff_layers[i].bias2 = model->weights + weight_offset;
-        weight_offset += config->embedding_dim;
-        
-        // Initialize FF weights with He initialization (for ReLU/tanh) - DOUBLE PRECISION
-        double he_std_w1 = prime_sqrt(2.0 / config->embedding_dim);
-        double he_std_w2 = prime_sqrt(2.0 / config->ff_dim);
-        
-        
-        for (size_t j = 0; j < w1_size; j++) {
-            model->ff_layers[i].w1_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w1;
-        }
-        for (size_t j = 0; j < config->ff_dim; j++) {
-            model->ff_layers[i].bias1[j] = 0.0;  // Biases initialized to zero
-        }
-        for (size_t j = 0; j < w2_size; j++) {
-            model->ff_layers[i].w2_lattice[j] = ((double)rand() / RAND_MAX - 0.5) * 2.0 * he_std_w2;
-        }
-        for (size_t j = 0; j < config->embedding_dim; j++) {
-            model->ff_layers[i].bias2[j] = 0.0;  // Biases initialized to zero
-        }
-    }
-    
-    // Allocate layer norms
-    model->layer_norms = (CLLMLayerNorm*)calloc(config->num_layers * 2, sizeof(CLLMLayerNorm));
-    if (!model->layer_norms) {
-        fprintf(stderr, "Failed to allocate layer norms\n");
-        free(model->ff_layers);
-        free(model->attention_layers);
-        free(model->weights);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    // Initialize layer norms (2 per layer: pre-attention and pre-feedforward)
-    for (uint32_t i = 0; i < config->num_layers * 2; i++) {
-        model->layer_norms[i].layer_id = i;
-        model->layer_norms[i].dim = config->embedding_dim;
-        model->layer_norms[i].epsilon = 1e-5f;
-        
-        model->layer_norms[i].gamma = model->weights + weight_offset;
-        weight_offset += config->embedding_dim;
-        model->layer_norms[i].beta = model->weights + weight_offset;
-        weight_offset += config->embedding_dim;
-        
-        // Initialize gamma to 1.0 and beta to 0.0 - DOUBLE PRECISION
-        for (uint32_t j = 0; j < config->embedding_dim; j++) {
-            model->layer_norms[i].gamma[j] = 1.0;
-            model->layer_norms[i].beta[j] = 0.0;
-        }
-    }
-    
-    // Initialize positional encoding
-    model->pos_encoding.max_length = config->max_seq_len;
-    model->pos_encoding.embedding_dim = config->embedding_dim;
-    
-    // Allocate positional encoding buffers
-    // size_t pos_size = config->max_seq_len * config->embedding_dim * sizeof(double);  // Unused
-    model->pos_encoding.spiral_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
-    model->pos_encoding.clock_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
-    model->pos_encoding.prime_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
-    model->pos_encoding.learned_positions = (double*)calloc(config->max_seq_len * config->embedding_dim, sizeof(double));
-    
-    if (!model->pos_encoding.spiral_positions || !model->pos_encoding.clock_positions ||
-        !model->pos_encoding.prime_positions || !model->pos_encoding.learned_positions) {
-        fprintf(stderr, "Failed to allocate positional encodings\n");
-        if (model->pos_encoding.spiral_positions) free(model->pos_encoding.spiral_positions);
-        if (model->pos_encoding.clock_positions) free(model->pos_encoding.clock_positions);
-        if (model->pos_encoding.prime_positions) free(model->pos_encoding.prime_positions);
-        if (model->pos_encoding.learned_positions) free(model->pos_encoding.learned_positions);
-        free(model->layer_norms);
-        free(model->ff_layers);
-        free(model->attention_layers);
-        free(model->weights);
-        free(model->tokens);
-        free(model);
-        return NULL;
-    }
-    
-    return model;
-}
-
-// Free model and all associated memory
-void cllm_free_model(CLLMModel* model) {
-    if (!model) return;
-    
-    if (model->pos_encoding.spiral_positions) {
-        free(model->pos_encoding.spiral_positions);
-    }
-    if (model->pos_encoding.clock_positions) {
-        free(model->pos_encoding.clock_positions);
-    }
-    if (model->pos_encoding.prime_positions) {
-        free(model->pos_encoding.prime_positions);
-    }
-    if (model->pos_encoding.learned_positions) {
-        free(model->pos_encoding.learned_positions);
-    }
-    
-    if (model->layer_norms) {
-        free(model->layer_norms);
-    }
-    
-    if (model->ff_layers) {
-        free(model->ff_layers);
-    }
-    
-    if (model->attention_layers) {
-        free(model->attention_layers);
-    }
-    
-    if (model->weights) {
-        free(model->weights);
-    }
-    
-    if (model->tokens) {
-        free(model->tokens);
-    }
-    
-    if (model->lattice_points) {
-        free(model->lattice_points);
-    }
-    
-    // Free Platonic model and clock lattice positions
-    // Note: platonic_model is NULL when using integrated geometry
-    if (model->platonic_model) {
-        platonic_model_free((PlatonicModel*)model->platonic_model);
-    }
-    
-    if (model->token_clock_positions) {
-        free(model->token_clock_positions);
-    }
-    
-    if (model->token_angular_positions) {
-        free(model->token_angular_positions);
-    }
-    
-    free(model);
-}
-
-// Estimate memory usage for a model configuration
-size_t cllm_estimate_memory(const CLLMConfig* config) {
-    if (!config) return 0;
-    
-    size_t total = 0;
-    
-    // Model structure
-    total += sizeof(CLLMModel);
-    
-    // Tokens
-    total += config->vocab_size * sizeof(CLLMToken);
-    
-    // Weights
-    uint64_t embedding_weights = config->vocab_size * config->embedding_dim;
-    uint64_t per_layer_weights = 
-        3 * config->embedding_dim * config->embedding_dim +
-        2 * config->embedding_dim * config->ff_dim +
-        config->embedding_dim + config->ff_dim +
-        4 * config->embedding_dim;
-    uint64_t total_weights = embedding_weights + config->num_layers * per_layer_weights;
-    total += total_weights * sizeof(double);
-    
-    // Attention layers
-    total += config->num_layers * sizeof(AttentionLayer);
-    
-    // Feed-forward layers
-    total += config->num_layers * sizeof(FeedForwardLayer);
-    
-    // Layer norms
-    total += config->num_layers * 2 * sizeof(CLLMLayerNorm);
-    
-    // Positional encodings (4 types)
-    total += 4 * config->max_seq_len * config->embedding_dim * sizeof(double);
-    
-    return total;
-}
-
-// Note: cllm_validate_model is already defined in cllm_utils.c
-
-// Print model information
-void cllm_print_model_info(const CLLMModel* model) {
-    if (!model) {
-        printf("Model is NULL\n");
-        return;
-    }
-    
-    printf("=== CLLM Model Information ===\n");
-    printf("Version: %u\n", model->header.version);
-    printf("Vocabulary Size: %lu\n", (unsigned long)model->vocab_size);
-    printf("Embedding Dimension: %lu\n", (unsigned long)model->embedding_dim);
-    printf("Number of Layers: %u\n", model->num_layers);
-    printf("Total Weights: %lu\n", (unsigned long)model->num_weights);
-    
-    if (model->num_layers > 0 && model->attention_layers) {
-        printf("\nAttention Configuration:\n");
-        printf("  Number of Heads: %u\n", model->attention_layers[0].num_heads);
-        printf("  Head Dimension: %u\n", model->attention_layers[0].head_dim);
-    }
-    
-    if (model->num_layers > 0 && model->ff_layers) {
-        printf("\nFeed-Forward Configuration:\n");
-        printf("  Input Dimension: %u\n", model->ff_layers[0].input_dim);
-        printf("  Hidden Dimension: %u\n", model->ff_layers[0].hidden_dim);
-    }
-    
-    // Calculate memory usage
-    size_t memory = sizeof(CLLMModel);
-    memory += model->vocab_size * sizeof(CLLMToken);
-    memory += model->num_weights * sizeof(double);
-    memory += model->num_layers * sizeof(AttentionLayer);
-    memory += model->num_layers * sizeof(FeedForwardLayer);
-    memory += model->num_layers * 2 * sizeof(CLLMLayerNorm);
-    
-    printf("\nMemory Usage: %.2f MB\n", memory / (1024.0 * 1024.0));
-    printf("==============================\n");
-}
-
-// Create a default small model for testing
-CLLMModel* cllm_create_small_model(void) {
-    CLLMConfig config = {
-        .vocab_size = 1000,
-        .embedding_dim = 128,
-        .num_layers = 4,
-        .num_heads = 4,
-        .ff_dim = 512,
-        .max_seq_len = 512,
-        .dropout = 0.1f
-    };
-    
-    return cllm_create_model(&config);
-}
-
-// Create a default medium model
-CLLMModel* cllm_create_medium_model(void) {
-    CLLMConfig config = {
-        .vocab_size = 50000,      // Increased for better coverage
-        .embedding_dim = 1024,    // Increased for richer representations
-        .num_layers = 8,
-        .num_heads = 8,
-        .ff_dim = 4096,           // Increased for more capacity
-        .max_seq_len = 1024,
-        .dropout = 0.1f
-    };
-    
-    return cllm_create_model(&config);
-}
-
-// Create a default large model
-CLLMModel* cllm_create_large_model(void) {
-    CLLMConfig config = {
-        .vocab_size = 50000,
-        .embedding_dim = 1024,
-        .num_layers = 12,
-        .num_heads = 16,
-        .ff_dim = 4096,
-        .max_seq_len = 2048,
-        .dropout = 0.1f
-    };
-    
-    return cllm_create_model(&config);
-}
-
-// ============================================================================
-// PLATONIC GEOMETRY MODEL CREATION (OBJECTIVE 25)
-// ============================================================================
-
-/**
- * Create a model based on Platonic solid geometry
- * 
- * Dimensions are automatically calculated from the Platonic solid:
- * - embedding_dim = vertices × 12
- * - ff_dim (hidden) = edges × 12
- * - num_layers = faces
- * - num_heads = 12 (always, for 12-fold symmetry)
- * 
- * @param solid_type Which Platonic solid (1-5)
- * @param vocab_size Vocabulary size
- * @param max_seq_len Maximum sequence length
- * @param enable_blind_recovery Enable blind recovery (OBJECTIVE 26)
- * @param enable_harmonic Enable harmonic integration (OBJECTIVE 27)
- * @param enable_ntt Enable NTT attention (OBJECTIVE 13D)
- * @return Newly created model with Platonic geometry, or NULL on failure
- */
-CLLMModel* cllm_create_platonic_model(
-    PlatonicSolidType solid_type,
-    uint32_t vocab_size,
-    uint32_t max_seq_len,
-    bool enable_blind_recovery,
-    bool enable_harmonic,
-    bool enable_ntt
-) {
-    // Get geometry from Platonic solid type
-    PlatonicGeometry geom = platonic_get_geometry(solid_type);
-    
-    // Create CLLM configuration with dimensions from geometry
-    CLLMConfig config = {
-        .vocab_size = vocab_size,
-        .embedding_dim = geom.vertices * 12,  // V × 12
-        .num_layers = geom.faces,             // F layers
-        .num_heads = 12,                      // Always 12
-        .ff_dim = geom.edges * 12,            // E × 12
-        .max_seq_len = max_seq_len,
-        .dropout = 0.1f
-    };
-    
-    // Create standard CLLM model (this allocates all parameters)
-    CLLMModel* model = cllm_create_model(&config);
-    if (!model) {
-        return NULL;
-    }
-    
-    // Set Platonic geometry flags (don't create separate PlatonicModel to avoid duplication)
-    model->platonic_model = NULL;  // We're using integrated geometry, not separate model
-    model->platonic_solid_type = solid_type;
-    model->use_platonic_geometry = true;
-    
-    // Set geometry properties
-    model->geometry.vertices = geom.vertices;
-    model->geometry.edges = geom.edges;
-    model->geometry.faces = geom.faces;
-    model->geometry.symmetries = geom.symmetries;
-    model->geometry.has_golden_ratio = geom.has_golden_ratio;
-    // Calculate sphere packing efficiency based on solid type
-    double sphere_packing[] = {34.0, 52.0, 68.0, 74.0, 74.0}; // Tetra, Cube, Octa, Dodeca, Icosa
-    model->geometry.sphere_packing = sphere_packing[solid_type];
-    
-    // Initialize clock lattice positions for all tokens
-    model->token_clock_positions = calloc(vocab_size, sizeof(BabylonianClockPosition));
-    model->token_angular_positions = calloc(vocab_size, sizeof(double));
-    
-    if (!model->token_clock_positions || !model->token_angular_positions) {
-        fprintf(stderr, "Failed to allocate clock lattice positions\n");
-        if (model->token_clock_positions) free(model->token_clock_positions);
-        if (model->token_angular_positions) free(model->token_angular_positions);
+    if (!model->vertex_positions || !model->token_positions || !model->token_angular_positions) {
+        fprintf(stderr, "Error: Failed to allocate clock positions\n");
         cllm_free_model(model);
         return NULL;
     }
     
-    // Map each token to clock lattice position
-    BabylonianClockPosition* positions = (BabylonianClockPosition*)model->token_clock_positions;
-    for (uint32_t i = 0; i < vocab_size; i++) {
-        positions[i] = map_prime_index_to_clock(i + 1);  // 1-based index
+    // Map vertices to clock lattice
+    for (uint32_t v = 0; v < model->geometry.vertices; v++) {
+        model->vertex_positions[v] = map_prime_index_to_clock(v);
+    }
+    
+    // Map tokens to clock lattice
+    for (uint32_t t = 0; t < model->vocab_size; t++) {
+        model->token_positions[t] = map_prime_index_to_clock(t);
+        model->token_angular_positions[t] = compute_angular_position(t, model);
+    }
+    
+    printf("  ✓ Mapped %u vertices and %u tokens to clock lattice\n",
+           model->geometry.vertices, model->vocab_size);
+    
+    // ========================================================================
+    // ALLOCATE MODEL PARAMETERS
+    // ========================================================================
+    
+    printf("💾 Allocating model parameters...\n");
+    
+    if (!allocate_model_parameters(model)) {
+        fprintf(stderr, "Error: Failed to allocate model parameters\n");
+        cllm_free_model(model);
+        return NULL;
+    }
+    
+    printf("  ✓ Allocated all parameters\n");
+    
+    // ========================================================================
+    // INITIALIZE FEATURES
+    // ========================================================================
+    
+    // Blind recovery
+    if (config->enable_blind_recovery) {
+        printf("🛡️  Initializing blind recovery...\n");
         
-        // Compute angular position: θ(n,k,λ,ω,ψ)
-        // For now, use simple mapping based on clock position
-        double angle = positions[i].angle;
-        double radius = positions[i].radius;
-        model->token_angular_positions[i] = angle + radius * 0.1;
+        model->recovery.enabled = true;
+        model->recovery.corruption_tolerance = config->corruption_tolerance;
+        model->recovery.max_iterations = config->max_recovery_iterations;
+        model->recovery.is_corrupted = false;
+        model->recovery.corruption_level = 0.0;
+        model->recovery.recovery_count = 0;
+        model->recovery.recovery_methods = 0x0F;  // All methods enabled
+        
+        // Allocate backup arrays
+        model->recovery.vertex_backup = (double*)calloc(model->geometry.vertices * 3, sizeof(double));
+        model->recovery.edge_backup = (double*)calloc(model->geometry.edges, sizeof(double));
+        model->recovery.face_backup = (double*)calloc(model->geometry.faces, sizeof(double));
+        
+        printf("  ✓ Blind recovery enabled (tolerance: %.0f%%)\n", 
+               model->recovery.corruption_tolerance * 100);
     }
     
-    // Set feature flags
-    model->blind_recovery.enabled = enable_blind_recovery;
-    model->blind_recovery.corruption_tolerance = 0.25;  // 25% tolerance
-    model->blind_recovery.recovery_method = 0;  // Auto
-    
-    model->harmonic.enabled = enable_harmonic;
-    model->harmonic.primary_frequency = 432.0;  // 432 Hz universal frequency
-    model->harmonic.use_fourier_transform = enable_harmonic;
-    model->harmonic.use_cymatic_modulation = enable_harmonic;
-    model->harmonic.use_prime_resonance = enable_harmonic;
-    
-    model->ntt_attention.enabled = enable_ntt;
-    model->ntt_attention.threshold_seq_len = 512;  // Use NTT for seq_len > 512
-    model->ntt_attention.auto_select = true;
-    
-    printf("✓ Created Platonic %s model:\n", platonic_solid_name(solid_type));
-    printf("  Vertices: %u → Embedding: %u\n", geom.vertices, config.embedding_dim);
-    printf("  Edges: %u → Hidden: %u\n", geom.edges, config.ff_dim);
-    printf("  Faces: %u → Layers: %u\n", geom.faces, config.num_layers);
-    printf("  Symmetries: %u\n", geom.symmetries);
-    printf("  Sphere packing: %.1f%%\n", model->geometry.sphere_packing);
-    if (geom.has_golden_ratio) {
-        printf("  Golden ratio: φ = 1.618034\n");
+    // Harmonic integration
+    if (config->enable_harmonic_integration) {
+        printf("🎵 Initializing harmonic integration...\n");
+        
+        model->harmonic.enabled = true;
+        model->harmonic.primary_frequency = config->primary_frequency;
+        
+        // Cymatic frequencies (Hz)
+        model->harmonic.frequencies[0] = 432.0;  // Universal
+        model->harmonic.frequencies[1] = 528.0;  // Transformation
+        model->harmonic.frequencies[2] = 639.0;  // Connection
+        model->harmonic.frequencies[3] = 741.0;  // Awakening
+        model->harmonic.frequencies[4] = 852.0;  // Intuition
+        model->harmonic.frequencies[5] = 963.0;  // Divine
+        
+        // Platonic primes
+        model->harmonic.platonic_primes[0] = 5;    // Tetrahedron
+        model->harmonic.platonic_primes[1] = 23;   // Cube
+        model->harmonic.platonic_primes[2] = 29;   // Octahedron
+        model->harmonic.platonic_primes[3] = 127;  // Dodecahedron
+        model->harmonic.platonic_primes[4] = 241;  // Icosahedron
+        
+        // Tetration attractors (computed)
+        model->harmonic.tetration_attractors[0] = 2;  // Base 2 attractor
+        model->harmonic.tetration_attractors[1] = 3;  // Base 3 attractor
+        model->harmonic.tetration_attractors[2] = 5;  // Base 5 attractor
+        
+        // Fourier coefficients
+        model->harmonic.fourier_coefficients = (double*)calloc(model->embedding_dim, sizeof(double));
+        
+        // Feature flags
+        model->harmonic.use_fourier_transform = config->use_fourier_transform;
+        model->harmonic.use_cymatic_modulation = config->use_cymatic_modulation;
+        model->harmonic.use_prime_resonance = config->use_prime_resonance;
+        model->harmonic.use_tetration_optimizer = config->use_tetration_optimizer;
+        
+        printf("  ✓ Harmonic integration enabled (primary: %.0f Hz)\n",
+               model->harmonic.primary_frequency);
     }
-    printf("  Blind recovery: %s\n", enable_blind_recovery ? "enabled" : "disabled");
-    printf("  Harmonic integration: %s\n", enable_harmonic ? "enabled" : "disabled");
-    printf("  NTT attention: %s\n", enable_ntt ? "enabled" : "disabled");
+    
+    // NTT attention
+    if (config->enable_ntt_attention) {
+        printf("⚡ Initializing NTT attention...\n");
+        
+        model->ntt.enabled = true;
+        model->ntt.threshold_seq_len = config->ntt_threshold_seq_len;
+        model->ntt.auto_select = config->ntt_auto_select;
+        
+        // Pre-allocate workspace
+        model->ntt.ntt_workspace = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
+        model->ntt.ntt_frequencies = (double*)calloc(model->max_seq_len, sizeof(double));
+        
+        model->ntt.ntt_calls = 0;
+        model->ntt.standard_calls = 0;
+        model->ntt.ntt_time = 0.0;
+        model->ntt.standard_time = 0.0;
+        
+        printf("  ✓ NTT attention enabled (threshold: %u)\n",
+               model->ntt.threshold_seq_len);
+    }
+    
+    // Kissing spheres threading
+    if (config->enable_kissing_spheres) {
+        printf("🔮 Initializing kissing spheres threading...\n");
+        
+        model->threading.enabled = true;
+        model->threading.num_spheres = (config->num_threads > 0) ? config->num_threads : 13;
+        
+        // Allocate work distribution maps
+        model->threading.vertex_to_sphere = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
+        model->threading.edge_to_boundary = (uint32_t*)calloc(model->geometry.edges, sizeof(uint32_t));
+        model->threading.token_to_sphere = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
+        
+        // Distribute vertices across spheres (geometric distribution)
+        for (uint32_t v = 0; v < model->geometry.vertices; v++) {
+            model->threading.vertex_to_sphere[v] = (v % 12) + 1;  // Workers 1-12
+        }
+        
+        // Distribute edges across boundaries
+        for (uint32_t e = 0; e < model->geometry.edges; e++) {
+            model->threading.edge_to_boundary[e] = e % model->geometry.edges;
+        }
+        
+        // Distribute tokens across spheres
+        for (uint32_t t = 0; t < model->vocab_size; t++) {
+            model->threading.token_to_sphere[t] = (t % 12) + 1;  // Workers 1-12
+        }
+        
+        printf("  ✓ Kissing spheres threading enabled (%d spheres)\n",
+               model->threading.num_spheres);
+    }
+    
+    // ========================================================================
+    // INITIALIZE OPTIMIZER
+    // ========================================================================
+    
+    model->optimizer.type = config->optimizer_type;
+    model->optimizer.learning_rate = config->learning_rate;
+    model->optimizer.beta1 = config->beta1;
+    model->optimizer.beta2 = config->beta2;
+    model->optimizer.epsilon = config->epsilon;
+    model->optimizer.weight_decay = config->weight_decay;
+    model->optimizer.t = 0;
+    
+    // Allocate optimizer buffers for Adam/RMSProp
+    if (config->optimizer_type == OPTIMIZER_ADAM || config->optimizer_type == OPTIMIZER_RMSPROP) {
+        // Calculate total number of parameters
+        size_t total_params = model->vocab_size * model->embedding_dim;  // Embeddings
+        total_params += model->embedding_dim * model->vocab_size;  // Output weights
+        
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            total_params += 4 * model->embedding_dim * model->embedding_dim;  // Attention
+            total_params += model->embedding_dim * model->hidden_dim;  // FFN W1
+            total_params += model->hidden_dim * model->embedding_dim;  // FFN W2
+            total_params += model->hidden_dim + model->embedding_dim;  // FFN biases
+            total_params += 4 * model->embedding_dim;  // Layer norms
+        }
+        
+        model->optimizer.m = (double*)calloc(total_params, sizeof(double));
+        model->optimizer.v = (double*)calloc(total_params, sizeof(double));
+    }
+    
+    // ========================================================================
+    // INITIALIZE WEIGHTS
+    // ========================================================================
+    
+    printf("🎲 Initializing weights with geometric structure...\n");
+    initialize_geometric_weights(model);
+    printf("  ✓ Weights initialized\n");
+    
+    // ========================================================================
+    // INITIALIZE METRICS
+    // ========================================================================
+    
+    model->metrics.total_steps = 0;
+    model->metrics.epoch = 0;
+    model->metrics.current_loss = 0.0;
+    model->metrics.best_loss = 1e9;
+    model->metrics.tokens_processed = 0;
+    model->metrics.perplexity = 0.0;
+    model->metrics.euler_validation = (double)euler;
+    model->metrics.symmetry_score = 1.0;
+    model->metrics.gcd_similarity_avg = 0.0;
+    model->metrics.corruption_events = 0;
+    model->metrics.successful_recoveries = 0;
+    model->metrics.avg_recovery_time_ms = 0.0;
+    
+    // ========================================================================
+    // INITIALIZE HEADER (for file format)
+    // ========================================================================
+    
+    memcpy(model->header.magic, "CLLM\x02\x00\x00\x00", 8);
+    model->header.version = CLLM_VERSION;
+    model->header.vocab_size = model->vocab_size;
+    model->header.embedding_dim = model->embedding_dim;
+    model->header.hidden_dim = model->hidden_dim;
+    model->header.num_layers = model->num_layers;
+    model->header.max_seq_len = model->max_seq_len;
+    model->header.num_heads = model->num_heads;
+    model->header.platonic_solid_type = model->solid_type;
+    model->header.vertices = model->geometry.vertices;
+    model->header.edges = model->geometry.edges;
+    model->header.faces = model->geometry.faces;
+    model->header.blind_recovery_enabled = model->recovery.enabled;
+    model->header.harmonic_enabled = model->harmonic.enabled;
+    model->header.ntt_attention_enabled = model->ntt.enabled;
+    model->header.kissing_spheres_enabled = model->threading.enabled;
+    model->header.created_timestamp = time(NULL);
+    model->header.modified_timestamp = time(NULL);
+    
+    // ========================================================================
+    // FINAL VALIDATION
+    // ========================================================================
+    
+    printf("✅ Model creation complete!\n");
+    printf("   Platonic solid: %uV, %uE, %uF (Euler: %d)\n",
+           model->geometry.vertices, model->geometry.edges, model->geometry.faces, euler);
+    printf("   Dimensions: %u embedding, %u hidden, %u layers, %u heads\n",
+           model->embedding_dim, model->hidden_dim, model->num_layers, model->num_heads);
+    printf("   Features: recovery=%d, harmonic=%d, ntt=%d, threading=%d\n",
+           model->recovery.enabled, model->harmonic.enabled, 
+           model->ntt.enabled, model->threading.enabled);
     
     return model;
 }
 
+// ============================================================================
+// DEFAULT CONFIGURATION
+// ============================================================================
+
 /**
- * Create Platonic models with preset configurations
+ * Get default configuration for a Platonic solid
  */
-
-// Tetrahedron: Small, fast (48-dim embeddings, 4 layers)
-CLLMModel* cllm_create_tetrahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
-    return cllm_create_platonic_model(
-        PLATONIC_TETRAHEDRON,
-        vocab_size,
-        max_seq_len,
-        true,   // Enable blind recovery
-        true,   // Enable harmonic integration
-        false   // Disable NTT (small model)
-    );
-}
-
-// Cube: Balanced (96-dim embeddings, 6 layers)
-CLLMModel* cllm_create_cube_model(uint32_t vocab_size, uint32_t max_seq_len) {
-    return cllm_create_platonic_model(
-        PLATONIC_CUBE,
-        vocab_size,
-        max_seq_len,
-        true,   // Enable blind recovery
-        true,   // Enable harmonic integration
-        true    // Enable NTT
-    );
-}
-
-// Octahedron: Dual of cube (72-dim embeddings, 8 layers)
-CLLMModel* cllm_create_octahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
-    return cllm_create_platonic_model(
-        PLATONIC_OCTAHEDRON,
-        vocab_size,
-        max_seq_len,
-        true,   // Enable blind recovery
-        true,   // Enable harmonic integration
-        true    // Enable NTT
-    );
-}
-
-// Dodecahedron: Large, powerful (240-dim embeddings, 12 layers)
-CLLMModel* cllm_create_dodecahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
-    return cllm_create_platonic_model(
-        PLATONIC_DODECAHEDRON,
-        vocab_size,
-        max_seq_len,
-        true,   // Enable blind recovery
-        true,   // Enable harmonic integration
-        true    // Enable NTT
-    );
-}
-
-// Icosahedron: Maximum symmetry (144-dim embeddings, 20 layers)
-CLLMModel* cllm_create_icosahedron_model(uint32_t vocab_size, uint32_t max_seq_len) {
-    return cllm_create_platonic_model(
-        PLATONIC_ICOSAHEDRON,
-        vocab_size,
-        max_seq_len,
-        true,   // Enable blind recovery
-        true,   // Enable harmonic integration
-        true    // Enable NTT
-    );
+CLLMConfig cllm_default_config(PlatonicSolidType solid_type, uint32_t vocab_size) {
+    CLLMConfig config = {0};
+    
+    config.solid_type = solid_type;
+    config.vocab_size = vocab_size;
+    config.max_seq_len = 512;
+    
+    // Dimensions auto-calculated from geometry (set to 0)
+    config.embedding_dim = 0;
+    config.hidden_dim = 0;
+    config.num_layers = 0;
+    config.num_heads = 0;
+    
+    // Enable all features by default
+    config.enable_blind_recovery = true;
+    config.enable_harmonic_integration = true;
+    config.enable_ntt_attention = true;
+    config.enable_kissing_spheres = true;
+    
+    // Threading
+    config.num_threads = 13;  // 1 control + 12 workers
+    
+    // Optimizer (Adam default)
+    config.optimizer_type = OPTIMIZER_ADAM;
+    config.learning_rate = 0.001;
+    config.beta1 = 0.9;
+    config.beta2 = 0.999;
+    config.epsilon = 1e-8;
+    config.weight_decay = 0.01;
+    
+    // Recovery options
+    config.corruption_tolerance = 0.25;  // 25%
+    config.max_recovery_iterations = 1000;
+    
+    // Harmonic options
+    config.primary_frequency = 432.0;  // Hz
+    config.use_fourier_transform = true;
+    config.use_cymatic_modulation = true;
+    config.use_prime_resonance = true;
+    config.use_tetration_optimizer = true;
+    
+    // NTT options
+    config.ntt_threshold_seq_len = 512;
+    config.ntt_auto_select = true;
+    
+    return config;
 }

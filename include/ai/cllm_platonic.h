@@ -34,28 +34,8 @@ extern "C" {
 // PLATONIC SOLID TYPES
 // ============================================================================
 
-/**
- * The five Platonic solids
- */
-typedef enum {
-    PLATONIC_TETRAHEDRON = 0,  // 4 vertices, 6 edges, 4 faces
-    PLATONIC_CUBE = 1,          // 8 vertices, 12 edges, 6 faces
-    PLATONIC_OCTAHEDRON = 2,    // 6 vertices, 12 edges, 8 faces
-    PLATONIC_DODECAHEDRON = 3,  // 20 vertices, 30 edges, 12 faces
-    PLATONIC_ICOSAHEDRON = 4    // 12 vertices, 30 edges, 20 faces
-} PlatonicSolidType;
-
-/**
- * Geometric properties of a Platonic solid
- */
-typedef struct {
-    uint32_t vertices;      // Number of vertices (V)
-    uint32_t edges;         // Number of edges (E)
-    uint32_t faces;         // Number of faces (F)
-    uint32_t symmetries;    // Size of symmetry group
-    double edge_length;     // Normalized edge length
-    bool has_golden_ratio;  // True for dodecahedron/icosahedron
-} PlatonicGeometry;
+// Note: PlatonicSolidType and PlatonicGeometry are now defined in cllm.h
+// to avoid circular dependencies. We just use them here.
 
 // ============================================================================
 // MODEL CONFIGURATION
