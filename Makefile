@@ -385,7 +385,7 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        tools/validate_lattice tools/analyze_cymatic_resonance \
        tools/visualize_angular_positions tools/ui_layout_analyzer \
        tools/benchmark_prime_validation \
-       tools/benchmark_prime_validation
+       tools/platonic_prime_resonance
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
@@ -580,3 +580,10 @@ tools/cllm-simple: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) $(CFLAGS) -o tools/cllm-simple tools/cllm_simple.c \
 		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Simple CLI tool built: tools/cllm-simple"
+
+tools/platonic_prime_resonance: $(CRYSTALLINE_LIB)
+	@echo "Building Platonic prime resonance tool..."
+	@mkdir -p tools
+	$(CC) $(CFLAGS) -o tools/platonic_prime_resonance tools/platonic_prime_resonance.c \
+		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Platonic prime resonance tool built: tools/platonic_prime_resonance"
