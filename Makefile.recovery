@@ -74,12 +74,14 @@ universal-tools: recovery-libs
 	@cd $(UNIVERSAL_TOOLS_DIR) && \
 		$(CC) $(CFLAGS) -I../lib/recovery_core/include -I../lib/recovery_crypto/include \
 		-o universal-recovery universal_recovery.c \
-		-L../lib/recovery_core -L../lib/recovery_crypto \
-		-lrecovery_core -lrecovery_crypto $(LDFLAGS)
+		-L../lib/recovery_core -L../lib/recovery_crypto -L../algorithms -L.. \
+		-lrecovery_core -lrecovery_crypto -lalgorithms -lcrystalline $(LDFLAGS)
 	@cd $(UNIVERSAL_TOOLS_DIR) && \
 		$(CC) $(CFLAGS) -I../lib/recovery_network/include \
 		-o bitcoin-network bitcoin_network.c \
 		-L../lib/recovery_network \
+		-lrecovery_network $(LDFLAGS)
+	@echo "Universal tools built successfully"
 		-lrecovery_network $(LDFLAGS)
 	@echo "Universal tools built successfully"
 

@@ -192,10 +192,12 @@ static recovery_error_t apply_blind_recovery_algorithm(
     }
     
     // Create structural map
+    // For byte sequences, we use a linear structure (1D chain)
+    // V = num_vertices, E = num_vertices - 1 (linear chain), F = 1 (treat as degenerate 2D)
     StructuralMap* structure = map_structure(
         num_vertices,
         num_vertices > 0 ? num_vertices - 1 : 0,
-        0,
+        1,  // Use 1 face to avoid NULL return (degenerate case)
         vertex_positions
     );
     
