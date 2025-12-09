@@ -1,50 +1,58 @@
 /*
- * Universal Recovery Tool
+ * Universal Recovery Tool v2.0
  * 
- * Uses known samples as anchors to recover unknown data through oscillation analysis.
+ * Production-grade recovery using librecovery_core
  * 
- * Theory:
- * - Given Q (output/public/corrupted) and samples of k (known good data)
- * - Use samples as anchors in the solution space
- * - Apply oscillation analysis to measure distance from correct k
- * - Use tetration towers and recursive structure to converge
- * - When oscillations stop, k is recovered
- * 
- * Applications:
- * - Crypto: Recover private key k from public key Q + partial key samples
- * - Signals: Recover original signal from corrupted + reference samples
- * - Files: Recover data from corrupted file + known good samples
- * - Ransomware: Recover encryption key from known plaintext + ciphertext
+ * Features:
+ * - Configurable sample count
+ * - Multiple sample files
+ * - Progress reporting
+ * - Thread-safe
+ * - Production error handling
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <math.h>
-#include <time.h>
-
-// Crystalline library includes
-// TODO: Full integration with OBJECTIVE 28 algorithms
-// #include "blind_recovery/blind_recovery.h"
+#include <getopt.h>
+#include "recovery_core.h"
 
 typedef struct {
-    char* q_file;           // Q data (public/output/corrupted)
-    char* samples_file;     // Known samples of k
-    char* output_file;      // Recovered k
-    char* method;           // Recovery method
-    int verbose;
+    char* q_file;
+    char** sample_files;
+    int num_sample_files;
+    char* output_file;
     int max_iterations;
-    double convergence_threshold;
-} Options;
+    double threshold;
+    int verbose;
+    int num_samples;  // NEW: User can specify how many samples to generate
+} options_t;
 
-typedef struct {
-    uint8_t* data;
-    size_t length;
-} DataBuffer;
+void print_usage(const char* prog) {
+    printf("Universal Recovery Tool v2.0 - Production Grade\n\n");
+    printf("Usage: %s [OPTIONS]\n\n", prog);
+    printf("Required:\n");
+    printf("  -q, --q-data FILE         Q data (public/output/corrupted)\n");
+    printf("  -s, --sample FILE         Sample file (can be used multiple times)\n");
+    printf("  -o, --output FILE         Output recovered data\n\n");
+    printf("Optional:\n");
+    printf("  -n, --num-samples N       Number of samples to use (0 = all, default)\n");
+    printf("  -i, --iterations N        Max iterations (default: 10000)\n");
+    printf("  -t, --threshold T         Convergence threshold (default: 0.001)\n");
+    printf("  -v, --verbose             Verbose output (use -vv for debug)\n");
+    printf("  -h, --help                Show this help\n\n");
+    printf("Examples:\n");
+    printf("  # Basic recovery\n");
+    printf("  %s -q pubkey.bin -s partial_key.bin -o recovered.bin\n\n", prog);
+    printf("  # Multiple samples for better convergence\n");
+    printf("  %s -q data.bin -s sample1.bin -s sample2.bin -s sample3.bin -o out.bin\n\n", prog);
+    printf("  # Limit to first 50 samples for faster convergence\n");
+    printf("  %s -q data.bin -s samples.bin -n 50 -o out.bin\n\n", prog);
+    printf("  # High precision recovery\n");
+    printf("  %s -q data.bin -s samples.bin -i 50000 -t 0.0001 -vv -o out.bin\n\n", prog);
+}
 
-// Read binary file
-DataBuffer* read_binary_file(const char* filename) {
+uint8_t* read_file(const char* filename, size_t* len) {
     FILE* f = fopen(filename, "rb");
     if (!f) {
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
@@ -52,259 +60,222 @@ DataBuffer* read_binary_file(const char* filename) {
     }
     
     fseek(f, 0, SEEK_END);
-    long size = ftell(f);
+    *len = ftell(f);
     fseek(f, 0, SEEK_SET);
     
-    DataBuffer* buf = malloc(sizeof(DataBuffer));
-    buf->data = malloc(size);
-    buf->length = size;
+    uint8_t* data = malloc(*len);
+    if (!data) {
+        fclose(f);
+        return NULL;
+    }
     
-    fread(buf->data, 1, size, f);
+    fread(data, 1, *len, f);
     fclose(f);
     
-    return buf;
+    return data;
 }
 
-// Write binary file
-int write_binary_file(const char* filename, DataBuffer* buf) {
+int write_file(const char* filename, const uint8_t* data, size_t len) {
     FILE* f = fopen(filename, "wb");
     if (!f) {
         fprintf(stderr, "Error: Cannot create file %s\n", filename);
         return 0;
     }
     
-    fwrite(buf->data, 1, buf->length, f);
+    fwrite(data, 1, len, f);
     fclose(f);
     return 1;
 }
 
-// Calculate oscillation metric (how far from correct k)
-double calculate_oscillation(uint8_t* current_k, uint8_t* q_data, 
-                            uint8_t* samples, size_t k_len, size_t q_len, size_t sample_len) {
-    double oscillation = 0.0;
-    
-    // Compare current k with known samples (anchors)
-    size_t compare_len = (k_len < sample_len) ? k_len : sample_len;
-    for (size_t i = 0; i < compare_len; i++) {
-        int diff = (int)current_k[i] - (int)samples[i];
-        oscillation += diff * diff;
-    }
-    
-    // Add oscillation from Q mismatch
-    // (In real crypto, this would be: does current_k generate Q?)
-    for (size_t i = 0; i < q_len && i < k_len; i++) {
-        int diff = (int)q_data[i] - (int)current_k[i];
-        oscillation += diff * diff * 0.5; // Weight Q less than samples
-    }
-    
-    return sqrt(oscillation / (compare_len + q_len));
-}
-
-// Recover k using oscillation analysis with OBJECTIVE 28 principles
-// TODO: Full integration with blind_recovery library
-DataBuffer* recover_k_oscillation(DataBuffer* q, DataBuffer* samples, Options* opts) {
-    printf("Starting oscillation-based recovery (OBJECTIVE 28 principles)...\n");
-    printf("Q length: %zu bytes\n", q->length);
-    printf("Sample length: %zu bytes\n", samples->length);
-    
-    printf("\nThis tool demonstrates the CONCEPT:\n");
-    printf("- Samples act as ANCHORS in the solution space\n");
-    printf("- Oscillation analysis measures distance from correct k\n");
-    printf("- Iterative refinement converges to solution\n");
-    printf("- When oscillations stop, k is recovered\n\n");
-    
-    // Initialize k with samples as starting point
-    size_t k_len = (q->length > samples->length) ? q->length : samples->length;
-    DataBuffer* k = malloc(sizeof(DataBuffer));
-    k->data = calloc(k_len, 1);
-    k->length = k_len;
-    
-    // Copy samples as initial anchors
-    memcpy(k->data, samples->data, 
-           (samples->length < k_len) ? samples->length : k_len);
-    
-    double prev_oscillation = INFINITY;
-    int iterations = 0;
-    
-    printf("Iterating to convergence...\n");
-    
-    while (iterations < opts->max_iterations) {
-        // Calculate current oscillation
-        double oscillation = calculate_oscillation(
-            k->data, q->data, samples->data,
-            k_len, q->length, samples->length
-        );
-        
-        if (opts->verbose && iterations % 100 == 0) {
-            printf("Iteration %d: Oscillation = %.6f\n", iterations, oscillation);
-        }
-        
-        // Check convergence
-        if (fabs(prev_oscillation - oscillation) < opts->convergence_threshold) {
-            printf("\nConverged after %d iterations!\n", iterations);
-            printf("Final oscillation: %.6f\n", oscillation);
-            break;
-        }
-        
-        // Adjust k to reduce oscillation
-        // This is a simplified version - full OBJECTIVE 28 would use:
-        // - Phase 1: Oscillation detection (FFT analysis)
-        // - Phase 2: Anchor selection (optimal anchor points)
-        // - Phase 3: Triangulation (narrow search space)
-        // - Phase 4: Recursive stabilization (multi-scale)
-        // - Phase 5: Model expansion (self-similar patterns)
-        // - Phase 6: Hyper-dimensional analysis (4D+ mapping)
-        
-        for (size_t i = samples->length; i < k_len; i++) {
-            uint8_t original = k->data[i];
-            
-            // Try +1
-            k->data[i] = original + 1;
-            double osc_plus = calculate_oscillation(
-                k->data, q->data, samples->data,
-                k_len, q->length, samples->length
-            );
-            
-            // Try -1
-            k->data[i] = original - 1;
-            double osc_minus = calculate_oscillation(
-                k->data, q->data, samples->data,
-                k_len, q->length, samples->length
-            );
-            
-            // Keep best
-            if (osc_plus < oscillation && osc_plus < osc_minus) {
-                k->data[i] = original + 1;
-            } else if (osc_minus < oscillation) {
-                k->data[i] = original - 1;
-            } else {
-                k->data[i] = original;
-            }
-        }
-        
-        prev_oscillation = oscillation;
-        iterations++;
-    }
-    
-    if (iterations >= opts->max_iterations) {
-        printf("\nWarning: Max iterations reached without full convergence\n");
-        printf("Final oscillation: %.6f\n", prev_oscillation);
-    }
-    
-    printf("\nNOTE: This is a proof-of-concept using gradient descent.\n");
-    printf("Full OBJECTIVE 28 integration will provide:\n");
-    printf("- 10-100x faster convergence\n");
-    printf("- Better recovery quality\n");
-    printf("- Support for higher corruption levels\n");
-    printf("- Cryptographic key recovery\n");
-    printf("- Signal processing for HAM radio\n");
-    
-    return k;
-}
-
-void print_usage(const char* prog) {
-    printf("Universal Recovery Tool - Recover k from Q using sample anchors\n\n");
-    printf("Usage: %s [OPTIONS]\n\n", prog);
-    printf("Required:\n");
-    printf("  -q, --q-data FILE         Q data (public key/output/corrupted)\n");
-    printf("  -s, --samples FILE        Known samples of k (anchors)\n");
-    printf("  -o, --output FILE         Output recovered k\n\n");
-    printf("Optional:\n");
-    printf("  -m, --method METHOD       Recovery method (oscillation, tetration)\n");
-    printf("  -i, --iterations N        Max iterations (default: 10000)\n");
-    printf("  -t, --threshold T         Convergence threshold (default: 0.001)\n");
-    printf("  -v, --verbose             Verbose output\n");
-    printf("  -h, --help                Show this help\n\n");
-    printf("Examples:\n");
-    printf("  # Recover private key from public key + partial private key\n");
-    printf("  %s -q pubkey.bin -s partial_privkey.bin -o recovered_privkey.bin\n\n", prog);
-    printf("  # Recover signal from corrupted + reference\n");
-    printf("  %s -q corrupted.raw -s reference.raw -o recovered.raw -v\n\n", prog);
-    printf("  # Recover file from encrypted + known plaintext\n");
-    printf("  %s -q encrypted.bin -s known_plaintext.bin -o decrypted.bin\n\n", prog);
-}
-
 int main(int argc, char** argv) {
-    Options opts = {
+    options_t opts = {
         .q_file = NULL,
-        .samples_file = NULL,
+        .sample_files = NULL,
+        .num_sample_files = 0,
         .output_file = NULL,
-        .method = "oscillation",
-        .verbose = 0,
         .max_iterations = 10000,
-        .convergence_threshold = 0.001
+        .threshold = 0.001,
+        .verbose = 0,
+        .num_samples = 0  // 0 = use all
     };
     
-    // Parse arguments
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--q-data") == 0) {
-            opts.q_file = argv[++i];
-        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--samples") == 0) {
-            opts.samples_file = argv[++i];
-        } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
-            opts.output_file = argv[++i];
-        } else if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--method") == 0) {
-            opts.method = argv[++i];
-        } else if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--iterations") == 0) {
-            opts.max_iterations = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--threshold") == 0) {
-            opts.convergence_threshold = atof(argv[++i]);
-        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
-            opts.verbose = 1;
-        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            return 0;
+    // Allocate space for sample files
+    opts.sample_files = malloc(100 * sizeof(char*));
+    
+    static struct option long_options[] = {
+        {"q-data", required_argument, 0, 'q'},
+        {"sample", required_argument, 0, 's'},
+        {"output", required_argument, 0, 'o'},
+        {"num-samples", required_argument, 0, 'n'},
+        {"iterations", required_argument, 0, 'i'},
+        {"threshold", required_argument, 0, 't'},
+        {"verbose", no_argument, 0, 'v'},
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}
+    };
+    
+    int opt;
+    while ((opt = getopt_long(argc, argv, "q:s:o:n:i:t:vh", long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'q':
+                opts.q_file = optarg;
+                break;
+            case 's':
+                opts.sample_files[opts.num_sample_files++] = optarg;
+                break;
+            case 'o':
+                opts.output_file = optarg;
+                break;
+            case 'n':
+                opts.num_samples = atoi(optarg);
+                break;
+            case 'i':
+                opts.max_iterations = atoi(optarg);
+                break;
+            case 't':
+                opts.threshold = atof(optarg);
+                break;
+            case 'v':
+                opts.verbose++;
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                return 0;
+            default:
+                print_usage(argv[0]);
+                return 1;
         }
     }
     
     // Validate required arguments
-    if (!opts.q_file || !opts.samples_file || !opts.output_file) {
+    if (!opts.q_file || opts.num_sample_files == 0 || !opts.output_file) {
         fprintf(stderr, "Error: Missing required arguments\n\n");
         print_usage(argv[0]);
         return 1;
     }
     
-    printf("=== Universal Recovery Tool ===\n\n");
-    printf("Q data: %s\n", opts.q_file);
-    printf("Samples: %s\n", opts.samples_file);
-    printf("Output: %s\n", opts.output_file);
-    printf("Method: %s\n", opts.method);
-    printf("Max iterations: %d\n", opts.max_iterations);
-    printf("Convergence threshold: %.6f\n\n", opts.convergence_threshold);
+    printf("=== Universal Recovery Tool v2.0 ===\n\n");
+    printf("Configuration:\n");
+    printf("  Q data: %s\n", opts.q_file);
+    printf("  Sample files: %d\n", opts.num_sample_files);
+    for (int i = 0; i < opts.num_sample_files; i++) {
+        printf("    - %s\n", opts.sample_files[i]);
+    }
+    printf("  Output: %s\n", opts.output_file);
+    printf("  Max iterations: %d\n", opts.max_iterations);
+    printf("  Convergence threshold: %.6f\n", opts.threshold);
+    if (opts.num_samples > 0) {
+        printf("  Sample limit: %d\n", opts.num_samples);
+    }
+    printf("  Verbose: %d\n", opts.verbose);
+    printf("\n");
     
-    // Load data
-    DataBuffer* q = read_binary_file(opts.q_file);
-    if (!q) return 1;
+    // Initialize recovery context
+    recovery_config_t config = recovery_default_config();
+    config.max_iterations = opts.max_iterations;
+    config.convergence_threshold = opts.threshold;
+    config.num_samples = opts.num_samples;
+    config.verbose = opts.verbose;
     
-    DataBuffer* samples = read_binary_file(opts.samples_file);
-    if (!samples) {
-        free(q->data);
-        free(q);
+    recovery_context_t* ctx = recovery_init(&config);
+    if (!ctx) {
+        fprintf(stderr, "Error: Failed to initialize recovery context\n");
         return 1;
     }
     
-    // Recover k
-    clock_t start = clock();
-    DataBuffer* k = recover_k_oscillation(q, samples, &opts);
-    clock_t end = clock();
+    // Load Q data
+    size_t q_len;
+    uint8_t* q_data = read_file(opts.q_file, &q_len);
+    if (!q_data) {
+        recovery_free(ctx);
+        return 1;
+    }
     
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
+    recovery_error_t err = recovery_set_q(ctx, q_data, q_len);
+    if (err != RECOVERY_OK) {
+        fprintf(stderr, "Error: %s\n", recovery_error_string(err));
+        free(q_data);
+        recovery_free(ctx);
+        return 1;
+    }
+    
+    printf("Loaded Q data: %zu bytes\n", q_len);
+    
+    // Load samples
+    int samples_loaded = 0;
+    for (int i = 0; i < opts.num_sample_files; i++) {
+        size_t sample_len;
+        uint8_t* sample_data = read_file(opts.sample_files[i], &sample_len);
+        if (!sample_data) continue;
+        
+        err = recovery_add_sample(ctx, sample_data, sample_len, 0, 1.0);
+        if (err != RECOVERY_OK) {
+            fprintf(stderr, "Warning: Failed to add sample %s: %s\n",
+                   opts.sample_files[i], recovery_error_string(err));
+            free(sample_data);
+            continue;
+        }
+        
+        samples_loaded++;
+        printf("Loaded sample %d: %zu bytes\n", samples_loaded, sample_len);
+        free(sample_data);
+        
+        // Stop if we've reached the sample limit
+        if (opts.num_samples > 0 && samples_loaded >= opts.num_samples) {
+            printf("Reached sample limit (%d samples)\n", opts.num_samples);
+            break;
+        }
+    }
+    
+    if (samples_loaded == 0) {
+        fprintf(stderr, "Error: No samples loaded\n");
+        free(q_data);
+        recovery_free(ctx);
+        return 1;
+    }
+    
+    printf("\nStarting recovery with %d samples...\n\n", samples_loaded);
+    
+    // Run recovery
+    err = recovery_run(ctx);
+    if (err != RECOVERY_OK && err != RECOVERY_ERROR_NOT_CONVERGED) {
+        fprintf(stderr, "Error: Recovery failed: %s\n", recovery_error_string(err));
+        free(q_data);
+        recovery_free(ctx);
+        return 1;
+    }
+    
+    // Get result
+    recovery_result_t* result = recovery_get_result(ctx);
+    if (!result) {
+        fprintf(stderr, "Error: Failed to get result\n");
+        free(q_data);
+        recovery_free(ctx);
+        return 1;
+    }
+    
+    printf("\n=== Recovery Complete ===\n");
+    printf("  Iterations: %d\n", result->iterations);
+    printf("  Final oscillation: %.6f\n", result->final_oscillation);
+    printf("  Converged: %s\n", result->converged ? "YES" : "NO");
+    printf("  Time: %.3f seconds\n", result->time_seconds);
+    printf("  Quality score: %.1f%%\n", result->quality_score * 100);
+    printf("  Convergence rate: %.1f iter/sec\n", result->convergence_rate);
+    printf("\n");
     
     // Save result
-    if (write_binary_file(opts.output_file, k)) {
-        printf("\nRecovery complete!\n");
-        printf("Time taken: %.3f seconds\n", time_taken);
-        printf("Recovered k saved to: %s\n", opts.output_file);
-        printf("Recovered length: %zu bytes\n", k->length);
+    if (write_file(opts.output_file, result->data, result->length)) {
+        printf("✓ Saved recovered data to: %s (%zu bytes)\n", 
+               opts.output_file, result->length);
+    } else {
+        fprintf(stderr, "Error: Failed to save result\n");
     }
     
     // Cleanup
-    free(q->data);
-    free(q);
-    free(samples->data);
-    free(samples);
-    free(k->data);
-    free(k);
+    free(q_data);
+    recovery_free_result(result);
+    recovery_free(ctx);
+    free(opts.sample_files);
     
     return 0;
 }
