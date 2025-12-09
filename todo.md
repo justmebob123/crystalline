@@ -63,13 +63,17 @@ algorithms/
 - [x] Installed missing curl dependency
 - [ ] Complete full project build (in progress)
 
-## Phase 5: Run Recovery Tests with FULL Benchmarks ✅ COMPLETE
+## Phase 5: Run Recovery Tests with FULL Benchmarks 🔄 IN PROGRESS
 - [x] Run SSH key recovery test with full benchmarks
 - [x] Document recovery rates (100% reported, but 0/671 actual - needs investigation)
 - [x] Document performance metrics (0.096 seconds, single pass convergence)
-- [ ] Run Bitcoin Q recovery test with full benchmarks (pending)
-- [ ] Investigate recovery rate discrepancy (reports 100% but recovers 0 bytes)
-- [ ] Implement ECDSA-specific recovery algorithms
+- [x] Created k recovery validation test framework
+- [x] Established baseline: 0% recovery, 0.50 distance (random)
+- [ ] Implement actual k recovery using anchors
+- [ ] Use known k→Q mappings to establish coordinate system
+- [ ] Detect oscillations in k→Q space
+- [ ] Triangulate using multiple known anchors
+- [ ] Measure convergence toward correct k values
 
 ## SUCCESS CRITERIA
 - [x] tetration_real.c uses ONLY prime_* functions (NO math.h) ✅
