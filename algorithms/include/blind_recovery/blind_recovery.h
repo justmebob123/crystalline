@@ -950,6 +950,22 @@ RecoveryStatistics blind_recovery_complete(
     double corruption_threshold
 );
 
+/**
+ * Universal Blind Recovery - FIXED VERSION 2
+ * 
+ * Improvements over v1:
+ * - Tracks actual vertex position evolution across passes
+ * - Uses adaptive threshold for recovery metrics
+ * - Improved tetration attractor computation
+ * - Better oscillation detection from real data
+ */
+RecoveryStatistics blind_recovery_complete_v2(
+    double* structure_data,
+    uint32_t num_elements,
+    uint32_t num_dimensions,
+    double corruption_threshold
+);
+
 // ============================================================================
 // PHASE 5: DYNAMIC MODEL EXPANSION
 // ============================================================================

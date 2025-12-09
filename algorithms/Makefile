@@ -62,7 +62,9 @@ SOURCES = src/numerical.c \
           src/blind_recovery/hyperdimensional_analysis.c \
           src/blind_recovery/multi_scalar_analysis.c \
           src/blind_recovery/variance_analysis.c \
-          src/blind_recovery/cross_correlation.c
+          src/blind_recovery/cross_correlation.c \
+          src/blind_recovery/universal_recovery.c \
+          src/blind_recovery/universal_recovery_v2.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
