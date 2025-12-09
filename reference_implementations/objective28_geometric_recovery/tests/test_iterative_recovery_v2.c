@@ -152,30 +152,43 @@ int main() {
     printf("TEST 3: ITERATIVE RECOVERY (Phase 1 + 2)\n");
     print_separator();
     
-    printf("Generating 100 anchor k/Q pairs...\n");
+    // Use 100 anchors - resolution comes from GRAPH SIZE, not anchor count!
+    // The Platonic model graph needs 2^32 vertices for proper resolution
+    int num_test_anchors = 100;
+    printf("Generating %d anchor k/Q pairs...\n", num_test_anchors);
     clock_t gen_start = clock();
     
-    BIGNUM** anchor_k = malloc(100 * sizeof(BIGNUM*));
-    EC_POINT** anchor_Q = malloc(100 * sizeof(EC_POINT*));
+    BIGNUM** anchor_k = malloc(num_test_anchors * sizeof(BIGNUM*));
+    EC_POINT** anchor_Q = malloc(num_test_anchors * sizeof(EC_POINT*));
     
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num_test_anchors; i++) {
         anchor_k[i] = BN_new();
         BN_rand_range(anchor_k[i], order);
         
         anchor_Q[i] = EC_POINT_new(curve);
         EC_POINT_mul(curve, anchor_Q[i], NULL, G, anchor_k[i], ctx);
+        
+        if ((i + 1) % 1000 == 0) {
+            printf("  Generated %d anchors...\n", i + 1);
+        }
     }
     
     clock_t gen_end = clock();
     printf("Generated in %.3f seconds\n\n", (double)(gen_end - gen_start) / CLOCKS_PER_SEC);
     
-    // Create recovery context
-    GeometricRecoveryContext* recovery_ctx = geometric_recovery_create(curve, 100, 13);
+    // Create recovery context with 10,000 anchors for proper resolution
+    printf("Creating recovery context with %d anchors...\n", num_test_anchors);
+    GeometricRecoveryContext* recovery_ctx = geometric_recovery_create(curve, num_test_anchors, 13);
     
     // Add anchors
-    for (int i = 0; i < 100; i++) {
+    printf("Adding anchors to context...\n");
+    for (int i = 0; i < num_test_anchors; i++) {
         geometric_recovery_add_anchor(recovery_ctx, anchor_k[i], anchor_Q[i]);
+        if ((i + 1) % 1000 == 0) {
+            printf("  Added %d anchors...\n", i + 1);
+        }
     }
+    printf("Added %d anchors to context\n", num_test_anchors);
     
     // Initialize
     printf("Initializing recovery context...\n");
@@ -274,7 +287,7 @@ int main() {
     printf("   5. Use stabilization point as target complexity\n");
     
     // Cleanup
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num_test_anchors; i++) {
         BN_free(anchor_k[i]);
         EC_POINT_free(anchor_Q[i]);
     }

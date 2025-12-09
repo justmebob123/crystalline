@@ -512,8 +512,12 @@ GeometricRecoveryContext* geometric_recovery_create(
     // Create tetration towers
     ctx->towers = create_tetration_towers(&ctx->num_towers);
     
-    // Create Platonic model
-    ctx->model = platonic_model_create(PLATONIC_ICOSAHEDRON, num_dimensions, 65536);
+    // Create Platonic model with high resolution
+    // For 256-bit keys, we need much higher resolution than 65536
+    // Use 2^24 = 16,777,216 vertices for significantly better resolution
+    // This is a practical compromise between resolution and memory
+    uint32_t high_res_vertices = 16777216;  // 2^24
+    ctx->model = platonic_model_create(PLATONIC_ICOSAHEDRON, num_dimensions, high_res_vertices);
     
     return ctx;
 }

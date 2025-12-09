@@ -68,6 +68,15 @@ BIGNUM* triangulate_k_with_truncation(
         }
     }
     
+    // Debug: Print nearest anchors for first few iterations
+    static int debug_count = 0;
+    if (debug_count < 5) {
+        printf("    [Nearest anchors: %u, %u, %u (distances: %.4f, %.4f, %.4f)]\n",
+               nearest[0], nearest[1], nearest[2], 
+               distances[0], distances[1], distances[2]);
+        debug_count++;
+    }
+    
     // Compute weights (inverse distance squared)
     double weights[3];
     double total_weight = 0.0;
@@ -87,15 +96,32 @@ BIGNUM* triangulate_k_with_truncation(
     BN_CTX* ctx = BN_CTX_new();
     EC_GROUP_get_order(ec_group, order, ctx);
     
-    // PHASE 2: Use 257 bits (+1 for boundary crossing)
-    unsigned char k_bytes[33];  // 257 bits = 33 bytes
-    memset(k_bytes, 0, 33);
+    // Get order bit length (+1 for boundary crossing)
+    int order_bits = BN_num_bits(order);
+    int num_bytes_needed = (order_bits + 8) / 8;  // +1 byte for boundary
+    if (num_bytes_needed > 33) num_bytes_needed = 33;
+    
+    unsigned char* k_bytes = (unsigned char*)malloc(num_bytes_needed);
+    memset(k_bytes, 0, num_bytes_needed);
     
     // Interpolate k values using weighted sum
     BIGNUM* result = BN_new();
     BN_zero(result);
     
     const uint64_t SCALE = 1000000000ULL;
+    
+    // Debug: Print anchor k values and weights
+    static int debug_tri = 0;
+    if (debug_tri < 2) {
+        printf("      [Triangulation: ");
+        for (uint32_t i = 0; i < k; i++) {
+            char* k_hex = BN_bn2hex(anchor_k_values[nearest[i]]);
+            printf("w%.2f*%s ", weights[i], k_hex + (strlen(k_hex) > 8 ? strlen(k_hex) - 8 : 0));
+            OPENSSL_free(k_hex);
+        }
+        printf("]\n");
+        debug_tri++;
+    }
     
     for (uint32_t i = 0; i < k; i++) {
         BIGNUM* weighted_k = BN_dup(anchor_k_values[nearest[i]]);
@@ -107,21 +133,40 @@ BIGNUM* triangulate_k_with_truncation(
     
     BN_div_word(result, SCALE);
     
-    // Convert to bytes (257 bits)
-    int num_bytes = BN_num_bytes(result);
-    if (num_bytes > 33) num_bytes = 33;
-    BN_bn2bin(result, k_bytes + (33 - num_bytes));
+    if (debug_tri <= 2) {
+        char* result_hex = BN_bn2hex(result);
+        printf("      [Result after weighted avg: %s]\n", result_hex);
+        OPENSSL_free(result_hex);
+    }
+    
+    // Convert to bytes
+    int result_bytes = BN_num_bytes(result);
+    if (result_bytes > num_bytes_needed) result_bytes = num_bytes_needed;
+    BN_bn2bin(result, k_bytes + (num_bytes_needed - result_bytes));
+    
+    // Debug: Check result BEFORE reversal
+    static int debug_reverse = 0;
+    if (debug_reverse < 3) {
+        printf("      [Before reverse (%d bytes): ", num_bytes_needed);
+        for (int i = 0; i < (num_bytes_needed < 8 ? num_bytes_needed : 8); i++) 
+            printf("%02X ", k_bytes[i]);
+        printf("...]\n");
+        debug_reverse++;
+    }
     
     // PHASE 2: Compute in REVERSE (as user specified)
-    unsigned char k_bytes_reversed[33];
-    for (int i = 0; i < 33; i++) {
-        k_bytes_reversed[i] = k_bytes[32 - i];
+    unsigned char* k_bytes_reversed = (unsigned char*)malloc(num_bytes_needed);
+    for (int i = 0; i < num_bytes_needed; i++) {
+        k_bytes_reversed[i] = k_bytes[num_bytes_needed - 1 - i];
     }
     
     // Convert back to BIGNUM
     BN_free(result);
     result = BN_new();
-    BN_bin2bn(k_bytes_reversed, 33, result);
+    BN_bin2bn(k_bytes_reversed, num_bytes_needed, result);
+    
+    free(k_bytes);
+    free(k_bytes_reversed);
     
     // PHASE 2: TRUNCATE to order size
     BN_mod(result, result, order, ctx);
@@ -321,28 +366,53 @@ BIGNUM* geometric_recovery_iterative(
         
         target_position[d] = 0.0;
         for (uint32_t b = 0; b < 16 && b < 32; b++) {
-            target_position[d] += target_bytes[b] * pow((double)prime, (double)(b % 8));
+            target_position[d] += target_bytes[b] * prime_pow((double)prime, (double)(b % 8));
         }
-        target_position[d] = fmod(target_position[d], 1.0);
+        // Use prime_fmod (modulo operation)
+        while (target_position[d] >= 1.0) target_position[d] -= 1.0;
+        while (target_position[d] < 0.0) target_position[d] += 1.0;
     }
     
     printf("Target position in 13D space computed\n");
     printf("Searching 2^16 candidates around target...\n");
     
-    uint32_t search_radius = 65536;
+    // ENTROPY REDUCTION: Search diverse positions across the full space
+    // Use quasi-random low-discrepancy sequence (Halton-like)
+    uint32_t search_limit = (max_iterations < 65536) ? max_iterations : 65536;
     
-    for (uint32_t iteration = 0; iteration < max_iterations && iteration < search_radius; iteration++) {
+    for (uint32_t iteration = 0; iteration < search_limit; iteration++) {
         double* search_position = (double*)malloc(ctx->num_dimensions * sizeof(double));
         
-        double angle = (iteration * 2.0 * 3.14159265359) / 1000.0;
-        double radius = (iteration % 1000) / 1000.0 * 0.1;
-        
-        for (uint32_t d = 0; d < ctx->num_dimensions; d++) {
-            double offset = radius * cos(angle + d * 0.5);
-            search_position[d] = target_position[d] + offset;
-            
-            while (search_position[d] < 0.0) search_position[d] += 1.0;
-            while (search_position[d] > 1.0) search_position[d] -= 1.0;
+        // Use different strategy for each iteration to ensure diversity
+        if (iteration < 100) {
+            // First 100: Random walk from target
+            double step_size = 0.1 + 0.4 * (iteration / 100.0);
+            for (uint32_t d = 0; d < ctx->num_dimensions; d++) {
+                // Use iteration and dimension as pseudo-random seed
+                uint64_t seed = iteration * 1000 + d;
+                double random = (double)(seed % 10000) / 10000.0;
+                double offset = (random - 0.5) * step_size;
+                search_position[d] = target_position[d] + offset;
+                
+                // Wrap to [0, 1]
+                while (search_position[d] < 0.0) search_position[d] += 1.0;
+                while (search_position[d] > 1.0) search_position[d] -= 1.0;
+            }
+        } else {
+            // After 100: Use Halton-like low-discrepancy sequence
+            for (uint32_t d = 0; d < ctx->num_dimensions; d++) {
+                // Halton sequence with prime base for each dimension
+                uint32_t base = 2 + d;  // Use primes: 2, 3, 5, 7, 11, 13, ...
+                uint32_t n = iteration;
+                double f = 1.0;
+                double r = 0.0;
+                while (n > 0) {
+                    f = f / base;
+                    r = r + f * (n % base);
+                    n = n / base;
+                }
+                search_position[d] = r;  // Already in [0, 1]
+            }
         }
         
         BIGNUM* candidate_k = triangulate_k_with_truncation(
@@ -358,10 +428,21 @@ BIGNUM* geometric_recovery_iterative(
         
         if (!candidate_k) continue;
         
-        // Debug: Print first few candidates
+        // Debug: Print first few candidates with detailed analysis
         if (iteration < 5) {
             char* k_hex = BN_bn2hex(candidate_k);
-            printf("  Candidate %u: %s\n", iteration, k_hex);
+            printf("  Candidate %u: %s", iteration, k_hex);
+            
+            // Show bit count
+            int bits = BN_num_bits(candidate_k);
+            printf(" (%d bits)", bits);
+            
+            // Show first few bytes in binary
+            unsigned char bytes[4];
+            BN_bn2binpad(candidate_k, bytes, 4);
+            printf(" [%02X %02X %02X %02X]", bytes[0], bytes[1], bytes[2], bytes[3]);
+            
+            printf("\n");
             OPENSSL_free(k_hex);
         }
         

@@ -18,17 +18,19 @@ void map_k_to_position(
     double* position_out,
     uint32_t num_dimensions
 ) {
-    // Extract k bytes (use 257 bits = 33 bytes)
-    unsigned char k_bytes[33];
-    memset(k_bytes, 0, 33);
+    // Get actual bit length of k
+    int k_bits = BN_num_bits(k);
+    if (k_bits == 0) k_bits = 1;
     
-    int len = BN_num_bytes(k);
-    if (len > 33) len = 33;
-    BN_bn2bin(k, k_bytes + (33 - len));
+    // Extract k bytes
+    int num_bytes = (k_bits + 7) / 8;
+    unsigned char* k_bytes = (unsigned char*)malloc(num_bytes);
+    memset(k_bytes, 0, num_bytes);
+    BN_bn2bin(k, k_bytes);
     
-    // Map 257 bits to num_dimensions
-    // Each dimension gets 257/num_dimensions bits
-    uint32_t bits_per_dim = 257 / num_dimensions;
+    // Map k_bits to num_dimensions
+    // Each dimension gets k_bits/num_dimensions bits
+    uint32_t bits_per_dim = k_bits / num_dimensions;
     if (bits_per_dim < 1) bits_per_dim = 1;
     
     for (uint32_t d = 0; d < num_dimensions; d++) {
@@ -36,19 +38,22 @@ void map_k_to_position(
         uint32_t bit_start = d * bits_per_dim;
         
         // Extract bits for this dimension
-        for (uint32_t b = 0; b < bits_per_dim && bit_start + b < 257; b++) {
+        for (uint32_t b = 0; b < bits_per_dim && bit_start + b < (uint32_t)k_bits; b++) {
             uint32_t byte_idx = (bit_start + b) / 8;
-            uint32_t bit_idx = (bit_start + b) % 8;
+            uint32_t bit_idx = 7 - ((bit_start + b) % 8);  // MSB first
             
-            if (byte_idx < 33 && (k_bytes[byte_idx] & (1 << (7 - bit_idx)))) {
+            if (byte_idx < (uint32_t)num_bytes && (k_bytes[byte_idx] & (1 << bit_idx))) {
                 value |= (1ULL << b);
             }
         }
         
-        // Normalize to [-1, 1] (centered at 0 for quadrant detection)
+        // Normalize to [0, 1] for simplicity
         uint64_t max_value = (1ULL << bits_per_dim) - 1;
-        position_out[d] = 2.0 * ((double)value / (double)max_value) - 1.0;
+        if (max_value == 0) max_value = 1;
+        position_out[d] = (double)value / (double)max_value;
     }
+    
+    free(k_bytes);
 }
 
 /**

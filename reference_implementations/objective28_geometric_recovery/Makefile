@@ -33,7 +33,10 @@ SOURCES = \
 	$(SRC_DIR)/tetration_real.c \
 	$(SRC_DIR)/prime_float_math.c \
 	$(SRC_DIR)/iterative_recovery.c \
-	$(SRC_DIR)/iterative_recovery_v2.c
+	$(SRC_DIR)/iterative_recovery_v2.c \
+        $(SRC_DIR)/recursive_recovery.c \
+        $(SRC_DIR)/clock_recovery.c \
+        $(SRC_DIR)/platonic_solids.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -223,3 +226,35 @@ help:
 
 .PHONY: all directories lib shared tests test quicktest clean install uninstall \
         sizes loc docs check valgrind profile benchmark help
+
+# Clock recovery test
+$(BUILD_DIR)/test_clock_mapping: $(TEST_DIR)/test_clock_mapping.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-clock
+test-clock: $(BUILD_DIR)/test_clock_mapping
+	@echo "Running clock mapping tests..."
+	@$(BUILD_DIR)/test_clock_mapping
+
+# Platonic solids test
+$(BUILD_DIR)/test_platonic_solids: $(TEST_DIR)/test_platonic_solids.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-platonic
+test-platonic: $(BUILD_DIR)/test_platonic_solids
+	@echo "Running Platonic solids tests..."
+	@$(BUILD_DIR)/test_platonic_solids
+
+# Integrated recovery test
+$(BUILD_DIR)/test_integrated_recovery: $(TEST_DIR)/test_integrated_recovery.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-integrated
+test-integrated: $(BUILD_DIR)/test_integrated_recovery
+	@echo "Running integrated recovery tests..."
+	@$(BUILD_DIR)/test_integrated_recovery
+
+.PHONY: test-all
+test-all: test-clock test-platonic test-integrated
+	@echo ""
+	@echo "All tests completed!"
