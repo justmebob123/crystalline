@@ -1,150 +1,243 @@
-# Implementation Plan - Critical Fixes and Enhancements
+# Universal Recovery - Production Implementation Plan
 
-## Priority 1: Fix Progress Reporting Artifacts (CRITICAL)
+## Architecture Overview
 
-### Problem
-The progress display creates duplicate boxes because:
-1. Other threads print messages (e.g., "[Sphere 0] Processing documents...")
-2. The cursor positioning gets confused
-3. The clear command `\033[6A\033[J` doesn't account for interleaved output
+### Library Structure
+```
+librecovery_core.so/.a       - Core recovery algorithms (unified OBJECTIVE 28)
+librecovery_crypto.so/.a     - Cryptographic recovery (Bitcoin, SSH, etc.)
+librecovery_signal.so/.a     - Signal processing recovery (HAM radio, SDR)
+librecovery_network.so/.a    - Network protocol handlers (Bitcoin, custom coins)
+```
 
-### Solution
-1. Add a mutex to prevent interleaved output
-2. Use a better clearing mechanism
-3. Suppress sphere debug messages during progress display
-4. OR: Move to a simpler single-line progress indicator
+### Language Bindings
+- C/C++ (native)
+- Python (ctypes/CFFI)
+- PHP (extension)
+- GNU Radio (C++ blocks)
 
-**Files to modify:**
-- `src/ai/cllm_global_progress.c` - Fix display logic
-- `src/ai/cllm_kissing_spheres.c` - Suppress debug output during progress
+### Installation
+```bash
+make                    # Build all libraries
+make install           # Install system-wide (/usr/local/lib)
+make install-python    # Install Python bindings
+make install-php       # Install PHP extension
+make install-gnuradio  # Install GNU Radio blocks
+```
 
----
+## Phase 1: Core Recovery Library (Week 1)
 
-## Priority 2: Training Tab Visualization Integration
+### 1.1 Unified Recovery Algorithm
+Integrate ALL OBJECTIVE 28 phases into single API:
+- Phase 1: Oscillation Detection (FFT analysis)
+- Phase 2: Anchor Selection (optimal anchors)
+- Phase 3: Triangulation (search space reduction)
+- Phase 4: Recursive Stabilization (multi-scale)
+- Phase 5: Model Expansion (self-similar patterns)
+- Phase 6: Hyper-Dimensional Analysis (4D+ mapping)
 
-### Current State
-- Training tab has sphere visualization
-- No 2D/3D toggle button
-- Crystalline visualization exists but not integrated
+**API:**
+```c
+recovery_context_t* recovery_init(recovery_config_t* config);
+void recovery_set_q(recovery_context_t* ctx, uint8_t* q, size_t len);
+void recovery_add_sample(recovery_context_t* ctx, uint8_t* sample, size_t len);
+int recovery_run(recovery_context_t* ctx);
+uint8_t* recovery_get_result(recovery_context_t* ctx, size_t* len);
+void recovery_free(recovery_context_t* ctx);
+```
 
-### Required Changes
-1. Add toggle button to training tab UI
-2. Create separate files for visualizations:
-   - `app/ui/visualization_2d.c` - 2D sphere layout
-   - `app/ui/visualization_3d.c` - 3D perspective view
-   - Keep `app/ui/crystalline_visualization.c` - Crystalline patterns
-3. Wire toggle button to switch between modes
-4. Integrate with training tab state
+### 1.2 Configurable Samples
+```c
+typedef struct {
+    int max_iterations;
+    double convergence_threshold;
+    int num_samples;              // User-specified
+    recovery_method_t method;     // AUTO, CRYPTO, SIGNAL, etc.
+    int verbose;
+} recovery_config_t;
+```
 
-**Files to create:**
-- `app/ui/visualization_2d.h`
-- `app/ui/visualization_2d.c`
-- `app/ui/visualization_3d.h`
-- `app/ui/visualization_3d.c`
+## Phase 2: Crypto Recovery Library (Week 1-2)
 
-**Files to modify:**
-- `app/ui/tabs/tab_training.c` - Add toggle button and mode switching
-- `app/ui/sphere_visualization.c` - Refactor to use separate files
+### 2.1 Bitcoin Network Interface
+**NOT just testnet - support ALL networks:**
+- Bitcoin mainnet
+- Bitcoin testnet
+- Bitcoin regtest
+- Custom altcoins
+- Private networks
 
----
+**API:**
+```c
+typedef enum {
+    NETWORK_BITCOIN_MAIN,
+    NETWORK_BITCOIN_TEST,
+    NETWORK_BITCOIN_REGTEST,
+    NETWORK_CUSTOM
+} network_type_t;
 
-## Priority 3: Complete Crawler Tab Implementation
+bitcoin_network_t* bitcoin_connect(network_type_t type, const char* rpc_url);
+transaction_t* bitcoin_fetch_tx(bitcoin_network_t* net, const char* txid);
+bool bitcoin_broadcast_tx(bitcoin_network_t* net, transaction_t* tx);
+block_t* bitcoin_fetch_block(bitcoin_network_t* net, const char* hash);
+```
 
-### Missing Features (from original 953-line implementation)
-1. ❌ Prime Configuration Panel (5 inputs + toggle)
-2. ❌ URL Pattern Selection (4 checkboxes)
-3. ❌ Content Filtering (4 radio buttons)
-4. ❌ Advanced Options Panel (collapsible, 4 inputs)
-5. ❌ Activity Log (10-line scrolling)
-6. ❌ Model Selector dropdown
-7. ❌ Save/Load Config buttons
-8. ❌ Reset URLs button
-9. ❌ 3-column layout
+### 2.2 Full Bitcoin Protocol
+- Transaction creation and signing
+- Block mining and validation
+- Nonce verification
+- Merkle tree construction
+- P2P protocol messages
+- RPC interface
 
-### Implementation Approach
-Use hybrid approach: Crystalline UI components with custom rendering for complex features
+### 2.3 Key Recovery
+- ECDSA nonce recovery
+- Private key recovery from signatures
+- Partial key recovery
+- Brute-force optimization
 
-**Files to modify:**
-- `app/ui/tabs/tab_crawler.c` - Expand from 724 to ~900 lines
+## Phase 3: Signal Processing Library (Week 2)
 
----
+### 3.1 GNU Radio Blocks
+```cpp
+class recovery_source : public gr::sync_block {
+    // Source block with reference signal
+};
 
-## Priority 4: Analyze All Other Tabs
+class recovery_sink : public gr::sync_block {
+    // Sink block that recovers signal
+};
 
-### Tabs to Analyze
-1. ✅ Models Tab - Already complete
-2. ✅ Training Tab - Complete (needs visualization toggle)
-3. ✅ LLM Tab - Already complete
-4. ⚠️ Crawler Tab - Needs completion
-5. ❓ Research Tab - Need to analyze
-6. ❓ URL Manager Tab - Need to analyze
-7. ❓ Downloaded Files Tab - Need to analyze
-8. ❓ Video Tab - Need to analyze
-9. ❓ Benchmark Tab - Need to analyze
+class recovery_filter : public gr::sync_block {
+    // Filter block using recovery algorithms
+};
+```
 
-**Action:** Create comprehensive analysis for each tab
+### 3.2 Signal Recovery API
+```c
+signal_recovery_t* signal_recovery_init(double sample_rate);
+void signal_set_reference(signal_recovery_t* ctx, float* ref, size_t len);
+void signal_process(signal_recovery_t* ctx, float* in, float* out, size_t len);
+```
 
----
+## Phase 4: System Integration (Week 2-3)
 
-## Implementation Order
+### 4.1 Makefile Structure
+```makefile
+# Top-level targets
+all: libraries tools bindings
+install: install-libs install-tools install-bindings
+clean: clean-libs clean-tools clean-bindings
 
-### Phase 1: Fix Progress Reporting (30 minutes)
-1. Add output mutex
-2. Simplify progress display
-3. Suppress debug messages
-4. Test with training
+# Library targets
+libraries: librecovery_core librecovery_crypto librecovery_signal librecovery_network
 
-### Phase 2: Separate Visualization Files (1 hour)
-1. Create visualization_2d.c/h
-2. Create visualization_3d.c/h
-3. Refactor sphere_visualization.c
-4. Update Makefile
+# Binding targets
+bindings: python-bindings php-bindings gnuradio-blocks
 
-### Phase 3: Add Training Tab Toggle (30 minutes)
-1. Add toggle button to UI
-2. Wire to visualization mode
-3. Test switching
+# Installation targets
+install-libs: install-core install-crypto install-signal install-network
+install-bindings: install-python install-php install-gnuradio
+```
 
-### Phase 4: Complete Crawler Tab (3-4 hours)
-1. Add Prime Configuration Panel
-2. Add URL Pattern Selection
-3. Add Content Filtering
-4. Add Advanced Options
-5. Add Activity Log
-6. Add Model Selector
-7. Add Save/Load Config
-8. Expand to 3-column layout
+### 4.2 Python Bindings
+```python
+import recovery
 
-### Phase 5: Analyze Remaining Tabs (2 hours)
-1. Research Tab analysis
-2. URL Manager Tab analysis
-3. Downloaded Files Tab analysis
-4. Video Tab analysis
-5. Benchmark Tab analysis
-6. Document findings
+# Core recovery
+ctx = recovery.Context(max_iterations=10000, num_samples=100)
+ctx.set_q(q_data)
+for sample in samples:
+    ctx.add_sample(sample)
+result = ctx.run()
 
----
+# Bitcoin
+net = recovery.bitcoin.connect('testnet')
+tx = net.fetch_transaction(txid)
+key = recovery.bitcoin.recover_key(tx, samples)
+
+# Signal processing
+sig = recovery.signal.recover(noisy_signal, reference_signal)
+```
+
+### 4.3 PHP Extension
+```php
+<?php
+$ctx = recovery_init(['max_iterations' => 10000]);
+recovery_set_q($ctx, $q_data);
+recovery_add_samples($ctx, $samples);
+$result = recovery_run($ctx);
+?>
+```
+
+## Phase 5: Tests 3-5 (Week 3)
+
+### Test 3: Bitcoin Oscillation Modeling
+1. Create transaction with known k
+2. Analyze oscillation patterns
+3. Build oscillation model
+4. Use model for blind recovery of second transaction
+
+### Test 4: Mining Tool
+1. Validate nonces from network
+2. Generate proof-of-work
+3. Create valid blocks
+4. Broadcast to network
+
+### Test 5: Transaction Editing
+1. Fetch unconfirmed transactions
+2. Modify outputs/fees
+3. Re-sign if needed
+4. Broadcast modified transaction
+
+## Timeline
+
+### Week 1
+- Day 1-2: Core recovery library with unified algorithm
+- Day 3-4: Bitcoin network interface (all networks)
+- Day 5-7: Crypto recovery implementation
+
+### Week 2
+- Day 1-3: Signal processing library
+- Day 4-5: GNU Radio blocks
+- Day 6-7: Python bindings
+
+### Week 3
+- Day 1-2: PHP extension
+- Day 3-4: System installation
+- Day 5-7: Tests 3-5
 
 ## Success Criteria
 
-### Build Quality
-- ✅ 0 errors
-- ✅ 0 warnings
-- ✅ Clean compilation
-
 ### Functionality
-- ✅ Progress reporting works without artifacts
-- ✅ Training tab has working 2D/3D toggle
-- ✅ Crawler tab has all original features
-- ✅ All tabs analyzed and documented
+- ✅ Unified recovery algorithm (all 6 phases)
+- ✅ Configurable sample count
+- ✅ Support all Bitcoin networks + custom coins
+- ✅ Full Bitcoin protocol implementation
+- ✅ GNU Radio blocks working
+- ✅ System-wide installation
+- ✅ Python and PHP bindings
+- ✅ All 5 tests passing
 
-### Code Quality
-- ✅ Proper file organization
-- ✅ Clear separation of concerns
-- ✅ No duplicate code
-- ✅ Consistent naming
+### Performance
+- ✅ Converge in <100 iterations with good samples
+- ✅ <1 second for typical recovery
+- ✅ Real-time signal processing (<10ms latency)
+- ✅ Production-grade error handling
 
----
+### Quality
+- ✅ Zero memory leaks
+- ✅ Thread-safe
+- ✅ Comprehensive error handling
+- ✅ Full documentation
+- ✅ Example code for all bindings
 
-**Created:** 2024-12-07
-**Status:** Ready to implement
+## Next Steps
+
+Starting implementation NOW in this order:
+1. Core recovery library (unified algorithm)
+2. Bitcoin network interface (all networks)
+3. Tests 3-5 implementation
+4. Signal processing + GNU Radio
+5. Python/PHP bindings
+6. System installation
