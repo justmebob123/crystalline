@@ -201,3 +201,17 @@ help:
 	@echo ""
 	@echo "To install to a different prefix:"
 	@echo "  make PREFIX=/opt/recovery install"
+# Build signal library
+recovery-signal:
+	@echo "Building signal library..."
+	@$(MAKE) -C $(RECOVERY_SIGNAL_DIR)
+
+# Install Python bindings
+install-python: all
+	@echo "Installing Python bindings..."
+	cd python && pip3 install -e .
+
+# Uninstall Python bindings
+uninstall-python:
+	@echo "Uninstalling Python bindings..."
+	pip3 uninstall -y recovery
