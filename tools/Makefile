@@ -31,3 +31,21 @@ clean:
 test_train_tiny: test_train_tiny.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
+
+# Bitcoin recovery tool
+bitcoin-recovery: bitcoin-recovery.c
+	$(CC) $(CFLAGS) -I../lib/recovery_core/include -I../lib/recovery_crypto/include -I../lib/recovery_network/include \
+		-o bitcoin-recovery bitcoin-recovery.c \
+		-L../lib/recovery_core -L../lib/recovery_crypto -L../lib/recovery_network \
+		-lrecovery_core -lrecovery_crypto -lrecovery_network -lssl -lcrypto -lcurl -lm
+
+.PHONY: bitcoin-recovery
+
+# Bitcoin recovery tool
+bitcoin-recovery: bitcoin-recovery.c
+	$(CC) $(CFLAGS) -I../lib/recovery_core/include -I../lib/recovery_crypto/include -I../lib/recovery_network/include \
+		-o bitcoin-recovery bitcoin-recovery.c \
+		-L../lib/recovery_core -L../lib/recovery_crypto -L../lib/recovery_network \
+		-lrecovery_core -lrecovery_crypto -lrecovery_network -lssl -lcrypto -lcurl -lm
+
+.PHONY: bitcoin-recovery

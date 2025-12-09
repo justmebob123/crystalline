@@ -58,6 +58,8 @@ recovery-libs:
 	@echo "Building recovery libraries..."
 	@$(MAKE) -C $(RECOVERY_CORE_DIR)
 	@$(MAKE) -C $(RECOVERY_CRYPTO_DIR)
+	@$(MAKE) -C $(RECOVERY_NETWORK_DIR)
+	@$(MAKE) -C $(RECOVERY_SIGNAL_DIR)
 	@echo "Recovery libraries built successfully"
 
 # Build recovery tools
@@ -96,10 +98,16 @@ install: all
 	install -m 755 $(RECOVERY_CORE_DIR)/librecovery_core.so $(DESTDIR)$(LIBDIR)/
 	install -m 644 $(RECOVERY_CRYPTO_DIR)/librecovery_crypto.a $(DESTDIR)$(LIBDIR)/
 	install -m 755 $(RECOVERY_CRYPTO_DIR)/librecovery_crypto.so $(DESTDIR)$(LIBDIR)/
+	install -m 644 $(RECOVERY_NETWORK_DIR)/librecovery_network.a $(DESTDIR)$(LIBDIR)/
+	install -m 755 $(RECOVERY_NETWORK_DIR)/librecovery_network.so $(DESTDIR)$(LIBDIR)/
+	install -m 644 $(RECOVERY_SIGNAL_DIR)/librecovery_signal.a $(DESTDIR)$(LIBDIR)/
+	install -m 755 $(RECOVERY_SIGNAL_DIR)/librecovery_signal.so $(DESTDIR)$(LIBDIR)/
 	
 	# Install headers
 	install -m 644 $(RECOVERY_CORE_DIR)/include/recovery_core.h $(DESTDIR)$(INCLUDEDIR)/recovery/
 	install -m 644 $(RECOVERY_CRYPTO_DIR)/include/recovery_crypto.h $(DESTDIR)$(INCLUDEDIR)/recovery/
+	install -m 644 $(RECOVERY_NETWORK_DIR)/include/recovery_network.h $(DESTDIR)$(INCLUDEDIR)/recovery/
+	install -m 644 $(RECOVERY_SIGNAL_DIR)/include/recovery_signal.h $(DESTDIR)$(INCLUDEDIR)/recovery/
 	
 	# Install tools
 	install -m 755 $(RECOVERY_TOOLS_DIR)/geometric-recovery $(DESTDIR)$(BINDIR)/ 2>/dev/null || true
@@ -112,6 +120,8 @@ install: all
 	install -m 755 $(RECOVERY_TOOLS_DIR)/platonic-demo $(DESTDIR)$(BINDIR)/ 2>/dev/null || true
 	install -m 755 $(UNIVERSAL_TOOLS_DIR)/universal-recovery $(DESTDIR)$(BINDIR)/
 	install -m 755 $(UNIVERSAL_TOOLS_DIR)/bitcoin-network $(DESTDIR)$(BINDIR)/
+	install -m 755 $(UNIVERSAL_TOOLS_DIR)/bitcoin-recovery $(DESTDIR)$(BINDIR)/ 2>/dev/null || true
+	install -m 755 $(UNIVERSAL_TOOLS_DIR)/bitcoin-miner $(DESTDIR)$(BINDIR)/ 2>/dev/null || true
 	
 	# Install documentation
 	install -m 644 UNIVERSAL_RECOVERY_EXPLAINED.md $(DESTDIR)$(DOCDIR)/ 2>/dev/null || true
@@ -215,3 +225,28 @@ install-python: all
 uninstall-python:
 	@echo "Uninstalling Python bindings..."
 	pip3 uninstall -y recovery
+
+# Build PHP extension
+php-extension:
+	@echo "Building PHP extension..."
+	@cd bindings/php && phpize && ./configure --with-recovery=$(PREFIX) && $(MAKE)
+
+# Install PHP extension
+install-php: all php-extension
+	@echo "Installing PHP extension..."
+	@cd bindings/php && sudo $(MAKE) install
+	@echo ""
+	@echo "PHP extension installed successfully!"
+	@echo "Add 'extension=recovery.so' to your php.ini to enable it."
+
+# Uninstall PHP extension
+uninstall-php:
+	@echo "Uninstalling PHP extension..."
+	@sudo rm -f $$(php-config --extension-dir)/recovery.so
+	@echo "PHP extension uninstalled"
+
+# Clean PHP extension
+clean-php:
+	@echo "Cleaning PHP extension..."
+	@cd bindings/php && $(MAKE) clean 2>/dev/null || true
+	@cd bindings/php && phpize --clean 2>/dev/null || true
