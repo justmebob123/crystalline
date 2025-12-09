@@ -37,7 +37,9 @@ SOURCES = \
         $(SRC_DIR)/recursive_recovery.c \
         $(SRC_DIR)/clock_recovery.c \
         $(SRC_DIR)/platonic_solids.c \
-        $(SRC_DIR)/k_recovery_enhanced.c
+        $(SRC_DIR)/k_recovery_enhanced.c \
+        $(SRC_DIR)/spherical_recovery.c \
+        $(SRC_DIR)/search_recovery.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -286,3 +288,21 @@ $(BUILD_DIR)/test_quadrant_analysis: $(TEST_DIR)/test_quadrant_analysis.c $(LIB_
 test-quadrant: $(BUILD_DIR)/test_quadrant_analysis
 	@echo "Running quadrant analysis..."
 	@$(BUILD_DIR)/test_quadrant_analysis
+
+# Spherical recovery test
+$(BUILD_DIR)/test_spherical_recovery: $(TEST_DIR)/test_spherical_recovery.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-spherical
+test-spherical: $(BUILD_DIR)/test_spherical_recovery
+	@echo "Running spherical recovery test..."
+	@$(BUILD_DIR)/test_spherical_recovery
+
+# Search recovery test
+$(BUILD_DIR)/test_search_recovery: $(TEST_DIR)/test_search_recovery.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-search
+test-search: $(BUILD_DIR)/test_search_recovery
+	@echo "Running search-based recovery test..."
+	@$(BUILD_DIR)/test_search_recovery
