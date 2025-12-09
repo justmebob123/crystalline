@@ -77,7 +77,8 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/geometric_utils.c \
           src/geometric_recovery/q_validation.c \
           src/geometric_recovery/geometric_recovery_complete.c \
-          src/geometric_recovery/iterative_recovery.c
+          src/geometric_recovery/iterative_recovery.c \
+          src/geometric_recovery/iterative_recovery_v2.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -180,3 +181,9 @@ test_geometric_recovery: tests/test_geometric_recovery.c $(SHARED_LIB)
 	@echo "Running Geometric Recovery test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_geometric_recovery
 
+
+test_iterative_v2: tests/test_iterative_recovery_v2.c $(SHARED_LIB)
+	@echo "Building Iterative Recovery V2 test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_iterative_recovery_v2 tests/test_iterative_recovery_v2.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	@echo "Running Iterative Recovery V2 test..."
+	LD_LIBRARY_PATH=.:.. ./tests/test_iterative_recovery_v2

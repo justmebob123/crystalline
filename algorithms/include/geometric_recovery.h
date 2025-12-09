@@ -220,7 +220,11 @@ BIGNUM* search_torus_orbit(
     const TorusIntersectionCurve* curve,
     EC_GROUP* ec_group,
     EC_POINT* target_Q,
-    uint32_t num_samples
+    uint32_t num_samples,
+    const double** anchor_positions,
+    const BIGNUM** anchor_k_values,
+    uint32_t num_anchors,
+    uint32_t num_dimensions
 );
 
 // ============================================================================
@@ -498,10 +502,105 @@ void map_k_to_position(
 /**
  * Map position to k (BIGNUM) with +1 bit extension
  */
+/**
+ * Triangulate k from anchors using weighted interpolation
+ * This is the CORRECT approach - uses actual anchor k values!
+ */
+BIGNUM* triangulate_k_from_anchors(
+    const double* position,
+    const double** anchor_positions,
+    const BIGNUM** anchor_k_values,
+    uint32_t num_anchors,
+    uint32_t num_dimensions,
+    EC_GROUP* ec_group
+);
+
+/**
+ * DEPRECATED: Use triangulate_k_from_anchors() instead!
+ */
 BIGNUM* map_position_to_k(
     const double* position,
     uint32_t num_dimensions
 );
+
+// ============================================================================
+// ITERATIVE RECOVERY WITH DYNAMIC SCALING (Version 2)
+// ============================================================================
+
+/**
+ * Triangulate k with correct endianness and truncation (Phase 2)
+ * - Uses 257 bits (+1 for boundary crossing)
+ * - Computes in REVERSE (as user specified)
+ * - Truncates to actual order size
+ */
+BIGNUM* triangulate_k_with_truncation(
+    const double* position,
+    const double** anchor_positions,
+    const BIGNUM** anchor_k_values,
+    uint32_t num_anchors,
+    uint32_t num_dimensions,
+    EC_GROUP* ec_group
+);
+
+/**
+ * Verify if candidate k produces target Q (Phase 1)
+ * CRITICAL: Checks if candidate_k * G == target_Q
+ */
+bool verify_candidate_produces_Q(
+    BIGNUM* candidate_k,
+    EC_POINT* target_Q,
+    EC_GROUP* ec_group
+);
+
+/**
+ * Measure distance between two points (for oscillation tracking)
+ */
+double measure_point_distance(
+    EC_POINT* Q1,
+    EC_POINT* Q2,
+    EC_GROUP* ec_group
+);
+
+/**
+ * Iterative recovery with verification loop (Phase 1)
+ * Iterates until finding k that produces target_Q
+ */
+BIGNUM* geometric_recovery_iterative(
+    GeometricRecoveryContext* ctx,
+    EC_POINT* target_Q,
+    uint32_t max_iterations,
+    double* confidence_out,
+    uint32_t* iterations_out
+);
+
+/**
+ * Measure oscillation magnitude in the system
+ */
+double measure_oscillation_magnitude(GeometricRecoveryContext* ctx);
+
+/**
+ * Recovery with dynamic scaling (Phase 3)
+ * Starts with low complexity, scales up until oscillations stabilize
+ */
+BIGNUM* geometric_recovery_with_dynamic_scaling(
+    EC_POINT* target_Q,
+    EC_GROUP* ec_group,
+    uint32_t initial_anchors,
+    uint32_t initial_dimensions,
+    double* confidence_out,
+    uint32_t* final_dimensions_out,
+    uint32_t* final_anchors_out
+);
+
+/**
+ * Reduce entropy iteratively (Phase 4 - from user's Python code)
+ */
+uint64_t reduce_entropy(uint64_t initial_space, uint64_t threshold);
+
+/**
+ * Generate deterministic target from Q (Phase 4)
+ * Note: This is a static function in iterative_recovery_v2.c
+ */
 
 /**
  * Compute Hamming distance between two k values

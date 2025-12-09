@@ -56,45 +56,143 @@ void map_k_to_position(
  * 
  * CRITICAL: Generates 257-bit k (256 + 1 for boundary)
  */
+/**
+ * Find k nearest anchors to a position
+ */
+static void find_k_nearest_anchors(
+    const double* position,
+    const double** anchor_positions,
+    uint32_t num_anchors,
+    uint32_t num_dimensions,
+    uint32_t k,
+    uint32_t* nearest_indices,
+    double* nearest_distances
+) {
+    // Initialize with worst possible values
+    for (uint32_t i = 0; i < k; i++) {
+        nearest_indices[i] = 0;
+        nearest_distances[i] = 1e100;
+    }
+    
+    // Find k nearest
+    for (uint32_t a = 0; a < num_anchors; a++) {
+        // Compute distance
+        double dist = 0.0;
+        for (uint32_t d = 0; d < num_dimensions; d++) {
+            double diff = position[d] - anchor_positions[a][d];
+            dist += diff * diff;
+        }
+        dist = sqrt(dist);
+        
+        // Insert if closer than current k-th nearest
+        for (uint32_t i = 0; i < k; i++) {
+            if (dist < nearest_distances[i]) {
+                // Shift down
+                for (uint32_t j = k - 1; j > i; j--) {
+                    nearest_indices[j] = nearest_indices[j - 1];
+                    nearest_distances[j] = nearest_distances[j - 1];
+                }
+                // Insert
+                nearest_indices[i] = a;
+                nearest_distances[i] = dist;
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * Triangulate k from anchors using weighted interpolation
+ * 
+ * This is the CORRECT approach - use actual anchor k values!
+ */
+BIGNUM* triangulate_k_from_anchors(
+    const double* position,
+    const double** anchor_positions,
+    const BIGNUM** anchor_k_values,
+    uint32_t num_anchors,
+    uint32_t num_dimensions,
+    EC_GROUP* ec_group
+) {
+    if (num_anchors == 0) return NULL;
+    
+    // Find 3 nearest anchors (or fewer if not enough anchors)
+    uint32_t k = (num_anchors >= 3) ? 3 : num_anchors;
+    uint32_t nearest[3];
+    double distances[3];
+    
+    find_k_nearest_anchors(position, anchor_positions, num_anchors, 
+                          num_dimensions, k, nearest, distances);
+    
+    // Compute weights (inverse distance)
+    double weights[3];
+    double total_weight = 0.0;
+    
+    for (uint32_t i = 0; i < k; i++) {
+        // Use inverse distance squared for sharper weighting
+        weights[i] = 1.0 / (distances[i] * distances[i] + 1e-10);
+        total_weight += weights[i];
+    }
+    
+    // Normalize weights
+    for (uint32_t i = 0; i < k; i++) {
+        weights[i] /= total_weight;
+    }
+    
+    // Interpolate k values using weighted sum
+    // k_result = w1*k1 + w2*k2 + w3*k3
+    
+    BIGNUM* result = BN_new();
+    BN_zero(result);
+    
+    BIGNUM* order = BN_new();
+    BN_CTX* ctx = BN_CTX_new();
+    EC_GROUP_get_order(ec_group, order, ctx);
+    
+    // Scale factor for fixed-point arithmetic (use 10^9 for precision)
+    const uint64_t SCALE = 1000000000ULL;
+    
+    for (uint32_t i = 0; i < k; i++) {
+        // Compute weighted_k = k * weight
+        BIGNUM* weighted_k = BN_dup(anchor_k_values[nearest[i]]);
+        
+        // Multiply by scaled weight
+        uint64_t scaled_weight = (uint64_t)(weights[i] * SCALE);
+        BN_mul_word(weighted_k, scaled_weight);
+        
+        // Add to result
+        BN_add(result, result, weighted_k);
+        BN_free(weighted_k);
+    }
+    
+    // Divide by scale factor
+    BN_div_word(result, SCALE);
+    
+    // Reduce modulo order
+    BN_mod(result, result, order, ctx);
+    
+    BN_free(order);
+    BN_CTX_free(ctx);
+    
+    return result;
+}
+
+/**
+ * Legacy function - kept for compatibility but should not be used
+ * Use triangulate_k_from_anchors() instead!
+ */
 BIGNUM* map_position_to_k(
     const double* position,
     uint32_t num_dimensions
 ) {
-    // Allocate 257 bits = 33 bytes
-    unsigned char k_bytes[33];
-    memset(k_bytes, 0, 33);
+    // This function is DEPRECATED and should not be used!
+    // It creates arbitrary k values that have no relationship to anchor k values.
+    // Use triangulate_k_from_anchors() instead!
     
-    uint32_t bits_per_dim = 257 / num_dimensions;
-    if (bits_per_dim < 1) bits_per_dim = 1;
+    fprintf(stderr, "WARNING: map_position_to_k() is deprecated! Use triangulate_k_from_anchors()\n");
     
-    for (uint32_t d = 0; d < num_dimensions; d++) {
-        // Convert position from [-1, 1] to [0, 1]
-        double normalized = (position[d] + 1.0) / 2.0;
-        if (normalized < 0.0) normalized = 0.0;
-        if (normalized > 1.0) normalized = 1.0;
-        
-        // Convert to integer value
-        uint64_t max_value = (1ULL << bits_per_dim) - 1;
-        uint64_t value = (uint64_t)(normalized * max_value);
-        
-        // Set bits
-        uint32_t bit_start = d * bits_per_dim;
-        for (uint32_t b = 0; b < bits_per_dim && bit_start + b < 257; b++) {
-            if (value & (1ULL << b)) {
-                uint32_t byte_idx = (bit_start + b) / 8;
-                uint32_t bit_idx = (bit_start + b) % 8;
-                if (byte_idx < 33) {
-                    k_bytes[byte_idx] |= (1 << (7 - bit_idx));
-                }
-            }
-        }
-    }
-    
-    // Create BIGNUM from bytes
-    BIGNUM* k = BN_new();
-    BN_bin2bn(k_bytes, 33, k);
-    
-    return k;
+    // Return NULL to force proper usage
+    return NULL;
 }
 
 /**
