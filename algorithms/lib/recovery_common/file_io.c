@@ -387,9 +387,65 @@ void free_generic_data(DataType type, GenericData* data) {
 // These will be implemented in separate files for each format
 
 static bool load_obj(FILE* file, GeometricData* data) {
-    (void)file; (void)data;
-    set_error(ERROR_INVALID_FORMAT, "OBJ loader not yet implemented");
-    return false;
+    // Count vertices and faces first
+    size_t num_vertices = 0;
+    size_t num_faces = 0;
+    char line[256];
+    
+    while (fgets(line, sizeof(line), file)) {
+        if (line[0] == 'v' && line[1] == ' ') num_vertices++;
+        else if (line[0] == 'f' && line[1] == ' ') num_faces++;
+    }
+    
+    if (num_vertices == 0) {
+        set_error(ERROR_INVALID_FORMAT, "No vertices found in OBJ file");
+        return false;
+    }
+    
+    // Allocate memory
+    data->vertices = malloc(num_vertices * 3 * sizeof(double));
+    data->faces = malloc(num_faces * 4 * sizeof(int));
+    data->num_vertices = num_vertices;
+    data->num_faces = num_faces;
+    data->edges = NULL;
+    data->num_edges = 0;
+    data->metadata = NULL;
+    
+    if (!data->vertices || !data->faces) {
+        set_error(ERROR_OUT_OF_MEMORY, "Failed to allocate memory");
+        free(data->vertices);
+        free(data->faces);
+        return false;
+    }
+    
+    // Read vertices and faces
+    rewind(file);
+    size_t v_idx = 0;
+    size_t f_idx = 0;
+    
+    while (fgets(line, sizeof(line), file)) {
+        if (line[0] == 'v' && line[1] == ' ') {
+            double x, y, z;
+            if (sscanf(line + 2, "%lf %lf %lf", &x, &y, &z) == 3) {
+                data->vertices[v_idx * 3 + 0] = x;
+                data->vertices[v_idx * 3 + 1] = y;
+                data->vertices[v_idx * 3 + 2] = z;
+                v_idx++;
+            }
+        } else if (line[0] == 'f' && line[1] == ' ') {
+            int v1, v2, v3, v4 = 0;
+            int count = sscanf(line + 2, "%d %d %d %d", &v1, &v2, &v3, &v4);
+            if (count >= 3) {
+                data->faces[f_idx * 4 + 0] = v1 - 1;
+                data->faces[f_idx * 4 + 1] = v2 - 1;
+                data->faces[f_idx * 4 + 2] = v3 - 1;
+                data->faces[f_idx * 4 + 3] = (count == 4) ? (v4 - 1) : -1;
+                f_idx++;
+            }
+        }
+    }
+    
+    return true;
 }
 
 static bool load_stl(FILE* file, GeometricData* data) {
