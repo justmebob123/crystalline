@@ -159,3 +159,10 @@ test_phase6: tests/test_phase6.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase6 tests/test_phase6.c -L. -lalgorithms -L.. -lcrystalline -lm
 	@echo "Running Phase 6 tests..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_phase6
+
+test_torus_phase1: tests/test_torus_recovery_phase1.c $(SHARED_LIB)
+	@echo "Building Phase 1 Torus Recovery test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_torus_phase1 tests/test_torus_recovery_phase1.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	@echo "Running Phase 1 Torus Recovery test..."
+	LD_LIBRARY_PATH=.:.. ./tests/test_torus_phase1
+
