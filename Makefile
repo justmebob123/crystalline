@@ -387,7 +387,9 @@ tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
        # tools/validate_lattice tools/analyze_cymatic_resonance \
        tools/visualize_angular_positions tools/ui_layout_analyzer \
        tools/benchmark_prime_validation \
-       tools/platonic_prime_resonance tools/tetration_analysis
+       tools/platonic_prime_resonance tools/tetration_analysis \
+
+
 
 tools/cllm_pdf_extract: $(DOCPROC_LIB)
 	@echo "Building PDF extraction tool..."
@@ -668,3 +670,11 @@ tools/test_harmonic: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	$(CC) $(CFLAGS) -o tools/test_harmonic tools/platonic/test_harmonic.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Harmonic Integration test tool built: tools/test_harmonic"
+
+# Recovery tools
+recovery-tools:
+	@echo "Building recovery tools..."
+	@cd tools/recovery && $(MAKE)
+	@echo "✓ Recovery tools built"
+
+.PHONY: recovery-tools
