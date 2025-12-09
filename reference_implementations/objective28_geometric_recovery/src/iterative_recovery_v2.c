@@ -290,13 +290,63 @@ BIGNUM* geometric_recovery_iterative(
     
     printf("Starting iterative recovery (max %u iterations)...\n", max_iterations);
     
-    for (uint32_t iteration = 0; iteration < max_iterations; iteration++) {
-        // Generate candidate using triangulation with truncation
-        uint32_t vertex_idx = iteration % ctx->num_shared_vertices;
-        if (vertex_idx >= ctx->num_shared_vertices) vertex_idx = 0;
+    // CRITICAL FIX: ENTROPY REDUCTION SEARCH
+    // Generate deterministic target from Q and search 2^16 candidates around it
+    
+    printf("Generating deterministic target from Q...\n");
+    BIGNUM* target_k = generate_target_from_Q_v2(target_Q, ctx->ec_group, 128);
+    
+    // Convert target to position in 13D space (same mapping as anchors)
+    double* target_position = (double*)malloc(ctx->num_dimensions * sizeof(double));
+    unsigned char target_bytes[32] = {0};
+    BN_bn2bin(target_k, target_bytes);
+    
+    // Map target to 13D space using prime-based projection
+    for (uint32_t d = 0; d < ctx->num_dimensions; d++) {
+        uint64_t prime = 2;
+        for (uint32_t p = 0; p < d; p++) {
+            prime++;
+            while (1) {
+                bool is_prime = true;
+                for (uint64_t i = 2; i * i <= prime; i++) {
+                    if (prime % i == 0) {
+                        is_prime = false;
+                        break;
+                    }
+                }
+                if (is_prime) break;
+                prime++;
+            }
+        }
+        
+        target_position[d] = 0.0;
+        for (uint32_t b = 0; b < 16 && b < 32; b++) {
+            target_position[d] += target_bytes[b] * pow((double)prime, (double)(b % 8));
+        }
+        target_position[d] = fmod(target_position[d], 1.0);
+    }
+    
+    printf("Target position in 13D space computed\n");
+    printf("Searching 2^16 candidates around target...\n");
+    
+    uint32_t search_radius = 65536;
+    
+    for (uint32_t iteration = 0; iteration < max_iterations && iteration < search_radius; iteration++) {
+        double* search_position = (double*)malloc(ctx->num_dimensions * sizeof(double));
+        
+        double angle = (iteration * 2.0 * 3.14159265359) / 1000.0;
+        double radius = (iteration % 1000) / 1000.0 * 0.1;
+        
+        for (uint32_t d = 0; d < ctx->num_dimensions; d++) {
+            double offset = radius * cos(angle + d * 0.5);
+            search_position[d] = target_position[d] + offset;
+            
+            while (search_position[d] < 0.0) search_position[d] += 1.0;
+            while (search_position[d] > 1.0) search_position[d] -= 1.0;
+        }
         
         BIGNUM* candidate_k = triangulate_k_with_truncation(
-            ctx->shared_vertices[vertex_idx].position,
+            search_position,
             (const double**)ctx->anchor_k_positions,
             (const BIGNUM**)ctx->anchor_k_values,
             ctx->num_anchors,
@@ -304,7 +354,16 @@ BIGNUM* geometric_recovery_iterative(
             ctx->ec_group
         );
         
+        free(search_position);
+        
         if (!candidate_k) continue;
+        
+        // Debug: Print first few candidates
+        if (iteration < 5) {
+            char* k_hex = BN_bn2hex(candidate_k);
+            printf("  Candidate %u: %s\n", iteration, k_hex);
+            OPENSSL_free(k_hex);
+        }
         
         // PHASE 1: VERIFY candidate produces target_Q
         if (verify_candidate_produces_Q(candidate_k, target_Q, ctx->ec_group)) {
@@ -343,6 +402,10 @@ BIGNUM* geometric_recovery_iterative(
         EC_POINT_free(candidate_Q);
         BN_free(candidate_k);
     }
+    
+    // Clean up
+    free(target_position);
+    BN_free(target_k);
     
     BN_CTX_free(bn_ctx);
     

@@ -187,3 +187,9 @@ test_iterative_v2: tests/test_iterative_recovery_v2.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_iterative_recovery_v2 tests/test_iterative_recovery_v2.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
 	@echo "Running Iterative Recovery V2 test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_iterative_recovery_v2
+
+test_candidate_analysis: tests/test_candidate_analysis.c $(SHARED_LIB)
+	@echo "Building Candidate Analysis test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_candidate_analysis tests/test_candidate_analysis.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	@echo "Running Candidate Analysis test..."
+	LD_LIBRARY_PATH=.:.. ./tests/test_candidate_analysis

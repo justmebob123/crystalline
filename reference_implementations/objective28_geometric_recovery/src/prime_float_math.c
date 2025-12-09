@@ -521,3 +521,16 @@ double prime_log2(double x) {
 float prime_atan2f(float y, float x) {
     return (float)prime_atan2((double)y, (double)x);
 }
+
+// Double precision versions
+double prime_fabs(double x) {
+    return (x < 0.0) ? -x : x;
+}
+
+int prime_isnan(double x) {
+    return (x != x);
+}
+
+int prime_isinf(double x) {
+    return (x == x + 1.0) || (x == x - 1.0);
+}
