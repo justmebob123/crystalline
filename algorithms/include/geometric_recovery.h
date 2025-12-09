@@ -461,6 +461,23 @@ BIGNUM* geometric_recovery_recover_k(
 );
 
 /**
+ * Iterative Q→k recovery with verification (from Python research)
+ * 
+ * Implements your OscillationAccelerator.reverse_q_to_k():
+ * 1. Generate deterministic target from Q
+ * 2. Reduce entropy recursively (2^(bit_scale/2) → 2^16)
+ * 3. Find prime near target (CrystalAbacus)
+ * 4. Verify QR condition (Legendre symbol)
+ * 5. Verify k produces Q (critical verification loop)
+ */
+BIGNUM* iterative_recover_k_from_Q(
+    GeometricRecoveryContext* ctx,
+    EC_POINT* target_Q,
+    uint32_t bit_scale,
+    double* confidence_out
+);
+
+/**
  * Free geometric recovery context
  */
 void geometric_recovery_free(GeometricRecoveryContext* ctx);

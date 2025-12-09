@@ -76,7 +76,8 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/shared_geometry.c \
           src/geometric_recovery/geometric_utils.c \
           src/geometric_recovery/q_validation.c \
-          src/geometric_recovery/geometric_recovery_complete.c
+          src/geometric_recovery/geometric_recovery_complete.c \
+          src/geometric_recovery/iterative_recovery.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
