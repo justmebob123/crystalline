@@ -13,7 +13,7 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "../../../include/prime_float_math.h"
 #include <stdio.h>
 #include <time.h>
 
@@ -194,7 +194,7 @@ bool platonic_model_validate_geometry(const PlatonicModel* model) {
     for (uint32_t v = 0; v < model->num_vertices; v++) {
         for (uint32_t d = 0; d < model->num_dimensions; d++) {
             double value = model->vertex_positions[v * model->num_dimensions + d];
-            if (!isfinite(value)) {
+            if (prime_isinf(value) || prime_isnan(value)) {
                 printf("  ❌ Non-finite value at vertex %u, dimension %u\n", v, d);
                 return false;
             }

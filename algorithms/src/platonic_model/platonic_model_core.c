@@ -13,7 +13,7 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "../../../include/prime_float_math.h"
 #include <stdio.h>
 #include <time.h>
 
@@ -135,9 +135,9 @@ static void expand_to_high_dimensions(
             for (uint32_t i = 0; i < 3; i++) {
                 double coord = vertices_3d[v * 3 + i];
                 uint32_t prime = primes[d % 20];
-                sum += coord * cos(2.0 * M_PI * prime * (d - 3) / num_dimensions);
+                sum += coord * prime_cos(2.0 * M_PI * prime * (d - 3) / num_dimensions);
             }
-            vertices_hd[v * num_dimensions + d] = sum / sqrt((double)num_dimensions);
+            vertices_hd[v * num_dimensions + d] = sum / prime_sqrt((double)num_dimensions);
         }
     }
 }
@@ -158,7 +158,7 @@ static void replicate_vertices(
         for (uint32_t d = 0; d < num_dimensions; d++) {
             double base_value = vertices[source * num_dimensions + d];
             // Add small perturbation based on vertex index
-            double perturbation = 0.01 * sin(2.0 * M_PI * v / target_num_vertices + d);
+            double perturbation = 0.01 * prime_sin(2.0 * M_PI * v / target_num_vertices + d);
             vertices[v * num_dimensions + d] = base_value + perturbation;
         }
     }
