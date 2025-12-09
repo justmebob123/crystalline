@@ -277,3 +277,12 @@ $(BUILD_DIR)/test_deep_recovery_analysis: $(TEST_DIR)/test_deep_recovery_analysi
 test-deep-analysis: $(BUILD_DIR)/test_deep_recovery_analysis
 	@echo "Running deep recovery analysis..."
 	@$(BUILD_DIR)/test_deep_recovery_analysis
+
+# Quadrant analysis test
+$(BUILD_DIR)/test_quadrant_analysis: $(TEST_DIR)/test_quadrant_analysis.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-quadrant
+test-quadrant: $(BUILD_DIR)/test_quadrant_analysis
+	@echo "Running quadrant analysis..."
+	@$(BUILD_DIR)/test_quadrant_analysis
