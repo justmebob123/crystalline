@@ -64,7 +64,13 @@ SOURCES = src/numerical.c \
           src/blind_recovery/variance_analysis.c \
           src/blind_recovery/cross_correlation.c \
           src/blind_recovery/universal_recovery.c \
-          src/blind_recovery/universal_recovery_v2.c
+          src/blind_recovery/universal_recovery_v2.c \
+          src/platonic_model/tetration_real.c \
+          src/platonic_model/platonic_model_core.c \
+          src/platonic_model/platonic_model_scaling.c \
+          src/platonic_model/platonic_model_oscillations.c \
+          src/platonic_model/platonic_model_recovery.c \
+          src/platonic_model/platonic_model_persistence.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
