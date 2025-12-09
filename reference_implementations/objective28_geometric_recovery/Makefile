@@ -36,7 +36,8 @@ SOURCES = \
 	$(SRC_DIR)/iterative_recovery_v2.c \
         $(SRC_DIR)/recursive_recovery.c \
         $(SRC_DIR)/clock_recovery.c \
-        $(SRC_DIR)/platonic_solids.c
+        $(SRC_DIR)/platonic_solids.c \
+        $(SRC_DIR)/k_recovery_enhanced.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -258,3 +259,12 @@ test-integrated: $(BUILD_DIR)/test_integrated_recovery
 test-all: test-clock test-platonic test-integrated
 	@echo ""
 	@echo "All tests completed!"
+
+# Enhanced k recovery test
+$(BUILD_DIR)/test_k_recovery_enhanced: $(TEST_DIR)/test_k_recovery_enhanced.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-k-recovery
+test-k-recovery: $(BUILD_DIR)/test_k_recovery_enhanced
+	@echo "Running enhanced k recovery tests..."
+	@$(BUILD_DIR)/test_k_recovery_enhanced
