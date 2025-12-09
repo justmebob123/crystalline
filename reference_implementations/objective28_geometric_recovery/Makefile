@@ -268,3 +268,12 @@ $(BUILD_DIR)/test_k_recovery_enhanced: $(TEST_DIR)/test_k_recovery_enhanced.c $(
 test-k-recovery: $(BUILD_DIR)/test_k_recovery_enhanced
 	@echo "Running enhanced k recovery tests..."
 	@$(BUILD_DIR)/test_k_recovery_enhanced
+
+# Deep recovery analysis test
+$(BUILD_DIR)/test_deep_recovery_analysis: $(TEST_DIR)/test_deep_recovery_analysis.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-deep-analysis
+test-deep-analysis: $(BUILD_DIR)/test_deep_recovery_analysis
+	@echo "Running deep recovery analysis..."
+	@$(BUILD_DIR)/test_deep_recovery_analysis
