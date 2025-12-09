@@ -70,7 +70,13 @@ SOURCES = src/numerical.c \
           src/platonic_model/platonic_model_scaling.c \
           src/platonic_model/platonic_model_oscillations.c \
           src/platonic_model/platonic_model_recovery.c \
-          src/platonic_model/platonic_model_persistence.c
+          src/platonic_model/platonic_model_persistence.c \
+          src/geometric_recovery/oscillation_vector.c \
+          src/geometric_recovery/quadrant_polarity.c \
+          src/geometric_recovery/shared_geometry.c \
+          src/geometric_recovery/geometric_utils.c \
+          src/geometric_recovery/q_validation.c \
+          src/geometric_recovery/geometric_recovery_complete.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -165,4 +171,11 @@ test_torus_phase1: tests/test_torus_recovery_phase1.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_torus_phase1 tests/test_torus_recovery_phase1.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
 	@echo "Running Phase 1 Torus Recovery test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_torus_phase1
+
+
+test_geometric_recovery: tests/test_geometric_recovery.c $(SHARED_LIB)
+	@echo "Building Geometric Recovery test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_geometric_recovery tests/test_geometric_recovery.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	@echo "Running Geometric Recovery test..."
+	LD_LIBRARY_PATH=.:.. ./tests/test_geometric_recovery
 
