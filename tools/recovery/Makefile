@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -I../../algorithms/include -I../../src
 LDFLAGS = -L../../algorithms/lib/recovery_common -L../..
-LIBS = -lrecovery_common -lalgorithms -lcrystalline -lm
+LIBS = ../../algorithms/lib/recovery_common/librecovery_common.a ../../libalgorithms.a ../../libcrystalline.a -lm
 
 # Tools
 TOOLS = geometric-recovery signal-recovery image-recovery network-recovery crypto-recovery scientific-recovery ml-recovery platonic-demo
