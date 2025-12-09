@@ -47,6 +47,243 @@ struct recovery_context {
     double current_error;
 };
 
+// ============================================================================
+// OBJECTIVE 28 Integration Functions
+// ============================================================================
+
+/**
+ * Convert byte array to structure data for blind_recovery
+ */
+static double* bytes_to_structure_data(const uint8_t* bytes, size_t len, uint32_t* num_vertices) {
+    *num_vertices = (uint32_t)len;
+    double* data = malloc(len * 3 * sizeof(double));
+    if (!data) return NULL;
+    
+    for (size_t i = 0; i < len; i++) {
+        data[i*3 + 0] = (double)bytes[i] / 255.0;
+        data[i*3 + 1] = (double)i / (double)len;
+        data[i*3 + 2] = sqrt(data[i*3 + 0] * data[i*3 + 1]);
+    }
+    
+    return data;
+}
+
+/**
+ * Convert structure data back to byte array
+ */
+static void structure_data_to_bytes(const double* data, uint32_t num_vertices, uint8_t* bytes) {
+    for (uint32_t i = 0; i < num_vertices; i++) {
+        double x = data[i*3 + 0];
+        if (x < 0.0) x = 0.0;
+        if (x > 1.0) x = 1.0;
+        bytes[i] = (uint8_t)(x * 255.0);
+    }
+}
+
+/**
+ * Create corruption mask from samples
+ */
+static bool* create_corruption_mask(size_t len, const recovery_sample_t* samples, size_t num_samples) {
+    bool* mask = calloc(len, sizeof(bool));
+    if (!mask) return NULL;
+    
+    for (size_t i = 0; i < len; i++) {
+        mask[i] = true;
+    }
+    
+    for (size_t i = 0; i < num_samples; i++) {
+        const recovery_sample_t* s = &samples[i];
+        for (size_t j = 0; j < s->length && (s->offset + j) < len; j++) {
+            mask[s->offset + j] = false;
+        }
+    }
+    
+    return mask;
+}
+
+/**
+ * Compute confidence scores for vertices
+ */
+static double* compute_confidence_scores_from_samples(
+    size_t len,
+    const recovery_sample_t* samples,
+    size_t num_samples,
+    const double* vertex_positions
+) {
+    double* scores = malloc(len * sizeof(double));
+    if (!scores) return NULL;
+    
+    for (size_t i = 0; i < len; i++) {
+        bool is_anchor = false;
+        for (size_t j = 0; j < num_samples; j++) {
+            const recovery_sample_t* s = &samples[j];
+            if (i >= s->offset && i < s->offset + s->length) {
+                is_anchor = true;
+                break;
+            }
+        }
+        
+        if (is_anchor) {
+            scores[i] = 1.0;
+        } else {
+            double min_dist = INFINITY;
+            for (size_t j = 0; j < num_samples; j++) {
+                const recovery_sample_t* s = &samples[j];
+                for (size_t k = 0; k < s->length && (s->offset + k) < len; k++) {
+                    size_t anchor_idx = s->offset + k;
+                    double dx = vertex_positions[i*3 + 0] - vertex_positions[anchor_idx*3 + 0];
+                    double dy = vertex_positions[i*3 + 1] - vertex_positions[anchor_idx*3 + 1];
+                    double dz = vertex_positions[i*3 + 2] - vertex_positions[anchor_idx*3 + 2];
+                    double dist = sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                    }
+                }
+            }
+            scores[i] = exp(-min_dist * 5.0);
+        }
+    }
+    
+    return scores;
+}
+
+/**
+ * Apply OBJECTIVE 28 Phase 1-6 algorithms for recovery
+ */
+static recovery_error_t apply_blind_recovery_algorithm(
+    recovery_context_t* ctx,
+    uint8_t* result_data,
+    size_t result_len
+) {
+    if (!ctx || !result_data) return RECOVERY_ERROR_INVALID_PARAM;
+    
+    if (ctx->config.verbose) {
+        printf("\n=== Applying OBJECTIVE 28 Blind Recovery Algorithm ===\n");
+    }
+    
+    // Convert to geometric structure
+    uint32_t num_vertices = 0;
+    double* vertex_positions = bytes_to_structure_data(result_data, result_len, &num_vertices);
+    if (!vertex_positions) return RECOVERY_ERROR_OUT_OF_MEMORY;
+    
+    bool* corruption_mask = create_corruption_mask(result_len, ctx->samples, ctx->num_samples);
+    if (!corruption_mask) {
+        free(vertex_positions);
+        return RECOVERY_ERROR_OUT_OF_MEMORY;
+    }
+    
+    double* confidence_scores = compute_confidence_scores_from_samples(
+        result_len, ctx->samples, ctx->num_samples, vertex_positions
+    );
+    if (!confidence_scores) {
+        free(vertex_positions);
+        free(corruption_mask);
+        return RECOVERY_ERROR_OUT_OF_MEMORY;
+    }
+    
+    if (ctx->config.verbose) {
+        uint32_t corrupted_count = 0;
+        for (size_t i = 0; i < result_len; i++) {
+            if (corruption_mask[i]) corrupted_count++;
+        }
+        printf("Converted %u bytes to geometric structure\n", num_vertices);
+        printf("Corrupted vertices: %u (%.1f%%)\n", 
+               corrupted_count, 100.0 * corrupted_count / num_vertices);
+    }
+    
+    // Create structural map
+    StructuralMap* structure = map_structure(
+        num_vertices,
+        num_vertices > 0 ? num_vertices - 1 : 0,
+        0,
+        vertex_positions
+    );
+    
+    if (!structure) {
+        free(vertex_positions);
+        free(corruption_mask);
+        free(confidence_scores);
+        return RECOVERY_ERROR_INTERNAL;
+    }
+    
+    // Select anchor points
+    AnchorSystem* anchors = select_anchors(
+        structure,
+        vertex_positions,
+        confidence_scores,
+        num_vertices
+    );
+    
+    if (!anchors) {
+        free_structural_map(structure);
+        free(vertex_positions);
+        free(corruption_mask);
+        free(confidence_scores);
+        return RECOVERY_ERROR_INTERNAL;
+    }
+    
+    if (ctx->config.verbose) {
+        printf("Selected %u anchor points (confidence: %.3f)\n", 
+               anchors->num_anchors, anchors->global_confidence);
+    }
+    
+    // Recover corrupted vertices
+    recover_all_vertices(
+        anchors,
+        structure,
+        vertex_positions,
+        confidence_scores,
+        num_vertices
+    );
+    
+    // Iterative refinement
+    uint32_t refinement_iterations = adjust_anchors_iterative(
+        anchors,
+        vertex_positions,
+        confidence_scores,
+        corruption_mask,
+        num_vertices,
+        ctx->config.max_iterations / 10
+    );
+    
+    if (ctx->config.verbose) {
+        printf("Performed %u refinement iterations\n", refinement_iterations);
+    }
+    
+    // Compute final metrics
+    RecoveryMetrics metrics;
+    compute_recovery_metrics(
+        confidence_scores,
+        corruption_mask,
+        num_vertices,
+        &metrics
+    );
+    
+    if (ctx->config.verbose) {
+        printf("\n=== Recovery Results ===\n");
+        printf("Recovery rate: %.1f%%\n", metrics.recovery_rate * 100.0);
+        printf("Average confidence: %.3f\n", metrics.avg_confidence);
+    }
+    
+    // Convert back to bytes
+    structure_data_to_bytes(vertex_positions, num_vertices, result_data);
+    
+    // Update context
+    ctx->converged = (metrics.recovery_rate >= 0.95);
+    ctx->final_oscillation = 1.0 - metrics.avg_confidence;
+    ctx->iterations_taken = refinement_iterations;
+    
+    // Cleanup
+    free_anchor_system(anchors);
+    free_structural_map(structure);
+    free(vertex_positions);
+    free(corruption_mask);
+    free(confidence_scores);
+    
+    return RECOVERY_OK;
+}
+
+
 // Default configuration
 recovery_config_t recovery_default_config(void) {
     recovery_config_t config = {
@@ -240,8 +477,32 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
         printf("\n");
     }
     
-    // Integrate OBJECTIVE 28 Phase 1-6 algorithms
-    // Use blind_recovery for oscillation-based recovery
+    // Apply OBJECTIVE 28 Phase 1-6 algorithms
+    // This uses the sophisticated blind_recovery algorithms implemented in C
+    recovery_error_t recovery_result = apply_blind_recovery_algorithm(
+        ctx, ctx->result_data, result_len
+    );
+    
+    if (recovery_result != RECOVERY_OK) {
+        if (ctx->config.verbose) {
+            printf("Warning: Blind recovery algorithm returned error: %s\n",
+                   recovery_error_string(recovery_result));
+            printf("Falling back to simple gradient descent...\n\n");
+        }
+        // Fall back to simple algorithm if OBJECTIVE 28 fails
+    } else {
+        // OBJECTIVE 28 succeeded, we're done
+        pthread_mutex_lock(&ctx->mutex);
+        ctx->is_running = false;
+        pthread_mutex_unlock(&ctx->mutex);
+        
+        return RECOVERY_OK;
+    }
+    
+    // FALLBACK: Simple gradient descent (only if OBJECTIVE 28 fails)
+    if (ctx->config.verbose) {
+        printf("\n=== Using Fallback Algorithm ===\n");
+    }
     
     // Calculate initial error (difference from Q data)
     ctx->initial_error = 0.0;
