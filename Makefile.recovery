@@ -16,7 +16,7 @@ CXX = g++
 AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC
 CXXFLAGS = -Wall -Wextra -O2 -fPIC
-LDFLAGS = -lssl -lcrypto -lcurl -ljson-c -lm -lpthread
+LDFLAGS = -lssl -lcrypto -lcurl -ljansson -lm -lpthread
 
 # Library directories
 RECOVERY_CORE_DIR = lib/recovery_core

@@ -202,7 +202,7 @@ crypto_error_t derive_bitcoin_pubkey(const uint8_t* private_key,
         EC_POINT_free(pub_point);
         BN_free(bn_priv);
         EC_KEY_free(key);
-        return CRYPTO_ERROR_INTERNAL;
+        return RECOVERY_ERROR_INTERNAL;
     }
     
     EC_KEY_set_public_key(key, pub_point);
@@ -216,7 +216,11 @@ crypto_error_t derive_bitcoin_pubkey(const uint8_t* private_key,
     BN_free(bn_priv);
     EC_KEY_free(key);
     
-    return (len > 0) ? CRYPTO_OK : CRYPTO_ERROR_INTERNAL;
+    if (len > 0) {
+        return CRYPTO_OK;
+    } else {
+        return RECOVERY_ERROR_INTERNAL;
+    }
 #else
     // Stub implementation
     memset(public_key, 0, compressed ? 33 : 65);

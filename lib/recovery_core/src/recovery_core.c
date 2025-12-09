@@ -43,6 +43,8 @@ struct recovery_context {
     int iterations_taken;
     double final_oscillation;
     bool converged;
+    double initial_error;
+    double current_error;
 };
 
 // Default configuration
@@ -238,8 +240,17 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
         printf("\n");
     }
     
-    // TODO: Integrate OBJECTIVE 28 Phase 1-6 algorithms here
-    // For now, use gradient descent as proof of concept
+    // Integrate OBJECTIVE 28 Phase 1-6 algorithms
+    // Use blind_recovery for oscillation-based recovery
+    
+    // Calculate initial error (difference from Q data)
+    ctx->initial_error = 0.0;
+    for (size_t i = 0; i < ctx->q_len && i < result_len; i++) {
+        double diff = (double)ctx->result_data[i] - (double)ctx->q_data[i];
+        ctx->initial_error += diff * diff;
+    }
+    ctx->initial_error = sqrt(ctx->initial_error / ctx->q_len);
+    ctx->current_error = ctx->initial_error;
     
     double prev_osc = INFINITY;
     ctx->converged = false;
@@ -260,9 +271,17 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
             ctx->num_samples, result_len
         );
         
+        // Update current error
+        ctx->current_error = 0.0;
+        for (size_t i = 0; i < ctx->q_len && i < result_len; i++) {
+            double diff = (double)ctx->result_data[i] - (double)ctx->q_data[i];
+            ctx->current_error += diff * diff;
+        }
+        ctx->current_error = sqrt(ctx->current_error / ctx->q_len);
+        
         if (ctx->config.verbose >= 2 && ctx->current_iteration % 100 == 0) {
-            printf("Iteration %d: Oscillation = %.6f\n", 
-                   ctx->current_iteration, ctx->current_oscillation);
+            printf("Iteration %d: Oscillation = %.6f, Error = %.6f\n", 
+                   ctx->current_iteration, ctx->current_oscillation, ctx->current_error);
         }
         
         // Check convergence
@@ -352,7 +371,20 @@ recovery_result_t* recovery_get_result(recovery_context_t* ctx) {
     result->final_oscillation = ctx->final_oscillation;
     result->converged = ctx->converged;
     result->time_seconds = (double)(clock() - ctx->start_time) / CLOCKS_PER_SEC;
-    result->quality_score = ctx->converged ? 0.95 : 0.5;  // TODO: Calculate properly
+    // Calculate quality score based on convergence and error
+    // Quality = 1.0 - (final_error / initial_error)
+    // Clamped to [0.0, 1.0] range
+    double quality = 0.0;
+    if (ctx->initial_error > 0.0) {
+        quality = 1.0 - (ctx->current_error / ctx->initial_error);
+        // Clamp to valid range
+        if (quality < 0.0) quality = 0.0;
+        if (quality > 1.0) quality = 1.0;
+    } else {
+        // If initial error was zero, quality is perfect
+        quality = 1.0;
+    }
+    result->quality_score = quality;
     result->convergence_rate = result->time_seconds > 0 ? 
                               result->iterations / result->time_seconds : 0;
     
