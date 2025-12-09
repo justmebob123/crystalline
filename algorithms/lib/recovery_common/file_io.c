@@ -222,8 +222,13 @@ bool save_data(const char* filename, DataType type, GenericData* data, FileForma
         return false;
     }
     
-    // Open file
-    FILE* file = fopen(filename, "wb");
+    // Open file (text mode for text formats, binary for others)
+    const char* mode = (format == FORMAT_OBJ || format == FORMAT_PLY || 
+                        format == FORMAT_CSV || format == FORMAT_JSON ||
+                        format == FORMAT_GML || format == FORMAT_GRAPHML ||
+                        format == FORMAT_PDB || format == FORMAT_MOL2 ||
+                        format == FORMAT_CIF) ? "w" : "wb";
+    FILE* file = fopen(filename, mode);
     if (!file) {
         set_error(ERROR_FILE_NOT_FOUND, "Could not create file");
         return false;
@@ -407,8 +412,6 @@ static bool load_obj(FILE* file, GeometricData* data) {
     data->faces = malloc(num_faces * 4 * sizeof(int));
     data->num_vertices = num_vertices;
     data->num_faces = num_faces;
-    data->edges = NULL;
-    data->num_edges = 0;
     data->metadata = NULL;
     
     if (!data->vertices || !data->faces) {
@@ -444,6 +447,46 @@ static bool load_obj(FILE* file, GeometricData* data) {
             }
         }
     }
+    
+    // Compute edges from faces
+    size_t max_edges = num_faces * 4;
+    int* temp_edges = malloc(max_edges * 2 * sizeof(int));
+    size_t edge_count = 0;
+    
+    for (size_t i = 0; i < num_faces; i++) {
+        int v1 = data->faces[i * 4 + 0];
+        int v2 = data->faces[i * 4 + 1];
+        int v3 = data->faces[i * 4 + 2];
+        int v4 = data->faces[i * 4 + 3];
+        
+        // Edge v1-v2
+        temp_edges[edge_count * 2 + 0] = v1;
+        temp_edges[edge_count * 2 + 1] = v2;
+        edge_count++;
+        
+        // Edge v2-v3
+        temp_edges[edge_count * 2 + 0] = v2;
+        temp_edges[edge_count * 2 + 1] = v3;
+        edge_count++;
+        
+        // Edge v3-v1 or v3-v4-v1 for quads
+        if (v4 >= 0) {
+            temp_edges[edge_count * 2 + 0] = v3;
+            temp_edges[edge_count * 2 + 1] = v4;
+            edge_count++;
+            
+            temp_edges[edge_count * 2 + 0] = v4;
+            temp_edges[edge_count * 2 + 1] = v1;
+            edge_count++;
+        } else {
+            temp_edges[edge_count * 2 + 0] = v3;
+            temp_edges[edge_count * 2 + 1] = v1;
+            edge_count++;
+        }
+    }
+    
+    data->edges = temp_edges;
+    data->num_edges = edge_count;
     
     return true;
 }
@@ -507,9 +550,40 @@ static bool load_json(FILE* file, GenericData* data, DataType* type) {
 // ============================================================================
 
 static bool save_obj(FILE* file, GeometricData* data) {
-    (void)file; (void)data;
-    set_error(ERROR_INVALID_FORMAT, "OBJ saver not yet implemented");
-    return false;
+    if (!data || !data->vertices || !data->faces) {
+        set_error(ERROR_INVALID_PARAMETER, "Invalid geometry data");
+        return false;
+    }
+    
+    if (data->num_vertices == 0 || data->num_faces == 0) {
+        set_error(ERROR_INVALID_PARAMETER, "Empty geometry data");
+        return false;
+    }
+    
+    // Write vertices
+    for (size_t i = 0; i < data->num_vertices; i++) {
+        fprintf(file, "v %.6f %.6f %.6f\n",
+                data->vertices[i * 3 + 0],
+                data->vertices[i * 3 + 1],
+                data->vertices[i * 3 + 2]);
+    }
+    
+    // Write faces
+    for (size_t i = 0; i < data->num_faces; i++) {
+        int v1 = data->faces[i * 4 + 0] + 1; // OBJ is 1-indexed
+        int v2 = data->faces[i * 4 + 1] + 1;
+        int v3 = data->faces[i * 4 + 2] + 1;
+        int v4 = data->faces[i * 4 + 3] + 1;
+        
+        if (v4 > 0) {
+            fprintf(file, "f %d %d %d %d\n", v1, v2, v3, v4);
+        } else {
+            fprintf(file, "f %d %d %d\n", v1, v2, v3);
+        }
+    }
+    
+    fflush(file);
+    return true;
 }
 
 static bool save_stl(FILE* file, GeometricData* data) {

@@ -108,9 +108,11 @@ static RecoveryResult* recover_geometric(GeometricData* corrupted, GeometricData
     }
     
     if (success && corrupted->faces && corrupted->num_faces > 0) {
-        // Faces are variable length, so we need to know the format
-        // For now, just copy the pointer (TODO: proper face copying)
-        recovered->num_faces = corrupted->num_faces;
+        recovered->faces = (int*)malloc(corrupted->num_faces * 4 * sizeof(int));
+        if (recovered->faces) {
+            memcpy(recovered->faces, corrupted->faces, corrupted->num_faces * 4 * sizeof(int));
+            recovered->num_faces = corrupted->num_faces;
+        }
     }
     
     clock_t end = clock();
