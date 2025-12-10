@@ -503,3 +503,15 @@ test-torus: $(BUILD_DIR)/test_torus_analysis
 	@echo "Running Torus Analysis Tests..."
 	@$(BUILD_DIR)/test_torus_analysis
 
+
+
+# Dual Scalar Decomposition Test
+$(BUILD_DIR)/test_dual_scalar_decomposition: $(TEST_DIR)/test_dual_scalar_decomposition.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/plateau_detection.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building dual scalar decomposition test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-dual-scalar
+test-dual-scalar: $(BUILD_DIR)/test_dual_scalar_decomposition
+	@echo "Running Dual Scalar Decomposition Tests..."
+	@$(BUILD_DIR)/test_dual_scalar_decomposition
+
