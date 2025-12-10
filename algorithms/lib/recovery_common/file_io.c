@@ -503,10 +503,11 @@ static bool load_ply(FILE* file, GeometricData* data) {
     return false;
 }
 
+// Forward declaration from wav_loader.c
+extern bool load_wav_file(FILE* file, SignalData* data);
+
 static bool load_wav(FILE* file, SignalData* data) {
-    (void)file; (void)data;
-    set_error(ERROR_INVALID_FORMAT, "WAV loader not yet implemented");
-    return false;
+    return load_wav_file(file, data);
 }
 
 static bool load_csv_signal(FILE* file, SignalData* data) {
@@ -598,10 +599,11 @@ static bool save_ply(FILE* file, GeometricData* data) {
     return false;
 }
 
+// Forward declaration from wav_loader.c
+extern bool save_wav_file(FILE* file, SignalData* data);
+
 static bool save_wav(FILE* file, SignalData* data) {
-    (void)file; (void)data;
-    set_error(ERROR_INVALID_FORMAT, "WAV saver not yet implemented");
-    return false;
+    return save_wav_file(file, data);
 }
 
 static bool save_csv_signal(FILE* file, SignalData* data) {

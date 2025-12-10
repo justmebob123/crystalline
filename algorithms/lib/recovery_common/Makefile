@@ -7,6 +7,7 @@ ARFLAGS = rcs
 
 # Source files
 SRCS = file_io.c \
+       wav_loader.c \
        corruption_detection.c \
        algorithm_dispatcher.c \
        error_handling.c \
