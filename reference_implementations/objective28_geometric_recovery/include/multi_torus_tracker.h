@@ -126,4 +126,33 @@ void export_multi_torus_csv(
     const char* filename
 );
 
+/**
+ * Multi-sample intersection result
+ */
+typedef struct {
+    uint32_t num_samples;           // Number of samples combined
+    uint32_t* sample_ids;           // Which samples were combined
+    double intersection_k_min;      // Combined intersection min
+    double intersection_k_max;      // Combined intersection max
+    double intersection_size;       // Size of intersection
+    double reduction_factor;        // Reduction factor
+    bool contains_true_k;           // Does intersection contain true k?
+    double original_space;          // Original search space
+} MultiSampleIntersection;
+
+/**
+ * Compute intersection of multiple samples
+ */
+MultiSampleIntersection* compute_multi_sample_intersection(
+    MultiTorusTracker** trackers,
+    uint32_t num_samples,
+    uint64_t true_k,
+    uint64_t max_k
+);
+
+/**
+ * Free multi-sample intersection
+ */
+void free_multi_sample_intersection(MultiSampleIntersection* intersection);
+
 #endif // MULTI_TORUS_TRACKER_H

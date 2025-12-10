@@ -572,3 +572,12 @@ $(BUILD_DIR)/test_per_sample_torus: $(TEST_DIR)/test_per_sample_torus.c $(BUILD_
 test-per-sample: $(BUILD_DIR)/test_per_sample_torus
 	@echo "Running Per-Sample Torus Analysis..."
 	@$(BUILD_DIR)/test_per_sample_torus
+
+# Multi-sample intersection test
+$(BUILD_DIR)/test_multi_sample_intersection: $(TEST_DIR)/test_multi_sample_intersection.c $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building multi-sample intersection test..."
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-multi-sample: $(BUILD_DIR)/test_multi_sample_intersection
+	@echo "Running Multi-Sample Intersection Analysis..."
+	@$(BUILD_DIR)/test_multi_sample_intersection

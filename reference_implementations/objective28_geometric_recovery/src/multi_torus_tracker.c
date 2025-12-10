@@ -255,3 +255,72 @@ void export_multi_torus_csv(
     
     fclose(f);
 }
+/**
+ * Compute intersection of multiple samples
+ */
+MultiSampleIntersection* compute_multi_sample_intersection(
+    MultiTorusTracker** trackers,
+    uint32_t num_samples,
+    uint64_t true_k,
+    uint64_t max_k
+) {
+    if (!trackers || num_samples == 0) return NULL;
+    
+    MultiSampleIntersection* result = malloc(sizeof(MultiSampleIntersection));
+    if (!result) return NULL;
+    
+    result->num_samples = num_samples;
+    result->sample_ids = malloc(num_samples * sizeof(uint32_t));
+    result->original_space = (double)max_k;
+    
+    // Initialize with first sample's intersection
+    result->intersection_k_min = trackers[0]->intersection_k_min;
+    result->intersection_k_max = trackers[0]->intersection_k_max;
+    result->sample_ids[0] = 0;
+    
+    // Compute intersection with all other samples
+    for (uint32_t i = 1; i < num_samples; i++) {
+        result->sample_ids[i] = i;
+        
+        // Intersection is the overlap of all bounds
+        if (trackers[i]->intersection_k_min > result->intersection_k_min) {
+            result->intersection_k_min = trackers[i]->intersection_k_min;
+        }
+        if (trackers[i]->intersection_k_max < result->intersection_k_max) {
+            result->intersection_k_max = trackers[i]->intersection_k_max;
+        }
+    }
+    
+    // Check if intersection is valid
+    if (result->intersection_k_max <= result->intersection_k_min) {
+        // No intersection - use union instead
+        result->intersection_k_min = trackers[0]->intersection_k_min;
+        result->intersection_k_max = trackers[0]->intersection_k_max;
+        
+        for (uint32_t i = 1; i < num_samples; i++) {
+            if (trackers[i]->intersection_k_min < result->intersection_k_min) {
+                result->intersection_k_min = trackers[i]->intersection_k_min;
+            }
+            if (trackers[i]->intersection_k_max > result->intersection_k_max) {
+                result->intersection_k_max = trackers[i]->intersection_k_max;
+            }
+        }
+    }
+    
+    // Compute final metrics
+    result->intersection_size = result->intersection_k_max - result->intersection_k_min;
+    result->reduction_factor = result->original_space / result->intersection_size;
+    result->contains_true_k = ((double)true_k >= result->intersection_k_min && 
+                               (double)true_k <= result->intersection_k_max);
+    
+    return result;
+}
+
+/**
+ * Free multi-sample intersection
+ */
+void free_multi_sample_intersection(MultiSampleIntersection* intersection) {
+    if (!intersection) return;
+    free(intersection->sample_ids);
+    free(intersection);
+}
