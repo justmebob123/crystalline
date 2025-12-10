@@ -660,3 +660,12 @@ $(BUILD_DIR)/micro_model.o: $(SRC_DIR)/micro_model.c
 test-micro-model: $(BUILD_DIR)/test_micro_model
 	@echo "Running Micro-Model Test..."
 	@$(BUILD_DIR)/test_micro_model
+
+# Real ECDSA samples test (Task 7)
+$(BUILD_DIR)/test_real_ecdsa_samples: $(TEST_DIR)/test_real_ecdsa_samples.c $(BUILD_DIR)/micro_model.o $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building real ECDSA samples test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-real-ecdsa: $(BUILD_DIR)/test_real_ecdsa_samples
+	@echo "Running Real ECDSA Samples Test..."
+	@$(BUILD_DIR)/test_real_ecdsa_samples

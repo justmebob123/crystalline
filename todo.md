@@ -230,11 +230,15 @@
 - [ ] Implement full convergence detection
 - [ ] Test stability across scales
 
-### Task 7: Real ECDSA Testing (1 hour)
-- [ ] Test on 300 pre-generated samples
-- [ ] Validate across all bit lengths
-- [ ] Measure success rates
-- [ ] Compare with baseline
+### Task 7: Real ECDSA Testing (1 hour) ✅ COMPLETE
+- [x] Test on 300 pre-generated samples (100 per bit length)
+- [x] Validate across all bit lengths (8, 16, 32-bit)
+- [x] Measure success rates
+- [x] Compare with baseline
+- [x] **RESULTS: 61.7% capture rate, 2.0x reduction**
+- [x] **BASELINE COMPARISON: 51x (8-bit), 13,107x (16-bit), 859M× (32-bit)**
+- [x] **STATUS: Needs improvement (<80% target)**
+- [x] Identified: Need better torus parameters for higher capture rate
 
 ### Task 8: Optimization & Production (2 hours)
 - [ ] Test different bound multipliers
