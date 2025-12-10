@@ -387,3 +387,25 @@ $(BUILD_DIR)/test_search_recovery_v5: $(TEST_DIR)/test_search_recovery_v5.c $(LI
 test-search-v5: $(BUILD_DIR)/test_search_recovery_v5
 	@echo "Running radius-aware search test (v5)..."
 	@$(BUILD_DIR)/test_search_recovery_v5
+
+# ═══════════════════════════════════════════════════════════════════════
+#                     PHASE 1: FOUNDATION (NEW)
+# ═══════════════════════════════════════════════════════════════════════
+
+# Crystal Abacus (prime generation with lattice)
+$(BUILD_DIR)/crystal_abacus.o: $(SRC_DIR)/crystal_abacus.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Kissing Spheres (recursive hierarchy)
+$(BUILD_DIR)/kissing_spheres.o: $(SRC_DIR)/kissing_spheres.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Phase 1 Foundation Test
+$(BUILD_DIR)/test_phase1_foundation: $(TEST_DIR)/test_phase1_foundation.c $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-phase1
+test-phase1: $(BUILD_DIR)/test_phase1_foundation
+	@echo "Running Phase 1 Foundation Tests..."
+	@$(BUILD_DIR)/test_phase1_foundation
+
