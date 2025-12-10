@@ -43,6 +43,7 @@ SOURCES = \
         $(SRC_DIR)/search_recovery_v2.c \
         $(SRC_DIR)/anchor_grid_24.c \
         $(SRC_DIR)/search_recovery_v3.c \
+        $(SRC_DIR)/prime_rainbow_recovery.c \
         $(SRC_DIR)/geometric_anchors.c
 
 # Object files
@@ -346,3 +347,12 @@ $(BUILD_DIR)/test_search_recovery_v3: $(TEST_DIR)/test_search_recovery_v3.c $(LI
 test-search-v3: $(BUILD_DIR)/test_search_recovery_v3
 	@echo "Running 24-anchor grid enhancement test (v3)..."
 	@$(BUILD_DIR)/test_search_recovery_v3
+
+# Prime rainbow recovery test
+$(BUILD_DIR)/test_prime_rainbow_recovery: $(TEST_DIR)/test_prime_rainbow_recovery.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-prime-rainbow
+test-prime-rainbow: $(BUILD_DIR)/test_prime_rainbow_recovery
+	@echo "Running prime rainbow recovery test..."
+	@$(BUILD_DIR)/test_prime_rainbow_recovery
