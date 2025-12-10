@@ -41,6 +41,8 @@ SOURCES = \
         $(SRC_DIR)/spherical_recovery.c \
         $(SRC_DIR)/search_recovery.c \
         $(SRC_DIR)/search_recovery_v2.c \
+        $(SRC_DIR)/anchor_grid_24.c \
+        $(SRC_DIR)/search_recovery_v3.c \
         $(SRC_DIR)/geometric_anchors.c
 
 # Object files
@@ -335,3 +337,12 @@ $(BUILD_DIR)/test_search_recovery_v2: $(TEST_DIR)/test_search_recovery_v2.c $(LI
 test-search-v2: $(BUILD_DIR)/test_search_recovery_v2
 	@echo "Running enhanced search recovery test (v2)..."
 	@$(BUILD_DIR)/test_search_recovery_v2
+
+# Search recovery v3 test (24-anchor grid)
+$(BUILD_DIR)/test_search_recovery_v3: $(TEST_DIR)/test_search_recovery_v3.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-search-v3
+test-search-v3: $(BUILD_DIR)/test_search_recovery_v3
+	@echo "Running 24-anchor grid enhancement test (v3)..."
+	@$(BUILD_DIR)/test_search_recovery_v3
