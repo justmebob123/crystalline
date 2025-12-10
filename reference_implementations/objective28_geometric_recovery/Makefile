@@ -550,3 +550,15 @@ $(BUILD_DIR)/test_comprehensive_torus: $(TEST_DIR)/test_comprehensive_torus_anal
 test-comprehensive: $(BUILD_DIR)/test_comprehensive_torus
 	@echo "Running Comprehensive Torus Analysis (up to 20 tori)..."
 	@$(BUILD_DIR)/test_comprehensive_torus
+
+# Torus intersection
+
+# Torus intersection test
+$(BUILD_DIR)/test_torus_intersection: $(TEST_DIR)/test_torus_intersection.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building torus intersection test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-intersection
+test-intersection: $(BUILD_DIR)/test_torus_intersection
+	@echo "Running Torus Intersection Tests..."
+	@$(BUILD_DIR)/test_torus_intersection

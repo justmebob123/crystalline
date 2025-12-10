@@ -333,13 +333,33 @@ grep -c "warning:" build.log
 
 **Documentation:** See COMPREHENSIVE_TORUS_ANALYSIS_RESULTS.md
 
-**Phase 2: Next Steps - Intersection &amp; Factor Extraction** (2-3 hours)
-- [ ] Compute intersection of all 20 tori
-- [ ] Measure actual search space reduction
+**Phase 2: Intersection Analysis** ✅ COMPLETE (1 hour)
+- [x] Computed intersection of all 20 tori
+- [x] Measured search space reduction
+- [x] **CRITICAL FINDING: Negative reduction!**
+
+**Key Discovery:**
+- Intersection is **LARGER** than original space (2.2-2.6x)
+- 8-bit: 665 vs 255 (-161% reduction)
+- 16-bit: 145,652 vs 65,535 (-122% reduction)
+- 32-bit: 9.4B vs 4.3B (-118% reduction)
+- **BUT: True k IS within intersection** (algorithm captures correct region)
+
+**Root Cause:**
+- Torus bounds extend beyond valid k range [0, max_k]
+- k_min values are negative (should be ≥ 0)
+- k_max values exceed max_k
+- Amplitude-based bounds are too loose (full amplitude, not 1σ or 2σ)
+
+**Documentation:** See TORUS_INTERSECTION_ANALYSIS.md
+
+**Phase 2b: Fix Bounding &amp; Factor Extraction** (2-3 hours)
+- [ ] Clip torus bounds to valid range [0, max_k]
+- [ ] Use tighter bounds (0.5× amplitude or 2σ)
+- [ ] Re-compute intersection with fixes
 - [ ] Implement factor extraction (p and q from amplitude ratios)
-- [ ] Validate on real ECDSA samples
 - [ ] Per-sample torus analysis (track 20 samples individually)
-- **Goal:** Extract p and q, measure practical reduction
+- **Goal:** Achieve positive reduction, extract p and q
 
 **Phase 3: Implement Remaining Components** (3-4 hours)
 - [ ] HDPLM entropy cut (recursive trimming: tower^(tower-1))
