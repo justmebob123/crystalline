@@ -34,3 +34,19 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f /tmp/prime_float_math.o
 
+
+# ═══════════════════════════════════════════════════════════════════════
+#                     PHASE 2: TETRATION ATTRACTORS
+# ═══════════════════════════════════════════════════════════════════════
+
+$(BUILD_DIR)/tetration_attractors.o: $(SRC_DIR)/tetration_attractors.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_phase2_tetration: $(TEST_DIR)/test_phase2_tetration.c $(BUILD_DIR)/tetration_attractors.o $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o /tmp/prime_float_math.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-phase2
+test-phase2: $(BUILD_DIR)/test_phase2_tetration
+	@echo "Running Phase 2 Tetration Tests..."
+	@$(BUILD_DIR)/test_phase2_tetration
+
