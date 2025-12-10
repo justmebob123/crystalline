@@ -669,3 +669,12 @@ $(BUILD_DIR)/test_real_ecdsa_samples: $(TEST_DIR)/test_real_ecdsa_samples.c $(BU
 test-real-ecdsa: $(BUILD_DIR)/test_real_ecdsa_samples
 	@echo "Running Real ECDSA Samples Test..."
 	@$(BUILD_DIR)/test_real_ecdsa_samples
+
+# 64-bit and 128-bit validation test
+$(BUILD_DIR)/test_64_128_bit_validation: $(TEST_DIR)/test_64_128_bit_validation.c $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building 64/128-bit validation test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-64-128: $(BUILD_DIR)/test_64_128_bit_validation
+	@echo "Running 64-bit and 128-bit Validation Test..."
+	@$(BUILD_DIR)/test_64_128_bit_validation
