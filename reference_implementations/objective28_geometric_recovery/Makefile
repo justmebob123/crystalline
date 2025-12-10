@@ -562,3 +562,13 @@ $(BUILD_DIR)/test_torus_intersection: $(TEST_DIR)/test_torus_intersection.c $(BU
 test-intersection: $(BUILD_DIR)/test_torus_intersection
 	@echo "Running Torus Intersection Tests..."
 	@$(BUILD_DIR)/test_torus_intersection
+
+# Per-sample torus analysis test
+$(BUILD_DIR)/test_per_sample_torus: $(TEST_DIR)/test_per_sample_torus.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building per-sample torus analysis test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-per-sample
+test-per-sample: $(BUILD_DIR)/test_per_sample_torus
+	@echo "Running Per-Sample Torus Analysis..."
+	@$(BUILD_DIR)/test_per_sample_torus
