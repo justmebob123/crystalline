@@ -48,7 +48,8 @@ SOURCES = \
         $(SRC_DIR)/geometric_anchors.c \
         $(SRC_DIR)/anchor_tracking.c \
         $(SRC_DIR)/ecdsa_test_generator.c \
-        $(SRC_DIR)/ecdsa_sample_loader.c
+        $(SRC_DIR)/ecdsa_sample_loader.c \
+        $(SRC_DIR)/integrated_recovery.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -444,3 +445,13 @@ $(BUILD_DIR)/test_ecdsa_samples: $(TEST_DIR)/test_ecdsa_samples.c $(BUILD_DIR)/e
 test-ecdsa-samples: $(BUILD_DIR)/test_ecdsa_samples
 	@echo "Running ECDSA Sample Loader Tests..."
 	@$(BUILD_DIR)/test_ecdsa_samples
+
+# Integrated recovery test v2
+$(BUILD_DIR)/test_integrated_recovery_v2: $(TEST_DIR)/test_integrated_recovery_v2.c $(BUILD_DIR)/integrated_recovery.o $(BUILD_DIR)/ecdsa_sample_loader.o $(BUILD_DIR)/anchor_tracking.o $(BUILD_DIR)/geometric_anchors.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building integrated recovery v2 test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-integrated-v2
+test-integrated-v2: $(BUILD_DIR)/test_integrated_recovery_v2
+	@echo "Running Integrated Recovery V2 Tests..."
+	@$(BUILD_DIR)/test_integrated_recovery_v2
