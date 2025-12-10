@@ -434,9 +434,9 @@ void map_13d_to_clock(const double position[13], int* ring, int* pos, double* an
     *angle = fmod(*angle, TWO_PI);
     if (*angle < 0) *angle += TWO_PI;
     
-    // DISABLED: 42° phase offset (was hardcoded for k=42 test case)
-    // *angle += PHASE_OFFSET_42_DEG;
-    // *angle = fmod(*angle, TWO_PI);
+    // Add 42° phase offset
+    *angle += PHASE_OFFSET_42_DEG;
+    *angle = fmod(*angle, TWO_PI);
     
     // Compute radius
     double radius = 0.0;

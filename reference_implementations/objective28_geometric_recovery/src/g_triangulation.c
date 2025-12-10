@@ -433,3 +433,117 @@ bool check_convergence(GTriangulationContext* ctx, double threshold) {
     
     return false;
 }
+/**
+ * Phase 4: Refine G estimate using extracted p and q
+ * 
+ * Uses the prime factors p and q extracted from the torus structure
+ * and their positions on the clock lattice to refine the G estimate.
+ */
+void refine_G_with_pq(
+    GTriangulationContext* ctx,
+    uint64_t p,
+    uint64_t q,
+    int p_index,
+    int q_index
+) {
+    if (!ctx) return;
+    
+    // Map p and q to clock lattice positions
+    double p_position[13];
+    double q_position[13];
+    
+    // Use prime indices to compute clock positions
+    // p and q have specific geometric relationships on the clock
+    double p_angle = (double)p_index * TWO_PI / 12.0;  // Map to 12-hour clock
+    double q_angle = (double)q_index * TWO_PI / 12.0;
+    
+    for (int d = 0; d < 13; d++) {
+        double freq = (double)DIMENSIONAL_FREQUENCIES[d];
+        p_position[d] = prime_cos(p_angle * freq) * prime_pow(PHI, d % 5);
+        q_position[d] = prime_cos(q_angle * freq) * prime_pow(PHI, d % 5);
+    }
+    
+    // Compute the geometric center between p and q positions
+    // This gives us a refined estimate of where G should be
+    double pq_center[13];
+    for (int d = 0; d < 13; d++) {
+        pq_center[d] = (p_position[d] + q_position[d]) / 2.0;
+    }
+    
+    // Adjust G position towards the pq center
+    // Use weighted average: 70% current G, 30% pq center
+    double alpha = 0.3;  // Refinement weight
+    for (int d = 0; d < 13; d++) {
+        ctx->G_position[d] = (1.0 - alpha) * ctx->G_position[d] + alpha * pq_center[d];
+    }
+    
+    // Recompute anchor positions relative to refined G
+    // This is the key step - anchors are now better positioned
+    for (int a = 0; a < ctx->num_anchors; a++) {
+        // Compute distance from anchor to refined G
+        double dist = compute_distance(ctx->anchors[a].position, ctx->G_position);
+        
+        // Adjust anchor confidence based on alignment with p/q structure
+        double p_dist = compute_distance(ctx->anchors[a].position, p_position);
+        double q_dist = compute_distance(ctx->anchors[a].position, q_position);
+        
+        // Anchors closer to p or q positions get higher confidence
+        double min_pq_dist = (p_dist < q_dist) ? p_dist : q_dist;
+        ctx->anchors[a].confidence *= (1.0 + 1.0 / (1.0 + min_pq_dist));
+    }
+    
+    printf("  ✓ G refined using p=%lu, q=%lu\n", p, q);
+    printf("    p angle: %.2f°, q angle: %.2f°\n", 
+           p_angle * 180.0 / PI, q_angle * 180.0 / PI);
+}
+
+/**
+ * Get refined G position after p/q refinement
+ */
+void get_refined_g_position(
+    const GTriangulationContext* ctx,
+    double position[13]
+) {
+    if (!ctx || !position) return;
+    
+    for (int d = 0; d < 13; d++) {
+        position[d] = ctx->G_position[d];
+    }
+}
+
+/**
+ * Measure improvement from G refinement
+ * 
+ * Compares k estimation error before and after refinement
+ */
+double measure_refinement_improvement(
+    GTriangulationContext* ctx,
+    const uint64_t* true_k_values,
+    int num_samples
+) {
+    if (!ctx || !true_k_values || num_samples == 0) return 0.0;
+    
+    double total_error_before = 0.0;
+    double total_error_after = 0.0;
+    
+    for (int i = 0; i < num_samples && i < ctx->num_training_pairs; i++) {
+        // Get k estimate from current iteration
+        double k_estimate = ctx->k_estimates_history[ctx->current_iteration - 1][i];
+        double error = prime_fabs(k_estimate - (double)true_k_values[i]);
+        total_error_after += error;
+        
+        // Get k estimate from first iteration (before refinement)
+        if (ctx->current_iteration > 1) {
+            double k_estimate_initial = ctx->k_estimates_history[0][i];
+            double error_initial = prime_fabs(k_estimate_initial - (double)true_k_values[i]);
+            total_error_before += error_initial;
+        }
+    }
+    
+    if (ctx->current_iteration <= 1 || total_error_before == 0.0) {
+        return 1.0;  // No improvement measurable yet
+    }
+    
+    // Return improvement factor
+    return total_error_before / total_error_after;
+}

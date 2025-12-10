@@ -24,7 +24,22 @@ typedef struct {
     double confidence;          // Confidence score
 } Anchor;
 
-typedef struct GTriangulationContext GTriangulationContext;
+typedef struct {
+    const EC_GROUP* group;
+    EC_POINT* G;
+    double G_position[13];
+    Anchor* anchors;
+    int num_anchors;
+    int num_training_pairs;
+    uint64_t* training_k;
+    EC_POINT** training_Q;
+    double** k_estimates_history;
+    int max_iterations;
+    int current_iteration;
+    double g_movement;
+    double k_oscillation;
+    bool converged;
+} GTriangulationContext;
 
 /**
  * Create G triangulation context
@@ -79,3 +94,31 @@ void map_k_to_lattice(uint64_t k, double position[13]);
 double compute_distance(const double pos1[13], const double pos2[13]);
 
 #endif // G_TRIANGULATION_H
+/**
+ * Phase 4: Refine G estimate using extracted p and q
+ */
+void refine_G_with_pq(
+    GTriangulationContext* ctx,
+    uint64_t p,
+    uint64_t q,
+    int p_index,
+    int q_index
+);
+
+/**
+ * Get refined G position after p/q refinement
+ */
+void get_refined_g_position(
+    const GTriangulationContext* ctx,
+    double position[13]
+);
+
+/**
+ * Measure improvement from G refinement
+ */
+double measure_refinement_improvement(
+    GTriangulationContext* ctx,
+    const uint64_t* true_k_values,
+    int num_samples
+);
+

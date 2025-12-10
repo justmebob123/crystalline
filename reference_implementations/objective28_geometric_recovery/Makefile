@@ -3,8 +3,8 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -g -I./include
-LDFLAGS = -lm -lssl -lcrypto -lpthread
+CFLAGS = -Wall -Wextra -O2 -g -I./include -I../../include
+LDFLAGS = -L../../crystalline -lcrystalline -lm -lssl -lcrypto -lpthread
 
 # Directories
 SRC_DIR = src
@@ -66,7 +66,8 @@ SOURCES = \
         $(SRC_DIR)/multi_scalar_analysis.c \
         $(SRC_DIR)/plateau_detection.c \
         $(SRC_DIR)/recursive_search.c \
-        $(SRC_DIR)/tetration_attractors.c
+        $(SRC_DIR)/tetration_attractors.c \
+        $(SRC_DIR)/full_pipeline.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -725,3 +726,16 @@ SOURCES += \
 	$(SRC_DIR)/torus_analysis.c \
 	$(SRC_DIR)/oscillation_detection.c \
 	$(SRC_DIR)/multi_scalar_analysis.c
+
+# Phase 6: Full Pipeline Test
+$(BUILD_DIR)/test_full_pipeline: $(TEST_DIR)/test_full_pipeline.c $(LIB_DIR)/$(LIB_NAME)
+	@echo "Building full pipeline test: $@"
+	$(CC) $(CFLAGS) $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS) -o $@
+
+test-full-pipeline: $(BUILD_DIR)/test_full_pipeline
+	@echo ""
+	@echo "╔══════════════════════════════════════════════════════════╗"
+	@echo "║  Running Full Pipeline Test                              ║"
+	@echo "╚══════════════════════════════════════════════════════════╝"
+	@$(BUILD_DIR)/test_full_pipeline
+
