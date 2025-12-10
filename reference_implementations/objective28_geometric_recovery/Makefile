@@ -53,7 +53,8 @@ SOURCES = \
         $(SRC_DIR)/multi_torus_tracker.c \
         $(SRC_DIR)/oscillation_decomposition.c \
         $(SRC_DIR)/torus_analysis.c \
-        $(SRC_DIR)/prime_factor_extraction.c
+        $(SRC_DIR)/prime_factor_extraction.c \
+        $(SRC_DIR)/clock_lattice_integration.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
