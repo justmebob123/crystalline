@@ -590,3 +590,21 @@ $(BUILD_DIR)/test_platonic_solid_verification: $(TEST_DIR)/test_platonic_solid_v
 test-platonic: $(BUILD_DIR)/test_platonic_solid_verification
 	@echo "Running Platonic Solid Verification Test..."
 	@$(BUILD_DIR)/test_platonic_solid_verification
+
+# Extract p and q test
+$(BUILD_DIR)/test_extract_p_q: $(TEST_DIR)/test_extract_p_q.c $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building p/q extraction test..."
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-extract-pq: $(BUILD_DIR)/test_extract_p_q
+	@echo "Running p/q Extraction Test..."
+	@$(BUILD_DIR)/test_extract_p_q
+
+# Comprehensive p/q extraction test
+$(BUILD_DIR)/test_comprehensive_pq_extraction: $(TEST_DIR)/test_comprehensive_pq_extraction.c $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building comprehensive p/q extraction test..."
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-comprehensive-pq: $(BUILD_DIR)/test_comprehensive_pq_extraction
+	@echo "Running Comprehensive p/q Extraction Test..."
+	@$(BUILD_DIR)/test_comprehensive_pq_extraction
