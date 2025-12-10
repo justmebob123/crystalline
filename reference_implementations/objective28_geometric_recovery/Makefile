@@ -581,3 +581,12 @@ $(BUILD_DIR)/test_multi_sample_intersection: $(TEST_DIR)/test_multi_sample_inter
 test-multi-sample: $(BUILD_DIR)/test_multi_sample_intersection
 	@echo "Running Multi-Sample Intersection Analysis..."
 	@$(BUILD_DIR)/test_multi_sample_intersection
+
+# Platonic solid verification test
+$(BUILD_DIR)/test_platonic_solid_verification: $(TEST_DIR)/test_platonic_solid_verification.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building Platonic solid verification test..."
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-platonic: $(BUILD_DIR)/test_platonic_solid_verification
+	@echo "Running Platonic Solid Verification Test..."
+	@$(BUILD_DIR)/test_platonic_solid_verification
