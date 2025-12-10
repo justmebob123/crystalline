@@ -45,7 +45,9 @@ SOURCES = \
         $(SRC_DIR)/search_recovery_v3.c \
         $(SRC_DIR)/search_recovery_v4.c \
         $(SRC_DIR)/prime_rainbow_recovery.c \
-        $(SRC_DIR)/geometric_anchors.c
+        $(SRC_DIR)/geometric_anchors.c \
+        $(SRC_DIR)/anchor_tracking.c \
+        $(SRC_DIR)/ecdsa_test_generator.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -421,3 +423,13 @@ $(BUILD_DIR)/test_phase1_foundation: $(TEST_DIR)/test_phase1_foundation.c $(BUIL
 	fi
 	$(CC) $(CFLAGS) -o $@ $< $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o ../../build/prime_float_math.o $(LDFLAGS)
 
+
+# Anchor tracking test
+$(BUILD_DIR)/test_anchor_tracking: $(TEST_DIR)/test_anchor_tracking.c $(BUILD_DIR)/anchor_tracking.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building anchor tracking test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-anchor-tracking
+test-anchor-tracking: $(BUILD_DIR)/test_anchor_tracking
+	@echo "Running Anchor Tracking Tests..."
+	@$(BUILD_DIR)/test_anchor_tracking
