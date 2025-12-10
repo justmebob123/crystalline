@@ -637,3 +637,12 @@ $(BUILD_DIR)/test_g_refinement_with_clock: $(TEST_DIR)/test_g_refinement_with_cl
 test-g-refine: $(BUILD_DIR)/test_g_refinement_with_clock
 	@echo "Running G Refinement with Clock Lattice Test..."
 	@$(BUILD_DIR)/test_g_refinement_with_clock
+
+# Map 20 tori to clock lattice test (Revised Phase 4)
+$(BUILD_DIR)/test_map_20_tori_to_clock: $(TEST_DIR)/test_map_20_tori_to_clock.c $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building map 20 tori to clock test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-map-tori: $(BUILD_DIR)/test_map_20_tori_to_clock
+	@echo "Running Map 20 Tori to Clock Test..."
+	@$(BUILD_DIR)/test_map_20_tori_to_clock
