@@ -47,7 +47,8 @@ SOURCES = \
         $(SRC_DIR)/prime_rainbow_recovery.c \
         $(SRC_DIR)/geometric_anchors.c \
         $(SRC_DIR)/anchor_tracking.c \
-        $(SRC_DIR)/ecdsa_test_generator.c
+        $(SRC_DIR)/ecdsa_test_generator.c \
+        $(SRC_DIR)/ecdsa_sample_loader.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -433,3 +434,13 @@ $(BUILD_DIR)/test_anchor_tracking: $(TEST_DIR)/test_anchor_tracking.c $(BUILD_DI
 test-anchor-tracking: $(BUILD_DIR)/test_anchor_tracking
 	@echo "Running Anchor Tracking Tests..."
 	@$(BUILD_DIR)/test_anchor_tracking
+
+# ECDSA sample loader test
+$(BUILD_DIR)/test_ecdsa_samples: $(TEST_DIR)/test_ecdsa_samples.c $(BUILD_DIR)/ecdsa_sample_loader.o $(BUILD_DIR)/anchor_tracking.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building ECDSA sample loader test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-ecdsa-samples
+test-ecdsa-samples: $(BUILD_DIR)/test_ecdsa_samples
+	@echo "Running ECDSA Sample Loader Tests..."
+	@$(BUILD_DIR)/test_ecdsa_samples
