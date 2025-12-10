@@ -66,3 +66,19 @@ test-phase3: $(BUILD_DIR)/test_phase3_ecdlp
 	@echo "Running Phase 3 ECDLP Integration Tests..."
 	@$(BUILD_DIR)/test_phase3_ecdlp
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+#                     PHASE 4: OSCILLATION DETECTION
+# ═══════════════════════════════════════════════════════════════════════════
+
+$(BUILD_DIR)/oscillation_detection.o: $(SRC_DIR)/oscillation_detection.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_phase4_oscillation: $(TEST_DIR)/test_phase4_oscillation.c $(BUILD_DIR)/oscillation_detection.o $(BUILD_DIR)/ecdlp_integration.o $(BUILD_DIR)/tetration_attractors.o $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o /tmp/prime_float_math.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-phase4
+test-phase4: $(BUILD_DIR)/test_phase4_oscillation
+	@echo "Running Phase 4 Oscillation Detection Tests..."
+	@$(BUILD_DIR)/test_phase4_oscillation
+
