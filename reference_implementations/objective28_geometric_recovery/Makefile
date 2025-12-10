@@ -49,7 +49,11 @@ SOURCES = \
         $(SRC_DIR)/anchor_tracking.c \
         $(SRC_DIR)/ecdsa_test_generator.c \
         $(SRC_DIR)/ecdsa_sample_loader.c \
-        $(SRC_DIR)/integrated_recovery.c
+        $(SRC_DIR)/integrated_recovery.c \
+        $(SRC_DIR)/multi_torus_tracker.c \
+        $(SRC_DIR)/oscillation_decomposition.c \
+        $(SRC_DIR)/torus_analysis.c \
+        $(SRC_DIR)/prime_factor_extraction.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -687,3 +691,24 @@ $(BUILD_DIR)/test_large_prime_clock_mapping: $(TEST_DIR)/test_large_prime_clock_
 test-large-primes: $(BUILD_DIR)/test_large_prime_clock_mapping
 	@echo "Running Large Prime Clock Mapping Test..."
 	@$(BUILD_DIR)/test_large_prime_clock_mapping
+
+# Real torus data validation test
+$(BUILD_DIR)/test_real_torus_data_validation: $(TEST_DIR)/test_real_torus_data_validation.c $(BUILD_DIR)/prime_float_math.o
+	@echo "Building real torus data validation test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-real-torus: $(BUILD_DIR)/test_real_torus_data_validation
+	@echo "Running Real Torus Data Validation Test..."
+	@$(BUILD_DIR)/test_real_torus_data_validation
+
+# Additional sources for comprehensive library
+SOURCES += \
+	$(SRC_DIR)/micro_model.c \
+	$(SRC_DIR)/g_triangulation.c \
+	$(SRC_DIR)/multi_torus_tracker.c \
+	$(SRC_DIR)/oscillation_decomposition.c \
+	$(SRC_DIR)/plateau_detection.c \
+	$(SRC_DIR)/harmonic_folding.c \
+	$(SRC_DIR)/torus_analysis.c \
+	$(SRC_DIR)/oscillation_detection.c \
+	$(SRC_DIR)/multi_scalar_analysis.c
