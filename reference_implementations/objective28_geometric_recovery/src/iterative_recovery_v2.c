@@ -9,6 +9,7 @@
  */
 
 #include "geometric_recovery.h"
+#include "../../../include/clock_lattice.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -351,15 +352,8 @@ BIGNUM* geometric_recovery_iterative(
         uint64_t prime = 2;
         for (uint32_t p = 0; p < d; p++) {
             prime++;
-            while (1) {
-                bool is_prime = true;
-                for (uint64_t i = 2; i * i <= prime; i++) {
-                    if (prime % i == 0) {
-                        is_prime = false;
-                        break;
-                    }
-                }
-                if (is_prime) break;
+            // Use deterministic clock lattice validation instead of trial division
+            while (!validate_prime_by_clock_position(prime)) {
                 prime++;
             }
         }

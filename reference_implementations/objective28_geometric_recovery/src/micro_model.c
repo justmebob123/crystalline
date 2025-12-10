@@ -2,14 +2,24 @@
  * Trainable Micro-Model Implementation
  * 
  * Phase 5: Complete implementation of trainable micro-model
+ * 
+ * CRYSTALLINE INTEGRATION:
+ * - Uses clock lattice for geometric constraints
+ * - Uses rainbow table for prime coordinate lookups
+ * - Uses deterministic prime validation
+ * - NO trial division, NO simplifications
  */
 
 #include "../include/micro_model.h"
 #include "../../../include/prime_float_math.h"
 #include "../../../include/clock_lattice.h"
+#include "../../../include/prime_rainbow.h"
+#include "../../../include/crystal_abacus.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+// Note: estimate_prime_index() is provided by clock_lattice.h
 
 // ============================================================================
 // MODEL CREATION & INITIALIZATION
@@ -123,22 +133,19 @@ int micro_model_set_clock_info(MicroModel* model, uint64_t p, uint64_t q) {
     model->clock_info.p = p;
     model->clock_info.q = q;
     
-    // Simplified clock position calculation
-    // For p=2, q=5 (most common case)
-    if (p == 2) {
-        model->clock_info.p_ring = 0;
-        model->clock_info.p_position = 1;
-        model->clock_info.p_angle = -1.0472;  // -60 degrees in radians
-    }
+    // Use proper clock lattice mapping for p
+    uint32_t p_index = estimate_prime_index(p);
+    BabylonianClockPosition p_pos = map_prime_index_to_clock(p_index);
+    model->clock_info.p_ring = p_pos.ring;
+    model->clock_info.p_position = p_pos.position;
+    model->clock_info.p_angle = p_pos.angle;
     
-    if (q == 5) {
-        model->clock_info.q_ring = 0;
-        model->clock_info.q_position = 3;
-        model->clock_info.q_angle = 0.0;  // 0 degrees (SACRED POSITION)
-    }
-    
-    // For other primes, use simple mapping
-    // This is a simplified version - full implementation would use clock_lattice functions
+    // Use proper clock lattice mapping for q
+    uint32_t q_index = estimate_prime_index(q);
+    BabylonianClockPosition q_pos = map_prime_index_to_clock(q_index);
+    model->clock_info.q_ring = q_pos.ring;
+    model->clock_info.q_position = q_pos.position;
+    model->clock_info.q_angle = q_pos.angle;
     
     return 0;
 }
@@ -168,10 +175,6 @@ int micro_model_recover(
         return -1;
     }
     
-    // STEP 1: Use G estimate to compute initial k estimate from Q
-    // For now, we use a simplified approach based on the model's trained parameters
-    // In a full implementation, this would use G triangulation with the actual Q point
-    
     // If we have no tori, we can't recover
     if (model->num_tori == 0) {
         // Fallback: use full range
@@ -180,61 +183,121 @@ int micro_model_recover(
         return 0;
     }
     
-    // STEP 2: Apply per-sample torus analysis
-    // Use the Q value to modulate the torus bounds
-    // This is a simplified implementation - full version would:
-    // - Map Q to clock lattice position
-    // - Compute distance from G
-    // - Use torus oscillation patterns
-    // - Apply geometric constraints
+    // STEP 1: Map Q to clock lattice position
+    // Estimate Q's prime index (this is an approximation for large Q)
+    uint32_t q_prime_index = estimate_prime_index(Q);
+    BabylonianClockPosition q_pos = map_prime_index_to_clock(q_prime_index);
     
-    // For now, we use the trained torus parameters with Q-based adjustment
-    TorusParams* torus = &model->tori[0];
+    // STEP 2: Get Q's geometric coordinates from rainbow table
+    double q_angle = fast_prime_angle(q_prime_index);
+    double q_radius = fast_prime_radius(q_prime_index);
+    double q_frequency = fast_prime_frequency(q_prime_index);
+    // Note: q_layer not used in current implementation
+    // int q_layer = fast_prime_layer(q_prime_index);
     
-    // Calculate base bounds from torus
-    double center = torus->center;
-    double amplitude = torus->amplitude;
+    // STEP 3: Fold Q to 3D sphere for geometric analysis
+    SphereCoord q_sphere = fold_clock_to_sphere(q_pos);
     
-    // STEP 3: Apply Q-based modulation
-    // Use Q to adjust the center position within the torus bounds
-    // This ensures different Q values give different bounds
-    double q_factor = (double)(Q % 1000) / 1000.0;  // Normalize Q to [0,1]
-    double adjusted_center = center + (q_factor - 0.5) * amplitude * 0.5;
+    // STEP 4: Get Q's modular relationships
+    PrimeModular q_modular = get_prime_modular(Q);
     
-    // STEP 4: Use clock lattice constraints if available
+    // STEP 5: Check if Q is at a sacred position
+    bool q_is_sacred = is_sacred_position(q_pos);
+    
+    // STEP 6: Compute geometric distance from G estimate
+    // G is also mapped to clock lattice
+    uint32_t g_prime_index = estimate_prime_index((uint64_t)model->g_estimate);
+    BabylonianClockPosition g_pos = map_prime_index_to_clock(g_prime_index);
+    SphereCoord g_sphere = fold_clock_to_sphere(g_pos);
+    
+    // Calculate 3D Euclidean distance on sphere
+    double dx = q_sphere.x - g_sphere.x;
+    double dy = q_sphere.y - g_sphere.y;
+    double dz = q_sphere.z - g_sphere.z;
+    double geometric_distance = prime_sqrtf(dx*dx + dy*dy + dz*dz);
+    
+    // STEP 7: Apply torus constraints based on geometric position
+    TorusParams* primary_torus = &model->tori[0];
+    double center = primary_torus->center;
+    double amplitude = primary_torus->amplitude;
+    
+    // Modulate center based on Q's geometric properties
+    // Use angle difference for primary modulation
+    double angle_diff = q_angle - fast_prime_angle(g_prime_index);
+    double angle_factor = prime_cos(angle_diff);  // -1 to 1
+    
+    // Use radius difference for secondary modulation
+    double radius_diff = q_radius - fast_prime_radius(g_prime_index);
+    
+    // Adjust center based on geometric position
+    double adjusted_center = center + (angle_factor * amplitude * 0.3) + (radius_diff * amplitude * 0.2);
+    
+    // STEP 8: Apply modular arithmetic constraints (Babylonian structure)
+    // Use mod 12, mod 60, mod 100 relationships
     if (model->clock_info.p > 0 && model->clock_info.q > 0) {
-        // Apply modular constraints based on p and q
-        // This further refines the bounds
+        // Apply p and q modular constraints
         uint64_t pq = model->clock_info.p * model->clock_info.q;
+        
         if (pq > 0 && pq < model->n) {
-            // Adjust bounds to align with p*q structure
-            uint64_t q_mod_pq = Q % pq;
-            adjusted_center = adjusted_center + (double)q_mod_pq * 0.1;
+            // Use modular relationships to refine center
+            double mod12_factor = (double)q_modular.mod_12 / 12.0;
+            double mod60_factor = (double)q_modular.mod_60 / 60.0;
+            double mod100_factor = (double)q_modular.mod_100 / 100.0;
+            
+            // Apply Babylonian ring structure
+            adjusted_center += (mod12_factor - 0.5) * amplitude * 0.1;  // Ring 0 influence
+            adjusted_center += (mod60_factor - 0.5) * amplitude * 0.05; // Ring 1-2 influence
+            adjusted_center += (mod100_factor - 0.5) * amplitude * 0.03; // Ring 3 influence
         }
     }
     
-    // STEP 5: Compute final bounds
-    // Use multiple tori if available for tighter bounds
-    double final_amplitude = amplitude;
+    // STEP 9: Apply cymatic frequency resonance
+    // Use Q's frequency to modulate amplitude
+    double freq_resonance = prime_sin(q_frequency / 432.0 * 2.0 * PRIME_PI);
+    double resonance_factor = 1.0 + freq_resonance * 0.1;
+    
+    // STEP 10: Apply sacred position bonus
+    if (q_is_sacred) {
+        // Sacred positions (π at 3 o'clock, 12 o'clock, etc.) get tighter bounds
+        amplitude *= 0.8;
+    }
+    
+    // STEP 11: Use multiple tori for intersection
+    // Find the tightest bounds from all tori
+    double final_amplitude = amplitude * resonance_factor;
+    
     if (model->num_tori > 1) {
-        // Use the smallest torus for tightest bounds
+        // Use intersection of multiple tori for tighter bounds
         for (uint32_t i = 1; i < model->num_tori && i < 5; i++) {
-            if (model->tori[i].amplitude < final_amplitude) {
-                final_amplitude = model->tori[i].amplitude;
+            TorusParams* torus = &model->tori[i];
+            
+            // Each torus provides independent bounds
+            double torus_amplitude = torus->amplitude * resonance_factor;
+            
+            // Use the smallest amplitude (tightest bounds)
+            if (torus_amplitude < final_amplitude) {
+                final_amplitude = torus_amplitude;
             }
         }
     }
     
-    // Calculate final bounds: adjusted_center ± final_amplitude
+    // STEP 12: Apply geometric distance scaling
+    // Closer to G = tighter bounds
+    if (geometric_distance < 0.5) {
+        final_amplitude *= (0.5 + geometric_distance);  // Scale down for close points
+    }
+    
+    // STEP 13: Compute final bounds
     *k_min = (uint64_t)(adjusted_center - final_amplitude);
     *k_max = (uint64_t)(adjusted_center + final_amplitude);
     
-    // Clamp to valid range
-    if (*k_min < 0) *k_min = 0;
+    // STEP 14: Clamp to valid range [0, n]
+    // Note: k_min is uint64_t, so no need to check < 0
     if (*k_max > model->n) *k_max = model->n;
     
-    // Ensure k_min < k_max
+    // STEP 15: Ensure k_min < k_max
     if (*k_min >= *k_max) {
+        // Fallback to full range if bounds are invalid
         *k_min = 0;
         *k_max = model->n;
     }

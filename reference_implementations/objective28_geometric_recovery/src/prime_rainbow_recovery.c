@@ -6,6 +6,7 @@
  */
 
 #include "prime_rainbow_recovery.h"
+#include "../../../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -261,16 +262,9 @@ PrimeRainbowRecoveryContext* init_prime_rainbow_recovery(
     }
     
     // Generate primes and add to rainbow table
-    // Simple sieve for primes up to num_primes
+    // Use deterministic clock lattice validation instead of trial division
     for (int n = 2; n <= num_primes && ctx->rainbow_table->count < num_primes; n++) {
-        bool is_prime = true;
-        for (int i = 2; i * i <= n; i++) {
-            if (n % i == 0) {
-                is_prime = false;
-                break;
-            }
-        }
-        if (is_prime) {
+        if (validate_prime_by_clock_position(n)) {
             add_prime_to_rainbow(ctx->rainbow_table, n);
         }
     }
