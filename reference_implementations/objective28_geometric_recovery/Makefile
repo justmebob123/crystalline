@@ -646,3 +646,17 @@ $(BUILD_DIR)/test_map_20_tori_to_clock: $(TEST_DIR)/test_map_20_tori_to_clock.c 
 test-map-tori: $(BUILD_DIR)/test_map_20_tori_to_clock
 	@echo "Running Map 20 Tori to Clock Test..."
 	@$(BUILD_DIR)/test_map_20_tori_to_clock
+
+# Micro-model test (Phase 5)
+$(BUILD_DIR)/test_micro_model: $(TEST_DIR)/test_micro_model.c $(BUILD_DIR)/micro_model.o $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building micro-model test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+# Micro-model object
+$(BUILD_DIR)/micro_model.o: $(SRC_DIR)/micro_model.c
+	@echo "Compiling micro_model.c..."
+	@$(CC) $(CFLAGS) -I../../include -c $< -o $@
+
+test-micro-model: $(BUILD_DIR)/test_micro_model
+	@echo "Running Micro-Model Test..."
+	@$(BUILD_DIR)/test_micro_model
