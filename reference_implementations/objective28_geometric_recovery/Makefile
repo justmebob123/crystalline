@@ -54,7 +54,19 @@ SOURCES = \
         $(SRC_DIR)/oscillation_decomposition.c \
         $(SRC_DIR)/torus_analysis.c \
         $(SRC_DIR)/prime_factor_extraction.c \
-        $(SRC_DIR)/clock_lattice_integration.c
+        $(SRC_DIR)/clock_lattice_integration.c \
+        $(SRC_DIR)/search_recovery_v5.c \
+        $(SRC_DIR)/oscillation_detection.c \
+        $(SRC_DIR)/crystal_abacus.c \
+        $(SRC_DIR)/ecdlp_integration.c \
+        $(SRC_DIR)/g_triangulation.c \
+        $(SRC_DIR)/harmonic_folding.c \
+        $(SRC_DIR)/kissing_spheres.c \
+        $(SRC_DIR)/micro_model.c \
+        $(SRC_DIR)/multi_scalar_analysis.c \
+        $(SRC_DIR)/plateau_detection.c \
+        $(SRC_DIR)/recursive_search.c \
+        $(SRC_DIR)/tetration_attractors.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
