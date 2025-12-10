@@ -1,0 +1,137 @@
+=================================================
+Harmonic Folding Analysis
+=================================================
+Applying prime frequency folding to k estimates
+Frequencies: [5, 7, 11, 13, 17, 19, 23, 29, 31]
+
+
+========================================
+BIT LENGTH: 8-bit (Harmonic Folding)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+
+  Iteration  400: avg_k = 89.70
+  Iteration  800: avg_k = 89.70
+  Iteration 1200: avg_k = 89.70
+  Iteration 1600: avg_k = 89.70
+  Iteration 2000: avg_k = 89.70
+
+✓ Collected 2000 samples in 13.41 seconds
+
+Phase 2: Applying harmonic folding...
+
+✓ Dominant harmonic: 31 Hz
+
+
+=== Harmonic Folding Analysis ===
+
+Signal length: 2000 samples
+Number of harmonics: 9
+Total energy: 36207.724402
+Dominant frequency: 31 Hz (energy: 4023.134696)
+
+Harmonic Components:
+
+| Freq | Amplitude | Phase (rad) | Energy    | % of Total |
+|------|-----------|-------------|-----------|------------|
+|    5 |     89.70 |    1.130973 | 4023.047498 |     11.11% |
+|    7 |     89.70 |    1.121549 | 4023.049888 |     11.11% |
+|   11 |     89.70 |    1.140398 | 4023.057006 |     11.11% |
+|   13 |     89.70 |    1.143540 | 4023.061708 |     11.11% |
+|   17 |     89.70 |    1.121549 | 4023.073319 |     11.11% |
+|   19 |     89.70 |    1.134115 | 4023.080187 |     11.11% |
+|   23 |     89.70 |    1.156106 | 4023.095931 |     11.11% |
+|   29 |     89.70 |    1.184380 | 4023.124168 |     11.11% |
+|   31 |     89.70 |    1.168672 | 4023.134696 |     11.11% |
+
+✓ Data exported to harmonic_analysis_8bit.csv and harmonic_signals_8bit.csv
+
+========================================
+BIT LENGTH: 16-bit (Harmonic Folding)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+
+  Iteration  400: avg_k = 19653.30
+  Iteration  800: avg_k = 19653.30
+  Iteration 1200: avg_k = 19653.30
+  Iteration 1600: avg_k = 19653.30
+  Iteration 2000: avg_k = 19653.30
+
+✓ Collected 2000 samples in 13.32 seconds
+
+Phase 2: Applying harmonic folding...
+
+✓ Dominant harmonic: 5 Hz
+
+
+=== Harmonic Folding Analysis ===
+
+Signal length: 2000 samples
+Number of harmonics: 9
+Total energy: 1738131768.919232
+Dominant frequency: 5 Hz (energy: 193126076.036003)
+
+Harmonic Components:
+
+| Freq | Amplitude | Phase (rad) | Energy    | % of Total |
+|------|-----------|-------------|-----------|------------|
+|    5 |  19653.30 |    1.130973 | 193126076.036003 |     11.11% |
+|    7 |  19653.30 |    1.121549 | 193126052.680713 |     11.11% |
+|   11 |  19653.30 |    1.140398 | 193125983.065845 |     11.11% |
+|   13 |  19653.30 |    1.143540 | 193125937.028219 |     11.11% |
+|   17 |  19653.30 |    1.121549 | 193125823.216764 |     11.11% |
+|   19 |  19653.30 |    1.134115 | 193125755.795657 |     11.11% |
+|   23 |  19653.30 |    1.156106 | 193125600.946138 |     11.11% |
+|   29 |  19653.30 |    1.184380 | 193125322.207180 |     11.11% |
+|   31 |  19653.30 |    1.168672 | 193125217.942713 |     11.11% |
+
+✓ Data exported to harmonic_analysis_16bit.csv and harmonic_signals_16bit.csv
+
+========================================
+BIT LENGTH: 32-bit (Harmonic Folding)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+
+  Iteration  400: avg_k = 1270360728.60
+  Iteration  800: avg_k = 1270360728.60
+  Iteration 1200: avg_k = 1270360728.60
+  Iteration 1600: avg_k = 1270360728.60
+  Iteration 2000: avg_k = 1270360728.60
+
+✓ Collected 2000 samples in 13.32 seconds
+
+Phase 2: Applying harmonic folding...
+
+✓ Dominant harmonic: 5 Hz
+
+
+=== Harmonic Folding Analysis ===
+
+Signal length: 2000 samples
+Number of harmonics: 9
+Total energy: 7262144123776315392.000000
+Dominant frequency: 5 Hz (energy: 806907959670623488.000000)
+
+Harmonic Components:
+
+| Freq | Amplitude | Phase (rad) | Energy    | % of Total |
+|------|-----------|-------------|-----------|------------|
+|    5 | 1270360728.60 |    1.130973 | 806907959670623488.000000 |     11.11% |
+|    7 | 1270360728.60 |    1.121549 | 806907738946527872.000000 |     11.11% |
+|   11 | 1270360728.60 |    1.140398 | 806907081208182912.000000 |     11.11% |
+|   13 | 1270360728.60 |    1.143540 | 806906646371207936.000000 |     11.11% |
+|   17 | 1270360728.60 |    1.121549 | 806905571845202176.000000 |     11.11% |
+|   19 | 1270360728.60 |    1.134115 | 806904935594574080.000000 |     11.11% |
+|   23 | 1270360728.60 |    1.156106 | 806903475054309760.000000 |     11.11% |
+|   29 | 1270360728.60 |    1.184380 | 806900848435490816.000000 |     11.11% |
+|   31 | 1270360728.60 |    1.168672 | 806899866650197504.000000 |     11.11% |
+
+✓ Data exported to harmonic_analysis_32bit.csv and harmonic_signals_32bit.csv
+
+=================================================
+Harmonic Folding Analysis Complete!
+Total time: 40.09 seconds
+=================================================

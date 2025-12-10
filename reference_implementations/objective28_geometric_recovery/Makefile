@@ -515,3 +515,28 @@ test-dual-scalar: $(BUILD_DIR)/test_dual_scalar_decomposition
 	@echo "Running Dual Scalar Decomposition Tests..."
 	@$(BUILD_DIR)/test_dual_scalar_decomposition
 
+
+# Extended iteration test (2000 iterations to fix period 2 issue)
+$(BUILD_DIR)/test_extended_iterations: $(TEST_DIR)/test_extended_iterations.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/plateau_detection.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/ecdsa_sample_loader.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building extended iteration test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-extended
+test-extended: $(BUILD_DIR)/test_extended_iterations
+	@echo "Running Extended Iteration Tests (2000 iterations)..."
+	@$(BUILD_DIR)/test_extended_iterations
+
+# Harmonic folding
+$(BUILD_DIR)/harmonic_folding.o: $(SRC_DIR)/harmonic_folding.c
+	@echo "Compiling: $<"
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Harmonic folding test
+$(BUILD_DIR)/test_harmonic_folding: $(TEST_DIR)/test_harmonic_folding.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/plateau_detection.o $(BUILD_DIR)/harmonic_folding.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building harmonic folding test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-harmonic
+test-harmonic: $(BUILD_DIR)/test_harmonic_folding
+	@echo "Running Harmonic Folding Tests..."
+	@$(BUILD_DIR)/test_harmonic_folding
