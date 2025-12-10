@@ -43,6 +43,7 @@ SOURCES = \
         $(SRC_DIR)/search_recovery_v2.c \
         $(SRC_DIR)/anchor_grid_24.c \
         $(SRC_DIR)/search_recovery_v3.c \
+        $(SRC_DIR)/search_recovery_v4.c \
         $(SRC_DIR)/prime_rainbow_recovery.c \
         $(SRC_DIR)/geometric_anchors.c
 
@@ -356,3 +357,33 @@ $(BUILD_DIR)/test_prime_rainbow_recovery: $(TEST_DIR)/test_prime_rainbow_recover
 test-prime-rainbow: $(BUILD_DIR)/test_prime_rainbow_recovery
 	@echo "Running prime rainbow recovery test..."
 	@$(BUILD_DIR)/test_prime_rainbow_recovery
+
+# Search recovery v4 test (direct k-based anchors)
+$(BUILD_DIR)/test_search_recovery_v4: $(TEST_DIR)/test_search_recovery_v4.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-search-v4
+test-search-v4: $(BUILD_DIR)/test_search_recovery_v4
+	@echo "Running direct k-based anchor test (v4)..."
+	@$(BUILD_DIR)/test_search_recovery_v4
+
+# Deep success pattern analysis
+$(BUILD_DIR)/test_success_pattern_deep_analysis: $(TEST_DIR)/test_success_pattern_deep_analysis.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-success-deep
+test-success-deep: $(BUILD_DIR)/test_success_pattern_deep_analysis
+	@echo "Running deep success pattern analysis..."
+	@$(BUILD_DIR)/test_success_pattern_deep_analysis
+
+# Search recovery v5 (radius-aware)
+$(BUILD_DIR)/search_recovery_v5.o: $(SRC_DIR)/search_recovery_v5.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_search_recovery_v5: $(TEST_DIR)/test_search_recovery_v5.c $(LIB_DIR)/$(LIB_NAME) $(BUILD_DIR)/search_recovery_v5.o
+	$(CC) $(CFLAGS) -o $@ $< $(BUILD_DIR)/search_recovery_v5.o -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-search-v5
+test-search-v5: $(BUILD_DIR)/test_search_recovery_v5
+	@echo "Running radius-aware search test (v5)..."
+	@$(BUILD_DIR)/test_search_recovery_v5
