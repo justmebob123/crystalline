@@ -151,13 +151,55 @@
 - Expected: 1.6-5.7x reduction per unknown k
 - This IS the correct approach
 
-### Task 5: Align with Spec - SFT Integration (2 hours) - NEXT
-- [ ] Study existing SFT implementation in algorithms/src/sft/
-- [ ] Integrate SFT for candidate generation (Phase 3 from spec)
-- [ ] Implement nonce-based search space exploration
-- [ ] Implement candidate scoring (multi-factor)
-- [ ] Test with real ECDSA samples
-- [ ] Goal: Use SFT to generate k candidates within reduced torus bounds
+### Task 5: Comprehensive Re-Assessment (REVISED - 6 PHASES, 8 HOURS)
+
+**Analysis Complete:** See COMPREHENSIVE_REASSESSMENT.md
+
+**Key Findings:**
+- ✅ Clock lattice factor visualization EXISTS (app/calculator.c)
+- ✅ Crystalline sieve EXISTS (src/ai/cllm_sieve.c)
+- ✅ 20-torus structure = complete pq factorization
+- 🔍 Need to extract p and q from torus structure
+- 🔍 Need to verify Platonic solid integration
+- 🔍 Need to reassess G with enhanced information
+- 🔍 Need to create trainable micro-model
+
+**Phase 1: Verify Platonic Solid Integration (1 hour)**
+- [ ] Review geometric_anchors.c implementation
+- [ ] Check if G triangulation uses these anchors
+- [ ] Verify Euler's formula: V - E + F = 2
+- [ ] Test anchor adjustment during refinement
+
+**Phase 2: Extract p and q from 20-Torus (2 hours)**
+- [ ] Analyze torus centers and amplitudes
+- [ ] Identify p-torus and q-torus (Torus 1 and 2)
+- [ ] Extract p and q values from structure
+- [ ] Verify p × q = n (graph boundary)
+- [ ] Create separate p and q torus visualizations
+
+**Phase 3: Clock Lattice Factor Visualization (1 hour)**
+- [ ] Integrate clock lattice factor display
+- [ ] Given n, show p and q on clock
+- [ ] Visualize p and q positions
+- [ ] Understand relationship to torus structure
+
+**Phase 4: Reassess G with Enhanced Info (1 hour)**
+- [ ] Use p and q to refine G estimate
+- [ ] Re-triangulate with refined G
+- [ ] Measure improvement in torus bounds
+- [ ] Check if reduction factor improves
+
+**Phase 5: Trainable Micro-Model (2 hours)**
+- [ ] Define model structure (anchors + tori + G)
+- [ ] Implement training process
+- [ ] Implement save/load functionality
+- [ ] Test: Train, save, reload, recover
+
+**Phase 6: Integration and Testing (1 hour)**
+- [ ] Integrate all components
+- [ ] Test on real ECDSA samples
+- [ ] Measure final performance
+- [ ] Document complete system
 
 ### Task 6: Align with Spec - Recursive Stabilization (2 hours)
 - [ ] Implement multi-scale analysis (Phase 4 from spec)
