@@ -455,3 +455,39 @@ $(BUILD_DIR)/test_integrated_recovery_v2: $(TEST_DIR)/test_integrated_recovery_v
 test-integrated-v2: $(BUILD_DIR)/test_integrated_recovery_v2
 	@echo "Running Integrated Recovery V2 Tests..."
 	@$(BUILD_DIR)/test_integrated_recovery_v2
+
+
+# G Triangulation Test
+$(BUILD_DIR)/test_g_triangulation: $(TEST_DIR)/test_g_triangulation.c $(BUILD_DIR)/prime_float_math.o
+	@echo "Building G triangulation test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-g-triangulation
+test-g-triangulation: $(BUILD_DIR)/test_g_triangulation
+	@echo "Running G Triangulation Tests..."
+	@$(BUILD_DIR)/test_g_triangulation
+
+
+
+# Iterative Refinement Test
+$(BUILD_DIR)/test_iterative_refinement: $(TEST_DIR)/test_iterative_refinement.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building iterative refinement test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-iterative-refinement
+test-iterative-refinement: $(BUILD_DIR)/test_iterative_refinement
+	@echo "Running Iterative Refinement Tests..."
+	@$(BUILD_DIR)/test_iterative_refinement
+
+
+
+# Convergence Analysis Test
+$(BUILD_DIR)/test_convergence_analysis: $(TEST_DIR)/test_convergence_analysis.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building convergence analysis test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-convergence
+test-convergence: $(BUILD_DIR)/test_convergence_analysis
+	@echo "Running Convergence Analysis Tests..."
+	@$(BUILD_DIR)/test_convergence_analysis
+
