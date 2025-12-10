@@ -39,7 +39,8 @@ SOURCES = \
         $(SRC_DIR)/platonic_solids.c \
         $(SRC_DIR)/k_recovery_enhanced.c \
         $(SRC_DIR)/spherical_recovery.c \
-        $(SRC_DIR)/search_recovery.c
+        $(SRC_DIR)/search_recovery.c \
+        $(SRC_DIR)/geometric_anchors.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -306,3 +307,21 @@ $(BUILD_DIR)/test_search_recovery: $(TEST_DIR)/test_search_recovery.c $(LIB_DIR)
 test-search: $(BUILD_DIR)/test_search_recovery
 	@echo "Running search-based recovery test..."
 	@$(BUILD_DIR)/test_search_recovery
+
+# Geometric anchors test
+$(BUILD_DIR)/test_geometric_anchors: $(TEST_DIR)/test_geometric_anchors.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-geometric
+test-geometric: $(BUILD_DIR)/test_geometric_anchors
+	@echo "Running geometric anchor system test..."
+	@$(BUILD_DIR)/test_geometric_anchors
+
+# Shared vertex tolerance test
+$(BUILD_DIR)/test_shared_vertex_tolerance: $(TEST_DIR)/test_shared_vertex_tolerance.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-tolerance
+test-tolerance: $(BUILD_DIR)/test_shared_vertex_tolerance
+	@echo "Running shared vertex tolerance analysis..."
+	@$(BUILD_DIR)/test_shared_vertex_tolerance
