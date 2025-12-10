@@ -40,6 +40,7 @@ SOURCES = \
         $(SRC_DIR)/k_recovery_enhanced.c \
         $(SRC_DIR)/spherical_recovery.c \
         $(SRC_DIR)/search_recovery.c \
+        $(SRC_DIR)/search_recovery_v2.c \
         $(SRC_DIR)/geometric_anchors.c
 
 # Object files
@@ -325,3 +326,12 @@ $(BUILD_DIR)/test_shared_vertex_tolerance: $(TEST_DIR)/test_shared_vertex_tolera
 test-tolerance: $(BUILD_DIR)/test_shared_vertex_tolerance
 	@echo "Running shared vertex tolerance analysis..."
 	@$(BUILD_DIR)/test_shared_vertex_tolerance
+
+# Search recovery v2 test
+$(BUILD_DIR)/test_search_recovery_v2: $(TEST_DIR)/test_search_recovery_v2.c $(LIB_DIR)/$(LIB_NAME)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lgeometric_recovery $(LDFLAGS)
+
+.PHONY: test-search-v2
+test-search-v2: $(BUILD_DIR)/test_search_recovery_v2
+	@echo "Running enhanced search recovery test (v2)..."
+	@$(BUILD_DIR)/test_search_recovery_v2
