@@ -50,3 +50,19 @@ test-phase2: $(BUILD_DIR)/test_phase2_tetration
 	@echo "Running Phase 2 Tetration Tests..."
 	@$(BUILD_DIR)/test_phase2_tetration
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+#                     PHASE 3: ECDLP INTEGRATION
+# ═══════════════════════════════════════════════════════════════════════════
+
+$(BUILD_DIR)/ecdlp_integration.o: $(SRC_DIR)/ecdlp_integration.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_phase3_ecdlp: $(TEST_DIR)/test_phase3_ecdlp.c $(BUILD_DIR)/ecdlp_integration.o $(BUILD_DIR)/tetration_attractors.o $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o /tmp/prime_float_math.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-phase3
+test-phase3: $(BUILD_DIR)/test_phase3_ecdlp
+	@echo "Running Phase 3 ECDLP Integration Tests..."
+	@$(BUILD_DIR)/test_phase3_ecdlp
+
