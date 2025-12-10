@@ -82,3 +82,19 @@ test-phase4: $(BUILD_DIR)/test_phase4_oscillation
 	@echo "Running Phase 4 Oscillation Detection Tests..."
 	@$(BUILD_DIR)/test_phase4_oscillation
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+#                     PHASE 5: RECURSIVE SEARCH
+# ═══════════════════════════════════════════════════════════════════════════
+
+$(BUILD_DIR)/recursive_search.o: $(SRC_DIR)/recursive_search.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_phase5_recursive: $(TEST_DIR)/test_phase5_recursive.c $(BUILD_DIR)/recursive_search.o $(BUILD_DIR)/oscillation_detection.o $(BUILD_DIR)/ecdlp_integration.o $(BUILD_DIR)/tetration_attractors.o $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o /tmp/prime_float_math.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-phase5
+test-phase5: $(BUILD_DIR)/test_phase5_recursive
+	@echo "Running Phase 5 Recursive Search Tests..."
+	@$(BUILD_DIR)/test_phase5_recursive
+
