@@ -608,3 +608,23 @@ $(BUILD_DIR)/test_comprehensive_pq_extraction: $(TEST_DIR)/test_comprehensive_pq
 test-comprehensive-pq: $(BUILD_DIR)/test_comprehensive_pq_extraction
 	@echo "Running Comprehensive p/q Extraction Test..."
 	@$(BUILD_DIR)/test_comprehensive_pq_extraction
+
+# Clock lattice p/q visualization test
+$(BUILD_DIR)/test_clock_lattice_pq_visualization: $(TEST_DIR)/test_clock_lattice_pq_visualization.c $(BUILD_DIR)/prime_float_math.o
+	@echo "Building clock lattice p/q visualization test..."
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+test-clock-pq: $(BUILD_DIR)/test_clock_lattice_pq_visualization
+	@echo "Running Clock Lattice p/q Visualization Test..."
+	@$(BUILD_DIR)/test_clock_lattice_pq_visualization
+
+# Clock lattice visualization test (Phase 3)
+
+# Clock lattice visualization test (Phase 3)
+$(BUILD_DIR)/test_clock_lattice_visualization: $(TEST_DIR)/test_clock_lattice_visualization.c $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building clock lattice visualization test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-clock-viz: $(BUILD_DIR)/test_clock_lattice_visualization
+	@echo "Running Clock Lattice Visualization Test..."
+	@$(BUILD_DIR)/test_clock_lattice_visualization
