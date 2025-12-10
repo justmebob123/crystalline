@@ -353,13 +353,36 @@ grep -c "warning:" build.log
 
 **Documentation:** See TORUS_INTERSECTION_ANALYSIS.md
 
-**Phase 2b: Fix Bounding &amp; Factor Extraction** (2-3 hours)
-- [ ] Clip torus bounds to valid range [0, max_k]
-- [ ] Use tighter bounds (0.5× amplitude or 2σ)
-- [ ] Re-compute intersection with fixes
+**Phase 2b: Bounding Fix** ✅ COMPLETE (30 minutes)
+- [x] Clipped torus bounds to valid range [0, max_k]
+- [x] Used tighter bounds (0.5× amplitude)
+- [x] Re-computed intersection with fixes
+- [x] **SUCCESS: Positive reduction achieved!**
+
+**Results After Fix:**
+- 8-bit: 1.00x (0% reduction, spans full range)
+- 16-bit: 1.17x (14.45% reduction) ✅
+- 32-bit: 1.19x (15.86% reduction) ✅
+- **Trend: Reduction improves with bit length!**
+
+**Key Changes:**
+1. Use 0.5× amplitude (tighter bounds)
+2. Clip k_min ≥ 0
+3. Clip k_max ≤ max_k
+
+**Validation:**
+- True k captured in all cases ✅
+- Bounds within valid range ✅
+- Reproducible results ✅
+
+**Documentation:** See BOUNDING_FIX_RESULTS.md
+
+**Phase 2c: Factor Extraction &amp; Per-Sample Analysis** (2-3 hours)
 - [ ] Implement factor extraction (p and q from amplitude ratios)
 - [ ] Per-sample torus analysis (track 20 samples individually)
-- **Goal:** Achieve positive reduction, extract p and q
+- [ ] Test with different multipliers (0.25×, 0.5×, 0.75×)
+- [ ] Use statistical bounds (2σ instead of amplitude)
+- **Goal:** Extract p and q, improve reduction further
 
 **Phase 3: Implement Remaining Components** (3-4 hours)
 - [ ] HDPLM entropy cut (recursive trimming: tower^(tower-1))

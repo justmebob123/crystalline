@@ -1,0 +1,80 @@
+=================================================
+Torus Intersection Analysis
+=================================================
+Computing intersections for 5, 10, 15, 20 tori
+Measuring search space reduction
+
+
+========================================
+BIT LENGTH: 8-bit (Intersection Analysis)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+✓ Collected 2000 samples in 13.36 seconds
+
+Phase 2: Identifying tori...
+✓ Detected 20 tori
+
+Phase 3: Computing intersection of all 20 tori...
+
+✓ Intersection computed successfully
+
+Intersection Analysis:
+  Valid: YES
+  Bounds: [0.00, 255.00]
+  Size: 255.00
+  Reduction: 1.00x (0.00%)
+  Contains true k: YES
+
+✓ Data exported to intersection_8bit.csv
+
+========================================
+BIT LENGTH: 16-bit (Intersection Analysis)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+✓ Collected 2000 samples in 13.19 seconds
+
+Phase 2: Identifying tori...
+✓ Detected 20 tori
+
+Phase 3: Computing intersection of all 20 tori...
+
+✓ Intersection computed successfully
+
+Intersection Analysis:
+  Valid: YES
+  Bounds: [0.00, 56064.26]
+  Size: 56064.26
+  Reduction: 1.17x (14.45%)
+  Contains true k: YES
+
+✓ Data exported to intersection_16bit.csv
+
+========================================
+BIT LENGTH: 32-bit (Intersection Analysis)
+========================================
+
+Phase 1: Collecting 2000 k estimates...
+✓ Collected 2000 samples in 13.19 seconds
+
+Phase 2: Identifying tori...
+✓ Detected 20 tori
+
+Phase 3: Computing intersection of all 20 tori...
+
+✓ Intersection computed successfully
+
+Intersection Analysis:
+  Valid: YES
+  Bounds: [0.00, 3613996374.49]
+  Size: 3613996374.49
+  Reduction: 1.19x (15.86%)
+  Contains true k: YES
+
+✓ Data exported to intersection_32bit.csv
+
+=================================================
+Torus Intersection Analysis Complete!
+Total time: 39.80 seconds
+=================================================

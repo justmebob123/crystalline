@@ -95,8 +95,19 @@ int identify_tori(MultiTorusTracker* tracker) {
         torus->center_k = sum / tracker->history_size;
         
         // Compute bounds
-        torus->k_min = torus->center_k - torus->amplitude;
-        torus->k_max = torus->center_k + torus->amplitude;
+        // Use tighter bounds (0.5× amplitude instead of full amplitude)
+        // This reduces the bound size while still capturing the oscillation
+        double bound_multiplier = 0.5;
+        torus->k_min = torus->center_k - (torus->amplitude * bound_multiplier);
+        torus->k_max = torus->center_k + (torus->amplitude * bound_multiplier);
+        
+        // Clip to valid k range [0, original_space]
+        if (torus->k_min < 0.0) {
+            torus->k_min = 0.0;
+        }
+        if (torus->k_max > (double)tracker->original_space) {
+            torus->k_max = (double)tracker->original_space;
+        }
         
         // Confidence based on amplitude relative to signal
         double signal_energy = 0.0;
