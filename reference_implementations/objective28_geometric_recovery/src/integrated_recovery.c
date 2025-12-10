@@ -225,36 +225,162 @@ static uint64_t estimate_k_from_anchor(
 /**
  * Simple recovery using geometric anchors
  */
+/**
+ * Multi-layer search implementation (from search_recovery_v2.c)
+ */
+static uint64_t multi_layer_search(
+    double target_angle,
+    uint64_t center_k,
+    int num_layers,
+    double* final_error
+) {
+    // Search layers: ±100 (coarse), ±25 (medium), ±10 (fine)
+    typedef struct {
+        int range;
+        int step;
+    } Layer;
+    
+    Layer layers[3] = {
+        {100, 10},  // Coarse: ±100, step 10
+        {25, 2},    // Medium: ±25, step 2
+        {10, 1}     // Fine: ±10, step 1
+    };
+    
+    uint64_t best_k = center_k;
+    double best_error = 1e9;
+    
+    // Normalize target angle to [0, 2π)
+    double normalized_target = target_angle;
+    while (normalized_target < 0) normalized_target += TWO_PI;
+    while (normalized_target >= TWO_PI) normalized_target -= TWO_PI;
+    
+    // Iterate through layers
+    for (int layer = 0; layer < num_layers && layer < 3; layer++) {
+        int64_t min_offset = -layers[layer].range;
+        int64_t max_offset = layers[layer].range;
+        
+        // Search with current step size
+        for (int64_t offset = min_offset; offset <= max_offset; offset += layers[layer].step) {
+            int64_t candidate_k = (int64_t)best_k + offset;
+            if (candidate_k < 0) continue;
+            
+            uint64_t k = (uint64_t)candidate_k;
+            
+            // Forward mapping: θ = k·π·φ
+            double computed_angle = (double)k * PI * PHI;
+            
+            // Normalize to [0, 2π)
+            while (computed_angle < 0) computed_angle += TWO_PI;
+            while (computed_angle >= TWO_PI) computed_angle -= TWO_PI;
+            
+            // Compute error (handle wraparound)
+            double error = prime_fabs(computed_angle - normalized_target);
+            if (error > PI) error = TWO_PI - error;
+            
+            // Update best
+            if (error < best_error) {
+                best_error = error;
+                best_k = k;
+            }
+        }
+        
+        // Center next layer on current best
+        center_k = best_k;
+    }
+    
+    if (final_error) *final_error = best_error;
+    return best_k;
+}
+
 static uint64_t recover_k_simple(
     IntegratedRecoveryContext* ctx,
     ECDSASample* sample
 ) {
-    // Map real k to 13D position
-    double target_position[13];
+    // Compute Q position in 13D space
+    double q_position[13];
+    for (int d = 0; d < 13; d++) {
+        // Use dimensional frequencies to compute position
+        double freq = (double)DIMENSIONAL_FREQUENCIES[d];
+        
+        // Extract x, y coordinates from Q point (public key)
+        char* qx_str = BN_bn2hex(sample->pubkey_x);
+        char* qy_str = BN_bn2hex(sample->pubkey_y);
+        
+        // Convert to double (simplified - use first few bytes)
+        uint64_t qx_val = strtoull(qx_str, NULL, 16);
+        uint64_t qy_val = strtoull(qy_str, NULL, 16);
+        
+        // Compute position using π×φ metric
+        double angle = (double)(qx_val % 360) * PI / 180.0;
+        q_position[d] = prime_cos(angle * freq) * prime_pow(PHI, d % 5);
+        
+        OPENSSL_free(qx_str);
+        OPENSSL_free(qy_str);
+    }
     
-    // Convert BIGNUM to uint64_t for mapping
-    char* k_str = BN_bn2dec(sample->k);
-    uint64_t k_val = strtoull(k_str, NULL, 10);
-    OPENSSL_free(k_str);
+    // Find 3 nearest geometric anchors
+    typedef struct {
+        int index;
+        double distance;
+        uint64_t k_estimate;
+    } AnchorInfo;
     
-    map_k_to_13d(k_val, target_position);
+    AnchorInfo nearest[3] = {{0, 1e9, 0}, {0, 1e9, 0}, {0, 1e9, 0}};
     
-    // Find nearest geometric anchor
-    int nearest_anchor = find_nearest_geometric_anchor(
-        target_position,
-        ctx->geo_anchors,
-        ctx->num_geo_anchors
-    );
+    for (int i = 0; i < ctx->num_geo_anchors; i++) {
+        double distance = 0.0;
+        for (int d = 0; d < 13; d++) {
+            double diff = q_position[d] - ctx->geo_anchors[i].position[d];
+            distance += diff * diff;
+        }
+        distance = prime_sqrt(distance);
+        
+        // Update nearest 3
+        for (int j = 0; j < 3; j++) {
+            if (distance < nearest[j].distance) {
+                // Shift down
+                for (int k = 2; k > j; k--) {
+                    nearest[k] = nearest[k-1];
+                }
+                nearest[j].index = i;
+                nearest[j].distance = distance;
+                // Map anchor index to k estimate (50 anchors → [0, 300])
+                nearest[j].k_estimate = (uint64_t)((double)i * 300.0 / 50.0);
+                break;
+            }
+        }
+    }
     
-    // Estimate k from anchor
-    uint64_t max_k = 1ULL << sample->bit_length;
-    uint64_t estimated_k = estimate_k_from_anchor(
-        nearest_anchor,
-        ctx->num_geo_anchors,
-        max_k
-    );
+    // Compute weighted k estimate (inverse distance weighting)
+    double total_weight = 0.0;
+    double weighted_sum = 0.0;
     
-    return estimated_k;
+    for (int i = 0; i < 3; i++) {
+        if (nearest[i].distance < 0.001) {
+            // Very close to anchor, use it directly
+            weighted_sum = (double)nearest[i].k_estimate;
+            total_weight = 1.0;
+            break;
+        }
+        double weight = 1.0 / nearest[i].distance;
+        weighted_sum += weight * nearest[i].k_estimate;
+        total_weight += weight;
+    }
+    
+    uint64_t center_k = (uint64_t)(weighted_sum / total_weight);
+    
+    // Compute target angle from Q point (public key)
+    char* qx_str = BN_bn2hex(sample->pubkey_x);
+    uint64_t qx_val = strtoull(qx_str, NULL, 16);
+    OPENSSL_free(qx_str);
+    
+    double target_angle = (double)(qx_val % 360) * PI / 180.0;
+    
+    // Perform multi-layer search
+    double final_error = 0.0;
+    uint64_t recovered_k = multi_layer_search(target_angle, center_k, 3, &final_error);
+    
+    return recovered_k;
 }
 
 /**
