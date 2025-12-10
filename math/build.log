@@ -1,0 +1,35 @@
+Compiling src/core/arithmetic.c...
+Compiling src/core/transcendental.c...
+Compiling src/bigint/bigint_arithmetic.c...
+src/bigint/bigint_arithmetic.c:24:5: error: conflicting types for ‘bigint_add’; have ‘int(BigInt *, const BigInt *, const BigInt *)’
+   24 | int bigint_add(BigInt* result, const BigInt* a, const BigInt* b) {
+      |     ^~~~~~~~~~
+In file included from src/bigint/bigint_arithmetic.c:8:
+./include/math/bigint.h:200:11: note: previous declaration of ‘bigint_add’ with type ‘MathError(BigInt *, const BigInt *, const BigInt *)’
+  200 | MathError bigint_add(BigInt* result, const BigInt* a, const BigInt* b);
+      |           ^~~~~~~~~~
+src/bigint/bigint_arithmetic.c:56:5: error: conflicting types for ‘bigint_sub’; have ‘int(BigInt *, const BigInt *, const BigInt *)’
+   56 | int bigint_sub(BigInt* result, const BigInt* a, const BigInt* b) {
+      |     ^~~~~~~~~~
+./include/math/bigint.h:209:11: note: previous declaration of ‘bigint_sub’ with type ‘MathError(BigInt *, const BigInt *, const BigInt *)’
+  209 | MathError bigint_sub(BigInt* result, const BigInt* a, const BigInt* b);
+      |           ^~~~~~~~~~
+src/bigint/bigint_arithmetic.c:88:5: error: conflicting types for ‘bigint_mul’; have ‘int(BigInt *, const BigInt *, const BigInt *)’
+   88 | int bigint_mul(BigInt* result, const BigInt* a, const BigInt* b) {
+      |     ^~~~~~~~~~
+./include/math/bigint.h:218:11: note: previous declaration of ‘bigint_mul’ with type ‘MathError(BigInt *, const BigInt *, const BigInt *)’
+  218 | MathError bigint_mul(BigInt* result, const BigInt* a, const BigInt* b);
+      |           ^~~~~~~~~~
+src/bigint/bigint_arithmetic.c:130:5: error: conflicting types for ‘bigint_div’; have ‘int(BigInt *, BigInt *, const BigInt *, const BigInt *)’
+  130 | int bigint_div(BigInt* quotient, BigInt* remainder, const BigInt* a, const BigInt* b) {
+      |     ^~~~~~~~~~
+./include/math/bigint.h:228:11: note: previous declaration of ‘bigint_div’ with type ‘MathError(BigInt *, BigInt *, const BigInt *, const BigInt *)’
+  228 | MathError bigint_div(BigInt* quotient, BigInt* remainder, const BigInt* a, const BigInt* b);
+      |           ^~~~~~~~~~
+src/bigint/bigint_arithmetic.c:255:5: error: conflicting types for ‘bigint_mod’; have ‘int(BigInt *, const BigInt *, const BigInt *)’
+  255 | int bigint_mod(BigInt* result, const BigInt* a, const BigInt* m) {
+      |     ^~~~~~~~~~
+./include/math/bigint.h:237:11: note: previous declaration of ‘bigint_mod’ with type ‘MathError(BigInt *, const BigInt *, const BigInt *)’
+  237 | MathError bigint_mod(BigInt* result, const BigInt* a, const BigInt* m);
+      |           ^~~~~~~~~~
+make: *** [Makefile:65: build/bigint/bigint_arithmetic.o] Error 1
