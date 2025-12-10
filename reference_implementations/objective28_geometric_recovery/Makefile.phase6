@@ -26,9 +26,10 @@ PHASE_OBJECTS = $(PHASE_SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # Test programs
 TEST_PHASE6 = $(BUILD_DIR)/test_phase6_simple
+TEST_COMPREHENSIVE = $(BUILD_DIR)/test_comprehensive_recovery
 
 # Default target
-all: directories $(TEST_PHASE6)
+all: directories $(TEST_PHASE6) $(TEST_COMPREHENSIVE)
 
 # Create directories
 directories:
@@ -45,20 +46,34 @@ $(TEST_PHASE6): $(TEST_DIR)/test_phase6_simple.c $(PHASE_OBJECTS)
 	$(CC) $(CFLAGS) $< $(PHASE_OBJECTS) $(LDFLAGS) -o $@
 	@echo "Phase 6 test built successfully"
 
+# Build comprehensive recovery test
+$(TEST_COMPREHENSIVE): $(TEST_DIR)/test_comprehensive_recovery.c $(PHASE_OBJECTS)
+	@echo "Building comprehensive recovery test: $@"
+	$(CC) $(CFLAGS) $< $(PHASE_OBJECTS) $(LDFLAGS) -o $@
+	@echo "Comprehensive test built successfully"
+
 # Run Phase 6 test
 test: $(TEST_PHASE6)
 	@echo ""
 	@echo "========================================"
 	@echo "Running Phase 6: Multi-Scalar Analysis"
 	@echo "========================================"
-	@$(TEST_PHASE6)
+	@LD_LIBRARY_PATH=/workspace:$$LD_LIBRARY_PATH $(TEST_PHASE6)
+
+# Run comprehensive test
+test-comprehensive: $(TEST_COMPREHENSIVE)
+	@echo ""
+	@echo "========================================"
+	@echo "Running Comprehensive Recovery Test"
+	@echo "========================================"
+	@LD_LIBRARY_PATH=/workspace:$$LD_LIBRARY_PATH $(TEST_COMPREHENSIVE)
 
 # Clean
 clean:
-	rm -rf $(BUILD_DIR)/*.o $(TEST_PHASE6)
+	rm -rf $(BUILD_DIR)/*.o $(TEST_PHASE6) $(TEST_COMPREHENSIVE)
 
 # Clean all
 cleanall:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all directories test clean cleanall
+.PHONY: all directories test test-comprehensive clean cleanall

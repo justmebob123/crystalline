@@ -1,0 +1,440 @@
+
+========================================
+Running Comprehensive Recovery Test
+========================================
+
+========================================
+COMPREHENSIVE ECDLP RECOVERY TEST
+========================================
+
+Testing recovery across multiple bit lengths
+Verifying Q regeneration for each recovery
+
+
+========================================
+Testing 8-bit k values (5 tests)
+========================================
+
+Test 1/5:
+
+  Bit Length: 8 bits
+  Original k: D9
+  Recovered k: 84
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.729565
+  Iterations: 400
+  Time: 0.220 seconds
+
+Test 2/5:
+
+  Bit Length: 8 bits
+  Original k: EB
+  Recovered k: 46
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.703196
+  Iterations: 400
+  Time: 0.221 seconds
+
+Test 3/5:
+
+  Bit Length: 8 bits
+  Original k: F8
+  Recovered k: 2A
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.680459
+  Iterations: 400
+  Time: 0.217 seconds
+
+Test 4/5:
+
+  Bit Length: 8 bits
+  Original k: D1
+  Recovered k: 70
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.709377
+  Iterations: 400
+  Time: 0.217 seconds
+
+Test 5/5:
+
+  Bit Length: 8 bits
+  Original k: B1
+  Recovered k: 4C
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.691087
+  Iterations: 400
+  Time: 0.218 seconds
+
+========================================
+Summary for 8-bit k:
+========================================
+  Tests: 5
+  Successes: 0 / 5 (0.0%)
+  Q Matches: 0 / 5 (0.0%)
+  Avg Time: 0.219 seconds
+  Avg Score: 0.702737
+========================================
+
+
+========================================
+Testing 16-bit k values (5 tests)
+========================================
+
+Test 1/5:
+
+  Bit Length: 16 bits
+  Original k: D50E
+  Recovered k: 4A
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.691086
+  Iterations: 400
+  Time: 0.218 seconds
+
+Test 2/5:
+
+  Bit Length: 16 bits
+  Original k: D924
+  Recovered k: B4
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.659905
+  Iterations: 400
+  Time: 0.217 seconds
+
+Test 3/5:
+
+  Bit Length: 16 bits
+  Original k: B660
+  Recovered k: 84
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.663567
+  Iterations: 400
+  Time: 0.217 seconds
+
+Test 4/5:
+
+  Bit Length: 16 bits
+  Original k: A480
+  Recovered k: 90
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.672706
+  Iterations: 400
+  Time: 0.216 seconds
+
+Test 5/5:
+
+  Bit Length: 16 bits
+  Original k: 8FB0
+  Recovered k: 34
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.665259
+  Iterations: 400
+  Time: 0.215 seconds
+
+========================================
+Summary for 16-bit k:
+========================================
+  Tests: 5
+  Successes: 0 / 5 (0.0%)
+  Q Matches: 0 / 5 (0.0%)
+  Avg Time: 0.217 seconds
+  Avg Score: 0.670504
+========================================
+
+
+========================================
+Testing 32-bit k values (5 tests)
+========================================
+
+Test 1/5:
+
+  Bit Length: 32 bits
+  Original k: 8685BF44
+  Recovered k: 84
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.682111
+  Iterations: 400
+  Time: 0.214 seconds
+
+Test 2/5:
+
+  Bit Length: 32 bits
+  Original k: BDB57CFE
+  Recovered k: A2
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.692886
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 3/5:
+
+  Bit Length: 32 bits
+  Original k: DDE6662E
+  Recovered k: 02
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.724044
+  Iterations: 400
+  Time: 0.214 seconds
+
+Test 4/5:
+
+  Bit Length: 32 bits
+  Original k: FB55A9AE
+  Recovered k: 02
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.675152
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 5/5:
+
+  Bit Length: 32 bits
+  Original k: F08CD004
+  Recovered k: 1E
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.682581
+  Iterations: 300
+  Time: 0.162 seconds
+
+========================================
+Summary for 32-bit k:
+========================================
+  Tests: 5
+  Successes: 0 / 5 (0.0%)
+  Q Matches: 0 / 5 (0.0%)
+  Avg Time: 0.204 seconds
+  Avg Score: 0.691355
+========================================
+
+
+========================================
+Testing 64-bit k values (5 tests)
+========================================
+
+Test 1/5:
+
+  Bit Length: 64 bits
+  Original k: A1D46A3572B0B39B
+  Recovered k: 68
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.696833
+  Iterations: 300
+  Time: 0.162 seconds
+
+Test 2/5:
+
+  Bit Length: 64 bits
+  Original k: A5765B7159C44476
+  Recovered k: 18
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.693969
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 3/5:
+
+  Bit Length: 64 bits
+  Original k: D80B482857CDB880
+  Recovered k: 70
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.689942
+  Iterations: 400
+  Time: 0.216 seconds
+
+Test 4/5:
+
+  Bit Length: 64 bits
+  Original k: 8B6ED54895F577A2
+  Recovered k: 0C
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.678222
+  Iterations: 300
+  Time: 0.162 seconds
+
+Test 5/5:
+
+  Bit Length: 64 bits
+  Original k: AC1354E61682FEEE
+  Recovered k: 46
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.715152
+  Iterations: 400
+  Time: 0.215 seconds
+
+========================================
+Summary for 64-bit k:
+========================================
+  Tests: 5
+  Successes: 0 / 5 (0.0%)
+  Q Matches: 0 / 5 (0.0%)
+  Avg Time: 0.194 seconds
+  Avg Score: 0.694824
+========================================
+
+
+========================================
+Testing 128-bit k values (3 tests)
+========================================
+
+Test 1/3:
+
+  Bit Length: 128 bits
+  Original k: C393CF0806912BBF42B7E07E37D0F6D4
+  Recovered k: 08
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.672490
+  Iterations: 300
+  Time: 0.160 seconds
+
+Test 2/3:
+
+  Bit Length: 128 bits
+  Original k: CA784FF3CF38932A5824ACF418401840
+  Recovered k: 84
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.675940
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 3/3:
+
+  Bit Length: 128 bits
+  Original k: 92E0A1E1282BD341F79F514EE2A4DE61
+  Recovered k: 64
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.707254
+  Iterations: 400
+  Time: 0.216 seconds
+
+========================================
+Summary for 128-bit k:
+========================================
+  Tests: 3
+  Successes: 0 / 3 (0.0%)
+  Q Matches: 0 / 3 (0.0%)
+  Avg Time: 0.197 seconds
+  Avg Score: 0.685228
+========================================
+
+
+========================================
+Testing 192-bit k values (3 tests)
+========================================
+
+Test 1/3:
+
+  Bit Length: 192 bits
+  Original k: FC2CF939CBF7C9DEAF985CF240144728DB6C79F55EC31349
+  Recovered k: 84
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.752781
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 2/3:
+
+  Bit Length: 192 bits
+  Original k: FF56245021515E7EB95B07ADB2663BA851BAB3AF2BD73EC3
+  Recovered k: 30
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.686184
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 3/3:
+
+  Bit Length: 192 bits
+  Original k: 95B78B47EDF29A1A83256B17CD4CCDDCBB002CFFED844ED3
+  Recovered k: 2A
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.718394
+  Iterations: 400
+  Time: 0.215 seconds
+
+========================================
+Summary for 192-bit k:
+========================================
+  Tests: 3
+  Successes: 0 / 3 (0.0%)
+  Q Matches: 0 / 3 (0.0%)
+  Avg Time: 0.215 seconds
+  Avg Score: 0.719120
+========================================
+
+
+========================================
+Testing 256-bit k values (3 tests)
+========================================
+
+Test 1/3:
+
+  Bit Length: 256 bits
+  Original k: 98671E995DF4F388CF2A0C72347EC13BB4FC6C1CBED36F4FCAA56A6391A95D1C
+  Recovered k: 18
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.702914
+  Iterations: 400
+  Time: 0.215 seconds
+
+Test 2/3:
+
+  Bit Length: 256 bits
+  Original k: B75B6CD08D3F775EA6DED7116DC0DEA298C40B9B9FA9E494AE29404135188A91
+  Recovered k: 8C
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.671114
+  Iterations: 400
+  Time: 0.216 seconds
+
+Test 3/3:
+
+  Bit Length: 256 bits
+  Original k: ACB4E0DECF36A3100C3B11AED5A38A50A2243A6F9DB5BAE3F055D27322931109
+  Recovered k: 1E
+  Recovery: ❌ FAILED
+  Q Match: ❌ MISMATCH
+  Score: 0.681332
+  Iterations: 400
+  Time: 0.216 seconds
+
+========================================
+Summary for 256-bit k:
+========================================
+  Tests: 3
+  Successes: 0 / 3 (0.0%)
+  Q Matches: 0 / 3 (0.0%)
+  Avg Time: 0.215 seconds
+  Avg Score: 0.685120
+========================================
+
+
+========================================
+COMPREHENSIVE TEST COMPLETE
+========================================
