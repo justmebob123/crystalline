@@ -98,6 +98,14 @@ typedef struct {
     double error;           // Triangulation error
 } TrainingSample;
 
+/**
+ * Validation sample (same as training but for validation)
+ */
+typedef struct {
+    uint64_t k;             // Known k value
+    uint64_t Q;             // Known Q value
+} ValidationSample;
+
 // ============================================================================
 // MODEL CREATION & INITIALIZATION
 // ============================================================================

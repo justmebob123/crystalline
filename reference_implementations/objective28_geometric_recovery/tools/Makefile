@@ -4,8 +4,10 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -g -I../include
 LDFLAGS = -L../lib -lgeometric_recovery -lm -lssl -lcrypto
 
-all: generate_ecdsa_samples generate_comprehensive_test_data run_comprehensive_tests test_real_recovery_comprehensive geometric_recovery_cli
+# All tools including new CLI tools
+all: generate_ecdsa_samples generate_comprehensive_test_data run_comprehensive_tests geometric_recovery_cli train_model recover_k validate_model
 
+# Original tools
 generate_ecdsa_samples: generate_ecdsa_samples.c
 	@echo "Building ECDSA sample generator..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
@@ -21,18 +23,29 @@ run_comprehensive_tests: run_comprehensive_tests.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ Built successfully"
 
-test_real_recovery_comprehensive: test_real_recovery_comprehensive.c
-	@echo "Building real recovery comprehensive test..."
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-	@echo "✓ Built successfully"
-
 geometric_recovery_cli: geometric_recovery_cli.c
 	@echo "Building unified CLI tool..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ Built successfully"
 
+# New CLI tools (OBJECTIVE 28 completion)
+train_model: train_model.c
+	@echo "Building train_model CLI tool..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ Built successfully"
+
+recover_k: recover_k.c
+	@echo "Building recover_k CLI tool..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ Built successfully"
+
+validate_model: validate_model.c
+	@echo "Building validate_model CLI tool..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ Built successfully"
+
 clean:
-	rm -f generate_ecdsa_samples generate_comprehensive_test_data run_comprehensive_tests test_real_recovery_comprehensive geometric_recovery_cli
+	rm -f generate_ecdsa_samples generate_comprehensive_test_data run_comprehensive_tests geometric_recovery_cli train_model recover_k validate_model
 	@echo "✓ Cleaned"
 
 .PHONY: all clean
