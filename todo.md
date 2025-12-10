@@ -173,7 +173,8 @@
 - [x] All 5/5 tests passing (100%)
 - [x] Documented in PHASE1_PLATONIC_VERIFICATION_COMPLETE.md
 
-**Phase 2: Extract p and q from 20-Torus (2 hours)**
+**Phase 2: Extract p and q from 20-Torus (2 hours)** - IN PROGRESS
+- [ ] Copy all algorithms to main library (algorithms/src/geometric_recovery/)
 - [ ] Analyze torus centers and amplitudes
 - [ ] Identify p-torus and q-torus (Torus 1 and 2)
 - [ ] Extract p and q values from structure
