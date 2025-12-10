@@ -491,3 +491,15 @@ test-convergence: $(BUILD_DIR)/test_convergence_analysis
 	@echo "Running Convergence Analysis Tests..."
 	@$(BUILD_DIR)/test_convergence_analysis
 
+
+
+# Torus Analysis Test
+$(BUILD_DIR)/test_torus_analysis: $(TEST_DIR)/test_torus_analysis.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/plateau_detection.o $(BUILD_DIR)/torus_analysis.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building torus analysis test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-torus
+test-torus: $(BUILD_DIR)/test_torus_analysis
+	@echo "Running Torus Analysis Tests..."
+	@$(BUILD_DIR)/test_torus_analysis
+
