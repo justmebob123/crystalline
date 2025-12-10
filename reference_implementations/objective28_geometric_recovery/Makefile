@@ -678,3 +678,12 @@ $(BUILD_DIR)/test_64_128_bit_validation: $(TEST_DIR)/test_64_128_bit_validation.
 test-64-128: $(BUILD_DIR)/test_64_128_bit_validation
 	@echo "Running 64-bit and 128-bit Validation Test..."
 	@$(BUILD_DIR)/test_64_128_bit_validation
+
+# Large prime clock mapping test
+$(BUILD_DIR)/test_large_prime_clock_mapping: $(TEST_DIR)/test_large_prime_clock_mapping.c $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building large prime clock mapping test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-large-primes: $(BUILD_DIR)/test_large_prime_clock_mapping
+	@echo "Running Large Prime Clock Mapping Test..."
+	@$(BUILD_DIR)/test_large_prime_clock_mapping

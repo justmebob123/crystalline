@@ -240,13 +240,16 @@
 - [x] **STATUS: Needs improvement (<80% target)**
 - [x] Identified: Need better torus parameters for higher capture rate
 
-### Task 8: Optimization & Production (2 hours) ✅ COMPLETE
-- [x] Documentation and cleanup
-- [x] Final summary created (FINAL_SUMMARY.md)
-- [x] README.md with quick start guide
-- [x] All code committed and pushed
-- [x] Path to 95%+ capture documented
-- [ ] Optimization implementation (deferred to production)
+### Task 8: Critical Validation & Fixes (2 hours) 🔴 IN PROGRESS
+- [x] 64-bit and 128-bit validation tests created
+- [x] Fixed 128-bit test cases (correct factorizations)
+- [x] Verified clock lattice mapping for large primes (✅ works!)
+- [x] Investigated 19² = 361 connection (special modular properties)
+- [x] Confirmed using improved clock lattice mapping
+- [ ] Refactor naming convention (m for boundary, n for pq)
+- [ ] Test with REAL torus data from Phase 2 (not synthetic)
+- [ ] Validate coprime pair extraction at 64/128-bit
+- [ ] Document 19² = 361 mathematical significance
 
 ### Task 9: Final Integration (1 hour) ✅ COMPLETE
 - [x] Integrate all components
