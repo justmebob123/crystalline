@@ -1,0 +1,36 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -O2 -g -I./include -I../../include
+LDFLAGS = -lm -lssl -lcrypto -lpthread
+
+BUILD_DIR = build
+SRC_DIR = src
+TEST_DIR = tests
+
+.PHONY: all clean test-phase1
+
+all: test-phase1
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# Compile prime_float_math from main repo
+/tmp/prime_float_math.o:
+	cd ../.. && gcc -Wall -Wextra -O2 -g -I./include -c src/transcendental/prime_float_math.c -o /tmp/prime_float_math.o
+
+$(BUILD_DIR)/crystal_abacus.o: $(SRC_DIR)/crystal_abacus.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/kissing_spheres.o: $(SRC_DIR)/kissing_spheres.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_phase1_foundation: $(TEST_DIR)/test_phase1_foundation.c $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o /tmp/prime_float_math.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test-phase1: $(BUILD_DIR)/test_phase1_foundation
+	@echo "Running Phase 1 Foundation Tests..."
+	@$(BUILD_DIR)/test_phase1_foundation
+
+clean:
+	rm -rf $(BUILD_DIR)
+	rm -f /tmp/prime_float_math.o
+

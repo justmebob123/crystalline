@@ -409,3 +409,15 @@ test-phase1: $(BUILD_DIR)/test_phase1_foundation
 	@echo "Running Phase 1 Foundation Tests..."
 	@$(BUILD_DIR)/test_phase1_foundation
 
+
+# Link with crystalline prime math library
+PRIME_MATH_OBJS = ../../build/prime_float_math.o
+
+$(BUILD_DIR)/test_phase1_foundation: $(TEST_DIR)/test_phase1_foundation.c $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o
+	@echo "Building with crystalline prime math..."
+	@if [ ! -f ../../build/prime_float_math.o ]; then \
+		echo "Building prime_float_math.o..."; \
+		cd ../.. && make build/prime_float_math.o; \
+	fi
+	$(CC) $(CFLAGS) -o $@ $< $(BUILD_DIR)/crystal_abacus.o $(BUILD_DIR)/kissing_spheres.o ../../build/prime_float_math.o $(LDFLAGS)
+

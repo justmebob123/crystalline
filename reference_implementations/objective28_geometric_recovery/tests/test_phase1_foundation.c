@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include "../include/crystal_abacus.h"
 #include "../include/kissing_spheres.h"
 
@@ -15,8 +14,6 @@ void test_crystal_abacus(void) {
     
     printf("Generating first 50 primes with lattice filtering...\n");
     
-    clock_t start = clock();
-    
     for (int i = 0; i < 50; i++) {
         uint64_t prime = abacus_next_prime(abacus);
         
@@ -25,10 +22,7 @@ void test_crystal_abacus(void) {
         }
     }
     
-    clock_t end = clock();
-    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    
-    printf("\nGenerated 50 primes in %.4f seconds\n", elapsed);
+    printf("\nGenerated 50 primes\n");
     printf("Total primes in abacus: %u\n", abacus->num_primes);
     printf("Total embeddings seen: %u\n\n", abacus->num_seen);
     
@@ -104,18 +98,13 @@ void test_kissing_spheres(void) {
     printf("  Center: %lu\n", center);
     printf("  Depth: %u\n\n", depth);
     
-    clock_t start = clock();
-    
     KissingSphere* root = create_kissing_sphere_hierarchy(center, depth);
     if (!root) {
         printf("Failed to create hierarchy\n");
         return;
     }
     
-    clock_t end = clock();
-    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    
-    printf("Created hierarchy in %.4f seconds\n\n", elapsed);
+    printf("Created hierarchy successfully\n\n");
     
     // Count spheres
     uint32_t total = count_spheres(root);

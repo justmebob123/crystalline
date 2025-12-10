@@ -1,345 +1,245 @@
-# TODO: Complete Geometric Recovery Algorithm Implementation
+# TODO: OBJECTIVE 28 - Geometric Recovery Algorithm
 
-## MAJOR REALIZATION: Anchors Are Geometric, Not K-Based!
+## 🚨 MASTER PLAN RULES (MANDATORY - READ FIRST)
 
-**Date**: December 9, 2024  
-**Status**: 🔄 **70% COMPLETE - FUNDAMENTAL REDESIGN IN PROGRESS**  
-**Previous Status**: 65% complete, 6% success rate with search  
-**Current Status**: Redesigning with geometric anchors (NO known k needed!)
+### RULE 0: ALWAYS READ THESE RULES FIRST
+Before ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Read AUDIT.md for current architectural state
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Update todo.md with current progress
 
----
+### RULE 1: CRITICAL - NO EXTERNAL MATH LIBRARIES
+**PURE crystalline mathematics ONLY (NO math.h, NO gmp, NO external libs)**
+- Uses ONLY prime_* functions from crystalline library
+- Available: prime_sqrt, prime_sin, prime_cos, prime_exp, prime_log, prime_pow, etc.
+- Location: include/prime_float_math.h, include/prime_math.h
+- Implements icosahedral geometry with golden ratio using ONLY prime_* functions
 
-## Executive Summary
+### RULE 2: GIT OPERATIONS
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
 
-**MAJOR REALIZATION**: The anchors are GEOMETRIC, not based on known k values!
-
-**Critical Discovery**: In production, we don't need ANY known k values. The anchors are the **2,376 shared vertices** of the 5 Platonic solids in 13D space!
-
-**The Complete Picture**:
-1. **Anchors = Platonic solid vertices** (FIXED geometric points)
-2. **Target position from Q** (deterministic hash to 13D)
-3. **Find 3 nearest vertices** (using π×φ metric)
-4. **Verify Pythagorean triple** (geometric constraint)
-5. **Triangulate to find k** (barycentric coordinates)
-
-**Additional Discoveries**:
-- **Tetration towers** provide convergence attractors
-- **42° phase offset** in clock calculations (7/60 = 7 minutes)
-- **GCD relationships** reduce search space (gcd(V)=2, gcd(E)=6, gcd(F)=4)
-- **Per-dimension entropy** must be measured separately
-- **Torus intersections** in multi-dimensional space are optimal search points
-- **Partition boundaries** are fractal and self-similar
-- **Donut hole** excludes k≈0 from search space
-
-**See COMPREHENSIVE_DEEP_ANALYSIS.md for complete mathematical framework.**
-
----
-
-## What Actually Works (60%)
-
-### ✅ Phase 1: Clock Position Mapping (Forward Direction)
-- [x] π×φ metric: θ = k·π(1+√5)
-- [x] Babylonian clock mapping: 4 rings (12, 60, 60, 100)
-- [x] 13-dimensional frequency analysis
-- [x] Forward mapping (k → clock position) works perfectly
-- [x] All tests passing
-
-### ✅ Phase 2: Platonic Solid Generation
-- [x] All 5 Platonic solids in 13D
-- [x] Golden ratio vertex generation
-- [x] Overlay system
-- [x] Shared vertex detection (3 found)
-- [x] 12-fold symmetry validated (92.5% quality)
-- [x] All tests passing
-
-### ✅ Phase 3: Framework & Infrastructure
-- [x] Recursive refinement framework
-- [x] 3-growth scaling
-- [x] Dimensional alignment detection
-- [x] Entropy computation
-- [x] Build system integrated
-- [x] Comprehensive documentation
+### RULE 3: BUILD VERIFICATION
+1. Make code changes
+2. Run: `make clean && make 2>&1 | tee build.log`
+3. Count warnings: `grep -c "warning:" build.log`
+4. VERIFY BUILD SUCCESS
+5. Fix all warnings
+6. Rebuild and verify
+7. ONLY THEN commit changes
 
 ---
 
-## What's Broken (40%)
+## 🎯 CURRENT STATE (December 10, 2024)
 
-### ❌ Phase 6: Inverse Mapping (FUNDAMENTALLY WRONG)
+### Phase 1: Foundation - IN PROGRESS (Fixing math.h violation)
 
-**Current Implementation**:
+**CRITICAL ISSUE DISCOVERED**: 
+- ❌ Used math.h in crystal_abacus.c and kissing_spheres.c
+- ❌ Violated RULE 1 of master plan
+- ✅ Must replace ALL math.h functions with prime_* equivalents
+
+### What Needs Immediate Fix
+
+**Files to Fix**:
+1. `src/crystal_abacus.c` - Remove `#include <math.h>`, use prime_sqrt
+2. `src/kissing_spheres.c` - Remove `#include <math.h>`, use prime_sqrt, prime_pow, prime_fabs
+3. `tests/test_phase1_foundation.c` - Remove `#include <time.h>`, use prime timing if needed
+
+**Replacements Needed**:
 ```c
-// Step 1: Basic inverse (WRONG!)
-k = θ / (π·φ)
+// WRONG (what I did):
+#include <math.h>
+sqrt(x) → prime_sqrt(x)
+pow(x, y) → prime_pow(x, y)
+fabs(x) → prime_fabs(x)
 
-// Step 2: Ring correction (WRONG!)
-k += ring_offsets[ring]  // {0, 12, 72, 132, 232}
-
-// Step 3: Position correction (WRONG!)
-k += position
-
-// Step 4: Anchor correction (OSCILLATING!)
-k += weighted_average(3_nearest_anchors)
-```
-
-**Test Results**:
-- Average error: 77.77 (should be < 1.0)
-- Success rate: 4% (should be > 90%)
-- Oscillation: 51% sign changes in anchor correction
-
-**Example Failure (k = 2)**:
-```
-Actual k: 2
-Step 1: k ≈ 0.76   (error = 1.24)
-Step 2: k ≈ 72.76  (error = 70.76)  ← Ring correction makes it worse!
-Step 3: k ≈ 101.76 (error = 99.76)  ← Position correction makes it worse!
-Step 4: k ≈ 95.43  (error = 93.43)  ← Anchor correction doesn't help!
+// RIGHT (what to use):
+#include "../include/prime_float_math.h"
+prime_sqrt(x)
+prime_pow(x, y)
+prime_fabs(x)
 ```
 
 ---
 
-## Root Cause Analysis
+## 📋 CORRECTED IMPLEMENTATION PLAN
 
-### 1. Wrong Coordinate System
+### Phase 1: Foundation (Week 1-2) - FIXING NOW
 
-**Problem**: We're using **linear corrections** on a **spherical structure**.
+- [x] Implement Crystal Abacus structure
+- [x] Implement Kissing Spheres structure
+- [x] Create test suite
+- [ ] **FIX: Remove ALL math.h usage**
+- [ ] **FIX: Use ONLY prime_* functions**
+- [ ] **FIX: Verify build with no external math**
+- [ ] Test with corrected implementation
 
-**Evidence**:
-- Ring structure = concentric spheres
-- Position structure = angular sectors
-- Anchor structure = icosahedral vertices on sphere
+### Phase 2: Tetration (Week 3-4)
 
-**Solution**: Use **spherical coordinate transformations**, not additive corrections.
+- [ ] Implement modular tetration using prime_* functions
+- [ ] Compute tetration attractors (bases: 2,3,5,7,11,13)
+- [ ] Implement damping for entropy reduction
+- [ ] Test convergence to attractors
+- [ ] **CRITICAL**: Use ONLY prime_pow, prime_exp, NO external math
 
-### 2. Wrong Inverse Formula
+### Phase 3: ECDLP Integration (Week 5-6)
 
-**Problem**: The basic inverse `k = θ / (π·φ)` assumes a linear relationship, but the actual relationship is **spherical**.
+- [ ] Integrate OpenSSL EC library (ONLY for EC operations)
+- [ ] Create ECDLP test instances
+- [ ] Map EC points to lattice embeddings using prime_* math
+- [ ] Test with toy secp64k1 first
 
-**Evidence**:
-- Forward mapping works: θ = k·π(1+√5)
-- But inverse doesn't work: k ≠ θ / (π·φ)
-- The relationship is modulated by ring and position
+### Phase 4: Oscillation Detection (Week 7-8)
 
-**Solution**: Implement proper spherical inverse transformation.
+- [ ] Implement FFT using prime_* trigonometric functions
+- [ ] Sample EC point trajectories
+- [ ] Detect frequency/amplitude/phase using prime_sin, prime_cos
+- [ ] Track convergence rate
 
-### 3. Wrong Correction Formulas
+### Phase 5: Recursive Search (Week 9-10)
 
-**Problem**: Adding offsets (ring_offsets, position) assumes **linear space**, but we're in **spherical space**.
+- [ ] Implement oscillation-triggered recursion
+- [ ] Dynamic depth (no fixed limits)
+- [ ] Anchor/sphere reassessment
+- [ ] Attractor recomputation
 
-**Evidence**:
-- Ring correction adds 0, 12, 72, 132, 232
-- Position correction adds 0-99
-- Both make errors worse, not better
+### Phase 6: Multi-Scalar (Week 11-12)
 
-**Solution**: Use **radial and angular transformations** instead of addition.
-
-### 4. Oscillating Anchor Correction
-
-**Problem**: Weighted averaging in **Euclidean space** doesn't work for **spherical interpolation**.
-
-**Evidence**:
-- 51% sign changes (oscillating)
-- Sometimes helps, sometimes hurts
-- Not converging to correct value
-
-**Solution**: Use **spherical barycentric interpolation** with the 3 nearest anchors.
-
----
-
-## Revised Implementation Plan
-
-### Phase 7: Fix Inverse Mapping (4-6 hours) ⏳ CRITICAL
-
-**Task 7.1: Implement Spherical Coordinate System (2 hours)**
-- [ ] Define spherical coordinates: (r, θ, φ) for each ring
-- [ ] Implement spherical_to_k() transformation
-- [ ] Test with known k values
-- [ ] Validate against forward mapping
-
-**Task 7.2: Fix Ring Correction (1 hour)**
-- [ ] Implement radial_transform(ring, k_base)
-- [ ] Account for spherical shell structure
-- [ ] Test with k values in each ring
-- [ ] Validate error reduction
-
-**Task 7.3: Fix Position Correction (1 hour)**
-- [ ] Implement angular_transform(position, k_ring)
-- [ ] Account for angular sector structure
-- [ ] Test with k values at different positions
-- [ ] Validate error reduction
-
-**Task 7.4: Fix Anchor Correction (2 hours)**
-- [ ] Implement spherical_interpolation(3_anchors, target)
-- [ ] Use barycentric coordinates on sphere
-- [ ] Test convergence (no oscillation)
-- [ ] Validate >90% success rate
-
-**Success Criteria**:
-- Average error < 5.0
-- Success rate > 90% (45+ out of 50)
-- No oscillation in anchor correction
-- Monotonic error reduction through steps
-
-### Phase 8: Iterative Refinement (2-3 hours) ⏳ PENDING
-
-**Task 8.1: Newton-Raphson Refinement (1 hour)**
-- [ ] Implement iterative refinement loop
-- [ ] Use gradient descent on error
-- [ ] Converge to exact k value
-- [ ] Test with 50 known k values
-
-**Task 8.2: EC Point Verification (1 hour)**
-- [ ] Implement k·G == Q verification
-- [ ] Use OpenSSL EC operations
-- [ ] Test with real EC points
-- [ ] Validate 100% accuracy
-
-**Task 8.3: Final Testing (1 hour)**
-- [ ] Test with 1000+ k values
-- [ ] Benchmark performance
-- [ ] Document accuracy metrics
-- [ ] Create usage examples
-
-**Success Criteria**:
-- 100% recovery success rate
-- Exact k recovery (error < 0.001)
-- Fast convergence (< 10 iterations)
-- Works with real EC operations
+- [ ] Test at multiple scales using prime_* math
+- [ ] Cross-scalar correlation
+- [ ] Stability verification
+- [ ] Final integration
 
 ---
 
-## Key Insights from Deep Analysis
+## 🔧 IMMEDIATE ACTIONS (Next 1 Hour)
 
-### 1. The Structure is Spherical, Not Linear
+### Action 1: Fix crystal_abacus.c (15 min)
+```c
+// Remove:
+#include <math.h>
 
-**Discovery**: The clock lattice is a **spherical coordinate system**, not a linear one.
+// Add:
+#include "../include/prime_float_math.h"
 
-**Evidence**:
-- Rings = concentric spheres (radial dimension)
-- Positions = angular sectors (angular dimension)
-- Anchors = icosahedral vertices (optimal sampling)
+// Replace:
+sqrt((double)k) → prime_sqrt((double)k)
+```
 
-**Implication**: All corrections must use spherical geometry, not Euclidean.
+### Action 2: Fix kissing_spheres.c (15 min)
+```c
+// Remove:
+#include <math.h>
 
-### 2. The Oscillation is Real
+// Add:
+#include "../include/prime_float_math.h"
 
-**Discovery**: The anchor correction oscillates with **51% sign changes**.
+// Replace:
+pow(PHI, -(double)depth) → prime_pow(PHI, -(double)depth)
+pow(PHI, depth) → prime_pow(PHI, depth)
+sqrt(dx*dx + dy*dy + dz*dz) → prime_sqrt(dx*dx + dy*dy + dz*dz)
+fabs(dist - sum_radii) → prime_fabs(dist - sum_radii)
+llabs(...) → (int64_t)prime_fabs((double)(...))
+```
 
-**Evidence**:
-- Step 1→2: 0% sign changes (always positive)
-- Step 2→3: 0% sign changes (always positive)
-- Step 3→4: 51% sign changes (oscillating!)
+### Action 3: Fix test file (10 min)
+```c
+// Remove:
+#include <time.h>
 
-**Implication**: This is the "additional oscillation" you asked about. It's caused by using Euclidean averaging on a spherical structure.
+// Use simple counter or remove timing if not critical
+```
 
-### 3. The Polytopic Structure Exists
-
-**Discovery**: The correction steps form a **polytopic structure** in spherical space.
-
-**Evidence**:
-- Ring structure = concentric polytopes (spheres)
-- Position structure = angular polytopes (sectors)
-- Anchor structure = icosahedral polytope (vertices)
-
-**Implication**: The corrections should follow polytopic paths, not linear paths.
-
-### 4. The 12-Fold Symmetry is Validated
-
-**Discovery**: Both position distribution and anchor usage show **>92% symmetry quality**.
-
-**Evidence**:
-- Position distribution: 92.5% symmetry
-- Anchor usage: 94.6% symmetry
-- Both confirm 12-fold structure
-
-**Implication**: The Icosahedron is the correct anchor structure.
-
----
-
-## Estimated Timeline
-
-### Revised Completion Estimate
-
-**Previous estimate**: 1-2 hours (99% → 100%)  
-**Actual remaining**: 6-9 hours (60% → 100%)
-
-**Breakdown**:
-- Phase 7 (Fix inverse mapping): 4-6 hours
-- Phase 8 (Iterative refinement): 2-3 hours
-
-**Total**: 6-9 hours to achieve 100% completion with >90% recovery success rate.
+### Action 4: Rebuild and Test (20 min)
+```bash
+make clean
+make test-phase1 2>&1 | tee build.log
+grep "math.h" build.log  # Should be empty
+grep "warning" build.log  # Fix all warnings
+./build/test_phase1_foundation
+```
 
 ---
 
-## Success Metrics
+## 📊 AVAILABLE PRIME_* FUNCTIONS
 
-### Current Performance (FAILING)
-- ✗ Average error: 77.77
-- ✗ Success rate: 4% (2/50)
-- ✗ Oscillation: 51% sign changes
-- ✗ Error range: 0.62 - 211.61
+From `include/prime_float_math.h`:
 
-### Target Performance (PASSING)
-- ✓ Average error: < 5.0
-- ✓ Success rate: > 90% (45+/50)
-- ✓ Oscillation: < 10% sign changes
-- ✓ Error range: < 10.0 for all cases
+**Basic Math**:
+- `prime_sqrt(x)` - Square root
+- `prime_exp(x)` - Exponential e^x
+- `prime_log(x)` - Natural logarithm
+- `prime_pow(x, y)` - Power x^y
+- `prime_fabs(x)` - Absolute value
 
-### Final Performance (COMPLETE)
-- ✓ Average error: < 0.1
-- ✓ Success rate: 100% (50/50)
-- ✓ Oscillation: 0% (monotonic convergence)
-- ✓ Error range: < 0.001 for all cases
+**Trigonometric**:
+- `prime_sin(x)` - Sine
+- `prime_cos(x)` - Cosine
+- `prime_tan(x)` - Tangent
+- `prime_atan(x)` - Arctangent
+- `prime_atan2(y, x)` - Two-argument arctangent
 
----
+**Utility**:
+- `prime_floor(x)` - Floor
+- `prime_ceil(x)` - Ceiling
+- `prime_round(x)` - Round
+- `prime_fmod(x, y)` - Modulo
+- `prime_fmax(x, y)` - Maximum
+- `prime_fmin(x, y)` - Minimum
+- `prime_isnan(x)` - Check NaN
+- `prime_isinf(x)` - Check infinity
 
-## Documentation Status
-
-### Completed Documentation (5,600+ lines)
-- [x] DEEP_ANALYSIS_FINDINGS.md - Critical issues identified
-- [x] PHASE1_COMPLETE.md - Clock mapping
-- [x] PHASE2_COMPLETE.md - Platonic solids
-- [x] PHASE6_COMPLETE.md - Enhanced k recovery (now known to be broken)
-- [x] SESSION_SUMMARY_DEC9.md - Session achievements
-- [x] IMPLEMENTATION_PROGRESS.md - Progress tracking
-- [x] CURRENT_STATUS.md - Status updates
-
-### Required Documentation
-- [ ] PHASE7_SPHERICAL_MAPPING.md - Spherical coordinate system
-- [ ] PHASE8_ITERATIVE_REFINEMENT.md - Newton-Raphson refinement
-- [ ] FINAL_VALIDATION_REPORT.md - Complete validation results
-- [ ] OBJECTIVE_28_COMPLETE.md - Final completion report
+**ALL AVAILABLE - USE THESE INSTEAD OF math.h!**
 
 ---
 
-## Conclusion
+## ✅ COMPLETION CRITERIA
 
-**The algorithm is NOT 99% complete.** The deep analysis revealed fundamental issues with the inverse mapping that prevent reliable k recovery.
+### Phase 1 (Corrected)
+- [ ] NO math.h includes anywhere
+- [ ] NO gmp includes anywhere
+- [ ] ONLY prime_* functions used
+- [ ] Build succeeds with zero warnings
+- [ ] All tests pass
+- [ ] Crystal Abacus generates primes correctly
+- [ ] Kissing Spheres hierarchy works correctly
 
-**Real status: 60% complete**
-
-**What works**:
-- ✓ Forward mapping (k → clock)
-- ✓ Platonic solid generation
-- ✓ Framework and infrastructure
-- ✓ 12-fold symmetry validation
-
-**What's broken**:
-- ✗ Inverse mapping (clock → k)
-- ✗ All correction formulas
-- ✗ Anchor interpolation
-- ✗ Convergence
-
-**Next steps**:
-1. Implement spherical coordinate system
-2. Fix all correction formulas
-3. Achieve >90% recovery success rate
-4. Add iterative refinement
-5. Achieve 100% recovery success rate
-
-**Estimated time to completion**: 6-9 hours
+### Overall Project
+- [ ] All 6 phases implemented
+- [ ] Uses real ECDLP (secp256k1 or toy secp64k1)
+- [ ] Oscillation detection working
+- [ ] Tetration integration working
+- [ ] Multi-torus analysis working
+- [ ] Recursive stabilization working (dynamic depth)
+- [ ] 95%+ recovery rate achieved
+- [ ] **ZERO external math library usage**
 
 ---
 
-**Status**: ⚠️ **CRITICAL ISSUES - MAJOR REWORK REQUIRED**
+## 🎯 KEY INSIGHTS
 
-See DEEP_ANALYSIS_FINDINGS.md for complete analysis and recommendations.
+1. **NO EXTERNAL MATH LIBRARIES** - This is RULE 1!
+2. **Use prime_* functions ONLY** - They're all available
+3. **Crystalline math is self-contained** - No dependencies
+4. **Golden ratio, π, e** - All computed from prime lattice
+5. **Arbitrary precision** - Built into prime_* system
+
+---
+
+## 📝 NEXT IMMEDIATE STEPS
+
+1. Fix crystal_abacus.c (remove math.h)
+2. Fix kissing_spheres.c (remove math.h)
+3. Fix test file (remove time.h if possible)
+4. Rebuild and verify NO external math
+5. Test all functionality still works
+6. Commit with message: "Fix RULE 1 violation: Remove math.h, use prime_* functions"
+7. Continue with Phase 2 (Tetration) using ONLY prime_* functions
+
+**Status**: Phase 1 needs correction before proceeding
+**Priority**: CRITICAL - Fix RULE 1 violation immediately
