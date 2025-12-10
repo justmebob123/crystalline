@@ -628,3 +628,12 @@ $(BUILD_DIR)/test_clock_lattice_visualization: $(TEST_DIR)/test_clock_lattice_vi
 test-clock-viz: $(BUILD_DIR)/test_clock_lattice_visualization
 	@echo "Running Clock Lattice Visualization Test..."
 	@$(BUILD_DIR)/test_clock_lattice_visualization
+
+# G refinement with clock lattice test (Phase 4)
+$(BUILD_DIR)/test_g_refinement_with_clock: $(TEST_DIR)/test_g_refinement_with_clock.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/prime_float_math.o ../../src/geometry/clock_lattice.o
+	@echo "Building G refinement with clock lattice test..."
+	@$(CC) $(CFLAGS) -I../../include -o $@ $^ $(LDFLAGS)
+
+test-g-refine: $(BUILD_DIR)/test_g_refinement_with_clock
+	@echo "Running G Refinement with Clock Lattice Test..."
+	@$(BUILD_DIR)/test_g_refinement_with_clock

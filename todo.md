@@ -194,11 +194,15 @@
 - [x] **60° angular separation between p=2 and q=5**
 - [x] Documented in PHASE3_CLOCK_LATTICE_COMPLETE.md
 
-**Phase 4: Reassess G with Enhanced Info (1 hour)**
-- [ ] Use p and q to refine G estimate
-- [ ] Re-triangulate with refined G
-- [ ] Measure improvement in torus bounds
-- [ ] Check if reduction factor improves
+**Phase 4: Reassess G with Enhanced Info (1 hour)** ⚠️ REVISED
+- [x] Tested G refinement using clock positions
+- [x] **LEARNING: Clock lattice doesn't improve G estimation**
+- [x] **ROOT CAUSE: G is independent of factorization**
+- [x] **INSIGHT: Clock lattice visualizes torus structure, not G**
+- [x] Documented in PHASE4_G_REFINEMENT_ANALYSIS.md
+- [ ] **REVISED TASK: Map all 20 tori to clock positions**
+- [ ] Visualize complete pq factorization structure
+- [ ] Understand hierarchical torus relationships
 
 **Phase 5: Trainable Micro-Model (2 hours)**
 - [ ] Define model structure (anchors + tori + G)
@@ -285,12 +289,12 @@
 
 ## 📊 PROGRESS TRACKING
 
-- **Time Spent:** 11 hours (69% complete)
-- **Time Remaining:** 5 hours
-- **Completion:** 69% (11/16 hours)
+- **Time Spent:** 12 hours (75% complete)
+- **Time Remaining:** 4 hours
+- **Completion:** 75% (12/16 hours)
 - **Status:** AHEAD OF SCHEDULE - MAJOR BREAKTHROUGHS
 
-**Latest Achievement:** **p=2 and q=5 extracted from oscillation periods!** Consistent across all bit lengths (8, 16, 32-bit)
+**Latest Achievement:** **Clock lattice visualization complete!** Discovered that clock positions visualize factorization structure, not G. Revised Phase 4 to map all 20 tori to clock positions.
 
 **Key Breakthroughs:**
 1. Per-sample analysis: 6.75x best reduction (85% elimination)
