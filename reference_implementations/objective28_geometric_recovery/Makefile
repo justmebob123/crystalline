@@ -540,3 +540,13 @@ $(BUILD_DIR)/test_harmonic_folding: $(TEST_DIR)/test_harmonic_folding.c $(BUILD_
 test-harmonic: $(BUILD_DIR)/test_harmonic_folding
 	@echo "Running Harmonic Folding Tests..."
 	@$(BUILD_DIR)/test_harmonic_folding
+
+# Comprehensive torus analysis test (up to 20 tori)
+$(BUILD_DIR)/test_comprehensive_torus: $(TEST_DIR)/test_comprehensive_torus_analysis.c $(BUILD_DIR)/g_triangulation.o $(BUILD_DIR)/plateau_detection.o $(BUILD_DIR)/oscillation_decomposition.o $(BUILD_DIR)/multi_torus_tracker.o $(BUILD_DIR)/harmonic_folding.o $(BUILD_DIR)/prime_float_math.o
+	@echo "Building comprehensive torus analysis test..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: test-comprehensive
+test-comprehensive: $(BUILD_DIR)/test_comprehensive_torus
+	@echo "Running Comprehensive Torus Analysis (up to 20 tori)..."
+	@$(BUILD_DIR)/test_comprehensive_torus
