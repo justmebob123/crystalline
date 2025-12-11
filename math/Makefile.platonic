@@ -26,7 +26,8 @@ SRCS = $(SRC_DIR)/schlafli_parser.c \
        $(SRC_DIR)/cross_polytope_generator_abacus.c \
        $(SRC_DIR)/dodecahedron_generator_abacus.c \
        $(SRC_DIR)/icosahedron_generator_abacus.c \
-       $(SRC_DIR)/golden_ratio_abacus.c
+       $(SRC_DIR)/golden_ratio_abacus.c \
+       $(SRC_DIR)/platonic_clock.c
 
 # Object files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
@@ -36,7 +37,8 @@ LIB_STATIC = $(LIB_DIR)/libplatonic.a
 LIB_SHARED = $(LIB_DIR)/libplatonic.so
 
 # Test files
-TEST_SRCS = $(TEST_DIR)/test_generator.c
+TEST_SRCS = $(TEST_DIR)/test_generator.c \
+            $(TEST_DIR)/test_clock_integration.c
 TEST_BINS = $(TEST_SRCS:$(TEST_DIR)/%.c=$(BIN_DIR)/%)
 
 # Default target
@@ -79,6 +81,11 @@ test: tests
 	@echo "Running tests..."
 	@echo "==============================================="
 	@LD_LIBRARY_PATH=./lib $(BIN_DIR)/test_generator
+	@echo "==============================================="
+	@echo ""
+	@echo "Running clock integration tests..."
+	@echo "==============================================="
+	@LD_LIBRARY_PATH=./lib $(BIN_DIR)/test_clock_integration
 	@echo "==============================================="
 	@echo ""
 
