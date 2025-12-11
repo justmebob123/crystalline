@@ -11,6 +11,16 @@
 #include <stdio.h>
 #include <math.h>
 
+// Forward declarations for specialized generators
+extern PlatonicSolid* platonic_generate_tetrahedron(void);
+extern PlatonicSolid* platonic_generate_cube(void);
+extern PlatonicSolid* platonic_generate_octahedron(void);
+extern PlatonicSolid* platonic_generate_dodecahedron(void);
+extern PlatonicSolid* platonic_generate_icosahedron(void);
+extern PlatonicSolid* platonic_generate_5cell(void);
+extern PlatonicSolid* platonic_generate_tesseract(void);
+extern PlatonicSolid* platonic_generate_16cell(void);
+
 // ============================================================================
 // MEMORY MANAGEMENT
 // ============================================================================
@@ -383,6 +393,118 @@ void platonic_print_detailed(const PlatonicSolid* solid) {
     printf("  Validation:\n");
     printf("    Valid: %s\n", solid->is_valid ? "yes" : "no");
     printf("    Regular: %s\n", solid->is_regular ? "yes" : "no");
+}
+
+// ============================================================================
+// MAIN GENERATOR FUNCTION
+// ============================================================================
+
+PlatonicSolid* platonic_generate(uint32_t dimension, 
+                                  const uint32_t* schlafli, 
+                                  uint32_t length) {
+    if (!schlafli || length == 0) {
+        return NULL;
+    }
+    
+    // Create Schläfli symbol
+    SchlafliSymbol* symbol = schlafli_create(schlafli, length);
+    if (!symbol || !symbol->is_valid) {
+        if (symbol) schlafli_free(symbol);
+        return NULL;
+    }
+    
+    // Check dimension matches
+    if (dimension != symbol->dimension) {
+        fprintf(stderr, "Error: Dimension mismatch (expected %u, got %u)\n",
+                symbol->dimension, dimension);
+        schlafli_free(symbol);
+        return NULL;
+    }
+    
+    PlatonicSolid* solid = NULL;
+    
+    // 3D solids
+    if (dimension == 3 && length == 2) {
+        uint32_t p = schlafli[0];
+        uint32_t q = schlafli[1];
+        
+        if (p == 3 && q == 3) {
+            solid = platonic_generate_tetrahedron();
+        } else if (p == 4 && q == 3) {
+            solid = platonic_generate_cube();
+        } else if (p == 3 && q == 4) {
+            solid = platonic_generate_octahedron();
+        } else if (p == 5 && q == 3) {
+            solid = platonic_generate_dodecahedron();
+        } else if (p == 3 && q == 5) {
+            solid = platonic_generate_icosahedron();
+        }
+    }
+    // 4D solids
+    else if (dimension == 4 && length == 3) {
+        uint32_t p = schlafli[0];
+        uint32_t q = schlafli[1];
+        uint32_t r = schlafli[2];
+        
+        if (p == 3 && q == 3 && r == 3) {
+            solid = platonic_generate_5cell();
+        } else if (p == 4 && q == 3 && r == 3) {
+            solid = platonic_generate_tesseract();
+        } else if (p == 3 && q == 3 && r == 4) {
+            solid = platonic_generate_16cell();
+        }
+        // 24-cell, 120-cell, 600-cell not yet implemented
+    }
+    // nD solids (simplex, hypercube, cross-polytope)
+    else {
+        // Check if all components are 3 (simplex)
+        bool all_three = true;
+        for (uint32_t i = 0; i < length; i++) {
+            if (schlafli[i] != 3) {
+                all_three = false;
+                break;
+            }
+        }
+        if (all_three) {
+            solid = platonic_generate_simplex(dimension);
+        }
+        
+        // Check if hypercube {4,3,...,3}
+        if (!solid && schlafli[0] == 4) {
+            bool rest_three = true;
+            for (uint32_t i = 1; i < length; i++) {
+                if (schlafli[i] != 3) {
+                    rest_three = false;
+                    break;
+                }
+            }
+            if (rest_three) {
+                solid = platonic_generate_hypercube(dimension);
+            }
+        }
+        
+        // Check if cross-polytope {3,...,3,4}
+        if (!solid && schlafli[length - 1] == 4) {
+            bool rest_three = true;
+            for (uint32_t i = 0; i < length - 1; i++) {
+                if (schlafli[i] != 3) {
+                    rest_three = false;
+                    break;
+                }
+            }
+            if (rest_three) {
+                solid = platonic_generate_cross_polytope(dimension);
+            }
+        }
+    }
+    
+    schlafli_free(symbol);
+    
+    if (!solid) {
+        fprintf(stderr, "Error: Could not generate solid for given Schläfli symbol\n");
+    }
+    
+    return solid;
 }
 
 // ============================================================================

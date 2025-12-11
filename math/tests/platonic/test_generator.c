@@ -118,6 +118,66 @@ void test_cube() {
     platonic_free(solid);
 }
 
+void test_octahedron() {
+    TEST("Octahedron (3D Cross-polytope)");
+    
+    PlatonicSolid* solid = platonic_generate_octahedron();
+    ASSERT_TRUE(solid != NULL);
+    ASSERT_EQ(solid->dimension, 3);
+    ASSERT_EQ(solid->num_vertices, 6);
+    ASSERT_EQ(solid->num_edges, 12);
+    ASSERT_EQ(solid->embedding_dim, 72);  // 6 × 12
+    ASSERT_EQ(solid->hidden_dim, 144);    // 12 × 12
+    ASSERT_TRUE(platonic_validate_euler(solid));
+    
+    printf("Octahedron properties:\n");
+    platonic_print(solid);
+    
+    platonic_free(solid);
+}
+
+void test_dodecahedron() {
+    TEST("Dodecahedron (3D, Golden Ratio)");
+    
+    PlatonicSolid* solid = platonic_generate_dodecahedron();
+    ASSERT_TRUE(solid != NULL);
+    ASSERT_EQ(solid->dimension, 3);
+    ASSERT_EQ(solid->num_vertices, 20);
+    ASSERT_EQ(solid->num_edges, 30);
+    ASSERT_EQ(solid->num_faces, 12);
+    ASSERT_EQ(solid->embedding_dim, 240);  // 20 × 12
+    ASSERT_EQ(solid->hidden_dim, 360);     // 30 × 12
+    ASSERT_EQ(solid->num_layers, 12);
+    ASSERT_TRUE(solid->has_golden_ratio);
+    ASSERT_TRUE(platonic_validate_euler(solid));
+    
+    printf("Dodecahedron properties:\n");
+    platonic_print(solid);
+    
+    platonic_free(solid);
+}
+
+void test_icosahedron() {
+    TEST("Icosahedron (3D, Maximum Symmetry)");
+    
+    PlatonicSolid* solid = platonic_generate_icosahedron();
+    ASSERT_TRUE(solid != NULL);
+    ASSERT_EQ(solid->dimension, 3);
+    ASSERT_EQ(solid->num_vertices, 12);
+    ASSERT_EQ(solid->num_edges, 30);
+    ASSERT_EQ(solid->num_faces, 20);
+    ASSERT_EQ(solid->embedding_dim, 144);  // 12 × 12
+    ASSERT_EQ(solid->hidden_dim, 360);     // 30 × 12
+    ASSERT_EQ(solid->num_layers, 20);
+    ASSERT_TRUE(solid->has_golden_ratio);
+    ASSERT_TRUE(platonic_validate_euler(solid));
+    
+    printf("Icosahedron properties:\n");
+    platonic_print(solid);
+    
+    platonic_free(solid);
+}
+
 // ============================================================================
 // 4D SOLID TESTS
 // ============================================================================
@@ -162,6 +222,76 @@ void test_tesseract() {
     platonic_print(solid);
     
     platonic_free(solid);
+}
+
+void test_16cell() {
+    TEST("16-cell (4D Cross-polytope)");
+    
+    PlatonicSolid* solid = platonic_generate_16cell();
+    ASSERT_TRUE(solid != NULL);
+    ASSERT_EQ(solid->dimension, 4);
+    ASSERT_EQ(solid->num_vertices, 8);
+    ASSERT_EQ(solid->num_edges, 24);
+    ASSERT_EQ(solid->embedding_dim, 96);   // 8 × 12
+    ASSERT_EQ(solid->hidden_dim, 288);     // 24 × 12
+    ASSERT_TRUE(platonic_validate_euler(solid));
+    
+    printf("16-cell properties:\n");
+    platonic_print(solid);
+    
+    platonic_free(solid);
+}
+
+// ============================================================================
+// MAIN GENERATOR TESTS
+// ============================================================================
+
+void test_main_generator() {
+    TEST("Main Generator Function");
+    
+    // Test 3D solids
+    PlatonicSolid* tetra = platonic_generate(3, (uint32_t[]){3,3}, 2);
+    ASSERT_TRUE(tetra != NULL);
+    ASSERT_EQ(tetra->num_vertices, 4);
+    platonic_free(tetra);
+    
+    PlatonicSolid* cube = platonic_generate(3, (uint32_t[]){4,3}, 2);
+    ASSERT_TRUE(cube != NULL);
+    ASSERT_EQ(cube->num_vertices, 8);
+    platonic_free(cube);
+    
+    PlatonicSolid* octa = platonic_generate(3, (uint32_t[]){3,4}, 2);
+    ASSERT_TRUE(octa != NULL);
+    ASSERT_EQ(octa->num_vertices, 6);
+    platonic_free(octa);
+    
+    PlatonicSolid* dodeca = platonic_generate(3, (uint32_t[]){5,3}, 2);
+    ASSERT_TRUE(dodeca != NULL);
+    ASSERT_EQ(dodeca->num_vertices, 20);
+    platonic_free(dodeca);
+    
+    PlatonicSolid* icosa = platonic_generate(3, (uint32_t[]){3,5}, 2);
+    ASSERT_TRUE(icosa != NULL);
+    ASSERT_EQ(icosa->num_vertices, 12);
+    platonic_free(icosa);
+    
+    // Test 4D solids
+    PlatonicSolid* cell5 = platonic_generate(4, (uint32_t[]){3,3,3}, 3);
+    ASSERT_TRUE(cell5 != NULL);
+    ASSERT_EQ(cell5->num_vertices, 5);
+    platonic_free(cell5);
+    
+    PlatonicSolid* tess = platonic_generate(4, (uint32_t[]){4,3,3}, 3);
+    ASSERT_TRUE(tess != NULL);
+    ASSERT_EQ(tess->num_vertices, 16);
+    platonic_free(tess);
+    
+    PlatonicSolid* cell16 = platonic_generate(4, (uint32_t[]){3,3,4}, 3);
+    ASSERT_TRUE(cell16 != NULL);
+    ASSERT_EQ(cell16->num_vertices, 8);
+    platonic_free(cell16);
+    
+    printf("Main generator: All tests passed!\n");
 }
 
 // ============================================================================
@@ -218,13 +348,20 @@ int main(void) {
     // Schläfli tests
     test_schlafli_parser();
     
-    // 3D tests
+    // 3D tests (all 5 Platonic solids)
     test_tetrahedron();
     test_cube();
+    test_octahedron();
+    test_dodecahedron();
+    test_icosahedron();
     
     // 4D tests
     test_5cell();
     test_tesseract();
+    test_16cell();
+    
+    // Main generator test
+    test_main_generator();
     
     // Scaling tests
     test_simplex_scaling();
