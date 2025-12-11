@@ -19,6 +19,9 @@
  * ============================================================================
  */
 
+/* Forward declarations */
+static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosition* pos);
+
 /**
  * @brief Ensure abacus has enough capacity
  */
@@ -50,6 +53,72 @@ static MathError abacus_ensure_capacity(CrystallineAbacus* abacus, size_t min_ca
 /**
  * @brief Map a digit value to a clock position
  */
+/**
+ * @brief Compare magnitudes of two abacuses (ignore signs)
+ * @return -1 if |a| < |b|, 0 if |a| == |b|, 1 if |a| > |b|
+ */
+static int compare_magnitude(const CrystallineAbacus* a, const CrystallineAbacus* b) {
+    /* Compare number of beads first */
+    if (a->num_beads > b->num_beads) return 1;
+    if (a->num_beads < b->num_beads) return -1;
+    
+    /* Same number of beads, compare from most significant */
+    for (size_t i = a->num_beads; i > 0; i--) {
+        uint32_t digit_a = a->beads[i-1].value;
+        uint32_t digit_b = b->beads[i-1].value;
+        
+        if (digit_a > digit_b) return 1;
+        if (digit_a < digit_b) return -1;
+    }
+    
+    return 0; /* Equal */
+}
+
+/**
+ * @brief Subtract magnitudes (assumes |a| >= |b|)
+ * @param result Output abacus
+ * @param a Larger magnitude
+ * @param b Smaller magnitude
+ * @return MATH_SUCCESS or error code
+ */
+static MathError subtract_magnitude(CrystallineAbacus* result, 
+                                    const CrystallineAbacus* a, 
+                                    const CrystallineAbacus* b) {
+    if (abacus_ensure_capacity(result, a->num_beads) != MATH_SUCCESS) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    int32_t borrow = 0;
+    size_t i = 0;
+    
+    while (i < a->num_beads) {
+        int32_t digit_a = (i < a->num_beads) ? a->beads[i].value : 0;
+        int32_t digit_b = (i < b->num_beads) ? b->beads[i].value : 0;
+        
+        int32_t diff = digit_a - digit_b - borrow;
+        
+        if (diff < 0) {
+            diff += result->base;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        
+        result->beads[i].value = (uint32_t)diff;
+        result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+        
+        if (map_digit_to_position((uint32_t)diff, result->base, &result->beads[i].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+        
+        i++;
+    }
+    
+    result->num_beads = i;
+    
+    return MATH_SUCCESS;
+}
+
 static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosition* pos) {
     if (!pos) {
         return MATH_ERROR_INVALID_ARG;
@@ -298,39 +367,29 @@ MathError abacus_add(CrystallineAbacus* result, const CrystallineAbacus* a, cons
         result->negative = a->negative;
         
     } else {
-        /* Different signs: subtract magnitudes */
-        /* For now, convert to BigInt and back */
-        /* TODO: Implement direct geometric subtraction */
+        /* Different signs: subtract magnitudes (PURE GEOMETRIC) */
+        int cmp = compare_magnitude(a, b);
         
-        BigInt* bi_a = abacus_to_bigint(a);
-        BigInt* bi_b = abacus_to_bigint(b);
-        BigInt* bi_result = bigint_new();
-        
-        if (!bi_a || !bi_b || !bi_result) {
-            bigint_free(bi_a);
-            bigint_free(bi_b);
-            bigint_free(bi_result);
-            return MATH_ERROR_OUT_OF_MEMORY;
-        }
-        
-        MathError err = bigint_add(bi_result, bi_a, bi_b);
-        
-        if (err == MATH_SUCCESS) {
-            CrystallineAbacus* temp = abacus_from_bigint(bi_result, result->base);
-            if (temp) {
-                /* Copy to result */
-                if (abacus_ensure_capacity(result, temp->num_beads) == MATH_SUCCESS) {
-                    memcpy(result->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
-                    result->num_beads = temp->num_beads;
-                    result->negative = temp->negative;
-                }
-                abacus_free(temp);
+        if (cmp == 0) {
+            /* Equal magnitudes, result is zero */
+            result->num_beads = 1;
+            result->beads[0].value = 0;
+            result->beads[0].weight = 1;
+            result->negative = false;
+            if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
+                return MATH_ERROR_INVALID_ARG;
             }
+        } else if (cmp > 0) {
+            /* |a| > |b|: subtract b from a, keep sign of a */
+            MathError err = subtract_magnitude(result, a, b);
+            if (err != MATH_SUCCESS) return err;
+            result->negative = a->negative;
+        } else {
+            /* |a| < |b|: subtract a from b, flip sign of a */
+            MathError err = subtract_magnitude(result, b, a);
+            if (err != MATH_SUCCESS) return err;
+            result->negative = !a->negative;
         }
-        
-        bigint_free(bi_a);
-        bigint_free(bi_b);
-        bigint_free(bi_result);
     }
     
     return abacus_normalize(result);
@@ -341,19 +400,73 @@ MathError abacus_sub(CrystallineAbacus* result, const CrystallineAbacus* a, cons
         return MATH_ERROR_INVALID_ARG;
     }
     
-    /* Create a copy of b with flipped sign */
-    CrystallineAbacus* b_neg = abacus_copy(b);
-    if (!b_neg) {
-        return MATH_ERROR_OUT_OF_MEMORY;
+    /* Bases must match */
+    if (a->base != b->base || result->base != a->base) {
+        return MATH_ERROR_INVALID_ARG;
     }
     
-    b_neg->negative = !b_neg->negative;
+    /* Subtraction is addition with flipped sign (PURE GEOMETRIC) */
+    /* a - b = a + (-b) */
     
-    MathError err = abacus_add(result, a, b_neg);
+    /* Handle signs */
+    if (a->negative == b->negative) {
+        /* Same sign: subtract magnitudes */
+        int cmp = compare_magnitude(a, b);
+        
+        if (cmp == 0) {
+            /* Equal magnitudes, result is zero */
+            result->num_beads = 1;
+            result->beads[0].value = 0;
+            result->beads[0].weight = 1;
+            result->negative = false;
+            if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
+                return MATH_ERROR_INVALID_ARG;
+            }
+        } else if (cmp > 0) {
+            /* |a| > |b|: subtract b from a, keep sign of a */
+            MathError err = subtract_magnitude(result, a, b);
+            if (err != MATH_SUCCESS) return err;
+            result->negative = a->negative;
+        } else {
+            /* |a| < |b|: subtract a from b, flip sign */
+            MathError err = subtract_magnitude(result, b, a);
+            if (err != MATH_SUCCESS) return err;
+            result->negative = !a->negative;
+        }
+    } else {
+        /* Different signs: add magnitudes */
+        size_t max_beads = (a->num_beads > b->num_beads) ? a->num_beads : b->num_beads;
+        
+        if (abacus_ensure_capacity(result, max_beads + 1) != MATH_SUCCESS) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        uint32_t carry = 0;
+        size_t i = 0;
+        
+        while (i < max_beads || carry > 0) {
+            uint32_t digit_a = (i < a->num_beads) ? a->beads[i].value : 0;
+            uint32_t digit_b = (i < b->num_beads) ? b->beads[i].value : 0;
+            
+            uint32_t sum = digit_a + digit_b + carry;
+            carry = sum / result->base;
+            uint32_t digit = sum % result->base;
+            
+            result->beads[i].value = digit;
+            result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+            
+            if (map_digit_to_position(digit, result->base, &result->beads[i].position) != MATH_SUCCESS) {
+                return MATH_ERROR_INVALID_ARG;
+            }
+            
+            i++;
+        }
+        
+        result->num_beads = i;
+        result->negative = a->negative;
+    }
     
-    abacus_free(b_neg);
-    
-    return err;
+    return abacus_normalize(result);
 }
 
 MathError abacus_mul(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b) {
