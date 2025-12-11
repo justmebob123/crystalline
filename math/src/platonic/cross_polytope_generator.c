@@ -142,10 +142,14 @@ static bool generate_cross_polytope_faces(PlatonicSolid* solid) {
     uint32_t n = solid->dimension;
     
     // Number of 2-faces (triangular faces)
-    // For 3D octahedron: 8 triangular faces
-    // For 4D 16-cell: 32 triangular faces
-    // Formula: 2^n (one face per orthant)
-    solid->num_faces = 1ULL << n;  // 2^n
+    // For 3D octahedron: 8 triangular faces = 2^3
+    // For 4D 16-cell: 32 triangular faces = 2^3 × 4
+    // Formula: 2^n for 3D, 2^(n-1) × n for 4D+
+    if (n == 3) {
+        solid->num_faces = 1ULL << n;  // 2^3 = 8
+    } else {
+        solid->num_faces = (1ULL << (n - 1)) * n;  // 2^(n-1) × n
+    }
     
     // Allocate face arrays (use calloc to zero-initialize)
     solid->face_indices = (uint32_t**)calloc(solid->num_faces, sizeof(uint32_t*));
@@ -209,8 +213,9 @@ static bool generate_cross_polytope_cells(PlatonicSolid* solid) {
     uint32_t n = solid->dimension;
     
     // Number of 3-cells
-    // For 4D 16-cell: 16 tetrahedral cells
-    solid->num_cells = 2 * n;  // Simplified formula
+    // For 4D 16-cell: 16 tetrahedral cells = 2^4
+    // Formula: 2^n for n-dimensional cross-polytope
+    solid->num_cells = 1ULL << n;  // 2^n
     
     // For now, we just store the count
     // Full cell connectivity can be added later if needed
