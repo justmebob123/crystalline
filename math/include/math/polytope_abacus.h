@@ -11,6 +11,7 @@
 
 #include "math/types.h"
 #include "math/abacus.h"
+#include "math/polytope.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -104,7 +105,7 @@ void platonic_abacus_free(PlatonicSolidAbacus* solid);
  * @param precision Fractional precision
  * @return Abacus-based solid, or NULL on error
  */
-PlatonicSolidAbacus* platonic_double_to_abacus(const struct PlatonicSolid* solid_double,
+PlatonicSolidAbacus* platonic_double_to_abacus(const PlatonicSolid* solid_double,
                                                 uint32_t base, int32_t precision);
 
 /**
@@ -112,7 +113,7 @@ PlatonicSolidAbacus* platonic_double_to_abacus(const struct PlatonicSolid* solid
  * @param solid_abacus Abacus-based solid
  * @return Double-based solid, or NULL on error
  */
-struct PlatonicSolid* platonic_abacus_to_double(const PlatonicSolidAbacus* solid_abacus);
+PlatonicSolid* platonic_abacus_to_double(const PlatonicSolidAbacus* solid_abacus);
 
 #ifdef __cplusplus
 }

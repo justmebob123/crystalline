@@ -136,7 +136,7 @@ PlatonicSolidAbacus* platonic_double_to_abacus(const PlatonicSolid* solid_double
     solid->symmetry_order = solid_double->symmetry_order;
     solid->has_golden_ratio = solid_double->has_golden_ratio;
     solid->is_regular = solid_double->is_regular;
-    solid->is_convex = solid_double->is_convex;
+    solid->is_convex = true;  // All Platonic solids are convex
     solid->embedding_dim = solid_double->embedding_dim;
     solid->hidden_dim = solid_double->hidden_dim;
     solid->num_layers = solid_double->num_layers;
@@ -266,7 +266,7 @@ PlatonicSolid* platonic_abacus_to_double(const PlatonicSolidAbacus* solid_abacus
     solid->symmetry_order = solid_abacus->symmetry_order;
     solid->has_golden_ratio = solid_abacus->has_golden_ratio;
     solid->is_regular = solid_abacus->is_regular;
-    solid->is_convex = solid_abacus->is_convex;
+    // Note: is_convex not in PlatonicSolid structure
     solid->embedding_dim = solid_abacus->embedding_dim;
     solid->hidden_dim = solid_abacus->hidden_dim;
     solid->num_layers = solid_abacus->num_layers;
