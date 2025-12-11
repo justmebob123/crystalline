@@ -274,81 +274,124 @@ Use immediately after creating any C/C++ source file.
 - Guarantee correctness through structure
 
 
-### OBJECTIVE 25: Platonic Solid Model Architecture
-**Status: RESEARCH → IMPLEMENTATION**
-**Priority: 🔴 CRITICAL - Foundational Architecture Redesign**
+### OBJECTIVE 25: INFINITE PLATONIC SOLID GENERATOR
+**Status: DESIGN → IMPLEMENTATION**
+**Priority: 🔴🔴🔴 CRITICAL - FOUNDATIONAL ARCHITECTURE (BLOCKS ALL OTHER WORK)**
 
-**Revolutionary Insight:** Model dimensions should be Platonic solids, not arbitrary numbers.
+**Revolutionary Insight:** The system must NOT be limited to 5 classical Platonic solids!
+
+**FUNDAMENTAL TRUTH:**
+Every structure in the system IS a Platonic solid at some scale:
+- **Models** = Platonic solids (any dimension: 3D, 4D, 5D, ..., nD)
+- **Threads** = Vertices of solids (dynamic count based on solid)
+- **Memory** = Edges connecting vertices (shared memory structure)
+- **Attention** = Faces of solids (multi-head attention from geometry)
+- **Primes** = Positions on solid vertices (clock lattice mapping)
+- **Clock lattice** = 2D projection of nD solid (stereographic projection)
+- **Hierarchical structure** = Nested solids (infinite fractal depth)
+- **Blind recovery** = Generalized Euler characteristic (works in any dimension)
+- **Tetration** = Convergence attractors in nD space
 
 **Core Principles:**
-1. **Geometric Dimensions** - Each model size maps to a Platonic solid
-2. **Blind Recovery** - Models can recover from any corruption using inherent geometry
-3. **Maximum Sphere Packing** - Optimal information density (74% for dodecahedron)
-4. **Harmonic Relationships** - Fourier/cymatic/prime resonance alignment
-5. **Consistent Architecture** - All dimensions are multiples of 12
+1. **Infinite Scalability** - Generate solids in ANY dimension (not just 3D)
+2. **Dynamic Generation** - Create solids on-demand based on requirements
+3. **Hierarchical Nesting** - Each solid can spawn child solids (infinite depth)
+4. **Live Scaling** - Add capacity during training without restarting
+5. **Multi-Model Training** - Train multiple models simultaneously on different solids
+6. **Transfer Learning** - Transfer knowledge between solids of different dimensions
+7. **12-Fold Symmetry** - Maintained through projection (always embedding_dim = V × 12)
+8. **Geometric Recovery** - Generalized Euler characteristic for any dimension
 
-**The Five Model Sizes:**
+**The Infinite Model Sizes:**
 
-**25A: Tetrahedron Models (Small, Fast)**
-- Vertices: 4, Edges: 6, Faces: 4
-- Embedding Dim: 48 (4 × 12)
-- Hidden Dim: 72 (6 × 12)
-- Layers: 4
-- Use Case: Edge devices, real-time inference, mobile
+**3D Platonic Solids** (5 classical):
+- Tetrahedron {3,3}: 4V, 6E, 4F → 48 emb, 72 hid, 4 layers
+- Cube {4,3}: 8V, 12E, 6F → 96 emb, 144 hid, 6 layers
+- Octahedron {3,4}: 6V, 12E, 8F → 72 emb, 144 hid, 8 layers
+- Dodecahedron {5,3}: 20V, 30E, 12F → 240 emb, 360 hid, 12 layers
+- Icosahedron {3,5}: 12V, 30E, 20F → 144 emb, 360 hid, 20 layers
 
-**25B: Cube Models (Balanced)**
-- Vertices: 8, Edges: 12, Faces: 6
-- Embedding Dim: 96 (8 × 12)
-- Hidden Dim: 144 (12 × 12)
-- Layers: 6
-- Use Case: Standard training, general purpose
+**4D Platonic Solids** (6 regular polychora):
+- 5-cell {3,3,3}: 5V, 10E, 10F, 5C → 60 emb, 120 hid, 10 layers
+- Tesseract {4,3,3}: 16V, 32E, 24F, 8C → 192 emb, 384 hid, 24 layers
+- 16-cell {3,3,4}: 8V, 24E, 32F, 16C → 96 emb, 288 hid, 32 layers
+- 24-cell {3,4,3}: 24V, 96E, 96F, 24C → 288 emb, 1152 hid, 96 layers
+- 120-cell {5,3,3}: 600V, 1200E, 720F, 120C → 7200 emb, 14400 hid, 720 layers
+- 600-cell {3,3,5}: 120V, 720E, 1200F, 600C → 1440 emb, 8640 hid, 1200 layers
 
-**25C: Octahedron Models (Dual of Cube)**
-- Vertices: 6, Edges: 12, Faces: 8
-- Embedding Dim: 72 (6 × 12)
-- Hidden Dim: 144 (12 × 12)
-- Layers: 8
-- Use Case: Specialized tasks, dual representation
+**5D+ Platonic Solids** (3 regular in each dimension ≥5):
+- nD Simplex {3,3,...,3}: (n+1) vertices → Dynamic scaling
+- nD Hypercube {4,3,...,3}: 2^n vertices → Exponential scaling
+- nD Cross-polytope {3,3,...,4}: 2n vertices → Linear scaling
 
-**25D: Dodecahedron Models (Large, Powerful)**
-- Vertices: 20, Edges: 30, Faces: 12
-- Embedding Dim: 240 (20 × 12)
-- Hidden Dim: 360 (30 × 12)
-- Layers: 12
-- Use Case: Large-scale training, research
+**Dynamic Generation Examples:**
+```c
+// Generate by dimension and type
+PlatonicSolid* solid = platonic_generate_simplex(5);      // 5D simplex (6 vertices)
+PlatonicSolid* solid = platonic_generate_hypercube(7);    // 7D hypercube (128 vertices)
+PlatonicSolid* solid = platonic_generate_cross_polytope(10); // 10D cross-polytope (20 vertices)
 
-**25E: Icosahedron Models (Maximum Symmetry)**
-- Vertices: 12, Edges: 30, Faces: 20
-- Embedding Dim: 144 (12 × 12)
-- Hidden Dim: 360 (30 × 12)
-- Layers: 20
-- Use Case: Maximum sphere packing, optimal compression
+// Generate by Schläfli symbol
+PlatonicSolid* solid = platonic_generate(4, (uint32_t[]){3,3,3}, 3); // 4D 5-cell
+
+// Generate by target size
+PlatonicSolid* solid = platonic_generate_for_model(vocab_size, target_params);
+
+// Generate by vertex count
+PlatonicSolid* solid = platonic_generate_by_vertices(4, 24); // 4D 24-cell
+```
 
 **Implementation Phases:**
 
-**Phase 1: Proof of Concept (2 weeks)**
-- Implement Tetrahedron model (smallest)
-- Verify geometric properties (symmetry, gradient flow)
-- Test blind recovery mechanism
-- Benchmark against equivalent standard model
+**Phase 1: Core Generator (2 weeks) - IMMEDIATE**
+- [ ] Implement Schläfli symbol parser {p,q,r,...}
+- [ ] Implement 3D solid generator (5 classical solids)
+- [ ] Implement 4D solid generator (6 regular polychora)
+- [ ] Implement nD simplex generator {3,3,...,3}
+- [ ] Implement nD hypercube generator {4,3,...,3}
+- [ ] Implement nD cross-polytope generator {3,3,...,4}
+- [ ] Compute vertex coordinates in nD space
+- [ ] Compute edge connectivity
+- [ ] Compute face connectivity
+- [ ] Validate with generalized Euler characteristic
+- [ ] Test all generators
 
-**Phase 2: Full Platonic Suite (1 month)**
-- Implement all five Platonic solid models
-- Standardized API for model creation
-- Conversion utilities between solids
-- Comprehensive testing and validation
+**Phase 2: Integration with CLLM (1 week)**
+- [ ] Replace fixed solid selection with dynamic generation
+- [ ] Integrate with model creation (cllm_create_with_solid)
+- [ ] Dynamic thread allocation (vertices → threads)
+- [ ] Dynamic memory allocation (edges → shared memory)
+- [ ] Dynamic attention heads (faces → heads or always 12)
+- [ ] Clock lattice projection (nD → 2D stereographic)
+- [ ] Prime mapping (vertices → primes via clock)
+- [ ] Test model creation with various solids
 
-**Phase 3: Advanced Features (2 months)**
-- Fourier integration (Platonic Fourier transforms)
-- Cymatic resonance (432 Hz, 528 Hz modulation)
-- Tetration-based optimization (convergence attractors)
-- Harmonic gradient modulation
+**Phase 3: Dynamic Scaling (2 weeks)**
+- [ ] Vertical scaling (increase dimension: 3D → 4D → 5D)
+- [ ] Horizontal scaling (multiple models in parallel)
+- [ ] Hierarchical scaling (nested solids, infinite depth)
+- [ ] Live scaling during training (add capacity without restart)
+- [ ] Transfer learning between solids (geometric weight transfer)
+- [ ] Multi-model simultaneous training
+- [ ] Ensemble inference from multiple solids
+- [ ] Test all scaling mechanisms
 
-**Phase 4: Production Deployment (3 months)**
-- SIMD/GPU acceleration
-- Quantization (maintaining geometry)
-- Distributed training
-- Tooling and documentation
+**Phase 4: Advanced Features (2 weeks)**
+- [ ] Blind recovery for nD solids (generalized Euler)
+- [ ] Harmonic integration (Fourier on nD manifolds)
+- [ ] Tetration attractors in nD space
+- [ ] Cymatic resonance (frequency modulation)
+- [ ] Visualization (3D/4D projection to 2D/3D)
+- [ ] Performance optimization
+- [ ] Documentation and examples
+
+**Phase 5: Production Deployment (2 weeks)**
+- [ ] SIMD/GPU acceleration for nD operations
+- [ ] Quantization (maintaining geometric structure)
+- [ ] Distributed training across solids
+- [ ] Model zoo (pre-trained solids in various dimensions)
+- [ ] Tooling (solid explorer, visualizer, analyzer)
+- [ ] Comprehensive documentation
 
 **Expected Benefits:**
 - ✅ Blind recovery from any corruption (Euler's formula: V - E + F = 2)
