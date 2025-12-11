@@ -80,7 +80,40 @@
 
 ---
 
-## 🔄 NEXT: CLLM Library Migration (src/ai/)
+## 🔄 CRITICAL: Implement Hierarchical Prime Generation System
+
+### Understanding the Architecture
+The hierarchical abacus system is NOT dead code - it's fundamental to the distributed architecture:
+
+**Purpose:**
+1. **Parallel prime generation** across 12 spheres (12-fold symmetry)
+2. **Each sphere handles one symmetry group** (primes mod 12)
+3. **Partition-based generation** (each sphere owns a range)
+4. **Distributed caching** for performance
+5. **Parent-child references** for efficiency
+
+**Current State:**
+- Stub implementations in algorithms library
+- Used by CLLMLatticeHierarchy (but fields removed as "dead code")
+- Actually NEEDED for distributed prime generation
+
+**What Needs Implementation:**
+1. `hierarchical_abacus_create()` - Create abacus for a sphere
+2. `hierarchical_abacus_next_prime()` - Generate next prime in partition
+3. `hierarchical_abacus_is_prime()` - Check primality with caching
+4. `hierarchical_abacus_in_partition()` - Check if prime in range
+5. `hierarchical_abacus_cache_prime()` - Cache for fast lookup
+6. `create_lattice_partition()` - Define prime range for sphere
+7. `create_sphere_position()` - Map sphere to clock position
+
+**Migration Strategy:**
+1. Implement hierarchical_prime_partitions.c with NEW math library
+2. Implement lattice_sphere_positions.c with NEW math library
+3. Restore fields to CLLMLatticeHierarchy
+4. Integrate with CLLM training system
+5. Replace rainbow_table with distributed generation
+
+## 🔄 THEN: CLLM Library Migration (src/ai/)
 
 ### Files Using OLD Library (7 files identified)
 1. src/ai/cllm_embeddings.c
@@ -90,10 +123,3 @@
 5. src/ai/cllm_production.c
 6. src/ai/cllm_lattice_conversion.c
 7. src/ai/cllm_optimizer.c
-
-### Migration Strategy
-- Same approach as algorithms library
-- Direct migration where possible
-- Complete redesign where necessary
-- Remove ALL OLD library dependencies
-- Use NEW math library (Crystalline Abacus) exclusively
