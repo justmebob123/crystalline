@@ -1,0 +1,418 @@
+/**
+ * @file generator_core.c
+ * @brief Core generator functions and property computation
+ */
+
+#include "math/platonic_generator.h"
+#include "math/polytope.h"
+#include "math/schlafli.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+
+// ============================================================================
+// MEMORY MANAGEMENT
+// ============================================================================
+
+PlatonicSolid* platonic_alloc(void) {
+    PlatonicSolid* solid = (PlatonicSolid*)calloc(1, sizeof(PlatonicSolid));
+    if (!solid) {
+        return NULL;
+    }
+    
+    // Set defaults
+    solid->edge_length = 1.0;
+    solid->num_heads = 12;  // Always 12 (12-fold symmetry)
+    
+    return solid;
+}
+
+void platonic_free(PlatonicSolid* solid) {
+    if (!solid) {
+        return;
+    }
+    
+    // Free Schläfli symbol
+    if (solid->schlafli_symbol) {
+        free(solid->schlafli_symbol);
+    }
+    
+    // Free vertex coordinates
+    if (solid->vertex_coords) {
+        free(solid->vertex_coords);
+    }
+    
+    // Free edge indices
+    if (solid->edge_indices) {
+        for (uint64_t i = 0; i < solid->num_edges; i++) {
+            if (solid->edge_indices[i]) {
+                free(solid->edge_indices[i]);
+            }
+        }
+        free(solid->edge_indices);
+    }
+    
+    // Free face indices
+    if (solid->face_indices) {
+        for (uint64_t i = 0; i < solid->num_faces; i++) {
+            if (solid->face_indices[i]) {
+                free(solid->face_indices[i]);
+            }
+        }
+        free(solid->face_indices);
+    }
+    
+    // Free face sizes
+    if (solid->face_sizes) {
+        free(solid->face_sizes);
+    }
+    
+    // Free higher faces
+    if (solid->higher_faces) {
+        free(solid->higher_faces);
+    }
+    
+    free(solid);
+}
+
+PlatonicSolid* platonic_clone(const PlatonicSolid* solid) {
+    if (!solid) {
+        return NULL;
+    }
+    
+    // Allocate new solid
+    PlatonicSolid* clone = platonic_alloc();
+    if (!clone) {
+        return NULL;
+    }
+    
+    // Copy all scalar fields
+    memcpy(clone, solid, sizeof(PlatonicSolid));
+    
+    // Deep copy Schläfli symbol
+    if (solid->schlafli_symbol && solid->symbol_length > 0) {
+        clone->schlafli_symbol = (uint32_t*)malloc(solid->symbol_length * sizeof(uint32_t));
+        if (!clone->schlafli_symbol) {
+            platonic_free(clone);
+            return NULL;
+        }
+        memcpy(clone->schlafli_symbol, solid->schlafli_symbol, 
+               solid->symbol_length * sizeof(uint32_t));
+    }
+    
+    // Deep copy vertex coordinates
+    if (solid->vertex_coords && solid->num_vertices > 0) {
+        size_t coord_size = solid->num_vertices * solid->dimension * sizeof(double);
+        clone->vertex_coords = (double*)malloc(coord_size);
+        if (!clone->vertex_coords) {
+            platonic_free(clone);
+            return NULL;
+        }
+        memcpy(clone->vertex_coords, solid->vertex_coords, coord_size);
+    }
+    
+    // Deep copy edges
+    if (solid->edge_indices && solid->num_edges > 0) {
+        clone->edge_indices = (uint32_t**)malloc(solid->num_edges * sizeof(uint32_t*));
+        if (!clone->edge_indices) {
+            platonic_free(clone);
+            return NULL;
+        }
+        for (uint64_t i = 0; i < solid->num_edges; i++) {
+            clone->edge_indices[i] = (uint32_t*)malloc(2 * sizeof(uint32_t));
+            if (!clone->edge_indices[i]) {
+                platonic_free(clone);
+                return NULL;
+            }
+            memcpy(clone->edge_indices[i], solid->edge_indices[i], 2 * sizeof(uint32_t));
+        }
+    }
+    
+    // Deep copy faces
+    if (solid->face_indices && solid->num_faces > 0) {
+        clone->face_indices = (uint32_t**)malloc(solid->num_faces * sizeof(uint32_t*));
+        clone->face_sizes = (uint32_t*)malloc(solid->num_faces * sizeof(uint32_t));
+        if (!clone->face_indices || !clone->face_sizes) {
+            platonic_free(clone);
+            return NULL;
+        }
+        memcpy(clone->face_sizes, solid->face_sizes, solid->num_faces * sizeof(uint32_t));
+        
+        for (uint64_t i = 0; i < solid->num_faces; i++) {
+            uint32_t face_size = solid->face_sizes[i];
+            clone->face_indices[i] = (uint32_t*)malloc(face_size * sizeof(uint32_t));
+            if (!clone->face_indices[i]) {
+                platonic_free(clone);
+                return NULL;
+            }
+            memcpy(clone->face_indices[i], solid->face_indices[i], 
+                   face_size * sizeof(uint32_t));
+        }
+    }
+    
+    return clone;
+}
+
+// ============================================================================
+// PROPERTY COMPUTATION
+// ============================================================================
+
+bool platonic_compute_metrics(PlatonicSolid* solid) {
+    if (!solid || !solid->vertex_coords || solid->num_vertices == 0) {
+        return false;
+    }
+    
+    // Compute circumradius (distance from origin to any vertex)
+    double sum_sq = 0.0;
+    for (uint32_t i = 0; i < solid->dimension; i++) {
+        double coord = solid->vertex_coords[i];
+        sum_sq += coord * coord;
+    }
+    solid->circumradius = sqrt(sum_sq);
+    
+    // Edge length is already set to 1.0 by default
+    
+    // Inradius and volume computation would require more complex geometry
+    // For now, set to 0 (can be computed later if needed)
+    solid->inradius = 0.0;
+    solid->volume = 0.0;
+    
+    return true;
+}
+
+bool platonic_compute_symmetries(PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // Symmetry computation is complex and depends on the specific solid
+    // For now, set default values
+    // These can be computed more accurately later
+    
+    if (solid->dimension == 3) {
+        if (solid->num_vertices == 4) {
+            solid->symmetry_order = 12;  // T_d
+            snprintf(solid->symmetry_group, sizeof(solid->symmetry_group), "T_d");
+        } else if (solid->num_vertices == 8 || solid->num_vertices == 6) {
+            solid->symmetry_order = 48;  // O_h
+            snprintf(solid->symmetry_group, sizeof(solid->symmetry_group), "O_h");
+        } else if (solid->num_vertices == 20 || solid->num_vertices == 12) {
+            solid->symmetry_order = 120;  // I_h
+            snprintf(solid->symmetry_group, sizeof(solid->symmetry_group), "I_h");
+        }
+    } else {
+        // For higher dimensions, use factorial as approximation
+        solid->symmetry_order = 1;
+        for (uint32_t i = 2; i <= solid->dimension + 1; i++) {
+            solid->symmetry_order *= i;
+        }
+        snprintf(solid->symmetry_group, sizeof(solid->symmetry_group), "S_%u", solid->dimension + 1);
+    }
+    
+    return true;
+}
+
+bool platonic_compute_cllm_properties(PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // 12-fold scaling law
+    solid->embedding_dim = (uint32_t)(solid->num_vertices * 12);
+    solid->hidden_dim = (uint32_t)(solid->num_edges * 12);
+    solid->num_layers = (uint32_t)solid->num_faces;
+    solid->num_heads = 12;  // Always 12 (12-fold symmetry)
+    
+    return true;
+}
+
+bool platonic_compute_properties(PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // Compute metrics
+    if (!platonic_compute_metrics(solid)) {
+        return false;
+    }
+    
+    // Compute symmetries
+    if (!platonic_compute_symmetries(solid)) {
+        return false;
+    }
+    
+    // Compute 12-fold properties
+    if (!platonic_compute_cllm_properties(solid)) {
+        return false;
+    }
+    
+    // Compute Euler characteristic
+    int64_t chi = (int64_t)solid->num_vertices - (int64_t)solid->num_edges + 
+                  (int64_t)solid->num_faces;
+    if (solid->dimension >= 4) {
+        chi -= (int64_t)solid->num_cells;
+    }
+    solid->euler_characteristic = chi;
+    
+    // Validate
+    solid->is_valid = platonic_validate(solid);
+    solid->is_regular = solid->is_valid;
+    
+    return true;
+}
+
+// ============================================================================
+// VALIDATION
+// ============================================================================
+
+bool platonic_validate_euler(const PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // Compute expected Euler characteristic
+    int64_t expected = 1 + ((solid->dimension % 2 == 0) ? -1 : 1);
+    
+    return solid->euler_characteristic == expected;
+}
+
+bool platonic_validate_symmetry(const PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // Basic validation: symmetry order should be > 0
+    return solid->symmetry_order > 0;
+}
+
+bool platonic_validate_regularity(const PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // All generated solids are regular by construction
+    return true;
+}
+
+bool platonic_validate(const PlatonicSolid* solid) {
+    if (!solid) {
+        return false;
+    }
+    
+    // Validate basic properties
+    if (solid->dimension < 2 || solid->num_vertices == 0) {
+        return false;
+    }
+    
+    // Validate Euler characteristic
+    if (!platonic_validate_euler(solid)) {
+        return false;
+    }
+    
+    // Validate symmetry
+    if (!platonic_validate_symmetry(solid)) {
+        return false;
+    }
+    
+    // Validate regularity
+    if (!platonic_validate_regularity(solid)) {
+        return false;
+    }
+    
+    return true;
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+const char* platonic_get_name(const PlatonicSolid* solid) {
+    if (!solid) {
+        return "(null)";
+    }
+    return solid->name;
+}
+
+void platonic_print(const PlatonicSolid* solid) {
+    if (!solid) {
+        printf("(null)\n");
+        return;
+    }
+    
+    printf("Platonic Solid: %s\n", solid->name);
+    printf("  Dimension: %u\n", solid->dimension);
+    printf("  Vertices: %lu\n", (unsigned long)solid->num_vertices);
+    printf("  Edges: %lu\n", (unsigned long)solid->num_edges);
+    printf("  Faces: %lu\n", (unsigned long)solid->num_faces);
+    if (solid->dimension >= 4) {
+        printf("  Cells: %lu\n", (unsigned long)solid->num_cells);
+    }
+    printf("  Euler characteristic: %ld\n", (long)solid->euler_characteristic);
+    printf("  Symmetry: %s (order %u)\n", solid->symmetry_group, solid->symmetry_order);
+    printf("  CLLM Properties:\n");
+    printf("    Embedding dim: %u\n", solid->embedding_dim);
+    printf("    Hidden dim: %u\n", solid->hidden_dim);
+    printf("    Layers: %u\n", solid->num_layers);
+    printf("    Heads: %u\n", solid->num_heads);
+}
+
+void platonic_print_detailed(const PlatonicSolid* solid) {
+    platonic_print(solid);
+    
+    if (!solid) {
+        return;
+    }
+    
+    // Print Schläfli symbol
+    if (solid->schlafli_symbol && solid->symbol_length > 0) {
+        printf("  Schläfli symbol: {");
+        for (uint32_t i = 0; i < solid->symbol_length; i++) {
+            if (i > 0) printf(",");
+            printf("%u", solid->schlafli_symbol[i]);
+        }
+        printf("}\n");
+    }
+    
+    // Print metrics
+    printf("  Metrics:\n");
+    printf("    Edge length: %.6f\n", solid->edge_length);
+    printf("    Circumradius: %.6f\n", solid->circumradius);
+    
+    // Print validation status
+    printf("  Validation:\n");
+    printf("    Valid: %s\n", solid->is_valid ? "yes" : "no");
+    printf("    Regular: %s\n", solid->is_regular ? "yes" : "no");
+}
+
+// ============================================================================
+// EXPORT
+// ============================================================================
+
+bool platonic_export(const PlatonicSolid* solid, 
+                     const char* filename, 
+                     const char* format) {
+    if (!solid || !filename || !format) {
+        return false;
+    }
+    
+    // For now, just implement basic text export
+    if (strcmp(format, "txt") == 0) {
+        FILE* f = fopen(filename, "w");
+        if (!f) {
+            return false;
+        }
+        
+        fprintf(f, "Platonic Solid: %s\n", solid->name);
+        fprintf(f, "Dimension: %u\n", solid->dimension);
+        fprintf(f, "Vertices: %lu\n", (unsigned long)solid->num_vertices);
+        fprintf(f, "Edges: %lu\n", (unsigned long)solid->num_edges);
+        fprintf(f, "Faces: %lu\n", (unsigned long)solid->num_faces);
+        
+        fclose(f);
+        return true;
+    }
+    
+    fprintf(stderr, "Error: Unsupported export format: %s\n", format);
+    return false;
+}

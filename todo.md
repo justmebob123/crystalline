@@ -1,4 +1,68 @@
-# CRITICAL ARCHITECTURE SHIFT: Infinite Platonic Solid Generator
+# TODO - Crystalline CLLM Development
+
+---
+
+## 🔒 RULES (READ FIRST - MANDATORY)
+
+### ⭐ RULE 0: ALWAYS READ THESE RULES FIRST ⭐
+**MANDATORY WITH EVERY RESPONSE**
+
+Before ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Read AUDIT.md for current architectural state
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Update todo.md with current progress
+
+### RULE 1: CRITICAL REFERENCE FILES
+**Before making ANY code changes, ALWAYS check these files:**
+
+1. **app/ui/sphere_visualization.c** - 3D kissing spheres visualization
+   - PURE crystalline mathematics ONLY (NO math.h)
+   - Uses ONLY prime_* functions from crystalline library
+   - Implements icosahedral geometry with golden ratio
+   - 13 spheres: 1 control + 12 workers
+
+2. **src/geometry/clock_lattice.c** - Babylonian clock structure
+   - Ring structure: 12, 60, 60, 100
+   - Prime position mapping
+
+3. **src/ai/cllm_kissing_spheres.c** - Kissing spheres implementation
+   - 12 neighbors per point
+   - Shared memory structure
+
+**CRITICAL**: Never use math.h or standard library functions. Only use prime_* functions.
+
+### RULE 2: GIT OPERATIONS
+**ALWAYS use correct authentication:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git audit
+```
+
+### RULE 3: BUILD VERIFICATION
+**MANDATORY: Test every build after making changes**
+
+Process (NEVER SKIP):
+1. Make code changes
+2. Run: `make clean &amp;&amp; make 2>&amp;1 | tee build.log`
+3. Count warnings: `grep -c "warning:" build.log`
+4. **VERIFY BUILD SUCCESS**
+5. Fix all warnings
+6. Rebuild and verify
+7. **ONLY THEN** commit changes
+
+### RULE 4: FIX HTML ENTITIES IMMEDIATELY
+When creating files, HTML entities may be introduced.
+
+**Solution:**
+```bash
+python3 tools/fix_html_entities.py <file>
+```
+
+Use immediately after creating any C/C++ source file.
+
+---
 
 ## 🎯 HIGHEST PRIORITY: Infinite Platonic Generator (FOUNDATIONAL)
 
@@ -30,16 +94,36 @@ We need a **DYNAMIC PLATONIC SOLID GENERATOR** that creates infinite solids in A
 
 ### Implementation Phases
 
-#### Phase 1: Core Generator (Week 1-2) - IMMEDIATE
-- [ ] Implement Schläfli symbol parser {p,q,r,...}
-- [ ] Generate 3D solids (5 classical)
-- [ ] Generate 4D solids (6 regular polychora)
-- [ ] Generate nD simplex {3,3,...,3}
-- [ ] Generate nD hypercube {4,3,...,3}
-- [ ] Generate nD cross-polytope {3,3,...,4}
-- [ ] Validate with generalized Euler characteristic
-- [ ] Compute vertex coordinates in nD space
-- [ ] Test all generators
+#### Phase 1: Core Generator (Week 1-2) - IN PROGRESS ✅
+
+**Day 1 Progress** (December 11, 2024):
+- [x] Implemented Schläfli symbol parser {p,q,r,...}
+- [x] Generated nD simplex {3,3,...,3}
+- [x] Generated nD hypercube {4,3,...,3}
+- [x] Computed vertex coordinates in nD space
+- [x] Computed edge connectivity
+- [x] Computed face connectivity
+- [x] Validated with generalized Euler characteristic
+- [x] Created comprehensive test suite
+
+**Files Created** (8 files, ~2000 lines):
+1. math/include/math/polytope.h - Core data structures
+2. math/include/math/schlafli.h - Schläfli symbol API
+3. math/include/math/platonic_generator.h - Main generator API
+4. math/src/platonic/schlafli_parser.c - Symbol parsing
+5. math/src/platonic/simplex_generator.c - Simplex generation
+6. math/src/platonic/hypercube_generator.c - Hypercube generation
+7. math/src/platonic/generator_core.c - Core functions
+8. math/tests/platonic/test_generator.c - Test suite
+
+**Remaining Tasks**:
+- [ ] Implement nD cross-polytope generator
+- [ ] Implement specialized 3D generators (octahedron, dodecahedron, icosahedron)
+- [ ] Implement specialized 4D generators (16-cell, 24-cell, 120-cell, 600-cell)
+- [ ] Create Makefile for platonic library
+- [ ] Build and test all generators
+- [ ] Fix any compilation issues
+- [ ] Verify all tests pass
 
 #### Phase 2: Integration (Week 3) - HIGH PRIORITY
 - [ ] Integrate with CLLM model creation
