@@ -117,3 +117,4 @@ tools/checkpoints/
 perf_analysis*/
 checkpoints_quick/
 !IMPLEMENTATION_STATUS.md
+!PI_PHI_INVESTIGATION.md
