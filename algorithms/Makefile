@@ -5,7 +5,7 @@ AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 LDFLAGS = -shared
 ARFLAGS = rcs
-INCLUDES = -I./include -I./include/blind_recovery -I../include
+INCLUDES = -I./include -I./include/blind_recovery -I../include -I../math/include
 
 # Source files
 SOURCES = src/numerical.c \
@@ -94,7 +94,7 @@ all: $(SHARED_LIB)
 
 $(SHARED_LIB): $(OBJECTS) $(CRYSTALLINE_LIB)
 	@echo "Creating shared algorithms library: $@"
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline -lm
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline -L../math/lib -lcrystallinemath -lm
 	@echo "✓ Shared algorithms library created"
 
 static: $(STATIC_LIB)
