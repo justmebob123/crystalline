@@ -8,8 +8,8 @@
  * CRITICAL: This maintains mathematical independence - NO external math dependencies!
  */
 
-#include "../include/prime_float_math.h"
 #include <stdint.h>
+#include "prime_float_math.h"
 
 /*
  * Square Root: sqrt(x)

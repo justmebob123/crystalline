@@ -19,7 +19,7 @@
 #include <openssl/obj_mac.h>
 #include <openssl/bn.h>
 #include "../include/geometric_recovery.h"
-#include "../../include/prime_float_math.h"
+#include "prime_float_math.h"
 
 // Toy configuration - much smaller for fast testing
 #define TOY_NUM_ANCHORS 100

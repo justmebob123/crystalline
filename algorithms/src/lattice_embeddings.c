@@ -14,9 +14,9 @@
 #include "lattice_embeddings.h"
 #include "clock_lattice.h"
 #include "prime_lattice_core.h"
-#include "prime_float_math.h"
 #include "cllm_mathematical_constants.h"
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Compute L(n,d,k,λ) directly from clock position

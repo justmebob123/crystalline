@@ -7,7 +7,7 @@
 #include "../include/sphere_packing.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Test result tracking
 static int tests_passed = 0;
@@ -48,7 +48,7 @@ static int tests_failed = 0;
     ASSERT_TRUE(!(condition), message)
 
 #define ASSERT_NEAR(a, b, epsilon, message) \
-    ASSERT_TRUE(fabs((a) - (b)) < (epsilon), message)
+    ASSERT_TRUE(prime_fabs((a) - (b)) < (epsilon), message)
 
 // Helper function
 static double float_abs(double x) {
@@ -122,7 +122,7 @@ void test_sphere_distance(void) {
     // Test 3D distance
     Sphere3D s3 = {1.0, 1.0, 1.0, 1.0, 3};
     double distance2 = sphere_distance(&s1, &s3);
-    double expected = sqrt(3.0); // sqrt(1² + 1² + 1²)
+    double expected = prime_sqrt(3.0); // prime_sqrt(1² + 1² + 1²)
     ASSERT_NEAR(distance2, expected, 0.001, "3D distance incorrect");
     
     TEST_PASS(current_test);
@@ -204,7 +204,7 @@ void test_vector2d_operations(void) {
     
     // Magnitude
     double mag = vector2d_magnitude(&v1);
-    ASSERT_NEAR(mag, 5.0, 0.001, "Magnitude incorrect"); // sqrt(3² + 4²) = 5
+    ASSERT_NEAR(mag, 5.0, 0.001, "Magnitude incorrect"); // prime_sqrt(3² + 4²) = 5
     
     // Normalization
     ASSERT_TRUE(vector2d_normalize(&v1, &result), "Normalization failed");
@@ -257,7 +257,7 @@ void test_vector3d_operations(void) {
     
     // Magnitude
     double mag = vector3d_magnitude(&v1);
-    double expected_mag = sqrt(1.0 + 4.0 + 9.0); // sqrt(14)
+    double expected_mag = prime_sqrt(1.0 + 4.0 + 9.0); // prime_sqrt(14)
     ASSERT_NEAR(mag, expected_mag, 0.001, "Magnitude incorrect");
     
     TEST_PASS(current_test);
@@ -415,11 +415,11 @@ void test_generate_kissing_spheres(void) {
     for (int i = 0; i < 12; i++) {
         double dx = kissing[i].center_x - central.center_x;
         double dy = kissing[i].center_y - central.center_y;
-        double angle = atan2(dy, dx);
+        double angle = prime_atan2(dy, dx);
         if (angle < 0) angle += 2.0 * M_PI;
         
         double expected_angle = (double)i * expected_angle_step;
-        double angle_diff = fabs(angle - expected_angle);
+        double angle_diff = prime_fabs(angle - expected_angle);
         
         // Allow for wraparound
         if (angle_diff > M_PI) {

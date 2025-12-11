@@ -4,9 +4,9 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include <openssl/ec.h>
 #include <openssl/bn.h>
+#include "prime_float_math.h"
 
 /**
  * Validate candidate k by computing Q and measuring distance

@@ -14,8 +14,8 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../../../include/prime_float_math.h"
 #include <stdio.h>
+#include "prime_float_math.h"
 
 bool platonic_scale_dimensions(
     PlatonicModel* model,

@@ -13,9 +13,9 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../../../include/prime_float_math.h"
 #include <stdio.h>
 #include <time.h>
+#include "prime_float_math.h"
 
 // Forward declarations
 extern void platonic_detect_spatial_oscillations(PlatonicModel*, uint32_t, double);

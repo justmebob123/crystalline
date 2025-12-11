@@ -11,13 +11,13 @@
  * 7. Repeat until convergence
  */
 
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <openssl/ec.h>
 #include <openssl/bn.h>
+#include "prime_float_math.h"
 
 #define PHI 1.618033988749895
 #define PI 3.141592653589793

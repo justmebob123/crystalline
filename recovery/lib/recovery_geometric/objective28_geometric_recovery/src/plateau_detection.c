@@ -3,9 +3,9 @@
  */
 
 #include "../include/plateau_detection.h"
-#include "../include/prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 PlateauDetector* create_plateau_detector(
     int history_size,

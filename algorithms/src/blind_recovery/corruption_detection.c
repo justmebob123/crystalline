@@ -7,8 +7,8 @@
 
 #include "blind_recovery/blind_recovery.h"
 #include <stdlib.h>
-#include <math.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 /**
  * Detect corrupted elements in structure
@@ -37,14 +37,14 @@ bool* detect_corruption(
         double val = structure_data[i];
         
         // Check for NaN or Inf
-        if (isnan(val) || isinf(val)) {
+        if (prime_isnan(val) || prime_isinf(val)) {
             mask[i] = true;
             corrupted_count++;
             continue;
         }
         
         // Check for extreme values
-        if (fabs(val) > threshold) {
+        if (prime_fabs(val) > threshold) {
             mask[i] = true;
             corrupted_count++;
         }

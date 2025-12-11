@@ -5,8 +5,8 @@
 
 #include "numerical.h"
 #include "prime_math_custom.h"
-#include "prime_float_math.h"
 #include <string.h>
+#include "prime_float_math.h"
 
 /* ============================================================================
  * Softmax and Related Functions

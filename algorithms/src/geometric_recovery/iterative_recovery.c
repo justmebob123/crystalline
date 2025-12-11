@@ -11,11 +11,11 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include "prime_types.h"
 #include <openssl/sha.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Generate large deterministic target from Q (from your Python code)

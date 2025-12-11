@@ -13,9 +13,9 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../../../include/prime_float_math.h"
 #include <stdio.h>
 #include <time.h>
+#include "prime_float_math.h"
 
 // Golden ratio (for Icosahedron/Dodecahedron)
 #define PHI 1.618033988749895

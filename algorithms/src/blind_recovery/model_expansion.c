@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Platonic solid expansion rules

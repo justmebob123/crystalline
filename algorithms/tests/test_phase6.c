@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Test counters
 static int tests_run = 0;
@@ -39,7 +39,7 @@ static double* create_test_data(uint64_t num_elements) {
     
     // Initialize with simple pattern
     for (uint64_t i = 0; i < num_elements; i++) {
-        data[i] = sin((double)i * 0.1) + cos((double)i * 0.05);
+        data[i] = prime_sin((double)i * 0.1) + prime_cos((double)i * 0.05);
     }
     
     return data;
@@ -374,7 +374,7 @@ static void test_cross_dimensional_correlations(void) {
             for (uint32_t i = 0; i < 4; i++) {
                 double self_corr = get_dimension_correlation(correlations, 4, i, i);
                 printf("  Self-correlation dim %u: %.3f\n", i, self_corr);
-                ASSERT(fabs(self_corr - 1.0) < 0.01, "Self-correlation is 1.0");
+                ASSERT(prime_fabs(self_corr - 1.0) < 0.01, "Self-correlation is 1.0");
             }
             
             // Check some cross-correlations

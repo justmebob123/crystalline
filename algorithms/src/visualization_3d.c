@@ -6,10 +6,10 @@
 
 #include "visualization.h"
 #include "sphere_packing.h"
-#include "../../include/prime_float_math.h"
 #include "../../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Project to 3D using spherical layout

@@ -11,13 +11,13 @@
  */
 
 #include "../include/micro_model.h"
-#include "../../../include/prime_float_math.h"
 #include "../../../include/clock_lattice.h"
 #include "../../../include/prime_rainbow.h"
 #include "../../../include/crystal_abacus.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "prime_float_math.h"
 
 // Note: estimate_prime_index() is provided by clock_lattice.h
 

@@ -18,11 +18,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 #include <openssl/bn.h>
 #include "../include/platonic_model.h"
+#include "prime_float_math.h"
 
 // Phase 1 scaling parameters
 #define NUM_DIMENSIONS 52        // Was 13 - now 4× for proper coverage
@@ -241,15 +241,15 @@ void create_tetration_towers(TorusRecoverySystem* sys) {
             tower->depth = depth;
             
             // Compute logarithmic representation to avoid overflow
-            // tetration(base, depth) ≈ exp(depth * log(base))
-            tower->log_value = depth * log((double)base);
+            // tetration(base, depth) ≈ prime_exp(depth * prime_log(base))
+            tower->log_value = depth * prime_log((double)base);
             
             // Map tower to position in 52D space
             // Use tower properties to determine position
             for (uint32_t d = 0; d < NUM_DIMENSIONS; d++) {
                 // Use prime-based positioning
                 double phase = (double)(base * depth + d) / (double)NUM_DIMENSIONS;
-                tower->position[d] = 0.5 + 0.3 * sin(2.0 * M_PI * phase);
+                tower->position[d] = 0.5 + 0.3 * prime_sin(2.0 * M_PI * phase);
             }
             
             // Attractor strength increases with depth
@@ -277,7 +277,7 @@ double compute_tetration_score(TorusRecoverySystem* sys, double* position) {
         }
         
         // Attraction decreases with distance (inverse square law)
-        double dist = sqrt(dist_sq);
+        double dist = prime_sqrt(dist_sq);
         if (dist < 0.001) dist = 0.001;  // Avoid division by zero
         
         double attraction = tower->attractor_strength / (dist * dist);
@@ -374,7 +374,7 @@ void detect_axis_aligned_tori(TorusRecoverySystem* sys) {
                 torus->center[dd] = sum / sys->num_anchors;
             }
             
-            torus->radius = sqrt(variance);
+            torus->radius = prime_sqrt(variance);
             torus->frequency = variance;
             torus->complexity = 1ULL << 40;  // 2^40 per torus
             torus->is_identified = true;
@@ -421,7 +421,7 @@ void detect_planar_tori(TorusRecoverySystem* sys) {
             var2 /= sys->num_anchors;
             
             // If covariance is significant, there's a planar torus
-            double correlation = fabs(covariance) / sqrt(var1 * var2 + 1e-10);
+            double correlation = prime_fabs(covariance) / prime_sqrt(var1 * var2 + 1e-10);
             
             if (correlation > 0.3) {  // Threshold for significant correlation
                 TorusOrbit* torus = &sys->tori[sys->num_tori];
@@ -445,7 +445,7 @@ void detect_planar_tori(TorusRecoverySystem* sys) {
                     torus->center[dd] = sum / sys->num_anchors;
                 }
                 
-                torus->radius = sqrt(var1 + var2);
+                torus->radius = prime_sqrt(var1 + var2);
                 torus->frequency = correlation;
                 torus->complexity = 1ULL << 40;
                 torus->is_identified = true;
@@ -517,9 +517,9 @@ void find_3way_intersections(TorusRecoverySystem* sys) {
                 // (simplified check: centers not too far apart)
                 double max_dist = 0.0;
                 for (uint32_t d = 0; d < NUM_DIMENSIONS; d++) {
-                    double d12 = fabs(t1->center[d] - t2->center[d]);
-                    double d13 = fabs(t1->center[d] - t3->center[d]);
-                    double d23 = fabs(t2->center[d] - t3->center[d]);
+                    double d12 = prime_fabs(t1->center[d] - t2->center[d]);
+                    double d13 = prime_fabs(t1->center[d] - t3->center[d]);
+                    double d23 = prime_fabs(t2->center[d] - t3->center[d]);
                     double max_d = d12 > d13 ? d12 : d13;
                     max_d = max_d > d23 ? max_d : d23;
                     if (max_d > max_dist) max_dist = max_d;
@@ -570,7 +570,7 @@ void triangulate_candidate_k(TorusRecoverySystem* sys, IntersectionPoint* pt) {
             double diff = pt->position[d] - sys->anchors[a].position_k[d];
             dist += diff * diff;
         }
-        dist = sqrt(dist);
+        dist = prime_sqrt(dist);
         
         if (dist < distances[0]) {
             distances[2] = distances[1];

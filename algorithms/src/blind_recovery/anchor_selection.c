@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute Euclidean distance between two 3D points
@@ -18,7 +18,7 @@ static double compute_distance(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return prime_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**

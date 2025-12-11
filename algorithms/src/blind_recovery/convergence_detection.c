@@ -8,7 +8,7 @@
 
 #include "blind_recovery.h"
 #include <stdlib.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Check if oscillations have converged

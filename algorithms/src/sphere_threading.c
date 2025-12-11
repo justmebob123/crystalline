@@ -7,10 +7,10 @@
 
 #include "sphere_threading.h"
 #include "../../include/clock_lattice.h"
-#include "../../include/prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 // ============================================================================
 // INITIALIZATION

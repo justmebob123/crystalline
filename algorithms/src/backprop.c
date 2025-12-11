@@ -6,10 +6,10 @@
 #include "backprop.h"
 #include "numerical.h"
 #include "prime_math_custom.h"
-#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 /* ============================================================================
  * Gradient Buffer Management

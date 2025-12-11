@@ -4,8 +4,8 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Map k (BIGNUM) to position in high-dimensional space

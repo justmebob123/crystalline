@@ -8,10 +8,10 @@
 
 #include "../include/oscillation_detection.h"
 #include "../include/ecdlp_integration.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 // Mathematical constants (computed using crystalline math)
 #define PI 3.14159265358979323846

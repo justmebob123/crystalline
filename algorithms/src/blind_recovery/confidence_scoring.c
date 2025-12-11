@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute distance between two 3D points
@@ -18,7 +18,7 @@ static double distance_3d(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return prime_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**
@@ -50,7 +50,7 @@ double compute_vertex_confidence(
         double actual_dist = distance_3d(vertex_position, anchors->anchors[i].position);
         double expected_dist = expected_distances[i];
         
-        double error = fabs(actual_dist - expected_dist);
+        double error = prime_fabs(actual_dist - expected_dist);
         double relative_error = error / (expected_dist + 1e-6);
         
         total_error += relative_error;
@@ -65,7 +65,7 @@ double compute_vertex_confidence(
     // Perfect match (0 error) = 1.0 confidence
     // 10% error = ~0.9 confidence
     // 50% error = ~0.6 confidence
-    double confidence = exp(-2.0 * avg_error);
+    double confidence = prime_exp(-2.0 * avg_error);
     
     // Penalize if max error is very high (outlier detection)
     if (max_error > 0.5) {
@@ -247,7 +247,7 @@ double compute_structural_confidence(
     if (structure->dimensional_offsets) {
         double offset = structure->dimensional_offsets[vertex_id];
         // Lower confidence if offset is large
-        confidence *= exp(-offset);
+        confidence *= prime_exp(-offset);
     }
     
     return confidence;

@@ -8,10 +8,10 @@
 #include "../include/ecdlp_integration.h"
 #include "../include/crystal_abacus.h"
 #include "../include/tetration_attractors.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 // First 15 primes for lattice embedding
 static const uint64_t FIRST_15_PRIMES[15] = {

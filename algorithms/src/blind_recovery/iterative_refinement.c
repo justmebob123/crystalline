@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Apply candidate to structure
@@ -102,7 +102,7 @@ bool refine_structure(
         }
         
         // Check convergence
-        double corruption_change = fabs(structure->corruption_percentage - prev_corruption);
+        double corruption_change = prime_fabs(structure->corruption_percentage - prev_corruption);
         if (corruption_change < convergence_threshold) {
             converged = true;
         }

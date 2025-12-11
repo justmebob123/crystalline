@@ -11,7 +11,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <math.h>
 
 // OpenSSL for cryptographic operations (optional - stub implementations provided)
 #ifdef HAVE_OPENSSL
@@ -23,6 +22,7 @@
 #include <openssl/ripemd.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+#include "prime_float_math.h"
 #else
 // Stub implementations when OpenSSL is not available
 // In production, install OpenSSL development libraries

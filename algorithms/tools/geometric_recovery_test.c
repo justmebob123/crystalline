@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 #include <getopt.h>
 
 // Include blind recovery algorithm headers
 #include "blind_recovery/blind_recovery.h"
+#include "prime_float_math.h"
 
 #define MAX_VERTICES 1000
 #define MAX_EDGES 2000
@@ -215,7 +215,7 @@ void compute_metrics(GeometricStructure* original, GeometricStructure* corrupted
         double dx = recovered->vertices[i].x - original->vertices[i].x;
         double dy = recovered->vertices[i].y - original->vertices[i].y;
         double dz = recovered->vertices[i].z - original->vertices[i].z;
-        double error = sqrt(dx*dx + dy*dy + dz*dz);
+        double error = prime_sqrt(dx*dx + dy*dy + dz*dz);
         
         sum_squared_error += error * error;
         if (error > max_error) {
@@ -228,7 +228,7 @@ void compute_metrics(GeometricStructure* original, GeometricStructure* corrupted
         }
     }
     
-    metrics->rmse = sqrt(sum_squared_error / original->num_vertices);
+    metrics->rmse = prime_sqrt(sum_squared_error / original->num_vertices);
     metrics->max_error = max_error;
     metrics->recovery_rate = (double)recovered_count / original->num_vertices * 100.0;
     metrics->euler_verified = verify_euler_formula(recovered);

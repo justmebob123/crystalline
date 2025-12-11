@@ -4,9 +4,8 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute directional oscillation using anchors as gradient

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /*
  * Validation Module
@@ -125,7 +125,7 @@ ValidationResult* validate_signal(SignalData* data, SignalData* reference) {
         result->metrics[0] = snr; // SNR in dB
         
         // Calculate RMSE
-        double rmse = sqrt(noise_power);
+        double rmse = prime_sqrt(noise_power);
         result->metrics[1] = rmse;
         
         // Calculate correlation
@@ -146,11 +146,11 @@ ValidationResult* validate_signal(SignalData* data, SignalData* reference) {
             var_data += diff_data * diff_data;
             var_ref += diff_ref * diff_ref;
         }
-        correlation /= sqrt(var_data * var_ref + 1e-10);
+        correlation /= prime_sqrt(var_data * var_ref + 1e-10);
         result->metrics[2] = correlation;
         
         // Quality score based on SNR and correlation
-        result->quality_score = (fmin(snr / 40.0, 1.0) + correlation) / 2.0;
+        result->quality_score = (prime_fmin(snr / 40.0, 1.0) + correlation) / 2.0;
         result->valid = (snr > 20.0 && correlation > 0.8);
         
         snprintf(result->report, sizeof(result->report),
@@ -172,7 +172,7 @@ ValidationResult* validate_signal(SignalData* data, SignalData* reference) {
         variance /= total_samples;
         
         result->metrics[0] = mean;
-        result->metrics[1] = sqrt(variance); // Standard deviation
+        result->metrics[1] = prime_sqrt(variance); // Standard deviation
         result->metrics[2] = 0.0;
         result->metrics[3] = 0.0;
         
@@ -180,7 +180,7 @@ ValidationResult* validate_signal(SignalData* data, SignalData* reference) {
         result->quality_score = 0.8; // Assume good quality without reference
         snprintf(result->report, sizeof(result->report),
                 "Mean=%.4f, StdDev=%.4f (no reference)",
-                mean, sqrt(variance));
+                mean, prime_sqrt(variance));
     }
     
     result->metrics[3] = result->quality_score;
@@ -261,7 +261,7 @@ ValidationResult* validate_image(ImageData* data, ImageData* reference) {
         result->metrics[1] = ssim;
         
         // Quality score based on PSNR and SSIM
-        result->quality_score = (fmin(psnr / 50.0, 1.0) + ssim) / 2.0;
+        result->quality_score = (prime_fmin(psnr / 50.0, 1.0) + ssim) / 2.0;
         result->valid = (psnr > 30.0 && ssim > 0.9);
         
         snprintf(result->report, sizeof(result->report),
@@ -508,7 +508,7 @@ ValidationResult* validate_ml(MLData* data, void* test_data) {
     // Basic validation - check for NaN or Inf in weights
     bool valid_weights = true;
     for (size_t i = 0; i < data->num_weights; i++) {
-        if (isnan(data->weights[i]) || isinf(data->weights[i])) {
+        if (prime_isnan(data->weights[i]) || prime_isinf(data->weights[i])) {
             valid_weights = false;
             break;
         }

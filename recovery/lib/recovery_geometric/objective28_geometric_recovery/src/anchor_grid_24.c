@@ -15,11 +15,11 @@
 
 #include "anchor_grid_24.h"
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 #define PI M_PI
-#define PHI ((1.0 + sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
 
 AnchorGrid24* create_anchor_grid_24(uint64_t max_k) {
     AnchorGrid24* grid = calloc(1, sizeof(AnchorGrid24));
@@ -72,7 +72,7 @@ int find_nearest_anchors_24(
     if (!grid || !nearest) return 0;
     
     // Normalize target angle to [0, 2π)
-    double normalized = fmod(target_angle, 2.0 * PI);
+    double normalized = prime_fmod(target_angle, 2.0 * PI);
     if (normalized < 0) normalized += 2.0 * PI;
     
     // Find distances to all anchors
@@ -86,7 +86,7 @@ int find_nearest_anchors_24(
     
     for (uint32_t i = 0; i < grid->num_anchors; i++) {
         // Angular distance (handle wraparound)
-        double diff = fabs(grid->anchors[i].angle - normalized);
+        double diff = prime_fabs(grid->anchors[i].angle - normalized);
         if (diff > PI) diff = 2.0 * PI - diff;
         
         distances[i].distance = diff;
@@ -122,7 +122,7 @@ uint64_t compute_weighted_k_24(
     if (num_anchors == 0) return 0;
     
     // Normalize target angle
-    double normalized = fmod(target_angle, 2.0 * PI);
+    double normalized = prime_fmod(target_angle, 2.0 * PI);
     if (normalized < 0) normalized += 2.0 * PI;
     
     // Compute weights based on angular distance
@@ -131,7 +131,7 @@ uint64_t compute_weighted_k_24(
     
     for (int i = 0; i < num_anchors; i++) {
         // Angular distance
-        double diff = fabs(anchors[i]->angle - normalized);
+        double diff = prime_fabs(anchors[i]->angle - normalized);
         if (diff > PI) diff = 2.0 * PI - diff;
         
         // Avoid division by zero

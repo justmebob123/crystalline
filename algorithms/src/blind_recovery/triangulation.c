@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Tetration attractors for convergence bias
 static const uint64_t TETRATION_ATTRACTORS[] = {
@@ -31,7 +31,7 @@ static double distance_3d(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return prime_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**
@@ -39,11 +39,11 @@ static double distance_3d(const double* p1, const double* p2) {
  */
 static double find_nearest_attractor(double value) {
     double nearest = (double)TETRATION_ATTRACTORS[0];
-    double min_diff = fabs(value - nearest);
+    double min_diff = prime_fabs(value - nearest);
     
     for (uint32_t i = 1; i < NUM_ATTRACTORS; i++) {
         double attractor = (double)TETRATION_ATTRACTORS[i];
-        double diff = fabs(value - attractor);
+        double diff = prime_fabs(value - attractor);
         if (diff < min_diff) {
             min_diff = diff;
             nearest = attractor;
@@ -63,7 +63,7 @@ static bool solve_3x3(double A[3][3], double b[3], double x[3]) {
         // Find pivot
         int max_row = i;
         for (int k = i + 1; k < 3; k++) {
-            if (fabs(A[k][i]) > fabs(A[max_row][i])) {
+            if (prime_fabs(A[k][i]) > prime_fabs(A[max_row][i])) {
                 max_row = k;
             }
         }
@@ -81,7 +81,7 @@ static bool solve_3x3(double A[3][3], double b[3], double x[3]) {
         }
         
         // Check for singular matrix
-        if (fabs(A[i][i]) < 1e-10) {
+        if (prime_fabs(A[i][i]) < 1e-10) {
             return false;
         }
         
@@ -158,7 +158,7 @@ bool recover_vertex_triangulation(
             double dx = recovered_position[0] - anchor_pos[0];
             double dy = recovered_position[1] - anchor_pos[1];
             double dz = recovered_position[2] - anchor_pos[2];
-            double dist = sqrt(dx*dx + dy*dy + dz*dz);
+            double dist = prime_sqrt(dx*dx + dy*dy + dz*dz);
             
             if (dist < 1e-10) dist = 1e-10;  // Avoid division by zero
             
@@ -192,7 +192,7 @@ bool recover_vertex_triangulation(
         }
         
         // Check convergence
-        double delta_norm = sqrt(delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]);
+        double delta_norm = prime_sqrt(delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]);
         if (delta_norm < CONVERGENCE_THRESHOLD) {
             break;
         }
@@ -202,13 +202,13 @@ bool recover_vertex_triangulation(
     double total_error = 0.0;
     for (uint32_t i = 0; i < anchors->num_anchors; i++) {
         double dist = distance_3d(recovered_position, anchors->anchors[i].position);
-        double error = fabs(dist - expected_distances[i]);
+        double error = prime_fabs(dist - expected_distances[i]);
         total_error += error;
     }
     double avg_error = total_error / anchors->num_anchors;
     
     // Confidence: 1.0 for zero error, decreases exponentially
-    *confidence = exp(-avg_error);
+    *confidence = prime_exp(-avg_error);
     
     return true;
 }
@@ -256,7 +256,7 @@ bool recover_all_vertices(
             double dx = anchors->anchors[i].position[0] - centroid[0];
             double dy = anchors->anchors[i].position[1] - centroid[1];
             double dz = anchors->anchors[i].position[2] - centroid[2];
-            expected_distances[i] = sqrt(dx*dx + dy*dy + dz*dz);
+            expected_distances[i] = prime_sqrt(dx*dx + dy*dy + dz*dz);
             
             // Add small variation based on anchor index for better distribution
             expected_distances[i] *= (0.9 + 0.2 * (double)i / anchors->num_anchors);
