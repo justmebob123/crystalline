@@ -393,45 +393,6 @@ MathError abacus_to_uint64(const CrystallineAbacus* abacus, uint64_t* value) {
     return MATH_SUCCESS;
 }
 
-CrystallineAbacus* abacus_from_bigint(const BigInt* bi, uint32_t base) {
-    if (!bi) {
-        return NULL;
-    }
-    
-    /* For now, convert through int64 */
-    /* TODO: Implement direct BigInt conversion for large numbers */
-    
-    int64_t value = bigint_to_int64(bi);
-    
-    CrystallineAbacus* abacus = abacus_from_uint64(
-        (value < 0) ? -value : value,
-        base
-    );
-    
-    if (abacus) {
-        abacus->negative = (value < 0);
-    }
-    
-    return abacus;
-}
-
-BigInt* abacus_to_bigint(const CrystallineAbacus* abacus) {
-    if (!abacus) {
-        return NULL;
-    }
-    
-    /* For now, convert through uint64 */
-    /* TODO: Implement direct BigInt conversion for large numbers */
-    
-    uint64_t value;
-    if (abacus_to_uint64(abacus, &value) != MATH_SUCCESS) {
-        return NULL;
-    }
-    
-    BigInt* bi = bigint_from_int64(abacus->negative ? -(int64_t)value : (int64_t)value);
-    return bi;
-}
-
 /* ============================================================================
  * GEOMETRIC ARITHMETIC OPERATIONS
  * ============================================================================

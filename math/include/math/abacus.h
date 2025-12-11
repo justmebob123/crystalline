@@ -11,7 +11,7 @@
  * - Numbers are represented as positions on the Babylonian clock
  * - Arithmetic operations become geometric transformations
  * - Leverages the crystalline lattice structure
- * - Provides alternative representation for BigInt/BigFixed
+ * - Self-contained geometric arithmetic system (no BigInt dependency)
  * 
  * Structure:
  * - Each "bead" is a position on the clock lattice
@@ -29,7 +29,6 @@
 
 #include "math/types.h"
 #include "math/clock.h"
-#include "math/bigint.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -96,21 +95,6 @@ MathError abacus_init_zero(CrystallineAbacus* abacus);
  * CONVERSION
  * ============================================================================
  */
-
-/**
- * @brief Create abacus from BigInt
- * @param bi BigInt to convert
- * @param base Number base (12, 60, or 100)
- * @return Pointer to new abacus, or NULL on error
- */
-CrystallineAbacus* abacus_from_bigint(const BigInt* bi, uint32_t base);
-
-/**
- * @brief Convert abacus to BigInt
- * @param abacus Abacus to convert
- * @return Pointer to new BigInt, or NULL on error
- */
-BigInt* abacus_to_bigint(const CrystallineAbacus* abacus);
 
 /**
  * @brief Create abacus from uint64
