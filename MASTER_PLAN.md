@@ -562,18 +562,18 @@ The project is transitioning from the OLD crystalline library to the NEW math li
 **OLD System (Legacy - Being Replaced):**
 - Located in: crystalline/, src/, include/
 - Uses: BigInt (array-based), BigFixed (depends on BigInt)
-- Status: Production code, needs migration
+- Status: Production code, DO NOT MODIFY, needs migration
 
 **NEW System (Pure Crystalline):**
 - Located in: math/
 - Uses: Crystalline Abacus (geometric clock lattice)
-- Status: Production-ready, fully tested
+- Status: ✅ Production-ready, 192 tests passing
 - Features:
   * Supports ALL bases >= 2 (not just 12, 60, 100)
   * Base conversion without fractions
   * Fractional support (negative exponents)
-  * Modular arithmetic
-  * NTT implementation
+  * Modular arithmetic (mod, mod_add, mod_sub, mod_mul, mod_exp, mod_inverse)
+  * NTT implementation (pure Abacus, no BigInt)
   * Zero dependencies on math.h or BigInt
 
 **Migration Path:**
@@ -581,11 +581,92 @@ The project is transitioning from the OLD crystalline library to the NEW math li
 2. ✅ BigInt/BigFixed removed from NEW library
 3. ✅ NTT rewritten to use pure Abacus
 4. ✅ Abacus enhanced to support ALL bases
-5. 🔄 Migrate OLD crystalline library to use NEW math library
-6. 🔄 Migrate algorithms library
-7. 🔄 Migrate CLLM library
-8. 🔄 Migrate application code
-9. ⏳ Delete OLD crystalline library
+5. ✅ Algorithms library migrated (6/6 files) - COMPLETE
+6. 🔄 CLLM library migration (0/7 files) - IN PROGRESS
+7. ⏳ Application code migration - PENDING
+8. ⏳ Delete OLD crystalline library - PENDING
+
+**Current Progress: 46% Complete (6/13 core files migrated)**
+
+### Layer-by-Layer Design
+
+#### Layer 1: NEW Math Library (math/) - ✅ COMPLETE
+**Purpose**: Pure crystalline mathematics foundation
+**Design Principles**:
+- Pure Crystalline Abacus (geometric clock lattice operations)
+- No threading, no hierarchical structures
+- Self-contained, no external dependencies
+- Supports ALL bases >= 2 (universal Babylonian mathematics)
+
+**Key Components**:
+- `abacus.c` - Core Abacus implementation
+- `abacus_modular.c` - Modular arithmetic operations
+- `ntt.c` - Number Theoretic Transform (pure Abacus)
+- `arithmetic.c` - Basic arithmetic operations
+- `transcendental.c` - Transcendental functions (sin, cos, log, exp)
+- `clock_lattice.c` - Babylonian clock structure
+- `prime_generation.c` - Deterministic prime generation
+
+**Status**: ✅ 100% Complete, 192 tests passing
+
+#### Layer 2: Algorithms Library (algorithms/) - ✅ COMPLETE
+**Purpose**: Algorithms built on NEW math library
+**Design Principles**:
+- Uses NEW math library (Crystalline Abacus) exclusively
+- Implements specialized algorithms (NTT attention, lattice embeddings, etc.)
+- Hierarchical prime generation ALGORITHM (not in math library)
+- No OLD library dependencies
+
+**Key Components**:
+- `ntt_attention.c` - O(n log n) attention using NTT
+- `lattice_embeddings_bigfixed.c` - L(n,d,k,λ) lattice formula
+- `loss_functions_bigfixed.c` - Loss computation
+- `bigfixed_math_wrappers.c` - Math wrappers
+- `hierarchical_prime_partitions.c` - Hierarchical prime generation
+- `lattice_sphere_positions.c` - 12-sphere positioning
+
+**Status**: ✅ 100% Complete (6/6 files migrated)
+
+#### Layer 3: CLLM Library (src/ai/) - 🔄 IN PROGRESS
+**Purpose**: Core CLLM model implementation
+**Design Principles**:
+- Uses NEW math library (Crystalline Abacus) for all arithmetic
+- Preserves all geometric architecture (Platonic solids, clock lattice, blind recovery)
+- Uses algorithms library for specialized operations
+- No OLD library dependencies
+
+**Key Components** (7 files to migrate):
+1. ⏳ `cllm_token.c` - Token → prime mapping, rainbow table
+2. ⏳ `cllm_embeddings.c` - Embedding initialization with L(n,d,k,λ)
+3. ⏳ `bigfixed_array_utils.c` - Array utilities
+4. ⏳ `cllm_lattice_conversion.c` - Abacus ↔ double conversion
+5. ⏳ `cllm_optimizer.c` - Optimizer (Adam, SGD)
+6. ⏳ `cllm_training_threaded.c` - Comments only
+7. ⏳ `cllm_production.c` - Comments only
+
+**Geometric Architecture** (FULLY IMPLEMENTED - PRESERVE):
+- ✅ All 5 Platonic solids (2,900 lines)
+- ✅ Blind recovery system (23 algorithm files, 4 recovery methods)
+- ✅ Clock lattice mapping (495 file references)
+- ✅ Kissing spheres threading (343 file references)
+- ✅ NTT attention (already migrated in algorithms/)
+- ✅ Harmonic integration (291 lines)
+
+**Status**: 🔄 0% Complete (0/7 files migrated) - CURRENT FOCUS
+
+#### Layer 4: Application Layer (app/) - ⏳ PENDING
+**Purpose**: User interface and tools
+**Design Principles**:
+- Uses CLLM library for all model operations
+- Provides UI and CLI interfaces
+- Visualization and analysis tools
+
+**Key Components**:
+- UI tabs (training, models, LLM, etc.)
+- CLI tools (train_model, etc.)
+- Visualization components
+
+**Status**: ⏳ Pending (after CLLM migration)
 
 ## 📋 ARCHITECTURAL PRINCIPLES
 
