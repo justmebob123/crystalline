@@ -12,7 +12,7 @@
 #include <stdint.h>
 
 /* Forward declarations for internal helpers */
-static double math_trunc(double x);
+// Forward declaration removed - now in header
 
 /* ============================================================================
  * BASIC ARITHMETIC
@@ -99,30 +99,54 @@ bool math_is_finite(double x) {
     return !math_is_nan(x) && !math_is_inf(x);
 }
 
+// Rounding functions
+double math_floor(double x) {
+    if (math_is_nan(x) || math_is_inf(x)) {
+        return x;
+    }
+    
+    int64_t i = (int64_t)x;
+    if (x < 0.0 && x != (double)i) {
+        return (double)(i - 1);
+    }
+    return (double)i;
+}
+
+double math_ceil(double x) {
+    if (math_is_nan(x) || math_is_inf(x)) {
+        return x;
+    }
+    
+    int64_t i = (int64_t)x;
+    if (x > 0.0 && x != (double)i) {
+        return (double)(i + 1);
+    }
+    return (double)i;
+}
+
+double math_round(double x) {
+    if (math_is_nan(x) || math_is_inf(x)) {
+        return x;
+    }
+    
+    if (x >= 0.0) {
+        return math_floor(x + 0.5);
+    } else {
+        return math_ceil(x - 0.5);
+    }
+}
+
+double math_trunc(double x) {
+    if (math_is_nan(x) || math_is_inf(x)) {
+        return x;
+    }
+    
+    return (double)((int64_t)x);
+}
+
 /* ============================================================================
  * HELPER FUNCTIONS (internal use)
  * ============================================================================
  */
 
-/**
- * @brief Truncate to integer (internal helper)
- * @param x Input value
- * @return Integer part (round toward zero)
- */
-static double math_trunc(double x) {
-    if (x >= 0.0) {
-        // Positive: cast to int64 and back
-        if (x < 9007199254740992.0) {  // 2^53
-            return (double)(int64_t)x;
-        }
-        // For very large numbers, already an integer
-        return x;
-    } else {
-        // Negative: cast to int64 and back
-        if (x > -9007199254740992.0) {  // -2^53
-            return (double)(int64_t)x;
-        }
-        // For very large negative numbers, already an integer
-        return x;
-    }
-}
+// Note: math_trunc is already defined above as a public function

@@ -539,59 +539,12 @@ double math_atanh(double x) {
 }
 
 /* ============================================================================
- * ROUNDING FUNCTIONS
+ * MODULO FUNCTIONS
  * ============================================================================
  */
 
-double math_floor(double x) {
-    if (x >= 0.0) {
-        /* Positive: truncate */
-        if (x < 9007199254740992.0) {  /* 2^53 */
-            return (double)(int64_t)x;
-        }
-        return x;  /* Already an integer */
-    } else {
-        /* Negative: truncate and subtract 1 if not exact */
-        if (x > -9007199254740992.0) {  /* -2^53 */
-            int64_t truncated = (int64_t)x;
-            return ((double)truncated == x) ? x : (double)(truncated - 1);
-        }
-        return x;  /* Already an integer */
-    }
-}
-
-double math_ceil(double x) {
-    if (x >= 0.0) {
-        /* Positive: truncate and add 1 if not exact */
-        if (x < 9007199254740992.0) {  /* 2^53 */
-            int64_t truncated = (int64_t)x;
-            return ((double)truncated == x) ? x : (double)(truncated + 1);
-        }
-        return x;  /* Already an integer */
-    } else {
-        /* Negative: truncate */
-        if (x > -9007199254740992.0) {  /* -2^53 */
-            return (double)(int64_t)x;
-        }
-        return x;  /* Already an integer */
-    }
-}
-
-double math_round(double x) {
-    if (x >= 0.0) {
-        return math_floor(x + 0.5);
-    } else {
-        return math_ceil(x - 0.5);
-    }
-}
-
-double math_trunc(double x) {
-    if (x >= 0.0) {
-        return math_floor(x);
-    } else {
-        return math_ceil(x);
-    }
-}
+/* Note: math_floor, math_ceil, math_round, math_trunc are defined in arithmetic.c
+ * and included via arithmetic.h. We use them here but don't redefine them. */
 
 double math_fmod(double x, double y) {
     if (y == 0.0) {

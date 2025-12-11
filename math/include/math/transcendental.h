@@ -257,33 +257,8 @@ double math_atanh(double x);
  * ============================================================================
  */
 
-/**
- * @brief Floor function
- * @param x Input value
- * @return Largest integer <= x
- */
-double math_floor(double x);
-
-/**
- * @brief Ceiling function
- * @param x Input value
- * @return Smallest integer >= x
- */
-double math_ceil(double x);
-
-/**
- * @brief Round to nearest integer
- * @param x Input value
- * @return Nearest integer (ties round away from zero)
- */
-double math_round(double x);
-
-/**
- * @brief Truncate to integer
- * @param x Input value
- * @return Integer part (round toward zero)
- */
-double math_trunc(double x);
+/* Note: math_floor, math_ceil, math_round, math_trunc are declared in arithmetic.h
+ * These are basic arithmetic operations, not transcendental functions. */
 
 /**
  * @brief Floating-point modulo

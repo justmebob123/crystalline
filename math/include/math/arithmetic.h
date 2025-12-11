@@ -139,6 +139,34 @@ bool math_is_inf(double x);
  */
 bool math_is_finite(double x);
 
+/**
+ * @brief Round down to nearest integer
+ * @param x Value to round
+ * @return Largest integer <= x
+ */
+double math_floor(double x);
+
+/**
+ * @brief Round up to nearest integer
+ * @param x Value to round
+ * @return Smallest integer >= x
+ */
+double math_ceil(double x);
+
+/**
+ * @brief Round to nearest integer
+ * @param x Value to round
+ * @return Nearest integer (ties round away from zero)
+ */
+double math_round(double x);
+
+/**
+ * @brief Truncate to integer (round toward zero)
+ * @param x Value to truncate
+ * @return Integer part of x
+ */
+double math_trunc(double x);
+
 #ifdef __cplusplus
 }
 #endif
