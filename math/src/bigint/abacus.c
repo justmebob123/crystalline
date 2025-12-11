@@ -21,6 +21,7 @@
 
 /* Forward declarations */
 static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosition* pos);
+static MathError multiply_by_digit(CrystallineAbacus* result, const CrystallineAbacus* a, uint32_t digit);
 
 /**
  * @brief Ensure abacus has enough capacity
@@ -72,6 +73,48 @@ static int compare_magnitude(const CrystallineAbacus* a, const CrystallineAbacus
     }
     
     return 0; /* Equal */
+}
+
+/**
+ * @brief Find quotient digit for division (trial division)
+ * @param dividend Current dividend
+ * @param divisor Divisor
+ * @return Quotient digit (0 to base-1)
+ * 
+ * Finds the largest digit q such that divisor * q <= dividend
+ */
+static uint32_t find_quotient_digit(const CrystallineAbacus* dividend,
+                                    const CrystallineAbacus* divisor) {
+    /* Binary search for quotient digit */
+    uint32_t low = 0;
+    uint32_t high = dividend->base - 1;
+    uint32_t result = 0;
+    
+    CrystallineAbacus* temp = abacus_new(dividend->base);
+    if (!temp) return 0;
+    
+    while (low <= high) {
+        uint32_t mid = (low + high) / 2;
+        
+        /* Calculate divisor * mid */
+        multiply_by_digit(temp, divisor, mid);
+        
+        /* Compare with dividend */
+        int cmp = compare_magnitude(temp, dividend);
+        
+        if (cmp <= 0) {
+            /* divisor * mid <= dividend, try larger */
+            result = mid;
+            low = mid + 1;
+        } else {
+            /* divisor * mid > dividend, try smaller */
+            if (mid == 0) break;
+            high = mid - 1;
+        }
+    }
+    
+    abacus_free(temp);
+    return result;
 }
 
 /**
@@ -649,60 +692,251 @@ MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
         return MATH_ERROR_INVALID_ARG;
     }
     
+    /* Bases must match */
+    if (a->base != b->base || quotient->base != a->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (remainder && remainder->base != a->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
     /* Check for division by zero */
     if (abacus_is_zero(b)) {
         return MATH_ERROR_DIVISION_BY_ZERO;
     }
     
-    /* For now, convert to BigInt and back */
-    /* TODO: Implement direct geometric division */
+    /* PURE GEOMETRIC DIVISION - Long Division Algorithm */
     
-    BigInt* bi_a = abacus_to_bigint(a);
-    BigInt* bi_b = abacus_to_bigint(b);
-    BigInt* bi_q = bigint_new();
-    BigInt* bi_r = (remainder != NULL) ? bigint_new() : NULL;
+    /* Handle zero dividend */
+    if (abacus_is_zero(a)) {
+        abacus_init_zero(quotient);
+        if (remainder) {
+            abacus_init_zero(remainder);
+        }
+        return MATH_SUCCESS;
+    }
     
-    if (!bi_a || !bi_b || !bi_q) {
-        bigint_free(bi_a);
-        bigint_free(bi_b);
-        bigint_free(bi_q);
-        bigint_free(bi_r);
+    /* Compare magnitudes */
+    int cmp = compare_magnitude(a, b);
+    
+    if (cmp < 0) {
+        /* |a| < |b|: quotient = 0, remainder = a */
+        abacus_init_zero(quotient);
+        if (remainder) {
+            CrystallineAbacus* temp = abacus_copy(a);
+            if (!temp) return MATH_ERROR_OUT_OF_MEMORY;
+            
+            if (abacus_ensure_capacity(remainder, temp->num_beads) == MATH_SUCCESS) {
+                memcpy(remainder->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+                remainder->num_beads = temp->num_beads;
+                remainder->negative = temp->negative;
+            }
+            abacus_free(temp);
+        }
+        return MATH_SUCCESS;
+    }
+    
+    if (cmp == 0) {
+        /* |a| == |b|: quotient = 1, remainder = 0 */
+        quotient->num_beads = 1;
+        quotient->beads[0].value = 1;
+        quotient->beads[0].weight = 1;
+        quotient->negative = (a->negative != b->negative);
+        if (map_digit_to_position(1, quotient->base, &quotient->beads[0].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+        
+        if (remainder) {
+            abacus_init_zero(remainder);
+        }
+        return MATH_SUCCESS;
+    }
+    
+    /* Long division: |a| > |b| */
+    /* Work with magnitudes, handle sign at the end */
+    
+    CrystallineAbacus* current = abacus_new(a->base);
+    CrystallineAbacus* temp_quotient = abacus_new(a->base);
+    
+    if (!current || !temp_quotient) {
+        abacus_free(current);
+        abacus_free(temp_quotient);
         return MATH_ERROR_OUT_OF_MEMORY;
     }
     
-    MathError err = bigint_div(bi_q, bi_r, bi_a, bi_b);
+    /* Initialize quotient to zero */
+    abacus_init_zero(temp_quotient);
     
-    if (err == MATH_SUCCESS) {
-        CrystallineAbacus* temp_q = abacus_from_bigint(bi_q, quotient->base);
-        if (temp_q) {
-            if (abacus_ensure_capacity(quotient, temp_q->num_beads) == MATH_SUCCESS) {
-                memcpy(quotient->beads, temp_q->beads, temp_q->num_beads * sizeof(AbacusBead));
-                quotient->num_beads = temp_q->num_beads;
-                quotient->negative = temp_q->negative;
-            }
-            abacus_free(temp_q);
+    /* Initialize current to zero */
+    abacus_init_zero(current);
+    
+    /* Process each digit of dividend from most significant to least */
+    for (int i = (int)a->num_beads - 1; i >= 0; i--) {
+        /* Shift current left by 1 position (multiply by base) */
+        CrystallineAbacus* shifted = abacus_new(a->base);
+        if (!shifted) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            return MATH_ERROR_OUT_OF_MEMORY;
         }
         
-        if (remainder && bi_r) {
-            CrystallineAbacus* temp_r = abacus_from_bigint(bi_r, remainder->base);
-            if (temp_r) {
-                if (abacus_ensure_capacity(remainder, temp_r->num_beads) == MATH_SUCCESS) {
-                    memcpy(remainder->beads, temp_r->beads, temp_r->num_beads * sizeof(AbacusBead));
-                    remainder->num_beads = temp_r->num_beads;
-                    remainder->negative = temp_r->negative;
-                }
-                abacus_free(temp_r);
-            }
+        MathError err = abacus_shift_left(shifted, current, 1);
+        if (err != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(shifted);
+            return err;
         }
+        
+        /* Add next digit from dividend */
+        shifted->beads[0].value = a->beads[i].value;
+        if (map_digit_to_position(a->beads[i].value, shifted->base, &shifted->beads[0].position) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(shifted);
+            return MATH_ERROR_INVALID_ARG;
+        }
+        
+        /* Normalize shifted */
+        abacus_normalize(shifted);
+        
+        /* Copy shifted to current */
+        if (abacus_ensure_capacity(current, shifted->num_beads) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(shifted);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(current->beads, shifted->beads, shifted->num_beads * sizeof(AbacusBead));
+        current->num_beads = shifted->num_beads;
+        current->negative = false;  /* Work with magnitudes */
+        
+        abacus_free(shifted);
+        
+        /* Find quotient digit */
+        uint32_t q_digit = find_quotient_digit(current, b);
+        
+        /* Shift quotient left and add new digit */
+        CrystallineAbacus* q_shifted = abacus_new(a->base);
+        if (!q_shifted) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        err = abacus_shift_left(q_shifted, temp_quotient, 1);
+        if (err != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(q_shifted);
+            return err;
+        }
+        
+        q_shifted->beads[0].value = q_digit;
+        if (map_digit_to_position(q_digit, q_shifted->base, &q_shifted->beads[0].position) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(q_shifted);
+            return MATH_ERROR_INVALID_ARG;
+        }
+        
+        abacus_normalize(q_shifted);
+        
+        /* Copy to temp_quotient */
+        if (abacus_ensure_capacity(temp_quotient, q_shifted->num_beads) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(q_shifted);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(temp_quotient->beads, q_shifted->beads, q_shifted->num_beads * sizeof(AbacusBead));
+        temp_quotient->num_beads = q_shifted->num_beads;
+        
+        abacus_free(q_shifted);
+        
+        /* Subtract b * q_digit from current */
+        CrystallineAbacus* product = abacus_new(a->base);
+        if (!product) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        err = multiply_by_digit(product, b, q_digit);
+        if (err != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(product);
+            return err;
+        }
+        
+        CrystallineAbacus* new_current = abacus_new(a->base);
+        if (!new_current) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(product);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        err = abacus_sub(new_current, current, product);
+        if (err != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(product);
+            abacus_free(new_current);
+            return err;
+        }
+        
+        abacus_free(product);
+        
+        /* Copy new_current to current */
+        if (abacus_ensure_capacity(current, new_current->num_beads) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            abacus_free(new_current);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(current->beads, new_current->beads, new_current->num_beads * sizeof(AbacusBead));
+        current->num_beads = new_current->num_beads;
+        current->negative = false;  /* Keep magnitude */
+        
+        abacus_free(new_current);
     }
     
-    bigint_free(bi_a);
-    bigint_free(bi_b);
-    bigint_free(bi_q);
-    bigint_free(bi_r);
+    /* Copy quotient */
+    if (abacus_ensure_capacity(quotient, temp_quotient->num_beads) != MATH_SUCCESS) {
+        abacus_free(current);
+        abacus_free(temp_quotient);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    memcpy(quotient->beads, temp_quotient->beads, temp_quotient->num_beads * sizeof(AbacusBead));
+    quotient->num_beads = temp_quotient->num_beads;
+    quotient->negative = (a->negative != b->negative);
     
-    return err;
+    /* Copy remainder */
+    if (remainder) {
+        if (abacus_ensure_capacity(remainder, current->num_beads) != MATH_SUCCESS) {
+            abacus_free(current);
+            abacus_free(temp_quotient);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(remainder->beads, current->beads, current->num_beads * sizeof(AbacusBead));
+        remainder->num_beads = current->num_beads;
+        remainder->negative = a->negative;  /* Remainder has same sign as dividend */
+    }
+    
+    abacus_free(current);
+    abacus_free(temp_quotient);
+    
+    abacus_normalize(quotient);
+    if (remainder) {
+        abacus_normalize(remainder);
+    }
+    
+    return MATH_SUCCESS;
 }
+
 
 MathError abacus_shift_left(CrystallineAbacus* result, const CrystallineAbacus* a, size_t n) {
     if (!result || !a) {
