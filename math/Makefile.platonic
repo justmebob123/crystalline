@@ -22,7 +22,9 @@ SRCS = $(SRC_DIR)/schlafli_parser.c \
        $(SRC_DIR)/icosahedron_generator.c \
        $(SRC_DIR)/polytope_abacus.c \
        $(SRC_DIR)/simplex_generator_abacus.c \
-       $(SRC_DIR)/hypercube_generator_abacus.c
+       $(SRC_DIR)/hypercube_generator_abacus.c \
+       $(SRC_DIR)/cross_polytope_generator_abacus.c \
+       $(SRC_DIR)/golden_ratio_abacus.c
 
 # Object files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
