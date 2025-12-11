@@ -90,6 +90,7 @@ typedef struct {
     // ========================================================================
     bool is_valid;                   /**< Passed all validation checks */
     bool is_regular;                 /**< All faces/edges/angles equal */
+    bool is_convex;                  /**< Convex polytope */
     bool has_golden_ratio;           /**< Contains golden ratio (φ) */
     
     // ========================================================================

@@ -165,17 +165,19 @@ We need a **DYNAMIC PLATONIC SOLID GENERATOR** that creates infinite solids in A
   * [x] Corrected cell count formula: 2^n
   * [x] 16-cell now: 8V, 24E, 32F, 16C, χ=0 ✅
   * [x] ALL 158 TESTS PASSING ✅
-- [ ] **Phase 2 IN PROGRESS**: Replace `double` coordinates with Crystalline Abacus representation
+- [x] **Phase 2 COMPLETE**: Replace `double` coordinates with Crystalline Abacus representation ✅
   * [x] Created polytope_abacus.h (new Abacus-based structure)
   * [x] Created polytope_abacus.c (conversion functions)
   * [x] Rewrite simplex generator to use Abacus ✅
   * [x] Rewrite hypercube generator to use Abacus ✅
   * [x] Rewrite cross-polytope generator to use Abacus ✅
   * [x] Golden ratio computation with Abacus ✅
-  * [ ] Rewrite dodecahedron generator to use Abacus (golden ratio) - NEXT
-  * [ ] Rewrite icosahedron generator to use Abacus (golden ratio) - NEXT
-  * [x] Test and verify precision (28/28 Abacus tests passing) ✅
+  * [x] Rewrite dodecahedron generator to use Abacus (golden ratio) ✅
+  * [x] Rewrite icosahedron generator to use Abacus (golden ratio) ✅
+  * [x] Test and verify precision (40/40 Abacus tests passing) ✅
   * [x] All original tests still passing (158/158) ✅
+  * [x] Added is_convex property to PlatonicSolid structure ✅
+  * [x] Identified and documented abacus_div bug (workaround implemented)
 - [ ] **Phase 3 PENDING**: Integrate with clock lattice for geometric calculations
 - [ ] **Phase 4 PENDING**: Use deterministic prime-based positioning
 - [ ] **Phase 5 PENDING**: Ensure arbitrary precision throughout

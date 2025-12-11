@@ -272,6 +272,7 @@ bool platonic_compute_properties(PlatonicSolid* solid) {
     // Validate
     solid->is_valid = platonic_validate(solid);
     solid->is_regular = solid->is_valid;
+    solid->is_convex = true;  // All Platonic solids are convex
     
     return true;
 }

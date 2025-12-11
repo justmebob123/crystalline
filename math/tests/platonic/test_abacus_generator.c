@@ -130,6 +130,44 @@ void test_high_dimension() {
     platonic_abacus_free(solid);
 }
 
+void test_golden_ratio_solids() {
+    TEST("Dodecahedron with Abacus (golden ratio)");
+    
+    PlatonicSolidAbacus* dodeca = platonic_generate_dodecahedron_abacus(12, 10);
+    ASSERT_TRUE(dodeca != NULL);
+    ASSERT_EQ(dodeca->dimension, 3);
+    ASSERT_EQ(dodeca->num_vertices, 20);
+    ASSERT_EQ(dodeca->num_edges, 30);
+    ASSERT_EQ(dodeca->num_faces, 12);
+    ASSERT_TRUE(dodeca->has_golden_ratio);
+    
+    printf("Dodecahedron (Abacus with golden ratio):\n");
+    printf("  Vertices: %lu\n", (unsigned long)dodeca->num_vertices);
+    printf("  Edges: %lu\n", (unsigned long)dodeca->num_edges);
+    printf("  Faces: %lu\n", (unsigned long)dodeca->num_faces);
+    printf("  Has golden ratio: %s\n", dodeca->has_golden_ratio ? "YES" : "NO");
+    
+    platonic_abacus_free(dodeca);
+    
+    TEST("Icosahedron with Abacus (golden ratio)");
+    
+    PlatonicSolidAbacus* icosa = platonic_generate_icosahedron_abacus(12, 10);
+    ASSERT_TRUE(icosa != NULL);
+    ASSERT_EQ(icosa->dimension, 3);
+    ASSERT_EQ(icosa->num_vertices, 12);
+    ASSERT_EQ(icosa->num_edges, 30);
+    ASSERT_EQ(icosa->num_faces, 20);
+    ASSERT_TRUE(icosa->has_golden_ratio);
+    
+    printf("Icosahedron (Abacus with golden ratio):\n");
+    printf("  Vertices: %lu\n", (unsigned long)icosa->num_vertices);
+    printf("  Edges: %lu\n", (unsigned long)icosa->num_edges);
+    printf("  Faces: %lu\n", (unsigned long)icosa->num_faces);
+    printf("  Has golden ratio: %s\n", icosa->has_golden_ratio ? "YES" : "NO");
+    
+    platonic_abacus_free(icosa);
+}
+
 int main(void) {
     printf("=================================================\n");
     printf("Abacus-Based Platonic Solid Generator Tests\n");
@@ -139,6 +177,7 @@ int main(void) {
     test_hypercube_abacus();
     test_conversion();
     test_high_dimension();
+    test_golden_ratio_solids();
     
     printf("\n=================================================\n");
     printf("Test Results:\n");
