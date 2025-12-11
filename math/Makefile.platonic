@@ -3,7 +3,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -fPIC -I./include
-LDFLAGS = -lm
+LDFLAGS = -L./lib -lcrystallinemath -lm
 
 # Directories
 SRC_DIR = src/platonic
@@ -71,7 +71,7 @@ test: tests
 	@echo ""
 	@echo "Running tests..."
 	@echo "==============================================="
-	@$(BIN_DIR)/test_generator
+	@LD_LIBRARY_PATH=./lib $(BIN_DIR)/test_generator
 	@echo "==============================================="
 	@echo ""
 

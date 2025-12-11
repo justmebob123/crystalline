@@ -17,13 +17,14 @@
 #include "math/platonic_generator.h"
 #include "math/polytope.h"
 #include "math/schlafli.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
-// Golden ratio
-#define PHI ((1.0 + sqrt(5.0)) / 2.0)
+// Golden ratio: φ = (1 + √5) / 2
+#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 
 // ============================================================================
 // COORDINATE GENERATION
@@ -114,7 +115,7 @@ static bool generate_icosahedron_edges(PlatonicSolid* solid) {
             double dz = solid->vertex_coords[i * 3 + 2] - solid->vertex_coords[j * 3 + 2];
             double dist_sq = dx * dx + dy * dy + dz * dz;
             
-            if (fabs(dist_sq - edge_length_sq) < tolerance) {
+            if (math_abs(dist_sq - edge_length_sq) < tolerance) {
                 num_edges++;
             }
         }
@@ -137,7 +138,7 @@ static bool generate_icosahedron_edges(PlatonicSolid* solid) {
             double dz = solid->vertex_coords[i * 3 + 2] - solid->vertex_coords[j * 3 + 2];
             double dist_sq = dx * dx + dy * dy + dz * dz;
             
-            if (fabs(dist_sq - edge_length_sq) < tolerance) {
+            if (math_abs(dist_sq - edge_length_sq) < tolerance) {
                 solid->edge_indices[edge_idx] = (uint32_t*)calloc(2, sizeof(uint32_t));
                 if (!solid->edge_indices[edge_idx]) {
                     return false;

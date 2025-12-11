@@ -20,10 +20,11 @@
 #include "math/platonic_generator.h"
 #include "math/polytope.h"
 #include "math/schlafli.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 // ============================================================================
 // COORDINATE GENERATION
@@ -68,7 +69,7 @@ static bool generate_simplex_coordinates(PlatonicSolid* solid) {
                     double coord = solid->vertex_coords[i * n + k];
                     sum_sq += coord * coord;
                 }
-                solid->vertex_coords[i * n + j] = sqrt(1.0 - sum_sq);
+                solid->vertex_coords[i * n + j] = math_sqrt(1.0 - sum_sq);
             } else {
                 // Copy and adjust from previous vertex
                 solid->vertex_coords[i * n + j] = 

@@ -6,10 +6,11 @@
 #include "math/platonic_generator.h"
 #include "math/polytope.h"
 #include "math/schlafli.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 // Forward declarations for specialized generators
 extern PlatonicSolid* platonic_generate_tetrahedron(void);
@@ -179,7 +180,7 @@ bool platonic_compute_metrics(PlatonicSolid* solid) {
         double coord = solid->vertex_coords[i];
         sum_sq += coord * coord;
     }
-    solid->circumradius = sqrt(sum_sq);
+    solid->circumradius = math_sqrt(sum_sq);
     
     // Edge length is already set to 1.0 by default
     
