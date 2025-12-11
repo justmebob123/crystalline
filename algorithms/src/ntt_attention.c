@@ -2,13 +2,15 @@
  * NTT Attention - O(n log n) Attention Implementation
  * 
  * Implements fast attention using Number Theoretic Transform.
- * Uses crystalline library for all mathematical operations.
+ * Uses NEW math library (Crystalline Abacus) for all mathematical operations.
+ * 
+ * MIGRATED: Now uses math/ntt.h and math/abacus.h instead of OLD BigInt
  */
 
 #include "ntt_attention.h"
 #include "../../include/prime_math_custom.h"
-#include "../../include/bigint_ntt.h"
-#include "../../include/bigint_core.h"
+#include "math/ntt.h"
+#include "math/abacus.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -65,32 +67,55 @@ static void apply_softmax(float* scores, uint32_t len) {
 }
 
 /**
- * Convert float array to BigInt array for NTT
+ * Convert float array to Abacus array for NTT
+ * MIGRATED: Now uses Crystalline Abacus instead of BigInt
  */
 __attribute__((unused))
-static int float_to_bigint_array(BigInt* output, const float* input, uint32_t len) {
+static int float_to_abacus_array(CrystallineAbacus** output, const float* input, uint32_t len, uint32_t base) {
     if (!output || !input) return 0;
     
     for (uint32_t i = 0; i < len; i++) {
         // Scale float to integer (multiply by scale factor)
         int64_t scaled = (int64_t)(input[i] * NTT_SCALE_FACTOR);
-        big_from_int(&output[i], scaled);
+        uint64_t abs_scaled = (scaled < 0) ? -scaled : scaled;
+        
+        output[i] = abacus_from_uint64(abs_scaled, base);
+        if (!output[i]) return 0;
+        
+        if (scaled < 0) {
+            output[i]->negative = true;
+        }
     }
     
     return 1;
 }
 
 /**
- * Convert BigInt array back to float array
+ * Convert Abacus array back to float array
+ * MIGRATED: Now uses Crystalline Abacus instead of BigInt
  */
 __attribute__((unused))
-static int bigint_to_float_array(float* output, const BigInt* input, uint32_t len) {
+static int abacus_to_float_array(float* output, CrystallineAbacus** input, uint32_t len) {
     if (!output || !input) return 0;
     
     for (uint32_t i = 0; i < len; i++) {
-        // Convert BigInt to int64 and scale back to float
-        int64_t value = big_to_int64(&input[i]);
+        if (!input[i]) {
+            output[i] = 0.0f;
+            continue;
+        }
+        
+        // Convert Abacus to uint64 and scale back to float
+        uint64_t value = 0;
+        if (abacus_to_uint64(input[i], &value) != MATH_SUCCESS) {
+            output[i] = 0.0f;
+            continue;
+        }
+        
         output[i] = (float)value / NTT_SCALE_FACTOR;
+        
+        if (input[i]->negative) {
+            output[i] = -output[i];
+        }
     }
     
     return 1;
@@ -148,36 +173,42 @@ int ntt_attention_single_head(
     // Round up to power of 2 for NTT
     uint32_t ntt_size = next_power_of_2(seq_len);
     
-    // Allocate NTT context
-    NTTContext ntt_ctx;
-    if (!ntt_init(&ntt_ctx, ntt_size)) {
+    // Allocate NTT context (NEW math library)
+    NTTContext* ntt_ctx = ntt_create(ntt_size);
+    if (!ntt_ctx) {
         fprintf(stderr, "Failed to initialize NTT context\n");
         return 0;
     }
     
-    // Allocate working arrays
-    BigInt* q_bigint = calloc(ntt_size, sizeof(BigInt));
-    BigInt* k_bigint = calloc(ntt_size, sizeof(BigInt));
-    BigInt* q_freq = calloc(ntt_size, sizeof(BigInt));
-    BigInt* k_freq = calloc(ntt_size, sizeof(BigInt));
-    BigInt* attn_freq = calloc(ntt_size, sizeof(BigInt));
-    BigInt* attn_time = calloc(ntt_size, sizeof(BigInt));
+    // Allocate working arrays (NEW: Crystalline Abacus)
+    CrystallineAbacus** q_abacus = calloc(ntt_size, sizeof(CrystallineAbacus*));
+    CrystallineAbacus** k_abacus = calloc(ntt_size, sizeof(CrystallineAbacus*));
+    CrystallineAbacus** q_freq = calloc(ntt_size, sizeof(CrystallineAbacus*));
+    CrystallineAbacus** k_freq = calloc(ntt_size, sizeof(CrystallineAbacus*));
+    CrystallineAbacus** attn_freq = calloc(ntt_size, sizeof(CrystallineAbacus*));
+    CrystallineAbacus** attn_time = calloc(ntt_size, sizeof(CrystallineAbacus*));
     float* attn_scores = calloc(seq_len, sizeof(float));
     
-    if (!q_bigint || !k_bigint || !q_freq || !k_freq || 
+    if (!q_abacus || !k_abacus || !q_freq || !k_freq || 
         !attn_freq || !attn_time || !attn_scores) {
         fprintf(stderr, "Memory allocation failed\n");
         goto cleanup;
     }
     
-    // Initialize BigInt arrays
+    // Initialize Abacus arrays (use base 60 for NTT)
     for (uint32_t i = 0; i < ntt_size; i++) {
-        big_init(&q_bigint[i]);
-        big_init(&k_bigint[i]);
-        big_init(&q_freq[i]);
-        big_init(&k_freq[i]);
-        big_init(&attn_freq[i]);
-        big_init(&attn_time[i]);
+        q_abacus[i] = abacus_new(60);
+        k_abacus[i] = abacus_new(60);
+        q_freq[i] = abacus_new(60);
+        k_freq[i] = abacus_new(60);
+        attn_freq[i] = abacus_new(60);
+        attn_time[i] = abacus_new(60);
+        
+        if (!q_abacus[i] || !k_abacus[i] || !q_freq[i] || 
+            !k_freq[i] || !attn_freq[i] || !attn_time[i]) {
+            fprintf(stderr, "Abacus allocation failed\n");
+            goto cleanup;
+        }
     }
     
     // Process each dimension

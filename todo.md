@@ -1,54 +1,77 @@
-# Abacus Enhancement & Documentation Update
+# Algorithms Library Migration - Replace OLD with NEW Math Library
 
 ## Current Status
-Updating MASTER_PLAN.md and SECONDARY_OBJECTIVES.md to reflect the shift to NEW math library with Crystalline Abacus, and enhancing Abacus to support all bases.
+The algorithms library currently uses OLD crystalline library (BigInt/BigFixed).
+Need to replace with NEW math library (Crystalline Abacus).
 
-## Phase 1: Enhance Abacus to Support All Bases
-- [x] Update `abacus_new()` to accept any base (not just 12, 60, 100)
-- [x] Add base conversion functions (`abacus_convert_base`, `abacus_get_base`)
-- [x] Add fractional support (already exists, documented)
-- [x] Update documentation to clarify Babylonian math supports ALL bases
-- [x] Test with various bases (builds successfully)
-- [x] Build and verify (all 192 tests passing)
+## Files Using OLD Crystalline Library (Need Migration)
 
-## Phase 2: Update Master Plan
-- [x] Remove all BigInt/BigFixed references
-- [x] Update to reference NEW math library (math/)
-- [x] Clarify Abacus is the ONLY arbitrary precision system
-- [x] Update architectural principles
-- [x] Update build system documentation
-- [x] Clarify Babylonian math supports ALL bases
-- [x] Update memory structure section
-- [x] Update mathematical foundation section
-- [x] Add architecture shift section
+### High Priority - Core Math Operations
+1. `algorithms/src/lattice_embeddings_bigfixed.c` - Uses BigFixed
+2. `algorithms/src/loss_functions_bigfixed.c` - Uses BigFixed
+3. `algorithms/src/bigfixed_math_wrappers.c` - Uses BigFixed
+4. `algorithms/src/ntt_attention.c` - Uses BigInt NTT
+5. `algorithms/src/hierarchical_prime_partitions.c` - Uses BigInt
+6. `algorithms/src/lattice_sphere_positions.c` - Uses BigInt
 
-## Phase 3: Update Secondary Objectives
-- [x] Remove BigInt/BigFixed references
-- [x] Update to use Abacus instead
-- [x] Update completed objectives (mark as needing migration)
-- [x] Update pending objectives
-- [x] Clarify migration path from OLD to NEW
+## Migration Plan
 
-## Phase 4: Continue with Audit Action Plan
-- [x] Read current audit status
-- [x] Identify next migration tasks
-- [ ] Execute migration plan
+### Phase 1: Verify NEW Math Library is Ready
+- [x] NEW math library builds successfully
+- [x] All 192 tests passing
+- [x] Abacus supports ALL bases
+- [x] NTT implemented with pure Abacus
+- [x] Modular arithmetic available
 
-### Next Steps from Audit:
-The audit shows that all 4 core layers (145 files) are complete and production-ready.
-The OLD crystalline library uses BigInt/BigFixed which needs to be migrated to the
-NEW math library's Crystalline Abacus.
+### Phase 2: Migrate NTT Attention (PRIORITY) - IN PROGRESS
+- [x] Update includes to use NEW math library
+- [x] Replace BigInt with Abacus in conversion functions
+- [x] Update NTT context initialization
+- [x] Update array allocations to use Abacus
+- [ ] Complete main computation loop migration
+- [ ] Update cleanup code
+- [ ] Test and verify
 
-**Migration Priority:**
-1. Start with Layer 1 (Crystalline Library) - 23 files
-2. Then Layer 2 (Algorithms Library) - 14 files
-3. Then Layer 3 (CLLM Library) - 64 files
-4. Finally Layer 4 (Application) - 44 files
+**Status:** Partially migrated - headers updated, conversion functions updated, 
+need to complete main computation loop and cleanup.
 
-**Current Focus:** Start migration of Layer 1 (Crystalline Library)
+### Phase 3: Migrate Lattice Embeddings
+- [ ] Update `algorithms/src/lattice_embeddings_bigfixed.c`
+- [ ] Replace BigFixed with Abacus
+- [ ] Update function signatures
+- [ ] Test and verify
+
+### Phase 4: Migrate Loss Functions
+- [ ] Update `algorithms/src/loss_functions_bigfixed.c`
+- [ ] Replace BigFixed with Abacus
+- [ ] Update function signatures
+- [ ] Test and verify
+
+### Phase 5: Migrate Math Wrappers
+- [ ] Update `algorithms/src/bigfixed_math_wrappers.c`
+- [ ] Replace BigFixed with Abacus
+- [ ] Update function signatures
+- [ ] Test and verify
+
+### Phase 6: Migrate Remaining Files
+- [ ] Update `algorithms/src/hierarchical_prime_partitions.c`
+- [ ] Update `algorithms/src/lattice_sphere_positions.c`
+- [ ] Test and verify
+
+### Phase 7: Update Build System
+- [ ] Update algorithms/Makefile to link with NEW math library
+- [ ] Remove OLD crystalline library dependencies
+- [ ] Verify clean build
+
+### Phase 8: Final Verification
+- [ ] All algorithms library files build
+- [ ] All tests pass
+- [ ] No references to OLD crystalline library
+- [ ] Commit changes
 
 ## Notes
-- Babylonian mathematics supports ALL bases and transformations
-- Abacus supports fractions (already implemented)
-- NEW math library (math/) is the production system
-- OLD crystalline library is legacy (to be migrated)
+- OLD crystalline library: crystalline/, src/, include/ (DO NOT MODIFY)
+- NEW math library: math/ (USE THIS)
+- Replace BigInt → Abacus
+- Replace BigFixed → Abacus
+- Use NEW math library headers: math/abacus.h, math/ntt.h, etc.
