@@ -333,8 +333,8 @@ static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosit
  */
 
 CrystallineAbacus* abacus_new(uint32_t base) {
-    /* Validate base */
-    if (base != 12 && base != 60 && base != 100) {
+    /* Validate base - Babylonian mathematics supports ALL bases >= 2 */
+    if (base < 2) {
         return NULL;
     }
     
@@ -1626,5 +1626,151 @@ MathError abacus_truncate(CrystallineAbacus* result, const CrystallineAbacus* a,
     result->min_exponent = temp->min_exponent;
     
     abacus_free(temp);
+    return MATH_SUCCESS;
+}
+
+/* ============================================================================
+ * BASE CONVERSION
+ * ============================================================================ */
+
+uint32_t abacus_get_base(const CrystallineAbacus* abacus) {
+    if (!abacus) return 0;
+    return abacus->base;
+}
+
+MathError abacus_convert_base(CrystallineAbacus** result, const CrystallineAbacus* source, uint32_t new_base) {
+    if (!result || !source || new_base < 2) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* If same base, just copy */
+    if (source->base == new_base) {
+        *result = abacus_copy(source);
+        return *result ? MATH_SUCCESS : MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    /* Convert to decimal (base 10) as intermediate */
+    /* Calculate decimal value: sum of (digit * base^exponent) */
+    double decimal_value = 0.0;
+    
+    for (size_t i = 0; i < source->num_beads; i++) {
+        const AbacusBead* bead = &source->beads[i];
+        /* Calculate base^exponent manually to avoid math.h */
+        double weight = 1.0;
+        int32_t exp = bead->weight_exponent;
+        if (exp > 0) {
+            for (int32_t j = 0; j < exp; j++) {
+                weight *= source->base;
+            }
+        } else if (exp < 0) {
+            for (int32_t j = 0; j < -exp; j++) {
+                weight /= source->base;
+            }
+        }
+        decimal_value += bead->value * weight;
+    }
+    
+    /* Apply sign */
+    if (source->negative) {
+        decimal_value = -decimal_value;
+    }
+    
+    /* Convert from decimal to new base */
+    /* Separate integer and fractional parts manually */
+    double int_part_d;
+    double frac_part;
+    
+    if (decimal_value >= 0) {
+        int_part_d = (double)((uint64_t)decimal_value);
+        frac_part = decimal_value - int_part_d;
+    } else {
+        int_part_d = (double)((int64_t)decimal_value);
+        frac_part = decimal_value - int_part_d;
+    }
+    
+    bool is_negative = (decimal_value < 0.0);
+    if (is_negative) {
+        int_part_d = -int_part_d;
+        frac_part = -frac_part;
+    }
+    
+    /* Create result abacus */
+    *result = abacus_new(new_base);
+    if (!*result) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    (*result)->negative = is_negative;
+    
+    /* Convert integer part */
+    uint64_t int_part = (uint64_t)int_part_d;
+    if (int_part == 0) {
+        /* Add a zero bead */
+        MathError err = abacus_ensure_capacity(*result, 1);
+        if (err != MATH_SUCCESS) {
+            abacus_free(*result);
+            *result = NULL;
+            return err;
+        }
+        
+        (*result)->beads[0].value = 0;
+        (*result)->beads[0].weight_exponent = 0;
+        (*result)->num_beads = 1;
+    } else {
+        /* Convert integer part to new base */
+        int32_t exponent = 0;
+        while (int_part > 0) {
+            uint32_t digit = int_part % new_base;
+            int_part /= new_base;
+            
+            MathError err = abacus_ensure_capacity(*result, (*result)->num_beads + 1);
+            if (err != MATH_SUCCESS) {
+                abacus_free(*result);
+                *result = NULL;
+                return err;
+            }
+            
+            (*result)->beads[(*result)->num_beads].value = digit;
+            (*result)->beads[(*result)->num_beads].weight_exponent = exponent;
+            (*result)->num_beads++;
+            exponent++;
+        }
+    }
+    
+    /* Convert fractional part (if any) */
+    if (frac_part > 0.0001) {  /* Small threshold to avoid floating point errors */
+        int32_t frac_exponent = -1;
+        int max_frac_digits = 10;  /* Limit fractional precision */
+        
+        for (int i = 0; i < max_frac_digits && frac_part > 0.0001; i++) {
+            frac_part *= new_base;
+            uint32_t digit = (uint32_t)frac_part;
+            frac_part -= digit;
+            
+            if (digit > 0) {
+                MathError err = abacus_ensure_capacity(*result, (*result)->num_beads + 1);
+                if (err != MATH_SUCCESS) {
+                    abacus_free(*result);
+                    *result = NULL;
+                    return err;
+                }
+                
+                (*result)->beads[(*result)->num_beads].value = digit;
+                (*result)->beads[(*result)->num_beads].weight_exponent = frac_exponent;
+                (*result)->num_beads++;
+            }
+            
+            frac_exponent--;
+        }
+    }
+    
+    /* Update min_exponent */
+    (*result)->min_exponent = 0;
+    for (size_t i = 0; i < (*result)->num_beads; i++) {
+        if ((*result)->beads[i].weight_exponent < (*result)->min_exponent) {
+            (*result)->min_exponent = (*result)->beads[i].weight_exponent;
+        }
+    }
+    
     return MATH_SUCCESS;
 }

@@ -13,10 +13,16 @@
  * - Leverages the crystalline lattice structure
  * - Self-contained geometric arithmetic system (no BigInt dependency)
  * 
+ * Babylonian Mathematics - Universal Base Support:
+ * - Supports ALL bases >= 2 (binary, octal, decimal, hexadecimal, etc.)
+ * - Traditional Babylonian bases: 12, 60, 100 (clock rings)
+ * - Base conversion without fractions (pure geometric transformation)
+ * - Fractional support through negative weight exponents
+ * 
  * Structure:
  * - Each "bead" is a position on the clock lattice
  * - Multiple beads represent multi-digit numbers
- * - Base can be 12, 60, or 100 (matching clock rings)
+ * - Any base >= 2 supported (not limited to 12, 60, 100)
  * 
  * Example:
  *   Number 157 in base 12:
@@ -93,7 +99,10 @@ typedef struct {
 
 /**
  * @brief Create a new crystalline abacus
- * @param base Number base (12, 60, or 100)
+ * @param base Number base (any base >= 2)
+ *             Traditional Babylonian: 12, 60, 100
+ *             Common: 2 (binary), 8 (octal), 10 (decimal), 16 (hex)
+ *             Any positive integer >= 2 is supported
  * @return Pointer to new abacus, or NULL on error
  */
 CrystallineAbacus* abacus_new(uint32_t base);
@@ -119,7 +128,7 @@ MathError abacus_init_zero(CrystallineAbacus* abacus);
 /**
  * @brief Create abacus from uint64
  * @param value Value to convert
- * @param base Number base (12, 60, or 100)
+ * @param base Number base (any base >= 2)
  * @return Pointer to new abacus, or NULL on error
  */
 CrystallineAbacus* abacus_from_uint64(uint64_t value, uint32_t base);
@@ -135,7 +144,7 @@ MathError abacus_to_uint64(const CrystallineAbacus* abacus, uint64_t* value);
 /**
  * @brief Create abacus from double (with fractional part)
  * @param value Value to convert
- * @param base Number base (12, 60, or 100)
+ * @param base Number base (any base >= 2)
  * @param precision Number of fractional digits (negative exponents)
  * @return Pointer to new abacus, or NULL on error
  * 
@@ -313,11 +322,6 @@ char* abacus_to_string(const CrystallineAbacus* abacus);
  */
 void abacus_print(const CrystallineAbacus* abacus);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* MATH_ABACUS_H */
 /* ============================================================================
  * MODULAR ARITHMETIC OPERATIONS
  * ============================================================================ */
@@ -382,3 +386,38 @@ MathError abacus_mod_exp(CrystallineAbacus* result, const CrystallineAbacus* bas
  */
 MathError abacus_mod_inverse(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* modulus);
 
+/* ============================================================================
+ * BASE CONVERSION
+ * ============================================================================ */
+
+/**
+ * @brief Convert abacus to a different base
+ * 
+ * Babylonian mathematics supports conversion between ANY bases without
+ * requiring fractions. This is a pure geometric transformation on the
+ * clock lattice.
+ * 
+ * @param result Output abacus in new base (will be created)
+ * @param source Input abacus in original base
+ * @param new_base Target base (any base >= 2)
+ * @return MATH_SUCCESS on success, error code on failure
+ * 
+ * Example:
+ *   Convert 157 from base 12 to base 10:
+ *   Input:  [13, 1] in base 12 = 13*12 + 1 = 157
+ *   Output: [1, 5, 7] in base 10 = 1*100 + 5*10 + 7 = 157
+ */
+MathError abacus_convert_base(CrystallineAbacus** result, const CrystallineAbacus* source, uint32_t new_base);
+
+/**
+ * @brief Get the base of an abacus
+ * @param abacus Input abacus
+ * @return Base of the abacus, or 0 on error
+ */
+uint32_t abacus_get_base(const CrystallineAbacus* abacus);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* MATH_ABACUS_H */
