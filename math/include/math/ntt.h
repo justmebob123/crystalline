@@ -1,10 +1,11 @@
 /**
  * @file ntt.h
- * @brief Number Theoretic Transform (NTT) for BigInt
+ * @brief Number Theoretic Transform (NTT) using Crystalline Abacus
  * 
  * ⚠️ CRITICAL: ALL WORK MUST USE THE 'audit' FEATURE BRANCH ⚠️
  * 
- * NTT is the modular arithmetic analog of FFT, perfect for prime-based systems.
+ * NTT is the modular arithmetic analog of FFT, implemented using pure
+ * crystalline clock lattice geometry through the Abacus.
  * 
  * Key Advantages:
  * - Works in Z/pZ (modular arithmetic) - no complex numbers
@@ -12,9 +13,10 @@
  * - Exact arithmetic (no floating point errors)
  * - Perfect fit for crystalline lattice prime-based coordinates
  * - O(n log n) complexity for multiplication
+ * - Pure geometric operations on clock lattice
  * 
  * Applications:
- * - Fast BigInt multiplication: O(n log n) vs O(n²)
+ * - Fast large number multiplication: O(n log n) vs O(n²)
  * - Fast polynomial multiplication
  * - Convolution in modular arithmetic
  * - CLLM attention optimization
@@ -31,7 +33,7 @@
 #define MATH_NTT_H
 
 #include "math/types.h"
-#include "math/bigint.h"
+#include "math/abacus.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,15 +45,17 @@ extern "C" {
 
 /**
  * @brief NTT Context - stores precomputed values for efficient NTT
+ * 
+ * All values stored as crystalline abacus positions on clock lattice
  */
 typedef struct {
-    BigInt *prime;              /**< Prime modulus p = k·2^n + 1 */
-    BigInt *root;               /**< Primitive 2^n-th root of unity */
-    BigInt **roots_forward;     /**< Precomputed roots for forward NTT */
-    BigInt **roots_inverse;     /**< Precomputed roots for inverse NTT */
-    size_t n;                   /**< Transform size (power of 2) */
-    size_t log_n;               /**< log2(n) */
-    bool initialized;           /**< Initialization flag */
+    CrystallineAbacus *prime;              /**< Prime modulus p = k·2^n + 1 */
+    CrystallineAbacus *root;               /**< Primitive 2^n-th root of unity */
+    CrystallineAbacus **roots_forward;     /**< Precomputed roots for forward NTT */
+    CrystallineAbacus **roots_inverse;     /**< Precomputed roots for inverse NTT */
+    size_t n;                              /**< Transform size (power of 2) */
+    size_t log_n;                          /**< log2(n) */
+    bool initialized;                      /**< Initialization flag */
 } NTTContext;
 
 /* ============================================================================
@@ -78,7 +82,7 @@ void ntt_free(NTTContext* ctx);
  * @param prime Prime modulus (must be of form k·2^m + 1 where m >= log2(n))
  * @return true if successful, false if failed
  */
-bool ntt_init_with_prime(NTTContext* ctx, size_t n, const BigInt* prime);
+bool ntt_init_with_prime(NTTContext* ctx, size_t n, const CrystallineAbacus* prime);
 
 /* ============================================================================
  * PRIMITIVE ROOT FINDING
@@ -94,9 +98,9 @@ bool ntt_init_with_prime(NTTContext* ctx, size_t n, const BigInt* prime);
  * @param root Output: primitive n-th root of unity
  * @param n Root degree (must divide p-1)
  * @param p Prime modulus
- * @return true if found, false if not found
+ * @return MATH_SUCCESS if found, error code otherwise
  */
-bool ntt_find_primitive_root(BigInt* root, size_t n, const BigInt* p);
+MathError ntt_find_primitive_root(CrystallineAbacus* root, size_t n, const CrystallineAbacus* p);
 
 /**
  * @brief Find suitable NTT prime
@@ -106,9 +110,9 @@ bool ntt_find_primitive_root(BigInt* root, size_t n, const BigInt* p);
  * @param prime Output: suitable prime
  * @param n Minimum transform size needed
  * @param bits Desired bit size of prime
- * @return true if found, false if failed
+ * @return MATH_SUCCESS if found, error code otherwise
  */
-bool ntt_find_prime(BigInt* prime, size_t n, uint32_t bits);
+MathError ntt_find_prime(CrystallineAbacus* prime, size_t n, uint32_t bits);
 
 /**
  * @brief Check if g is a primitive root modulo p
@@ -116,7 +120,7 @@ bool ntt_find_prime(BigInt* prime, size_t n, uint32_t bits);
  * @param p Prime modulus
  * @return true if primitive root, false otherwise
  */
-bool ntt_is_primitive_root(const BigInt* g, const BigInt* p);
+bool ntt_is_primitive_root(const CrystallineAbacus* g, const CrystallineAbacus* p);
 
 /* ============================================================================
  * NTT TRANSFORMS
@@ -134,9 +138,10 @@ bool ntt_is_primitive_root(const BigInt* g, const BigInt* p);
  * @param output Output: transformed sequence (length n)
  * @param input Input: sequence to transform (length n)
  * @param n Sequence length (must be power of 2)
- * @return true if successful, false if failed
+ * @return MATH_SUCCESS if successful, error code otherwise
  */
-bool ntt_forward(const NTTContext* ctx, BigInt** output, const BigInt** input, size_t n);
+MathError ntt_forward(const NTTContext* ctx, CrystallineAbacus** output, 
+                      const CrystallineAbacus** input, size_t n);
 
 /**
  * @brief Inverse Number Theoretic Transform
@@ -150,18 +155,19 @@ bool ntt_forward(const NTTContext* ctx, BigInt** output, const BigInt** input, s
  * @param output Output: inverse transformed sequence (length n)
  * @param input Input: frequency domain sequence (length n)
  * @param n Sequence length (must be power of 2)
- * @return true if successful, false if failed
+ * @return MATH_SUCCESS if successful, error code otherwise
  */
-bool ntt_inverse(const NTTContext* ctx, BigInt** output, const BigInt** input, size_t n);
+MathError ntt_inverse(const NTTContext* ctx, CrystallineAbacus** output,
+                      const CrystallineAbacus** input, size_t n);
 
 /* ============================================================================
  * NTT-BASED MULTIPLICATION
  * ============================================================================ */
 
 /**
- * @brief Fast BigInt multiplication using NTT
+ * @brief Fast large number multiplication using NTT
  * 
- * Multiplies two BigInts using Number Theoretic Transform.
+ * Multiplies two numbers using Number Theoretic Transform.
  * 
  * Complexity: O(n log n) where n = len(a) + len(b)
  * 
@@ -173,9 +179,10 @@ bool ntt_inverse(const NTTContext* ctx, BigInt** output, const BigInt** input, s
  * @param result Output: a × b
  * @param a First number
  * @param b Second number
- * @return true if successful, false if failed
+ * @return MATH_SUCCESS if successful, error code otherwise
  */
-bool ntt_multiply(BigInt* result, const BigInt* a, const BigInt* b);
+MathError ntt_multiply(CrystallineAbacus* result, const CrystallineAbacus* a, 
+                       const CrystallineAbacus* b);
 
 /**
  * @brief NTT-based polynomial multiplication
@@ -188,10 +195,10 @@ bool ntt_multiply(BigInt* result, const BigInt* a, const BigInt* b);
  * @param b Second polynomial coefficients (length m)
  * @param m Length of second polynomial
  * @param ctx NTT context
- * @return true if successful, false if failed
+ * @return MATH_SUCCESS if successful, error code otherwise
  */
-bool ntt_poly_multiply(BigInt** result, const BigInt** a, size_t n,
-                       const BigInt** b, size_t m, const NTTContext* ctx);
+MathError ntt_poly_multiply(CrystallineAbacus** result, const CrystallineAbacus** a, size_t n,
+                            const CrystallineAbacus** b, size_t m, const NTTContext* ctx);
 
 /* ============================================================================
  * UTILITY FUNCTIONS
@@ -227,7 +234,7 @@ uint32_t ntt_log2(size_t n);
  * @param array Array to permute
  * @param n Array length (must be power of 2)
  */
-void ntt_bit_reverse(BigInt** array, size_t n);
+void ntt_bit_reverse(CrystallineAbacus** array, size_t n);
 
 /* ============================================================================
  * CRYSTALLINE LATTICE OPTIMIZATIONS
@@ -241,9 +248,9 @@ void ntt_bit_reverse(BigInt** array, size_t n);
  * @param prime Output: suitable prime
  * @param n Transform size
  * @param bits Desired bit size
- * @return true if found, false if failed
+ * @return MATH_SUCCESS if found, error code otherwise
  */
-bool ntt_find_prime_lattice(BigInt* prime, size_t n, uint32_t bits);
+MathError ntt_find_prime_lattice(CrystallineAbacus* prime, size_t n, uint32_t bits);
 
 /**
  * @brief Optimize NTT for crystalline lattice structure
@@ -251,9 +258,9 @@ bool ntt_find_prime_lattice(BigInt* prime, size_t n, uint32_t bits);
  * Precomputes additional values for lattice-aware NTT.
  * 
  * @param ctx NTT context
- * @return true if successful, false if failed
+ * @return MATH_SUCCESS if successful, error code otherwise
  */
-bool ntt_optimize_for_lattice(NTTContext* ctx);
+MathError ntt_optimize_for_lattice(NTTContext* ctx);
 
 #ifdef __cplusplus
 }

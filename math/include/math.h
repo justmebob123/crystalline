@@ -13,7 +13,7 @@
  * 
  * Design Principles:
  * - Self-contained (no math.h dependencies)
- * - Arbitrary precision support (bigfixed, bigint)
+ * - Pure crystalline clock lattice geometry
  * - Deterministic prime generation (clock lattice)
  * - Clean, standardized API
  * - Production quality code
@@ -22,8 +22,8 @@
  * Module Organization:
  * - arithmetic.h: Basic double-precision arithmetic
  * - transcendental.h: Transcendental functions (sqrt, sin, cos, log, exp)
- * - bigfixed.h: Arbitrary precision fixed-point
- * - bigint.h: Arbitrary precision integer
+ * - abacus.h: Arbitrary precision using crystalline clock lattice
+ * - ntt.h: Number Theoretic Transform for fast multiplication
  * - clock.h: Clock lattice for deterministic operations
  * - prime.h: Prime number operations
  
@@ -37,10 +37,11 @@
  *   double y = sqrt(x);      // OLD
  *   double y = math_sqrt(x); // NEW
  * 
- * Arbitrary precision:
- *   BigFixed* x = bigfixed_from_double(2.0, 256);
- *   BigFixed* result = bigfixed_new(256);
- *   bigfixed_sqrt(result, x);
+ * Arbitrary precision (Crystalline Abacus):
+ *   CrystallineAbacus* x = abacus_new();
+ *   abacus_from_uint64(x, 12345);
+ *   CrystallineAbacus* result = abacus_new();
+ *   abacus_mul(result, x, x);
  * 
  * Prime numbers:
  *   uint64_t p = prime_nth(1000);  // Get 1000th prime
@@ -59,9 +60,7 @@
 /* Transcendental functions */
 #include "math/transcendental.h"
 
-/* Arbitrary precision */
-#include "math/bigfixed.h"
-#include "math/bigint.h"
+/* Arbitrary precision - Use Crystalline Abacus instead */
 
 /* Clock lattice and prime numbers */
 #include "math/clock.h"

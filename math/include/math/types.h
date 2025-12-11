@@ -27,19 +27,7 @@
 extern "C" {
 #endif
 
-/* ============================================================================
- * BIGINT - Arbitrary Precision Integer
- * ============================================================================
- * 
- * Fundamental type for unlimited precision integer calculations.
- * Uses dynamic array of 32-bit digits (little-endian).
- */
-typedef struct {
-    uint32_t *digits;         /**< Array of 32-bit digits (little-endian) */
-    size_t length;            /**< Current number of digits used */
-    size_t capacity;          /**< Allocated capacity */
-    bool negative;            /**< Sign: false = positive, true = negative */
-} BigInt;
+/* BigInt removed - use CrystallineAbacus for arbitrary precision */
 
 /* ============================================================================
  * BIGFIXED - Arbitrary Precision Fixed-Point
@@ -50,12 +38,7 @@ typedef struct {
  * 
  * Representation: value = (integer_part + fractional_part / 2^scale_bits) * sign
  */
-typedef struct {
-    BigInt *integer_part;     /**< Integer portion */
-    BigInt *fractional_part;  /**< Fractional portion */
-    bool negative;            /**< Sign: false = positive, true = negative */
-    size_t scale_bits;        /**< Number of fractional bits */
-} BigFixed;
+/* BigFixed removed - use CrystallineAbacus for arbitrary precision */
 
 /* ============================================================================
  * CLOCK LATTICE - Deterministic Prime Generation
@@ -164,8 +147,7 @@ typedef struct {
 /** Natural logarithm of 10 */
 #define MATH_LN10 2.30258509299404568402
 
-/** Default precision for BigFixed (bits) */
-#define BIGFIXED_DEFAULT_PRECISION 256
+/* BigFixed removed - use CrystallineAbacus for arbitrary precision */
 
 /** Maximum safe integer in double precision */
 #define MATH_MAX_SAFE_INTEGER 9007199254740991LL

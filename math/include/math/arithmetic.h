@@ -7,7 +7,7 @@
  * This module provides basic double-precision arithmetic operations.
  * All functions are self-contained and do not depend on math.h.
  * 
- * For arbitrary precision, see bigfixed.h and bigint.h
+ * For arbitrary precision, see abacus.h (crystalline clock lattice)
  */
 
 #ifndef MATH_ARITHMETIC_H

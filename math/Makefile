@@ -17,24 +17,26 @@ TEST_DIR = tests
 
 # Source files
 CORE_SRCS = $(wildcard $(SRC_DIR)/core/*.c)
-BIGFIXED_SRCS = $(wildcard $(SRC_DIR)/bigfixed/*.c)
-BIGINT_SRCS = $(wildcard $(SRC_DIR)/bigint/*.c)
+
+ABACUS_SRCS = $(wildcard $(SRC_DIR)/bigint/*.c)
+NTT_SRCS = $(wildcard $(SRC_DIR)/ntt/*.c)
 GEOMETRY_SRCS = $(wildcard $(SRC_DIR)/geometry/*.c)
 PRIME_SRCS = $(wildcard $(SRC_DIR)/prime/*.c)
 CRYPTO_SRCS = $(wildcard $(SRC_DIR)/crypto/*.c)
 VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
 
-ALL_SRCS = $(CORE_SRCS) $(BIGFIXED_SRCS) $(BIGINT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS)
+ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS)
 
 # Object files
 CORE_OBJS = $(CORE_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-BIGFIXED_OBJS = $(BIGFIXED_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-BIGINT_OBJS = $(BIGINT_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+
+ABACUS_OBJS = $(ABACUS_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+NTT_OBJS = $(NTT_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 GEOMETRY_OBJS = $(GEOMETRY_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 PRIME_OBJS = $(PRIME_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 CRYPTO_OBJS = $(CRYPTO_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-ALL_OBJS = $(CORE_OBJS) $(BIGFIXED_OBJS) $(BIGINT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS)
+ALL_OBJS = $(CORE_OBJS) $(ABACUS_OBJS) $(NTT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS)
 
 # Library files
 STATIC_LIB = $(LIB_DIR)/libcrystallinemath.a
@@ -52,8 +54,9 @@ all: directories $(STATIC_LIB) $(SHARED_LIB)
 .PHONY: directories
 directories:
 	@mkdir -p $(BUILD_DIR)/core
-	@mkdir -p $(BUILD_DIR)/bigfixed
+	
 	@mkdir -p $(BUILD_DIR)/bigint
+	@mkdir -p $(BUILD_DIR)/ntt
 	@mkdir -p $(BUILD_DIR)/geometry
 	@mkdir -p $(BUILD_DIR)/prime
 	@mkdir -p $(BUILD_DIR)/crypto
@@ -150,8 +153,9 @@ help:
 debug:
 	@echo "Source files:"
 	@echo "  CORE_SRCS: $(CORE_SRCS)"
-	@echo "  BIGFIXED_SRCS: $(BIGFIXED_SRCS)"
-	@echo "  BIGINT_SRCS: $(BIGINT_SRCS)"
+	
+	@echo "  ABACUS_SRCS: $(ABACUS_SRCS)"
+        @echo "  NTT_SRCS: $(NTT_SRCS)"
 	@echo "  GEOMETRY_SRCS: $(GEOMETRY_SRCS)"
 	@echo "  PRIME_SRCS: $(PRIME_SRCS)"
 	@echo "  CRYPTO_SRCS: $(CRYPTO_SRCS)"
