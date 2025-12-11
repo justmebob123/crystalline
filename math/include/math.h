@@ -26,7 +26,7 @@
  * - bigint.h: Arbitrary precision integer
  * - clock.h: Clock lattice for deterministic operations
  * - prime.h: Prime number operations
- * - crypto.h: Cryptographic operations (OpenSSL wrappers)
+ 
  * 
  * Usage:
  * 
@@ -71,7 +71,6 @@
 /* Crystalline Abacus */
 #include "math/abacus.h"
 
-/* Cryptographic operations */
-#include "math/crypto.h"
+
 
 #endif /* CRYSTALLINE_MATH_H */
