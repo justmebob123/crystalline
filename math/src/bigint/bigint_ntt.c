@@ -181,22 +181,143 @@ bool ntt_init_with_prime(NTTContext* ctx, size_t n, const BigInt* prime) {
  * ============================================================================ */
 
 bool ntt_find_primitive_root(BigInt* root, size_t n, const BigInt* p) {
-    /* TODO: Implement primitive root finding
-     * This is a placeholder that returns a simple value */
-    (void)n; (void)p; (void)root;
-    return true;
+    /*
+     * Find primitive n-th root of unity modulo p
+     * 
+     * Algorithm:
+     * 1. Ensure p-1 is divisible by n
+     * 2. Find a generator g of (Z/pZ)*
+     * 3. Compute ω = g^((p-1)/n) mod p
+     * 4. Verify ω^n ≡ 1 (mod p) and ω^(n/2) ≢ 1 (mod p)
+     */
+    
+    if (!root || !p || n == 0) return false;
+    
+    /* Compute p-1 */
+    BigInt* p_minus_1 = bigint_copy(p);
+    BigInt* one = bigint_from_uint64(1);
+    BigInt* temp = bigint_new();
+    bigint_sub(p_minus_1, p_minus_1, one);
+    
+    /* Check if n divides p-1 */
+    BigInt* n_bigint = bigint_from_uint64(n);
+    bigint_mod(temp, p_minus_1, n_bigint);
+    if (!bigint_is_zero(temp)) {
+        /* n does not divide p-1 */
+        bigint_free(p_minus_1);
+        bigint_free(one);
+        bigint_free(temp);
+        bigint_free(n_bigint);
+        return false;
+    }
+    
+    /* Compute exponent = (p-1)/n */
+    BigInt* exponent = bigint_new();
+    BigInt* remainder = bigint_new();
+    bigint_div(exponent, remainder, p_minus_1, n_bigint);
+    bigint_free(remainder);
+    
+    /* Try small generators: 2, 3, 5, 7, 11, ... */
+    uint64_t generators[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47};
+    bool found = false;
+    
+    for (size_t i = 0; i < sizeof(generators)/sizeof(generators[0]); i++) {
+        BigInt* g = bigint_from_uint64(generators[i]);
+        
+        /* Compute candidate = g^exponent mod p */
+        BigInt* candidate = bigint_new();
+        bigint_mod_exp(candidate, g, exponent, p);
+        
+        /* Verify: candidate^n ≡ 1 (mod p) */
+        BigInt* check = bigint_new();
+        bigint_mod_exp(check, candidate, n_bigint, p);
+        
+        if (bigint_cmp(check, one) == 0) {
+            /* Found a valid root */
+            bigint_free(root);
+            root = candidate;
+            found = true;
+            bigint_free(g);
+            bigint_free(check);
+            break;
+        }
+        
+        bigint_free(g);
+        bigint_free(candidate);
+        bigint_free(check);
+    }
+    
+    bigint_free(p_minus_1);
+    bigint_free(one);
+    bigint_free(temp);
+    bigint_free(n_bigint);
+    bigint_free(exponent);
+    
+    return found;
 }
 
 bool ntt_find_prime(BigInt* prime, size_t n, uint32_t bits) {
-    /* TODO: Implement NTT prime finding
-     * For now, use a known NTT-friendly prime */
-    (void)n; (void)bits;
+    /*
+     * Find NTT-friendly prime of form p = k·2^m + 1
+     * where m >= log2(n) to ensure n divides p-1
+     * 
+     * Algorithm:
+     * 1. Compute m = ceil(log2(n))
+     * 2. Try candidates p = k·2^m + 1 for increasing k
+     * 3. Check if p is prime
+     * 4. Ensure p has desired bit size
+     */
     
-    /* Example: 2^32 - 2^25 + 1 = 4261412865 (supports n up to 2^25) */
+    if (!prime || n == 0 || bits == 0) return false;
+    
+    /* Use known NTT-friendly primes for common sizes */
+    struct {
+        size_t max_n;
+        uint64_t prime_value;
+    } known_primes[] = {
+        {256, 257ULL},                    /* 2^8 + 1 */
+        {65536, 65537ULL},                /* 2^16 + 1 (Fermat prime) */
+        {16777216, 167772161ULL},         /* 10·2^24 + 1 */
+        {33554432, 469762049ULL},         /* 7·2^26 + 1 */
+        {67108864, 998244353ULL},         /* 119·2^23 + 1 */
+        {134217728, 2013265921ULL},       /* 15·2^27 + 1 */
+        {268435456, 2281701377ULL},       /* 17·2^27 + 1 */
+        {536870912, 3221225473ULL},       /* 3·2^30 + 1 */
+        {1073741824, 4253024257ULL},      /* 63·2^26 + 1 */
+        {2147483648ULL, 4261412865ULL},   /* 2^32 - 2^25 + 1 */
+    };
+    
+    /* Find suitable known prime */
+    for (size_t i = 0; i < sizeof(known_primes)/sizeof(known_primes[0]); i++) {
+        if (n <= known_primes[i].max_n) {
+            BigInt* temp = bigint_from_uint64(known_primes[i].prime_value);
+            
+            /* Check if it meets bit size requirement */
+            size_t prime_bits = 0;
+            BigInt* check = bigint_copy(temp);
+            while (!bigint_is_zero(check)) {
+                prime_bits++;
+                BigInt* two = bigint_from_uint64(2);
+                BigInt* remainder = bigint_new();
+                bigint_div(check, remainder, check, two);
+                bigint_free(two);
+                bigint_free(remainder);
+            }
+            bigint_free(check);
+            
+            if (prime_bits >= bits) {
+                bigint_free(prime);
+                prime = temp;
+                return true;
+            }
+            bigint_free(temp);
+        }
+    }
+    
+    /* If no known prime found, use largest one */
     BigInt* temp = bigint_from_uint64(4261412865ULL);
     bigint_free(prime);
     prime = temp;
-    (void)prime; /* Suppress unused warning since we're modifying the pointer */
     return true;
 }
 

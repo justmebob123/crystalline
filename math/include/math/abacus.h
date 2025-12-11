@@ -318,3 +318,67 @@ void abacus_print(const CrystallineAbacus* abacus);
 #endif
 
 #endif /* MATH_ABACUS_H */
+/* ============================================================================
+ * MODULAR ARITHMETIC OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Modular reduction (a mod m)
+ * @param result Output abacus (must be pre-allocated)
+ * @param a Input abacus
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* modulus);
+
+/**
+ * @brief Modular addition ((a + b) mod m)
+ * @param result Output abacus (must be pre-allocated)
+ * @param a First abacus
+ * @param b Second abacus
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod_add(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b, const CrystallineAbacus* modulus);
+
+/**
+ * @brief Modular subtraction ((a - b) mod m)
+ * @param result Output abacus (must be pre-allocated)
+ * @param a First abacus
+ * @param b Second abacus
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod_sub(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b, const CrystallineAbacus* modulus);
+
+/**
+ * @brief Modular multiplication ((a * b) mod m)
+ * @param result Output abacus (must be pre-allocated)
+ * @param a First abacus
+ * @param b Second abacus
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod_mul(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b, const CrystallineAbacus* modulus);
+
+/**
+ * @brief Modular exponentiation ((base ^ exponent) mod m)
+ * Uses binary exponentiation for efficiency
+ * @param result Output abacus (must be pre-allocated)
+ * @param base Base
+ * @param exponent Exponent
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod_exp(CrystallineAbacus* result, const CrystallineAbacus* base, const CrystallineAbacus* exponent, const CrystallineAbacus* modulus);
+
+/**
+ * @brief Modular multiplicative inverse (a^-1 mod m)
+ * Uses extended Euclidean algorithm
+ * @param result Output abacus (must be pre-allocated)
+ * @param a Input abacus
+ * @param modulus Modulus
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_mod_inverse(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* modulus);
+
