@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "bigfixed_core.h"
+#include "clock_lattice.h"
 
 /**
  * Initialize embeddings using geometric pattern
@@ -73,38 +73,41 @@ bool lattice_verify_geometric_embeddings(
 #endif // LATTICE_EMBEDDINGS_H
 
 /**
- * Initialize embeddings using geometric pattern with BigFixed (arbitrary precision)
+ * Initialize embeddings using geometric pattern with Crystalline Abacus (arbitrary precision)
+ * 
+ * MIGRATED: Now uses Crystalline Abacus instead of BigFixed
  * 
  * This is INSTANT with ARBITRARY PRECISION - no overflow, no precision loss.
  * Works for ANY vocabulary size with O(vocab_size * embedding_dim) complexity.
+ * Supports ALL bases >= 2 (Babylonian mathematics).
  * 
- * @param embeddings Output embedding matrix [vocab_size][embedding_dim] (BigFixed)
+ * @param embeddings Output embedding matrix [vocab_size * embedding_dim] (float)
  * @param vocab_size Number of tokens (can be ANY size)
  * @param embedding_dim Embedding dimension
- * @param precision_bits Precision for BigFixed operations (e.g., 256)
  */
-void lattice_embeddings_init_geometric_bigfixed(
-    BigFixed** embeddings,
+void lattice_embeddings_init_geometric_abacus(
+    float* embeddings,
     uint32_t vocab_size,
-    uint32_t embedding_dim,
-    int precision_bits
+    uint32_t embedding_dim
 );
 
 /**
- * Get embedding for a single token (on-demand) with BigFixed
+ * Get embedding for a single token (on-demand) with Crystalline Abacus
+ * 
+ * MIGRATED: Now uses Crystalline Abacus instead of BigFixed
  * 
  * This demonstrates that we can compute embeddings on-demand
  * with arbitrary precision. Useful for dynamic vocabularies.
  * 
+ * @param embedding Output embedding vector [embedding_dim] (float)
  * @param token_id Token ID
  * @param embedding_dim Embedding dimension
- * @param output Output embedding vector [embedding_dim] (BigFixed)
- * @param precision_bits Precision for BigFixed operations
+ * @param lattice Clock lattice for mapping
  */
-void lattice_get_token_embedding_geometric_bigfixed(
+void lattice_get_token_embedding_geometric_abacus(
+    float* embedding,
     uint32_t token_id,
     uint32_t embedding_dim,
-    BigFixed* output,
-    int precision_bits
+    ClockLattice* lattice
 );
 

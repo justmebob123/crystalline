@@ -32,7 +32,7 @@ SOURCES = src/numerical.c \
           src/cymatic_modulation.c \
           src/ntt_attention.c \
           src/lattice_embeddings.c \
-          src/lattice_embeddings_bigfixed.c \
+          src/lattice_embeddings_abacus.c \
           src/loss_functions_bigfixed.c \
           src/tensor_ops.c \
           src/qk_mapping.c \
