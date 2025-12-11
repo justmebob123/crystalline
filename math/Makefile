@@ -22,8 +22,9 @@ BIGINT_SRCS = $(wildcard $(SRC_DIR)/bigint/*.c)
 GEOMETRY_SRCS = $(wildcard $(SRC_DIR)/geometry/*.c)
 PRIME_SRCS = $(wildcard $(SRC_DIR)/prime/*.c)
 CRYPTO_SRCS = $(wildcard $(SRC_DIR)/crypto/*.c)
+VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
 
-ALL_SRCS = $(CORE_SRCS) $(BIGFIXED_SRCS) $(BIGINT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS)
+ALL_SRCS = $(CORE_SRCS) $(BIGFIXED_SRCS) $(BIGINT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS)
 
 # Object files
 CORE_OBJS = $(CORE_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)

@@ -17,11 +17,11 @@
  */
 
 #include "ai/cllm_platonic.h"
+#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // ============================================================================
 // TETRAHEDRON GEOMETRY
@@ -162,7 +162,7 @@ bool platonic_tetrahedron_init_embeddings(PlatonicModel* model) {
                 double value = (x + y + z) * 0.1 + (double)token * 0.01 + (double)dim * 0.001;
                 
                 // Normalize to [-1, 1]
-                model->embeddings[idx] = tanh(value);
+                model->embeddings[idx] = prime_tanh(value);
             }
         }
     }
@@ -287,7 +287,7 @@ double platonic_tetrahedron_vertex_distance(
     double dy = model->vertex_positions[v1 * 3 + 1] - model->vertex_positions[v2 * 3 + 1];
     double dz = model->vertex_positions[v1 * 3 + 2] - model->vertex_positions[v2 * 3 + 2];
     
-    return sqrt(dx * dx + dy * dy + dz * dz);
+    return prime_sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /**
@@ -307,7 +307,7 @@ bool platonic_tetrahedron_verify_edges(const PlatonicModel* model) {
         uint32_t v2 = model->edge_connections[i * 2 + 1];
         double length = platonic_tetrahedron_vertex_distance(model, v1, v2);
         
-        double diff = fabs(length - edge_length);
+        double diff = prime_fabs(length - edge_length);
         if (diff > 0.0001) {
             printf("  ✗ Edge %u: length %.6f (diff: %.6f)\n", i, length, diff);
             all_equal = false;

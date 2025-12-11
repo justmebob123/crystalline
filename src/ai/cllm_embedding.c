@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
@@ -270,7 +269,7 @@ void cllm_init_embeddings(CLLMModel* model) {
                 // Use prime-based sinusoidal initialization
                 double value = prime_sin(angle) * (1.0 + radius_factor * 0.1);
                 
-                // Scale by 1/sqrt(embedding_dim) for stability
+                // Scale by 1/prime_sqrt(embedding_dim) for stability
                 value *= 1.0 / prime_sqrt((double)embedding_dim);
                 
                 embeddings[token * embedding_dim + dim] = value;

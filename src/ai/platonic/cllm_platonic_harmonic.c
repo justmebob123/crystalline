@@ -15,12 +15,12 @@
  */
 
 #include "ai/cllm_platonic.h"
+#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include "prime_types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // ============================================================================
 // CYMATIC FREQUENCIES (Hz)
@@ -95,12 +95,12 @@ void platonic_fourier_transform(
         
         for (size_t n = 0; n < signal_size; n++) {
             double angle = 2.0 * M_PI * k * n / signal_size;
-            real_part += signal[n] * cos(angle);
-            imag_part += signal[n] * sin(angle);
+            real_part += signal[n] * prime_cos(angle);
+            imag_part += signal[n] * prime_sin(angle);
         }
         
         // Store magnitude (respecting geometric structure)
-        coefficients[k] = sqrt(real_part * real_part + imag_part * imag_part) / signal_size;
+        coefficients[k] = prime_sqrt(real_part * real_part + imag_part * imag_part) / signal_size;
     }
     
     printf("✓ Fourier transform complete\n");
@@ -132,10 +132,10 @@ void platonic_cymatic_modulate(
     
     // Find closest cymatic frequency
     double closest_freq = CYMATIC_FREQUENCIES[0];
-    double min_diff = fabs(frequency_hz - closest_freq);
+    double min_diff = prime_fabs(frequency_hz - closest_freq);
     
     for (int i = 1; i < NUM_CYMATIC_FREQUENCIES; i++) {
-        double diff = fabs(frequency_hz - CYMATIC_FREQUENCIES[i]);
+        double diff = prime_fabs(frequency_hz - CYMATIC_FREQUENCIES[i]);
         if (diff < min_diff) {
             min_diff = diff;
             closest_freq = CYMATIC_FREQUENCIES[i];
@@ -150,7 +150,7 @@ void platonic_cymatic_modulate(
         double phase = 2.0 * M_PI * i / gradient_size;
         
         // Apply frequency modulation
-        double modulation = cos(phase * closest_freq / 100.0);
+        double modulation = prime_cos(phase * closest_freq / 100.0);
         
         // Modulate gradient (smooth out harsh changes)
         gradients[i] *= (1.0 + 0.1 * modulation);
@@ -196,7 +196,7 @@ void platonic_align_attention_resonance(
         double phase = 2.0 * M_PI * (i % solid_prime) / solid_prime;
         
         // Apply resonance modulation
-        double resonance = cos(phase);
+        double resonance = prime_cos(phase);
         
         // Align attention with prime resonance
         attention_weights[i] *= (1.0 + 0.05 * resonance);

@@ -21,17 +21,19 @@ else
     DEBUG_FLAGS =
 endif
 
-CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include $(SIMD_FLAGS) $(DEBUG_FLAGS)
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include $(SIMD_FLAGS) $(DEBUG_FLAGS)
 LDFLAGS = 
 ARFLAGS = rcs
 
 # Library names - Shared (.so)
+MATH_LIB = math/lib/libcrystallinemath.so
 CRYSTALLINE_LIB = libcrystalline.so
 ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = libcllm.so
 CRAWLER_LIB = libcrawler.so
 
 # Library names - Static (.a)
+MATH_STATIC = math/lib/libcrystallinemath.a
 CRYSTALLINE_STATIC = libcrystalline.a
 ALGORITHMS_STATIC = libalgorithms.a
 CLLM_STATIC = libcllm.a
@@ -81,7 +83,7 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(CRYSTALLINE_LIB) $(CRYSTALLINE_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
+all: $(MATH_LIB) $(MATH_STATIC) $(CRYSTALLINE_LIB) $(CRYSTALLINE_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
 	@echo "✓ Build complete!"
 	@echo "  Shared Libraries:"
 	@echo "    - $(CRYSTALLINE_LIB)"
@@ -95,18 +97,36 @@ all: $(CRYSTALLINE_LIB) $(CRYSTALLINE_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STA
 	@echo "    - $(CRAWLER_STATIC)"
 
 # ============================================================================
+# Math Library (Foundation)
+# ============================================================================
+
+# 0. Crystalline Math Library (self-contained math, NO math.h)
+$(MATH_LIB) $(MATH_STATIC):
+	@echo "Building Crystalline Math Library..."
+	@cd math &amp;&amp; $(MAKE)
+	@echo "✓ Math library built successfully"
+
+.PHONY: math-clean
+math-clean:
+	@cd math &amp;&amp; $(MAKE) clean
+
+.PHONY: math-test
+math-test:
+	@cd math &amp;&amp; $(MAKE) test
+
+# ============================================================================
 # Three Independent Libraries
 # ============================================================================
 
 # 1. Crystalline Lattice Library (core math + geometry)
 CRYSTALLINE_OBJECTS = $(CORE_OBJECTS) $(TRANS_OBJECTS) $(GEOM_OBJECTS)
 
-$(CRYSTALLINE_LIB): $(CRYSTALLINE_OBJECTS)
+$(CRYSTALLINE_LIB): $(MATH_LIB) $(CRYSTALLINE_OBJECTS)
 	@echo "Creating crystalline shared library: $@"
 	$(CC) -shared -o $@ $^
 	@echo "✓ Crystalline shared library created"
 
-$(CRYSTALLINE_STATIC): $(CRYSTALLINE_OBJECTS)
+$(CRYSTALLINE_STATIC): $(MATH_STATIC) $(CRYSTALLINE_OBJECTS)
 	@echo "Creating crystalline static library: $@"
 	$(AR) $(ARFLAGS) $@ $^
 	@echo "✓ Crystalline static library created"

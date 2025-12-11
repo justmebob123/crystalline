@@ -9,6 +9,7 @@
  */
 
 #include "geometric_recovery.h"
+#include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>

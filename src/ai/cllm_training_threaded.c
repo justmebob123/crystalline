@@ -52,7 +52,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <immintrin.h>  // AVX/AVX2 SIMD instructions
-// #include <math.h>  // OBJECTIVE 3A: Removed - using crystalline math only
 #include <unistd.h>
 #include <time.h>  // For timing metrics
 

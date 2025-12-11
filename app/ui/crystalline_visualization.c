@@ -6,7 +6,6 @@
 #include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <string.h>
-// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
 #include "../../include/prime_float_math.h"
 
 #ifndef M_PI
