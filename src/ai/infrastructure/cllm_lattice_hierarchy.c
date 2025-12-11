@@ -192,17 +192,10 @@ void lattice_hierarchy_free(CLLMLatticeHierarchy* sphere) {
     }
     
     // Free position and partition
-    if (sphere->position) {
-        sphere_position_free(sphere->position);
-    }
-    if (sphere->partition) {
-        free_lattice_partition(sphere->partition);
-    }
-    
-    // Free abacus
-    if (sphere->abacus) {
-        hierarchical_abacus_free(sphere->abacus);
-    }
+    // Dead code removed - these fields were never initialized or used:
+    // - sphere->position (never set, never used)
+    // - sphere->partition (never set, never used)
+    // - sphere->abacus (never set, never used)
     
     // Destroy mutexes and condition variables
     pthread_mutex_destroy(&sphere->state_mutex);

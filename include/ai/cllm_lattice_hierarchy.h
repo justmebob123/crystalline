@@ -4,10 +4,11 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stdatomic.h>
-#include "lattice_sphere_positions.h"
+// Removed dead code includes:
+// #include "lattice_sphere_positions.h"
+// #include "../../algorithms/include/hierarchical_prime_partitions.h"
 #include "ai/cllm_sphere_stats.h"
 #include "ai/cllm_message_queue.h"
-#include "../../algorithms/include/hierarchical_prime_partitions.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_thread_allocation.h"
 
@@ -106,17 +107,14 @@ struct CLLMLatticeHierarchy {
     CLLMLatticeHierarchy* siblings[11];
     
     // ========================================================================
-    // POSITION & GEOMETRY
+    // DEAD CODE REMOVED
     // ========================================================================
+    // Removed unused fields (never initialized, never used, only freed):
+    // - SpherePosition* position
+    // - LatticePartition* partition
+    // - HierarchicalAbacus* abacus
     
-    SpherePosition* position;        // Position in lattice
-    LatticePartition* partition;     // Lattice partition owned by this sphere
-    
-    // ========================================================================
-    // PRIME GENERATION
-    // ========================================================================
-    
-    HierarchicalAbacus* abacus;      // Prime generator for this sphere
+    // Kept for potential future use:
     uint64_t primes_generated;       // Total primes generated
     uint64_t current_prime;          // Current prime being processed
     
