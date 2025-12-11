@@ -75,6 +75,77 @@ static int compare_magnitude(const CrystallineAbacus* a, const CrystallineAbacus
 }
 
 /**
+ * @brief Multiply abacus by a single digit (PURE GEOMETRIC)
+ * @param result Output abacus (must be pre-allocated)
+ * @param a Input abacus
+ * @param digit Single digit to multiply by
+ * @return MATH_SUCCESS or error code
+ */
+static MathError multiply_by_digit(CrystallineAbacus* result,
+                                   const CrystallineAbacus* a,
+                                   uint32_t digit) {
+    if (digit == 0) {
+        /* Result is zero */
+        result->num_beads = 1;
+        result->beads[0].value = 0;
+        result->beads[0].weight = 1;
+        result->negative = false;
+        if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+        return MATH_SUCCESS;
+    }
+    
+    if (digit == 1) {
+        /* Result is a copy of a */
+        if (abacus_ensure_capacity(result, a->num_beads) != MATH_SUCCESS) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(result->beads, a->beads, a->num_beads * sizeof(AbacusBead));
+        result->num_beads = a->num_beads;
+        result->negative = a->negative;
+        return MATH_SUCCESS;
+    }
+    
+    /* Ensure capacity for result (may need one extra bead for carry) */
+    if (abacus_ensure_capacity(result, a->num_beads + 1) != MATH_SUCCESS) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    uint32_t carry = 0;
+    size_t i = 0;
+    
+    for (i = 0; i < a->num_beads; i++) {
+        uint64_t product = (uint64_t)a->beads[i].value * digit + carry;
+        uint32_t digit_value = product % result->base;
+        carry = product / result->base;
+        
+        result->beads[i].value = digit_value;
+        result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+        
+        if (map_digit_to_position(digit_value, result->base, &result->beads[i].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+    }
+    
+    /* Handle final carry */
+    if (carry > 0) {
+        result->beads[i].value = carry;
+        result->beads[i].weight = result->beads[i-1].weight * result->base;
+        if (map_digit_to_position(carry, result->base, &result->beads[i].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+        result->num_beads = i + 1;
+    } else {
+        result->num_beads = i;
+    }
+    
+    result->negative = a->negative;
+    
+    return MATH_SUCCESS;
+}
+
+/**
  * @brief Subtract magnitudes (assumes |a| >= |b|)
  * @param result Output abacus
  * @param a Larger magnitude
@@ -474,39 +545,102 @@ MathError abacus_mul(CrystallineAbacus* result, const CrystallineAbacus* a, cons
         return MATH_ERROR_INVALID_ARG;
     }
     
-    /* For now, convert to BigInt and back */
-    /* TODO: Implement direct geometric multiplication */
+    /* Bases must match */
+    if (a->base != b->base || result->base != a->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
     
-    BigInt* bi_a = abacus_to_bigint(a);
-    BigInt* bi_b = abacus_to_bigint(b);
-    BigInt* bi_result = bigint_new();
+    /* PURE GEOMETRIC MULTIPLICATION - School Algorithm */
+    /* Algorithm: For each digit in b, multiply a by that digit and add to result */
     
-    if (!bi_a || !bi_b || !bi_result) {
-        bigint_free(bi_a);
-        bigint_free(bi_b);
-        bigint_free(bi_result);
+    /* Handle zero cases */
+    if (abacus_is_zero(a) || abacus_is_zero(b)) {
+        result->num_beads = 1;
+        result->beads[0].value = 0;
+        result->beads[0].weight = 1;
+        result->negative = false;
+        if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
+            return MATH_ERROR_INVALID_ARG;
+        }
+        return MATH_SUCCESS;
+    }
+    
+    /* Initialize result to zero */
+    if (abacus_init_zero(result) != MATH_SUCCESS) {
         return MATH_ERROR_OUT_OF_MEMORY;
     }
     
-    MathError err = bigint_mul(bi_result, bi_a, bi_b);
-    
-    if (err == MATH_SUCCESS) {
-        CrystallineAbacus* temp = abacus_from_bigint(bi_result, result->base);
-        if (temp) {
-            if (abacus_ensure_capacity(result, temp->num_beads) == MATH_SUCCESS) {
-                memcpy(result->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
-                result->num_beads = temp->num_beads;
-                result->negative = temp->negative;
-            }
-            abacus_free(temp);
+    /* For each digit in b (multiplier) */
+    for (size_t i = 0; i < b->num_beads; i++) {
+        /* Skip if digit is zero (optimization) */
+        if (b->beads[i].value == 0) {
+            continue;
         }
+        
+        /* Multiply a by b[i] */
+        CrystallineAbacus* temp = abacus_new(result->base);
+        if (!temp) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        MathError err = multiply_by_digit(temp, a, b->beads[i].value);
+        if (err != MATH_SUCCESS) {
+            abacus_free(temp);
+            return err;
+        }
+        
+        /* Shift temp left by i positions (multiply by base^i) */
+        if (i > 0) {
+            CrystallineAbacus* shifted = abacus_new(result->base);
+            if (!shifted) {
+                abacus_free(temp);
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            err = abacus_shift_left(shifted, temp, i);
+            if (err != MATH_SUCCESS) {
+                abacus_free(temp);
+                abacus_free(shifted);
+                return err;
+            }
+            
+            abacus_free(temp);
+            temp = shifted;
+        }
+        
+        /* Add to result (accumulate) */
+        CrystallineAbacus* new_result = abacus_new(result->base);
+        if (!new_result) {
+            abacus_free(temp);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        err = abacus_add(new_result, result, temp);
+        if (err != MATH_SUCCESS) {
+            abacus_free(temp);
+            abacus_free(new_result);
+            return err;
+        }
+        
+        /* Copy new_result to result */
+        if (abacus_ensure_capacity(result, new_result->num_beads) != MATH_SUCCESS) {
+            abacus_free(temp);
+            abacus_free(new_result);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        memcpy(result->beads, new_result->beads, new_result->num_beads * sizeof(AbacusBead));
+        result->num_beads = new_result->num_beads;
+        result->negative = new_result->negative;
+        
+        abacus_free(temp);
+        abacus_free(new_result);
     }
     
-    bigint_free(bi_a);
-    bigint_free(bi_b);
-    bigint_free(bi_result);
+    /* Handle sign: negative if signs differ */
+    result->negative = (a->negative != b->negative);
     
-    return err;
+    return abacus_normalize(result);
 }
 
 MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
