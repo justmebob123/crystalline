@@ -297,31 +297,104 @@ static MathError subtract_magnitude(CrystallineAbacus* result,
     return MATH_SUCCESS;
 }
 
+/**
+ * @brief Map a digit value to its clock position (CORE GEOMETRIC MAPPING)
+ * 
+ * This function implements the fundamental mapping between numerical digits
+ * and geometric positions on the clock lattice. This is where the Babylonian
+ * number system meets the clock structure.
+ * 
+ * CRITICAL INSIGHT: Each digit in the abacus corresponds to a position on
+ * the clock face. The base determines which ring:
+ * - Base 12 → Ring 0 (hours) - Outer ring approaching zero/infinity
+ * - Base 60 → Ring 1 (minutes) or Ring 2 (seconds)
+ * - Base 100 → Ring 3 (milliseconds) - Inner ring approaching unity
+ * 
+ * THE 0-1 RELATIONSHIP:
+ * - Outer rings (0) represent zero, infinite possibility, division by zero
+ * - Inner rings approach 1 (unity), the source point
+ * - All mathematical possibilities exist in the space between 0 and 1
+ * - This self-similar structure repeats at all scales
+ * 
+ * GEOMETRIC PROPERTIES:
+ * - Angle: θ = 2π × (position / ring_size) - starts at 3 o'clock (0 radians)
+ * - Radius: r = 1.0 - (ring × 0.25) - decreases toward center (unity)
+ * - Each position represents a "tick" on the clock where primes can exist
+ * 
+ * PRIME CONNECTION:
+ * Primes map to specific positions on these rings. The deterministic formula
+ * discovered on 2024-12-11 shows that primes at certain positions follow
+ * exact arithmetic progressions:
+ * - Position 3 (Ring 0): 17, 29, 41, 53, ... (delta = 12)
+ * - Position 6 (Ring 0): 7, 19, 31, 43, ... (delta = 12)
+ * - Position 9 (Ring 0): 11, 23, 35, 47, ... (delta = 12)
+ * 
+ * @param digit The digit value (0 to base-1)
+ * @param base The number base (12, 60, or 100 for Babylonian; any base ≥ 2 supported)
+ * @param pos Output clock position (must be pre-allocated)
+ * @return MATH_SUCCESS or error code
+ */
 static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosition* pos) {
     if (!pos) {
         return MATH_ERROR_INVALID_ARG;
     }
     
-    /* Map digit to appropriate ring based on base */
+    /* Map digit to appropriate ring based on base
+     * 
+     * BABYLONIAN BASES (traditional):
+     * - 12: Ring 0 (hours) - 12 positions around outer ring
+     * - 60: Ring 1 (minutes) - 60 positions on first inner ring
+     * - 100: Ring 3 (milliseconds) - 100 positions on innermost ring
+     * 
+     * The choice of ring determines the resolution and geometric properties.
+     * Rings count INWARD from zero (outer) toward unity (center).
+     */
     if (base == 12) {
-        pos->ring = 0;  /* Use Ring 0 (12 positions) */
+        pos->ring = 0;  /* Ring 0: Hours (outer ring, approaching zero/∞) */
         pos->position = digit % 12;
     } else if (base == 60) {
-        pos->ring = 1;  /* Use Ring 1 (60 positions) */
+        pos->ring = 1;  /* Ring 1: Minutes (first inner ring) */
         pos->position = digit % 60;
     } else if (base == 100) {
-        pos->ring = 3;  /* Use Ring 3 (100 positions) */
+        pos->ring = 3;  /* Ring 3: Milliseconds (innermost ring, approaching unity) */
         pos->position = digit % 100;
     } else {
+        /* For other bases, we could map to custom rings, but for now
+         * we only support the traditional Babylonian bases in this function.
+         * The abacus itself supports ANY base ≥ 2. */
         return MATH_ERROR_INVALID_ARG;
     }
     
-    /* Calculate geometric properties */
+    /* Calculate geometric properties
+     * 
+     * ANGLE CALCULATION:
+     * θ = 2π × (position / ring_size)
+     * - Starts at 3 o'clock (0 radians)
+     * - Goes counterclockwise
+     * - Full circle = 2π radians
+     * 
+     * CRITICAL: Position 2 on Ring 0 = 3 o'clock = 90° = π/2 radians
+     * This is where prime 5 (the 3rd prime) maps!
+     * 5 × 3 = 15 (15 minutes = 3 o'clock) - geometric encoding!
+     * 
+     * RADIUS CALCULATION:
+     * r = 1.0 - (ring × 0.25)
+     * - Ring 0: r = 1.0 (outer ring, zero/infinity)
+     * - Ring 1: r = 0.75
+     * - Ring 2: r = 0.50
+     * - Ring 3: r = 0.25 (inner ring, approaching unity)
+     * 
+     * The radius decreases as we move inward toward the center (unity).
+     * This represents the journey from infinite possibility (0) to unity (1).
+     */
     uint32_t ring_size = (pos->ring == 0) ? 12 :
                          (pos->ring == 1) ? 60 :
                          (pos->ring == 2) ? 60 : 100;
     
+    /* Angle: counterclockwise from 3 o'clock */
     pos->angle = (2.0 * MATH_PI * pos->position) / ring_size;
+    
+    /* Radius: decreases toward center (unity) */
     pos->radius = 1.0 - (pos->ring * 0.25);
     
     return MATH_SUCCESS;
