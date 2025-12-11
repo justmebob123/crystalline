@@ -7,6 +7,8 @@
  * Implements geometric arithmetic operations using the clock lattice structure.
  */
 
+#define _GNU_SOURCE
+#include <math.h>
 #include "math/abacus.h"
 #include "math/prime.h"
 #include "math/arithmetic.h"
@@ -131,7 +133,7 @@ static MathError multiply_by_digit(CrystallineAbacus* result,
         /* Result is zero */
         result->num_beads = 1;
         result->beads[0].value = 0;
-        result->beads[0].weight = 1;
+        result->beads[0].weight_exponent = 0;
         result->negative = false;
         if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
@@ -164,7 +166,7 @@ static MathError multiply_by_digit(CrystallineAbacus* result,
         carry = product / result->base;
         
         result->beads[i].value = digit_value;
-        result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+                result->beads[i].weight_exponent = i;
         
         if (map_digit_to_position(digit_value, result->base, &result->beads[i].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
@@ -174,7 +176,7 @@ static MathError multiply_by_digit(CrystallineAbacus* result,
     /* Handle final carry */
     if (carry > 0) {
         result->beads[i].value = carry;
-        result->beads[i].weight = result->beads[i-1].weight * result->base;
+                result->beads[i].weight_exponent = i;
         if (map_digit_to_position(carry, result->base, &result->beads[i].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
         }
@@ -219,7 +221,7 @@ static MathError subtract_magnitude(CrystallineAbacus* result,
         }
         
         result->beads[i].value = (uint32_t)diff;
-        result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+                result->beads[i].weight_exponent = i;
         
         if (map_digit_to_position((uint32_t)diff, result->base, &result->beads[i].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
@@ -288,6 +290,7 @@ CrystallineAbacus* abacus_new(uint32_t base) {
     abacus->num_beads = 0;
     abacus->capacity = 8;
     abacus->base = base;
+    abacus->min_exponent = 0;
     abacus->negative = false;
     
     return abacus;
@@ -309,7 +312,7 @@ MathError abacus_init_zero(CrystallineAbacus* abacus) {
     
     abacus->num_beads = 1;
     abacus->beads[0].value = 0;
-    abacus->beads[0].weight = 1;
+    abacus->beads[0].weight_exponent = 0;
     abacus->negative = false;
     
     return map_digit_to_position(0, abacus->base, &abacus->beads[0].position);
@@ -355,7 +358,7 @@ CrystallineAbacus* abacus_from_uint64(uint64_t value, uint32_t base) {
         uint32_t digit = temp % base;
         
         abacus->beads[i].value = digit;
-        abacus->beads[i].weight = weight;
+        abacus->beads[i].weight_exponent = i;
         
         if (map_digit_to_position(digit, base, &abacus->beads[i].position) != MATH_SUCCESS) {
             abacus_free(abacus);
@@ -368,6 +371,7 @@ CrystallineAbacus* abacus_from_uint64(uint64_t value, uint32_t base) {
     
     abacus->num_beads = num_digits;
     abacus->negative = false;
+    abacus->min_exponent = 0;
     
     return abacus;
 }
@@ -429,7 +433,7 @@ MathError abacus_add(CrystallineAbacus* result, const CrystallineAbacus* a, cons
             uint32_t digit = sum % result->base;
             
             result->beads[i].value = digit;
-            result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+                        result->beads[i].weight_exponent = i;
             
             if (map_digit_to_position(digit, result->base, &result->beads[i].position) != MATH_SUCCESS) {
                 return MATH_ERROR_INVALID_ARG;
@@ -449,7 +453,7 @@ MathError abacus_add(CrystallineAbacus* result, const CrystallineAbacus* a, cons
             /* Equal magnitudes, result is zero */
             result->num_beads = 1;
             result->beads[0].value = 0;
-            result->beads[0].weight = 1;
+            result->beads[0].weight_exponent = 0;
             result->negative = false;
             if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
                 return MATH_ERROR_INVALID_ARG;
@@ -492,7 +496,7 @@ MathError abacus_sub(CrystallineAbacus* result, const CrystallineAbacus* a, cons
             /* Equal magnitudes, result is zero */
             result->num_beads = 1;
             result->beads[0].value = 0;
-            result->beads[0].weight = 1;
+            result->beads[0].weight_exponent = 0;
             result->negative = false;
             if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
                 return MATH_ERROR_INVALID_ARG;
@@ -528,7 +532,7 @@ MathError abacus_sub(CrystallineAbacus* result, const CrystallineAbacus* a, cons
             uint32_t digit = sum % result->base;
             
             result->beads[i].value = digit;
-            result->beads[i].weight = (i == 0) ? 1 : result->beads[i-1].weight * result->base;
+                        result->beads[i].weight_exponent = i;
             
             if (map_digit_to_position(digit, result->base, &result->beads[i].position) != MATH_SUCCESS) {
                 return MATH_ERROR_INVALID_ARG;
@@ -561,7 +565,7 @@ MathError abacus_mul(CrystallineAbacus* result, const CrystallineAbacus* a, cons
     if (abacus_is_zero(a) || abacus_is_zero(b)) {
         result->num_beads = 1;
         result->beads[0].value = 0;
-        result->beads[0].weight = 1;
+        result->beads[0].weight_exponent = 0;
         result->negative = false;
         if (map_digit_to_position(0, result->base, &result->beads[0].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
@@ -702,7 +706,7 @@ MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
         /* |a| == |b|: quotient = 1, remainder = 0 */
         quotient->num_beads = 1;
         quotient->beads[0].value = 1;
-        quotient->beads[0].weight = 1;
+        quotient->beads[0].weight_exponent = 0;
         quotient->negative = (a->negative != b->negative);
         if (map_digit_to_position(1, quotient->base, &quotient->beads[0].position) != MATH_SUCCESS) {
             return MATH_ERROR_INVALID_ARG;
@@ -930,9 +934,9 @@ MathError abacus_shift_left(CrystallineAbacus* result, const CrystallineAbacus* 
     /* Fill lower n positions with zeros */
     for (size_t i = 0; i < n; i++) {
         result->beads[i].value = 0;
-        result->beads[i].weight = 1;
+        result->beads[i].weight_exponent = 0;
         for (size_t j = 0; j < i; j++) {
-            result->beads[i].weight *= result->base;
+            result->beads[i].weight_exponent += 1; // was: weight *= result->base;
         }
         map_digit_to_position(0, result->base, &result->beads[i].position);
     }
@@ -940,9 +944,9 @@ MathError abacus_shift_left(CrystallineAbacus* result, const CrystallineAbacus* 
     /* Copy shifted digits */
     for (size_t i = 0; i < a->num_beads; i++) {
         result->beads[i + n] = a->beads[i];
-        result->beads[i + n].weight = a->beads[i].weight;
+        result->beads[i + n].weight_exponent = a->beads[i].weight_exponent;
         for (size_t j = 0; j < n; j++) {
-            result->beads[i + n].weight *= result->base;
+            result->beads[i + n].weight_exponent += 1; // was: weight *= result->base;
         }
     }
     
@@ -1133,4 +1137,350 @@ void abacus_print(const CrystallineAbacus* abacus) {
         printf("%s\n", str);
         free(str);
     }
+}
+
+/* ============================================================================
+ * FRACTIONAL BEAD SUPPORT
+ * ============================================================================
+ */
+
+/**
+ * @brief Simple floor implementation (avoid math.h dependency issues)
+ */
+static double simple_floor(double x) {
+    if (x >= 0) {
+        return (double)((int64_t)x);
+    } else {
+        int64_t i = (int64_t)x;
+        return (x == (double)i) ? x : (double)(i - 1);
+    }
+}
+
+/**
+ * @brief Simple pow implementation for integer exponents
+ */
+static double simple_pow(double base, int32_t exp) {
+    if (exp == 0) return 1.0;
+    
+    double result = 1.0;
+    if (exp > 0) {
+        for (int32_t i = 0; i < exp; i++) {
+            result *= base;
+        }
+    } else {
+        for (int32_t i = 0; i < -exp; i++) {
+            result /= base;
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief Create abacus from double (with fractional part)
+ */
+CrystallineAbacus* abacus_from_double(double value, uint32_t base, int32_t precision) {
+    if (base != 12 && base != 60 && base != 100) {
+        return NULL;
+    }
+    
+    if (precision < 0) {
+        precision = 0;
+    }
+    
+    /* Create abacus */
+    CrystallineAbacus* abacus = abacus_new(base);
+    if (!abacus) {
+        return NULL;
+    }
+    
+    /* Handle sign */
+    if (value < 0) {
+        abacus->negative = true;
+        value = -value;
+    } else {
+        abacus->negative = false;
+    }
+    
+    /* Split into integer and fractional parts */
+    double int_part_d = simple_floor(value);
+    double frac_part = value - int_part_d;
+    
+    /* Convert integer part */
+    uint64_t int_part = (uint64_t)int_part_d;
+    
+    /* Count digits needed for integer part */
+    size_t int_digits = 0;
+    uint64_t temp = int_part;
+    if (temp == 0) {
+        int_digits = 1;
+    } else {
+        while (temp > 0) {
+            int_digits++;
+            temp /= base;
+        }
+    }
+    
+    /* Total beads needed */
+    size_t total_beads = int_digits + precision;
+    
+    if (abacus_ensure_capacity(abacus, total_beads) != MATH_SUCCESS) {
+        abacus_free(abacus);
+        return NULL;
+    }
+    
+    /* Fill integer part (from least to most significant) */
+    temp = int_part;
+    for (size_t i = 0; i < int_digits; i++) {
+        uint32_t digit = temp % base;
+        abacus->beads[precision + i].value = digit;
+        abacus->beads[precision + i].weight_exponent = i;
+        
+        if (map_digit_to_position(digit, base, &abacus->beads[precision + i].position) != MATH_SUCCESS) {
+            abacus_free(abacus);
+            return NULL;
+        }
+        
+        temp /= base;
+    }
+    
+    /* Fill fractional part */
+    for (int32_t i = 0; i < precision; i++) {
+        frac_part *= base;
+        uint32_t digit = (uint32_t)simple_floor(frac_part);
+        frac_part -= digit;
+        
+        abacus->beads[precision - 1 - i].value = digit;
+        abacus->beads[precision - 1 - i].weight_exponent = -(i + 1);
+        
+        if (map_digit_to_position(digit, base, &abacus->beads[precision - 1 - i].position) != MATH_SUCCESS) {
+            abacus_free(abacus);
+            return NULL;
+        }
+    }
+    
+    abacus->num_beads = total_beads;
+    abacus->min_exponent = -precision;
+    
+    return abacus;
+}
+
+/**
+ * @brief Convert abacus to double
+ */
+MathError abacus_to_double(const CrystallineAbacus* abacus, double* value) {
+    if (!abacus || !value) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    double result = 0.0;
+    double base_d = (double)abacus->base;
+    
+    /* Sum all beads */
+    for (size_t i = 0; i < abacus->num_beads; i++) {
+        double weight = simple_pow(base_d, abacus->beads[i].weight_exponent);
+        result += abacus->beads[i].value * weight;
+    }
+    
+    /* Apply sign */
+    if (abacus->negative) {
+        result = -result;
+    }
+    
+    *value = result;
+    return MATH_SUCCESS;
+}
+
+/**
+ * @brief Set precision (number of fractional digits)
+ */
+MathError abacus_set_precision(CrystallineAbacus* abacus, int32_t precision) {
+    if (!abacus) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (precision < 0) {
+        precision = 0;
+    }
+    
+    int32_t current_min = abacus->min_exponent;
+    int32_t target_min = -precision;
+    
+    if (target_min == current_min) {
+        return MATH_SUCCESS;  /* Already at desired precision */
+    }
+    
+    if (target_min < current_min) {
+        /* Increasing precision - pad with zeros */
+        int32_t extra_beads = current_min - target_min;
+        size_t new_size = abacus->num_beads + extra_beads;
+        
+        if (abacus_ensure_capacity(abacus, new_size) != MATH_SUCCESS) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        /* Shift existing beads */
+        for (int i = (int)abacus->num_beads - 1; i >= 0; i--) {
+            abacus->beads[i + extra_beads] = abacus->beads[i];
+        }
+        
+        /* Fill new fractional beads with zeros */
+        for (int32_t i = 0; i < extra_beads; i++) {
+            abacus->beads[i].value = 0;
+            abacus->beads[i].weight_exponent = target_min + i;
+            map_digit_to_position(0, abacus->base, &abacus->beads[i].position);
+        }
+        
+        abacus->num_beads = new_size;
+        abacus->min_exponent = target_min;
+    } else {
+        /* Decreasing precision - truncate */
+        int32_t beads_to_remove = target_min - current_min;
+        
+        if (beads_to_remove >= (int32_t)abacus->num_beads) {
+            /* Removing all beads, set to zero */
+            abacus_init_zero(abacus);
+            abacus->min_exponent = target_min;
+        } else {
+            /* Shift beads left */
+            for (size_t i = 0; i < abacus->num_beads - beads_to_remove; i++) {
+                abacus->beads[i] = abacus->beads[i + beads_to_remove];
+            }
+            abacus->num_beads -= beads_to_remove;
+            abacus->min_exponent = target_min;
+        }
+    }
+    
+    return abacus_normalize(abacus);
+}
+
+/**
+ * @brief Get precision (number of fractional digits)
+ */
+int32_t abacus_get_precision(const CrystallineAbacus* abacus) {
+    if (!abacus) {
+        return 0;
+    }
+    
+    return -abacus->min_exponent;
+}
+
+/**
+ * @brief Round abacus to specified precision
+ */
+MathError abacus_round(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision) {
+    if (!result || !a) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Copy to result */
+    CrystallineAbacus* temp = abacus_copy(a);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    /* If already at or above precision, just copy */
+    if (-temp->min_exponent <= precision) {
+        if (abacus_ensure_capacity(result, temp->num_beads) != MATH_SUCCESS) {
+            abacus_free(temp);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(result->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+        result->num_beads = temp->num_beads;
+        result->negative = temp->negative;
+        result->min_exponent = temp->min_exponent;
+        abacus_free(temp);
+        return MATH_SUCCESS;
+    }
+    
+    /* Find the digit at position -(precision+1) for rounding */
+    int32_t round_exp = -(precision + 1);
+    bool round_up = false;
+    
+    for (size_t i = 0; i < temp->num_beads; i++) {
+        if (temp->beads[i].weight_exponent == round_exp) {
+            /* Round up if digit >= base/2 */
+            if (temp->beads[i].value >= temp->base / 2) {
+                round_up = true;
+            }
+            break;
+        }
+    }
+    
+    /* Truncate to precision */
+    MathError err = abacus_set_precision(temp, precision);
+    if (err != MATH_SUCCESS) {
+        abacus_free(temp);
+        return err;
+    }
+    
+    /* Add 1 to least significant digit if rounding up */
+    if (round_up && temp->num_beads > 0) {
+        /* Find bead at exponent -precision */
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            if (temp->beads[i].weight_exponent == -precision) {
+                temp->beads[i].value++;
+                if (temp->beads[i].value >= temp->base) {
+                    /* Need to carry */
+                    temp->beads[i].value = 0;
+                    /* Propagate carry */
+                    for (size_t j = i + 1; j < temp->num_beads; j++) {
+                        temp->beads[j].value++;
+                        if (temp->beads[j].value < temp->base) {
+                            break;
+                        }
+                        temp->beads[j].value = 0;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    /* Copy to result */
+    if (abacus_ensure_capacity(result, temp->num_beads) != MATH_SUCCESS) {
+        abacus_free(temp);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    memcpy(result->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+    result->num_beads = temp->num_beads;
+    result->negative = temp->negative;
+    result->min_exponent = temp->min_exponent;
+    
+    abacus_free(temp);
+    return abacus_normalize(result);
+}
+
+/**
+ * @brief Truncate abacus to specified precision
+ */
+MathError abacus_truncate(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision) {
+    if (!result || !a) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Copy to result */
+    CrystallineAbacus* temp = abacus_copy(a);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    /* Set precision (this truncates) */
+    MathError err = abacus_set_precision(temp, precision);
+    if (err != MATH_SUCCESS) {
+        abacus_free(temp);
+        return err;
+    }
+    
+    /* Copy to result */
+    if (abacus_ensure_capacity(result, temp->num_beads) != MATH_SUCCESS) {
+        abacus_free(temp);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    memcpy(result->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+    result->num_beads = temp->num_beads;
+    result->negative = temp->negative;
+    result->min_exponent = temp->min_exponent;
+    
+    abacus_free(temp);
+    return MATH_SUCCESS;
 }

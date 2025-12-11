@@ -46,24 +46,44 @@ extern "C" {
  * @brief A bead on the crystalline abacus
  * 
  * Each bead represents a digit in the number, positioned on the clock lattice.
+ * Supports both integer and fractional positions through weight_exponent.
+ * 
+ * Examples:
+ *   weight_exponent = 2  → weight = base^2  (hundreds place)
+ *   weight_exponent = 1  → weight = base^1  (tens place)
+ *   weight_exponent = 0  → weight = base^0  (ones place)
+ *   weight_exponent = -1 → weight = base^-1 (tenths place)
+ *   weight_exponent = -2 → weight = base^-2 (hundredths place)
  */
 typedef struct {
     ClockPosition position;  /**< Position on clock lattice */
     uint32_t value;          /**< Digit value (0 to base-1) */
-    uint32_t weight;         /**< Position weight (base^index) */
+    int32_t weight_exponent; /**< Weight exponent (can be negative for fractions) */
 } AbacusBead;
 
 /**
  * @brief Crystalline Abacus structure
  * 
  * Represents a number as a collection of beads on the clock lattice.
+ * Supports both integer and fractional numbers through weight exponents.
+ * 
+ * Beads are stored in order from least significant to most significant.
+ * The weight_exponent of each bead determines its position relative to
+ * the decimal point.
+ * 
+ * Example: 157.25 in base 12
+ *   beads[0]: value=3, weight_exponent=-1  (3 * 12^-1 = 0.25)
+ *   beads[1]: value=1, weight_exponent=0   (1 * 12^0 = 1)
+ *   beads[2]: value=13, weight_exponent=1  (13 * 12^1 = 156)
+ *   Total: 156 + 1 + 0.25 = 157.25
  */
 typedef struct {
-    AbacusBead* beads;       /**< Array of beads */
+    AbacusBead* beads;       /**< Array of beads (ordered by weight_exponent) */
     size_t num_beads;        /**< Number of beads */
     size_t capacity;         /**< Allocated capacity */
     uint32_t base;           /**< Number base (12, 60, or 100) */
     bool negative;           /**< Sign of the number */
+    int32_t min_exponent;    /**< Minimum weight exponent (for fractional precision) */
 } CrystallineAbacus;
 
 /* ============================================================================
@@ -111,6 +131,63 @@ CrystallineAbacus* abacus_from_uint64(uint64_t value, uint32_t base);
  * @return MATH_SUCCESS or error code
  */
 MathError abacus_to_uint64(const CrystallineAbacus* abacus, uint64_t* value);
+
+/**
+ * @brief Create abacus from double (with fractional part)
+ * @param value Value to convert
+ * @param base Number base (12, 60, or 100)
+ * @param precision Number of fractional digits (negative exponents)
+ * @return Pointer to new abacus, or NULL on error
+ * 
+ * Example: abacus_from_double(157.25, 12, 2)
+ *   Creates abacus with beads for 157.25 in base 12
+ *   precision=2 means 2 fractional digits (12^-1, 12^-2)
+ */
+CrystallineAbacus* abacus_from_double(double value, uint32_t base, int32_t precision);
+
+/**
+ * @brief Convert abacus to double
+ * @param abacus Abacus to convert
+ * @param value Output value
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_to_double(const CrystallineAbacus* abacus, double* value);
+
+/**
+ * @brief Set precision (number of fractional digits)
+ * @param abacus Abacus to modify
+ * @param precision Number of fractional digits (negative exponents)
+ * @return MATH_SUCCESS or error code
+ * 
+ * Adjusts min_exponent to support the specified precision.
+ * Pads with zeros if needed, truncates if reducing precision.
+ */
+MathError abacus_set_precision(CrystallineAbacus* abacus, int32_t precision);
+
+/**
+ * @brief Get precision (number of fractional digits)
+ * @param abacus Abacus to query
+ * @return Number of fractional digits (0 if integer only)
+ */
+int32_t abacus_get_precision(const CrystallineAbacus* abacus);
+
+/**
+ * @brief Round abacus to specified precision
+ * @param result Output abacus
+ * @param a Input abacus
+ * @param precision Number of fractional digits to keep
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_round(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision);
+
+/**
+ * @brief Truncate abacus to specified precision
+ * @param result Output abacus
+ * @param a Input abacus
+ * @param precision Number of fractional digits to keep
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_truncate(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision);
 
 /* ============================================================================
  * GEOMETRIC ARITHMETIC OPERATIONS
