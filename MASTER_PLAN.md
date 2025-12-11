@@ -554,17 +554,52 @@ See OBJECTIVE_30_COMPRESSION_ALGORITHMS.md for complete specification.
 
 ---
 
+## 🔄 ARCHITECTURE SHIFT: NEW MATH LIBRARY
+
+### Critical Understanding
+The project is transitioning from the OLD crystalline library to the NEW math library (math/):
+
+**OLD System (Legacy - Being Replaced):**
+- Located in: crystalline/, src/, include/
+- Uses: BigInt (array-based), BigFixed (depends on BigInt)
+- Status: Production code, needs migration
+
+**NEW System (Pure Crystalline):**
+- Located in: math/
+- Uses: Crystalline Abacus (geometric clock lattice)
+- Status: Production-ready, fully tested
+- Features:
+  * Supports ALL bases >= 2 (not just 12, 60, 100)
+  * Base conversion without fractions
+  * Fractional support (negative exponents)
+  * Modular arithmetic
+  * NTT implementation
+  * Zero dependencies on math.h or BigInt
+
+**Migration Path:**
+1. ✅ NEW math library complete (192 tests passing)
+2. ✅ BigInt/BigFixed removed from NEW library
+3. ✅ NTT rewritten to use pure Abacus
+4. ✅ Abacus enhanced to support ALL bases
+5. 🔄 Migrate OLD crystalline library to use NEW math library
+6. 🔄 Migrate algorithms library
+7. 🔄 Migrate CLLM library
+8. 🔄 Migrate application code
+9. ⏳ Delete OLD crystalline library
+
 ## 📋 ARCHITECTURAL PRINCIPLES
 
 ### Core Design Principles
-1. **Pure Crystalline Mathematics**: NO math.h, only prime_* functions
-2. **12-Fold Symmetry**: Throughout all structures
-3. **Kissing Spheres**: ONLY threading model
-4. **Recursive Hierarchy**: Infinite self-similar structure
-5. **No Conditional Compilation**: One codebase, one design
-6. **No Legacy Code**: Remove all "standard" implementations
-7. **Static Libraries Primary**: Shared libraries optional
-8. **Execution-First**: Validate before documenting
+1. **Pure Crystalline Mathematics**: NO math.h, use NEW math library (Crystalline Abacus)
+2. **Crystalline Abacus**: ONLY arbitrary precision system (no BigInt/BigFixed)
+3. **Babylonian Mathematics**: Supports ALL bases >= 2, universal transformations
+4. **12-Fold Symmetry**: Throughout all structures
+5. **Kissing Spheres**: ONLY threading model
+6. **Recursive Hierarchy**: Infinite self-similar structure
+7. **No Conditional Compilation**: One codebase, one design
+8. **No Legacy Code**: Remove all "standard" implementations
+9. **Static Libraries Primary**: Shared libraries optional
+10. **Execution-First**: Validate before documenting
 
 ### Threading Architecture
 - 1 control thread (Node 0)
@@ -575,17 +610,25 @@ See OBJECTIVE_30_COMPRESSION_ALGORITHMS.md for complete specification.
 - Only leaf workers process batches
 
 ### Memory Structure
-- Crystalline lattice abacus
+- Crystalline Abacus (NEW math library)
+- Babylonian clock lattice (supports ALL bases >= 2)
 - 12-fold memory structure
 - Shared memory between spheres
 - Cache locality based on sphere proximity
+- Pure geometric operations (no array manipulation)
 
 ### Mathematical Foundation
+- **Crystalline Abacus (NEW math library):** Universal arbitrary precision
+  * Supports ALL bases >= 2 (binary, octal, decimal, hex, Babylonian, etc.)
+  * Base conversion without fractions (pure geometric transformation)
+  * Fractional support through negative weight exponents
+  * Modular arithmetic (mod, mod_add, mod_sub, mod_mul, mod_exp, mod_inverse)
+  * NTT implementation using pure Abacus operations
 - **Clock Lattice (Babylonian):** Deterministic prime generation (12, 60, 60, 100)
 - **Deterministic Principle:** Structure IS validation, Position IS prime
 - L(n,d,k,λ) lattice formula for embeddings
 - θ(n,k,λ,ω,ψ) angular position for attention
-- NTT-based O(n log n) attention
+- NTT-based O(n log n) attention (pure Abacus implementation)
 - Cymatic frequency resonance (432 Hz, 528 Hz, etc.)
 - GCD-based similarity (20-400x faster)
 - **Prime Generation:** O(1) deterministic vs O(n log log n) sieve
@@ -596,10 +639,19 @@ See OBJECTIVE_30_COMPRESSION_ALGORITHMS.md for complete specification.
 
 ### Library Structure
 ```
-libcrystalline.so/.a  - Core crystalline math
-libalgorithms.so/.a   - Algorithms and optimizations
-libcllm.so/.a         - CLLM model implementation
-libcrawler.so/.a      - Web crawler integration
+NEW Math Library (math/):
+  libcrystallinemath.so/.a  - Pure crystalline mathematics
+    ├── Crystalline Abacus (universal arbitrary precision)
+    ├── NTT (Number Theoretic Transform)
+    ├── Clock Lattice (Babylonian structure)
+    ├── Prime Generation (deterministic)
+    └── Transcendental Functions (no math.h)
+
+OLD Libraries (to be migrated):
+  libcrystalline.so/.a  - Legacy crystalline math (being replaced)
+  libalgorithms.so/.a   - Algorithms and optimizations
+  libcllm.so/.a         - CLLM model implementation
+  libcrawler.so/.a      - Web crawler integration
 ```
 
 ### Compilation Flags

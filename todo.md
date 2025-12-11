@@ -12,19 +12,22 @@ Updating MASTER_PLAN.md and SECONDARY_OBJECTIVES.md to reflect the shift to NEW 
 - [x] Build and verify (all 192 tests passing)
 
 ## Phase 2: Update Master Plan
-- [ ] Remove all BigInt references
-- [ ] Update to reference NEW math library (math/)
-- [ ] Clarify Abacus is the ONLY arbitrary precision system
-- [ ] Update architectural principles
-- [ ] Update build system documentation
-- [ ] Clarify Babylonian math supports ALL bases
+- [x] Remove all BigInt/BigFixed references
+- [x] Update to reference NEW math library (math/)
+- [x] Clarify Abacus is the ONLY arbitrary precision system
+- [x] Update architectural principles
+- [x] Update build system documentation
+- [x] Clarify Babylonian math supports ALL bases
+- [x] Update memory structure section
+- [x] Update mathematical foundation section
+- [x] Add architecture shift section
 
 ## Phase 3: Update Secondary Objectives
-- [ ] Remove BigInt/BigFixed references
-- [ ] Update to use Abacus instead
-- [ ] Update completed objectives
-- [ ] Update pending objectives
-- [ ] Clarify migration path
+- [x] Remove BigInt/BigFixed references
+- [x] Update to use Abacus instead
+- [x] Update completed objectives (mark as needing migration)
+- [x] Update pending objectives
+- [x] Clarify migration path from OLD to NEW
 
 ## Phase 4: Continue with Audit Action Plan
 - [ ] Read current audit status
