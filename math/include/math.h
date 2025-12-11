@@ -66,6 +66,7 @@
 /* Clock lattice and prime numbers */
 #include "math/clock.h"
 #include "math/prime.h"
+#include "math/rainbow.h"
 
 /* Cryptographic operations */
 #include "math/crypto.h"

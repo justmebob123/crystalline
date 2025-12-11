@@ -184,7 +184,9 @@ typedef enum {
     MATH_ERROR_OUT_OF_MEMORY, /**< Memory allocation failed */
     MATH_ERROR_DOMAIN,        /**< Domain error (e.g., sqrt of negative) */
     MATH_ERROR_RANGE,         /**< Range error (result too large/small) */
-    MATH_ERROR_CONVERGENCE    /**< Iterative algorithm failed to converge */
+    MATH_ERROR_CONVERGENCE,   /**< Iterative algorithm failed to converge */
+    MATH_ERROR_NOT_FOUND,     /**< Item not found in lookup */
+    MATH_ERROR_OUT_OF_RANGE   /**< Index or value out of valid range */
 } MathError;
 
 #ifdef __cplusplus
