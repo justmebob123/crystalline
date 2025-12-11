@@ -71,6 +71,7 @@
 /* Crystalline Abacus */
 #include "math/abacus.h"
 
-
+/* Number Theoretic Transform */
+#include "math/ntt.h"
 
 #endif /* CRYSTALLINE_MATH_H */

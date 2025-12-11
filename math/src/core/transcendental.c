@@ -226,8 +226,11 @@ double math_expm1(double x) {
 }
 
 double math_log(double x) {
-    if (x <= 0.0) {
-        return 0.0 / 0.0;  /* NaN */
+    if (x < 0.0) {
+        return 0.0 / 0.0;  /* NaN for negative numbers */
+    }
+    if (x == 0.0) {
+        return -1.0 / 0.0;  /* -Inf for log(0) */
     }
     if (x == 1.0) return 0.0;
     
@@ -432,6 +435,10 @@ double math_acos(double x) {
 double math_atan(double x) {
     if (x == 0.0) return 0.0;
     
+    /* Handle special cases for better accuracy */
+    if (x == 1.0) return MATH_PI / 4.0;
+    if (x == -1.0) return -MATH_PI / 4.0;
+    
     /* For large |x|, use atan(x) = π/2 - atan(1/x) */
     if (x > 1.0) {
         return MATH_PI / 2.0 - math_atan(1.0 / x);
@@ -440,15 +447,24 @@ double math_atan(double x) {
         return -MATH_PI / 2.0 - math_atan(1.0 / x);
     }
     
-    /* Taylor series: atan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ... */
+    /* For |x| > 0.5, use argument reduction for better convergence
+     * atan(x) = 2*atan(x/(1+sqrt(1+x²))) */
+    if (math_abs(x) > 0.5) {
+        double sqrt_term = math_sqrt(1.0 + x * x);
+        double reduced = x / (1.0 + sqrt_term);
+        return 2.0 * math_atan(reduced);
+    }
+    
+    /* Taylor series for |x| <= 0.5: atan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ... */
     double result = x;
     double term = x;
     double x_squared = x * x;
     
-    for (int n = 1; n < 30; n++) {
+    for (int n = 1; n < 50; n++) {
         term *= -x_squared;
-        result += term / (double)(2*n + 1);
-        if (math_abs(term) < 1e-15) break;
+        double next_term = term / (double)(2*n + 1);
+        result += next_term;
+        if (math_abs(next_term) < 1e-16) break;
     }
     
     return result;
