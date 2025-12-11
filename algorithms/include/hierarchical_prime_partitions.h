@@ -14,15 +14,10 @@ extern "C" {
 /**
  * Hierarchical Abacus System
  * 
- * REDESIGNED: Uses NEW math library (Crystalline Abacus)
- * - Removed ALL OLD library dependencies
- * - Simplified structures
- * - Pure geometric approach
+ * STUB IMPLEMENTATION: Minimal interface for compilation
+ * - Will be properly implemented with NEW math library later
+ * - Currently just provides function signatures
  */
-
-// Forward declarations
-typedef struct BigInt BigInt;
-typedef struct CrystalAbacus CrystalAbacus;
 
 /**
  * Hierarchical Abacus (simplified)
@@ -44,7 +39,7 @@ typedef struct HierarchicalAbacus {
  * Create hierarchical abacus
  */
 HierarchicalAbacus* hierarchical_abacus_create(const LatticePartition* partition,
-                                                const CrystalAbacus* parent);
+                                                const void* parent);
 
 /**
  * Free hierarchical abacus
@@ -54,28 +49,28 @@ void hierarchical_abacus_free(HierarchicalAbacus* abacus);
 /**
  * Get next prime in partition
  */
-int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, BigInt* out_prime);
+int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, void* out_prime);
 
 /**
  * Check if number is prime
  */
-bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const BigInt* n);
+bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const void* n);
 
 /**
  * Check if prime is in partition
  */
 bool hierarchical_abacus_in_partition(const HierarchicalAbacus* abacus, 
-                                      const BigInt* prime);
+                                      const void* prime);
 
 /**
  * Add prime to cache
  */
-int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const BigInt* prime);
+int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const void* prime);
 
 /**
  * Lookup prime in cache
  */
-bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const BigInt* prime);
+bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const void* prime);
 
 /**
  * Get statistics

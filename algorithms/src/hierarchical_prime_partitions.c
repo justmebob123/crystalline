@@ -18,10 +18,10 @@
 /**
  * Create hierarchical abacus
  * 
- * REDESIGNED: Uses NEW math library exclusively
+ * STUB: Returns NULL until properly implemented
  */
 HierarchicalAbacus* hierarchical_abacus_create(const LatticePartition* partition,
-                                                const CrystalAbacus* parent) {
+                                                const void* parent) {
     (void)partition;
     (void)parent;
     
@@ -44,24 +44,22 @@ void hierarchical_abacus_free(HierarchicalAbacus* abacus) {
 /**
  * Get next prime in partition
  */
-int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, BigInt* out_prime) {
+int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, void* out_prime) {
     (void)abacus;
     (void)out_prime;
     
-    // TODO: Implement using NEW math library
-    fprintf(stderr, "hierarchical_abacus_next_prime: Requires redesign with NEW math library\n");
+    // STUB: Returns -1 until properly implemented
     return -1;
 }
 
 /**
  * Check if number is prime
  */
-bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const BigInt* n) {
+bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const void* n) {
     (void)abacus;
     (void)n;
     
-    // TODO: Implement using NEW math library
-    fprintf(stderr, "hierarchical_abacus_is_prime: Requires redesign with NEW math library\n");
+    // STUB: Returns false until properly implemented
     return false;
 }
 
@@ -69,36 +67,33 @@ bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const BigInt* n) {
  * Check if prime is in partition
  */
 bool hierarchical_abacus_in_partition(const HierarchicalAbacus* abacus, 
-                                      const BigInt* prime) {
+                                      const void* prime) {
     (void)abacus;
     (void)prime;
     
-    // TODO: Implement using NEW math library
-    fprintf(stderr, "hierarchical_abacus_in_partition: Requires redesign with NEW math library\n");
+    // STUB: Returns false until properly implemented
     return false;
 }
 
 /**
  * Add prime to cache
  */
-int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const BigInt* prime) {
+int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const void* prime) {
     (void)abacus;
     (void)prime;
     
-    // TODO: Implement using NEW math library
-    fprintf(stderr, "hierarchical_abacus_cache_prime: Requires redesign with NEW math library\n");
+    // STUB: Returns -1 until properly implemented
     return -1;
 }
 
 /**
  * Lookup prime in cache
  */
-bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const BigInt* prime) {
+bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const void* prime) {
     (void)abacus;
     (void)prime;
     
-    // TODO: Implement using NEW math library
-    fprintf(stderr, "hierarchical_abacus_cache_lookup: Requires redesign with NEW math library\n");
+    // STUB: Returns false until properly implemented
     return false;
 }
 

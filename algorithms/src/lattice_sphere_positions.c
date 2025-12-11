@@ -29,9 +29,9 @@ uint64_t get_next_sphere_id(void) {
 /**
  * Calculate clock position from symmetry group
  */
-ClockPosition calculate_clock_position(int symmetry_group) {
-    ClockPosition pos;
-    memset(&pos, 0, sizeof(ClockPosition));
+LatticeClockPosition calculate_clock_position(int symmetry_group) {
+    LatticeClockPosition pos;
+    memset(&pos, 0, sizeof(LatticeClockPosition));
     
     if (symmetry_group < 0 || symmetry_group >= 12) {
         return pos;
@@ -54,14 +54,13 @@ ClockPosition calculate_clock_position(int symmetry_group) {
  * Create lattice partition
  */
 LatticePartition* create_lattice_partition(int symmetry_group,
-                                          const BigInt* range_start,
-                                          const BigInt* range_end) {
+                                          const void* range_start,
+                                          const void* range_end) {
     (void)symmetry_group;
     (void)range_start;
     (void)range_end;
     
-    // TODO: Redesign to use NEW math library
-    fprintf(stderr, "create_lattice_partition: Requires redesign with NEW math library\n");
+    // STUB: Returns NULL until properly implemented
     return NULL;
 }
 
@@ -77,14 +76,13 @@ void free_lattice_partition(LatticePartition* partition) {
  * Create sphere position
  */
 SpherePosition* create_sphere_position(int symmetry_group,
-                                       const BigInt* prime_start,
-                                       const BigInt* prime_end) {
+                                       const void* prime_start,
+                                       const void* prime_end) {
     (void)symmetry_group;
     (void)prime_start;
     (void)prime_end;
     
-    // TODO: Redesign to use NEW math library
-    fprintf(stderr, "create_sphere_position: Requires redesign with NEW math library\n");
+    // STUB: Returns NULL until properly implemented
     return NULL;
 }
 
@@ -99,11 +97,11 @@ void free_sphere_position(SpherePosition* position) {
 /**
  * Check if prime is in partition
  */
-bool is_prime_in_partition(const LatticePartition* partition, const BigInt* prime) {
+bool is_prime_in_partition(const LatticePartition* partition, const void* prime) {
     (void)partition;
     (void)prime;
     
-    // TODO: Implement using NEW math library
+    // STUB: Returns false until properly implemented
     return false;
 }
 
@@ -152,13 +150,12 @@ void print_sphere_position(const SpherePosition* position) {
 /**
  * Create 12 sphere positions (12-fold symmetry)
  */
-SpherePosition** create_12_sphere_positions(const BigInt* total_range_start,
-                                           const BigInt* total_range_end) {
+SpherePosition** create_12_sphere_positions(const void* total_range_start,
+                                           const void* total_range_end) {
     (void)total_range_start;
     (void)total_range_end;
     
-    // TODO: Redesign to use NEW math library
-    fprintf(stderr, "create_12_sphere_positions: Requires redesign with NEW math library\n");
+    // STUB: Returns NULL until properly implemented
     return NULL;
 }
 
