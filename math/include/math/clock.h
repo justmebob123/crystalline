@@ -69,6 +69,18 @@ MathError clock_map_prime_to_position(uint64_t prime, ClockPosition* pos);
  * This is the inverse of clock_map_prime_to_position.
  * Given a valid clock position, computes the prime at that position.
  */
+/**
+ * @brief Get a representative prime at a clock position
+ * @param pos Clock position
+ * @return A prime number at this position, or 0 if invalid
+ * 
+ * NOTE: Multiple primes can map to the same position (they share
+ * the same modular class). This function returns the SMALLEST prime
+ * at the given position.
+ * 
+ * Example: Position (0, 0) contains primes 2, 13, 37, 61, ...
+ * This function returns 2 (the smallest).
+ */
 uint64_t clock_position_to_prime(const ClockPosition* pos);
 
 /**
