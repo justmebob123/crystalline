@@ -68,6 +68,9 @@
 #include "math/prime.h"
 #include "math/rainbow.h"
 
+/* Crystalline Abacus */
+#include "math/abacus.h"
+
 /* Cryptographic operations */
 #include "math/crypto.h"
 
