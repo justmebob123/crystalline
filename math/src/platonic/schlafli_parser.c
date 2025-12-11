@@ -24,7 +24,7 @@ SchlafliSymbol* schlafli_create(const uint32_t* components, uint32_t length) {
     }
     
     // Allocate and copy components
-    symbol->components = (uint32_t*)malloc(length * sizeof(uint32_t));
+    symbol->components = (uint32_t*)calloc(length, sizeof(uint32_t));
     if (!symbol->components) {
         free(symbol);
         return NULL;
@@ -32,7 +32,7 @@ SchlafliSymbol* schlafli_create(const uint32_t* components, uint32_t length) {
     
     memcpy(symbol->components, components, length * sizeof(uint32_t));
     symbol->length = length;
-    symbol->dimension = length + 2;
+    symbol->dimension = length + 1;  // Schläfli length n → dimension n+1
     
     // Set derived properties
     symbol->vertices_per_face = components[0];

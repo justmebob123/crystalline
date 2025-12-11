@@ -135,7 +135,7 @@ static bool generate_dodecahedron_edges(PlatonicSolid* solid) {
     solid->num_edges = num_edges;
     
     // Allocate edge array
-    solid->edge_indices = (uint32_t**)malloc(num_edges * sizeof(uint32_t*));
+    solid->edge_indices = (uint32_t**)calloc(num_edges, sizeof(uint32_t*));
     if (!solid->edge_indices) {
         return false;
     }
@@ -150,7 +150,7 @@ static bool generate_dodecahedron_edges(PlatonicSolid* solid) {
             double dist_sq = dx * dx + dy * dy + dz * dz;
             
             if (fabs(dist_sq - edge_length_sq) < tolerance) {
-                solid->edge_indices[edge_idx] = (uint32_t*)malloc(2 * sizeof(uint32_t));
+                solid->edge_indices[edge_idx] = (uint32_t*)calloc(2, sizeof(uint32_t));
                 if (!solid->edge_indices[edge_idx]) {
                     return false;
                 }
@@ -205,7 +205,7 @@ PlatonicSolid* platonic_generate_dodecahedron(void) {
     solid->num_vertices = 20;
     
     // Create Schläfli symbol {5,3}
-    uint32_t* schlafli = (uint32_t*)malloc(2 * sizeof(uint32_t));
+    uint32_t* schlafli = (uint32_t*)calloc(2, sizeof(uint32_t));
     if (!schlafli) {
         platonic_free(solid);
         return NULL;

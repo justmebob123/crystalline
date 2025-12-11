@@ -86,7 +86,7 @@ static bool generate_hypercube_edges(PlatonicSolid* solid) {
     solid->num_edges = num_edges;
     
     // Allocate edge array
-    solid->edge_indices = (uint32_t**)malloc(num_edges * sizeof(uint32_t*));
+    solid->edge_indices = (uint32_t**)calloc(num_edges, sizeof(uint32_t*));
     if (!solid->edge_indices) {
         return false;
     }
@@ -100,7 +100,7 @@ static bool generate_hypercube_edges(PlatonicSolid* solid) {
             
             // Only add edge once (i < j)
             if (i < j) {
-                solid->edge_indices[edge_idx] = (uint32_t*)malloc(2 * sizeof(uint32_t));
+                solid->edge_indices[edge_idx] = (uint32_t*)calloc(2, sizeof(uint32_t));
                 if (!solid->edge_indices[edge_idx]) {
                     return false;
                 }
@@ -136,8 +136,8 @@ static bool generate_hypercube_faces(PlatonicSolid* solid) {
     solid->num_faces = (n * (n - 1) / 2) * (1ULL << (n - 2));
     
     // Allocate face arrays
-    solid->face_indices = (uint32_t**)malloc(solid->num_faces * sizeof(uint32_t*));
-    solid->face_sizes = (uint32_t*)malloc(solid->num_faces * sizeof(uint32_t));
+    solid->face_indices = (uint32_t**)calloc(solid->num_faces, sizeof(uint32_t*));
+    solid->face_sizes = (uint32_t*)calloc(solid->num_faces, sizeof(uint32_t));
     if (!solid->face_indices || !solid->face_sizes) {
         return false;
     }
@@ -153,7 +153,7 @@ static bool generate_hypercube_faces(PlatonicSolid* solid) {
             uint64_t num_fixed_combos = 1ULL << (n - 2);
             for (uint64_t fixed = 0; fixed < num_fixed_combos; fixed++) {
                 // Build the 4 vertices of this square face
-                solid->face_indices[face_idx] = (uint32_t*)malloc(4 * sizeof(uint32_t));
+                solid->face_indices[face_idx] = (uint32_t*)calloc(4, sizeof(uint32_t));
                 if (!solid->face_indices[face_idx]) {
                     return false;
                 }

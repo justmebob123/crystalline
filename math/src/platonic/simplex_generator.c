@@ -101,7 +101,7 @@ static bool generate_simplex_edges(PlatonicSolid* solid) {
     solid->num_edges = num_edges;
     
     // Allocate edge array
-    solid->edge_indices = (uint32_t**)malloc(num_edges * sizeof(uint32_t*));
+    solid->edge_indices = (uint32_t**)calloc(num_edges, sizeof(uint32_t*));
     if (!solid->edge_indices) {
         return false;
     }
@@ -110,7 +110,7 @@ static bool generate_simplex_edges(PlatonicSolid* solid) {
     uint64_t edge_idx = 0;
     for (uint64_t i = 0; i < num_vertices; i++) {
         for (uint64_t j = i + 1; j < num_vertices; j++) {
-            solid->edge_indices[edge_idx] = (uint32_t*)malloc(2 * sizeof(uint32_t));
+            solid->edge_indices[edge_idx] = (uint32_t*)calloc(2, sizeof(uint32_t));
             if (!solid->edge_indices[edge_idx]) {
                 return false;
             }
@@ -154,8 +154,8 @@ static bool generate_simplex_faces(PlatonicSolid* solid) {
     }
     
     // Allocate face arrays
-    solid->face_indices = (uint32_t**)malloc(solid->num_faces * sizeof(uint32_t*));
-    solid->face_sizes = (uint32_t*)malloc(solid->num_faces * sizeof(uint32_t));
+    solid->face_indices = (uint32_t**)calloc(solid->num_faces, sizeof(uint32_t*));
+    solid->face_sizes = (uint32_t*)calloc(solid->num_faces, sizeof(uint32_t));
     if (!solid->face_indices || !solid->face_sizes) {
         return false;
     }
@@ -165,7 +165,7 @@ static bool generate_simplex_faces(PlatonicSolid* solid) {
     for (uint64_t i = 0; i < num_vertices; i++) {
         for (uint64_t j = i + 1; j < num_vertices; j++) {
             for (uint64_t k = j + 1; k < num_vertices; k++) {
-                solid->face_indices[face_idx] = (uint32_t*)malloc(3 * sizeof(uint32_t));
+                solid->face_indices[face_idx] = (uint32_t*)calloc(3, sizeof(uint32_t));
                 if (!solid->face_indices[face_idx]) {
                     return false;
                 }

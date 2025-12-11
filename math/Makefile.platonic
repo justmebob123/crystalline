@@ -63,7 +63,7 @@ tests: directories $(LIB_STATIC) $(TEST_BINS)
 
 $(BIN_DIR)/%: $(TEST_DIR)/%.c $(LIB_STATIC)
 	@echo "Building test $@..."
-	@$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lplatonic $(LDFLAGS)
+	@$(CC) $(CFLAGS) $< -o $@ $(LIB_STATIC) $(LDFLAGS)
 	@echo "Test built successfully!"
 
 # Run tests

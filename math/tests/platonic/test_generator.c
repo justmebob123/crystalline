@@ -53,7 +53,7 @@ void test_schlafli_parser() {
     ASSERT_EQ(sym->length, 2);
     ASSERT_EQ(sym->components[0], 3);
     ASSERT_EQ(sym->components[1], 3);
-    ASSERT_EQ(sym->dimension, 5);  // length + 2 = 4... wait, should be 3
+    ASSERT_EQ(sym->dimension, 3);  // length + 1 = 3 (3D solid)
     ASSERT_TRUE(sym->is_valid);
     schlafli_free(sym);
     
@@ -68,7 +68,7 @@ void test_schlafli_parser() {
     sym = schlafli_parse("{3,3,3}");
     ASSERT_TRUE(sym != NULL);
     ASSERT_EQ(sym->length, 3);
-    ASSERT_EQ(sym->dimension, 5);  // length + 2 = 5... wait, should be 4
+    ASSERT_EQ(sym->dimension, 4);  // length + 1 = 4 (4D solid)
     ASSERT_TRUE(sym->is_valid);
     schlafli_free(sym);
 }
@@ -346,22 +346,36 @@ int main(void) {
     printf("=================================================\n");
     
     // Schläfli tests
+    printf("Starting Schläfli tests...\n");
     test_schlafli_parser();
+    printf("Schläfli tests complete.\n");
     
     // 3D tests (all 5 Platonic solids)
+    printf("Starting 3D tests...\n");
     test_tetrahedron();
+    printf("Tetrahedron test complete.\n");
     test_cube();
+    printf("Cube test complete.\n");
     test_octahedron();
+    printf("Octahedron test complete.\n");
     test_dodecahedron();
+    printf("Dodecahedron test complete.\n");
     test_icosahedron();
+    printf("Icosahedron test complete.\n");
     
     // 4D tests
+    printf("Starting 4D tests...\n");
     test_5cell();
+    printf("5-cell test complete.\n");
     test_tesseract();
+    printf("Tesseract test complete.\n");
     test_16cell();
+    printf("16-cell test complete.\n");
     
     // Main generator test
+    printf("Starting main generator test...\n");
     test_main_generator();
+    printf("Main generator test complete.\n");
     
     // Scaling tests
     test_simplex_scaling();

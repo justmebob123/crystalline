@@ -32,10 +32,10 @@
 /**
  * @brief Generate coordinates for icosahedron
  * 
- * The icosahedron has 12 vertices that can be constructed from:
- * - 4 vertices on xy plane: (0, ±1, ±φ)
- * - 4 vertices on yz plane: (±1, 0, ±φ)
- * - 4 vertices on xz plane: (±φ, ±1, 0)
+ * The icosahedron has 12 vertices at:
+ * - (±1, ±φ, 0) and cyclic permutations
+ * 
+ * This gives the correct edge length of 2.
  */
 static bool generate_icosahedron_coordinates(PlatonicSolid* solid) {
     if (!solid) {
@@ -52,7 +52,17 @@ static bool generate_icosahedron_coordinates(PlatonicSolid* solid) {
     
     int idx = 0;
     
-    // 4 vertices on xy plane: (0, ±1, ±φ)
+    // 4 vertices: (±1, ±φ, 0)
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            solid->vertex_coords[idx * 3 + 0] = (i == 0) ? -1.0 : 1.0;
+            solid->vertex_coords[idx * 3 + 1] = (j == 0) ? -phi : phi;
+            solid->vertex_coords[idx * 3 + 2] = 0.0;
+            idx++;
+        }
+    }
+    
+    // 4 vertices: (0, ±1, ±φ)
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             solid->vertex_coords[idx * 3 + 0] = 0.0;
@@ -62,22 +72,12 @@ static bool generate_icosahedron_coordinates(PlatonicSolid* solid) {
         }
     }
     
-    // 4 vertices on yz plane: (±1, 0, ±φ)
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 2; j++) {
-            solid->vertex_coords[idx * 3 + 0] = (i == 0) ? -1.0 : 1.0;
-            solid->vertex_coords[idx * 3 + 1] = 0.0;
-            solid->vertex_coords[idx * 3 + 2] = (j == 0) ? -phi : phi;
-            idx++;
-        }
-    }
-    
-    // 4 vertices on xz plane: (±φ, ±1, 0)
+    // 4 vertices: (±φ, 0, ±1)
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             solid->vertex_coords[idx * 3 + 0] = (i == 0) ? -phi : phi;
-            solid->vertex_coords[idx * 3 + 1] = (j == 0) ? -1.0 : 1.0;
-            solid->vertex_coords[idx * 3 + 2] = 0.0;
+            solid->vertex_coords[idx * 3 + 1] = 0.0;
+            solid->vertex_coords[idx * 3 + 2] = (j == 0) ? -1.0 : 1.0;
             idx++;
         }
     }
@@ -101,6 +101,7 @@ static bool generate_icosahedron_edges(PlatonicSolid* solid) {
     }
     
     // Edge length for icosahedron with these coordinates
+    // Distance between adjacent vertices = 2
     double edge_length_sq = 4.0;  // 2²
     double tolerance = 0.01;
     
@@ -122,7 +123,7 @@ static bool generate_icosahedron_edges(PlatonicSolid* solid) {
     solid->num_edges = num_edges;
     
     // Allocate edge array
-    solid->edge_indices = (uint32_t**)malloc(num_edges * sizeof(uint32_t*));
+    solid->edge_indices = (uint32_t**)calloc(num_edges, sizeof(uint32_t*));
     if (!solid->edge_indices) {
         return false;
     }
@@ -137,7 +138,7 @@ static bool generate_icosahedron_edges(PlatonicSolid* solid) {
             double dist_sq = dx * dx + dy * dy + dz * dz;
             
             if (fabs(dist_sq - edge_length_sq) < tolerance) {
-                solid->edge_indices[edge_idx] = (uint32_t*)malloc(2 * sizeof(uint32_t));
+                solid->edge_indices[edge_idx] = (uint32_t*)calloc(2, sizeof(uint32_t));
                 if (!solid->edge_indices[edge_idx]) {
                     return false;
                 }
@@ -192,7 +193,7 @@ PlatonicSolid* platonic_generate_icosahedron(void) {
     solid->num_vertices = 12;
     
     // Create Schläfli symbol {3,5}
-    uint32_t* schlafli = (uint32_t*)malloc(2 * sizeof(uint32_t));
+    uint32_t* schlafli = (uint32_t*)calloc(2, sizeof(uint32_t));
     if (!schlafli) {
         platonic_free(solid);
         return NULL;

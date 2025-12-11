@@ -288,6 +288,16 @@ bool platonic_compute_metrics(PlatonicSolid* solid);
 bool platonic_compute_cllm_properties(PlatonicSolid* solid);
 
 // ============================================================================
+// PRINTING & DEBUGGING
+// ============================================================================
+
+/**
+ * @brief Print solid properties to stdout
+ * @param solid Platonic solid to print
+ */
+void platonic_print(const PlatonicSolid* solid);
+
+// ============================================================================
 // VALIDATION
 // ============================================================================
 
