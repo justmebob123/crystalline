@@ -75,7 +75,7 @@ bool lattice_verify_geometric_embeddings(
 /**
  * Initialize embeddings using geometric pattern with Crystalline Abacus (arbitrary precision)
  * 
- * MIGRATED: Now uses Crystalline Abacus instead of BigFixed
+ * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * 
  * This is INSTANT with ARBITRARY PRECISION - no overflow, no precision loss.
  * Works for ANY vocabulary size with O(vocab_size * embedding_dim) complexity.
@@ -94,7 +94,7 @@ void lattice_embeddings_init_geometric_abacus(
 /**
  * Get embedding for a single token (on-demand) with Crystalline Abacus
  * 
- * MIGRATED: Now uses Crystalline Abacus instead of BigFixed
+ * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * 
  * This demonstrates that we can compute embeddings on-demand
  * with arbitrary precision. Useful for dynamic vocabularies.
@@ -102,12 +102,12 @@ void lattice_embeddings_init_geometric_abacus(
  * @param embedding Output embedding vector [embedding_dim] (float)
  * @param token_id Token ID
  * @param embedding_dim Embedding dimension
- * @param lattice Clock lattice for mapping
+ * @param lattice Clock lattice for mapping (optional, can be NULL, void* to avoid type conflicts)
  */
 void lattice_get_token_embedding_geometric_abacus(
     float* embedding,
     uint32_t token_id,
     uint32_t embedding_dim,
-    ClockLattice* lattice
+    void* lattice
 );
 
