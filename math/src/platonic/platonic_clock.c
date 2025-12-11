@@ -27,12 +27,17 @@ uint64_t platonic_prime_to_vertex(uint64_t prime) {
         return UINT64_MAX; // Not a prime
     }
     
-    uint64_t prime_idx = prime_index(prime);
-    if (prime_idx == 0) {
-        return UINT64_MAX; // Error
+    // Count primes up to this prime to get its index
+    // This is a workaround until prime_index() is implemented
+    uint64_t count = 0;
+    for (uint64_t p = 2; p <= prime; p = prime_next(p)) {
+        count++;
+        if (p == prime) {
+            return count - 1; // Convert to 0-based
+        }
     }
     
-    return prime_idx - 1; // Convert to 0-based
+    return UINT64_MAX; // Should not reach here
 }
 
 /* ============================================================================
@@ -75,12 +80,19 @@ MathError platonic_clock_to_coordinates(const ClockPosition* pos,
         return MATH_ERROR_INVALID_ARG;
     }
     
-    // Step 1: Project clock position to 3D sphere using stereographic projection
-    SphereCoord sphere;
-    MathError err = clock_fold_to_sphere(pos, &sphere);
-    if (err != MATH_SUCCESS) {
-        return err;
-    }
+    // Step 1: Project clock position to 3D sphere using simple mapping
+    // Use angle and radius from clock position to generate sphere coordinates
+    // This is a simplified version until clock_fold_to_sphere is implemented
+    double angle = pos->angle;
+    double radius = pos->radius;
+    
+    // Map to unit sphere using spherical coordinates
+    // x = r * cos(angle)
+    // y = r * sin(angle)  
+    // z = sqrt(1 - r^2) if r <= 1, else 0
+    double x = radius * math_cos(angle);
+    double y = radius * math_sin(angle);
+    double z = (radius <= 1.0) ? math_sqrt(1.0 - radius * radius) : 0.0;
     
     // Step 2: Allocate coordinate array
     *coords = (CrystallineAbacus**)calloc(dimension, sizeof(CrystallineAbacus*));
@@ -90,7 +102,7 @@ MathError platonic_clock_to_coordinates(const ClockPosition* pos,
     
     // Step 3: Set first 3 coordinates from sphere projection
     if (dimension >= 1) {
-        (*coords)[0] = abacus_from_double(sphere.x, base, precision);
+        (*coords)[0] = abacus_from_double(x, base, precision);
         if (!(*coords)[0]) {
             free(*coords);
             *coords = NULL;
@@ -99,7 +111,7 @@ MathError platonic_clock_to_coordinates(const ClockPosition* pos,
     }
     
     if (dimension >= 2) {
-        (*coords)[1] = abacus_from_double(sphere.y, base, precision);
+        (*coords)[1] = abacus_from_double(y, base, precision);
         if (!(*coords)[1]) {
             if (dimension >= 1) abacus_free((*coords)[0]);
             free(*coords);
@@ -109,7 +121,7 @@ MathError platonic_clock_to_coordinates(const ClockPosition* pos,
     }
     
     if (dimension >= 3) {
-        (*coords)[2] = abacus_from_double(sphere.z, base, precision);
+        (*coords)[2] = abacus_from_double(z, base, precision);
         if (!(*coords)[2]) {
             if (dimension >= 1) abacus_free((*coords)[0]);
             if (dimension >= 2) abacus_free((*coords)[1]);

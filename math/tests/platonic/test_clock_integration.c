@@ -188,7 +188,7 @@ void test_clock_to_coordinates_4d() {
     TEST_START("Clock to Coordinates (4D)");
     
     ClockPosition pos;
-    CrystallineAbacus* coords = NULL;
+    CrystallineAbacus** coords = NULL;
     MathError err;
     
     // Get clock position for vertex 1 (prime 3)
@@ -201,18 +201,19 @@ void test_clock_to_coordinates_4d() {
     ASSERT(coords != NULL, "Coordinates should not be NULL");
     
     // Validate coordinates
-    ASSERT(platonic_validate_coordinates(&coords, 4), "Coordinates should be valid");
+    ASSERT(platonic_validate_coordinates(coords, 4), "Coordinates should be valid");
     
     // Print coordinates
     printf("  Vertex 1 (Prime 3) 4D coordinates:\n");
     for (uint32_t i = 0; i < 4; i++) {
-        double value = abacus_to_double(&coords[i]);
+        double value;
+        abacus_to_double(coords[i], &value);
         printf("    coord[%u] = %.6f\n", i, value);
     }
     
     // Clean up
     for (uint32_t i = 0; i < 4; i++) {
-        abacus_free(&coords[i]);
+        abacus_free(coords[i]);
     }
     free(coords);
     
@@ -222,7 +223,7 @@ void test_clock_to_coordinates_4d() {
 void test_vertex_to_coordinates() {
     TEST_START("Vertex to Coordinates (Direct)");
     
-    CrystallineAbacus* coords = NULL;
+    CrystallineAbacus** coords = NULL;
     MathError err;
     
     // Generate coordinates directly from vertex index
@@ -231,11 +232,11 @@ void test_vertex_to_coordinates() {
     ASSERT(coords != NULL, "Coordinates should not be NULL");
     
     // Validate coordinates
-    ASSERT(platonic_validate_coordinates(&coords, 3), "Coordinates should be valid");
+    ASSERT(platonic_validate_coordinates(coords, 3), "Coordinates should be valid");
     
     // Clean up
     for (uint32_t i = 0; i < 3; i++) {
-        abacus_free(&coords[i]);
+        abacus_free(coords[i]);
     }
     free(coords);
     
@@ -250,8 +251,8 @@ void test_vertex_to_coordinates() {
 void test_coordinate_distance() {
     TEST_START("Coordinate Distance");
     
-    CrystallineAbacus* coords1 = NULL;
-    CrystallineAbacus* coords2 = NULL;
+    CrystallineAbacus** coords1 = NULL;
+    CrystallineAbacus** coords2 = NULL;
     CrystallineAbacus* distance = NULL;
     MathError err;
     
@@ -263,22 +264,23 @@ void test_coordinate_distance() {
     ASSERT_SUCCESS(err, "Should generate coords2");
     
     // Compute distance
-    distance = platonic_coordinate_distance(&coords1, &coords2, 3);
+    distance = platonic_coordinate_distance(coords1, coords2, 3);
     ASSERT(distance != NULL, "Distance should not be NULL");
     
-    double dist_value = abacus_to_double(distance);
+    double dist_value;
+    abacus_to_double(distance, &dist_value);
     printf("  Distance between vertex 0 and vertex 1: %.6f\n", dist_value);
     ASSERT(dist_value > 0.0, "Distance should be positive");
     
     // Clean up
     for (uint32_t i = 0; i < 3; i++) {
-        abacus_free(&coords1[i]);
-        abacus_free(&coords2[i]);
+        abacus_free(coords1[i]);
+        abacus_free(coords2[i]);
     }
     free(coords1);
     free(coords2);
+    // Note: distance is already freed by abacus_free, don't free again
     abacus_free(distance);
-    free(distance);
     
     TEST_PASS();
 }
@@ -291,8 +293,8 @@ void test_coordinate_distance() {
 void test_12fold_rotation() {
     TEST_START("12-Fold Rotation");
     
-    CrystallineAbacus* coords = NULL;
-    CrystallineAbacus* rotated = NULL;
+    CrystallineAbacus** coords = NULL;
+    CrystallineAbacus** rotated = NULL;
     MathError err;
     
     // Generate coordinates
@@ -300,35 +302,34 @@ void test_12fold_rotation() {
     ASSERT_SUCCESS(err, "Should generate coordinates");
     
     // Allocate rotated array
-    rotated = (CrystallineAbacus*)calloc(3, sizeof(CrystallineAbacus));
+    rotated = (CrystallineAbacus**)calloc(3, sizeof(CrystallineAbacus*));
     ASSERT(rotated != NULL, "Should allocate rotated array");
     
-    for (uint32_t i = 0; i < 3; i++) {
-        err = abacus_init(&rotated[i], 12, 6);
-        ASSERT_SUCCESS(err, "Should initialize rotated coordinate");
-    }
-    
     // Apply rotation
-    err = platonic_apply_12fold_rotation(&coords, 3, 1, &rotated);
+    err = platonic_apply_12fold_rotation(coords, 3, 1, rotated);
     ASSERT_SUCCESS(err, "Should apply rotation");
     
     // Validate rotated coordinates
-    ASSERT(platonic_validate_coordinates(&rotated, 3), "Rotated coordinates should be valid");
+    ASSERT(platonic_validate_coordinates(rotated, 3), "Rotated coordinates should be valid");
     
     printf("  Original coordinates:\n");
     for (uint32_t i = 0; i < 3; i++) {
-        printf("    coord[%u] = %.6f\n", i, abacus_to_double(&coords[i]));
+        double value;
+        abacus_to_double(coords[i], &value);
+        printf("    coord[%u] = %.6f\n", i, value);
     }
     
     printf("  Rotated coordinates (30°):\n");
     for (uint32_t i = 0; i < 3; i++) {
-        printf("    coord[%u] = %.6f\n", i, abacus_to_double(&rotated[i]));
+        double value;
+        abacus_to_double(rotated[i], &value);
+        printf("    coord[%u] = %.6f\n", i, value);
     }
     
     // Clean up
     for (uint32_t i = 0; i < 3; i++) {
-        abacus_free(&coords[i]);
-        abacus_free(&rotated[i]);
+        abacus_free(coords[i]);
+        if (rotated[i]) abacus_free(rotated[i]);
     }
     free(coords);
     free(rotated);
@@ -339,7 +340,7 @@ void test_12fold_rotation() {
 void test_has_12fold_symmetry() {
     TEST_START("Check 12-Fold Symmetry");
     
-    CrystallineAbacus* coords = NULL;
+    CrystallineAbacus** coords = NULL;
     MathError err;
     
     // Generate coordinates
@@ -347,12 +348,12 @@ void test_has_12fold_symmetry() {
     ASSERT_SUCCESS(err, "Should generate coordinates");
     
     // Check symmetry
-    bool has_symmetry = platonic_has_12fold_symmetry(&coords, 3);
+    bool has_symmetry = platonic_has_12fold_symmetry(coords, 3);
     printf("  Coordinates have 12-fold symmetry: %s\n", has_symmetry ? "YES" : "NO");
     
     // Clean up
     for (uint32_t i = 0; i < 3; i++) {
-        abacus_free(&coords[i]);
+        abacus_free(coords[i]);
     }
     free(coords);
     
@@ -367,8 +368,8 @@ void test_has_12fold_symmetry() {
 void test_deterministic_coordinates() {
     TEST_START("Deterministic Coordinate Generation");
     
-    CrystallineAbacus* coords1 = NULL;
-    CrystallineAbacus* coords2 = NULL;
+    CrystallineAbacus** coords1 = NULL;
+    CrystallineAbacus** coords2 = NULL;
     MathError err;
     
     // Generate coordinates twice for same vertex
@@ -381,8 +382,9 @@ void test_deterministic_coordinates() {
     // Compare coordinates
     bool identical = true;
     for (uint32_t i = 0; i < 3; i++) {
-        double v1 = abacus_to_double(&coords1[i]);
-        double v2 = abacus_to_double(&coords2[i]);
+        double v1, v2;
+        abacus_to_double(coords1[i], &v1);
+        abacus_to_double(coords2[i], &v2);
         
         // Check if values are identical (within floating point precision)
         if (v1 != v2) {
@@ -396,8 +398,8 @@ void test_deterministic_coordinates() {
     
     // Clean up
     for (uint32_t i = 0; i < 3; i++) {
-        abacus_free(&coords1[i]);
-        abacus_free(&coords2[i]);
+        abacus_free(coords1[i]);
+        abacus_free(coords2[i]);
     }
     free(coords1);
     free(coords2);
