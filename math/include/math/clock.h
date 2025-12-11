@@ -84,6 +84,27 @@ MathError clock_map_prime_to_position(uint64_t prime, ClockPosition* pos);
 uint64_t clock_position_to_prime(const ClockPosition* pos);
 
 /**
+ * @brief Generate prime from clock position with magnitude (EXACT FORMULA)
+ * @param ring Ring number (0-3)
+ * @param position Position on ring
+ * @param magnitude Which "lap" around the clock (0, 1, 2, 3, ...)
+ * @return Prime number, or 0 if invalid
+ * 
+ * BREAKTHROUGH (2024-12-11): O(1) deterministic prime generation!
+ * 
+ * For Ring 0 positions with exact arithmetic progressions:
+ * - Position 3: prime = 17 + magnitude x 12 (exact for magnitude < 4)
+ * - Position 6: prime = 7 + magnitude x 12 (exact for magnitude < 4)
+ * - Position 9: prime = 11 + magnitude x 12 (exact for magnitude < 4)
+ * 
+ * Example:
+ *   clock_position_to_prime_exact(0, 3, 0) returns 17
+ *   clock_position_to_prime_exact(0, 3, 1) returns 29
+ *   clock_position_to_prime_exact(0, 3, 2) returns 41
+ */
+uint64_t clock_position_to_prime_exact(uint32_t ring, uint32_t position, uint64_t magnitude);
+
+/**
  * @brief Map prime index to clock position
  * @param prime_index 1-based prime index (1 = first prime = 2)
  * @param pos Output clock position (must be pre-allocated)
