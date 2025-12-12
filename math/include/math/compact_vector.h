@@ -505,6 +505,140 @@ MathError create_extended_vector(
     ExtendedCompactVector* vector
 );
 
+/* ============================================================================
+ * SPHERE HOPPING & HIERARCHY
+ * ============================================================================
+ */
+
+/**
+ * @brief Recursive sphere in hierarchy
+ */
+typedef struct CompactSphere {
+    uint32_t id;                       /**< Unique sphere ID */
+    uint32_t parent_id;                /**< Parent sphere ID */
+    uint32_t level;                    /**< Recursion depth (0 = root) */
+    CompactVector position;            /**< Position in parent sphere */
+    struct CompactSphere* children[12]; /**< 12 child spheres (kissing) */
+    CompactNumber* data;               /**< Data at this level */
+    double scale_factor;               /**< Scaling relative to parent */
+} CompactSphere;
+
+/**
+ * @brief Create recursive sphere hierarchy
+ * 
+ * @param max_depth Maximum recursion depth
+ * @return Root sphere, or NULL on error
+ */
+CompactSphere* create_sphere_hierarchy(uint32_t max_depth);
+
+/**
+ * @brief Create children recursively
+ * 
+ * @param parent Parent sphere
+ * @param max_depth Maximum depth
+ * @param current_depth Current depth
+ */
+void create_children_recursive(
+    CompactSphere* parent,
+    uint32_t max_depth,
+    uint32_t current_depth
+);
+
+/**
+ * @brief Free sphere hierarchy
+ * 
+ * @param root Root sphere
+ */
+void free_sphere_hierarchy(CompactSphere* root);
+
+/**
+ * @brief Calculate phase difference between spheres
+ * 
+ * @param sphere1 First sphere ID
+ * @param sphere2 Second sphere ID
+ * @return Phase difference in degrees
+ */
+double calculate_sphere_phase_difference(uint32_t sphere1, uint32_t sphere2);
+
+/**
+ * @brief Calculate magnitude scale between spheres
+ * 
+ * @param sphere1 First sphere ID
+ * @param sphere2 Second sphere ID
+ * @return Magnitude scale factor
+ */
+int32_t calculate_magnitude_scale(uint32_t sphere1, uint32_t sphere2);
+
+/**
+ * @brief Hop from one sphere to another
+ * 
+ * @param number Input number
+ * @param from_sphere Source sphere ID
+ * @param to_sphere Target sphere ID
+ * @param result Output vector
+ * @return MATH_SUCCESS or error code
+ */
+MathError sphere_hop(
+    const CompactNumber* number,
+    uint32_t from_sphere,
+    uint32_t to_sphere,
+    CompactVector* result
+);
+
+/**
+ * @brief Navigate hierarchy to find target sphere
+ * 
+ * @param root Root sphere
+ * @param magnitude Target magnitude
+ * @param target Output target sphere
+ * @return MATH_SUCCESS or error code
+ */
+MathError navigate_hierarchy(
+    CompactSphere* root,
+    uint64_t magnitude,
+    CompactSphere** target
+);
+
+/**
+ * @brief Calculate sphere radius based on magnitude
+ * 
+ * @param magnitude Magnitude value
+ * @return Sphere radius
+ */
+double calculate_sphere_radius(uint64_t magnitude);
+
+/**
+ * @brief Map magnitude to hierarchy level
+ * 
+ * @param magnitude Magnitude value
+ * @return Hierarchy level
+ */
+uint32_t magnitude_to_level(uint64_t magnitude);
+
+/**
+ * @brief Get scale factor for level
+ * 
+ * @param level Hierarchy level
+ * @return Scale factor
+ */
+double get_scale_factor(uint32_t level);
+
+/**
+ * @brief Calculate memory usage of sphere hierarchy
+ * 
+ * @param root Root sphere
+ * @return Memory usage in bytes
+ */
+size_t calculate_hierarchy_memory(const CompactSphere* root);
+
+/**
+ * @brief Count total spheres in hierarchy
+ * 
+ * @param root Root sphere
+ * @return Number of spheres
+ */
+uint32_t count_spheres(const CompactSphere* root);
+
 #ifdef __cplusplus
 }
 #endif
