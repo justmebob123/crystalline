@@ -188,6 +188,9 @@ static const size_t SMALL_PRIMES_COUNT = sizeof(SMALL_PRIMES) / sizeof(SMALL_PRI
 /* This is initialized on first use and grows as needed */
 static RainbowTable* g_rainbow_table = NULL;
 
+/* Flag to prevent circular dependency during table population */
+static int g_populating_table = 0;
+
 /* Initialize rainbow table with reasonable default size */
 static void ensure_rainbow_initialized(void) {
     if (g_rainbow_table == NULL) {
@@ -230,10 +233,21 @@ static void ensure_rainbow_coverage(uint64_t n) {
         return;  /* Rainbow table not available */
     }
     
+    /* Prevent circular dependency during table population */
+    if (g_populating_table) {
+        return;  /* Already populating, don't recurse */
+    }
+    
     /* If n is beyond our current coverage, expand the table */
     if (n > g_rainbow_table->max_prime) {
+        /* Set flag to prevent recursion */
+        g_populating_table = 1;
+        
         /* Expand to cover up to n */
         rainbow_populate_to_prime(g_rainbow_table, n);
+        
+        /* Clear flag */
+        g_populating_table = 0;
     }
 }
 

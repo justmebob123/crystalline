@@ -1,53 +1,29 @@
-# TODO: Debug PHP Extension Segfault (Still Occurring)
+# TODO: Debug PHP Extension Segfault with GDB
 
-## Current Status
-✅ Extension compiles successfully
-✅ Initialization added to PHP_MINIT_FUNCTION
-✅ O(1) prime generation works
-✅ Primality testing works
-❌ Still segfaults in crystalline_prime_nth()
+## ROOT CAUSE FOUND! ✅
 
-## Analysis
-The segfault occurs AFTER primality testing completes successfully, which means:
-1. The extension loads correctly
-2. Basic functions work (version, is_prime, generate_o1)
-3. The crash happens specifically when calling prime_nth in a loop
+### The Problem: Circular Dependency
+1. `prime_nth()` → `ensure_rainbow_coverage()`
+2. `ensure_rainbow_coverage()` → `rainbow_populate_to_prime()`
+3. `rainbow_populate_to_prime()` → `prime_next()`
+4. `prime_next()` → `ensure_rainbow_coverage()` ← **CIRCULAR!**
 
-## Hypothesis
-The issue might be:
-1. **Memory corruption** - The global rainbow table might be getting corrupted
-2. **Thread safety** - PHP might be using multiple threads
-3. **Initialization timing** - PHP_MINIT might run too early or in wrong context
-4. **Return value issue** - Large uint64_t values might overflow RETURN_LONG
+This creates infinite recursion or memory corruption during initialization.
 
-## Next Approach
-Instead of trying to fix the complex prime_nth function, let's:
-1. **Simplify the example** - Remove the prime_nth section temporarily
-2. **Document the workaround** - Users can use prime_generate_o1 instead
-3. **Focus on what works** - The O(1) generation and primality testing are the main features
+### The Fix
+Modify `prime_next()` to NOT call `ensure_rainbow_coverage()` during table population.
+Add a flag to track if we're currently populating the table.
 
-## Workaround for Users
-Users can generate the nth prime using a simple loop:
-```php
-function get_nth_prime($n) {
-    $count = 0;
-    $candidate = 2;
-    while ($count < $n) {
-        if (crystalline_prime_is_prime($candidate)) {
-            $count++;
-            if ($count == $n) return $candidate;
-        }
-        $candidate++;
-    }
-    return 0;
-}
-```
+## Steps
+1. [x] Read Master Plan
+2. [x] Identify exact cause (circular dependency)
+3. [x] Implement fix with population flag
+4. [x] Test C library (works perfectly)
+5. [ ] User needs to rebuild PHP extension
+6. [ ] Commit and push
 
-## Decision
-Rather than spending more time debugging this complex issue, let's:
-1. Create a simplified example that works
-2. Document the known issue with prime_nth
-3. Provide workarounds
-4. Focus on the main features that DO work
-
-The PHP extension is 90% functional - only prime_nth has issues.
+## Fix Applied
+Added `g_populating_table` flag to prevent circular recursion:
+- When `ensure_rainbow_coverage()` starts populating, it sets the flag
+- If called recursively during population, it returns immediately
+- This breaks the circular dependency chain
