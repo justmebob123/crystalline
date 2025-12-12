@@ -152,7 +152,7 @@ PHP_FUNCTION(crystalline_prime_nth)
     uint64_t prime = prime_nth((uint64_t)n);
     
     /* Check if result is valid (0 indicates error) */
-    if (prime == 0 &amp;&amp; n > 0) {
+    if (prime == 0 && n > 0) {
         php_error_docref(NULL, E_WARNING, "Failed to compute nth prime");
         RETURN_FALSE;
     }
