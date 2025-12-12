@@ -1,10 +1,14 @@
 /**
  * @file optimizers.c
  * @brief Implementation of optimization algorithms
+ * 
+ * PHASE 1 INTEGRATION: Migrated to NEW math library
+ * - Replaced prime_sqrt with math_sqrt
+ * - Replaced prime_pow with math_pow
  */
 
 #include "optimizers.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -224,7 +228,7 @@ bool optimizer_step(
             for (size_t i = 0; i < num_parameters; i++) {
                 state->squared_gradient[i] += gradients[i] * gradients[i];
                 parameters[i] -= state->config.learning_rate * gradients[i] /
-                                (prime_sqrt(state->squared_gradient[i]) + state->config.epsilon);
+                                (math_sqrt(state->squared_gradient[i]) + state->config.epsilon);  // PHASE 1: NEW math library
             }
             if (state->config.weight_decay > 0.0) {
                 optimizer_apply_weight_decay(parameters, num_parameters, 
@@ -315,8 +319,8 @@ void optimizer_adam_step(
         num_parameters == 0 || step == 0) return;
     
     // Compute bias correction terms
-    double bias_correction1 = 1.0 - prime_pow(beta1, (double)step);
-    double bias_correction2 = 1.0 - prime_pow(beta2, (double)step);
+    double bias_correction1 = 1.0 - math_pow(beta1, (double)step);  // PHASE 1: NEW math library
+    double bias_correction2 = 1.0 - math_pow(beta2, (double)step);  // PHASE 1: NEW math library
     
     for (size_t i = 0; i < num_parameters; i++) {
         double grad = gradients[i];
@@ -340,7 +344,7 @@ void optimizer_adam_step(
         }
         
         // Update parameter
-        parameters[i] -= learning_rate * m_hat / (prime_sqrt(v_hat) + epsilon);
+        parameters[i] -= learning_rate * m_hat / (math_sqrt(v_hat) + epsilon);  // PHASE 1: NEW math library
         
         // Apply weight decay (decoupled for AdamW)
         if (weight_decay > 0.0) {
@@ -368,7 +372,7 @@ void optimizer_rmsprop_step(
         squared_gradient[i] = beta * squared_gradient[i] + (1.0 - beta) * grad * grad;
         
         // Update parameter
-        parameters[i] -= learning_rate * grad / (prime_sqrt(squared_gradient[i]) + epsilon);
+        parameters[i] -= learning_rate * grad / (math_sqrt(squared_gradient[i]) + epsilon);  // PHASE 1: NEW math library
         
         // Apply weight decay
         if (weight_decay > 0.0) {
@@ -443,7 +447,7 @@ double lr_schedule_step_decay(
     if (decay_steps == 0) return initial_lr;
     
     size_t num_decays = step / decay_steps;
-    return initial_lr * prime_pow(decay_rate, (double)num_decays);
+    return initial_lr * math_pow(decay_rate, (double)num_decays);  // PHASE 1: NEW math library
 }
 
 double lr_schedule_exponential_decay(
@@ -451,7 +455,7 @@ double lr_schedule_exponential_decay(
     size_t step,
     double decay_rate
 ) {
-    return initial_lr * prime_exp(-decay_rate * (double)step);
+    return initial_lr * math_exp(-decay_rate * (double)step);  // PHASE 1: NEW math library
 }
 
 double lr_schedule_cosine_annealing(
@@ -463,7 +467,7 @@ double lr_schedule_cosine_annealing(
     if (total_steps == 0 || step >= total_steps) return final_lr;
     
     double progress = (double)step / (double)total_steps;
-    double cosine = 0.5 * (1.0 + prime_cos(M_PI * progress));
+    double cosine = 0.5 * (1.0 + math_cos(M_PI * progress));  // PHASE 1: NEW math library
     
     return final_lr + (initial_lr - final_lr) * cosine;
 }
@@ -512,7 +516,7 @@ double optimizer_gradient_norm(const double* gradients, size_t num_parameters) {
     for (size_t i = 0; i < num_parameters; i++) {
         norm += gradients[i] * gradients[i];
     }
-    return prime_sqrt(norm);
+    return math_sqrt(norm);  // PHASE 1: NEW math library
 }
 
 const char* optimizer_type_name(OptimizerType type) {

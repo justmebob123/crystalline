@@ -1,10 +1,18 @@
 /**
  * @file statistics.c
  * @brief Implementation of statistical analysis functions
+ * 
+ * PHASE 1 INTEGRATION: Migrated to NEW math library
+ * - Replaced prime_sqrt with math_sqrt
+ * - Replaced prime_fabs with math_abs
+ * - Replaced prime_floor with math_floor
+ * - Replaced prime_ceil with math_ceil
+ * - Replaced prime_log2 with math_log2
  */
 
 #include "statistics.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +57,7 @@ double stats_variance(const double* values, size_t size, bool sample_variance) {
 }
 
 double stats_std_dev(const double* values, size_t size, bool sample_variance) {
-    return prime_sqrt(stats_variance(values, size, sample_variance));
+    return math_sqrt(stats_variance(values, size, sample_variance));  // PHASE 1: NEW math library
 }
 
 double stats_median(double* values, size_t size) {
@@ -77,7 +85,7 @@ double stats_mode(const double* values, size_t size, double tolerance) {
     for (size_t i = 0; i < size; i++) {
         size_t count = 0;
         for (size_t j = 0; j < size; j++) {
-            if (prime_fabs(values[i] - values[j]) <= tolerance) {
+            if (math_abs(values[i] - values[j]) <= tolerance) {  // PHASE 1: NEW math library
                 count++;
             }
         }
@@ -99,8 +107,8 @@ double stats_percentile(double* values, size_t size, double percentile) {
     qsort(values, size, sizeof(double), compare_doubles);
     
     double index = (percentile / 100.0) * (double)(size - 1);
-    size_t lower = (size_t)prime_floor(index);
-    size_t upper = (size_t)prime_ceil(index);
+    size_t lower = (size_t)math_floor(index);  // PHASE 1: NEW math library
+    size_t upper = (size_t)math_ceil(index);   // PHASE 1: NEW math library
     
     if (lower == upper) {
         return values[lower];
@@ -357,8 +365,8 @@ double stats_shannon_entropy(const double* signal, size_t size) {
         double p = val / sum;
         
         if (p > 0.0) {
-            // Use prime_log2 for log base 2
-            double log2_p = prime_log2(p);
+            // Use math_log2 for log base 2
+            double log2_p = math_log2(p);  // PHASE 1: NEW math library
             entropy -= p * log2_p;
         }
     }
@@ -384,7 +392,7 @@ double stats_entropy_reduction(double initial_bits, uint32_t steps,
         double cut_fraction = cut_min + t * (cut_max - cut_min);
         
         // Reduce entropy: new_bits = old_bits + log₂(1 - cut_fraction)
-        double reduction = prime_log2(1.0 - cut_fraction);
+        double reduction = math_log2(1.0 - cut_fraction);  // PHASE 1: NEW math library
         current_bits += reduction;  // reduction is negative
         
         if (current_bits < 0.0) current_bits = 0.0;
@@ -437,7 +445,7 @@ double stats_entropy_residuals(const uint64_t* layers, size_t num_layers,
         for (size_t i = 0; i < num_primes; i++) {
             if (sum > 0.0 && prob_dist[i] > 0.0) {
                 double p = prob_dist[i] / sum;
-                double log2_p = prime_log2(p);
+                double log2_p = math_log2(p);  // PHASE 1: NEW math library
                 layer_entropy -= p * log2_p;
             }
         }

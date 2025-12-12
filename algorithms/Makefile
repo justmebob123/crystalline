@@ -130,11 +130,6 @@ src/batch_processing.o: src/batch_processing.c include/batch_processing.h
 # Test targets
 test: test_phase1 test_phase2
 
-test_phase1: tests/test_phase1.c $(SHARED_LIB)
-	@echo "Building Phase 1 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1 tests/test_phase1.c -L. -lalgorithms -L.. -lm
-	@echo "Running Phase 1 tests..."
-	LD_LIBRARY_PATH=..:. ./tests/test_phase1
 
 test_phase2: tests/test_phase2.c $(SHARED_LIB)
 	@echo "Building Phase 2 tests..."
@@ -191,3 +186,20 @@ test_candidate_analysis: tests/test_candidate_analysis.c $(SHARED_LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_candidate_analysis tests/test_candidate_analysis.c -L. -lalgorithms -L.. -lssl -lcrypto -lm
 	@echo "Running Candidate Analysis test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_candidate_analysis
+
+# Phase 1 Integration Test
+test_phase1: tests/test_phase1_integration.c $(SHARED_LIB)
+	@echo "Building Phase 1 Integration test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1_integration tests/test_phase1_integration.c -L. -lalgorithms -L../math/lib -lcrystallinemath
+	@echo "Running Phase 1 Integration test..."
+	LD_LIBRARY_PATH=.:../math/lib ./tests/test_phase1_integration
+
+
+# Phase 1 Integration Test
+test_phase1_integration: tests/test_phase1_integration.c $(SHARED_LIB)
+	@echo "Building Phase 1 Integration test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1_integration tests/test_phase1_integration.c -L. -lalgorithms -L.. -lcrystalline -L../math/lib -lcrystallinemath
+	@echo "Running Phase 1 Integration test..."
+	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_phase1_integration
+
+.PHONY: test_phase1_integration

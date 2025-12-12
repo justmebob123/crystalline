@@ -156,19 +156,20 @@ bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result
  * Computes seed_prime^(seed_prime^(seed_prime^...)) (depth times) mod modulus
  * Uses arbitrary precision to handle large intermediate values
  */
-CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime, 
+struct CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime, 
                                                        uint32_t depth,
                                                        uint64_t modulus,
-                                                       ClockContext* ctx) {
+                                                       struct ClockContext* ctx) {
     if (depth == 0 || seed_prime == 0 || !ctx) {
         return NULL;
     }
     
-    // Create Abacus values
-    CrystallineAbacus* base = abacus_create_from_uint64(seed_prime, 12, ctx);
-    CrystallineAbacus* mod_abacus = abacus_create_from_uint64(modulus, 12, ctx);
-    CrystallineAbacus* result = abacus_create_from_uint64(seed_prime, 12, ctx);
-    CrystallineAbacus* temp = abacus_create_from_uint64(0, 12, ctx);
+    // Create Abacus values (FIXED: use abacus_from_uint64, not abacus_create_from_uint64)
+    (void)ctx;  // Suppress unused parameter warning
+    CrystallineAbacus* base = abacus_from_uint64(seed_prime, 12);
+    CrystallineAbacus* mod_abacus = abacus_from_uint64(modulus, 12);
+    CrystallineAbacus* result = abacus_from_uint64(seed_prime, 12);
+    CrystallineAbacus* temp = abacus_from_uint64(0, 12);
     
     if (!base || !mod_abacus || !result || !temp) {
         if (base) abacus_free(base);
@@ -204,8 +205,9 @@ CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime,
             return NULL;
         }
         
-        // result = temp
-        abacus_copy(result, temp);
+        // result = temp (FIXED: abacus_copy returns new copy, doesn't modify in place)
+        abacus_free(result);
+        result = abacus_copy(temp);
     }
     
     abacus_free(base);
