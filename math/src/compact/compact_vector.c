@@ -408,12 +408,36 @@ MathError triangulate_subtraction(
         return MATH_ERROR_NULL_POINTER;
     }
     
-    // Subtraction is addition with negated second operand
-    // Negation = 180° rotation
-    Triangle modified_tri = *tri;
-    modified_tri.p2.phase_angle = (float)math_fmod(modified_tri.p2.phase_angle + 180.0f, 360.0f);
+    // Subtraction: A - B
+    // Geometrically: rotate B by 180° and adjust magnitude
     
-    return triangulate_addition(&modified_tri, result);
+    // Convert angles to radians
+    double angle_a = DEG_TO_RAD(tri->p1.phase_angle);
+    double angle_b = DEG_TO_RAD(tri->p2.phase_angle);
+    
+    // For subtraction, we negate B (180° rotation)
+    angle_b += PI;
+    
+    // Spherical law of cosines for result angle
+    double result_angle_rad = math_atan2(
+        math_sin(angle_a) + math_sin(angle_b),
+        math_cos(angle_a) + math_cos(angle_b)
+    );
+    
+    // Convert back to degrees
+    double result_angle = RAD_TO_DEG(result_angle_rad);
+    if (result_angle < 0.0) result_angle += 360.0;
+    
+    // Magnitude is subtraction (not addition!)
+    int32_t result_magnitude = tri->p1.magnitude_offset - tri->p2.magnitude_offset;
+    
+    // Create result vector
+    result->sphere_id = tri->p1.sphere_id;
+    result->phase_angle = (float)result_angle;
+    result->magnitude_offset = result_magnitude;
+    result->phase_offset = 0.0f;
+    
+    return MATH_SUCCESS;
 }
 
 MathError triangulate_multiplication(
@@ -475,8 +499,35 @@ MathError get_precise_clock_position(
     else if (magnitude >= 60) ring = 2;
     else if (magnitude >= 12) ring = 1;
     
+    // Apply factor-based refinement for enhanced precision
+    // Simple factorization for small numbers
+    uint64_t factors[16];
+    size_t num_factors = 0;
+    uint64_t n = number;
+    
+    // Find factors (simple trial division for demonstration)
+    for (uint64_t f = 2; f <= n && num_factors < 16; f++) {
+        while (n % f == 0 && num_factors < 16) {
+            factors[num_factors++] = f;
+            n /= f;
+        }
+    }
+    
+    // Calculate precise angle with factor refinement
+    double precise_angle;
+    if (num_factors > 0) {
+        MathError err = calculate_precise_angle_with_factors(
+            number, factors, num_factors, &precise_angle
+        );
+        if (err != MATH_SUCCESS) {
+            precise_angle = base_angle;
+        }
+    } else {
+        precise_angle = base_angle;
+    }
+    
     position->ring = ring;
-    position->precise_angle = base_angle;
+    position->precise_angle = precise_angle;
     position->magnitude = magnitude;
     position->phase_offset = 0.0;
     
