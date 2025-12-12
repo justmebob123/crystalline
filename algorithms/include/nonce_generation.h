@@ -118,6 +118,26 @@ uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
                                       uint64_t modulus);
 
 /**
+ * @brief Build tetration stack using CrystallineAbacus (NEW API)
+ * 
+ * Uses arbitrary precision arithmetic for large intermediate values.
+ * Returns CrystallineAbacus* that must be freed by caller.
+ * 
+ * @param seed_prime Seed prime value
+ * @param depth Tetration depth
+ * @param modulus Modulus for reduction
+ * @param ctx Clock context for operations
+ * @return CrystallineAbacus* result (caller must free) or NULL on error
+ */
+struct CrystallineAbacus;
+struct ClockContext;
+struct CrystallineAbacus* nonce_build_tetration_stack_abacus(
+    uint64_t seed_prime, 
+    uint32_t depth,
+    uint64_t modulus,
+    struct ClockContext* ctx);
+
+/**
  * @brief Apply difficulty-based bounds using entropy reduction
  * 
  * Reduces the search space based on difficulty target using entropy

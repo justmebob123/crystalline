@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Include prime functions from crystalline library
 extern bool is_prime(uint64_t n);
@@ -112,7 +112,7 @@ static double score_candidate_sft(
         double best_ratio_score = 0.0;
         int small_primes[] = {2, 3, 5, 7, 11, 13};
         for (int i = 0; i < 6; i++) {
-            double diff = fabs(ratio - small_primes[i]);
+            double diff = prime_fabs(ratio - small_primes[i]);
             double ratio_score = 3.0 / (1.0 + diff);
             if (ratio_score > best_ratio_score) {
                 best_ratio_score = ratio_score;

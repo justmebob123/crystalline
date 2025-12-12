@@ -192,9 +192,12 @@ void lattice_hierarchy_free(CLLMLatticeHierarchy* sphere) {
     }
     
     // Free position and partition
+    // Free position
     if (sphere->position) {
-        sphere_position_free(sphere->position);
+        free_sphere_position(sphere->position);
     }
+    
+    // Free partition
     if (sphere->partition) {
         free_lattice_partition(sphere->partition);
     }

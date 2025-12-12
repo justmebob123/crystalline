@@ -8,8 +8,8 @@
 #include "blind_recovery/blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 /**
  * Validate Euler's formula: V - E + F = 2
@@ -115,14 +115,14 @@ StructuralMap* map_structure(
             double z = vertex_positions[i * 3 + 2];
             
             // Check for NaN or Inf
-            if (isnan(x) || isnan(y) || isnan(z) ||
-                isinf(x) || isinf(y) || isinf(z)) {
+            if (prime_isnan(x) || prime_isnan(y) || prime_isnan(z) ||
+                prime_isinf(x) || prime_isinf(y) || prime_isinf(z)) {
                 map->corruption_mask[i] = true;
                 corrupted_count++;
             }
             
             // Check for extreme values
-            double magnitude = sqrt(x*x + y*y + z*z);
+            double magnitude = prime_sqrt(x*x + y*y + z*z);
             if (magnitude > 100.0) {  // Threshold
                 map->corruption_mask[i] = true;
                 corrupted_count++;

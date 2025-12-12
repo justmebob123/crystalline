@@ -22,6 +22,8 @@
 #include "../include/cllm_metrics.h"
 #include "lattice_cache.h"
 #include "terminal_output.h"
+#include "../math/include/math/types.h"
+#include "../math/include/math/clock.h"
 
 // Video-friendly dimensions (16:9 aspect ratio)
 #define WINDOW_WIDTH 1600
@@ -216,6 +218,9 @@ typedef struct {
     LatticeCache* lattice_cache;
     bool lattice_cache_initialized;
     bool auto_extend_on_zoom;
+    
+    // NEW: Clock Context for compact vector system
+    ClockContext* clock_ctx;
     
     // Spheres data
     Sphere* spheres;

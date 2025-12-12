@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute distance between two 3D points
@@ -18,7 +18,7 @@ static double distance_3d(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return prime_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**
@@ -59,7 +59,7 @@ bool detect_anchor_corruption(
             anchor_idx * system->num_anchors + i
         ];
         
-        double error = fabs(actual_dist - expected_dist) / expected_dist;
+        double error = prime_fabs(actual_dist - expected_dist) / expected_dist;
         if (error > max_distance_error) {
             max_distance_error = error;
         }
@@ -158,7 +158,7 @@ void update_anchor_confidence(
             anchor->confidence *= 0.5;  // Reduce confidence
         } else {
             // Increase confidence slightly if no issues detected
-            anchor->confidence = fmin(1.0, anchor->confidence * 1.05);
+            anchor->confidence = prime_fmin(1.0, anchor->confidence * 1.05);
         }
     }
     

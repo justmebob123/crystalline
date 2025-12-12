@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Create scalar analysis for a specific scale
@@ -53,7 +53,7 @@ static ScalarAnalysis* create_scalar_analysis(
     }
     
     // Check stability (simple heuristic: scalar close to 1.0 is stable)
-    analysis->is_stable = (fabs(scalar_value - 1.0) < 0.5);
+    analysis->is_stable = (prime_fabs(scalar_value - 1.0) < 0.5);
     
     return analysis;
 }
@@ -125,7 +125,7 @@ MultiScalarAnalysis* analyze_multi_scalar(
     for (uint32_t i = 0; i < num_scalars; i++) {
         for (uint32_t j = 0; j < num_scalars; j++) {
             // Simple correlation: based on scalar value similarity
-            double diff = fabs(scalar_values[i] - scalar_values[j]);
+            double diff = prime_fabs(scalar_values[i] - scalar_values[j]);
             analysis->cross_scalar_correlations[i * num_scalars + j] = 
                 1.0 / (1.0 + diff);
         }
@@ -206,7 +206,7 @@ uint32_t find_most_stable_scalar(const MultiScalarAnalysis* analysis) {
     
     for (uint32_t i = 0; i < analysis->num_scalars; i++) {
         // Stability score: closer to 1.0 is better
-        double stability = 1.0 / (1.0 + fabs(analysis->analyses[i].scalar_value - 1.0));
+        double stability = 1.0 / (1.0 + prime_fabs(analysis->analyses[i].scalar_value - 1.0));
         if (stability > best_stability) {
             best_stability = stability;
             most_stable = i;

@@ -8,7 +8,7 @@
 #include "prime_math_custom.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 double validation_calculate_harm(double P_misuse, double D_damage,
                                   double error, double scale_factor) {
@@ -18,7 +18,7 @@ double validation_calculate_harm(double P_misuse, double D_damage,
 }
 
 double validation_safety_probability(double proof_level, double alpha) {
-    // P_safe = 1 - exp(-alpha * proof_level)
+    // P_safe = 1 - prime_exp(-alpha * proof_level)
     double exponent = -alpha * proof_level;
     double P_safe = 1.0 - prime_exp(exponent);
     
@@ -124,12 +124,12 @@ bool validation_check_range(double value, double min_val, double max_val) {
 
 bool validation_check_stability(double value, double max_magnitude) {
     // Check for NaN
-    if (isnan(value)) {
+    if (prime_isnan(value)) {
         return false;
     }
     
     // Check for infinity
-    if (isinf(value)) {
+    if (prime_isinf(value)) {
         return false;
     }
     
@@ -147,7 +147,7 @@ double validation_proof_level_from_error(double error) {
         return 0.0;
     }
     
-    // proof_level = log(1 / error) = -log(error)
+    // proof_level = prime_log(1 / error) = -prime_log(error)
     double proof_level = -prime_log(error);
     
     return proof_level > 0.0 ? proof_level : 0.0;

@@ -1,8 +1,8 @@
 #include "../include/anchor_tracking.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 // Constants
 #define PHI 1.618033988749895  // Golden ratio

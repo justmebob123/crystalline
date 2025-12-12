@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
 #include "prime_float_math.h"
 
 // Helper function to clamp values

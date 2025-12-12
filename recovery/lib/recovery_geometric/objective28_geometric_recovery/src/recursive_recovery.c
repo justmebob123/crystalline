@@ -2,8 +2,8 @@
 #include "geometric_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 // Compute π×φ distance
 double pi_phi_distance(const double* p1, const double* p2, int dims) {
@@ -12,7 +12,7 @@ double pi_phi_distance(const double* p1, const double* p2, int dims) {
         double diff = p1[d] - p2[d];
         sum += diff * diff;
     }
-    return sqrt(sum) / PI_PHI;
+    return prime_sqrt(sum) / PI_PHI;
 }
 
 // Compute distance from origin
@@ -21,7 +21,7 @@ double distance_from_origin(const double* p, int dims) {
     for (int d = 0; d < dims; d++) {
         sum += p[d] * p[d];
     }
-    return sqrt(sum) / PI_PHI;
+    return prime_sqrt(sum) / PI_PHI;
 }
 
 // Create recursive recovery context
@@ -142,7 +142,7 @@ double analyze_partition_boundaries(
             variance += diff * diff;
         }
         variance /= 3.0;
-        double stddev = sqrt(variance);
+        double stddev = prime_sqrt(variance);
         
         if (stddev < 0.01) {
             num_uniform++;
@@ -223,7 +223,7 @@ TorusState* map_torus_recursive(
     printf("Parameters: %uD, %u anchors, 2^%d vertices\n",
            ctx->current_torus->num_dimensions,
            ctx->current_torus->num_anchors,
-           (int)log2(ctx->current_torus->resolution_level));
+           (int)prime_log2(ctx->current_torus->resolution_level));
     
     // Check recursion depth
     if (current_depth >= ctx->params->max_recursion_depth) {
@@ -264,7 +264,7 @@ TorusState* map_torus_recursive(
         variance += diff * diff;
     }
     variance /= ctx->num_samples;
-    ctx->current_torus->entropy = sqrt(variance);
+    ctx->current_torus->entropy = prime_sqrt(variance);
     ctx->current_torus->is_stable = (ctx->current_torus->entropy < ctx->params->entropy_threshold);
     
     printf("Torus properties:\n");
@@ -346,7 +346,7 @@ BIGNUM* recursive_k_recovery(
     printf("=== RECURSIVE K RECOVERY ===\n");
     printf("Samples: %d\n", num_samples);
     printf("Initial parameters: %uD, %u anchors, 2^%d resolution\n\n",
-           params->min_dimensions, params->min_anchors, (int)log2(params->min_resolution));
+           params->min_dimensions, params->min_anchors, (int)prime_log2(params->min_resolution));
     
     // Create context
     RecursiveRecoveryContext* ctx = recursive_recovery_create(ec_group, params);

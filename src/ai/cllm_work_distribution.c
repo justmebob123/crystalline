@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
 #include "prime_float_math.h"
 
 // Default epsilon for ratio validation

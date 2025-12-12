@@ -10,10 +10,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only
 #include "../include/cymatic_modulation.h"
-#include "../../include/prime_float_math.h"
 #include "../../include/cllm_mathematical_constants.h"
+#include "prime_float_math.h"
 
 /**
  * Apply cymatic resonance modulation to gradients

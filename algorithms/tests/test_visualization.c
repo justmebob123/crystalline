@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <assert.h>
 #include "../include/visualization.h"
+#include "prime_float_math.h"
 
 // Test counters
 static int tests_run = 0;
@@ -102,8 +102,8 @@ int test_set_point_position(void) {
     double position[2] = {1.5, 2.5};
     int result = viz_set_point_position(data, 0, position);
     TEST_ASSERT(result == 0, "Failed to set point position");
-    TEST_ASSERT(fabs(data->points[0].position[0] - 1.5) < 1e-9, "X position incorrect");
-    TEST_ASSERT(fabs(data->points[0].position[1] - 2.5) < 1e-9, "Y position incorrect");
+    TEST_ASSERT(prime_fabs(data->points[0].position[0] - 1.5) < 1e-9, "X position incorrect");
+    TEST_ASSERT(prime_fabs(data->points[0].position[1] - 2.5) < 1e-9, "Y position incorrect");
     
     viz_free(data);
     
@@ -118,7 +118,7 @@ int test_set_point_value(void) {
     
     int result = viz_set_point_value(data, 0, 42.5);
     TEST_ASSERT(result == 0, "Failed to set point value");
-    TEST_ASSERT(fabs(data->points[0].value - 42.5) < 1e-9, "Value incorrect");
+    TEST_ASSERT(prime_fabs(data->points[0].value - 42.5) < 1e-9, "Value incorrect");
     
     viz_free(data);
     
@@ -267,10 +267,10 @@ int test_update_bounds(void) {
     
     int result = viz_update_bounds(data);
     TEST_ASSERT(result == 0, "Failed to update bounds");
-    TEST_ASSERT(fabs(data->min_bounds[0] - 0.0) < 1e-9, "Min X bound incorrect");
-    TEST_ASSERT(fabs(data->max_bounds[0] - 9.0) < 1e-9, "Max X bound incorrect");
-    TEST_ASSERT(fabs(data->min_bounds[1] - 0.0) < 1e-9, "Min Y bound incorrect");
-    TEST_ASSERT(fabs(data->max_bounds[1] - 18.0) < 1e-9, "Max Y bound incorrect");
+    TEST_ASSERT(prime_fabs(data->min_bounds[0] - 0.0) < 1e-9, "Min X bound incorrect");
+    TEST_ASSERT(prime_fabs(data->max_bounds[0] - 9.0) < 1e-9, "Max X bound incorrect");
+    TEST_ASSERT(prime_fabs(data->min_bounds[1] - 0.0) < 1e-9, "Min Y bound incorrect");
+    TEST_ASSERT(prime_fabs(data->max_bounds[1] - 18.0) < 1e-9, "Max Y bound incorrect");
     
     viz_free(data);
     

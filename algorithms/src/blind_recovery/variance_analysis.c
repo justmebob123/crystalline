@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute mean along an axis
@@ -230,7 +230,7 @@ void compute_variance_statistics(
             sum_squared_diff += diff * diff;
         }
         
-        *std_dev = sqrt(sum_squared_diff / num_elements);
+        *std_dev = prime_sqrt(sum_squared_diff / num_elements);
     }
 }
 

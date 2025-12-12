@@ -18,11 +18,11 @@
  */
 
 #include "ai/cllm_platonic.h"
+#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // ============================================================================
 // CUBE GEOMETRY
@@ -116,7 +116,7 @@ bool platonic_cube_init_geometry(PlatonicModel* model) {
     printf("  ✓ Euler's formula: 8 - 12 + 6 = %d (verified)\n", euler);
     
     // Verify all edges have same length (should be 2.0)
-    double edge_length = sqrt(
+    double edge_length = prime_sqrt(
         (CUBE_VERTICES[1][0] - CUBE_VERTICES[0][0]) * 
         (CUBE_VERTICES[1][0] - CUBE_VERTICES[0][0]) +
         (CUBE_VERTICES[1][1] - CUBE_VERTICES[0][1]) * 

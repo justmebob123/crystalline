@@ -10,10 +10,10 @@
 
 #include "clock_recovery.h"
 #include "platonic_solids.h"
-#include <math.h>
 #include <stdio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
+#include "prime_float_math.h"
 
 // Mathematical constants
 #define PI 3.141592653589793

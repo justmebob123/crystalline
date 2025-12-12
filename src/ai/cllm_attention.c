@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <immintrin.h>  // AVX2 intrinsics
 
 // ============================================================================
@@ -87,7 +86,7 @@ static void softmax(double* scores, uint32_t len) {
         if (scores[i] > max_score) max_score = scores[i];
     }
     
-    // Compute exp(x - max) and sum (vectorized)
+    // Compute prime_exp(x - max) and sum (vectorized)
     __m256d max_broadcast = _mm256_set1_pd(max_score);
     __m256d sum_vec = _mm256_setzero_pd();
     
@@ -256,7 +255,7 @@ static void standard_attention_forward(
             double* K_head = &K[h * head_dim];
             double* V_head = &V[h * head_dim];
             
-            // Compute attention scores: Q * K^T / sqrt(d_k)
+            // Compute attention scores: Q * K^T / prime_sqrt(d_k)
             for (uint32_t i = 0; i < seq_len; i++) {
                 for (uint32_t j = 0; j < seq_len; j++) {
                     double score = 0.0;

@@ -6,8 +6,8 @@
 #include "mathematical_formulas.h"
 #include "cllm_mathematical_constants.h"
 #include "prime_math_custom.h"
-#include "prime_lattice_geometry.h"
 #include <stdlib.h>
+#include <stdint.h>
 
 /* ============================================================================
  * Entropy & Information Theory (6 formulas)
@@ -127,20 +127,37 @@ uint64_t formula_tv(uint64_t P, uint32_t T, uint64_t p_mod) {
     if (T == 0) return 1;
     if (T == 1) return P % p_mod;
     
-    // Use tetration_damped from prime_lattice_geometry
-    BigInt result, modulus;
-    big_init(&result);
-    big_init(&modulus);
-    big_from_int(&modulus, p_mod);
+    // Tetration with modular arithmetic: P^P^P^... (T times) mod p_mod
+    // Use iterative approach with golden ratio damping for stability
+    uint64_t result = P % p_mod;
     
-    tetration_damped(&result, P, T, &modulus);
+    for (uint32_t i = 1; i < T; i++) {
+        // Apply golden ratio damping to prevent overflow
+        // Damping factor: φ^(-i) where φ = 1.618...
+        double damping = 1.0;
+        for (uint32_t j = 0; j < i; j++) {
+            damping /= PHI;
+        }
+        
+        // Compute P^result mod p_mod with damping
+        uint64_t damped_exp = (uint64_t)(result * damping);
+        if (damped_exp == 0) damped_exp = 1;
+        
+        // Modular exponentiation: P^damped_exp mod p_mod
+        uint64_t base = P % p_mod;
+        uint64_t exp = damped_exp;
+        result = 1;
+        
+        while (exp > 0) {
+            if (exp & 1) {
+                result = (result * base) % p_mod;
+            }
+            base = (base * base) % p_mod;
+            exp >>= 1;
+        }
+    }
     
-    uint64_t value = big_to_int64(&result);
-    
-    big_free(&result);
-    big_free(&modulus);
-    
-    return value;
+    return result;
 }
 
 uint64_t formula_tvg(uint64_t P, uint32_t T, uint64_t p_mod) {

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
 
 // External functions
@@ -48,7 +47,7 @@ static double compute_angular_position(uint32_t token_id, const CLLMModel* model
     double omega = 2.0 * M_PI / 12.0;  // 12-fold symmetry
     double psi = (double)(prime % 360) * M_PI / 180.0;  // Prime-based phase
     
-    // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·sin(ωn + ψ)
+    // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·prime_sin(ωn + ψ)
     double theta = (2.0 * M_PI * n / k) + (lambda / k) * prime_sin(omega * n + psi);
     
     return theta;

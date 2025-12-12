@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>  // For exp() in geometric_resonance()
 
 // Prime cache for dynamic generation
 static uint64_t* prime_cache = NULL;
@@ -90,7 +89,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         int adjusted_index = prime_index - 232;
         
         // Map to ring using log₃ (keeps growth bounded)
-        // ring = floor(log₃(adjusted_index + 1)) + 4
+        // ring = prime_floor(log₃(adjusted_index + 1)) + 4
         // But cap at ring 7 to keep 3^ring manageable
         double log3_val = prime_log(adjusted_index + 1.0) / prime_log(3.0);
         pos.ring = ((int)log3_val % 4) + 4;  // Rings 4-7, wrapping
@@ -482,7 +481,7 @@ static inline double geometric_resonance(uint64_t n) {
     
     for (int i = 0; i < NUM_PLATONIC_TARGETS; i++) {
         double dist = (double)n - (double)PLATONIC_TARGETS[i].target;
-        score += exp(-(dist * dist) / sigma);
+        score += prime_exp(-(dist * dist) / sigma);
     }
     
     return score;

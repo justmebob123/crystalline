@@ -12,10 +12,10 @@
  */
 
 #include "../include/prime_factor_extraction.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Compute GCD using Euclidean algorithm

@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Golden ratio for dodecahedron and icosahedron
 #define PHI 1.618033988749895

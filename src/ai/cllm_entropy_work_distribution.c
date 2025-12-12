@@ -8,8 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include <math.h>  // OBJECTIVE 2E: Removed - using crystalline math only
-#include "prime_float_math.h"
 
 /**
  * @brief Small epsilon for floating point comparisons

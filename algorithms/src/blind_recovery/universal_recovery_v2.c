@@ -12,9 +12,9 @@
 #include "blind_recovery/blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include "prime_float_math.h"
 
 // History tracking for oscillation detection
 typedef struct {
@@ -72,16 +72,16 @@ static void free_position_history(PositionHistory* hist) {
 
 // Improved tetration computation with logarithmic representation
 static double compute_tetration_log(uint32_t base, uint32_t depth) {
-    if (depth == 0) return 0.0;  // log(1) = 0
-    if (depth == 1) return log((double)base);
+    if (depth == 0) return 0.0;  // prime_log(1) = 0
+    if (depth == 1) return prime_log((double)base);
     
     // For deep tetration, use logarithmic approximation
-    // log(base^base^...^base) ≈ base^(depth-1) * log(base)
-    double log_base = log((double)base);
+    // prime_log(base^base^...^base) ≈ base^(depth-1) * prime_log(base)
+    double log_base = prime_log((double)base);
     double result = log_base;
     
     for (uint32_t i = 1; i < depth && i < 10; i++) {
-        result = pow((double)base, result);
+        result = prime_pow((double)base, result);
         if (result > 100.0) break;  // Prevent overflow
     }
     
@@ -92,7 +92,7 @@ static double compute_tetration_log(uint32_t base, uint32_t depth) {
 static double find_tetration_attractor_improved(double value, uint32_t min_depth, uint32_t max_depth) {
     if (value <= 0.0) return value;
     
-    double log_value = log(fabs(value) + 1e-10);
+    double log_value = prime_log(prime_fabs(value) + 1e-10);
     double nearest_log = log_value;
     double min_distance = INFINITY;
     
@@ -102,7 +102,7 @@ static double find_tetration_attractor_improved(double value, uint32_t min_depth
     for (size_t b = 0; b < sizeof(bases)/sizeof(bases[0]); b++) {
         for (uint32_t depth = min_depth; depth <= max_depth && depth <= 10; depth++) {
             double tower_log = compute_tetration_log(bases[b], depth);
-            double distance = fabs(log_value - tower_log);
+            double distance = prime_fabs(log_value - tower_log);
             
             if (distance < min_distance) {
                 min_distance = distance;
@@ -112,7 +112,7 @@ static double find_tetration_attractor_improved(double value, uint32_t min_depth
     }
     
     // Convert back from log space
-    double result = exp(nearest_log);
+    double result = prime_exp(nearest_log);
     return (value < 0.0) ? -result : result;
 }
 

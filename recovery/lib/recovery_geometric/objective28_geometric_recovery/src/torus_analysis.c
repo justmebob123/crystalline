@@ -3,10 +3,10 @@
  */
 
 #include "../include/torus_analysis.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 TorusAnalyzer* create_torus_analyzer(int history_size, uint64_t original_space_size) {
     TorusAnalyzer* analyzer = (TorusAnalyzer*)calloc(1, sizeof(TorusAnalyzer));

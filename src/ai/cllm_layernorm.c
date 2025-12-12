@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <immintrin.h>  // AVX2
 #include "../include/cllm.h"
 #include "../include/prime_float_math.h"
@@ -25,7 +24,7 @@
 /**
  * Layer normalization forward pass with SIMD
  * 
- * Computes: output = gamma * (input - mean) / sqrt(variance + epsilon) + beta
+ * Computes: output = gamma * (input - mean) / prime_sqrt(variance + epsilon) + beta
  * 
  * @param input Input tensor [batch_size × seq_len × dim]
  * @param output Output tensor [batch_size × seq_len × dim]

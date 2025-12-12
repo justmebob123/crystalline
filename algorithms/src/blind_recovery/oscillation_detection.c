@@ -13,8 +13,8 @@
 #include "blind_recovery/blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
+#include "prime_float_math.h"
 
 // Simple FFT implementation (Cooley-Tukey algorithm)
 // For production, would use FFTW library
@@ -113,7 +113,7 @@ static bool is_oscillation_stable(const double* amplitudes, uint32_t num_samples
     variance /= num_samples;
     
     // Stable if variance is low relative to mean
-    double coefficient_of_variation = sqrt(variance) / (mean + 1e-10);
+    double coefficient_of_variation = prime_sqrt(variance) / (mean + 1e-10);
     return coefficient_of_variation < 0.1;  // 10% threshold
 }
 
@@ -232,9 +232,9 @@ OscillationMap* detect_oscillations(
                 map->cross_correlations[i * num_dimensions + j] = 1.0;
             } else {
                 // Simplified correlation based on frequency similarity
-                double freq_diff = fabs(map->signatures[i].frequency - 
+                double freq_diff = prime_fabs(map->signatures[i].frequency - 
                                        map->signatures[j].frequency);
-                double correlation = exp(-freq_diff / 10.0);  // Decay with difference
+                double correlation = prime_exp(-freq_diff / 10.0);  // Decay with difference
                 map->cross_correlations[i * num_dimensions + j] = correlation;
             }
         }

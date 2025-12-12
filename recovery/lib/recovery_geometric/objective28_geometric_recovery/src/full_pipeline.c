@@ -19,10 +19,10 @@
 #include "../include/prime_factor_extraction.h"
 #include "../include/clock_lattice_integration.h"
 #include "../include/micro_model.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 #define PI 3.141592653589793
 

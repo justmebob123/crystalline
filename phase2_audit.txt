@@ -1,0 +1,30 @@
+=== PHASE 2 AUDIT RESULTS ===
+
+1. References to -lcrystalline (OLD library):
+30
+
+2. OLD library files exist:
+-rw-r--r-- 1 root root 932K Dec 11 20:58 libcrystalline.a
+-rwxr-xr-x 1 root root 459K Dec 11 20:58 libcrystalline.so
+
+3. OLD source directories:
+src/core
+src/geometry
+src/transcendental
+
+4. OLD source compilation rules:
+156:$(SRC_CORE)/%.o: $(SRC_CORE)/%.c $(HEADERS)
+161:$(SRC_TRANS)/%.o: $(SRC_TRANS)/%.c $(HEADERS)
+166:$(SRC_GEOM)/%.o: $(SRC_GEOM)/%.c $(HEADERS)
+
+5. Variables using OLD sources:
+53:CORE_SOURCES = $(wildcard $(SRC_CORE)/*.c)
+54:TRANS_SOURCES = $(wildcard $(SRC_TRANS)/*.c)
+55:GEOM_SOURCES = $(wildcard $(SRC_GEOM)/*.c)
+65:ALL_SOURCES = $(CORE_SOURCES) $(TRANS_SOURCES) $(GEOM_SOURCES) $(AI_SOURCES) $(UTILS_SOURCES) $(CRAWLER_SOURCES) $(DOCPROC_SOURCES)
+68:CORE_OBJECTS = $(CORE_SOURCES:.c=.o)
+69:TRANS_OBJECTS = $(TRANS_SOURCES:.c=.o)
+70:GEOM_OBJECTS = $(GEOM_SOURCES:.c=.o)
+271:	@echo "║   Core:          $(words $(CORE_SOURCES)) files                "
+272:	@echo "║   Transcendental: $(words $(TRANS_SOURCES)) files              "
+273:	@echo "║   Geometry:      $(words $(GEOM_SOURCES)) files                "

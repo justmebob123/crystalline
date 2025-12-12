@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute resolution for scale level
@@ -19,7 +19,7 @@
  */
 static double compute_scale_resolution(uint32_t scale_level) {
     // Each scale level doubles the resolution
-    return pow(2.0, (double)scale_level);
+    return prime_pow(2.0, (double)scale_level);
 }
 
 /**

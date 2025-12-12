@@ -5,10 +5,10 @@
  */
 
 #include "../include/harmonic_folding.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 // Prime frequencies for harmonic folding
 static const uint32_t PRIME_FREQUENCIES[] = {5, 7, 11, 13, 17, 19, 23, 29, 31};

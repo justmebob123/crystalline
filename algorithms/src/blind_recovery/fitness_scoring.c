@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Score candidate based on structural consistency
@@ -44,7 +44,7 @@ static double score_structural_consistency(
     if (expected_size > 0) {
         double ratio = (double)candidate->candidate / expected_size;
         // Prefer ratios close to 1.0 (natural scale)
-        score += 5.0 / (1.0 + fabs(ratio - 1.0));
+        score += 5.0 / (1.0 + prime_fabs(ratio - 1.0));
     }
     
     // Bonus for prime candidates (structural stability)

@@ -13,11 +13,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 #include <openssl/bn.h>
 #include "../include/platonic_model.h"
+#include "prime_float_math.h"
 
 #define NUM_ANCHORS 100
 #define NUM_DIMENSIONS 13
@@ -209,7 +209,7 @@ void detect_torus_orbits(TorusRecoverySystem* sys) {
             }
             
             // Radius is the standard deviation
-            torus->radius = sqrt(var_k);
+            torus->radius = prime_sqrt(var_k);
             
             // Frequency from variance ratio
             torus->frequency = var_Q / (var_k + 1e-10);
@@ -227,7 +227,7 @@ void detect_torus_orbits(TorusRecoverySystem* sys) {
     
     printf("  ✅ Detected %u torus orbits\n", sys->num_tori);
     printf("  📊 Total complexity: %u × 2^40 = 2^%.1f\n", 
-           sys->num_tori, 40.0 + log2(sys->num_tori));
+           sys->num_tori, 40.0 + prime_log2(sys->num_tori));
 }
 
 // Find intersection points where multiple tori meet
@@ -289,7 +289,7 @@ void triangulate_candidates(TorusRecoverySystem* sys) {
                 double diff = pt->position[d] - sys->anchors[a].position_k[d];
                 dist += diff * diff;
             }
-            dist = sqrt(dist);
+            dist = prime_sqrt(dist);
             
             // Update nearest anchors
             if (dist < min_dist[0]) {
@@ -360,7 +360,7 @@ int main(void) {
     printf("║  Tori detected: %u\n", sys->num_tori);
     printf("║  Intersections found: %u\n", sys->num_intersections);
     printf("║  Complexity reduction: 2^256 → 2^%.1f\n", 
-           40.0 + log2(sys->num_tori));
+           40.0 + prime_log2(sys->num_tori));
     printf("║  Search space: %u candidates\n", sys->num_intersections);
     printf("╚══════════════════════════════════════════════════════════╝\n");
     

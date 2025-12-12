@@ -13,12 +13,12 @@
  */
 
 #include "ai/cllm_platonic.h"
+#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include "clock_lattice.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 
 // ============================================================================
@@ -189,9 +189,9 @@ RecoveryResult platonic_recover_symmetry(PlatonicModel* model) {
         double z = model->vertex_positions[i * 3 + 2];
         
         // Check if vertex lies on unit sphere (for normalized vertices)
-        double radius = sqrt(x*x + y*y + z*z);
+        double radius = prime_sqrt(x*x + y*y + z*z);
         
-        if (fabs(radius) < 0.1) {
+        if (prime_fabs(radius) < 0.1) {
             printf("  ✗ Vertex %u has invalid position (r=%.3f)\n", i, radius);
             all_symmetric = false;
         }
@@ -374,7 +374,7 @@ RecoveryResult platonic_recover_tetration(PlatonicModel* model) {
             
             model->embeddings[i] += correction;
             
-            double change = fabs(correction);
+            double change = prime_fabs(correction);
             if (change > max_change) {
                 max_change = change;
             }

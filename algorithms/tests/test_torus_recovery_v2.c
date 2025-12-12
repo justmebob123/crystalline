@@ -13,11 +13,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 #include <openssl/bn.h>
 #include "../include/platonic_model.h"
+#include "prime_float_math.h"
 
 #define NUM_ANCHORS 100
 #define NUM_DIMENSIONS 13
@@ -274,7 +274,7 @@ void detect_torus_orbits(TorusRecoverySystem* sys) {
                 torus->center[dd] = mean / sys->num_anchors;
             }
             
-            torus->radius = sqrt(var_k);
+            torus->radius = prime_sqrt(var_k);
             torus->frequency = var_Q / (var_k + 1e-10);
             torus->complexity = (1ULL << 40);
             torus->is_identified = true;
@@ -344,7 +344,7 @@ void triangulate_candidates(TorusRecoverySystem* sys) {
                 double diff = pt->position[d] - sys->anchors[a].position_k[d];
                 dist += diff * diff;
             }
-            dist = sqrt(dist);
+            dist = prime_sqrt(dist);
             
             if (dist < min_dist[0]) {
                 min_dist[2] = min_dist[1]; nearest[2] = nearest[1];
@@ -491,7 +491,7 @@ int main(void) {
     printf("║  COMPLETE                                                ║\n");
     printf("╠══════════════════════════════════════════════════════════╣\n");
     printf("║  Time: %.3f seconds\n", elapsed);
-    printf("║  Complexity: 2^256 → 2^%.1f\n", 40.0 + log2(sys->num_tori));
+    printf("║  Complexity: 2^256 → 2^%.1f\n", 40.0 + prime_log2(sys->num_tori));
     printf("║  Candidates: %u\n", sys->num_intersections);
     printf("╚══════════════════════════════════════════════════════════╝\n");
     

@@ -10,13 +10,12 @@
  */
 
 #include "spherical_recovery.h"
-#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // Golden ratio constant
-#define PHI ((1.0 + sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
 #define PI M_PI
 
 SphericalRecoveryContext* init_spherical_recovery(
@@ -59,7 +58,7 @@ SphericalCoord clock_to_spherical(ClockPosition pos) {
     
     // Polar angle (theta): vertical position [0, π]
     // Map angle to polar angle
-    double normalized_angle = fmod(pos.angle, 2.0 * PI);
+    double normalized_angle = prime_fmod(pos.angle, 2.0 * PI);
     if (normalized_angle < 0) normalized_angle += 2.0 * PI;
     
     // Convert to polar angle (0 = top, π = bottom)
@@ -99,7 +98,7 @@ double angular_transform(double theta, double phi, uint32_t position) {
     
     // Angular modulation using golden ratio
     // This creates the spiral structure
-    double angular_mod = cos(phi * PHI) * sin(theta);
+    double angular_mod = prime_cos(phi * PHI) * prime_sin(theta);
     
     // Combine position and angular modulation
     return pos_contrib * (1.0 + 0.1 * angular_mod);
@@ -117,14 +116,14 @@ double spherical_barycentric_interpolation(
     
     for (uint32_t i = 0; i < num_anchors && i < 12; i++) {
         // Spherical distance (great circle distance)
-        double cos_dist = sin(target.theta) * sin(anchors[i].theta) * cos(target.phi - anchors[i].phi)
-                        + cos(target.theta) * cos(anchors[i].theta);
+        double cos_dist = prime_sin(target.theta) * prime_sin(anchors[i].theta) * prime_cos(target.phi - anchors[i].phi)
+                        + prime_cos(target.theta) * prime_cos(anchors[i].theta);
         
         // Clamp to [-1, 1] to avoid numerical issues
         if (cos_dist > 1.0) cos_dist = 1.0;
         if (cos_dist < -1.0) cos_dist = -1.0;
         
-        distances[i] = acos(cos_dist);
+        distances[i] = prime_acos(cos_dist);
         indices[i] = i;
     }
     
@@ -228,7 +227,7 @@ double spherical_to_k(
 }
 
 Quadrant get_quadrant_from_position(ClockPosition pos) {
-    double angle = fmod(pos.angle, 2.0 * PI);
+    double angle = prime_fmod(pos.angle, 2.0 * PI);
     if (angle < 0) angle += 2.0 * PI;
     
     if (angle < PI / 2.0) {
@@ -270,7 +269,7 @@ bool is_in_optimal_zone(ClockPosition pos) {
     }
     
     // Check if near 12 o'clock (0° or 360°)
-    double angle = fmod(pos.angle, 2.0 * PI);
+    double angle = prime_fmod(pos.angle, 2.0 * PI);
     if (angle < 0) angle += 2.0 * PI;
     
     // Within 30° of 12 o'clock (0° or 360°)

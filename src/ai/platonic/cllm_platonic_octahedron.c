@@ -18,11 +18,11 @@
  */
 
 #include "ai/cllm_platonic.h"
+#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // ============================================================================
 // OCTAHEDRON GEOMETRY
@@ -126,7 +126,7 @@ bool platonic_octahedron_init_geometry(PlatonicModel* model) {
     printf("  ✓ Euler's formula: 6 - 12 + 8 = %d (verified)\n", euler);
     
     // Verify all edges have same length (should be √2 ≈ 1.414)
-    double edge_length = sqrt(
+    double edge_length = prime_sqrt(
         (OCTAHEDRON_VERTICES[0][0] - OCTAHEDRON_VERTICES[2][0]) * 
         (OCTAHEDRON_VERTICES[0][0] - OCTAHEDRON_VERTICES[2][0]) +
         (OCTAHEDRON_VERTICES[0][1] - OCTAHEDRON_VERTICES[2][1]) * 

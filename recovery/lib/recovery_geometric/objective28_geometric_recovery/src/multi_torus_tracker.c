@@ -3,10 +3,10 @@
  */
 
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 MultiTorusTracker* create_multi_torus_tracker(
     int max_tori,

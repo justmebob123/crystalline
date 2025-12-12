@@ -20,10 +20,10 @@
 
 #include "cllm.h"
 #include "cllm_utils.h"
+#include "prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // Recovery method enumeration
 typedef enum {
@@ -50,7 +50,7 @@ int cllm_detect_corruption(CLLMModel* model) {
     if (model->embeddings) {
         for (uint32_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
             double val = model->embeddings[i];
-            if (isnan(val) || isinf(val) || fabs(val) > 100.0) {
+            if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
                 corruption_count++;
             }
         }
@@ -62,7 +62,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].query_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].query_weights[i];
-                if (isnan(val) || isinf(val) || fabs(val) > 100.0) {
+                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
                     corruption_count++;
                 }
             }
@@ -72,7 +72,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].key_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].key_weights[i];
-                if (isnan(val) || isinf(val) || fabs(val) > 100.0) {
+                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
                     corruption_count++;
                 }
             }
@@ -82,7 +82,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].value_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].value_weights[i];
-                if (isnan(val) || isinf(val) || fabs(val) > 100.0) {
+                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
                     corruption_count++;
                 }
             }

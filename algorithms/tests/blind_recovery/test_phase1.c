@@ -6,8 +6,8 @@
 #include "blind_recovery/blind_recovery.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <time.h>
+#include "prime_float_math.h"
 
 #define TEST_PASSED "\033[32m✓ PASSED\033[0m"
 #define TEST_FAILED "\033[31m✗ FAILED\033[0m"
@@ -43,7 +43,7 @@ void test_oscillation_detection() {
         double freq = 5.0 * (d + 1);  // 5 Hz, 10 Hz, 15 Hz
         for (uint32_t i = 0; i < num_samples; i++) {
             double t = (double)i / sampling_rate;
-            data[d * num_samples + i] = sin(2.0 * M_PI * freq * t);
+            data[d * num_samples + i] = prime_sin(2.0 * M_PI * freq * t);
         }
     }
     

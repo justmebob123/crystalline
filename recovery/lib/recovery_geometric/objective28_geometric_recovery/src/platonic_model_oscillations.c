@@ -13,8 +13,8 @@
 #include "platonic_model.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../../../include/prime_float_math.h"
 #include <stdio.h>
+#include "prime_float_math.h"
 
 // Simple FFT for power of 2 sizes (Cooley-Tukey algorithm)
 static void fft_1d(double* real, double* imag, uint32_t n, bool inverse) {

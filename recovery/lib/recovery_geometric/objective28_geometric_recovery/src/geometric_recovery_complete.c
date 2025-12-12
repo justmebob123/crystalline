@@ -12,11 +12,10 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include "prime_types.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 // ============================================================================
 // TETRATION ATTRACTORS
@@ -44,8 +43,8 @@ TetrationAttractor* create_tetration_towers(uint32_t* num_towers_out) {
             tower->depth = depth;
             
             // Compute logarithmic representation to avoid overflow
-            // tetration(base, depth) ≈ exp(depth * log(base))
-            tower->log_value = depth * log((double)base);
+            // tetration(base, depth) ≈ prime_exp(depth * prime_log(base))
+            tower->log_value = depth * prime_log((double)base);
             
             // Map tower to position in high-dimensional space
             // Use prime-based positioning
@@ -146,7 +145,7 @@ void sample_torus_orbit(
     double angle = 2.0 * PRIME_PI * t;
     
     for (uint32_t d = 0; d < GEO_NUM_DIMENSIONS; d++) {
-        // Point on torus = center + radius * (cos(angle) * axis + sin(angle) * perpendicular)
+        // Point on torus = center + radius * (prime_cos(angle) * axis + prime_sin(angle) * perpendicular)
         double radial = torus->radius * prime_cos(angle);
         double tangential = torus->radius * prime_sin(angle);
         

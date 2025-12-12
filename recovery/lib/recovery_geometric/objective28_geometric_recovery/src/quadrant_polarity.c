@@ -4,9 +4,9 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include "prime_types.h"
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Create quadrant polarity system

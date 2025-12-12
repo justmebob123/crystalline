@@ -9,7 +9,7 @@
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "prime_float_math.h"
 
 /**
  * Compute cross-correlation between two dimensions
@@ -44,7 +44,7 @@ static double compute_dimension_correlation(
     uint32_t gcd = a;
     
     // Correlation based on GCD (higher GCD = higher correlation)
-    double correlation = (double)gcd / fmax(size1, size2);
+    double correlation = (double)gcd / prime_fmax(size1, size2);
     
     return correlation;
 }
@@ -268,7 +268,7 @@ bool validate_cross_dimensional_consistency(
     // Check diagonal elements (should be 1.0)
     for (uint32_t i = 0; i < num_dimensions; i++) {
         double self_corr = correlation_matrix[i * num_dimensions + i];
-        if (fabs(self_corr - 1.0) > 0.01) {
+        if (prime_fabs(self_corr - 1.0) > 0.01) {
             return false;
         }
     }
@@ -278,7 +278,7 @@ bool validate_cross_dimensional_consistency(
         for (uint32_t j = i + 1; j < num_dimensions; j++) {
             double corr_ij = correlation_matrix[i * num_dimensions + j];
             double corr_ji = correlation_matrix[j * num_dimensions + i];
-            if (fabs(corr_ij - corr_ji) > 0.01) {
+            if (prime_fabs(corr_ij - corr_ji) > 0.01) {
                 return false;
             }
         }

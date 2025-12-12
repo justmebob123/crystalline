@@ -4,9 +4,9 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
+#include "prime_float_math.h"
 
 /**
  * Find nearest vertex to a position

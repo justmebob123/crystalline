@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 // ============================================================================
 // EMBEDDING PRECOMPUTATION
@@ -42,7 +41,7 @@ void cllm_precompute_all_embeddings(CLLMModel* model) {
             for (uint32_t dim = 0; dim < model->embedding_dim; dim++) {
                 double freq_idx = (double)dim / model->embedding_dim;
                 double freq = model->harmonic.primary_frequency * (1.0 + freq_idx);
-                double modulation = cos(2.0 * M_PI * freq * token_id / model->vocab_size);
+                double modulation = prime_cos(2.0 * M_PI * freq * token_id / model->vocab_size);
                 embedding[dim] *= (1.0 + 0.1 * modulation);  // 10% modulation
             }
         }
@@ -276,11 +275,11 @@ double cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens,
         
         double sum_exp = 0.0;
         for (uint32_t v = 0; v < model->vocab_size; v++) {
-            sum_exp += exp(logits[v] - max_logit);
+            sum_exp += prime_exp(logits[v] - max_logit);
         }
         
         // Cross-entropy loss
-        double log_prob = (logits[target] - max_logit) - log(sum_exp);
+        double log_prob = (logits[target] - max_logit) - prime_log(sum_exp);
         double ce_loss = -log_prob;
         
         // Add GCD similarity bonus (encourages related tokens)
@@ -332,9 +331,9 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     model->optimizer.t++;
     
     // Bias correction
-    double beta1_t = pow(model->optimizer.beta1, model->optimizer.t);
-    double beta2_t = pow(model->optimizer.beta2, model->optimizer.t);
-    double lr_t = model->optimizer.learning_rate * sqrt(1.0 - beta2_t) / (1.0 - beta1_t);
+    double beta1_t = prime_pow(model->optimizer.beta1, model->optimizer.t);
+    double beta2_t = prime_pow(model->optimizer.beta2, model->optimizer.t);
+    double lr_t = model->optimizer.learning_rate * prime_sqrt(1.0 - beta2_t) / (1.0 - beta1_t);
     
     // Update parameters (simplified - just embeddings for now)
     // TODO: Update all parameters with proper gradients
