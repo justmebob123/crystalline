@@ -498,21 +498,21 @@ benchmark_large_scale: $(PROD_TEST_DIR)/benchmark_large_scale.c $(CLLM_LIB)
 	@echo "Building large-scale benchmark..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/benchmark_large_scale $(PROD_TEST_DIR)/benchmark_large_scale.c \
-		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcllm -lalgorithms -lcrystalline -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Large-scale benchmark built: tools/benchmark_large_scale"
 
 validate_training_quality: $(PROD_TEST_DIR)/validate_training_quality.c $(CLLM_LIB)
 	@echo "Building training quality validator..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/validate_training_quality $(PROD_TEST_DIR)/validate_training_quality.c \
-		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcllm -lalgorithms -lcrystalline -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Training validator built: tools/validate_training_quality"
 
 smoke_test_production: $(PROD_TEST_DIR)/smoke_test_production.c $(CLLM_LIB)
 	@echo "Building production smoke tests..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/smoke_test_production $(PROD_TEST_DIR)/smoke_test_production.c \
-		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcllm -lalgorithms -lcrystalline -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Smoke tests built: tools/smoke_test_production"
 
 # Production build target
@@ -554,7 +554,7 @@ tools/cllm: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building unified CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm tools/cllm_unified.c \
-		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcllm -lalgorithms -lcrystalline -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Unified CLI tool built: tools/cllm"
 
 tools/cllm_model_manager: $(CLLM_LIB)
@@ -590,7 +590,7 @@ tools/cllm-simple: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building simple (single-threaded) CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm-simple tools/cllm_simple.c \
-		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcllm -lalgorithms -lcrystalline -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Simple CLI tool built: tools/cllm-simple"
 
 tools/platonic_prime_resonance: $(MATH_LIB)

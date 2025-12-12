@@ -32,8 +32,6 @@ SOURCES = src/numerical.c \
           src/cymatic_modulation.c \
           src/ntt_attention.c \
           src/lattice_embeddings.c \
-          src/lattice_embeddings_bigfixed.c \
-          src/loss_functions_bigfixed.c \
           src/tensor_ops.c \
           src/qk_mapping.c \
           src/iterative_search.c \
@@ -41,7 +39,7 @@ SOURCES = src/numerical.c \
           src/mathematical_formulas.c \
           src/symbolic_field_theory.c \
           src/nonce_generation.c \
-          src/bigfixed_math_wrappers.c \
+          src/math_wrappers.c \
           src/blind_recovery/oscillation_detection.c \
           src/blind_recovery/structural_mapping.c \
           src/blind_recovery/coprime_analysis.c \
@@ -92,9 +90,9 @@ CRYSTALLINE_LIB = ../libcrystalline.so
 
 all: $(SHARED_LIB)
 
-$(SHARED_LIB): $(OBJECTS) $(CRYSTALLINE_LIB)
+$(SHARED_LIB): $(OBJECTS) $(MATH_LIB)
 	@echo "Creating shared algorithms library: $@"
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -lcrystalline -L../math/lib -lcrystallinemath -lm
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm
 	@echo "✓ Shared algorithms library created"
 
 static: $(STATIC_LIB)
@@ -134,62 +132,62 @@ test: test_phase1 test_phase2
 
 test_phase1: tests/test_phase1.c $(SHARED_LIB)
 	@echo "Building Phase 1 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1 tests/test_phase1.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1 tests/test_phase1.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 1 tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase1
 
 test_phase2: tests/test_phase2.c $(SHARED_LIB)
 	@echo "Building Phase 2 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase2 tests/test_phase2.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase2 tests/test_phase2.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 2 tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase2
 
 test_phase3: tests/test_phase3.c $(SHARED_LIB)
 	@echo "Building Phase 3 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase3 tests/test_phase3.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase3 tests/test_phase3.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 3 tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase3
 
 test_phase4: tests/test_phase4_comprehensive.c $(SHARED_LIB)
 	@echo "Building Phase 4 comprehensive tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase4_comprehensive tests/test_phase4_comprehensive.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase4_comprehensive tests/test_phase4_comprehensive.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 4 comprehensive tests..."
 	LD_LIBRARY_PATH=..:. ./tests/test_phase4_comprehensive
 
 test_phase5: tests/test_phase5.c $(SHARED_LIB)
 	@echo "Building Phase 5 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase5 tests/test_phase5.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase5 tests/test_phase5.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 5 tests..."
 	LD_LIBRARY_PATH=.:.../tests/test_phase5
 
 test_phase6: tests/test_phase6.c $(SHARED_LIB)
 	@echo "Building Phase 6 tests..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase6 tests/test_phase6.c -L. -lalgorithms -L.. -lcrystalline -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase6 tests/test_phase6.c -L. -lalgorithms -L.. -lm
 	@echo "Running Phase 6 tests..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_phase6
 
 test_torus_phase1: tests/test_torus_recovery_phase1.c $(SHARED_LIB)
 	@echo "Building Phase 1 Torus Recovery test..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_torus_phase1 tests/test_torus_recovery_phase1.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_torus_phase1 tests/test_torus_recovery_phase1.c -L. -lalgorithms -L.. -lssl -lcrypto -lm
 	@echo "Running Phase 1 Torus Recovery test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_torus_phase1
 
 
 test_geometric_recovery: tests/test_geometric_recovery.c $(SHARED_LIB)
 	@echo "Building Geometric Recovery test..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_geometric_recovery tests/test_geometric_recovery.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_geometric_recovery tests/test_geometric_recovery.c -L. -lalgorithms -L.. -lssl -lcrypto -lm
 	@echo "Running Geometric Recovery test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_geometric_recovery
 
 
 test_iterative_v2: tests/test_iterative_recovery_v2.c $(SHARED_LIB)
 	@echo "Building Iterative Recovery V2 test..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_iterative_recovery_v2 tests/test_iterative_recovery_v2.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_iterative_recovery_v2 tests/test_iterative_recovery_v2.c -L. -lalgorithms -L.. -lssl -lcrypto -lm
 	@echo "Running Iterative Recovery V2 test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_iterative_recovery_v2
 
 test_candidate_analysis: tests/test_candidate_analysis.c $(SHARED_LIB)
 	@echo "Building Candidate Analysis test..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_candidate_analysis tests/test_candidate_analysis.c -L. -lalgorithms -L.. -lcrystalline -lssl -lcrypto -lm
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_candidate_analysis tests/test_candidate_analysis.c -L. -lalgorithms -L.. -lssl -lcrypto -lm
 	@echo "Running Candidate Analysis test..."
 	LD_LIBRARY_PATH=.:.. ./tests/test_candidate_analysis

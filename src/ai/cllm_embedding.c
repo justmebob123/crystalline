@@ -651,7 +651,7 @@ int cllm_embedding_neighbor_influence_stats(
         for (uint32_t d = 0; d < embed_dim; d++) {
             magnitude += influence_vector[d] * influence_vector[d];
         }
-        magnitude = prime_sqrtf(magnitude);
+        magnitude = prime_prime_sqrtf(magnitude);
         
         sum += magnitude;
         if (magnitude > max_val) max_val = magnitude;
@@ -775,7 +775,7 @@ static float** apply_lll_reduction(float** cov_matrix, int dim, int target_dim) 
             for (int j = 0; j < dim; j++) {
                 norm += basis[i][j] * basis[i][j];
             }
-            norm = prime_sqrtf(norm);
+            norm = prime_prime_sqrtf(norm);
             if (norm > 1e-6f) {
                 for (int j = 0; j < dim; j++) {
                     basis[i][j] /= norm;
@@ -807,7 +807,7 @@ static float** compute_pseudo_inverse(float** basis, int reduced_dim, int origin
         for (int i = 0; i < original_dim; i++) {
             norm += inverse[i][j] * inverse[i][j];
         }
-        norm = prime_sqrtf(norm);
+        norm = prime_prime_sqrtf(norm);
         if (norm > 1e-6f) {
             for (int i = 0; i < original_dim; i++) {
                 inverse[i][j] /= norm;
@@ -1080,7 +1080,7 @@ void cllm_normalize_embedding(float* embedding, int dim) {
     
     if (norm == 0.0f) return;
     
-    norm = sqrtf(norm);
+    norm = prime_sqrtf(norm);
     for (int i = 0; i < dim; i++) {
         embedding[i] /= norm;
     }
