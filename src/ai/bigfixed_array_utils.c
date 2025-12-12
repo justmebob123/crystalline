@@ -4,6 +4,8 @@
  * 
  * MIGRATED FROM: BigFixed array utilities
  * NEW API: Uses CrystallineAbacus from NEW math library
+ * 
+ * NO BACKWARD COMPATIBILITY - Pure NEW design
  */
 
 #include "math/abacus.h"
@@ -121,54 +123,4 @@ void abacus_array_to_float(float* dest, CrystallineAbacus** src, size_t size) {
             dest[i] = 0.0f;
         }
     }
-}
-
-/* ============================================================================
- * LEGACY COMPATIBILITY WRAPPERS (for gradual migration)
- * These will be removed once all code is migrated
- * ============================================================================
- */
-
-// Temporary typedefs for compatibility
-typedef CrystallineAbacus BigFixed;
-
-BigFixed** bigfixed_array_create(size_t size, int precision) {
-    // Use default base 12 and global context
-    static ClockContext ctx;
-    static bool ctx_initialized = false;
-    
-    if (!ctx_initialized) {
-        clock_init(&ctx);
-        ctx_initialized = true;
-    }
-    
-    return abacus_array_create(size, 12, &ctx);
-}
-
-void bigfixed_array_free(BigFixed** array, size_t size) {
-    abacus_array_free(array, size);
-}
-
-void bigfixed_array_zero(BigFixed** array, size_t size) {
-    abacus_array_zero(array, size);
-}
-
-void bigfixed_array_copy(BigFixed** dest, BigFixed** src, size_t size) {
-    abacus_array_copy(dest, src, size);
-}
-
-void bigfixed_array_from_float(BigFixed** dest, const float* src, size_t size) {
-    static ClockContext ctx;
-    static bool ctx_initialized = false;
-    
-    if (!ctx_initialized) {
-        clock_init(&ctx);
-        ctx_initialized = true;
-    }
-    
-    abacus_array_from_float(dest, src, size, 12, -6, &ctx);
-}
-
-void bigfixed_array_to_float(float* dest, BigFixed** src, size_t size) {
-    abacus_array_to_float(dest, src, size);
 }

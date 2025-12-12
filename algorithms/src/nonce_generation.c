@@ -6,7 +6,7 @@
 #include "nonce_generation.h"
 #include "symbolic_field_theory.h"
 #include "mathematical_formulas.h"
-#include "prime_lowlevel.h"
+#include "math/arithmetic.h"
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>
@@ -138,7 +138,7 @@ uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
     
     for (uint32_t i = 1; i < depth; i++) {
         // result = seed_prime^result (mod modulus)
-        result = prime_powmod_int(seed_prime, result, modulus);
+        result = uint64_powmod(seed_prime, result, modulus);
     }
     
     return result;
