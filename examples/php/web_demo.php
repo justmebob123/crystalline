@@ -26,6 +26,29 @@ if (isset($_GET['action'])) {
             
         case 'nth':
             $n = intval($_GET['n']);
+            
+            // Enforce reasonable limit to prevent memory exhaustion
+            if ($n > 10000000) {
+                echo json_encode([
+                    'error' => 'Value too large',
+                    'message' => 'Maximum supported value is 10,000,000 for web requests',
+                    'requested' => $n,
+                    'reason' => 'Larger values require excessive memory (see LARGE_PRIME_LIMITATIONS.md)'
+                ]);
+                exit;
+            }
+            
+            if ($n < 1) {
+                echo json_encode([
+                    'error' => 'Invalid value',
+                    'message' => 'N must be positive (N >= 1)'
+                ]);
+                exit;
+            }
+            
+            // Set timeout to prevent hanging
+            set_time_limit(30);
+            
             $prime = crystalline_prime_nth($n);
             echo json_encode(['prime' => (int)$prime]);
             exit;
@@ -292,8 +315,8 @@ if (isset($_GET['action'])) {
                         <input type="number" id="checkNumber" placeholder="Enter a number" value="157">
                     </div>
                     <div class="calc-group">
-                        <label for="nthPrime">Get Nth Prime:</label>
-                        <input type="number" id="nthPrime" placeholder="Enter N" value="10" min="1">
+                        <label for="nthPrime">Get Nth Prime (max 10M):</label>
+                        <input type="number" id="nthPrime" placeholder="Enter N (max: 10,000,000)" value="10" min="1" max="10000000">
                     </div>
                 </div>
                 
@@ -320,6 +343,18 @@ if (isset($_GET['action'])) {
             <div class="info-box">
                 <h4>ℹ️ About O(1) Prime Generation</h4>
                 <p>This extension uses a revolutionary deterministic formula to generate primes in constant time O(1), without trial division or probabilistic tests. The clock lattice structure maps primes to positions on a Babylonian clock (12, 60, 60, 100).</p>
+            </div>
+            
+            <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
+                <h4>⚠️ Performance Note</h4>
+                <p><strong>Nth Prime function</strong> is limited to N ≤ 10,000,000 for web requests due to memory constraints. Larger values require excessive RAM and computation time.</p>
+                <p style="margin-top: 10px;"><strong>Performance guide:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>N < 1,000,000: Fast (< 1 second)</li>
+                    <li>N < 10,000,000: Reasonable (< 30 seconds)</li>
+                    <li>N > 10,000,000: Not recommended for web</li>
+                </ul>
+                <p style="margin-top: 10px;">See <a href="LARGE_PRIME_LIMITATIONS.md" style="color: #0066cc;">LARGE_PRIME_LIMITATIONS.md</a> for details.</p>
             </div>
             
             <!-- Examples -->
@@ -454,17 +489,43 @@ if (isset($_GET['action'])) {
                 return;
             }
             
+            if (n > 10000000) {
+                alert('Value too large! Maximum supported value is 10,000,000.\n\nLarger values require excessive memory and computation time.');
+                return;
+            }
+            
+            const result = document.getElementById('calcResult');
+            result.innerHTML = '<h3>Computing...</h3><p>Please wait...</p>';
+            result.classList.add('show');
+            
             fetch('?action=nth&n=' + n)
                 .then(r => r.json())
                 .then(data => {
-                    const result = document.getElementById('calcResult');
+                    if (data.error) {
+                        result.innerHTML = `
+                            <h3>Error</h3>
+                            <div class="result-value" style="color: #dc3545;">
+                                ${data.message}
+                            </div>
+                            ${data.reason ? `<p style="margin-top: 10px; color: #666;">${data.reason}</p>` : ''}
+                        `;
+                    } else {
+                        result.innerHTML = `
+                            <h3>Nth Prime Result</h3>
+                            <div class="result-value">
+                                Prime #${n} = <span class="prime">${data.prime}</span>
+                            </div>
+                        `;
+                    }
+                    result.classList.add('show');
+                })
+                .catch(err => {
                     result.innerHTML = `
-                        <h3>Nth Prime Result</h3>
-                        <div class="result-value">
-                            Prime #${n} = <span class="prime">${data.prime}</span>
+                        <h3>Error</h3>
+                        <div class="result-value" style="color: #dc3545;">
+                            Request failed: ${err.message}
                         </div>
                     `;
-                    result.classList.add('show');
                 });
         }
         
