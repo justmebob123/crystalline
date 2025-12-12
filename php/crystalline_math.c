@@ -266,7 +266,7 @@ PHP_FUNCTION(crystalline_clock_position)
     }
     
     ClockPosition pos;
-    MathError err = clock_map_prime((uint64_t)prime, &pos);
+    MathError err = clock_map_prime_to_position((uint64_t)prime, &pos);
     
     if (err != MATH_SUCCESS) {
         php_error_docref(NULL, E_WARNING, "Failed to map prime to clock position");
@@ -302,7 +302,7 @@ PHP_FUNCTION(crystalline_clock_validate)
     pos.angle = 0.0;
     pos.radius = 0.0;
     
-    bool valid = clock_validate_position(&pos);
+    bool valid = clock_is_valid_position(&pos);
     RETURN_BOOL(valid);
 }
 

@@ -1,19 +1,24 @@
-# TODO: Fix PHP Installation Script Path Issue
+# TODO: Fix PHP Extension Undefined Symbols
 
-## Current Issue
-The PHP installation script (`scripts/install_php_centos.sh`) has a path issue:
-- Script assumes it's run from `scripts/` directory
-- Uses `cd ../math` which fails when run from root directory
-- Error: `cd: ../math: No such file or directory`
+## Issue Identified
+The PHP extension compiled successfully but has undefined symbols at runtime:
+- `clock_map_prime` - WRONG (doesn't exist)
+- `clock_validate_position` - WRONG (doesn't exist)
+
+## Correct Function Names (from math/include/math/clock.h)
+- `clock_map_prime_to_position` - Maps prime to clock position
+- `clock_is_valid_position` - Validates clock position
 
 ## Tasks
-1. [x] Identify the issue in the installation script
-2. [x] Fix the path handling to work from any directory
-3. [x] Update both Ubuntu and CentOS scripts
-4. [ ] Verify the fix works
+1. [x] Identify the undefined symbols
+2. [x] Check the correct function names in clock.h
+3. [x] Fix php/crystalline_math.c to use correct function names
+4. [ ] Rebuild and test the PHP extension
 5. [ ] Commit and push the fix
 
-## Solution Approach
-- Use absolute paths based on script location
-- Detect the script's directory using `$0` or `dirname`
-- Calculate paths relative to the detected script directory
+## Changes Made
+- Line 269: `clock_map_prime` → `clock_map_prime_to_position`
+- Line 305: `clock_validate_position` → `clock_is_valid_position`
+
+## Files to Fix
+- php/crystalline_math.c (lines 269 and 305)
