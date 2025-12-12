@@ -62,16 +62,78 @@ python3 tools/fix_html_entities.py <file>
 
 ## 🎯 CURRENT MISSION: CLLM INTEGRATION WITH NEW MATH LIBRARY
 
-### 🚨 CRITICAL DISCOVERY
-The CLLM library (src/ai/) is **STILL USING THE OLD MATH LIBRARY**:
-- ❌ 5 files reference `bigint_core.h` (OLD library)
-- ❌ CLLM is linking against wrong library
-- ❌ Algorithm library may have legacy references
-- ❌ App directory not updated for NEW math library
+### 🚨 CRITICAL USER INSIGHT (2024-12-11)
+**User's Vision:**
+1. **Arbitrary Precision Everywhere** - The entire library should focus on arbitrary precision using CrystallineAbacus
+2. **GCD of Arbitrary Sizes** - There may be GCD operations on arbitrarily large numbers - the system MUST handle this
+3. **Memory &amp; Processing Efficiency** - New memory hopping architecture with on-demand reconstruction mitigates concerns
+4. **Avoid Type Double** - Use new self-similar crystalline mathematics instead of type double
+5. **Self-Similar Structure** - Mathematics should be in a self-similar structure throughout
+
+### 🔍 CRITICAL DISCOVERY: MISSING GCD FUNCTIONALITY
+The NEW math library (math/) is missing:
+- ❌ `abacus_gcd()` - GCD for arbitrary precision numbers
+- ❌ `abacus_lcm()` - LCM for arbitrary precision numbers
+- ❌ `abacus_coprime()` - Coprimality test for arbitrary precision
+
+**Current state:**
+- ✅ Has `abacus_mod_inverse()` which uses Extended Euclidean Algorithm internally
+- ✅ Has `abacus_div()` for division with remainder
+- ❌ NO public GCD API for arbitrary precision
+
+**Action Required:**
+1. Implement `abacus_gcd()` using Euclidean algorithm with CrystallineAbacus
+2. Implement `abacus_lcm()` using formula: lcm(a,b) = (a*b)/gcd(a,b)
+3. Implement `abacus_coprime()` using gcd(a,b) == 1
+4. Add tests for all three functions
+5. Update all code to use these functions instead of uint64 helpers
 
 ### 📋 PHASE 1: DEEP ANALYSIS (CURRENT)
 
-#### ✅ Step 1: Analyze All Makefiles
+#### ✅ Step 1: Implement Missing Arbitrary Precision Functions (BLOCKED)
+**Priority: 🔴🔴🔴 CRITICAL - BLOCKED BY ABACUS_DIV BUG**
+
+**CRITICAL BUG DISCOVERED:**
+- ❌ `abacus_div()` is completely broken in the NEW math library
+- ❌ Returns quotient=0, remainder=dividend for ALL divisions
+- ❌ Affects ALL bases (10, 12, 60, 100)
+- ❌ Example: 1000 / 500 returns q=0, r=1000 (should be q=2, r=0)
+- ❌ Example: 144 / 12 returns q=0, r=144 (should be q=12, r=0)
+- ❌ This breaks GCD, LCM, and all division-dependent operations
+
+**GCD/LCM/Coprimality Implementation Status:**
+- [x] Implemented `abacus_gcd()` in math/src/bigint/abacus_gcd.c
+  * Uses Euclidean algorithm with CrystallineAbacus
+  * Handles arbitrary precision numbers
+  * Pure geometric operations (no uint64 shortcuts)
+  * ✅ Algorithm is CORRECT
+  * ❌ BLOCKED by abacus_div() bug
+- [x] Implemented `abacus_lcm()` in math/src/bigint/abacus_gcd.c
+  * Uses formula: lcm(a,b) = (a*b)/gcd(a,b)
+  * Handles arbitrary precision numbers
+  * ✅ Algorithm is CORRECT
+  * ❌ BLOCKED by abacus_div() bug
+- [x] Implemented `abacus_coprime()` in math/src/bigint/abacus_gcd.c
+  * Uses gcd(a,b) == 1 test
+  * Handles arbitrary precision numbers
+  * ✅ Algorithm is CORRECT
+  * ❌ BLOCKED by abacus_div() bug
+- [x] Added function declarations to math/include/math/abacus.h
+- [x] Created tests in math/tests/test_abacus_gcd.c
+  * ✅ 8/10 tests passing (80%)
+  * ❌ 2 tests failing due to abacus_div() bug
+- [x] Fixed `map_digit_to_position()` to support arbitrary bases
+  * Now supports ALL bases >= 2 (not just 12, 60, 100)
+  * Maps non-Babylonian bases to Ring 2
+
+**NEXT STEPS:**
+- [ ] Fix `abacus_div()` bug in math/src/bigint/abacus.c
+- [ ] Verify all GCD/LCM tests pass after fix
+- [ ] Update cllm_plimpton_relationships.c to use abacus_gcd()
+- [ ] Remove independent compute_gcd() implementation
+- [ ] Commit changes to audit branch
+
+#### ✅ Step 2: Analyze All Makefiles
 - [x] Identified main Makefile structure
 - [x] Found CLLM linking to libcrystallinemath (correct)
 - [x] Found CLLM source files using OLD includes (WRONG)

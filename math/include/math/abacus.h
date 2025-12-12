@@ -387,6 +387,47 @@ MathError abacus_mod_exp(CrystallineAbacus* result, const CrystallineAbacus* bas
 MathError abacus_mod_inverse(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* modulus);
 
 /* ============================================================================
+ * GCD, LCM, AND COPRIMALITY OPERATIONS
+ * ============================================================================
+ */
+
+/**
+ * @brief Compute GCD of two arbitrary precision numbers
+ * 
+ * Uses the Euclidean algorithm to compute the greatest common divisor.
+ * This is a pure geometric operation on the CrystallineAbacus.
+ * 
+ * @param result Output: GCD of a and b (always positive)
+ * @param a First number
+ * @param b Second number
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_gcd(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b);
+
+/**
+ * @brief Compute LCM of two arbitrary precision numbers
+ * 
+ * Uses the formula: lcm(a, b) = (a * b) / gcd(a, b)
+ * 
+ * @param result Output: LCM of a and b (always positive)
+ * @param a First number
+ * @param b Second number
+ * @return MATH_SUCCESS on success, error code on failure
+ */
+MathError abacus_lcm(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b);
+
+/**
+ * @brief Test if two arbitrary precision numbers are coprime
+ * 
+ * Two numbers are coprime if gcd(a, b) = 1
+ * 
+ * @param a First number
+ * @param b Second number
+ * @return true if coprime, false otherwise
+ */
+bool abacus_coprime(const CrystallineAbacus* a, const CrystallineAbacus* b);
+
+/* ============================================================================
  * BASE CONVERSION
  * ============================================================================ */
 

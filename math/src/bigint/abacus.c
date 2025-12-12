@@ -349,6 +349,10 @@ static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosit
      * The choice of ring determines the resolution and geometric properties.
      * Rings count INWARD from zero (outer) toward unity (center).
      */
+    /* UNIVERSAL BASE SUPPORT:
+     * The Abacus supports ALL bases >= 2, not just Babylonian bases.
+     * For non-Babylonian bases, we map to Ring 2 (generic ring).
+     */
     if (base == 12) {
         pos->ring = 0;  /* Ring 0: Hours (outer ring, approaching zero/∞) */
         pos->position = digit % 12;
@@ -359,10 +363,9 @@ static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosit
         pos->ring = 3;  /* Ring 3: Milliseconds (innermost ring, approaching unity) */
         pos->position = digit % 100;
     } else {
-        /* For other bases, we could map to custom rings, but for now
-         * we only support the traditional Babylonian bases in this function.
-         * The abacus itself supports ANY base ≥ 2. */
-        return MATH_ERROR_INVALID_ARG;
+        /* For arbitrary bases, map to Ring 2 (generic ring) */
+        pos->ring = 2;
+        pos->position = digit % base;
     }
     
     /* Calculate geometric properties
@@ -387,9 +390,18 @@ static MathError map_digit_to_position(uint32_t digit, uint32_t base, ClockPosit
      * The radius decreases as we move inward toward the center (unity).
      * This represents the journey from infinite possibility (0) to unity (1).
      */
-    uint32_t ring_size = (pos->ring == 0) ? 12 :
-                         (pos->ring == 1) ? 60 :
-                         (pos->ring == 2) ? 60 : 100;
+    /* Determine ring size based on ring number and base */
+    uint32_t ring_size;
+    if (pos->ring == 0) {
+        ring_size = 12;
+    } else if (pos->ring == 1) {
+        ring_size = 60;
+    } else if (pos->ring == 2) {
+        /* For arbitrary bases, use the actual base as ring size */
+        ring_size = base;
+    } else {
+        ring_size = 100;
+    }
     
     /* Angle: counterclockwise from 3 o'clock */
     pos->angle = (2.0 * MATH_PI * pos->position) / ring_size;
@@ -1847,3 +1859,4 @@ MathError abacus_convert_base(CrystallineAbacus** result, const CrystallineAbacu
     
     return MATH_SUCCESS;
 }
+
