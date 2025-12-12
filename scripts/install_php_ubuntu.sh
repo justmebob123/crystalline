@@ -29,10 +29,14 @@ echo "Step 1: Installing dependencies..."
 apt-get update
 apt-get install -y php-dev build-essential autoconf automake libtool
 
+# Detect script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Build the NEW math library if not already built
 echo ""
 echo "Step 2: Building Crystalline Math library..."
-cd ../math
+cd "$PROJECT_ROOT/math"
 if [ ! -f "lib/libcrystallinemath.so" ]; then
     make clean
     make
@@ -40,7 +44,7 @@ if [ ! -f "lib/libcrystallinemath.so" ]; then
 else
     echo "✓ Math library already built"
 fi
-cd ../php
+cd "$PROJECT_ROOT/php"
 
 # Build PHP extension
 echo ""
