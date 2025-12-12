@@ -16,7 +16,8 @@
 #include <float.h>
 #include <stdbool.h>
 
-// Define INFINITY if not available
+// INDEPENDENT MATHEMATICS - NO math.h!
+// Define INFINITY constant ourselves
 #ifndef INFINITY
 #define INFINITY (1.0 / 0.0)
 #endif
