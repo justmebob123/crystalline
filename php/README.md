@@ -2,6 +2,8 @@
 
 This PHP extension provides access to the Crystalline Math library's powerful mathematical functions, including O(1) deterministic prime generation, rainbow tables, and clock lattice operations.
 
+**⚠️ Known Issue:** `crystalline_prime_nth()` has a segmentation fault issue. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for details and workarounds. All other functions work correctly.
+
 ## Features
 
 - **O(1) Prime Generation**: Generate primes deterministically in constant time
