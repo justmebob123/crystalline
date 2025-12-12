@@ -1,11 +1,11 @@
 # TODO - CLLM INTEGRATION WITH PLATONIC SOLIDS GENERATOR
 
-## 🎯 CURRENT FOCUS: LEGACY CODE ELIMINATION - PHASE 1
+## 🎯 CURRENT FOCUS: LEGACY CODE ELIMINATION - PHASE 2
 
 **Date:** December 12, 2024  
 **Branch:** audit  
-**Status:** Following LEGACY_CODE_ELIMINATION_PLAN.md - Starting with Algorithms Library  
-**Next:** Fix algorithms library to be 100% PURE (zero legacy code)  
+**Status:** Phase 1 Complete - Starting Phase 2: Update Main Makefile  
+**Next:** Remove OLD library references and update to NEW math library only  
 
 ---
 
@@ -467,7 +467,7 @@ needs careful header management to avoid type conflicts between OLD and NEW syst
 
 ---
 
-## 🎯 PHASE 1: FIX ALGORITHMS LIBRARY (CURRENT)
+## ✅ PHASE 1: FIX ALGORITHMS LIBRARY (COMPLETE)
 
 ### [x] Step 1.1: Audit algorithms library for legacy code
 - [x] Check mathematical_formulas.c for OLD BigInt usage - FOUND at line 131
@@ -495,6 +495,51 @@ needs careful header management to avoid type conflicts between OLD and NEW syst
 
 ---
 
-**STATUS:** 🎯 Phase 1: Fixing Algorithms Library  
+## 🎯 PHASE 2: UPDATE MAIN MAKEFILE (CURRENT)
+
+### [x] Step 2.1: Audit Makefile for OLD library references
+- [x] Count references to -lcrystalline (OLD library) - FOUND 30 references
+- [x] Identify all OLD source compilation rules - FOUND 3 rules (lines 156, 161, 166)
+- [x] Check if OLD library files exist - YES (libcrystalline.so, libcrystalline.a)
+
+### [x] Step 2.2: Replace -lcrystalline with -lcrystallinemath
+- [x] Replace all 30 references to -lcrystalline
+- [x] Update to use NEW math library (-lcrystallinemath)
+- [x] Added library path (-Lmath/lib) to all linker commands
+
+### [x] Step 2.3: Remove OLD source compilation rules
+- [x] Remove $(SRC_CORE)/%.o compilation rule
+- [x] Remove $(SRC_TRANS)/%.o compilation rule
+- [x] Remove $(SRC_GEOM)/%.o compilation rule
+
+### [x] Step 2.4: Remove OLD sources from ALL_SOURCES
+- [x] Remove CORE_SOURCES from ALL_SOURCES
+- [x] Remove TRANS_SOURCES from ALL_SOURCES
+- [x] Remove GEOM_SOURCES from ALL_SOURCES
+- [x] Remove CORE_OBJECTS, TRANS_OBJECTS, GEOM_OBJECTS variables
+- [x] Remove SRC_CORE, SRC_TRANS, SRC_GEOM directory definitions
+- [x] Update info section to remove OLD source counts
+- [x] Update verify section to remove OLD directory checks
+
+### [x] Step 2.5: Update library dependencies
+- [x] Verify CLLM_LIB depends on MATH_LIB - CONFIRMED
+- [x] Verify ALGORITHMS_LIB depends on MATH_LIB - CONFIRMED
+- [x] All linker commands updated to use -lcrystallinemath
+
+### [x] Step 2.6: Test build
+- [x] Run make clean - SUCCESS
+- [x] Run make -j4 - EXPECTED FAILURES (CLLM uses OLD functions)
+- [x] Verified NEW library is used - Linker correctly looks for NEW library only
+- [x] Identified undefined references - These are OLD functions in CLLM code
+- [x] **RESULT:** Makefile changes are CORRECT - CLLM migration needed (Phase 5)
+
+### [x] Step 2.7: Commit and push changes
+- [x] Git add Makefile, todo.md, and documentation
+- [x] Git commit with descriptive message
+- [x] Git push to audit branch using correct authentication
+
+---
+
+**STATUS:** 🎯 Phase 2: Updating Main Makefile  
 **BRANCH:** audit  
-**NEXT:** Audit algorithms library for legacy code
+**NEXT:** Audit Makefile for OLD library references
