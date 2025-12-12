@@ -16,8 +16,6 @@
 #include "../include/cllm.h"
 #include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
-#include "bigfixed_core.h"
-#include "bigfixed_array_utils.h"
 
 // FeedForwardLayer structure definition (local to this file)
 typedef struct FeedForwardLayer {
