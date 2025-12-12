@@ -14,6 +14,7 @@
 
 #include "math/types.h"
 #include "math/clock.h"
+#include "math/polytope.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -378,6 +379,130 @@ size_t compact_number_memory_usage(const CompactNumber* number);
 double compact_number_reduction_ratio(
     const CompactNumber* number,
     size_t traditional_size
+);
+
+/* ============================================================================
+ * PLATONIC SOLIDS INTEGRATION
+ * ============================================================================
+ */
+
+/**
+ * @brief Geometric trajectory structure
+ */
+typedef struct GeometricTrajectory {
+    PlatonicSolid* solid;      /**< The solid */
+    uint32_t start_vertex;     /**< Starting vertex */
+    uint32_t end_vertex;       /**< Ending vertex */
+    uint32_t* path;            /**< Sequence of vertices */
+    size_t path_length;        /**< Length of path */
+    double total_distance;     /**< Total distance */
+} GeometricTrajectory;
+
+/**
+ * @brief Multi-value mapping structure
+ */
+typedef struct MultiValueMapping {
+    PlatonicSolid* solid;      /**< The solid */
+    uint32_t* vertex_ids;      /**< One vertex per value */
+    size_t num_values;         /**< Number of values */
+} MultiValueMapping;
+
+/**
+ * @brief Math operation types for trajectory mapping
+ */
+typedef enum {
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_POWER
+} MathOperation;
+
+/**
+ * @brief Select Platonic solid based on magnitude
+ * 
+ * @param magnitude Magnitude value
+ * @return Pointer to selected solid, or NULL on error
+ */
+PlatonicSolid* select_solid_for_magnitude(uint64_t magnitude);
+
+/**
+ * @brief Map angle to vertex on Platonic solid
+ * 
+ * @param angle Phase angle (0-360°)
+ * @param solid The solid
+ * @return Vertex ID
+ */
+uint32_t map_angle_to_vertex(double angle, const PlatonicSolid* solid);
+
+/**
+ * @brief Map number to Platonic solid and vertex
+ * 
+ * @param number Input number
+ * @param solid Output solid
+ * @param vertex Output vertex ID
+ * @return MATH_SUCCESS or error code
+ */
+MathError map_number_to_solid(
+    uint64_t number,
+    PlatonicSolid** solid,
+    uint32_t* vertex
+);
+
+/**
+ * @brief Create geometric trajectory for operation
+ * 
+ * @param op Operation type
+ * @param operand_a First operand
+ * @param operand_b Second operand
+ * @param trajectory Output trajectory
+ * @return MATH_SUCCESS or error code
+ */
+MathError create_trajectory_for_operation(
+    MathOperation op,
+    uint64_t operand_a,
+    uint64_t operand_b,
+    GeometricTrajectory** trajectory
+);
+
+/**
+ * @brief Free geometric trajectory
+ * 
+ * @param trajectory Trajectory to free
+ */
+void trajectory_free(GeometricTrajectory* trajectory);
+
+/**
+ * @brief Create multi-value mapping
+ * 
+ * @param values Array of values
+ * @param num_values Number of values
+ * @param mapping Output mapping
+ * @return MATH_SUCCESS or error code
+ */
+MathError create_multi_value_mapping(
+    const uint64_t* values,
+    size_t num_values,
+    MultiValueMapping** mapping
+);
+
+/**
+ * @brief Free multi-value mapping
+ * 
+ * @param mapping Mapping to free
+ */
+void multi_value_mapping_free(MultiValueMapping* mapping);
+
+/**
+ * @brief Create extended compact vector with Platonic solid mapping
+ * 
+ * @param number Input number
+ * @param vector Output extended vector
+ * @return MATH_SUCCESS or error code
+ */
+MathError create_extended_vector(
+    uint64_t number,
+    ExtendedCompactVector* vector
 );
 
 #ifdef __cplusplus

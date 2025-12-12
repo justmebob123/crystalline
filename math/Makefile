@@ -25,8 +25,9 @@ PRIME_SRCS = $(wildcard $(SRC_DIR)/prime/*.c)
 CRYPTO_SRCS = $(wildcard $(SRC_DIR)/crypto/*.c)
 VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
 COMPACT_SRCS = $(wildcard $(SRC_DIR)/compact/*.c)
+PLATONIC_SRCS = $(wildcard $(SRC_DIR)/platonic/*.c)
 
-ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS) $(COMPACT_SRCS)
+ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS) $(COMPACT_SRCS) $(PLATONIC_SRCS)
 
 # Object files
 CORE_OBJS = $(CORE_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -37,8 +38,9 @@ GEOMETRY_OBJS = $(GEOMETRY_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 PRIME_OBJS = $(PRIME_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 CRYPTO_OBJS = $(CRYPTO_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 COMPACT_OBJS = $(COMPACT_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+PLATONIC_OBJS = $(PLATONIC_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-ALL_OBJS = $(CORE_OBJS) $(ABACUS_OBJS) $(NTT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS) $(COMPACT_OBJS)
+ALL_OBJS = $(CORE_OBJS) $(ABACUS_OBJS) $(NTT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS) $(COMPACT_OBJS) $(PLATONIC_OBJS)
 
 # Library files
 STATIC_LIB = $(LIB_DIR)/libcrystallinemath.a
@@ -61,6 +63,7 @@ directories:
 	@mkdir -p $(BUILD_DIR)/ntt
 	@mkdir -p $(BUILD_DIR)/geometry
 	@mkdir -p $(BUILD_DIR)/prime
+	@mkdir -p $(BUILD_DIR)/platonic
 	@mkdir -p $(BUILD_DIR)/crypto
 	@mkdir -p $(BUILD_DIR)/compact
 	@mkdir -p $(BUILD_DIR)/tests

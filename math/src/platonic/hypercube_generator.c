@@ -130,7 +130,7 @@ static bool generate_hypercube_faces(PlatonicSolid* solid) {
     }
     
     uint32_t n = solid->dimension;
-    uint64_t num_vertices = solid->num_vertices;
+    uint64_t num_vertices __attribute__((unused)) = solid->num_vertices;
     
     // Number of 2-faces (square faces)
     solid->num_faces = (n * (n - 1) / 2) * (1ULL << (n - 2));
