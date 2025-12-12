@@ -360,16 +360,180 @@ MathError abacus_sqrt(CrystallineAbacus* result, const CrystallineAbacus* n) {
 }
 
 /**
- * @brief Integer nth root - placeholder
+ * @brief Integer nth root using Newton-Raphson method
+ * 
+ * Finds the largest integer x such that x^root ≤ n
+ * 
+ * Mathematical Foundation:
+ * ========================
+ * Newton-Raphson iteration for finding root√n:
+ *   x_{k+1} = ((root-1)*x_k + n/x_k^(root-1)) / root
+ * 
+ * This formula comes from Newton's method applied to f(x) = x^root - n:
+ *   x_{k+1} = x_k - f(x_k)/f'(x_k)
+ *           = x_k - (x_k^root - n)/(root * x_k^(root-1))
+ *           = (root*x_k^root - x_k^root + n)/(root * x_k^(root-1))
+ *           = ((root-1)*x_k^root + n)/(root * x_k^(root-1))
+ *           = ((root-1)*x_k + n/x_k^(root-1)) / root
+ * 
+ * Convergence:
+ * - Quadratic convergence near the root
+ * - Typically converges in O(log log n) iterations
+ * - Each iteration requires one exponentiation and one division
+ * 
+ * Geometric Interpretation:
+ * ========================
+ * Finding the edge length of an n-dimensional hypercube with volume n
+ * 
+ * In Babylonian mathematics:
+ * - The number n is a point on the clock
+ * - root√n is the number that, when raised to power root, gives n
+ * - Geometrically: finding the edge of a hypercube with volume n
+ * 
+ * Examples:
+ * - root=2: Square root (edge of square with area n)
+ * - root=3: Cube root (edge of cube with volume n)
+ * - root=4: 4th root (edge of tesseract with hypervolume n)
+ * 
+ * Initial Guess:
+ * ==============
+ * We use bit_length to get a good initial guess:
+ *   x_0 = 2^(⌈log₂(n)/root⌉)
+ * 
+ * This ensures we start close to the actual root, minimizing iterations.
+ * 
+ * @param result Output: floor(root√n)
+ * @param n Input number
+ * @param root The root to extract (2 for square root, 3 for cube root, etc.)
+ * @return MATH_SUCCESS or error code
  */
 MathError abacus_root(CrystallineAbacus* result, const CrystallineAbacus* n, uint32_t root) {
     if (!result || !n) {
         return MATH_ERROR_INVALID_ARG;
     }
     
+    if (result->base != n->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Check for invalid root */
+    if (root == 0) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Special case: root = 1 */
+    if (root == 1) {
+        /* 1st root is just the number itself */
+        CrystallineAbacus* temp = abacus_copy(n);
+        if (!temp) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        result->num_beads = temp->num_beads;
+        result->negative = temp->negative;
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            result->beads[i] = temp->beads[i];
+        }
+        
+        abacus_free(temp);
+        return MATH_SUCCESS;
+    }
+    
+    /* Special case: root = 2 (square root) */
     if (root == 2) {
         return abacus_sqrt(result, n);
     }
     
+    /* Check for negative input with even root */
+    if (n->negative && (root % 2 == 0)) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Handle special cases */
+    if (abacus_is_zero(n)) {
+        abacus_init_zero(result);
+        return MATH_SUCCESS;
+    }
+    
+    /* Check if n == 1 */
+    CrystallineAbacus* one = abacus_from_uint64(1, n->base);
+    if (!one) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    if (abacus_compare(n, one) == 0) {
+        result->num_beads = one->num_beads;
+        result->negative = false;
+        for (size_t i = 0; i < one->num_beads; i++) {
+            result->beads[i] = one->beads[i];
+        }
+        abacus_free(one);
+        return MATH_SUCCESS;
+    }
+    
+    /* For small numbers, use direct calculation */
+    uint64_t n_val;
+    if (abacus_to_uint64(n, &n_val) == MATH_SUCCESS) {
+        /*
+         * Fast path: compute nth root directly using Newton-Raphson
+         * 
+         * Algorithm:
+         * 1. Initial guess: x = 2^(⌈log₂(n)/root⌉)
+         * 2. Iterate: x_new = ((root-1)*x + n/x^(root-1)) / root
+         * 3. Stop when x_new >= x (converged)
+         */
+        
+        /* Initial guess using bit length */
+        int bit_length = 64 - __builtin_clzll(n_val);
+        uint64_t x = 1ULL << ((bit_length + root - 1) / root);
+        
+        /* Newton-Raphson iteration */
+        while (true) {
+            /* Compute x^(root-1) */
+            uint64_t x_power = 1;
+            for (uint32_t i = 0; i < root - 1; i++) {
+                x_power *= x;
+            }
+            
+            /* Compute x_new = ((root-1)*x + n/x^(root-1)) / root */
+            uint64_t x_new = ((root - 1) * x + n_val / x_power) / root;
+            
+            /* Check convergence */
+            if (x_new >= x) {
+                break;
+            }
+            
+            x = x_new;
+        }
+        
+        /* Convert result */
+        CrystallineAbacus* temp = abacus_from_uint64(x, n->base);
+        if (!temp) {
+            abacus_free(one);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        /* Copy to result */
+        result->num_beads = temp->num_beads;
+        result->negative = n->negative;  /* Preserve sign for odd roots */
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            result->beads[i] = temp->beads[i];
+        }
+        
+        abacus_free(one);
+        abacus_free(temp);
+        return MATH_SUCCESS;
+    }
+    
+    /*
+     * Slow path: For arbitrary precision numbers that don't fit in uint64_t
+     * 
+     * This would require implementing arbitrary precision exponentiation
+     * and division, which is complex. For now, return not implemented.
+     * 
+     * Future work: Implement using CrystallineAbacus operations directly
+     */
+    
+    abacus_free(one);
     return MATH_ERROR_NOT_IMPLEMENTED;
 }
