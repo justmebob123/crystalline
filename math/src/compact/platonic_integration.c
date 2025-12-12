@@ -33,11 +33,11 @@ PlatonicSolid* select_solid_for_magnitude(uint64_t magnitude) {
         // Tetrahedron: 4 vertices
         return platonic_generate_simplex(3);
     } else if (magnitude < 8) {
-        // Cube: 8 vertices
-        return platonic_generate_hypercube(3);
-    } else if (magnitude < 12) {
         // Octahedron: 6 vertices (cross-polytope)
         return platonic_generate_cross_polytope(3);
+    } else if (magnitude < 12) {
+        // Cube: 8 vertices
+        return platonic_generate_hypercube(3);
     } else if (magnitude < 20) {
         // Icosahedron: 12 vertices
         uint32_t schlafli[] = {3, 5};
@@ -47,15 +47,15 @@ PlatonicSolid* select_solid_for_magnitude(uint64_t magnitude) {
         uint32_t schlafli[] = {5, 3};
         return platonic_generate(3, schlafli, 2);
     } else if (magnitude < 1000) {
-        // 4D: Tesseract (16 vertices)
-        return platonic_generate_hypercube(4);
+        // 4D: Tesseract (16 vertices) - but we need more than 20
+        // Use 5D hypercube (32 vertices) instead
+        return platonic_generate_hypercube(5);
     } else if (magnitude < 10000) {
-        // 4D: 24-cell (24 vertices)
-        uint32_t schlafli[] = {3, 4, 3};
-        return platonic_generate(4, schlafli, 3);
+        // 6D hypercube (64 vertices)
+        return platonic_generate_hypercube(6);
     } else {
-        // 5D+: Use hypercube with appropriate dimension
-        uint32_t dimension = 5;
+        // Higher dimensions: Use hypercube with appropriate dimension
+        uint32_t dimension = 7;
         uint64_t temp = magnitude;
         while (temp > (1ULL << dimension)) {
             dimension++;

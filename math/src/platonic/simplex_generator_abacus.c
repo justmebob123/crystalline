@@ -103,7 +103,6 @@ static bool generate_simplex_edges_abacus(PlatonicSolidAbacus* solid) {
         return false;
     }
     
-    uint32_t n = solid->dimension;
     uint64_t num_vertices = solid->num_vertices;
     
     // Number of edges: C(n+1, 2) = (n+1)*n/2
@@ -141,7 +140,6 @@ static bool generate_simplex_faces_abacus(PlatonicSolidAbacus* solid) {
         return true;  // No 2-faces for dimension < 3
     }
     
-    uint32_t n = solid->dimension;
     uint64_t num_vertices = solid->num_vertices;
     
     // Number of 2-faces: C(n+1, 3) = (n+1)*n*(n-1)/6

@@ -127,6 +127,7 @@ PlatonicSolidAbacus* platonic_double_to_abacus(const PlatonicSolid* solid_double
     
     // Copy basic properties
     strncpy(solid->name, solid_double->name, sizeof(solid->name) - 1);
+    solid->name[sizeof(solid->name) - 1] = '\0';  // Ensure null termination
     solid->dimension = solid_double->dimension;
     solid->num_vertices = solid_double->num_vertices;
     solid->num_edges = solid_double->num_edges;
@@ -144,6 +145,7 @@ PlatonicSolidAbacus* platonic_double_to_abacus(const PlatonicSolid* solid_double
     
     strncpy(solid->symmetry_group, solid_double->symmetry_group, 
             sizeof(solid->symmetry_group) - 1);
+    solid->symmetry_group[sizeof(solid->symmetry_group) - 1] = '\0';  // Ensure null termination
     
     // Copy Schläfli symbol
     if (solid_double->schlafli_symbol && solid_double->symbol_length > 0) {
@@ -257,6 +259,7 @@ PlatonicSolid* platonic_abacus_to_double(const PlatonicSolidAbacus* solid_abacus
     
     // Copy basic properties
     strncpy(solid->name, solid_abacus->name, sizeof(solid->name) - 1);
+    solid->name[sizeof(solid->name) - 1] = '\0';  // Ensure null termination
     solid->dimension = solid_abacus->dimension;
     solid->num_vertices = solid_abacus->num_vertices;
     solid->num_edges = solid_abacus->num_edges;
@@ -274,6 +277,7 @@ PlatonicSolid* platonic_abacus_to_double(const PlatonicSolidAbacus* solid_abacus
     
     strncpy(solid->symmetry_group, solid_abacus->symmetry_group,
             sizeof(solid->symmetry_group) - 1);
+    solid->symmetry_group[sizeof(solid->symmetry_group) - 1] = '\0';  // Ensure null termination
     
     // Copy Schläfli symbol
     if (solid_abacus->schlafli_symbol && solid_abacus->symbol_length > 0) {
