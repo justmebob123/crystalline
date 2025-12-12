@@ -101,16 +101,16 @@ all: $(MATH_LIB) $(MATH_STATIC) $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(A
 # 0. Crystalline Math Library (self-contained math, NO math.h)
 $(MATH_LIB) $(MATH_STATIC):
 	@echo "Building Crystalline Math Library..."
-	@cd math &amp;&amp; $(MAKE)
+	@cd math && $(MAKE)
 	@echo "✓ Math library built successfully"
 
 .PHONY: math-clean
 math-clean:
-	@cd math &amp;&amp; $(MAKE) clean
+	@cd math && $(MAKE) clean
 
 .PHONY: math-test
 math-test:
-	@cd math &amp;&amp; $(MAKE) test
+	@cd math && $(MAKE) test
 
 # ============================================================================
 # Three Independent Libraries
