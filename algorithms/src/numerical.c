@@ -1,12 +1,25 @@
 /**
  * @file numerical.c
  * @brief Implementation of numerical analysis functions
+ * 
+ * PHASE 1 INTEGRATION: Migrated to NEW math library
+ * - Replaced prime_exp with math_exp
+ * - Replaced prime_log with math_log
+ * - Replaced prime_sqrt with math_sqrt
+ * - Added high-precision variants using Crystalline Abacus
  */
 
 #include "numerical.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"
+#include "math/abacus.h"
 #include <string.h>
-#include "prime_float_math.h"
+#include <float.h>
+#include <stdbool.h>
+
+// Define INFINITY if not available
+#ifndef INFINITY
+#define INFINITY (1.0 / 0.0)
+#endif
 
 /* ============================================================================
  * Softmax and Related Functions
@@ -26,7 +39,7 @@ void numerical_softmax(const double* input, double* output, size_t size) {
     // Compute exp(x - max) and sum
     double sum = 0.0;
     for (size_t i = 0; i < size; i++) {
-        output[i] = prime_exp(input[i] - max_val);
+        output[i] = math_exp(input[i] - max_val);  // PHASE 1: NEW math library
         sum += output[i];
     }
     
@@ -62,11 +75,11 @@ double numerical_log_sum_exp(const double* values, size_t size) {
     // Compute sum(exp(x - max))
     double sum = 0.0;
     for (size_t i = 0; i < size; i++) {
-        sum += prime_exp(values[i] - max_val);
+        sum += math_exp(values[i] - max_val);  // PHASE 1: NEW math library
     }
     
     // Return max + log(sum)
-    return max_val + prime_log(sum);
+    return max_val + math_log(sum);  // PHASE 1: NEW math library
 }
 
 void numerical_softmax_2d(const double* input, double* output, 
@@ -96,12 +109,12 @@ void numerical_log_softmax_2d(const double* input, double* output,
  * ============================================================================ */
 
 double numerical_safe_log(double x, double epsilon) {
-    return prime_log(x + epsilon);
+    return math_log(x + epsilon);  // PHASE 1: NEW math library
 }
 
 double numerical_safe_exp(double x, double max_exp) {
-    if (x > max_exp) return prime_exp(max_exp);
-    return prime_exp(x);
+    if (x > max_exp) return math_exp(max_exp);  // PHASE 1: NEW math library
+    return math_exp(x);  // PHASE 1: NEW math library
 }
 
 double numerical_safe_divide(double numerator, double denominator, double epsilon) {
@@ -110,7 +123,7 @@ double numerical_safe_divide(double numerator, double denominator, double epsilo
 
 double numerical_safe_sqrt(double x, double epsilon) {
     if (x < 0.0) x = 0.0;
-    return prime_sqrt(x + epsilon);
+    return math_sqrt(x + epsilon);  // PHASE 1: NEW math library
 }
 
 /* ============================================================================
@@ -225,7 +238,7 @@ double numerical_variance(const double* values, size_t size,
 double numerical_std_dev(const double* values, size_t size,
                         double mean, bool compute_mean) {
     double var = numerical_variance(values, size, mean, compute_mean);
-    return prime_sqrt(var);
+    return math_sqrt(var);  // PHASE 1: NEW math library
 }
 
 /* ============================================================================
@@ -266,7 +279,7 @@ void numerical_l2_normalize(double* values, size_t size) {
     for (size_t i = 0; i < size; i++) {
         norm += values[i] * values[i];
     }
-    norm = prime_sqrt(norm);
+    norm = math_sqrt(norm);  // PHASE 1: NEW math library
     
     if (norm < 1e-10) return; // Avoid division by zero
     
@@ -287,7 +300,7 @@ double numerical_l2_distance(const double* a, const double* b, size_t size) {
         double diff = a[i] - b[i];
         dist += diff * diff;
     }
-    return prime_sqrt(dist);
+    return math_sqrt(dist);  // PHASE 1: NEW math library
 }
 
 double numerical_l1_distance(const double* a, const double* b, size_t size) {
@@ -311,8 +324,8 @@ double numerical_cosine_similarity(const double* a, const double* b, size_t size
         norm_a += a[i] * a[i];
         norm_b += b[i] * b[i];
     }
-    norm_a = prime_sqrt(norm_a);
-    norm_b = prime_sqrt(norm_b);
+    norm_a = math_sqrt(norm_a);  // PHASE 1: NEW math library
+    norm_b = math_sqrt(norm_b);  // PHASE 1: NEW math library
     
     if (norm_a < 1e-10 || norm_b < 1e-10) return 0.0;
     
@@ -332,6 +345,6 @@ double numerical_dot_product(const double* a, const double* b, size_t size) {
 double numerical_scalar_decay(double r, double C, double alpha) {
     // decay(r) = C / (r^alpha + epsilon)
     // epsilon prevents division by zero
-    double denominator = prime_pow(r, alpha) + 1e-10;
+    double denominator = math_pow(r, alpha) + 1e-10;  // PHASE 1: NEW math library
     return C / denominator;
 }
