@@ -5,7 +5,6 @@
 
 #include "symbolic_field_theory.h"
 #include "prime_math_custom.h"
-#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 

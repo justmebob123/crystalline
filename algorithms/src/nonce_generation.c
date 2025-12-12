@@ -1,12 +1,17 @@
 /**
  * @file nonce_generation.c
  * @brief Implementation of deterministic nonce generation
+ * 
+ * REDESIGNED: Uses CrystallineAbacus for arbitrary precision
+ * NO uint64 helpers - Pure NEW math library
  */
 
 #include "nonce_generation.h"
 #include "symbolic_field_theory.h"
 #include "mathematical_formulas.h"
-#include "math/arithmetic.h"
+#include "math/abacus.h"
+#include "math/types.h"
+#include "math/clock.h"
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>
@@ -81,17 +86,36 @@ bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result
     // Use first prime as seed
     result->seed_prime = primes[0];
     
-    // Step 2: Build tetration stack
+    // Step 2: Build tetration stack using Abacus
+    ClockContext ctx;
+    clock_init(&ctx);
+    
     uint64_t modulus = UINT64_MAX; // Use max value as modulus
-    uint64_t tetration_value = nonce_build_tetration_stack(
+    CrystallineAbacus* tetration_value = nonce_build_tetration_stack_abacus(
         result->seed_prime,
         config->tetration_depth,
-        modulus
+        modulus,
+        &ctx
     );
+    
+    if (!tetration_value) {
+        clock_cleanup(&ctx);
+        return false;
+    }
+    
+    // Convert back to uint64 for compatibility with existing code
+    uint64_t tetration_uint64;
+    MathError err = abacus_to_uint64(tetration_value, &tetration_uint64);
+    abacus_free(tetration_value);
+    
+    if (err != MATH_SUCCESS) {
+        clock_cleanup(&ctx);
+        return false;
+    }
     
     // Step 3: Apply entropy reduction based on difficulty
     uint64_t nonce_candidate = nonce_apply_difficulty_bounds(
-        tetration_value,
+        tetration_uint64,
         config->difficulty_bits,
         config->entropy_cut_min,
         config->entropy_cut_max
@@ -109,6 +133,7 @@ bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result
                 config->entropy_cut_min,
                 config->entropy_cut_max
             );
+            clock_cleanup(&ctx);
             return true;
         }
         
@@ -117,145 +142,167 @@ bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result
         result->nonce = nonce_reassess(config, result->reassessments, result->nonce);
     }
     
+    clock_cleanup(&ctx);
+    
     // If we get here, we failed to find valid nonce within max reassessments
     // Return the best candidate we have
     result->success = false;
     return false;
 }
 
-uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
-                                      uint64_t modulus) {
-    if (depth == 0 || seed_prime == 0) {
-        return 0;
+/**
+ * @brief Build tetration stack using CrystallineAbacus
+ * 
+ * Computes seed_prime^(seed_prime^(seed_prime^...)) (depth times) mod modulus
+ * Uses arbitrary precision to handle large intermediate values
+ */
+CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime, 
+                                                       uint32_t depth,
+                                                       uint64_t modulus,
+                                                       ClockContext* ctx) {
+    if (depth == 0 || seed_prime == 0 || !ctx) {
+        return NULL;
+    }
+    
+    // Create Abacus values
+    CrystallineAbacus* base = abacus_create_from_uint64(seed_prime, 12, ctx);
+    CrystallineAbacus* mod_abacus = abacus_create_from_uint64(modulus, 12, ctx);
+    CrystallineAbacus* result = abacus_create_from_uint64(seed_prime, 12, ctx);
+    CrystallineAbacus* temp = abacus_create_from_uint64(0, 12, ctx);
+    
+    if (!base || !mod_abacus || !result || !temp) {
+        if (base) abacus_free(base);
+        if (mod_abacus) abacus_free(mod_abacus);
+        if (result) abacus_free(result);
+        if (temp) abacus_free(temp);
+        return NULL;
     }
     
     if (depth == 1) {
-        return seed_prime % modulus;
+        // result = seed_prime % modulus
+        MathError err = abacus_mod(result, base, mod_abacus);
+        abacus_free(base);
+        abacus_free(mod_abacus);
+        abacus_free(temp);
+        
+        if (err != MATH_SUCCESS) {
+            abacus_free(result);
+            return NULL;
+        }
+        return result;
     }
     
-    // Build stack iteratively to avoid overflow
-    uint64_t result = seed_prime;
-    
+    // Build stack iteratively: result = base^result (mod modulus)
     for (uint32_t i = 1; i < depth; i++) {
-        // result = seed_prime^result (mod modulus)
-        result = uint64_powmod(seed_prime, result, modulus);
+        // temp = base^result (mod modulus)
+        MathError err = abacus_mod_exp(temp, base, result, mod_abacus);
+        if (err != MATH_SUCCESS) {
+            abacus_free(base);
+            abacus_free(mod_abacus);
+            abacus_free(result);
+            abacus_free(temp);
+            return NULL;
+        }
+        
+        // result = temp
+        abacus_copy(result, temp);
     }
+    
+    abacus_free(base);
+    abacus_free(mod_abacus);
+    abacus_free(temp);
     
     return result;
+}
+
+/**
+ * @brief Legacy wrapper for compatibility
+ * 
+ * This will be removed once all code is migrated
+ */
+uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
+                                      uint64_t modulus) {
+    ClockContext ctx;
+    clock_init(&ctx);
+    
+    CrystallineAbacus* result = nonce_build_tetration_stack_abacus(
+        seed_prime, depth, modulus, &ctx
+    );
+    
+    if (!result) {
+        clock_cleanup(&ctx);
+        return 0;
+    }
+    
+    uint64_t result_uint64;
+    MathError err = abacus_to_uint64(result, &result_uint64);
+    abacus_free(result);
+    clock_cleanup(&ctx);
+    
+    if (err != MATH_SUCCESS) {
+        return 0;
+    }
+    
+    return result_uint64;
 }
 
 uint64_t nonce_apply_difficulty_bounds(uint64_t tetration_value,
                                         uint32_t difficulty_bits,
                                         double entropy_cut_min,
                                         double entropy_cut_max) {
-    // Calculate entropy reduction factor
-    double reduction = nonce_calculate_entropy_reduction(
-        difficulty_bits,
-        entropy_cut_min,
-        entropy_cut_max
-    );
-    
-    // Apply reduction to tetration value
-    // Higher difficulty = smaller search space
-    uint64_t max_value = UINT64_MAX;
-    if (difficulty_bits < 64) {
-        max_value = (1ULL << difficulty_bits) - 1;
+    if (difficulty_bits == 0 || difficulty_bits > 64) {
+        return tetration_value;
     }
     
-    // Scale tetration value to fit within difficulty bounds
-    uint64_t bounded = tetration_value % max_value;
+    // Calculate entropy reduction factor
+    double entropy_factor = entropy_cut_min + 
+        (entropy_cut_max - entropy_cut_min) * ((double)difficulty_bits / 64.0);
     
     // Apply entropy reduction
-    bounded = (uint64_t)((double)bounded * (1.0 - reduction));
+    uint64_t mask = (1ULL << difficulty_bits) - 1;
+    uint64_t reduced = tetration_value & mask;
     
-    return bounded;
-}
-
-double nonce_calculate_entropy_reduction(uint32_t difficulty_bits,
-                                          double cut_min, double cut_max) {
-    if (difficulty_bits == 0) {
-        return cut_min;
-    }
+    // Apply entropy factor
+    reduced = (uint64_t)((double)reduced * (1.0 - entropy_factor));
     
-    // Use golden ratio for smooth scaling
-    // Higher difficulty = more entropy reduction
-    double phi = PHI; // Golden ratio from constants
-    
-    // Scale difficulty to [0, 1] range (assuming max 64 bits)
-    double normalized = (double)difficulty_bits / 64.0;
-    
-    // Apply golden ratio scaling
-    double scaled = normalized * phi;
-    if (scaled > 1.0) scaled = 1.0;
-    
-    // Interpolate between min and max
-    return cut_min + (cut_max - cut_min) * scaled;
-}
-
-uint64_t nonce_reassess(const NonceConfig* config, uint32_t attempt,
-                        uint64_t previous_nonce) {
-    if (config == NULL || attempt == 0) {
-        return previous_nonce;
-    }
-    
-    // Adjust entropy parameters based on attempt number
-    // Use golden ratio for adjustment
-    double phi = PHI;
-    double adjustment = (double)attempt / (double)config->max_reassessments;
-    adjustment *= phi;
-    if (adjustment > 1.0) adjustment = 1.0;
-    
-    // Increase entropy cut with each attempt
-    double new_cut_min = config->entropy_cut_min * (1.0 + adjustment * 0.1);
-    double new_cut_max = config->entropy_cut_max * (1.0 + adjustment * 0.1);
-    
-    if (new_cut_min > 0.9) new_cut_min = 0.9;
-    if (new_cut_max > 0.95) new_cut_max = 0.95;
-    
-    // Rebuild with adjusted parameters
-    uint64_t modulus = UINT64_MAX;
-    uint64_t tetration_value = nonce_build_tetration_stack(
-        config->block_height + attempt, // Vary seed slightly
-        config->tetration_depth,
-        modulus
-    );
-    
-    uint64_t new_nonce = nonce_apply_difficulty_bounds(
-        tetration_value,
-        config->difficulty_bits,
-        new_cut_min,
-        new_cut_max
-    );
-    
-    // Mix with previous nonce using XOR
-    return new_nonce ^ previous_nonce;
+    return reduced;
 }
 
 bool nonce_validate_difficulty(uint64_t nonce, uint32_t difficulty_bits) {
-    if (difficulty_bits == 0) {
-        return true; // No difficulty requirement
+    if (difficulty_bits == 0 || difficulty_bits > 64) {
+        return true;
     }
     
-    if (difficulty_bits >= 64) {
-        return false; // Impossible difficulty
-    }
-    
-    // Check if nonce has required number of leading zeros
-    // This is a simplified check - actual Bitcoin mining would
-    // hash the block header and check the hash
-    
-    // Count leading zeros in nonce
+    // Count leading zeros
     uint32_t leading_zeros = 0;
     uint64_t mask = 1ULL << 63;
     
-    while (leading_zeros < 64 && (nonce & mask) == 0) {
+    while (leading_zeros < 64 && !(nonce & mask)) {
         leading_zeros++;
         mask >>= 1;
     }
     
-    // For this simplified version, we check if the nonce value
-    // is small enough to meet the difficulty target
-    uint64_t max_value = (1ULL << (64 - difficulty_bits)) - 1;
+    return leading_zeros >= difficulty_bits;
+}
+
+double nonce_calculate_entropy_reduction(uint32_t difficulty_bits,
+                                         double entropy_cut_min,
+                                         double entropy_cut_max) {
+    if (difficulty_bits == 0 || difficulty_bits > 64) {
+        return 0.0;
+    }
     
-    return nonce <= max_value;
+    return entropy_cut_min + 
+        (entropy_cut_max - entropy_cut_min) * ((double)difficulty_bits / 64.0);
+}
+
+uint64_t nonce_reassess(const NonceConfig* config, uint32_t attempt, 
+                        uint64_t previous_nonce) {
+    if (!config) return previous_nonce;
+    
+    // Adjust nonce based on attempt number
+    // Use a deterministic but varying adjustment
+    uint64_t adjustment = (uint64_t)attempt * config->block_height;
+    
+    return previous_nonce ^ adjustment;
 }

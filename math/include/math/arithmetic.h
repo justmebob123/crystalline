@@ -167,61 +167,6 @@ double math_round(double x);
  */
 double math_trunc(double x);
 
-/* ============================================================================
- * INTEGER ARITHMETIC (uint64_t)
- * ============================================================================
- */
-
-/**
- * @brief Modular exponentiation for uint64_t
- * @param base Base value
- * @param exponent Exponent value
- * @param modulus Modulus value
- * @return (base^exponent) mod modulus
- * @note Uses binary exponentiation for efficiency
- */
-uint64_t uint64_powmod(uint64_t base, uint64_t exponent, uint64_t modulus);
-
-/**
- * @brief Greatest common divisor (Euclidean algorithm)
- * @param a First value
- * @param b Second value
- * @return GCD(a, b)
- */
-uint64_t uint64_gcd(uint64_t a, uint64_t b);
-
-/**
- * @brief Least common multiple
- * @param a First value
- * @param b Second value
- * @return LCM(a, b)
- */
-uint64_t uint64_lcm(uint64_t a, uint64_t b);
-
-/**
- * @brief Modular inverse using extended Euclidean algorithm
- * @param a Value to invert
- * @param modulus Modulus
- * @param inverse Output: modular inverse
- * @return MATH_SUCCESS if inverse exists, error otherwise
- */
-MathError uint64_modinv(uint64_t a, uint64_t modulus, uint64_t* inverse);
-
-/**
- * @brief Integer power (no modulus)
- * @param base Base value
- * @param exponent Exponent value
- * @return base^exponent (may overflow)
- */
-uint64_t uint64_pow(uint64_t base, uint64_t exponent);
-
-/**
- * @brief Integer square root (floor)
- * @param n Input value
- * @return floor(sqrt(n))
- */
-uint64_t uint64_sqrt(uint64_t n);
-
 #ifdef __cplusplus
 }
 #endif
