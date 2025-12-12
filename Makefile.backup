@@ -27,12 +27,14 @@ ARFLAGS = rcs
 
 # Library names - Shared (.so)
 MATH_LIB = math/lib/libcrystallinemath.so
+CRYSTALLINE_LIB = libcrystalline.so
 ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = libcllm.so
 CRAWLER_LIB = libcrawler.so
 
 # Library names - Static (.a)
 MATH_STATIC = math/lib/libcrystallinemath.a
+CRYSTALLINE_STATIC = libcrystalline.a
 ALGORITHMS_STATIC = libalgorithms.a
 CLLM_STATIC = libcllm.a
 CRAWLER_STATIC = libcrawler.a
@@ -81,15 +83,15 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(MATH_LIB) $(MATH_STATIC) $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
+all: $(MATH_LIB) $(MATH_STATIC) $(CRYSTALLINE_LIB) $(CRYSTALLINE_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
 	@echo "✓ Build complete!"
 	@echo "  Shared Libraries:"
-	@echo "    - $(MATH_LIB)"
+	@echo "    - $(CRYSTALLINE_LIB)"
 	@echo "    - $(ALGORITHMS_LIB)"
 	@echo "    - $(CLLM_LIB)"
 	@echo "    - $(CRAWLER_LIB)"
 	@echo "  Static Libraries:"
-	@echo "    - $(MATH_STATIC)"
+	@echo "    - $(CRYSTALLINE_STATIC)"
 	@echo "    - $(ALGORITHMS_STATIC)"
 	@echo "    - $(CLLM_STATIC)"
 	@echo "    - $(CRAWLER_STATIC)"
@@ -117,31 +119,38 @@ math-test:
 # ============================================================================
 
 # 1. Crystalline Lattice Library (core math + geometry)
+CRYSTALLINE_OBJECTS = $(CORE_OBJECTS) $(TRANS_OBJECTS) $(GEOM_OBJECTS)
 
+$(CRYSTALLINE_LIB): $(MATH_LIB) $(CRYSTALLINE_OBJECTS)
+	@echo "Creating crystalline shared library: $@"
+	$(CC) -shared -o $@ $^
 	@echo "✓ Crystalline shared library created"
 
+$(CRYSTALLINE_STATIC): $(MATH_STATIC) $(CRYSTALLINE_OBJECTS)
+	@echo "Creating crystalline static library: $@"
+	$(AR) $(ARFLAGS) $@ $^
 	@echo "✓ Crystalline static library created"
 
 # 3. CLLM Library (AI/language model - depends on crystalline and algorithms)
 # 2. Algorithms Library (mathematical algorithms - depends on crystalline)
-$(ALGORITHMS_LIB): $(MATH_LIB)
+$(ALGORITHMS_LIB): $(CRYSTALLINE_LIB)
 	@echo "Building algorithms shared library..."
 	@$(MAKE) -C algorithms
 	@cp algorithms/$(ALGORITHMS_LIB) .
 	@echo "✓ Algorithms shared library created"
 
-$(ALGORITHMS_STATIC): $(MATH_STATIC)
+$(ALGORITHMS_STATIC): $(CRYSTALLINE_STATIC)
 	@echo "Building algorithms static library..."
 	@$(MAKE) -C algorithms static
 	@cp algorithms/$(ALGORITHMS_STATIC) .
 	@echo "✓ Algorithms static library created"
 
-$(CLLM_LIB): $(AI_OBJECTS) $(MATH_LIB) $(ALGORITHMS_LIB)
+$(CLLM_LIB): $(AI_OBJECTS) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Creating CLLM shared library: $@"
 	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -lcrystalline -lalgorithms -lm
 	@echo "✓ CLLM shared library created"
 
-$(CLLM_STATIC): $(AI_OBJECTS) $(MATH_STATIC) $(ALGORITHMS_STATIC)
+$(CLLM_STATIC): $(AI_OBJECTS) $(CRYSTALLINE_STATIC) $(ALGORITHMS_STATIC)
 	@echo "Creating CLLM static library: $@"
 	$(AR) $(ARFLAGS) $@ $(AI_OBJECTS)
 	@echo "✓ CLLM static library created"
@@ -216,9 +225,11 @@ app: $(STATIC_LIB)
 install: all
 	@echo "Installing Crystalline CLLM Libraries..."
 	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 libcrystalline.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libalgorithms.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libcllm.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libcrawler.so $(DESTDIR)$(LIBDIR)
+	install -m 644 libcrystalline.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libalgorithms.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libcllm.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libcrawler.a $(DESTDIR)$(LIBDIR)
@@ -309,7 +320,7 @@ help:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
-	rm -f $(MATH_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/fix_html_entities # tools/validate_lattice
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
@@ -550,7 +561,7 @@ prod-tests: production
 
 
 # Unified CLI tool (replaces individual tools)
-tools/cllm: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/cllm: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building unified CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm tools/cllm_unified.c \
@@ -571,7 +582,7 @@ tools/diagnose_inference: $(CLLM_LIB)
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference diagnostic tool built: tools/diagnose_inference"
 
-tools/benchmark_prime_validation: $(MATH_LIB)
+tools/benchmark_prime_validation: $(CRYSTALLINE_LIB)
 	@echo "Building prime validation benchmark tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/benchmark_prime_validation tools/benchmark_prime_validation.c \
@@ -586,35 +597,35 @@ tools/fix_html_entities:
 	@echo "✓ HTML entity fixer built: tools/fix_html_entities"
 
 
-tools/cllm-simple: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/cllm-simple: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building simple (single-threaded) CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm-simple tools/cllm_simple.c \
 		-L. -lcllm -lcrystalline -lalgorithms -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Simple CLI tool built: tools/cllm-simple"
 
-tools/platonic_prime_resonance: $(MATH_LIB)
+tools/platonic_prime_resonance: $(CRYSTALLINE_LIB)
 	@echo "Building Platonic prime resonance tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/platonic_prime_resonance tools/platonic_prime_resonance.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Platonic prime resonance tool built: tools/platonic_prime_resonance"
 
-tools/analyze_million_primes: $(MATH_LIB)
+tools/analyze_million_primes: $(CRYSTALLINE_LIB)
 	@echo "Building million primes analysis tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/analyze_million_primes tools/analyze_million_primes.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Million primes analysis tool built: tools/analyze_million_primes"
 
-tools/discover_platonic_solids: $(MATH_LIB)
+tools/discover_platonic_solids: $(CRYSTALLINE_LIB)
 	@echo "Building Platonic solid discovery tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/discover_platonic_solids tools/discover_platonic_solids.c \
 		-L. -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Platonic solid discovery tool built: tools/discover_platonic_solids"
 
-tools/tetration_analysis: $(MATH_LIB)
+tools/tetration_analysis: $(CRYSTALLINE_LIB)
 	@echo "Building tetration analysis tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/tetration_analysis tools/tetration_analysis.c \
@@ -624,7 +635,7 @@ tools/tetration_analysis: $(MATH_LIB)
 CLLM_OBJECTS += $(PLATONIC_OBJECTS)
 
 # Platonic test tool
-tools/test_tetrahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_tetrahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Tetrahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_tetrahedron tools/platonic/test_tetrahedron.c \
@@ -637,42 +648,42 @@ platonic-test: tools/test_tetrahedron tools/test_cube tools/test_octahedron tool
 	./tools/test_tetrahedron
 
 
-tools/test_cube: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_cube: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Cube test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_cube tools/platonic/test_cube.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Cube test tool built: tools/test_cube"
 
-tools/test_octahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_octahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Octahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_octahedron tools/platonic/test_octahedron.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Octahedron test tool built: tools/test_octahedron"
 
-tools/test_dodecahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_dodecahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Dodecahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_dodecahedron tools/platonic/test_dodecahedron.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Dodecahedron test tool built: tools/test_dodecahedron"
 
-tools/test_icosahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_icosahedron: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Icosahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_icosahedron tools/platonic/test_icosahedron.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Icosahedron test tool built: tools/test_icosahedron"
 
-tools/test_blind_recovery: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_blind_recovery: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Blind Recovery test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_blind_recovery tools/platonic/test_blind_recovery.c \
 		-L. -L./algorithms -lcllm -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Blind Recovery test tool built: tools/test_blind_recovery"
 
-tools/test_harmonic: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+tools/test_harmonic: $(CLLM_LIB) $(CRYSTALLINE_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Harmonic Integration test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_harmonic tools/platonic/test_harmonic.c \
@@ -686,52 +697,3 @@ recovery-tools:
 	@echo "✓ Recovery tools built"
 
 .PHONY: recovery-tools
-
-# ============================================================================
-# PHP Extension Support
-# ============================================================================
-
-PHP_EXT_DIR = php
-PHP_EXT_NAME = crystalline_math
-
-.PHONY: php-ext php-clean install-php install-php-ubuntu install-php-centos php-setup
-
-php-setup:
-	@echo "Setting up PHP extension structure..."
-	@mkdir -p $(PHP_EXT_DIR)
-	@mkdir -p examples/php
-	@./scripts/create_php_extension.sh
-	@echo "✓ PHP extension structure created"
-
-php-ext: $(MATH_LIB) php-setup
-	@echo "Building PHP extension for Crystalline Math Library..."
-	@cd $(PHP_EXT_DIR) && \
-		phpize && \
-		./configure --with-crystalline-math=../math && \
-		$(MAKE)
-	@echo "✓ PHP extension built"
-	@echo ""
-	@echo "To install: sudo make install-php"
-
-php-clean:
-	@echo "Cleaning PHP extension..."
-	@if [ -d $(PHP_EXT_DIR) ]; then \
-		cd $(PHP_EXT_DIR) && \
-		if [ -f Makefile ]; then $(MAKE) clean; fi && \
-		phpize --clean 2>/dev/null || true; \
-	fi
-	@echo "✓ PHP extension cleaned"
-
-install-php: php-ext
-	@echo "Installing PHP extension..."
-	@cd $(PHP_EXT_DIR) && $(MAKE) install
-	@echo "✓ PHP extension installed"
-	@echo ""
-	@echo "Add to php.ini: extension=$(PHP_EXT_NAME).so"
-
-install-php-ubuntu: install-php
-	@./scripts/install_php_ubuntu.sh
-
-install-php-centos: install-php
-	@./scripts/install_php_centos.sh
-
