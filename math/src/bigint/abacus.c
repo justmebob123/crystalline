@@ -63,14 +63,44 @@ static MathError abacus_ensure_capacity(CrystallineAbacus* abacus, size_t min_ca
  * @return -1 if |a| < |b|, 0 if |a| == |b|, 1 if |a| > |b|
  */
 static int compare_magnitude(const CrystallineAbacus* a, const CrystallineAbacus* b) {
-    /* Compare number of beads first */
-    if (a->num_beads > b->num_beads) return 1;
-    if (a->num_beads < b->num_beads) return -1;
+    /* Find the highest exponent in each abacus */
+    int32_t max_exp_a = (a->num_beads > 0) ? a->beads[0].weight_exponent : 0;
+    int32_t max_exp_b = (b->num_beads > 0) ? b->beads[0].weight_exponent : 0;
     
-    /* Same number of beads, compare from most significant */
-    for (size_t i = a->num_beads; i > 0; i--) {
-        uint32_t digit_a = a->beads[i-1].value;
-        uint32_t digit_b = b->beads[i-1].value;
+    for (size_t i = 1; i < a->num_beads; i++) {
+        if (a->beads[i].weight_exponent > max_exp_a) {
+            max_exp_a = a->beads[i].weight_exponent;
+        }
+    }
+    
+    for (size_t i = 1; i < b->num_beads; i++) {
+        if (b->beads[i].weight_exponent > max_exp_b) {
+            max_exp_b = b->beads[i].weight_exponent;
+        }
+    }
+    
+    /* Compare from highest exponent down to lowest */
+    int32_t min_exp = (max_exp_a < max_exp_b) ? max_exp_a : max_exp_b;
+    int32_t max_exp = (max_exp_a > max_exp_b) ? max_exp_a : max_exp_b;
+    
+    for (int32_t exp = max_exp; exp >= min_exp; exp--) {
+        /* Find beads with this exponent */
+        uint32_t digit_a = 0;
+        uint32_t digit_b = 0;
+        
+        for (size_t i = 0; i < a->num_beads; i++) {
+            if (a->beads[i].weight_exponent == exp) {
+                digit_a = a->beads[i].value;
+                break;
+            }
+        }
+        
+        for (size_t i = 0; i < b->num_beads; i++) {
+            if (b->beads[i].weight_exponent == exp) {
+                digit_b = b->beads[i].value;
+                break;
+            }
+        }
         
         if (digit_a > digit_b) return 1;
         if (digit_a < digit_b) return -1;
@@ -519,6 +549,9 @@ CrystallineAbacus* abacus_from_uint64(uint64_t value, uint32_t base) {
     abacus->num_beads = num_digits;
     abacus->negative = false;
     abacus->min_exponent = 0;
+    
+    /* DO NOT normalize here - division algorithm expects dense representation */
+    /* Normalization will be done by operations that need it */
     
     return abacus;
 }
@@ -1215,21 +1248,9 @@ int abacus_compare(const CrystallineAbacus* a, const CrystallineAbacus* b) {
         return a->negative ? -1 : 1;
     }
     
-    /* Same sign: compare magnitudes */
-    if (a->num_beads != b->num_beads) {
-        int cmp = (a->num_beads > b->num_beads) ? 1 : -1;
-        return a->negative ? -cmp : cmp;
-    }
-    
-    /* Same number of beads: compare digit by digit from most significant */
-    for (int i = (int)a->num_beads - 1; i >= 0; i--) {
-        if (a->beads[i].value != b->beads[i].value) {
-            int cmp = (a->beads[i].value > b->beads[i].value) ? 1 : -1;
-            return a->negative ? -cmp : cmp;
-        }
-    }
-    
-    return 0;  /* Equal */
+    /* Same sign: compare magnitudes using compare_magnitude */
+    int cmp = compare_magnitude(a, b);
+    return a->negative ? -cmp : cmp;
 }
 
 bool abacus_is_zero(const CrystallineAbacus* abacus) {
