@@ -50,8 +50,10 @@ SRC_UTILS = src/utils
 AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
 INFRASTRUCTURE_SOURCES = $(wildcard src/ai/infrastructure/*.c)
 PLATONIC_SOURCES = $(wildcard src/ai/platonic/*.c)
+GEOMETRY_SOURCES = src/geometry/phonetic_values.c
 AI_SOURCES += $(INFRASTRUCTURE_SOURCES)
 AI_SOURCES += $(PLATONIC_SOURCES)
+AI_SOURCES += $(GEOMETRY_SOURCES)
 TOOLS_DIR = tools
 UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
 

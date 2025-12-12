@@ -1,19 +1,34 @@
 # Crystalline Math Library Integration - PROPER APPROACH
 
-## 🔒 RULES (HIGHEST PRIORITY - READ FIRST)
+## 🔒 MASTER PLAN RULES (HIGHEST PRIORITY - READ FIRST)
 
-**LAST UPDATED:** 2024-12-12 - DEEP BIDIRECTIONAL ANALYSIS COMPLETE
-
-## 🔒 RULES (HIGHEST PRIORITY - READ FIRST)
+**LAST UPDATED:** 2024-12-12 - COMPREHENSIVE REASSESSMENT COMPLETE
 
 ### ⭐ RULE 0: ALWAYS READ THESE RULES FIRST ⭐
 **MANDATORY WITH EVERY RESPONSE**
 
 Before ANY action, you MUST:
-1. Read MASTER_PLAN.md completely
-2. Read AUDIT.md for current architectural state
-3. Read SECONDARY_OBJECTIVES.md for detailed tasks
-4. Update todo.md with current progress
+1. Read MASTER_PLAN.md completely ✅
+2. Read AUDIT.md for current architectural state ✅
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks ✅
+4. Update todo.md with current progress ✅
+
+### 🚨 CRITICAL POLICY: ZERO LEGACY CODE
+
+**❌ ABSOLUTELY FORBIDDEN:**
+- NO OLD BigInt/BigFixed system - completely eliminated
+- NO hybrid approaches - pure NEW math library only
+- NO legacy code preservation - delete all OLD system references
+- NO math.h dependencies - 100% PURE crystalline mathematics
+- NO STUBS - implement properly using NEW math library
+
+**✅ CORRECT APPROACH:**
+- NEW math library ONLY - Crystalline Abacus exclusively
+- Implement missing functions in NEW math library
+- Use proper two-step approach where needed (e.g., prime_nth() + clock_map_prime_to_position())
+- Fix algorithms library - remove ALL OLD dependencies
+- Correct CLLM - use NEW math library exclusively
+- Pure Crystalline - zero external dependencies
 
 ### RULE 1: CRITICAL REFERENCE FILES
 **Before making ANY code changes, ALWAYS check these files:**
@@ -309,14 +324,173 @@ Day 1: Angular Position Implementation ✓ COMPLETE
 ✓ Algorithms library: Successfully using NEW math library
 ✓ CLLM library: Successfully using NEW math library
 
-**REMAINING UNDEFINED REFERENCES (25 - down from 31):**
-- BigInt/BigFixed functions (18): big_init, big_free, big_from_int, big_fixed_add, big_fixed_sub, big_fixed_mul, big_fixed_div, big_fixed_assign, big_fixed_from_int, big_fixed_from_double, big_fixed_to_bigint_rounded, bigint_to_uint64, big_sqrt, big_sin, big_cos, big_ln, big_pi
-- Rainbow table functions (5): rainbow_table_init, rainbow_table_generate_primes, rainbow_table_get_prime, rainbow_table_get_count, rainbow_table_load_important_primes
-- Application-specific (2): get_phonetic_value, cllm_get_dimensional_frequency, cllm_is_near_144000_boundary
+**REMAINING UNDEFINED REFERENCES (17 - down from 31):**
+- BigInt/BigFixed functions (17): big_init, big_free, big_from_int, big_fixed_add, big_fixed_sub, big_fixed_mul, big_fixed_div, big_fixed_assign, big_fixed_from_int, big_fixed_from_double, big_fixed_to_bigint_rounded, bigint_to_uint64, big_sqrt, big_sin, big_cos, big_ln, big_pi
 
-**PROGRESS: 6 functions resolved in this session (31 → 25)**
+**RESOLVED IN THIS SESSION (14 functions):**
+✅ angular_position_calculate
+✅ calculate_plimpton_ratios  
+✅ verify_plimpton_constraints
+✅ clock_map_index_to_position (implemented in NEW math library)
+✅ map_prime_index_to_clock (wrapper in algorithms library)
+✅ map_token_to_clock_lattice (implemented in cllm_embedding.c)
+✅ map_thread_to_memory (implemented in cllm_clock_memory.c)
+✅ rainbow_table_init (wrapper created)
+✅ rainbow_table_generate_primes (wrapper created)
+✅ rainbow_table_get_prime (wrapper created)
+✅ rainbow_table_get_count (wrapper created)
+✅ rainbow_table_load_important_primes (wrapper created)
+✅ get_phonetic_value (linked phonetic_values.c)
+✅ cllm_get_dimensional_frequency (implemented)
+✅ cllm_is_near_144000_boundary (implemented)
+
+**PROGRESS: 14 functions resolved (31 → 17) - 45% reduction!**
 
 **Estimated time**: 5-6 days total
+
+---
+
+## Phase 2: Rainbow Table & Application Functions ✅ COMPLETE
+
+### Rainbow Table Migration (2 hours) ✅
+- [x] Created rainbow_table_compat.c with proper API wrappers
+- [x] Mapped OLD API to NEW API:
+  * rainbow_table_init() → rainbow_init()
+  * rainbow_table_generate_primes() → rainbow_populate_count()
+  * rainbow_table_get_prime() → rainbow_lookup_by_index()
+  * rainbow_table_get_count() → rainbow_size()
+  * rainbow_table_load_important_primes() → rainbow_populate_count(10000)
+- [x] All wrappers use NEW math library exclusively
+- [x] No stubs - proper implementations
+
+### Application Functions (2 hours) ✅
+- [x] Implemented cllm_get_dimensional_frequency() in cllm_lattice_helpers.c
+- [x] Implemented cllm_is_near_144000_boundary() using angular_position
+- [x] Linked phonetic_values.c from geometry layer
+- [x] All functions use NEW math library
+
+### Clock Memory Functions (1 hour) ✅
+- [x] Implemented map_thread_to_memory() in cllm_clock_memory.c
+- [x] Implemented map_token_to_clock_lattice() in cllm_embedding.c
+- [x] Created map_prime_index_to_clock() wrapper in algorithms library
+- [x] All use NEW math library (clock_map_index_to_position)
+
+**Result:** Reduced undefined references from 25 to 17 (8 resolved)
+
+---
+
+## Phase 3: BigInt/BigFixed Migration to CrystallineAbacus (CURRENT - 3-4 days)
+
+### Critical Files (2 files only!)
+1. **src/ai/cllm_token.c** - Token operations and rainbow table
+2. **src/ai/cllm_embeddings.c** - L(n,d,k,λ) lattice formula
+
+### BigInt/BigFixed → CrystallineAbacus Mapping
+
+**Creation & Destruction:**
+```c
+// OLD: BigInt* x = big_init();
+// NEW: CrystallineAbacus* x = abacus_new(12); // Babylonian base
+
+// OLD: big_free(x);
+// NEW: abacus_free(x);
+```
+
+**Initialization:**
+```c
+// OLD: big_from_int(x, 42);
+// NEW: abacus_from_uint64(x, 42);
+
+// OLD: big_fixed_from_int(x, 42);
+// NEW: abacus_from_uint64(x, 42);
+
+// OLD: big_fixed_from_double(x, 3.14);
+// NEW: abacus_from_double(x, 3.14);
+```
+
+**Arithmetic:**
+```c
+// OLD: big_fixed_add(result, a, b);
+// NEW: abacus_add(result, a, b);
+
+// OLD: big_fixed_sub(result, a, b);
+// NEW: abacus_sub(result, a, b);
+
+// OLD: big_fixed_mul(result, a, b);
+// NEW: abacus_mul(result, a, b);
+
+// OLD: big_fixed_div(result, a, b);
+// NEW: abacus_div(result, a, b);
+```
+
+**Conversion:**
+```c
+// OLD: big_fixed_to_bigint_rounded(x);
+// NEW: uint64_t result; abacus_to_uint64(x, &result);
+
+// OLD: bigint_to_uint64(x);
+// NEW: uint64_t result; abacus_to_uint64(x, &result);
+
+// OLD: big_fixed_assign(dest, src);
+// NEW: abacus_copy(dest, src);
+```
+
+**Transcendental Functions:**
+```c
+// OLD: big_sqrt(x);
+// NEW: double val; abacus_to_double(x, &val); val = math_sqrt(val); abacus_from_double(result, val);
+
+// OLD: big_sin(x);
+// NEW: double val; abacus_to_double(x, &val); val = math_sin(val); abacus_from_double(result, val);
+
+// OLD: big_cos(x);
+// NEW: double val; abacus_to_double(x, &val); val = math_cos(val); abacus_from_double(result, val);
+
+// OLD: big_ln(x);
+// NEW: double val; abacus_to_double(x, &val); val = math_log(val); abacus_from_double(result, val);
+
+// OLD: big_pi();
+// NEW: Use MATH_PI constant
+```
+
+### Migration Steps
+
+**Day 1: Analyze & Plan (4 hours)**
+- [ ] Analyze cllm_token.c BigInt/BigFixed usage
+- [ ] Analyze cllm_embeddings.c BigInt/BigFixed usage
+- [ ] Create detailed migration plan for each function
+- [ ] Identify any missing Abacus functionality
+- [ ] Add missing functionality to NEW math library if needed
+
+**Day 2: Migrate cllm_token.c (1 day)**
+- [ ] Replace all BigInt with CrystallineAbacus
+- [ ] Replace all BigFixed with CrystallineAbacus
+- [ ] Update rainbow table usage (already have wrappers)
+- [ ] Test token operations
+- [ ] Verify prime mapping accuracy
+- [ ] Verify no regressions
+
+**Day 3-4: Migrate cllm_embeddings.c (2 days)**
+- [ ] Replace all BigFixed with CrystallineAbacus
+- [ ] Update L(n,d,k,λ) formula calculations
+- [ ] Update angular position calculations
+- [ ] Test embedding initialization
+- [ ] Verify lattice formula accuracy
+- [ ] Performance benchmarking
+
+**Day 5: Integration & Testing (1 day)**
+- [ ] Full system build
+- [ ] Verify 0 undefined references ✅
+- [ ] Run all tests
+- [ ] Performance comparison
+- [ ] Documentation update
+- [ ] Commit and push to GitHub
+
+### Expected Outcome
+- **Undefined references:** 17 → 0 (ALL RESOLVED) ✅
+- **Build status:** ✅ FULL BUILD SUCCESS
+- **Integration:** 100% complete
+- **Performance:** Validated and documented
 
 ### Priority 5: Handle Application-Specific Functions (LOW)
 **Check if still needed:**

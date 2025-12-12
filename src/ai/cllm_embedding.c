@@ -81,12 +81,40 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
 
 /**
  * Map token to 3D lattice coordinates
+ * Uses NEW math library: clock position → stereographic projection → 3D coordinates
  */
 void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, double* coords) {
     if (!coords) return;
     
-    // Use clock-based mapping
-    map_token_to_clock_lattice(token_id, prime, token_id + 1, coords);
+    // Get clock position using NEW math library
+    ClockPosition pos;
+    clock_map_index_to_position(token_id + 1, &pos);
+    
+    // Convert to 3D sphere coordinates using stereographic projection
+    double theta = pos.angle;
+    double phi = pos.radius * MATH_PI;
+    
+    // Spherical to Cartesian conversion
+    coords[0] = math_sin(phi) * math_cos(theta);
+    coords[1] = math_sin(phi) * math_sin(theta);
+    coords[2] = math_cos(phi);
+    
+    // Add small perturbation based on prime modular relationships
+    uint32_t mod_12 = prime % 12;
+    uint32_t mod_60 = prime % 60;
+    uint32_t mod_100 = prime % 100;
+    
+    coords[0] += 0.01 * (mod_12 / 12.0);
+    coords[1] += 0.01 * (mod_60 / 60.0);
+    coords[2] += 0.01 * (mod_100 / 100.0);
+    
+    // Normalize to unit sphere
+    double norm = math_sqrt(coords[0]*coords[0] + coords[1]*coords[1] + coords[2]*coords[2]);
+    if (norm > 1e-8) {
+        coords[0] /= norm;
+        coords[1] /= norm;
+        coords[2] /= norm;
+    }
 }
 
 /**

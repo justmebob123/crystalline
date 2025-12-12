@@ -40,6 +40,7 @@ SOURCES = src/numerical.c \
           src/symbolic_field_theory.c \
           src/nonce_generation.c \
           src/math_wrappers.c \
+          src/clock_position_wrapper.c \
           src/blind_recovery/oscillation_detection.c \
           src/blind_recovery/structural_mapping.c \
           src/blind_recovery/coprime_analysis.c \
