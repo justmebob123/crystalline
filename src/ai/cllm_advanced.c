@@ -13,8 +13,13 @@
 #include "prime_lattice.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
 #include <stdio.h>
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+
+#ifndef MATH_INFINITY
+#define MATH_INFINITY (1.0 / 0.0)
+#endif
 
 // Prime factorization cache entry
 typedef struct {
@@ -172,12 +177,12 @@ static void compute_ulam_position(uint32_t token_id, float* x, float* y, float* 
     }
     
     float golden_angle = 2.39996322972865332f;  // 2π/φ²
-    float radius = prime_sqrtf((float)token_id);
+    float radius = math_sqrt((double)(float)token_id);
     float angle = (float)token_id * golden_angle;
     
-    *x = radius * prime_cosf(angle);
-    *y = radius * prime_sinf(angle);
-    *z = prime_logf((float)token_id + 1.0);
+    *x = radius * math_cos((double)angle);
+    *y = radius * math_sin((double)angle);
+    *z = math_log((double)(float)token_id + 1.0);
 }
 
 /**
@@ -226,13 +231,13 @@ static int* find_nearby_tokens(UlamSpatialIndex* index, uint32_t token_id,
         float dx = index->tokens[i].x - target->x;
         float dy = index->tokens[i].y - target->y;
         float dz = index->tokens[i].z - target->z;
-        all_distances[i] = prime_sqrtf(dx*dx + dy*dy + dz*dz);
+        all_distances[i] = math_sqrt((double)dx*dx + dy*dy + dz*dz);
     }
     
     // Find k nearest (simple selection, could use heap)
     for (int i = 0; i < k; i++) {
         int min_idx = 0;
-        float min_dist = INFINITY;
+        float min_dist = MATH_INFINITY;
         for (int j = 0; j < index->num_tokens; j++) {
             if (all_distances[j] < min_dist) {
                 // Check if already selected
@@ -271,7 +276,7 @@ uint32_t cvp_find_closest_token(CLLMModel* model, const float* query_embedding) 
     double* embeddings = model->embeddings;
     
     uint32_t closest_token = 0;
-    float min_distance = INFINITY;
+    float min_distance = MATH_INFINITY;
     
     // Find token with minimum Euclidean distance
     for (uint32_t v = 0; v < vocab_size; v++) {
@@ -304,7 +309,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
     double* embeddings = model->embeddings;
     
     float* shortest = (float*)malloc(embed_dim * sizeof(float));
-    float min_length = INFINITY;
+    float min_length = MATH_INFINITY;
     
     // Find embedding with minimum length
     for (uint32_t v = 0; v < vocab_size; v++) {
@@ -313,7 +318,7 @@ float* svp_find_shortest_vector(CLLMModel* model) {
             float val = embeddings[v * embed_dim + d];
             length += val * val;
         }
-        length = prime_sqrtf(length);
+        length = math_sqrt((double)length);
         
         if (length > 1e-6f && length < min_length) {
             min_length = length;

@@ -54,7 +54,7 @@ static void apply_softmax(float* scores, uint32_t len) {
     // Compute exp(x - max) and sum
     float sum = 0.0f;
     for (uint32_t i = 0; i < len; i++) {
-        scores[i] = prime_exp(scores[i] - max_score);
+        scores[i] = math_exp(scores[i] - max_score);
         sum += scores[i];
     }
     
@@ -135,7 +135,7 @@ void ntt_attention_config_init(
     config->min_seq_len = DEFAULT_MIN_SEQ_LEN;
     config->head_dim = head_dim;
     config->num_heads = num_heads;
-    config->scale_factor = 1.0 / prime_sqrt((double)head_dim);
+    config->scale_factor = 1.0 / math_sqrt((double)head_dim);
 }
 
 int should_use_ntt_attention(uint32_t seq_len, const NTTAttentionConfig* config) {
@@ -149,7 +149,7 @@ double ntt_attention_estimate_speedup(uint32_t seq_len) {
     // O(n²) vs O(n log n) speedup
     double n = (double)seq_len;
     double standard_ops = n * n;
-    double ntt_ops = n * prime_log(n);
+    double ntt_ops = n * math_log(n);
     
     return standard_ops / ntt_ops;
 }
@@ -399,7 +399,7 @@ static void apply_softmax_double(double* scores, uint32_t len) {
     // Compute exp(x - max) and sum
     double sum = 0.0;
     for (uint32_t i = 0; i < len; i++) {
-        scores[i] = prime_exp(scores[i] - max_score);
+        scores[i] = math_exp(scores[i] - max_score);
         sum += scores[i];
     }
     

@@ -1,12 +1,18 @@
 /**
  * @file iterative_search.c
  * @brief Implementation of iterative search with entropy reduction
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_pow with math_pow (1 call)
+ * - Replaced math_sqrt with math_sqrt (1 call)
+ * Total: 2 function calls migrated to NEW math library
  */
 
 #include "iterative_search.h"
 #include "statistics.h"
 #include "cllm_mathematical_constants.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <string.h>
 
@@ -172,7 +178,7 @@ uint64_t iterative_reduced_space_size(double current_entropy,
     double reduced = stats_entropy_reduction(current_entropy, steps, cut_min, cut_max);
     
     // Convert bits to size: 2^bits
-    double size = prime_pow(2.0, reduced);
+    double size = math_pow(2.0, reduced);
     
     // Ensure minimum size of 1
     if (size < 1.0) {
@@ -226,7 +232,7 @@ bool iterative_default_oscillation_detector(const uint64_t* anchors,
     variance /= (double)num_anchors;
     
     // Calculate standard deviation
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     
     // Oscillation detected if std_dev is too high relative to mean
     double coefficient_of_variation = std_dev / (mean + EPSILON);

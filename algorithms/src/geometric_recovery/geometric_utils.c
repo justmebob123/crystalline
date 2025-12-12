@@ -82,7 +82,7 @@ static void find_k_nearest_anchors(
             double diff = position[d] - anchor_positions[a][d];
             dist += diff * diff;
         }
-        dist = prime_sqrt(dist);
+        dist = math_sqrt(dist);
         
         // Insert if closer than current k-th nearest
         for (uint32_t i = 0; i < k; i++) {

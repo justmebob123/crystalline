@@ -33,7 +33,7 @@ static uint64_t compute_tetration_tower(uint32_t base, uint32_t depth) {
     // Use logarithmic approximation for deep towers
     if (depth > 4) {
         // For base 2: 2^2^2^2^2 = 2^65536 which is astronomical
-        // Use log approximation: prime_log(tower) ≈ base^(depth-1)
+        // Use log approximation: math_log(tower) ≈ base^(depth-1)
         return UINT64_MAX; // Represents infinity
     }
     
@@ -65,7 +65,7 @@ static double find_tetration_attractor(double value, uint32_t min_depth, uint32_
             if (tower == UINT64_MAX) continue;
             
             double tower_val = (double)tower;
-            double distance = prime_fabs(value - tower_val);
+            double distance = math_abs(value - tower_val);
             
             if (distance < min_distance) {
                 min_distance = distance;
@@ -124,7 +124,7 @@ static int recursive_stabilization_pass(
             for (uint32_t d = 0; d < 3; d++) {
                 // Simulate temporal evolution with small perturbation
                 double base_value = vertex_positions[v * 3 + d];
-                double perturbation = 0.01 * prime_sin(2.0 * M_PI * t / num_time_samples);
+                double perturbation = 0.01 * math_sin(2.0 * M_PI * t / num_time_samples);
                 time_series[(t * num_vertices + v) * 3 + d] = base_value + perturbation;
             }
         }

@@ -3,8 +3,9 @@
  * @brief Implementation of entropy-based work distribution
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_entropy_work_distribution.h"
-#include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -150,7 +151,7 @@ WorkDistribution calculate_combined_work_distribution(
         dist.child_gets /= sum;
     }
     
-    dist.is_valid = (prime_fabs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
+    dist.is_valid = (math_abs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
     
     return dist;
 }
@@ -230,7 +231,7 @@ bool calculate_entropy_work_distribution(
                 // Adaptive: use entropy with exponential scaling
                 {
                     double normalized = entropies[d] / total_entropy;
-                    double scale = prime_exp(normalized * 2.0) / prime_exp(2.0);
+                    double scale = math_exp(normalized * 2.0) / math_exp(2.0);
                     dimension_work = (size_t)(scale * total_work);
                 }
                 break;
@@ -390,7 +391,7 @@ double calculate_work_distribution_balance(const WorkDistributionPlan* plan) {
     variance /= plan->num_assignments;
     
     // Return coefficient of variation
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     return (mean > EPSILON) ? (std_dev / mean) : 0.0;
 }
 

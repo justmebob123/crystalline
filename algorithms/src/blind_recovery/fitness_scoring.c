@@ -44,7 +44,7 @@ static double score_structural_consistency(
     if (expected_size > 0) {
         double ratio = (double)candidate->candidate / expected_size;
         // Prefer ratios close to 1.0 (natural scale)
-        score += 5.0 / (1.0 + prime_fabs(ratio - 1.0));
+        score += 5.0 / (1.0 + math_abs(ratio - 1.0));
     }
     
     // Bonus for prime candidates (structural stability)

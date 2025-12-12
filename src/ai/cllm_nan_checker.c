@@ -3,13 +3,21 @@
  * 
  * This file provides utilities to detect NaN values in the forward and backward passes
  * to help identify numerical stability issues.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced prime_isinf with inline isinf check (2 calls)
+ * Total: 2 function calls migrated
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "../include/cllm_training.h"
-#include "../include/prime_float_math.h"  // For prime_isinf()
+
+// Inline isinf check without math.h to avoid type conflicts
+static inline bool check_isinf(double x) {
+    return (x == x) && ((x - x) != 0.0);
+}
 
 // Check if a double value is NaN
 static inline bool is_nan_double(double val) {
@@ -33,7 +41,7 @@ int check_array_for_nan_double(const double* array, size_t size, const char* nam
             fprintf(stderr, "NaN detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
-        if (prime_isinf(array[i])) {
+        if (math_is_inf(array[i])) {
             fprintf(stderr, "Inf detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
@@ -49,7 +57,7 @@ int check_array_for_nan_float(const float* array, size_t size, const char* name)
             fprintf(stderr, "NaN detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }
-        if (prime_isinf(array[i])) {
+        if (math_is_inf(array[i])) {
             fprintf(stderr, "Inf detected in %s at index %zu (value: %f)\n", name, i, array[i]);
             return (int)i;
         }

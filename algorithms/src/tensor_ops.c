@@ -1,10 +1,14 @@
 /**
  * @file tensor_ops.c
  * @brief Implementation of general tensor operations
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_pow with math_pow (1 call)
+ * Total: 1 function call migrated to NEW math library
  */
 
 #include "tensor_ops.h"
-#include "prime_math_custom.h"
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 
@@ -79,7 +83,7 @@ void tensor_generate_anchors(double* anchors, size_t num_anchors,
             double t = (double)(state % 1000000) / 1000000.0;
             
             // Scale by golden ratio
-            double phi_scale = prime_pow(phi, (double)d);
+            double phi_scale = math_pow(phi, (double)d);
             anchors[a * dim + d] = t * phi_scale;
         }
     }

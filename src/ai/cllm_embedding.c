@@ -24,11 +24,12 @@
 #include <string.h>
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../include/clock_lattice.h"
 #include "../include/ai/cllm_platonic.h"
 #include "../include/prime_lattice_core.h"
-#include "../include/cllm_angular_position.h"
+#include "math/angular_position.h"
 #include "../include/prime_math.h"
 
 #define PI 3.14159265358979323846
@@ -61,12 +62,12 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
     uint32_t prime_index = 0;
     uint64_t p = 2;
     while (p < prime) {
-        if (validate_prime_by_clock_position(p)) prime_index++;
+        if (prime_validate_by_clock(p)) prime_index++;
         p++;
     }
     
     // Ulam spiral: radius grows with square root of index
-    *radius = prime_sqrt((double)prime_index);
+    *radius = math_sqrt((double)prime_index);
     
     // Angle based on golden angle for optimal packing
     double golden_angle = 2.0 * PI / (PHI * PHI);
@@ -102,7 +103,7 @@ double cllm_lattice_token_distance(uint32_t token1_id, uint64_t prime1,
     double dy = coords1[1] - coords2[1];
     double dz = coords1[2] - coords2[2];
     
-    return prime_sqrt(dx * dx + dy * dy + dz * dz);
+    return math_sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /**
@@ -164,13 +165,13 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
         double freq = (double)(i + 1);
         
         // Combine spatial coordinates with different frequencies
-        double spatial = prime_sin(freq * coords[0] / 10.0) * 0.3 +
-                       prime_cos(freq * coords[1] / 10.0) * 0.3 +
-                       prime_sin(freq * coords[2] / 10.0) * 0.3;
+        double spatial = math_sin(freq * coords[0] / 10.0) * 0.3 +
+                       math_cos(freq * coords[1] / 10.0) * 0.3 +
+                       math_sin(freq * coords[2] / 10.0) * 0.3;
         
         // Add symmetry-based component
         double symmetry_phase = 2.0 * PI * (double)symmetry / (double)SYMMETRY_ORDER;
-        double symmetry_component = prime_cos(freq * symmetry_phase) * 0.1;
+        double symmetry_component = math_cos(freq * symmetry_phase) * 0.1;
         
         output[i] = spatial + symmetry_component;
     }
@@ -180,7 +181,7 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
     for (uint32_t i = 0; i < embedding_dim; i++) {
         norm += output[i] * output[i];
     }
-    norm = prime_sqrt(norm);
+    norm = math_sqrt(norm);
     
     if (norm > 1e-8) {
         for (uint32_t i = 0; i < embedding_dim; i++) {
@@ -204,8 +205,8 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
     // Apply golden ratio-based rotations
     for (int i = 0; i < dim - 1; i++) {
         double angle = 2.0 * PI * PHI * (double)i / (double)dim;
-        double cos_a = prime_cos(angle);
-        double sin_a = prime_sin(angle);
+        double cos_a = math_cos(angle);
+        double sin_a = math_sin(angle);
         
         // Apply Givens rotation in plane (i, i+1)
         double temp_ii = transform[i * dim + i];
@@ -263,14 +264,14 @@ void cllm_init_embeddings(CLLMModel* model) {
             
             for (uint32_t dim = 0; dim < embedding_dim; dim++) {
                 // Combine clock position with dimensional frequency
-                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * M_PI;
+                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * MATH_PI;
                 double radius_factor = pos.radius / 100.0;  // Normalize radius
                 
                 // Use prime-based sinusoidal initialization
-                double value = prime_sin(angle) * (1.0 + radius_factor * 0.1);
+                double value = math_sin(angle) * (1.0 + radius_factor * 0.1);
                 
-                // Scale by 1/prime_sqrt(embedding_dim) for stability
-                value *= 1.0 / prime_sqrt((double)embedding_dim);
+                // Scale by 1/math_sqrt(embedding_dim) for stability
+                value *= 1.0 / math_sqrt((double)embedding_dim);
                 
                 embeddings[token * embedding_dim + dim] = value;
             }
@@ -284,12 +285,16 @@ void cllm_init_embeddings(CLLMModel* model) {
         // Standard initialization with clock lattice structure
         for (uint32_t token = 0; token < vocab_size; token++) {
             // Map token to clock position
-            BabylonianClockPosition pos = map_prime_index_to_clock(token + 1);
+            uint64_t prime_pos = prime_nth(token + 1);
+
+            ClockPosition pos;
+
+            clock_map_prime_to_position(prime_pos, &pos);
             
             for (uint32_t dim = 0; dim < embedding_dim; dim++) {
                 // Use clock-based sinusoidal initialization
-                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * M_PI;
-                double value = prime_sin(angle) / prime_sqrt((double)embedding_dim);
+                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * MATH_PI;
+                double value = math_sin(angle) / math_sqrt((double)embedding_dim);
                 
                 embeddings[token * embedding_dim + dim] = value;
             }
@@ -651,7 +656,7 @@ int cllm_embedding_neighbor_influence_stats(
         for (uint32_t d = 0; d < embed_dim; d++) {
             magnitude += influence_vector[d] * influence_vector[d];
         }
-        magnitude = prime_prime_sqrtf(magnitude);
+        magnitude = math_sqrt(magnitude);
         
         sum += magnitude;
         if (magnitude > max_val) max_val = magnitude;
@@ -775,7 +780,7 @@ static float** apply_lll_reduction(float** cov_matrix, int dim, int target_dim) 
             for (int j = 0; j < dim; j++) {
                 norm += basis[i][j] * basis[i][j];
             }
-            norm = prime_prime_sqrtf(norm);
+            norm = math_sqrt(norm);
             if (norm > 1e-6f) {
                 for (int j = 0; j < dim; j++) {
                     basis[i][j] /= norm;
@@ -807,7 +812,7 @@ static float** compute_pseudo_inverse(float** basis, int reduced_dim, int origin
         for (int i = 0; i < original_dim; i++) {
             norm += inverse[i][j] * inverse[i][j];
         }
-        norm = prime_prime_sqrtf(norm);
+        norm = math_sqrt(norm);
         if (norm > 1e-6f) {
             for (int i = 0; i < original_dim; i++) {
                 inverse[i][j] /= norm;
@@ -974,12 +979,16 @@ void cllm_add_positional_encoding(CLLMModel* model, uint32_t position, double* e
     uint32_t embedding_dim = model->embedding_dim;
     
     // Map position to clock lattice
-    BabylonianClockPosition pos = map_prime_index_to_clock(position + 1);
+    uint64_t prime_pos = prime_nth(position + 1);
+
+    ClockPosition pos;
+
+    clock_map_prime_to_position(prime_pos, &pos);
     
     // Add sinusoidal positional encoding based on clock position
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        double angle = pos.angle + (double)i / embedding_dim * 2.0 * M_PI;
-        double pos_encoding = prime_sin(angle);
+        double angle = pos.angle + (double)i / embedding_dim * 2.0 * MATH_PI;
+        double pos_encoding = math_sin(angle);
         
         embedding[i] += pos_encoding * 0.1;  // Scale factor
     }
@@ -1007,7 +1016,7 @@ void cllm_update_embedding(CLLMModel* model, uint32_t token_id,
     if (model->harmonic.enabled) {
         // Modulate learning rate with primary frequency (432 Hz)
         double freq = model->harmonic.primary_frequency;
-        modulation = 1.0 + 0.1 * prime_sin(freq * token_id / model->vocab_size);
+        modulation = 1.0 + 0.1 * math_sin(freq * token_id / model->vocab_size);
     }
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
@@ -1064,7 +1073,7 @@ double cllm_embedding_similarity(const double* emb1, const double* emb2, uint32_
     
     if (norm1 == 0.0 || norm2 == 0.0) return 0.0;
     
-    return dot / (prime_sqrt(norm1) * prime_sqrt(norm2));
+    return dot / (math_sqrt(norm1) * math_sqrt(norm2));
 }
 
 /**
@@ -1080,7 +1089,7 @@ void cllm_normalize_embedding(float* embedding, int dim) {
     
     if (norm == 0.0f) return;
     
-    norm = prime_sqrtf(norm);
+    norm = math_sqrt(norm);
     for (int i = 0; i < dim; i++) {
         embedding[i] /= norm;
     }

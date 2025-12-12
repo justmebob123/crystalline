@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512
@@ -85,7 +86,7 @@ void cllm_get_embedding(CLLMInference* inference, uint32_t token_id, float* outp
     double* embedding = &model->embeddings[token_id * embed_dim];
     
     // Lazy initialization: compute embedding on first access
-    if (prime_isnan(embedding[0])) {  // FIXED: Use double version for double*
+    if (math_is_nan(embedding[0])) {  // FIXED: Use double version for double*
         extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
         cllm_compute_embedding_lazy(model, token_id);
     }
@@ -274,7 +275,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
         
         // Check input for NaN
         for (uint32_t i = 0; i < embed_dim; i++) {
-            if (prime_isnan(in_vec[i])) {
+            if (math_is_nan(in_vec[i])) {
                 fprintf(stderr, "ERROR: NaN in input at pos=%d, i=%u\n", pos, i);
                 in_vec[i] = 0.0;
             }
@@ -289,15 +290,15 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
                     double in_val = in_vec[h * head_dim + i];
                     
                     // Check weights for NaN
-                    if (prime_isnan(layer->query_lattice[w_idx])) {
+                    if (math_is_nan(layer->query_lattice[w_idx])) {
                         fprintf(stderr, "ERROR: NaN in query weight at h=%u, d=%u, i=%u\n", h, d, i);
                         layer->query_lattice[w_idx] = 0.0;
                     }
-                    if (prime_isnan(layer->key_lattice[w_idx])) {
+                    if (math_is_nan(layer->key_lattice[w_idx])) {
                         fprintf(stderr, "ERROR: NaN in key weight at h=%u, d=%u, i=%u\n", h, d, i);
                         layer->key_lattice[w_idx] = 0.0;
                     }
-                    if (prime_isnan(layer->value_lattice[w_idx])) {
+                    if (math_is_nan(layer->value_lattice[w_idx])) {
                         fprintf(stderr, "ERROR: NaN in value weight at h=%u, d=%u, i=%u\n", h, d, i);
                         layer->value_lattice[w_idx] = 0.0;
                     }
@@ -315,7 +316,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     }
     
     // Compute attention scores with numerical stability
-    double scale = 1.0 / prime_sqrt((double)head_dim);
+    double scale = 1.0 / math_sqrt((double)head_dim);
     const double EPSILON = 1e-10;
     const double MAX_SCORE = 10.0;  // Clip scores to prevent overflow
     
@@ -350,9 +351,9 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
             
             double sum_exp = 0.0;
             for (int j = 0; j < seq_len; j++) {
-                double exp_val = prime_exp(scores[i * seq_len + j] - max_score);
+                double exp_val = math_exp(scores[i * seq_len + j] - max_score);
                 // Check for NaN or inf
-                if (prime_isnan(exp_val) || prime_isinf(exp_val)) {
+                if (math_is_nan(exp_val) || math_is_inf(exp_val)) {
                     exp_val = 0.0;
                 }
                 scores[i * seq_len + j] = exp_val;
@@ -376,7 +377,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
                 double attn_weight = scores[i * seq_len + j];
                 
                 // Check for NaN in attention weights
-                if (prime_isnan(attn_weight)) {
+                if (math_is_nan(attn_weight)) {
                     fprintf(stderr, "ERROR: NaN in attention weight at head=%u, i=%d, j=%d\n", h, i, j);
                     attn_weight = 1.0 / seq_len;
                 }
@@ -386,7 +387,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
                 
                 for (uint32_t d = 0; d < head_dim; d++) {
                     double val = attn_weight * v[d];
-                    if (prime_isnan(val)) {
+                    if (math_is_nan(val)) {
                         fprintf(stderr, "ERROR: NaN in output computation at head=%u, i=%d, j=%d, d=%u\n", h, i, j, d);
                         val = 0.0;
                     }
@@ -398,7 +399,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     
     // Final NaN check on output
     for (int i = 0; i < seq_len * (int)embed_dim; i++) {
-        if (prime_isnan(output[i])) {
+        if (math_is_nan(output[i])) {
             fprintf(stderr, "ERROR: NaN in final output at index %d\n", i);
             output[i] = 0.0;
         }
@@ -529,7 +530,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     double* double_embedding = &model->embeddings[last_token * embed_dim];
     
     // CRITICAL FIX: Check for NaN embeddings and trigger lazy initialization
-    if (prime_isnan(double_embedding[0])) {
+    if (math_is_nan(double_embedding[0])) {
         fprintf(stderr, "Warning: Embedding for token %u is NaN, triggering lazy initialization\n", last_token);
         extern void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id);
         cllm_compute_embedding_lazy(model, last_token);
@@ -607,7 +608,7 @@ void cllm_softmax(double* logits, int vocab_size) {
     // Compute exp and sum
     double sum = 0.0;
     for (int i = 0; i < vocab_size; i++) {
-        logits[i] = prime_exp(logits[i] - max_logit);
+        logits[i] = math_exp(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -750,7 +751,7 @@ int cllm_sample_token(CLLMInference* inf, double* logits) {
     
     double sum = 0.0;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        logits[i] = prime_exp(logits[i] - max_logit);
+        logits[i] = math_exp(logits[i] - max_logit);
         sum += logits[i];
     }
     

@@ -8,6 +8,8 @@
  * NO BACKWARD COMPATIBILITY - Pure NEW design
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "math/abacus.h"
 #include "math/types.h"
 #include "math/clock.h"
@@ -20,14 +22,15 @@
  * Returns: Array of CrystallineAbacus* pointers, each initialized to zero
  */
 CrystallineAbacus** abacus_array_create(size_t size, uint32_t base, ClockContext* ctx) {
-    if (size == 0 || !ctx) return NULL;
+    if (size == 0) return NULL;
+    (void)ctx; // Unused in NEW API
     
     CrystallineAbacus** array = (CrystallineAbacus**)malloc(size * sizeof(CrystallineAbacus*));
     if (!array) return NULL;
     
     // Create each Abacus element
     for (size_t i = 0; i < size; i++) {
-        array[i] = abacus_create_from_uint64(0, base, ctx);
+        array[i] = abacus_from_uint64(0, base);
         if (!array[i]) {
             // Allocation failed - clean up and return NULL
             for (size_t j = 0; j < i; j++) {
@@ -63,7 +66,10 @@ void abacus_array_zero(CrystallineAbacus** array, size_t size) {
     
     for (size_t i = 0; i < size; i++) {
         if (array[i]) {
-            abacus_set_zero(array[i]);
+            // Free old value and create new zero
+            uint32_t base = array[i]->base;
+            abacus_free(array[i]);
+            array[i] = abacus_from_uint64(0, base);
         }
     }
 }
@@ -87,7 +93,9 @@ void abacus_array_copy(CrystallineAbacus** dest, CrystallineAbacus** src, size_t
             }
             continue;
         }
-        abacus_copy(dest[i], src[i]);
+        // Free old destination and copy source
+        abacus_free(dest[i]);
+        dest[i] = abacus_copy(src[i]);
     }
 }
 
@@ -96,14 +104,16 @@ void abacus_array_copy(CrystallineAbacus** dest, CrystallineAbacus** src, size_t
  */
 void abacus_array_from_float(CrystallineAbacus** dest, const float* src, size_t size, 
                              uint32_t base, int32_t precision, ClockContext* ctx) {
-    if (!dest || !src || !ctx) return;
+    if (!dest || !src) return;
+    (void)ctx; // Unused in NEW API
     
     for (size_t i = 0; i < size; i++) {
         if (dest[i]) {
-            MathError err = abacus_from_double((double)src[i], base, precision, ctx, dest[i]);
-            if (err != MATH_SUCCESS) {
-                fprintf(stderr, "WARNING: abacus_array_from_float failed at index %zu with error %d\n", i, err);
-            }
+            abacus_free(dest[i]);
+        }
+        dest[i] = abacus_from_double((double)src[i], base, precision);
+        if (!dest[i]) {
+            fprintf(stderr, "WARNING: abacus_array_from_float failed at index %zu\n", i);
         }
     }
 }
@@ -118,7 +128,14 @@ void abacus_array_to_float(float* dest, CrystallineAbacus** src, size_t size) {
         if (src[i]) {
             // Convert Abacus to double, then to float
             // This is a lossy conversion but necessary for compatibility
-            dest[i] = (float)abacus_to_double(src[i]);
+            double value;
+            MathError err = abacus_to_double(src[i], &value);
+            if (err == MATH_SUCCESS) {
+                dest[i] = (float)value;
+            } else {
+                dest[i] = 0.0f;
+                fprintf(stderr, "WARNING: abacus_array_to_float failed at index %zu\n", i);
+            }
         } else {
             dest[i] = 0.0f;
         }

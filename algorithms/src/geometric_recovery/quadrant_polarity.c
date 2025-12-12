@@ -1,12 +1,17 @@
 /**
  * @file quadrant_polarity.c
  * @brief Quadrant polarity system with mirrored sudoku folding
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_cos with math_cos (2 calls)
+ * - Replaced math_sin with math_sin (2 calls)
+ * Total: 4 function calls migrated to NEW math library
  */
 
 #include "geometric_recovery.h"
 #include "prime_types.h"
+#include "../../../math/include/math/transcendental.h"  // NEW math library
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Create quadrant polarity system
@@ -99,8 +104,8 @@ void apply_quadrant_polarity(
     // Apply Möbius fold angle correction
     // This handles the 2π folding with polarity flip
     if (polarity->fold_angle > 1e-6) {
-        double cos_fold = prime_cos(polarity->fold_angle);
-        double sin_fold = prime_sin(polarity->fold_angle);
+        double cos_fold = math_cos(polarity->fold_angle);
+        double sin_fold = math_sin(polarity->fold_angle);
         
         if (num_dimensions >= 2) {
             double x = position[0];
@@ -138,8 +143,8 @@ void fold_to_first_quadrant(
     
     // Reverse Möbius fold
     if (polarity_out->fold_angle > 1e-6) {
-        double cos_fold = prime_cos(-polarity_out->fold_angle);
-        double sin_fold = prime_sin(-polarity_out->fold_angle);
+        double cos_fold = math_cos(-polarity_out->fold_angle);
+        double sin_fold = math_sin(-polarity_out->fold_angle);
         
         if (num_dimensions >= 2) {
             double x = position[0];

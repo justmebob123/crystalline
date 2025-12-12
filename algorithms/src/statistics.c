@@ -3,8 +3,8 @@
  * @brief Implementation of statistical analysis functions
  * 
  * PHASE 1 INTEGRATION: Migrated to NEW math library
- * - Replaced prime_sqrt with math_sqrt
- * - Replaced prime_fabs with math_abs
+ * - Replaced math_sqrt with math_sqrt
+ * - Replaced math_abs with math_abs
  * - Replaced prime_floor with math_floor
  * - Replaced prime_ceil with math_ceil
  * - Replaced prime_log2 with math_log2

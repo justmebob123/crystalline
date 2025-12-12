@@ -19,7 +19,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Include NEW math library types FIRST to prevent conflicts
+#include "../math/include/math/types.h"
+
 // Include clock lattice for complete type definition
+// (Will use NEW types if MATH_TYPES_H is defined)
 #include "clock_lattice.h"
 
 // Include optimizer types from algorithms layer

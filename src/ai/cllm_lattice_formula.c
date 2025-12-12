@@ -3,14 +3,13 @@
  * @brief Implementation of complete L(n,d,k,λ,ω,ψ) lattice formula
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/angular_position.h"
 #include "ai/cllm_lattice_formula.h"
 #include "ai/cllm_lattice_entropy.h"
 #include "ai/cllm_cymatic_frequencies.h"
-#include "cllm_angular_position.h"
-#include "cllm_mathematical_constants.h"
-#include "plimpton_322.h"
 #include "phonetic_values.h"
-#include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,7 +84,7 @@ double angular_position_complete(uint64_t n, uint32_t k, const char* lambda,
     double theta = pos.theta;
     
     // Add phonetic correction
-    double phonetic_correction = prime_log(nu + 1.0) / prime_log(3.0);
+    double phonetic_correction = math_log(nu + 1.0) / math_log(3.0);
     theta += phonetic_correction;
     
     // Add cymatic frequency correction
@@ -103,10 +102,10 @@ double angular_position_complete(uint64_t n, uint32_t k, const char* lambda,
     
     // Normalize to [0, 2π]
     while (theta < 0.0) {
-        theta += 2.0 * M_PI;
+        theta += 2.0 * MATH_PI;
     }
-    while (theta >= 2.0 * M_PI) {
-        theta -= 2.0 * M_PI;
+    while (theta >= 2.0 * MATH_PI) {
+        theta -= 2.0 * MATH_PI;
     }
     
     return theta;
@@ -208,7 +207,7 @@ double L_lattice_complete(const LatticeFormulaParams *params, LatticeFormulaCont
     }
     
     // 2. Calculate base: 3^O
-    double base = prime_pow(3.0, O);
+    double base = math_pow(3.0, O);
     
     if (ctx && ctx->verbose) {
         printf("3^O = %.6f\n", base);
@@ -222,16 +221,16 @@ double L_lattice_complete(const LatticeFormulaParams *params, LatticeFormulaCont
         printf("θ(n,k,λ,ω,ψ) = %.6f\n", theta);
     }
     
-    // 4. Calculate product: ∏ᵢ₌₁ᵈ cos(θ·φᵢ)
+    // 4. Calculate product: ∏ᵢ₌₁ᵈ math_cos(θ·φᵢ)
     double product = 1.0;
     for (uint32_t i = 1; i <= params->d; i++) {
         uint64_t phi_i = get_dimensional_frequency(i);
         double angle = theta * (double)phi_i;
-        product *= prime_cos(angle);
+        product *= math_cos(angle);
     }
     
     if (ctx && ctx->verbose) {
-        printf("∏cos(θ·φᵢ) = %.6f\n", product);
+        printf("∏math_cos(θ·φᵢ) = %.6f\n", product);
     }
     
     // 5. Calculate Möbius twist: Γ(k) = (-1)^k
@@ -249,7 +248,7 @@ double L_lattice_complete(const LatticeFormulaParams *params, LatticeFormulaCont
     }
     
     // 7. Einstein's Λ correction
-    double einstein = EINSTEIN_LAMBDA_DOUBLE;
+    double einstein = cllm_get_einstein_lambda();
     
     if (ctx && ctx->verbose) {
         printf("Λ = %.10f\n", einstein);
@@ -329,7 +328,7 @@ void L_lattice_breakdown(const LatticeFormulaParams *params,
         double product = 1.0;
         for (uint32_t i = 1; i <= params->d; i++) {
             uint64_t phi_i = get_dimensional_frequency(i);
-            product *= prime_cos(theta * (double)phi_i);
+            product *= math_cos(theta * (double)phi_i);
         }
         *product_out = product;
     }
@@ -343,7 +342,7 @@ void L_lattice_breakdown(const LatticeFormulaParams *params,
     }
     
     if (einstein_out) {
-        *einstein_out = EINSTEIN_LAMBDA_DOUBLE;
+        *einstein_out = cllm_get_einstein_lambda();
     }
     
     if (psi_out) {

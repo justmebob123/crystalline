@@ -25,8 +25,9 @@
  *          src/ai/cllm_batch.c is like fopen() - simple and easy to use.
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_batch.h"
-#include "prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -406,13 +407,13 @@ bool batch_validate(const Batch* batch) {
     
     // Check for NaN or Inf
     for (size_t i = 0; i < batch->input.total_size; i++) {
-        if (prime_isnanf(batch->input.data[i]) || prime_isinff(batch->input.data[i])) {
+        if (math_is_nan((double)batch->input.data[i]) || math_is_inf((double)batch->input.data[i])) {
             return false;
         }
     }
     
     for (size_t i = 0; i < batch->target.total_size; i++) {
-        if (prime_isnanf(batch->target.data[i]) || prime_isinff(batch->target.data[i])) {
+        if (math_is_nan((double)batch->target.data[i]) || math_is_inf((double)batch->target.data[i])) {
             return false;
         }
     }

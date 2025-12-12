@@ -4,7 +4,7 @@
  */
 
 #include "ai/cllm_workload_detector.h"
-#include "prime_float_math.h"
+// Migrated to NEW math library - no prime_float_math needed
 #include <string.h>
 #include <stdio.h>
 #include <time.h>

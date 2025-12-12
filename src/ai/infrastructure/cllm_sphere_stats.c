@@ -1,8 +1,13 @@
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_sphere_stats.h"
-#include "cllm_mathematical_constants.h"
 #include <stdio.h>
 #include <string.h>
-#include "prime_math_custom.h"
+
+// Crystalline constants from the NEW math library design
+#define VECTOR_CULMINATION 144000ULL  // 3 × 12³ × (250/9)
+#define TWIN_PRIME_LOWER 143999ULL    // Prime below 144000
+#define TWIN_PRIME_UPPER 144001ULL    // Prime above 144000
 
 void cllm_sphere_stats_init(SphereStatistics* stats, 
                             int symmetry_group,

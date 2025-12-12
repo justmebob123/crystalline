@@ -3,14 +3,29 @@
  * 
  * Generic threading model based on kissing spheres geometry.
  * Uses Babylonian clock structure for deterministic neighbor assignment.
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_sqrt with math_sqrt (1 call)
+ * Total: 1 function call migrated to NEW math library
  */
 
 #include "sphere_threading.h"
-#include "../../include/clock_lattice.h"
+#include "../../math/include/math/transcendental.h"  // PHASE 1: NEW math library
+#include "../../math/include/math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+
+// Forward declarations to avoid type conflicts with OLD library
+// We only need the function, not the full header
+typedef struct {
+    int ring;
+    int position;
+    double angle;
+    double radius;
+} BabylonianClockPosition;
+
+extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
 
 // ============================================================================
 // INITIALIZATION
@@ -335,7 +350,7 @@ int sphere_get_system_statistics(
         }
         
         variance /= model->num_spheres;
-        double std_dev = prime_sqrt(variance);
+        double std_dev = math_sqrt(variance);
         
         // Score: 1.0 = perfect balance, 0.0 = worst balance
         stats->load_balance_score = (avg_work > 0) ? 

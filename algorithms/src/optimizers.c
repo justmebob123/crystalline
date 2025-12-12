@@ -3,8 +3,8 @@
  * @brief Implementation of optimization algorithms
  * 
  * PHASE 1 INTEGRATION: Migrated to NEW math library
- * - Replaced prime_sqrt with math_sqrt
- * - Replaced prime_pow with math_pow
+ * - Replaced math_sqrt with math_sqrt
+ * - Replaced math_pow with math_pow
  */
 
 #include "optimizers.h"

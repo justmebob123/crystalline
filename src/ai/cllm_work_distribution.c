@@ -6,11 +6,12 @@
 
 #include "ai/cllm_work_distribution.h"
 #include "ai/cllm_plimpton_relationships.h"
-#include "plimpton_322.h"
+#include "math/angular_position.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 // Default epsilon for ratio validation
 #define DEFAULT_EPSILON 0.0001
@@ -156,7 +157,7 @@ bool ratios_sum_to_one(
     double epsilon
 ) {
     double sum = parent_ratio + child_ratio;
-    return prime_fabs(sum - 1.0) < epsilon;
+    return math_abs(sum - 1.0) < epsilon;
 }
 
 bool validate_work_distribution(
@@ -208,7 +209,7 @@ bool validate_multi_child_distribution(
         sum += distribution->child_ratios[i];
     }
     
-    return prime_fabs(sum - 1.0) < epsilon;
+    return math_abs(sum - 1.0) < epsilon;
 }
 
 // ============================================================================

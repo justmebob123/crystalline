@@ -13,10 +13,10 @@
  * - Geometric weight initialization
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../include/cllm.h"
 #include "../include/ai/cllm_platonic.h"
-#include "../include/clock_lattice.h"
-#include "../include/prime_float_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -26,7 +26,6 @@
 extern uint64_t crystalline_get_nth_prime(uint32_t n);
 extern PlatonicGeometry platonic_get_geometry(PlatonicSolidType solid_type);
 extern bool platonic_verify_euler(const PlatonicGeometry* geometry);
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -44,11 +43,11 @@ static double compute_angular_position(uint32_t token_id, const CLLMModel* model
     double n = (double)token_id;
     double k = (double)model->geometry.vertices;  // Use vertices as k
     double lambda = (double)model->geometry.edges; // Use edges as λ
-    double omega = 2.0 * M_PI / 12.0;  // 12-fold symmetry
-    double psi = (double)(prime % 360) * M_PI / 180.0;  // Prime-based phase
+    double omega = 2.0 * MATH_PI / 12.0;  // 12-fold symmetry
+    double psi = (double)(prime % 360) * MATH_PI / 180.0;  // Prime-based phase
     
-    // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·prime_sin(ωn + ψ)
-    double theta = (2.0 * M_PI * n / k) + (lambda / k) * prime_sin(omega * n + psi);
+    // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·math_sin(ωn + ψ)
+    double theta = (2.0 * MATH_PI * n / k) + (lambda / k) * math_sin(omega * n + psi);
     
     return theta;
 }
@@ -58,7 +57,7 @@ static double compute_angular_position(uint32_t token_id, const CLLMModel* model
  */
 static void initialize_geometric_weights(CLLMModel* model) {
     // Use Xavier/Glorot initialization scaled by geometric properties
-    double scale = prime_sqrt(2.0 / (model->embedding_dim + model->hidden_dim));
+    double scale = math_sqrt(2.0 / (model->embedding_dim + model->hidden_dim));
     
     // Scale by golden ratio if applicable
     if (model->geometry.has_golden_ratio) {
@@ -70,7 +69,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
         // Use prime-based initialization for better distribution
         double r1 = (double)(rand() % 10000) / 10000.0;
         double r2 = (double)(rand() % 10000) / 10000.0;
-        model->embeddings[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+        model->embeddings[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
     }
     
     // Initialize layer weights
@@ -80,7 +79,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
         for (size_t i = 0; i < attn_size; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            double val = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+            double val = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
             
             model->layers[layer].query_weights[i] = val;
             model->layers[layer].key_weights[i] = val;
@@ -93,14 +92,14 @@ static void initialize_geometric_weights(CLLMModel* model) {
         for (size_t i = 0; i < ffn_size1; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w1[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+            model->layers[layer].ffn_w1[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
         }
         
         size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
         for (size_t i = 0; i < ffn_size2; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w2[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+            model->layers[layer].ffn_w2[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
         }
         
         // Layer norm parameters (initialize to 1 and 0)
@@ -117,7 +116,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
     for (size_t i = 0; i < output_size; i++) {
         double r1 = (double)(rand() % 10000) / 10000.0;
         double r2 = (double)(rand() % 10000) / 10000.0;
-        model->output_weights[i] = scale * prime_sqrt(-2.0 * prime_log(r1)) * prime_cos(2.0 * M_PI * r2);
+        model->output_weights[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
     }
 }
 
@@ -309,12 +308,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     
     // Map vertices to clock lattice
     for (uint32_t v = 0; v < model->geometry.vertices; v++) {
-        model->vertex_positions[v] = map_prime_index_to_clock(v);
+        clock_map_index_to_position(v, &model->vertex_positions[v]);
     }
     
     // Map tokens to clock lattice
     for (uint32_t t = 0; t < model->vocab_size; t++) {
-        model->token_positions[t] = map_prime_index_to_clock(t);
+        clock_map_index_to_position(t, &model->token_positions[t]);
         model->token_angular_positions[t] = compute_angular_position(t, model);
     }
     

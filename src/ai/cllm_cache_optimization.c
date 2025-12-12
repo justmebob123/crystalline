@@ -6,7 +6,8 @@
 
 #define _GNU_SOURCE  // For CPU_SET macros
 #include "ai/cllm_cache_optimization.h"
-#include "prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "prime_types.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,7 +83,7 @@ uint32_t map_theta_to_numa_node(double theta, int num_numa_nodes) {
  */
 double calculate_cache_proximity(double theta1, double theta2) {
     // Calculate angular distance
-    double diff = prime_fabs(theta1 - theta2);
+    double diff = math_abs(theta1 - theta2);
     
     // Normalize to [0, π] (shortest angular distance)
     if (diff > PRIME_PI) {

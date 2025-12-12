@@ -180,7 +180,7 @@ int viz_calculate_statistics(
     }
     
     variance /= 12.0;
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     stats->load_balance_score = (avg > 0) ? 1.0 / (1.0 + std_dev / avg) : 1.0;
     
     // Calculate spatial extent

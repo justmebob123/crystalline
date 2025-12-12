@@ -2,14 +2,28 @@
  * 3D Visualization Projection
  * 
  * Implements 3D projection algorithms for visualization.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_cos with math_cos (2 calls)
+ * - Replaced math_sin with math_sin (2 calls)
+ * Total: 4 function calls migrated to NEW math library
  */
 
 #include "visualization.h"
 #include "sphere_packing.h"
-#include "../../include/clock_lattice.h"
+#include "../../math/include/math/transcendental.h"  // NEW math library
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+
+// Forward declarations to avoid type conflicts
+typedef struct {
+    int ring;
+    int position;
+    double angle;
+    double radius;
+} BabylonianClockPosition;
+
+extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
 
 /**
  * Project to 3D using spherical layout
@@ -43,10 +57,10 @@ int viz_project_3d(VisualizationData* data) {
         double phi = (clock_pos.position * 3.14159265358979323846) / positions_in_ring;
         
         // Convert to Cartesian coordinates
-        double sin_phi = prime_sin(phi);
-        point->position[0] = radius * sin_phi * prime_cos(theta);
-        point->position[1] = radius * sin_phi * prime_sin(theta);
-        point->position[2] = radius * prime_cos(phi);
+        double sin_phi = math_sin(phi);
+        point->position[0] = radius * sin_phi * math_cos(theta);
+        point->position[1] = radius * sin_phi * math_sin(theta);
+        point->position[2] = radius * math_cos(phi);
     }
     
     // Update bounds

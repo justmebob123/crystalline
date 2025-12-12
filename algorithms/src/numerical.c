@@ -3,9 +3,9 @@
  * @brief Implementation of numerical analysis functions
  * 
  * PHASE 1 INTEGRATION: Migrated to NEW math library
- * - Replaced prime_exp with math_exp
- * - Replaced prime_log with math_log
- * - Replaced prime_sqrt with math_sqrt
+ * - Replaced math_exp with math_exp
+ * - Replaced math_log with math_log
+ * - Replaced math_sqrt with math_sqrt
  * - Added high-precision variants using Crystalline Abacus
  */
 

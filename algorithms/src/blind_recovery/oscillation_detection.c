@@ -113,7 +113,7 @@ static bool is_oscillation_stable(const double* amplitudes, uint32_t num_samples
     variance /= num_samples;
     
     // Stable if variance is low relative to mean
-    double coefficient_of_variation = prime_sqrt(variance) / (mean + 1e-10);
+    double coefficient_of_variation = math_sqrt(variance) / (mean + 1e-10);
     return coefficient_of_variation < 0.1;  // 10% threshold
 }
 
@@ -232,9 +232,9 @@ OscillationMap* detect_oscillations(
                 map->cross_correlations[i * num_dimensions + j] = 1.0;
             } else {
                 // Simplified correlation based on frequency similarity
-                double freq_diff = prime_fabs(map->signatures[i].frequency - 
+                double freq_diff = math_abs(map->signatures[i].frequency - 
                                        map->signatures[j].frequency);
-                double correlation = prime_exp(-freq_diff / 10.0);  // Decay with difference
+                double correlation = math_exp(-freq_diff / 10.0);  // Decay with difference
                 map->cross_correlations[i * num_dimensions + j] = correlation;
             }
         }

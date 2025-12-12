@@ -3,7 +3,8 @@
 // Part of the Prime Mathematics Library - Crystalline Lattice Architecture
 
 #include "crystal_abacus.h"
-#include "clock_lattice.h"  // For validate_prime_by_clock_position()
+#include "math/clock.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -125,12 +126,12 @@ int prime_min_int_local(int a, int b) {
  * familiar API for external code while using our deterministic validation.
  * 
  * For internal use within crystalline/algorithms libraries, prefer direct
- * calls to validate_prime_by_clock_position() to express trust in our
+ * calls to prime_validate_by_clock() to express trust in our
  * geometric consistency.
  */
 bool is_prime(uint64_t n) {
     // Trust our deterministic clock lattice structure
-    return validate_prime_by_clock_position(n);
+    return prime_validate_by_clock(n);
 }
 
 int* generate_n_primes(int n) {
@@ -144,7 +145,7 @@ int* generate_n_primes(int n) {
     
     while (count < n) {
         // Internal use: Trust our deterministic clock lattice
-        if (validate_prime_by_clock_position(candidate)) {
+        if (prime_validate_by_clock(candidate)) {
             primes[count++] = candidate;
         }
         candidate++;

@@ -3,10 +3,15 @@
  * @brief Implementation of entropy-based thread allocation
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_entropy_allocation.h"
-#include "prime_float_math.h"
 #include <string.h>
 #include <stdio.h>
+
+#ifndef MATH_INFINITY
+#define MATH_INFINITY (1.0 / 0.0)
+#endif
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -94,7 +99,7 @@ int calculate_dimension_threads(
             {
                 double normalized = entropy / total_entropy;
                 // Use exponential scaling for adaptive allocation
-                double scale = prime_exp(normalized * 2.0) / prime_exp(2.0);
+                double scale = math_exp(normalized * 2.0) / math_exp(2.0);
                 threads = (int)(scale * available_threads);
             }
             break;
@@ -341,7 +346,7 @@ double calculate_allocation_balance(const ThreadAllocationPlan* plan) {
     variance /= plan->active_dimensions;
     
     // Return coefficient of variation (normalized standard deviation)
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     return (mean > EPSILON) ? (std_dev / mean) : 0.0;
 }
 
@@ -402,7 +407,7 @@ double compare_allocation_plans(
     const ThreadAllocationPlan* plan2
 ) {
     if (!plan1 || !plan2) {
-        return INFINITY;
+        return MATH_INFINITY;
     }
     
     double diff = 0.0;
@@ -415,7 +420,7 @@ double compare_allocation_plans(
         diff += delta * delta;
     }
     
-    return prime_sqrt(diff);
+    return math_sqrt(diff);
 }
 
 /**

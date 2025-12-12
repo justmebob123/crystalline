@@ -18,7 +18,7 @@ static double distance_3d(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return prime_sqrt(dx*dx + dy*dy + dz*dz);
+    return math_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**
@@ -59,7 +59,7 @@ bool detect_anchor_corruption(
             anchor_idx * system->num_anchors + i
         ];
         
-        double error = prime_fabs(actual_dist - expected_dist) / expected_dist;
+        double error = math_abs(actual_dist - expected_dist) / expected_dist;
         if (error > max_distance_error) {
             max_distance_error = error;
         }
@@ -158,7 +158,7 @@ void update_anchor_confidence(
             anchor->confidence *= 0.5;  // Reduce confidence
         } else {
             // Increase confidence slightly if no issues detected
-            anchor->confidence = prime_fmin(1.0, anchor->confidence * 1.05);
+            anchor->confidence = (anchor->confidence * 1.05 < 1.0) ? anchor->confidence * 1.05 : 1.0;
         }
     }
     

@@ -19,7 +19,7 @@
  */
 static double compute_scale_resolution(uint32_t scale_level) {
     // Each scale level doubles the resolution
-    return prime_pow(2.0, (double)scale_level);
+    return math_pow(2.0, (double)scale_level);
 }
 
 /**

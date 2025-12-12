@@ -5,13 +5,19 @@
  * It can be used by ANY model, not just CLLM.
  * 
  * Formula: attention(Q,K) = cos((θ_Q - θ_K) · φᵢ) · cymatic_resonance(θ_diff)
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_cos with math_cos (2 calls)
+ * - Replaced prime_expf with math_exp (1 call)
+ * Total: 3 function calls migrated to NEW math library
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include "../include/angular_attention.h"
-#include "../../include/cllm_mathematical_constants.h"
-#include "prime_float_math.h"
+#include "math/transcendental.h"  // NEW math library
+#include "math/arithmetic.h"      // NEW math library
+#include "math/types.h"           // NEW math library (for MATH_PI)
 
 /**
  * Compute angular attention score between two positions
@@ -26,12 +32,12 @@ float angular_attention_score(
     
     // Compute attention score: cos((θ_q - θ_k) · φᵢ)
     double theta_diff = q_pos->theta - k_pos->theta;
-    double score = prime_cos(theta_diff * (double)phi_i);
+    double score = math_cos(theta_diff * (double)phi_i);
     
     // Apply cymatic resonance
     // This adds a frequency-domain modulation to the attention
-    double cymatic_phase = 2.0 * PRIME_PI * cymatic_freq * theta_diff / 1000.0;
-    double resonance = prime_cos(cymatic_phase);
+    double cymatic_phase = 2.0 * MATH_PI * cymatic_freq * theta_diff / 1000.0;
+    double resonance = math_cos(cymatic_phase);
     
     // Combine: attention × (0.8 + 0.2 × resonance)
     // This gives 20% modulation from cymatic resonance
@@ -84,7 +90,7 @@ static void softmax_inplace(float* scores, uint32_t len) {
     // Compute exp and sum
     double sum = 0.0;
     for (uint32_t i = 0; i < len; i++) {
-        scores[i] = prime_expf(scores[i] - max_score);
+        scores[i] = math_exp(scores[i] - max_score);
         sum += scores[i];
     }
     

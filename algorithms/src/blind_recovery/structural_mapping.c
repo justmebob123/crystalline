@@ -115,14 +115,14 @@ StructuralMap* map_structure(
             double z = vertex_positions[i * 3 + 2];
             
             // Check for NaN or Inf
-            if (prime_isnan(x) || prime_isnan(y) || prime_isnan(z) ||
-                prime_isinf(x) || prime_isinf(y) || prime_isinf(z)) {
+            if (math_is_nan(x) || math_is_nan(y) || math_is_nan(z) ||
+                math_is_inf(x) || math_is_inf(y) || math_is_inf(z)) {
                 map->corruption_mask[i] = true;
                 corrupted_count++;
             }
             
             // Check for extreme values
-            double magnitude = prime_sqrt(x*x + y*y + z*z);
+            double magnitude = math_sqrt(x*x + y*y + z*z);
             if (magnitude > 100.0) {  // Threshold
                 map->corruption_mask[i] = true;
                 corrupted_count++;

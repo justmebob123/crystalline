@@ -3,8 +3,9 @@
  * @brief Core implementation of Platonic Solid Model Architecture
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_platonic.h"
-#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +53,7 @@ extern bool platonic_icosahedron_init_attention(PlatonicModel* model);
 // ============================================================================
 
 // Golden ratio for dodecahedron/icosahedron (use existing PHI from prime_types.h)
-// #define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)  // Already defined in prime_types.h
+// #define PHI ((1.0 + math_sqrt(5.0)) / 2.0)  // Already defined in prime_types.h
 
 // Platonic solid properties
 static const PlatonicGeometry PLATONIC_GEOMETRIES[] = {

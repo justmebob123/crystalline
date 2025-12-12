@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+// Migrated to NEW math library - no prime_float_math needed
 
 // Helper function to clamp values
 static inline double clamp(double value, double min, double max) {

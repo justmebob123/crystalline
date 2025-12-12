@@ -72,16 +72,16 @@ static void free_position_history(PositionHistory* hist) {
 
 // Improved tetration computation with logarithmic representation
 static double compute_tetration_log(uint32_t base, uint32_t depth) {
-    if (depth == 0) return 0.0;  // prime_log(1) = 0
-    if (depth == 1) return prime_log((double)base);
+    if (depth == 0) return 0.0;  // math_log(1) = 0
+    if (depth == 1) return math_log((double)base);
     
     // For deep tetration, use logarithmic approximation
-    // prime_log(base^base^...^base) ≈ base^(depth-1) * prime_log(base)
-    double log_base = prime_log((double)base);
+    // math_log(base^base^...^base) ≈ base^(depth-1) * math_log(base)
+    double log_base = math_log((double)base);
     double result = log_base;
     
     for (uint32_t i = 1; i < depth && i < 10; i++) {
-        result = prime_pow((double)base, result);
+        result = math_pow((double)base, result);
         if (result > 100.0) break;  // Prevent overflow
     }
     
@@ -92,7 +92,7 @@ static double compute_tetration_log(uint32_t base, uint32_t depth) {
 static double find_tetration_attractor_improved(double value, uint32_t min_depth, uint32_t max_depth) {
     if (value <= 0.0) return value;
     
-    double log_value = prime_log(prime_fabs(value) + 1e-10);
+    double log_value = math_log(math_abs(value) + 1e-10);
     double nearest_log = log_value;
     double min_distance = INFINITY;
     
@@ -102,7 +102,7 @@ static double find_tetration_attractor_improved(double value, uint32_t min_depth
     for (size_t b = 0; b < sizeof(bases)/sizeof(bases[0]); b++) {
         for (uint32_t depth = min_depth; depth <= max_depth && depth <= 10; depth++) {
             double tower_log = compute_tetration_log(bases[b], depth);
-            double distance = prime_fabs(log_value - tower_log);
+            double distance = math_abs(log_value - tower_log);
             
             if (distance < min_distance) {
                 min_distance = distance;
@@ -112,7 +112,7 @@ static double find_tetration_attractor_improved(double value, uint32_t min_depth
     }
     
     // Convert back from log space
-    double result = prime_exp(nearest_log);
+    double result = math_exp(nearest_log);
     return (value < 0.0) ? -result : result;
 }
 

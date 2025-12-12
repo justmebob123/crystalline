@@ -10,12 +10,13 @@
  * - 2-4x speedup over scalar implementation
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>  // AVX2
 #include "../include/cllm.h"
-#include "../include/prime_float_math.h"
 
 // ============================================================================
 // SIMD-OPTIMIZED LAYER NORMALIZATION
@@ -24,7 +25,7 @@
 /**
  * Layer normalization forward pass with SIMD
  * 
- * Computes: output = gamma * (input - mean) / prime_sqrt(variance + epsilon) + beta
+ * Computes: output = gamma * (input - mean) / math_sqrt(variance + epsilon) + beta
  * 
  * @param input Input tensor [batch_size × seq_len × dim]
  * @param output Output tensor [batch_size × seq_len × dim]
@@ -96,7 +97,7 @@ void cllm_layer_norm_forward(
             variance /= (double)dim;
             
             // Compute normalization factor
-            double inv_std = 1.0 / prime_sqrt(variance + epsilon);
+            double inv_std = 1.0 / math_sqrt(variance + epsilon);
             
             // Normalize and scale (vectorized)
             __m256d inv_std_vec = _mm256_set1_pd(inv_std);
@@ -181,7 +182,7 @@ void cllm_layer_norm_backward(
             }
             variance /= (double)dim;
             
-            double inv_std = 1.0 / prime_sqrt(variance + epsilon);
+            double inv_std = 1.0 / math_sqrt(variance + epsilon);
             
             // Accumulate gradients for gamma and beta
             for (uint32_t i = 0; i < dim; i++) {

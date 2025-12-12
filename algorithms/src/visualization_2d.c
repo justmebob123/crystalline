@@ -2,13 +2,27 @@
  * 2D Visualization Projection
  * 
  * Implements 2D projection algorithms for visualization.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_cos with math_cos (1 call)
+ * - Replaced math_sin with math_sin (1 call)
+ * Total: 2 function calls migrated to NEW math library
  */
 
 #include "visualization.h"
-#include "../../include/clock_lattice.h"
+#include "../../math/include/math/transcendental.h"  // NEW math library
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+
+// Forward declarations to avoid type conflicts
+typedef struct {
+    int ring;
+    int position;
+    double angle;
+    double radius;
+} BabylonianClockPosition;
+
+extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
 
 /**
  * Project to 2D using circular layout
@@ -42,8 +56,8 @@ int viz_project_2d(VisualizationData* data) {
         double angle = base_angle + angle_offset;
         
         // Calculate 2D position
-        point->position[0] = radius * prime_cos(angle);
-        point->position[1] = radius * prime_sin(angle);
+        point->position[0] = radius * math_cos(angle);
+        point->position[1] = radius * math_sin(angle);
         point->position[2] = 0.0; // Not used in 2D
     }
     

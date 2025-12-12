@@ -18,9 +18,10 @@
  *   - Tetration Convergence: Attractors for optimization
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "cllm.h"
 #include "cllm_utils.h"
-#include "prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,7 +51,7 @@ int cllm_detect_corruption(CLLMModel* model) {
     if (model->embeddings) {
         for (uint32_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
             double val = model->embeddings[i];
-            if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
+            if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
                 corruption_count++;
             }
         }
@@ -62,7 +63,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].query_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].query_weights[i];
-                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
+                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
                     corruption_count++;
                 }
             }
@@ -72,7 +73,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].key_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].key_weights[i];
-                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
+                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
                     corruption_count++;
                 }
             }
@@ -82,7 +83,7 @@ int cllm_detect_corruption(CLLMModel* model) {
         if (model->layers[layer].value_weights) {
             for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
                 double val = model->layers[layer].value_weights[i];
-                if (prime_isnan(val) || prime_isinf(val) || prime_fabs(val) > 100.0) {
+                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
                     corruption_count++;
                 }
             }
@@ -428,7 +429,7 @@ int cllm_simulate_corruption(CLLMModel* model, double corruption_rate) {
     // Corrupt random embeddings
     for (int i = 0; i < to_corrupt && i < (int)total_params; i++) {
         int idx = rand() % total_params;
-        model->embeddings[idx] = NAN; // Set to NaN
+        model->embeddings[idx] = 0.0 / 0.0; // Set to NaN using NEW math library approach
         corrupted++;
     }
     

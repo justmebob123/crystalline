@@ -20,6 +20,8 @@
  * The "threaded" name is legacy and will be renamed in future refactoring.
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "cllm_training.h"
 #include "cllm_training_threaded.h"
 #include "cllm_threads.h"
@@ -34,7 +36,7 @@
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
 #include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure (includes KissingBoundary)
 #include "ai/cllm_cache_optimization.h"  // PHASE 3: Cache optimization
-#include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
+// Forward declarations for clock lattice types
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "ai/cllm_entropy_integration.h" // PHASE 6: Entropy integration
 #include "ai/cllm_adaptive_hierarchy.h"  // PHASE 6: Adaptive hierarchy
@@ -43,10 +45,6 @@
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
 #include "ai/cllm_cymatic_sync.h"           // PHASE 5: Cymatic timing synchronization
 #include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
-#include "cllm_mathematical_constants.h"  // For dimensional frequencies
-#include "prime_float_math.h"
-#include "prime_math.h"
-#include "prime_types.h"                 // For PRIME_PI
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -471,7 +469,7 @@ double cllm_forward_training_threaded(
                     for (uint32_t i = 0; i < embed_dim; i++) {
 // DISABLED - USE BigFixed version:                         sum += attn_out[i] * ff->w1_lattice[i * ff->hidden_dim + h];
                     }
-// DISABLED - USE BigFixed version:                     ff_hidden[h] = prime_tanhf(sum);
+// DISABLED - USE BigFixed version:                     ff_hidden[h] = math_tanh((double)sum);
                 }
                 
                 for (uint32_t o = 0; o < embed_dim; o++) {
@@ -497,7 +495,7 @@ double cllm_forward_training_threaded(
                     var += diff * diff;
                 }
                 var /= embed_dim;
-                double std = prime_sqrt(var + 1e-5);
+                double std = math_sqrt(var + 1e-5);
                 (void)std;  // Reserved for future use
                 for (uint32_t d = 0; d < embed_dim; d++) {
 // DISABLED - USE BigFixed version:                     layer_out[d] = ln->gamma[d] * (layer_out[d] - mean) / std + ln->beta[d];
@@ -591,7 +589,7 @@ void cllm_backward_training_threaded(
                 // Clamp to safe range for exp
                 if (x > 50.0) x = 50.0;
                 if (x < -50.0) x = -50.0;
-                sum_exp += prime_exp(x);
+                sum_exp += math_exp(x);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
@@ -599,7 +597,7 @@ void cllm_backward_training_threaded(
                 // Clamp to safe range for exp
                 if (x > 50.0) x = 50.0;
                 if (x < -50.0) x = -50.0;
-                double prob = prime_exp(x) / sum_exp;
+                double prob = math_exp(x) / sum_exp;
                 grad[v] = prob - (v == target ? 1.0 : 0.0);
             }
         }
@@ -2320,12 +2318,12 @@ static int validate_gradients(double* gradients, size_t size, const char* source
     int inf_count = 0;
     
     for (size_t i = 0; i < size; i++) {
-        if (prime_isnan(gradients[i])) {
+        if (math_is_nan(gradients[i])) {
             nan_count++;
             if (nan_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: NaN gradient in %s at index %zu\n", source, i);
             }
-        } else if (prime_isinf(gradients[i])) {
+        } else if (math_is_inf(gradients[i])) {
             inf_count++;
             if (inf_count <= 5) {  // Only log first 5
                 fprintf(stderr, "ERROR: Inf gradient in %s at index %zu: %f\n", source, i, gradients[i]);
@@ -2350,7 +2348,7 @@ static void clip_gradients(double* gradients, size_t size, double max_norm) {
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    norm = prime_sqrt(norm);
+    norm = math_sqrt(norm);
     
     if (norm > max_norm) {
         double scale = max_norm / norm;
@@ -3465,7 +3463,7 @@ double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system) {
         double val = system->accumulated_gradients[i];
         norm += val * val;
     }
-    norm = prime_sqrt(norm);
+    norm = math_sqrt(norm);
     
     pthread_mutex_unlock(&system->gradient_lock);
     

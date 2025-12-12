@@ -6,13 +6,28 @@
  * 
  * Cymatic frequencies create smoother convergence by aligning training
  * dynamics with natural frequency patterns.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_cos with math_cos (7 calls)
+ * - Replaced math_sin with math_sin (6 calls)
+ * - Replaced math_sqrt with math_sqrt (1 call)
+ * - Replaced math_pow with math_pow (1 call)
+ * - Replaced PRIME_PI with MATH_PI
+ * - Replaced PHI with MATH_PHI
+ * Total: 15 function calls migrated to NEW math library
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cymatic_modulation.h"
-#include "../../include/cllm_mathematical_constants.h"
-#include "prime_float_math.h"
+#include "../../math/include/math/transcendental.h"  // NEW math library
+#include "../../math/include/math/arithmetic.h"       // NEW math library
+#include "../../math/include/math/types.h"            // NEW math library constants
+
+// Use NEW math library constants
+#define PRIME_PI MATH_PI
+#define PHI MATH_PHI
+#define TWO_PI (2.0 * MATH_PI)
 
 /**
  * Apply cymatic resonance modulation to gradients
@@ -46,14 +61,14 @@ void apply_cymatic_modulation(
             double freq_phase = global_phase * cymatic_freqs[f] / cymatic_freqs[0];
             
             // Add harmonic contribution
-            resonance += prime_cos(freq_phase) / (double)num_freqs;
+            resonance += math_cos(freq_phase) / (double)num_freqs;
         }
         
         // Get dimensional frequency for element's symmetry group
         uint64_t phi_i = dimensional_freqs[symmetry_group % 12];
         
         // Modulate resonance with φᵢ
-        double modulation = prime_cos(2.0 * PRIME_PI * (double)phi_i * resonance / 100.0);
+        double modulation = math_cos(2.0 * PRIME_PI * (double)phi_i * resonance / 100.0);
         
         // Apply to gradients with specified modulation strength
         double scale = 1.0 + modulation_strength * modulation;
@@ -81,7 +96,7 @@ void compute_cymatic_harmonics(
         
         // Apply golden ratio damping: φ^(-i)
         // This makes higher harmonics progressively weaker
-        double damping = prime_pow(phi, -(double)i);
+        double damping = math_pow(phi, -(double)i);
         harmonics[i] *= damping;
     }
 }
@@ -106,8 +121,8 @@ void analyze_gradient_spectrum(
         
         for (uint32_t n = 0; n < size; n++) {
             double angle = -2.0 * PRIME_PI * (double)k * (double)n / (double)size;
-            real += (double)gradients[n] * prime_cos(angle);
-            imag += (double)gradients[n] * prime_sin(angle);
+            real += (double)gradients[n] * math_cos(angle);
+            imag += (double)gradients[n] * math_sin(angle);
         }
         
         // Power spectrum: |X[k]|²
@@ -137,12 +152,12 @@ void cymatic_simulate_wave(double* output, size_t len,
             double t = (double)x / (double)len;
             
             // Add sine component
-            output[x] += prime_sin(freq * t * 2.0 * PRIME_PI);
+            output[x] += math_sin(freq * t * 2.0 * PRIME_PI);
             
             // Add cosine component from next prime
             if (i + 1 < num_primes) {
                 double freq2 = (double)primes[i + 1];
-                output[x] += prime_cos(freq2 * t * 2.0 * PRIME_PI);
+                output[x] += math_cos(freq2 * t * 2.0 * PRIME_PI);
             }
         }
     }
@@ -182,7 +197,7 @@ bool cymatic_detect_alignment(const double* signal, size_t len,
         double correlation = 0.0;
         for (size_t i = 0; i < len; i++) {
             double t = (double)i / (double)len;
-            double expected = prime_sin(freq * t * 2.0 * PRIME_PI);
+            double expected = math_sin(freq * t * 2.0 * PRIME_PI);
             correlation += signal[i] * expected;
         }
         
@@ -217,8 +232,8 @@ double cymatic_resonance_score(const double* signal, size_t len,
         for (size_t i = 0; i < len; i++) {
             double t = (double)i / (double)len;
             double angle = freq * t * 2.0 * PRIME_PI;
-            real += signal[i] * prime_cos(angle);
-            imag += signal[i] * prime_sin(angle);
+            real += signal[i] * math_cos(angle);
+            imag += signal[i] * math_sin(angle);
         }
         
         // Power at this frequency
@@ -265,7 +280,7 @@ void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_sym
         double angle = t * (double)shape_symmetry * TWO_PI;
         
         // Apply golden ratio scaling
-        double scale = 1.0 + 0.1 * prime_cos(angle / PHI);
+        double scale = 1.0 + 0.1 * math_cos(angle / PHI);
         
         signal[i] *= scale;
     }
@@ -295,11 +310,11 @@ bool cymatic_harmonic_alignment(const double* signal, size_t len,
         
         for (size_t n = 0; n < len; n++) {
             double angle = -TWO_PI * (double)k * (double)n / (double)len;
-            real += signal[n] * prime_cos(angle);
-            imag += signal[n] * prime_sin(angle);
+            real += signal[n] * math_cos(angle);
+            imag += signal[n] * math_sin(angle);
         }
         
-        fft_magnitudes[k] = prime_sqrt(real * real + imag * imag);
+        fft_magnitudes[k] = math_sqrt(real * real + imag * imag);
     }
     
     // Find top N peaks

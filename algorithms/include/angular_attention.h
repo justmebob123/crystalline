@@ -2,7 +2,7 @@
 #define ANGULAR_ATTENTION_H
 
 #include <stdint.h>
-#include "../include/cllm_angular_position.h"
+#include "math/angular_position.h"
 
 #ifdef __cplusplus
 extern "C" {

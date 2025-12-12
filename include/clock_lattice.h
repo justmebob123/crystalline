@@ -12,7 +12,12 @@ extern "C" {
 /**
  * Babylonian clock position structure
  * Represents a position on the Babylonian clock with rings
+ * 
+ * NOTE: If NEW math library is included, these types are already defined.
+ * We use conditional compilation to prevent redefinition.
  */
+#ifndef MATH_TYPES_H  // Only define if NEW math library not included
+
 typedef struct {
     int ring;           // 0=hours, 1=minutes, 2=seconds, 3=milliseconds
     int position;       // Position on that ring (1-based)
@@ -38,6 +43,14 @@ typedef struct {
 typedef struct {
     float x, y, z;
 } SphereCoord;
+
+#else  // MATH_TYPES_H is defined - use NEW math library types
+
+// Map OLD type names to NEW type names for compatibility
+typedef ClockPosition BabylonianClockPosition;
+// PrimeModular and SphereCoord are already defined in math/types.h
+
+#endif  // MATH_TYPES_H
 
 /**
  * Map prime index to clock position

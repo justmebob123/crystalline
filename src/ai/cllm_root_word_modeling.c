@@ -20,9 +20,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../include/cllm_attention.h"
-#include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
+#include "math/clock.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 
 #define PI 3.14159265358979323846
 #define PHI 1.618033988749895
@@ -45,7 +47,7 @@ static void init_prime_cache(void) {
     
     while (count < PRIME_CACHE_SIZE) {
         int is_prime = 1;
-        uint64_t sqrt_cand = (uint64_t)prime_sqrt((double)candidate);
+        uint64_t sqrt_cand = (uint64_t)math_sqrt((double)candidate);
         
         for (int i = 0; i < count && prime_cache[i] <= sqrt_cand; i++) {
             if (candidate % prime_cache[i] == 0) {
@@ -66,7 +68,7 @@ static void init_prime_cache(void) {
 
 // REMOVED: Local is_prime() implementation
 // Internal code trusts the deterministic clock lattice structure
-// Use validate_prime_by_clock_position() directly
+// Use prime_validate_by_clock() directly
 
 /**
  * Get nth prime number
@@ -85,7 +87,7 @@ static uint64_t get_nth_prime(uint32_t n) {
     
     while (count <= n) {
         // Internal: Trust deterministic clock lattice
-        if (validate_prime_by_clock_position(candidate)) {
+        if (prime_validate_by_clock(candidate)) {
             if (count == n) return candidate;
             count++;
         }
@@ -141,7 +143,7 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     }
     
     // Ulam spiral: radius grows with square root of index
-    double radius = prime_sqrt((double)prime_index + 1.0);
+    double radius = math_sqrt((double)prime_index + 1.0);
     
     // Golden angle for optimal packing (use macros from prime_types.h)
     double golden_angle = 2.0 * PI / (PHI * PHI);
@@ -153,15 +155,15 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     }
     
     // Convert to 3D coordinates
-    coords[0] = radius * prime_cos(angle);
-    coords[1] = radius * prime_sin(angle);
-    coords[2] = prime_log((double)prime + 1.0);
+    coords[0] = radius * math_cos(angle);
+    coords[1] = radius * math_sin(angle);
+    coords[2] = math_log((double)prime + 1.0);
     
     // Add token-specific perturbation
     double token_phase = 2.0 * PI * (double)token_id / 1000.0;
-    coords[0] += 0.1f * prime_cos(token_phase);
-    coords[1] += 0.1f * prime_sin(token_phase);
-    coords[2] += 0.1f * prime_sin(token_phase * PHI);
+    coords[0] += 0.1f * math_cos(token_phase);
+    coords[1] += 0.1f * math_sin(token_phase);
+    coords[2] += 0.1f * math_sin(token_phase * PHI);
 }
 
 /**
@@ -206,7 +208,7 @@ uint32_t cllm_extract_root_word(uint32_t token_id, uint64_t prime) {
     
     // If prime, it's already a root
     // Internal: Trust deterministic clock lattice
-    if (validate_prime_by_clock_position(prime)) {
+    if (prime_validate_by_clock(prime)) {
         return token_id;
     }
     
@@ -268,7 +270,7 @@ double cllm_compute_hyperdimensional_distance(const double* coords1,
     double dx = coords1[0] - coords2[0];
     double dy = coords1[1] - coords2[1];
     double dz = coords1[2] - coords2[2];
-    double euclidean = prime_sqrt(dx*dx + dy*dy + dz*dz);
+    double euclidean = math_sqrt(dx*dx + dy*dy + dz*dz);
     
     // Prime distance
     uint64_t gcd = compute_gcd(prime1, prime2);
@@ -292,7 +294,7 @@ void cllm_apply_symmetry_operation(float* weights, int seq_len, int symmetry_typ
         
         for (int i = 0; i < seq_len; i++) {
             double phase = angle * (double)i / (double)seq_len;
-            double rotation = (1.0 + prime_cos(phase)) / 2.0;
+            double rotation = (1.0 + math_cos(phase)) / 2.0;
             weights[i] *= rotation;
         }
     } else {
@@ -329,12 +331,12 @@ void cllm_compute_attention_fourier(const float* attention_weights,
         
         for (int n = 0; n < seq_len; n++) {
             double angle = -2.0 * PI * (double)k * (double)n / (double)seq_len;
-            real += attention_weights[n] * prime_cos(angle);
-            imag += attention_weights[n] * prime_sin(angle);
+            real += attention_weights[n] * math_cos(angle);
+            imag += attention_weights[n] * math_sin(angle);
         }
         
         // Magnitude
-        fourier_output[k] = prime_sqrt(real * real + imag * imag);
+        fourier_output[k] = math_sqrt(real * real + imag * imag);
     }
 }
 
@@ -356,7 +358,7 @@ void cllm_apply_fourier_dampening(float* attention_weights,
     for (int i = 0; i < seq_len; i++) {
         double freq = (double)i / (double)seq_len;
         if (freq > cutoff_freq) {
-            fourier[i] *= prime_exp(-(freq - cutoff_freq) * 10.0);
+            fourier[i] *= math_exp(-(freq - cutoff_freq) * 10.0);
         }
     }
     

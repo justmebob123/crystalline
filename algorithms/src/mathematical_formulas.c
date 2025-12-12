@@ -1,11 +1,22 @@
 /**
  * @file mathematical_formulas.c
  * @brief Implementation of 36 mathematical formulas from research prototype
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced prime_log2 with math_log2 (1 call)
+ * - Replaced math_log with math_log (7 calls)
+ * - Replaced math_sin with math_sin (8 calls)
+ * - Replaced math_cos with math_cos (2 calls)
+ * - Replaced math_sqrt with math_sqrt (5 calls)
+ * - Replaced math_pow with math_pow (4 calls)
+ * - Replaced math_exp with math_exp (1 call)
+ * Total: 28 function calls migrated to NEW math library
  */
 
 #include "mathematical_formulas.h"
 #include "cllm_mathematical_constants.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -19,7 +30,7 @@ double formula_lbs(const double* p_i, size_t len) {
     double lbs = 0.0;
     for (size_t i = 0; i < len; i++) {
         if (p_i[i] > 0.0) {
-            lbs -= p_i[i] * prime_log2(p_i[i]);
+            lbs -= p_i[i] * math_log2(p_i[i]);
         }
     }
     
@@ -56,12 +67,12 @@ double formula_matrix_entropy(const double* P, const double* f,
 
 double formula_hps(double P, double f) {
     if (P <= 0.0) return 0.0;
-    return P * prime_log(P) * f;
+    return P * math_log(P) * f;
 }
 
 double formula_e_approx(double P, double T) {
     if (T == 0.0 || P <= 0.0) return 0.0;
-    return prime_log(P) / T;
+    return math_log(P) / T;
 }
 
 double formula_les(double P, double T, double f) {
@@ -78,8 +89,8 @@ double formula_tlm(double P, double f) {
 
 double formula_wave_z(double P1, double P2, double P3, double P4, 
                       double x, double y) {
-    double term1 = prime_sin(P1 * PI * x) * prime_cos(P2 * PI * y);
-    double term2 = prime_sin(P3 * PI * x) * prime_cos(P4 * PI * y);
+    double term1 = math_sin(P1 * PI * x) * math_cos(P2 * PI * y);
+    double term2 = math_sin(P3 * PI * x) * math_cos(P4 * PI * y);
     return term1 + term2;
 }
 
@@ -87,17 +98,17 @@ double formula_psi_mn(uint32_t m, uint32_t n, double x, double y,
                       double L, double W) {
     if (L == 0.0 || W == 0.0) return 0.0;
     
-    double term1 = prime_sin((double)m * PI * x / L);
-    double term2 = prime_sin((double)n * PI * y / W);
+    double term1 = math_sin((double)m * PI * x / L);
+    double term2 = math_sin((double)n * PI * y / W);
     return term1 * term2;
 }
 
 double formula_psm(double P, double x) {
-    return P * prime_sin(P * PI * x);
+    return P * math_sin(P * PI * x);
 }
 
 double formula_eleventh_hg(double x, double dissonant) {
-    return prime_sin(11.0 * PI * x) + dissonant;
+    return math_sin(11.0 * PI * x) + dissonant;
 }
 
 double formula_hd(double harmonic, double P) {
@@ -109,8 +120,8 @@ double formula_dps(double P, uint32_t n, double x, double y,
                    double L, double W) {
     if (L == 0.0 || W == 0.0) return 0.0;
     
-    double term1 = prime_sin(P * PI * x / L);
-    double term2 = prime_sin((double)n * PI * y / W);
+    double term1 = math_sin(P * PI * x / L);
+    double term2 = math_sin((double)n * PI * y / W);
     return term1 * term2;
 }
 
@@ -181,7 +192,7 @@ double formula_ivg(const uint64_t* P_i, const uint32_t* T_i,
     double product = 1.0;
     
     for (size_t i = 0; i < len; i++) {
-        double term = prime_pow((double)P_i[i], (double)T_i[i]);
+        double term = math_pow((double)P_i[i], (double)T_i[i]);
         product *= term;
     }
     
@@ -190,7 +201,7 @@ double formula_ivg(const uint64_t* P_i, const uint32_t* T_i,
 
 double formula_tld(uint64_t P, uint32_t T) {
     if (T == 0 || P == 0) return 0.0;
-    return prime_log((double)P) / (double)T;
+    return math_log((double)P) / (double)T;
 }
 
 /* ============================================================================
@@ -218,15 +229,15 @@ double formula_ndc(double O1, double O2, double P) {
 
 double formula_qss(double H, double C, double P) {
     if (P <= 0.0) return H;
-    return H + C / prime_sqrt(P);
+    return H + C / math_sqrt(P);
 }
 
 double formula_pre(uint32_t n, double P) {
-    return prime_pow(PHI, (double)n) * P;
+    return math_pow(PHI, (double)n) * P;
 }
 
 double formula_gnr(double P, double G_val) {
-    return P * prime_sqrt(G_val);
+    return P * math_sqrt(G_val);
 }
 
 /* ============================================================================
@@ -249,7 +260,7 @@ double formula_pgh(const uint64_t* primes, size_t len) {
     
     for (size_t i = 0; i < len - 1; i++) {
         double gap = (double)(primes[i+1] - primes[i]);
-        double log_p = prime_log((double)primes[i]);
+        double log_p = math_log((double)primes[i]);
         
         if (log_p > 0.0) {
             sum += gap / log_p;
@@ -262,7 +273,7 @@ double formula_pgh(const uint64_t* primes, size_t len) {
 double formula_fhs(uint32_t k, uint64_t P) {
     if (P == 0 || k == 0) return 0.0;
     
-    double log_P = prime_log((double)P);
+    double log_P = math_log((double)P);
     if (log_P == 0.0) return 0.0;
     
     double sum = 0.0;
@@ -295,7 +306,7 @@ uint64_t formula_glyph_strokes(const uint32_t* strokes, size_t len, uint64_t B) 
 
 double formula_tfidf(double tf, uint32_t N, uint32_t df) {
     if (df == 0 || N == 0) return 0.0;
-    return tf * prime_log((double)N / (double)df);
+    return tf * math_log((double)N / (double)df);
 }
 
 double formula_wg(uint32_t R, uint32_t S, const double* table, size_t table_size) {
@@ -303,7 +314,7 @@ double formula_wg(uint32_t R, uint32_t S, const double* table, size_t table_size
     
     // Assume table is row-major, need to know number of columns
     // For simplicity, assume square table
-    size_t cols = (size_t)prime_sqrt((double)table_size);
+    size_t cols = (size_t)math_sqrt((double)table_size);
     if (cols == 0) return 0.0;
     
     size_t index = (size_t)R * cols + (size_t)S;
@@ -318,7 +329,7 @@ double formula_trans_prob(uint32_t g_prev, uint32_t g_n,
     
     // Assume T is transition matrix, need dimensions
     // For simplicity, assume square matrix
-    size_t dim = (size_t)prime_sqrt((double)T_size);
+    size_t dim = (size_t)math_sqrt((double)T_size);
     if (dim == 0) return 0.0;
     
     size_t index = (size_t)g_prev * dim + (size_t)g_n;
@@ -372,7 +383,7 @@ double formula_c_d(double r, uint32_t d) {
     if (d == 0) return 0.0;
     
     // C_D(r, d) = 1 - exp(-r^d / Γ(d/2 + 1))
-    double r_d = prime_pow(r, (double)d);
+    double r_d = math_pow(r, (double)d);
     
     // Approximate Γ(d/2 + 1) using Stirling's approximation
     // For small d, use direct calculation
@@ -385,9 +396,9 @@ double formula_c_d(double r, uint32_t d) {
         gamma_val = 1.0;  // Γ(2) = 1
     } else {
         // Stirling: Γ(x) ≈ √(2π/x) * (x/e)^x
-        gamma_val = prime_sqrt(TWO_PI / x) * prime_pow(x / E, x);
+        gamma_val = math_sqrt(TWO_PI / x) * math_pow(x / E, x);
     }
     
     double exponent = -r_d / gamma_val;
-    return 1.0 - prime_exp(exponent);
+    return 1.0 - math_exp(exponent);
 }

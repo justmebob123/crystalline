@@ -205,7 +205,7 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
     big_init(idx);
     big_from_int(idx, prime_index);
     
-    // Compute radius = sqrt(prime_index) using pure BigFixed
+    // Compute radius = math_sqrt(prime_index) using pure BigFixed
     BigFixed radius;
     radius.integer_part = (BigInt*)malloc(sizeof(BigInt));
     radius.fractional_part = (BigInt*)malloc(sizeof(BigInt));
@@ -246,7 +246,7 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
     
     big_fixed_mul(&angle, &golden_angle, &idx_fixed);
     
-    // Compute x = radius * cos(angle)
+    // Compute x = radius * math_cos(angle)
     BigFixed cos_angle;
     cos_angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
     cos_angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
@@ -258,7 +258,7 @@ void crystalline_compute_ulam_position(uint64_t prime, BigFixed coords[3], int p
     
     big_fixed_mul(&coords[0], &radius, &cos_angle);
     
-    // Compute y = radius * sin(angle)
+    // Compute y = radius * math_sin(angle)
     BigFixed sin_angle;
     sin_angle.integer_part = (BigInt*)malloc(sizeof(BigInt));
     sin_angle.fractional_part = (BigInt*)malloc(sizeof(BigInt));
@@ -423,7 +423,7 @@ void crystalline_lattice_distance(const BigFixed pos1[3], const BigFixed pos2[3]
         sum = temp;
     }
     
-    // Compute sqrt(sum) using pure BigFixed
+    // Compute math_sqrt(sum) using pure BigFixed
     // First convert sum to BigInt for big_sqrt
     BigInt* sum_int = (BigInt*)malloc(sizeof(BigInt));
     big_init(sum_int);
@@ -577,7 +577,7 @@ void crystalline_phase_alignment(uint64_t prime1, uint64_t prime2, BigFixed* ali
     phase_diff.negative = 0;
     big_fixed_div(&phase_diff, &numerator, &sum_fixed);
     
-    // Compute cos(phase_diff)
+    // Compute math_cos(phase_diff)
     BigFixed cos_phase;
     cos_phase.integer_part = (BigInt*)malloc(sizeof(BigInt));
     cos_phase.fractional_part = (BigInt*)malloc(sizeof(BigInt));
@@ -587,7 +587,7 @@ void crystalline_phase_alignment(uint64_t prime1, uint64_t prime2, BigFixed* ali
     cos_phase.negative = 0;
     big_cos(&cos_phase, &phase_diff, 256);
     
-    // Compute (1 + cos(phase_diff))
+    // Compute (1 + math_cos(phase_diff))
     BigFixed one;
     one.integer_part = (BigInt*)malloc(sizeof(BigInt));
     one.fractional_part = (BigInt*)malloc(sizeof(BigInt));
@@ -606,7 +606,7 @@ void crystalline_phase_alignment(uint64_t prime1, uint64_t prime2, BigFixed* ali
     one_plus_cos.negative = 0;
     big_fixed_add(&one_plus_cos, &one, &cos_phase);
     
-    // Compute alignment = (1 + cos(phase_diff)) / 2
+    // Compute alignment = (1 + math_cos(phase_diff)) / 2
     big_fixed_div(alignment, &one_plus_cos, &two);
     
     // Cleanup

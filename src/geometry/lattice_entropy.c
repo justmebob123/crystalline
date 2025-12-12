@@ -10,7 +10,8 @@
 #include "../include/prime_float_math.h"
 #include "../include/prime_types.h"
 #include "../include/crystal_abacus.h"
-#include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
+#include "math/clock.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +40,7 @@ uint64_t count_primes_in_dimension(uint32_t d, uint64_t max_prime) {
     // Count primes up to max_prime that map to dimension d
     for (uint64_t p = 2; p <= max_prime; p++) {
         // Internal: Trust deterministic clock lattice
-        if (validate_prime_by_clock_position(p)) {
+        if (prime_validate_by_clock(p)) {
             uint32_t prime_dim = p % 12;
             if (prime_dim == d) {
                 count++;
@@ -69,7 +70,7 @@ double calculate_point_entropy(uint32_t n, uint32_t d, uint64_t max_prime) {
     
     for (uint64_t p = 2; p <= max_prime; p++) {
         // Internal: Trust deterministic clock lattice
-        if (validate_prime_by_clock_position(p)) {
+        if (prime_validate_by_clock(p)) {
             uint32_t prime_dim = p % 12;
             counts[prime_dim]++;
             total_primes++;
@@ -143,7 +144,7 @@ double calculate_lattice_density(uint32_t n, uint32_t d) {
     uint64_t count = 0;
     for (uint64_t i = 2; i <= d; i++) {
         // Internal: Trust deterministic clock lattice
-        if (validate_prime_by_clock_position(i)) count++;
+        if (prime_validate_by_clock(i)) count++;
     }
     
     if (count == 0) return 0.0;

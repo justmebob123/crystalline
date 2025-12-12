@@ -1,15 +1,25 @@
 /**
  * @file backprop.c
  * @brief Implementation of backpropagation algorithms
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_sqrt with math_sqrt (2 calls)
+ * - Replaced math_abs with math_abs (2 calls)
+ * Total: 4 function calls migrated to NEW math library
  */
 
 #include "backprop.h"
 #include "numerical.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include <math.h>
+
+#ifndef INFINITY
+#define INFINITY (__builtin_inff())
+#endif
 
 /* ============================================================================
  * Gradient Buffer Management
@@ -332,7 +342,7 @@ double gradient_l2_norm(const double* gradients, size_t size) {
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    return prime_sqrt(norm);
+    return math_sqrt(norm);
 }
 
 double gradient_global_norm(
@@ -353,7 +363,7 @@ double gradient_global_norm(
         }
     }
     
-    return prime_sqrt(global_norm_sq);
+    return math_sqrt(global_norm_sq);
 }
 
 /* ============================================================================
@@ -380,7 +390,7 @@ void gradient_check_numerical_issues(
         if (numerical_is_inf(gradients[i])) {
             *has_inf = true;
         }
-        if (prime_fabs(gradients[i]) < 1e-10) {
+        if (math_abs(gradients[i]) < 1e-10) {
             (*num_zero)++;
         }
     }
@@ -398,7 +408,7 @@ bool gradient_validate(
             return false;
         }
         
-        double abs_val = prime_fabs(gradients[i]);
+        double abs_val = math_abs(gradients[i]);
         if (abs_val > max_abs_value) {
             return false;
         }

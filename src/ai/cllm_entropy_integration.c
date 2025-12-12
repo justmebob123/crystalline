@@ -4,7 +4,7 @@
  */
 
 #include "ai/cllm_entropy_integration.h"
-#include "prime_float_math.h"
+// Migrated to NEW math library - no prime_float_math needed
 #include <string.h>
 #include <stdio.h>
 
@@ -13,14 +13,19 @@
  */
 #define EPSILON 1e-10
 
+// Define MATH_INFINITY without math.h to avoid type conflicts
+#ifndef MATH_INFINITY
+#define MATH_INFINITY (1.0 / 0.0)
+#endif
+
 /**
  * @brief Initialize dimension statistics
  */
 static void init_dimension_stats(DimensionEntropyStats* stats, uint32_t dimension) {
     stats->dimension = dimension;
     stats->current_entropy = 0.0;
-    stats->min_entropy = INFINITY;
-    stats->max_entropy = -INFINITY;
+    stats->min_entropy = MATH_INFINITY;
+    stats->max_entropy = -MATH_INFINITY;
     stats->avg_entropy = 0.0;
     stats->sample_count = 0;
     stats->entropy_variance = 0.0;
@@ -369,8 +374,8 @@ void print_entropy_statistics(const EntropyIntegrationContext* ctx) {
         printf("%3d | %8.4f | %8.4f | %8.4f | %8.4f | %7lu\n",
                stats->dimension,
                stats->current_entropy,
-               stats->min_entropy == INFINITY ? 0.0 : stats->min_entropy,
-               stats->max_entropy == -INFINITY ? 0.0 : stats->max_entropy,
+               stats->min_entropy == MATH_INFINITY ? 0.0 : stats->min_entropy,
+               stats->max_entropy == -MATH_INFINITY ? 0.0 : stats->max_entropy,
                stats->avg_entropy,
                stats->sample_count);
     }

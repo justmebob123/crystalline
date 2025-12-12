@@ -4,15 +4,19 @@
  * 
  * Generates candidate values using Sieve-Free Testing (SFT) heuristics
  * combined with nonce-based randomization and geometric constraints.
+ * 
+ * MIGRATED: Uses NEW math library (prime_is_prime)
  */
 
 #include "blind_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/prime.h"  // NEW math library
 
-// Include prime functions from crystalline library
-extern bool is_prime(uint64_t n);
+// Helper function to check primality using NEW math library
+static inline bool check_prime(uint64_t n) {
+    return prime_is_prime(n);
+}
 
 /**
  * Find next prime after n
@@ -26,7 +30,7 @@ static uint64_t next_prime(uint64_t n) {
     
     // Search for next prime (limit search to avoid infinite loop)
     for (uint32_t i = 0; i < 1000; i++) {
-        if (is_prime(candidate)) {
+        if (check_prime(candidate)) {
             return candidate;
         }
         candidate += 2;
@@ -88,7 +92,7 @@ static double score_candidate_sft(
     double score = 0.0;
     
     // Factor 1: Primality (primes score higher)
-    if (is_prime(candidate)) {
+    if (check_prime(candidate)) {
         score += 10.0;
     }
     
@@ -112,7 +116,8 @@ static double score_candidate_sft(
         double best_ratio_score = 0.0;
         int small_primes[] = {2, 3, 5, 7, 11, 13};
         for (int i = 0; i < 6; i++) {
-            double diff = prime_fabs(ratio - small_primes[i]);
+            double diff_val = ratio - small_primes[i];
+            double diff = (diff_val < 0) ? -diff_val : diff_val;
             double ratio_score = 3.0 / (1.0 + diff);
             if (ratio_score > best_ratio_score) {
                 best_ratio_score = ratio_score;
@@ -165,7 +170,7 @@ SearchCandidate* generate_candidates(
         candidates[i].candidate = value;
         candidates[i].dimension = dimension;
         candidates[i].sft_score = score_candidate_sft(value, dimension, structure);
-        candidates[i].is_prime = is_prime(value);
+        candidates[i].is_prime = check_prime(value);
         candidates[i].clock_position = compute_clock_position(value);
     }
     

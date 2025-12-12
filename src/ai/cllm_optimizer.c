@@ -27,7 +27,8 @@
 #include <string.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 /**
  * Apply gradient clipping by global norm
@@ -44,7 +45,7 @@ void cllm_apply_gradient_clipping(double* gradients, size_t size, double max_nor
     for (size_t i = 0; i < size; i++) {
         norm += gradients[i] * gradients[i];
     }
-    norm = prime_sqrt(norm);
+    norm = math_sqrt(norm);
     
     // Clip if necessary
     if (norm > max_norm) {
@@ -118,7 +119,7 @@ static void adam_update_params(double* weights, double* gradients, double* m, do
         double v_hat = v[i] / bias_correction2;
         
         // Update parameters
-        weights[i] -= learning_rate * m_hat / (prime_sqrt(v_hat) + epsilon);
+        weights[i] -= learning_rate * m_hat / (math_sqrt(v_hat) + epsilon);
     }
 }
 
@@ -149,8 +150,8 @@ void cllm_adam_step(CLLMTraining* training, double learning_rate) {
     int t = training->current_step + 1;
     
     // Bias correction terms
-    double bias_correction1 = 1.0 - prime_pow(beta1, (float)t);
-    double bias_correction2 = 1.0 - prime_pow(beta2, (float)t);
+    double bias_correction1 = 1.0 - math_pow(beta1, (float)t);
+    double bias_correction2 = 1.0 - math_pow(beta2, (float)t);
     
     // Skip if no gradients allocated
     if (!training->gradients || !training->optimizer_state) {
@@ -235,7 +236,7 @@ void cllm_update_learning_rate(CLLMTraining* training) {
         if (decay_steps > 0) {
             double progress = (float)steps_since_warmup / (float)decay_steps;
             if (progress > 1.0) progress = 1.0;
-            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + prime_cos(3.14159265 * progress));
+            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + math_cos(3.14159265 * progress));
         } else {
             lr = base_lr;
         }
@@ -275,7 +276,7 @@ void cllm_update_learning_rate(CLLMTraining* training) {
         if (decay_steps > 0) {
             double progress = (float)steps_since_warmup / (float)decay_steps;
             if (progress > 1.0) progress = 1.0;
-            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + prime_cos(3.14159265 * progress));
+            lr = min_lr + (base_lr - min_lr) * 0.5 * (1.0 + math_cos(3.14159265 * progress));
         } else {
             lr = base_lr;
         }
@@ -332,7 +333,7 @@ double cllm_compute_gradient_norm(double* gradients, size_t size) {
         norm += gradients[i] * gradients[i];
     }
     
-    return prime_sqrt(norm);
+    return math_sqrt(norm);
 }
 
 /**

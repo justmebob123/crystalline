@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include "clock_lattice.h"
-#include "../include/prime_math_custom.h"
+#include "math/clock.h"
+#include "math/prime.h"
 
 // Global rainbow table
 static PrimeRainbowTable g_rainbow_table = {0};
@@ -111,19 +111,31 @@ PrimeRainbowTable* rainbow_table_get(void) {
 // CORRECTED: Use clock lattice mapping instead of spiral formulas
    double fast_prime_angle(int prime_index) {
        // Get clock position from lattice mapping
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        return pos.angle;
 }
 
 double fast_prime_radius(int prime_index) {
        // Get radius from clock lattice (0.25 to 1.0, counting INWARD)
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        return pos.radius;
 }
 
 double fast_prime_frequency(int prime_index) {
        // Frequency based on clock position, not prime value
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        
        // Base frequency on ring (deeper rings = higher frequency)
        double base_freq = 432.0;  // A4 tuning
@@ -137,7 +149,11 @@ double fast_prime_frequency(int prime_index) {
 
 int fast_prime_layer(int prime_index) {
        // Get ring from clock lattice (0-3 for first 232 primes)
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        return pos.ring;
 }
 
@@ -145,7 +161,11 @@ void fast_prime_fold_coords(int prime_index, double* x, double* y, double* z) {
        if (!x || !y || !z) return;
        
        // Get clock position
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        
        // Fold to 3D sphere
        SphereCoord sphere = fold_clock_to_sphere(pos);
@@ -163,13 +183,21 @@ void fast_prime_fold_coords(int prime_index, double* x, double* y, double* z) {
 
    // Check if position is sacred (π, 12 o'clock, etc.)
    bool fast_prime_is_sacred(int prime_index) {
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        return is_sacred_position(pos);
    }
 
    // Get position on clock ring
    int fast_prime_position(int prime_index) {
-       BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+       uint64_t prime_pos = prime_nth(prime_index);
+
+       ClockPosition pos;
+
+       clock_map_prime_to_position(prime_pos, &pos);
        return pos.position;
    }
 // ═══════════════════════════════════════════════════════════════════════════
@@ -534,7 +562,11 @@ int rainbow_table_add_prime_index(uint32_t prime_index) {
     uint64_t prime_value = get_prime_at_index_deterministic(prime_index);
     
     // Map to clock lattice position
-    BabylonianClockPosition pos = map_prime_index_to_clock(prime_index);
+    uint64_t prime_pos = prime_nth(prime_index);
+
+    ClockPosition pos;
+
+    clock_map_prime_to_position(prime_pos, &pos);
     
     // Create entry
     RainbowEntry entry = {

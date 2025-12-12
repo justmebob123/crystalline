@@ -18,6 +18,7 @@
 #include "math/clock.h"
 #include "math/prime.h"
 #include "math/rainbow.h"
+#include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdlib.h>
@@ -957,6 +958,79 @@ MathError clock_reverse_lookup(uint64_t number, uint32_t* ring,
     uint64_t reconstructed = base + (*magnitude) * 12;
     if (reconstructed != number) {
         return MATH_ERROR_INVALID_ARG;
+    }
+    
+    return MATH_SUCCESS;
+}
+
+/**
+ * @brief Map prime index to clock position
+ * 
+ * Maps a prime index (1st prime, 2nd prime, etc.) to a position on the clock lattice.
+ * 
+ * @param prime_index Prime index (1-based: 1 = first prime = 2)
+ * @param pos Output clock position
+ * @return MATH_SUCCESS on success, error code otherwise
+ */
+MathError clock_map_index_to_position(uint64_t prime_index, ClockPosition* pos) {
+    if (!pos || prime_index == 0) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Babylonian clock structure:
+    // Ring 0: 12 positions (hours)
+    // Ring 1: 60 positions (minutes)
+    // Ring 2: 60 positions (seconds)
+    // Ring 3: 100 positions (milliseconds)
+    
+    if (prime_index <= 12) {
+        // Ring 0: Hours (12 positions)
+        pos->ring = 0;
+        pos->position = (uint32_t)prime_index;
+        // 12 o'clock = position 12, 3 o'clock = position 3
+        // Angle: position 3 = 0°, position 12 = -90° (top)
+        pos->angle = ((double)pos->position - 3.0) * (2.0 * MATH_PI / 12.0);
+        pos->radius = 0.25;  // Outer ring (25% from center)
+        
+    } else if (prime_index <= 72) {
+        // Ring 1: Minutes (60 positions)
+        pos->ring = 1;
+        pos->position = (uint32_t)(prime_index - 12);
+        // Position 15 = 3 o'clock (0°)
+        pos->angle = ((double)pos->position - 15.0) * (2.0 * MATH_PI / 60.0);
+        pos->radius = 0.50;  // 50% from center
+        
+    } else if (prime_index <= 132) {
+        // Ring 2: Seconds (60 positions)
+        pos->ring = 2;
+        pos->position = (uint32_t)(prime_index - 72);
+        pos->angle = ((double)pos->position - 15.0) * (2.0 * MATH_PI / 60.0);
+        pos->radius = 0.75;  // 75% from center
+        
+    } else if (prime_index <= 232) {
+        // Ring 3: Milliseconds (100 positions)
+        pos->ring = 3;
+        pos->position = (uint32_t)(prime_index - 132);
+        // Position 25 = 3 o'clock (0°)
+        pos->angle = ((double)pos->position - 25.0) * (2.0 * MATH_PI / 100.0);
+        pos->radius = 1.00;  // Inner ring (100% from center)
+        
+    } else {
+        // Beyond 232: Use logarithmic spiral
+        uint64_t adjusted_index = prime_index - 232;
+        
+        // Map to ring using log₃ (keeps growth bounded)
+        double log3_val = math_log((double)(adjusted_index + 1)) / math_log(3.0);
+        pos->ring = ((uint32_t)log3_val % 4) + 4;  // Rings 4-7, wrapping
+        
+        // Position within ring using modular arithmetic
+        pos->position = (uint32_t)(adjusted_index % 1000);
+        
+        // Calculate angle
+        pos->angle = ((double)pos->position / 1000.0) * 2.0 * MATH_PI;
+        
+        // Radius increases logarithmically
+        pos->radius = 1.0 + math_log((double)(adjusted_index + 1)) / 10.0;
     }
     
     return MATH_SUCCESS;

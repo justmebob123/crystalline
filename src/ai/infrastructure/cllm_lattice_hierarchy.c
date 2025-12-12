@@ -1034,7 +1034,7 @@ int calculate_max_depth(int available_cores) {
     // Calculate depth using logarithm base 12
     // max_depth = floor(log12(cores)) + 1
     // 
-    // We use the change of base formula: log12(x) = log(x) / log(12)
+    // We use the change of base formula: log12(x) = math_log(x) / math_log(12)
     // Since we don't have math.h, we'll use a simple iterative approach
     
     // Calculate how many levels we can support

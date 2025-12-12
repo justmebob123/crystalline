@@ -5,14 +5,15 @@
  */
 
 #include "prime_randomization.h"
-#include "../../include/clock_lattice.h"  // For validate_prime_by_clock_position()
+#include "math/clock.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 #include <stdlib.h>
 #include <time.h>
 // #include "../../include/prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only  // REMOVED: Not using any math.h functions
 
 // REMOVED: Local is_prime() implementation
 // Internal code trusts the deterministic clock lattice structure
-// Use validate_prime_by_clock_position() directly
+// Use prime_validate_by_clock() directly
 
 /**
  * Get next prime number after n
@@ -22,7 +23,7 @@ uint64_t next_prime(uint64_t n) {
     
     uint64_t candidate = n + 1;
     // Internal: Trust deterministic clock lattice
-    while (!validate_prime_by_clock_position(candidate)) {
+    while (!prime_validate_by_clock(candidate)) {
         candidate++;
         if (candidate > n + 1000) {
             // Safety limit
@@ -41,7 +42,7 @@ uint64_t prev_prime(uint64_t n) {
     
     uint64_t candidate = n - 1;
     // Internal: Trust deterministic clock lattice
-    while (candidate > 1 && !validate_prime_by_clock_position(candidate)) {
+    while (candidate > 1 && !prime_validate_by_clock(candidate)) {
         candidate--;
     }
     
@@ -77,7 +78,7 @@ uint64_t calculate_prime_delay(uint64_t min_prime, uint64_t max_prime, uint64_t 
     
     // Ensure delay is prime
     // Internal: Trust deterministic clock lattice
-    if (!validate_prime_by_clock_position(delay)) {
+    if (!prime_validate_by_clock(delay)) {
         delay = next_prime(delay);
         if (delay > max_prime) {
             delay = prev_prime(max_prime);
@@ -110,10 +111,10 @@ bool prime_config_validate(const CrawlerPrimeConfig* config) {
     // Check if primes are actually prime
     // Internal: Trust deterministic clock lattice
     if (config->use_prime_randomization) {
-        if (!validate_prime_by_clock_position(config->frequency_prime)) return false;
-        if (!validate_prime_by_clock_position(config->link_selection_prime)) return false;
-        if (!validate_prime_by_clock_position(config->delay_min_prime)) return false;
-        if (!validate_prime_by_clock_position(config->delay_max_prime)) return false;
+        if (!prime_validate_by_clock(config->frequency_prime)) return false;
+        if (!prime_validate_by_clock(config->link_selection_prime)) return false;
+        if (!prime_validate_by_clock(config->delay_min_prime)) return false;
+        if (!prime_validate_by_clock(config->delay_max_prime)) return false;
     }
     
     // Check if min < max

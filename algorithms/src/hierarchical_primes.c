@@ -5,15 +5,19 @@
  * 
  * OPTIMIZED (2024-12-11): Now uses O(1) deterministic prime formula
  * for 3-5x performance improvement!
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_sqrt with math_sqrt (1 call)
+ * Total: 1 function call migrated to NEW math library
  */
 
 #include "hierarchical_primes.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "prime_float_math.h"
 #include "math/prime.h"
 #include "math/clock.h"
+#include "math/transcendental.h"  // NEW math library for math_sqrt
 
 /**
  * Optimized primality test using O(1) interference formula
@@ -59,7 +63,7 @@ static bool is_prime_simple(uint64_t n) {
     }
     
     // Optimized trial division (still faster than before)
-    uint64_t limit = (uint64_t)prime_sqrt((double)n);
+    uint64_t limit = (uint64_t)math_sqrt((double)n);
     for (uint64_t i = 5; i <= limit; i += 6) {
         if (n % i == 0 || n % (i + 2) == 0) {
             return false;

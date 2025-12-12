@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cllm.h"
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 #define PI 3.14159265358979323846
 #define SYMMETRY_ORDER 12
@@ -22,8 +23,8 @@
 static void apply_rotation(double* embedding, double angle, int dim) {
     if (!embedding || dim < 2) return;
     
-    double cos_a = prime_cos(angle);
-    double sin_a = prime_sin(angle);
+    double cos_a = math_cos(angle);
+    double sin_a = math_sin(angle);
     
     // Apply rotation in pairs of dimensions
     for (int i = 0; i < dim - 1; i += 2) {
@@ -208,7 +209,7 @@ void cllm_compute_symmetry_invariants(double* embedding, int dim,
         for (int i = 0; i < dim; i++) {
             norm += embedding[i] * embedding[i];
         }
-        features[0] = prime_sqrt(norm);
+        features[0] = math_sqrt(norm);
     }
     
     // Feature 1: Sum of absolute values (reflection invariant)
@@ -333,8 +334,8 @@ double cllm_symmetry_compatibility(double* embedding1, int symmetry1,
     free(e1_transformed);
     free(e2_transformed);
     
-    norm1 = prime_sqrt(norm1);
-    norm2 = prime_sqrt(norm2);
+    norm1 = math_sqrt(norm1);
+    norm2 = math_sqrt(norm2);
     
     if (norm1 < 1e-8 || norm2 < 1e-8) return 0.0;
     

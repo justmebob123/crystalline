@@ -65,8 +65,8 @@ uint64_t estimate_symmetry_group_workload(int symmetry_group,
     }
     
     // Prime number theorem approximation
-    double pi_end = (double)range_end / prime_log((double)range_end);
-    double pi_start = (range_start > 1) ? (double)range_start / prime_log((double)range_start) : 0;
+    double pi_end = (double)range_end / math_log((double)range_end);
+    double pi_start = (range_start > 1) ? (double)range_start / math_log((double)range_start) : 0;
     
     double total_primes = pi_end - pi_start;
     

@@ -18,7 +18,7 @@ static double compute_distance(const double* p1, const double* p2) {
     double dx = p1[0] - p2[0];
     double dy = p1[1] - p2[1];
     double dz = p1[2] - p2[2];
-    return prime_sqrt(dx*dx + dy*dy + dz*dz);
+    return math_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 /**

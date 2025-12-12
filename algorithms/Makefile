@@ -86,7 +86,7 @@ SHARED_LIB = libalgorithms.so
 STATIC_LIB = libalgorithms.a
 CRYSTALLINE_LIB = ../libcrystalline.so
 
-.PHONY: all static clean install test test_phase1 test_phase2
+.PHONY: all static clean install test test_phase1 test_phase2 benchmark_phase1
 
 all: $(SHARED_LIB)
 
@@ -203,3 +203,12 @@ test_phase1_integration: tests/test_phase1_integration.c $(SHARED_LIB)
 	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_phase1_integration
 
 .PHONY: test_phase1_integration
+
+# Phase 1 Benchmarking
+benchmark_phase1: tests/benchmark_phase1.c $(SHARED_LIB)
+	@echo "Building Phase 1 Benchmark..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/benchmark_phase1 tests/benchmark_phase1.c -L. -lalgorithms -L../math/lib -lcrystallinemath
+	@echo "Running Phase 1 Benchmark..."
+	LD_LIBRARY_PATH=.:../math/lib ./tests/benchmark_phase1
+
+.PHONY: benchmark_phase1

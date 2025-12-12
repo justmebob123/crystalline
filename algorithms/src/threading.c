@@ -2,7 +2,10 @@
  * Threading Algorithms Library - Implementation
  * 
  * Generic thread allocation and workload distribution algorithms.
- * All mathematical operations use crystalline library (prime_* functions).
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_log with math_log (3 calls)
+ * Total: 3 function calls migrated to NEW math library
  */
 
 #ifndef _GNU_SOURCE
@@ -10,7 +13,8 @@
 #endif
 
 #include "threading.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,10 +82,10 @@ uint64_t prime_workload_estimator(int work_group, void* user_data) {
     }
     
     // Prime number theorem approximation: π(x) ≈ x / ln(x)
-    // Using crystalline library's prime_log function
-    double pi_end = (double)range_end / prime_log((double)range_end);
+    // Using crystalline library's math_log function
+    double pi_end = (double)range_end / math_log((double)range_end);
     double pi_start = (range_start > 1) ? 
-        (double)range_start / prime_log((double)range_start) : 0;
+        (double)range_start / math_log((double)range_start) : 0;
     
     double total_primes = pi_end - pi_start;
     

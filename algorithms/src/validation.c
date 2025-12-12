@@ -1,14 +1,22 @@
 /**
  * @file validation.c
  * @brief Implementation of validation and safety checking
+ * 
+ * PHASE 1 WEEK 2: Migrated to NEW math library
+ * - Replaced math_exp with math_exp (2 calls)
+ * - Replaced math_log with math_log (3 calls)
+ * - Replaced math_is_nan with isnan (1 call)
+ * - Replaced math_is_inf with isinf (1 call)
+ * Total: 7 function calls migrated to NEW math library
  */
 
 #include "validation.h"
-#include "cllm_mathematical_constants.h"
-#include "prime_math_custom.h"
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include <stdbool.h>
+#include <math.h>  // For isnan, isinf (C99 standard)
 
 double validation_calculate_harm(double P_misuse, double D_damage,
                                   double error, double scale_factor) {
@@ -18,9 +26,9 @@ double validation_calculate_harm(double P_misuse, double D_damage,
 }
 
 double validation_safety_probability(double proof_level, double alpha) {
-    // P_safe = 1 - prime_exp(-alpha * proof_level)
+    // P_safe = 1 - math_exp(-alpha * proof_level)
     double exponent = -alpha * proof_level;
-    double P_safe = 1.0 - prime_exp(exponent);
+    double P_safe = 1.0 - math_exp(exponent);
     
     // Clamp to [0, 1]
     if (P_safe < 0.0) P_safe = 0.0;
@@ -124,12 +132,12 @@ bool validation_check_range(double value, double min_val, double max_val) {
 
 bool validation_check_stability(double value, double max_magnitude) {
     // Check for NaN
-    if (prime_isnan(value)) {
+    if (isnan(value)) {
         return false;
     }
     
     // Check for infinity
-    if (prime_isinf(value)) {
+    if (isinf(value)) {
         return false;
     }
     
@@ -147,8 +155,8 @@ double validation_proof_level_from_error(double error) {
         return 0.0;
     }
     
-    // proof_level = prime_log(1 / error) = -prime_log(error)
-    double proof_level = -prime_log(error);
+    // proof_level = math_log(1 / error) = -math_log(error)
+    double proof_level = -math_log(error);
     
     return proof_level > 0.0 ? proof_level : 0.0;
 }

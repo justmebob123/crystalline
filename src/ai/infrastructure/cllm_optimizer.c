@@ -34,11 +34,11 @@
 // ============================================================================
 
 static float safe_sqrt(float x) {
-    return prime_sqrt(x > 0.0f ? x : 0.0f);
+    return math_sqrt(x > 0.0f ? x : 0.0f);
 }
 
 static float safe_pow(float base, float exp) {
-    return prime_pow(base, exp);
+    return math_pow(base, exp);
 }
 
 // ============================================================================
@@ -389,7 +389,7 @@ int optimizer_adam_step(OptimizerState* state, const float* gradients) {
             v_hat = state->max_variance_buffer[i];
         }
         
-        // Update parameter: w = w - lr * m_hat / (sqrt(v_hat) + epsilon)
+        // Update parameter: w = w - lr * m_hat / (math_sqrt(v_hat) + epsilon)
         state->parameters[i] -= lr * m_hat / (safe_sqrt(v_hat) + epsilon);
     }
     
@@ -436,7 +436,7 @@ int optimizer_adamw_step(OptimizerState* state, const float* gradients) {
         }
         
         // AdamW: Decoupled weight decay
-        // w = w - lr * (m_hat / (sqrt(v_hat) + epsilon) + wd * w)
+        // w = w - lr * (m_hat / (math_sqrt(v_hat) + epsilon) + wd * w)
         float update = m_hat / (safe_sqrt(v_hat) + epsilon);
         if (wd > 0.0f) {
             update += wd * state->parameters[i];
@@ -468,7 +468,7 @@ int optimizer_rmsprop_step(OptimizerState* state, const float* gradients) {
         state->variance_buffer[i] = beta2 * state->variance_buffer[i] + 
                                    (1.0f - beta2) * grad * grad;
         
-        // Update parameter: w = w - lr * g / (sqrt(v) + epsilon)
+        // Update parameter: w = w - lr * g / (math_sqrt(v) + epsilon)
         state->parameters[i] -= lr * grad / (safe_sqrt(state->variance_buffer[i]) + epsilon);
     }
     
@@ -493,7 +493,7 @@ int optimizer_adagrad_step(OptimizerState* state, const float* gradients) {
         // Accumulate squared gradients: v = v + g^2
         state->variance_buffer[i] += grad * grad;
         
-        // Update parameter: w = w - lr * g / (sqrt(v) + epsilon)
+        // Update parameter: w = w - lr * g / (math_sqrt(v) + epsilon)
         state->parameters[i] -= lr * grad / (safe_sqrt(state->variance_buffer[i]) + epsilon);
     }
     
@@ -676,7 +676,7 @@ float optimizer_cosine_annealing_lr(
     if (step >= total_steps) return min_lr;
     
     float progress = (float)step / (float)total_steps;
-    float cosine_decay = 0.5f * (1.0f + prime_cos(3.14159265359f * progress));
+    float cosine_decay = 0.5f * (1.0f + math_cos(3.14159265359f * progress));
     
     return min_lr + (initial_lr - min_lr) * cosine_decay;
 }

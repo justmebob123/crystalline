@@ -37,14 +37,14 @@ bool* detect_corruption(
         double val = structure_data[i];
         
         // Check for NaN or Inf
-        if (prime_isnan(val) || prime_isinf(val)) {
+        if (math_is_nan(val) || math_is_inf(val)) {
             mask[i] = true;
             corrupted_count++;
             continue;
         }
         
         // Check for extreme values
-        if (prime_fabs(val) > threshold) {
+        if (math_abs(val) > threshold) {
             mask[i] = true;
             corrupted_count++;
         }

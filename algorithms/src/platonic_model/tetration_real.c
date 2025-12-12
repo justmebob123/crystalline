@@ -9,32 +9,44 @@
  * 
  * For depth 29-59, these values are ASTRONOMICAL.
  * We use logarithmic representation to handle them.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_exp with math_exp (4 calls)
+ * - Replaced math_log with math_log (2 calls)
+ * - Replaced math_abs with math_abs (3 calls)
+ * Total: 9 function calls migrated to NEW math library
  */
 
 #include "platonic_model.h"
+#include "../../../math/include/math/transcendental.h"  // NEW math library
+#include "../../../math/include/math/arithmetic.h"       // NEW math library
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+
+// Define INFINITY without math.h to avoid type conflicts
+#ifndef INFINITY
+#define INFINITY (1.0 / 0.0)
+#endif
 
 /**
  * Compute a single level of tetration in log space
  * 
- * If we have prime_log(x), and we want prime_log(base^x), we compute:
- * prime_log(base^x) = x * prime_log(base)
+ * If we have math_log(x), and we want math_log(base^x), we compute:
+ * math_log(base^x) = x * math_log(base)
  * 
  * But x itself is in log space, so we need to be careful.
  */
 static double tetration_step_log(double log_prev, double log_base) {
     // If log_prev is small enough, we can exponentiate
     if (log_prev < 100.0) {
-        double prev = prime_exp(log_prev);
+        double prev = math_exp(log_prev);
         // Compute base^prev in log space
         return prev * log_base;
     } else {
         // For very large values, use approximation
-        // prime_log(base^x) ≈ x * prime_log(base) when x is large
-        return prime_exp(log_prev) * log_base;
+        // math_log(base^x) ≈ x * math_log(base) when x is large
+        return math_exp(log_prev) * log_base;
     }
 }
 
@@ -52,8 +64,8 @@ static bool tetration_check_convergence(
     if (depth < 3) return false;
     
     // Check if last few values are similar
-    double diff1 = prime_fabs(log_tower[depth-1] - log_tower[depth-2]);
-    double diff2 = prime_fabs(log_tower[depth-2] - log_tower[depth-3]);
+    double diff1 = math_abs(log_tower[depth-1] - log_tower[depth-2]);
+    double diff2 = math_abs(log_tower[depth-2] - log_tower[depth-3]);
     
     return (diff1 < tolerance && diff2 < tolerance);
 }
@@ -74,7 +86,7 @@ TetrationTower* tetration_compute_real(uint32_t base, uint32_t depth) {
         return NULL;
     }
     
-    double log_base = prime_log((double)base);
+    double log_base = math_log((double)base);
     
     // Start with base^1 = base
     tower->log_tower[0] = log_base;
@@ -84,7 +96,7 @@ TetrationTower* tetration_compute_real(uint32_t base, uint32_t depth) {
         tower->log_tower[d] = tetration_step_log(tower->log_tower[d-1], log_base);
         
         // Check for overflow (infinity)
-        if (prime_isinf(tower->log_tower[d]) || prime_isnan(tower->log_tower[d])) {
+        if (isinf(tower->log_tower[d]) || isnan(tower->log_tower[d])) {
             // Mark as divergent
             tower->is_converged = false;
             tower->iterations = d;
@@ -133,14 +145,14 @@ static double find_1d_attractor(
         // Convert tower value from log space
         double tower_value;
         if (tower->log_value < 100.0) {
-            tower_value = prime_exp(tower->log_value);
+            tower_value = math_exp(tower->log_value);
         } else {
             // For very large values, use the log value directly
             // as a proxy for the actual value
             tower_value = tower->log_value;
         }
         
-        double distance = prime_fabs(value - tower_value);
+        double distance = math_abs(value - tower_value);
         
         if (distance < min_distance) {
             min_distance = distance;
@@ -184,7 +196,7 @@ void tetration_tower_print(const TetrationTower* tower) {
     printf("  Final log value: %.10f\n", tower->log_value);
     
     if (tower->log_value < 100.0) {
-        printf("  Final value: %.10e\n", prime_exp(tower->log_value));
+        printf("  Final value: %.10e\n", math_exp(tower->log_value));
     } else {
         printf("  Final value: TOO LARGE (log = %.10f)\n", tower->log_value);
     }
@@ -193,7 +205,7 @@ void tetration_tower_print(const TetrationTower* tower) {
     for (uint32_t d = 0; d < tower->depth && d < 10; d++) {
         printf("    Level %u: %.10f", d, tower->log_tower[d]);
         if (tower->log_tower[d] < 100.0) {
-            printf(" (value: %.10e)", prime_exp(tower->log_tower[d]));
+            printf(" (value: %.10e)", math_exp(tower->log_tower[d]));
         }
         printf("\n");
     }

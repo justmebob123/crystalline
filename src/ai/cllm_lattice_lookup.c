@@ -13,14 +13,21 @@
  * - Values are mathematical constants that NEVER change
  * 
  * This reduces initialization from minutes to INSTANT.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_cos with math_cos (1 call)
+ * - Replaced math_tanh with math_tanh (1 call)
+ * Total: 2 function calls migrated to NEW math library
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../../include/cllm_inference.h"
-#include "../../include/clock_lattice.h"
-#include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Forward declarations for clock lattice functions
 
 // Lookup table: [ring][position_in_ring][symmetry_group][dimension]
 // We only need to store patterns, not every token
@@ -58,10 +65,10 @@ void cllm_init_ring_patterns(uint32_t max_dim) {
                 double freq = 3.0 + (dim % 12) * 5.0;  // Dimensional frequencies
                 
                 // Compute embedding value using geometric pattern
-                double value = prime_cos(angle * freq) * radius;
+                double value = math_cos(angle * freq) * radius;
                 
                 // Normalize to [-1, 1]
-                value = prime_tanh(value);
+                value = math_tanh(value);
                 
                 g_ring_patterns[ring][group][dim] = (float)value;
             }

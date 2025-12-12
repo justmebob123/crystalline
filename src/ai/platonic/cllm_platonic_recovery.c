@@ -12,14 +12,15 @@
  * using inherent geometric structure.
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_platonic.h"
-#include "prime_float_math.h"
-#include "prime_math_custom.h"
-#include "clock_lattice.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+// Forward declarations for clock lattice and prime math functions
 
 // ============================================================================
 // CORRUPTION UTILITIES
@@ -189,9 +190,9 @@ RecoveryResult platonic_recover_symmetry(PlatonicModel* model) {
         double z = model->vertex_positions[i * 3 + 2];
         
         // Check if vertex lies on unit sphere (for normalized vertices)
-        double radius = prime_sqrt(x*x + y*y + z*z);
+        double radius = math_sqrt(x*x + y*y + z*z);
         
-        if (prime_fabs(radius) < 0.1) {
+        if (math_abs(radius) < 0.1) {
             printf("  ✗ Vertex %u has invalid position (r=%.3f)\n", i, radius);
             all_symmetric = false;
         }
@@ -271,9 +272,13 @@ RecoveryResult platonic_recover_prime(PlatonicModel* model) {
     bool all_valid = true;
     for (uint32_t i = 0; i < model->geometry.vertices; i++) {
         // Map vertex index to clock position
-        BabylonianClockPosition pos = map_prime_index_to_clock(i + 1);
+        uint64_t prime_pos = prime_nth(i + 1);
+
+        ClockPosition pos;
+
+        clock_map_prime_to_position(prime_pos, &pos);
         
-        if (!is_valid_clock_position(pos)) {
+        if (!clock_is_valid_position(pos)) {
             printf("  ✗ Vertex %u: invalid clock position\n", i);
             all_valid = false;
         }
@@ -374,7 +379,7 @@ RecoveryResult platonic_recover_tetration(PlatonicModel* model) {
             
             model->embeddings[i] += correction;
             
-            double change = prime_fabs(correction);
+            double change = math_abs(correction);
             if (change > max_change) {
                 max_change = change;
             }

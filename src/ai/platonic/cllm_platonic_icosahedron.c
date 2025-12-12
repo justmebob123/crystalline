@@ -18,8 +18,9 @@
  * Dual: Dodecahedron
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_platonic.h"
-#include "prime_float_math.h"
 #include "prime_math_custom.h"
 #include "prime_types.h"  // For PHI constant
 #include <stdio.h>

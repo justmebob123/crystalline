@@ -3,14 +3,20 @@
  * 
  * NOTE: The main loss function is cllm_compute_loss() in cllm_training.c
  * This file contains only utility functions for metrics and evaluation.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_exp with math_exp (2 calls)
+ * Total: 2 function calls migrated to NEW math library
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
-#include "../include/prime_float_math.h"
+#include "math/transcendental.h"  // NEW math library
 
 /**
  * Compute softmax in-place
@@ -32,7 +38,7 @@ static void softmax_inplace(double* logits, int size) {
     // Compute exp and sum
     double sum = 0.0;
     for (int i = 0; i < size; i++) {
-        logits[i] = prime_exp(logits[i] - max_logit);
+        logits[i] = math_exp(logits[i] - max_logit);
         sum += logits[i];
     }
     
@@ -72,13 +78,13 @@ void cllm_compute_loss_gradient(double* logits, uint32_t target,
 /**
  * Compute perplexity from loss
  * 
- * Perplexity = exp(loss)
+ * Perplexity = math_exp(loss)
  * 
  * @param loss Loss value
  * @return Perplexity value
  */
 double cllm_compute_perplexity(double loss) {
-    return prime_exp(loss);
+    return math_exp(loss);
 }
 
 /**

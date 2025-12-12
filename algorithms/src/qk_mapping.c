@@ -1,11 +1,15 @@
 /**
  * @file qk_mapping.c
  * @brief Implementation of Q→k mapping for general inference
+ * 
+ * PHASE 1 WEEK 2: Verified clean - no OLD library dependencies
+ * - No prime_* function calls
+ * - Removed prime_math_custom.h include (not needed)
+ * - Uses only standard C library
  */
 
 #include "qk_mapping.h"
 #include "tensor_ops.h"
-#include "prime_math_custom.h"
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 #include <string.h>

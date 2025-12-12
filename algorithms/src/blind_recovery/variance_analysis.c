@@ -230,7 +230,7 @@ void compute_variance_statistics(
             sum_squared_diff += diff * diff;
         }
         
-        *std_dev = prime_sqrt(sum_squared_diff / num_elements);
+        *std_dev = math_sqrt(sum_squared_diff / num_elements);
     }
 }
 

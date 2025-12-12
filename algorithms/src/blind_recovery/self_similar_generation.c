@@ -204,7 +204,7 @@ double compute_self_similarity_score(const SelfSimilarHierarchy* hierarchy) {
         double f_ratio = (double)curr->num_faces / prev->num_faces;
         
         // Check if ratios are consistent (self-similar)
-        double ratio_variance = prime_fabs(v_ratio - e_ratio) + prime_fabs(e_ratio - f_ratio);
+        double ratio_variance = math_abs(v_ratio - e_ratio) + math_abs(e_ratio - f_ratio);
         
         // Lower variance = higher self-similarity
         double level_score = 1.0 / (1.0 + ratio_variance);

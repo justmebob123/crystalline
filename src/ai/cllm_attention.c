@@ -11,8 +11,9 @@
  * - 10-100x speedup for sequences > 512 tokens
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../include/cllm.h"
-#include "../include/prime_float_math.h"
 #include "../include/cllm_simd_utils.h"
 #include "../algorithms/include/ntt_attention.h"
 #include <stdlib.h>
@@ -100,7 +101,7 @@ static void softmax(double* scores, uint32_t len) {
         double temp[4];
         _mm256_storeu_pd(temp, scores_vec);
         for (int j = 0; j < 4; j++) {
-            temp[j] = prime_exp(temp[j]);
+            temp[j] = math_exp(temp[j]);
         }
         scores_vec = _mm256_loadu_pd(temp);
         
@@ -115,7 +116,7 @@ static void softmax(double* scores, uint32_t len) {
     
     // Handle remainder
     for (; i < len; i++) {
-        scores[i] = prime_exp(scores[i] - max_score);
+        scores[i] = math_exp(scores[i] - max_score);
         sum += scores[i];
     }
     
@@ -208,7 +209,7 @@ static void standard_attention_forward(
     uint32_t embedding_dim = model->embedding_dim;
     uint32_t num_heads = model->num_heads;
     uint32_t head_dim = embedding_dim / num_heads;
-    double scale = 1.0 / prime_sqrt((double)head_dim);
+    double scale = 1.0 / math_sqrt((double)head_dim);
     
     // Get layer weights
     double* Q_weight = model->layers[layer_idx].query_weights;
@@ -255,7 +256,7 @@ static void standard_attention_forward(
             double* K_head = &K[h * head_dim];
             double* V_head = &V[h * head_dim];
             
-            // Compute attention scores: Q * K^T / prime_sqrt(d_k)
+            // Compute attention scores: Q * K^T / math_sqrt(d_k)
             for (uint32_t i = 0; i < seq_len; i++) {
                 for (uint32_t j = 0; j < seq_len; j++) {
                     double score = 0.0;
@@ -268,7 +269,7 @@ static void standard_attention_forward(
                     if (model->token_angular_positions && i < model->vocab_size && j < model->vocab_size) {
                         double angle_i = model->token_angular_positions[i];
                         double angle_j = model->token_angular_positions[j];
-                        double angular_bias = 0.1 * prime_cos(angle_i - angle_j);
+                        double angular_bias = 0.1 * math_cos(angle_i - angle_j);
                         scores[i * seq_len + j] += angular_bias;
                     }
                 }
@@ -329,7 +330,7 @@ static void cllm_ntt_attention_forward(
     uint32_t embedding_dim = model->embedding_dim;
     uint32_t num_heads = model->num_heads;
     uint32_t head_dim = embedding_dim / num_heads;
-    double scale = 1.0 / prime_sqrt((double)head_dim);
+    double scale = 1.0 / math_sqrt((double)head_dim);
     
     // Get layer weights
     double* Q_weight = model->layers[layer_idx].query_weights;
