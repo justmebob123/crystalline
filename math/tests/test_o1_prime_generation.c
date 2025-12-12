@@ -46,6 +46,7 @@ static bool is_prime_simple(uint64_t n) {
 }
 
 /* Check if number is in known primes list */
+static bool is_known_prime(uint64_t n) __attribute__((unused));
 static bool is_known_prime(uint64_t n) {
     for (size_t i = 0; i < KNOWN_PRIMES_COUNT; i++) {
         if (KNOWN_PRIMES[i] == n) return true;
@@ -128,7 +129,7 @@ static void test_position_o1(uint32_t position, uint64_t base, ClockContext* ctx
 }
 
 /* Test interference pattern computation */
-static void test_interference_patterns(ClockContext* ctx, TestResults* results) {
+static void test_interference_patterns(ClockContext* ctx __attribute__((unused)), TestResults* results) {
     printf("\n=== Testing Interference Pattern Computation ===\n");
     
     // Test known interference patterns
@@ -304,7 +305,8 @@ int main() {
     test_known_composites(&ctx, &results);
     
     // Cleanup
-    clock_cleanup(&ctx);
+    // Note: clock_cleanup not needed as we're using stack-allocated context
+    (void)ctx;  // Suppress unused warning
     
     // Print final results
     printf("\n==========================================================\n");
