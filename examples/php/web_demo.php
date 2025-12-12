@@ -1,3 +1,50 @@
+<?php
+/**
+ * Crystalline Math - Web Demo with REST API
+ */
+
+// Check if extension is loaded
+if (!extension_loaded('crystalline_math')) {
+    if (isset($_GET['action'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'crystalline_math extension not loaded']);
+        exit;
+    }
+    die("Error: crystalline_math extension is not loaded.");
+}
+
+// Handle API requests BEFORE any HTML output
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    switch ($_GET['action']) {
+        case 'check':
+            $number = intval($_GET['number']);
+            $isPrime = crystalline_prime_is_prime($number);
+            echo json_encode(['isPrime' => (bool)$isPrime]);
+            exit;
+            
+        case 'nth':
+            $n = intval($_GET['n']);
+            $prime = crystalline_prime_nth($n);
+            echo json_encode(['prime' => (int)$prime]);
+            exit;
+            
+        case 'o1':
+            $position = intval($_GET['position']);
+            $magnitude = intval($_GET['magnitude']);
+            $prime = crystalline_prime_generate_o1($position, $magnitude);
+            echo json_encode(['prime' => (int)$prime]);
+            exit;
+            
+        default:
+            echo json_encode(['error' => 'Invalid action']);
+            exit;
+    }
+}
+
+// If we get here, render the HTML page
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -453,31 +500,3 @@
     </script>
 </body>
 </html>
-
-<?php
-// API endpoints for AJAX requests
-if (isset($_GET['action'])) {
-    header('Content-Type: application/json');
-    
-    switch ($_GET['action']) {
-        case 'check':
-            $number = intval($_GET['number']);
-            $isPrime = crystalline_prime_is_prime($number);
-            echo json_encode(['isPrime' => $isPrime]);
-            exit;
-            
-        case 'nth':
-            $n = intval($_GET['n']);
-            $prime = crystalline_prime_nth($n);
-            echo json_encode(['prime' => $prime]);
-            exit;
-            
-        case 'o1':
-            $position = intval($_GET['position']);
-            $magnitude = intval($_GET['magnitude']);
-            $prime = crystalline_prime_generate_o1($position, $magnitude);
-            echo json_encode(['prime' => $prime]);
-            exit;
-    }
-}
-?>
