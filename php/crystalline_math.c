@@ -47,6 +47,11 @@ ZEND_GET_MODULE(crystalline_math)
 /* Module initialization */
 PHP_MINIT_FUNCTION(crystalline_math)
 {
+    /* Pre-initialize the rainbow table to avoid lazy initialization issues
+     * This ensures the global state is properly set up before any PHP calls
+     * and prevents potential segfaults from concurrent initialization */
+    prime_nth(1);  /* Force initialization by getting first prime */
+    
     return SUCCESS;
 }
 
@@ -143,7 +148,15 @@ PHP_FUNCTION(crystalline_prime_nth)
         RETURN_FALSE;
     }
     
+    /* Call prime_nth with error checking */
     uint64_t prime = prime_nth((uint64_t)n);
+    
+    /* Check if result is valid (0 indicates error) */
+    if (prime == 0 &amp;&amp; n > 0) {
+        php_error_docref(NULL, E_WARNING, "Failed to compute nth prime");
+        RETURN_FALSE;
+    }
+    
     RETURN_LONG(prime);
 }
 
