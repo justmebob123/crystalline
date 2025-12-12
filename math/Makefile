@@ -24,8 +24,9 @@ GEOMETRY_SRCS = $(wildcard $(SRC_DIR)/geometry/*.c)
 PRIME_SRCS = $(wildcard $(SRC_DIR)/prime/*.c)
 CRYPTO_SRCS = $(wildcard $(SRC_DIR)/crypto/*.c)
 VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
+COMPACT_SRCS = $(wildcard $(SRC_DIR)/compact/*.c)
 
-ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS)
+ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS) $(COMPACT_SRCS)
 
 # Object files
 CORE_OBJS = $(CORE_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -35,8 +36,9 @@ NTT_OBJS = $(NTT_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 GEOMETRY_OBJS = $(GEOMETRY_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 PRIME_OBJS = $(PRIME_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 CRYPTO_OBJS = $(CRYPTO_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+COMPACT_OBJS = $(COMPACT_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-ALL_OBJS = $(CORE_OBJS) $(ABACUS_OBJS) $(NTT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS)
+ALL_OBJS = $(CORE_OBJS) $(ABACUS_OBJS) $(NTT_OBJS) $(GEOMETRY_OBJS) $(PRIME_OBJS) $(CRYPTO_OBJS) $(COMPACT_OBJS)
 
 # Library files
 STATIC_LIB = $(LIB_DIR)/libcrystallinemath.a
@@ -60,6 +62,7 @@ directories:
 	@mkdir -p $(BUILD_DIR)/geometry
 	@mkdir -p $(BUILD_DIR)/prime
 	@mkdir -p $(BUILD_DIR)/crypto
+	@mkdir -p $(BUILD_DIR)/compact
 	@mkdir -p $(BUILD_DIR)/tests
 	@mkdir -p $(LIB_DIR)
 

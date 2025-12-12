@@ -866,3 +866,98 @@ bool clock_is_prime_o1(uint64_t base, uint64_t magnitude, const ClockContext* ct
     
     return !clock_has_interference_o1(base, magnitude, ctx->prime_cache, ctx->cache_size);
 }
+/* ============================================================================
+ * REVERSE LOOKUP - NUMBER TO POSITION/MAGNITUDE
+ * ============================================================================
+ */
+
+/**
+ * @brief Reverse lookup: Convert any number to ring position and magnitude
+ * @param number Number to analyze (prime or composite)
+ * @param ring Output ring number (0-3)
+ * @param position Output position on ring
+ * @param magnitude Output magnitude value
+ * @return MATH_SUCCESS if valid position found, error otherwise
+ * 
+ * Uses Babylonian reduction mathematics:
+ * 1. Calculate mod 12 to determine base position
+ * 2. Calculate magnitude from (number - base) / 12
+ * 3. Validate the result
+ * 
+ * This works for ANY number (prime or composite) that follows
+ * the clock lattice structure.
+ */
+MathError clock_reverse_lookup(uint64_t number, uint32_t* ring, 
+                               uint32_t* position, uint64_t* magnitude) {
+    if (!ring || !position || !magnitude) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Special cases for small numbers
+    if (number < 2) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Calculate mod 12 to determine position
+    uint32_t mod12 = (uint32_t)(number % 12);
+    
+    // Currently only Ring 0 is fully implemented
+    *ring = 0;
+    
+    // Map mod 12 to position and base
+    uint64_t base = 0;
+    
+    switch (mod12) {
+        case 2:  // Position 0 (special: only 2)
+            *position = 0;
+            base = 2;
+            break;
+            
+        case 3:  // Position 1 (special: only 3)
+            *position = 1;
+            base = 3;
+            break;
+            
+        case 5:  // Position 3 (progression: 5, 17, 29, 41, ...)
+            *position = 3;
+            base = 5;
+            break;
+            
+        case 7:  // Position 6 (progression: 7, 19, 31, 43, ...)
+            *position = 6;
+            base = 7;
+            break;
+            
+        case 11: // Position 9 (progression: 11, 23, 35, 47, ...)
+            *position = 9;
+            base = 11;
+            break;
+            
+        default:
+            // This mod 12 value doesn't correspond to a valid position
+            return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Calculate magnitude using Babylonian reduction
+    // magnitude = (number - base) / 12
+    if (number < base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    uint64_t diff = number - base;
+    
+    // Check if difference is divisible by 12
+    if (diff % 12 != 0) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    *magnitude = diff / 12;
+    
+    // Validate: reconstruct number and verify
+    uint64_t reconstructed = base + (*magnitude) * 12;
+    if (reconstructed != number) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    return MATH_SUCCESS;
+}

@@ -895,11 +895,13 @@ make tools          # Build all tools
 - **MASTER_PLAN.md**: This file - objectives and architecture
 - **AUDIT.md**: Current architectural state and violations
 - **SECONDARY_OBJECTIVES.md**: Detailed implementation tasks
+- **TERTIARY_OBJECTIVES.md**: Revolutionary memory hopping architecture
 - **todo.md**: Current progress and status updates
 
 ### Reference Documents
 - **README.md**: Project overview and setup
 - **docs/**: Detailed documentation for each component
+- **DEEP_ARCHITECTURE_ANALYSIS.md**: Deep analysis of memory optimization
 
 ---
 

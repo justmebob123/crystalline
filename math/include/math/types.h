@@ -168,7 +168,10 @@ typedef enum {
     MATH_ERROR_RANGE,         /**< Range error (result too large/small) */
     MATH_ERROR_CONVERGENCE,   /**< Iterative algorithm failed to converge */
     MATH_ERROR_NOT_FOUND,     /**< Item not found in lookup */
-    MATH_ERROR_OUT_OF_RANGE   /**< Index or value out of valid range */
+    MATH_ERROR_OUT_OF_RANGE,  /**< Index or value out of valid range */
+    MATH_ERROR_NULL_POINTER,  /**< Null pointer passed */
+    MATH_ERROR_INVALID_BASE,  /**< Invalid number base */
+    MATH_ERROR_NOT_IMPLEMENTED /**< Feature not yet implemented */
 } MathError;
 
 #ifdef __cplusplus

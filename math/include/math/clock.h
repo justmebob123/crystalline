@@ -45,6 +45,12 @@ MathError clock_init(ClockContext* ctx);
  */
 void clock_free(ClockContext* ctx);
 
+/**
+ * @brief Cleanup clock context resources
+ * @param ctx Clock context to cleanup
+ */
+void clock_cleanup(ClockContext* ctx);
+
 /* ============================================================================
  * POSITION MAPPING
  * ============================================================================
@@ -298,6 +304,42 @@ uint64_t clock_generate_prime_o1(uint32_t ring, uint32_t position, uint64_t magn
  *   }
  */
 bool clock_is_prime_o1(uint64_t base, uint64_t magnitude, const ClockContext* ctx);
+
+/* ============================================================================
+ * REVERSE LOOKUP - NUMBER TO POSITION/MAGNITUDE
+ * ============================================================================
+ */
+
+/**
+ * @brief Reverse lookup: Convert any number to ring position and magnitude
+ * @param number Number to analyze (prime or composite)
+ * @param ring Output ring number (0-3)
+ * @param position Output position on ring
+ * @param magnitude Output magnitude value
+ * @return MATH_SUCCESS if valid position found, error otherwise
+ * 
+ * Uses Babylonian reduction mathematics:
+ * 1. Calculate mod 12 to determine base position
+ * 2. Calculate magnitude from (number - base) / 12
+ * 3. Validate the result
+ * 
+ * This works for ANY number (prime or composite) that follows
+ * the clock lattice structure.
+ * 
+ * Example:
+ *   uint32_t ring, position;
+ *   uint64_t magnitude;
+ *   
+ *   // Reverse lookup for 29 (prime)
+ *   clock_reverse_lookup(29, &ring, &position, &magnitude);
+ *   // Result: ring=0, position=3, magnitude=2
+ *   
+ *   // Reverse lookup for 65 (composite: 5×13)
+ *   clock_reverse_lookup(65, &ring, &position, &magnitude);
+ *   // Result: ring=0, position=3, magnitude=5
+ */
+MathError clock_reverse_lookup(uint64_t number, uint32_t* ring, 
+                               uint32_t* position, uint64_t* magnitude);
 
 #ifdef __cplusplus
 }

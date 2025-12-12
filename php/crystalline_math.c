@@ -59,6 +59,13 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_crystalline_version, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_crystalline_reverse_lookup, 0, 0, 1)
+    ZEND_ARG_INFO(0, number)
+ZEND_END_ARG_INFO()
+
+/* Forward declarations */
+ZEND_FUNCTION(crystalline_reverse_lookup);
+
 /* Module entry */
 static const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(crystalline_prime_generate_o1, arginfo_crystalline_prime_generate_o1)
@@ -70,6 +77,7 @@ static const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(crystalline_rainbow_count, arginfo_crystalline_rainbow_count)
     PHP_FE(crystalline_clock_position, arginfo_crystalline_clock_position)
     PHP_FE(crystalline_clock_validate, arginfo_crystalline_clock_validate)
+    PHP_FE(crystalline_reverse_lookup, arginfo_crystalline_reverse_lookup)
     PHP_FE(crystalline_version, arginfo_crystalline_version)
     PHP_FE_END
 };
@@ -378,4 +386,44 @@ PHP_FUNCTION(crystalline_clock_validate)
 PHP_FUNCTION(crystalline_version)
 {
     RETURN_STRING(PHP_CRYSTALLINE_MATH_VERSION);
+}
+
+/**
+ * Reverse lookup: Convert number to ring position and magnitude
+ * 
+ * crystalline_reverse_lookup(int $number): array|false
+ * 
+ * Returns array with keys: 'ring', 'position', 'magnitude', 'is_prime'
+ * Returns false if number doesn't fit clock lattice structure
+ */
+PHP_FUNCTION(crystalline_reverse_lookup)
+{
+    zend_long number;
+    
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(number)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (number < 2) {
+        RETURN_FALSE;
+    }
+    
+    uint32_t ring, position;
+    uint64_t magnitude;
+    
+    MathError err = clock_reverse_lookup((uint64_t)number, &ring, &position, &magnitude);
+    
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    
+    // Check if it's prime using standard primality test
+    bool is_prime = prime_is_prime((uint64_t)number);
+    
+    // Return associative array
+    array_init(return_value);
+    add_assoc_long(return_value, "ring", ring);
+    add_assoc_long(return_value, "position", position);
+    add_assoc_long(return_value, "magnitude", magnitude);
+    add_assoc_bool(return_value, "is_prime", is_prime);
 }

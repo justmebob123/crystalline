@@ -56,8 +56,46 @@ if (isset($_GET['action'])) {
         case 'o1':
             $position = intval($_GET['position']);
             $magnitude = intval($_GET['magnitude']);
-            $prime = crystalline_prime_generate_o1($position, $magnitude);
-            echo json_encode(['prime' => (int)$prime]);
+            $result = crystalline_prime_generate_o1($position, $magnitude);
+            
+            // Calculate the actual value even if composite
+            $base = 0;
+            if ($position == 3) $base = 5;
+            else if ($position == 6) $base = 7;
+            else if ($position == 9) $base = 11;
+            
+            $value = $base + $magnitude * 12;
+            $isPrime = ($result > 0);
+            
+            echo json_encode([
+                'value' => (int)$value,
+                'isPrime' => $isPrime,
+                'prime' => (int)$result
+            ]);
+            exit;
+            
+        case 'reverse':
+            $number = intval($_GET['number']);
+            
+            if ($number < 2) {
+                echo json_encode([
+                    'error' => 'Invalid number',
+                    'message' => 'Number must be >= 2'
+                ]);
+                exit;
+            }
+            
+            $result = crystalline_reverse_lookup($number);
+            
+            if ($result === false) {
+                echo json_encode([
+                    'error' => 'Invalid number',
+                    'message' => 'Number does not fit clock lattice structure (mod 12 must be 2, 3, 5, 7, or 11)'
+                ]);
+                exit;
+            }
+            
+            echo json_encode($result);
             exit;
             
         default:
@@ -331,10 +369,18 @@ if (isset($_GET['action'])) {
                     </div>
                 </div>
                 
+                <div class="calc-row">
+                    <div class="calc-group" style="flex: 1 1 100%;">
+                        <label for="reverseNumber">Reverse Lookup (Number → Position + Magnitude):</label>
+                        <input type="number" id="reverseNumber" placeholder="Enter any number" value="29" min="2">
+                    </div>
+                </div>
+                
                 <div class="calc-buttons">
                     <button onclick="checkPrime()">Check Prime</button>
                     <button onclick="getNthPrime()">Get Nth Prime</button>
                     <button onclick="generateO1()">Generate O(1)</button>
+                    <button onclick="reverseLookup()">Reverse Lookup</button>
                 </div>
                 
                 <div id="calcResult" class="result"></div>
@@ -343,6 +389,7 @@ if (isset($_GET['action'])) {
             <div class="info-box">
                 <h4>ℹ️ About O(1) Prime Generation</h4>
                 <p>This extension uses a revolutionary deterministic formula to generate primes in constant time O(1), without trial division or probabilistic tests. The clock lattice structure maps primes to positions on a Babylonian clock (12, 60, 60, 100).</p>
+                <p style="margin-top: 10px;"><strong>Reverse Lookup:</strong> You can now convert any number back to its ring position and magnitude using Babylonian reduction mathematics. This works for both primes and composites that follow the clock lattice structure (mod 12 ∈ {2, 3, 5, 7, 11}).</p>
             </div>
             
             <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
@@ -366,18 +413,26 @@ if (isset($_GET['action'])) {
                     <div class="output">
                         <?php
                         $examples = [
-                            [3, 0], [3, 1], [3, 2],
-                            [6, 0], [6, 1],
-                            [9, 0], [9, 1]
+                            [3, 0], [3, 1], [3, 2], [3, 4],
+                            [6, 0], [6, 1], [6, 4],
+                            [9, 0], [9, 1], [9, 4]
                         ];
                         foreach ($examples as list($pos, $mag)) {
-                            $prime = crystalline_prime_generate_o1($pos, $mag);
+                            $result = crystalline_prime_generate_o1($pos, $mag);
+                            
+                            // Calculate actual value
+                            $base = 0;
+                            if ($pos == 3) $base = 5;
+                            else if ($pos == 6) $base = 7;
+                            else if ($pos == 9) $base = 11;
+                            $value = $base + $mag * 12;
+                            
                             echo "<div class='output-line'>";
                             echo "Position $pos, Magnitude $mag: ";
-                            if ($prime > 0) {
-                                echo "<span class='prime'>$prime (PRIME)</span>";
+                            if ($result > 0) {
+                                echo "<span class='prime'>$value (PRIME)</span>";
                             } else {
-                                echo "<span class='composite'>composite</span>";
+                                echo "<span class='composite'>$value (COMPOSITE)</span>";
                             }
                             echo "</div>";
                         }
@@ -419,20 +474,49 @@ if (isset($_GET['action'])) {
                     <div class="output">
                         <?php
                         for ($pos = 0; $pos < 12; $pos++) {
-                            $prime = crystalline_prime_generate_o1($pos, 0);
+                            $result = crystalline_prime_generate_o1($pos, 0);
+                            
+                            // Calculate actual value for valid positions
+                            $value = "N/A";
+                            if ($pos == 3) $value = 5;
+                            else if ($pos == 6) $value = 7;
+                            else if ($pos == 9) $value = 11;
+                            
                             echo "<div class='output-line'>";
                             echo "Position $pos: ";
-                            if ($prime > 0) {
-                                echo "<span class='prime'>$prime</span>";
+                            if ($result > 0) {
+                                echo "<span class='prime'>$value (PRIME)</span>";
+                            } else if ($value !== "N/A") {
+                                echo "<span class='composite'>$value (COMPOSITE)</span>";
                             } else {
-                                echo "<span class='composite'>composite</span>";
+                                echo "<span class='composite'>No prime at this position</span>";
                             }
                             echo "</div>";
                         }
                         ?>
                     </div>
                     
-                    <h3>5. Performance Benchmark</h3>
+                    <h3>5. Reverse Lookup Examples</h3>
+                    <div class="output">
+                        <?php
+                        $test_numbers = [29, 65, 157, 91, 127];
+                        foreach ($test_numbers as $num) {
+                            $lookup = crystalline_reverse_lookup($num);
+                            if ($lookup !== false) {
+                                echo "<div class='output-line'>";
+                                echo "$num: Ring {$lookup['ring']}, Position {$lookup['position']}, Magnitude {$lookup['magnitude']} - ";
+                                if ($lookup['is_prime']) {
+                                    echo "<span class='prime'>PRIME</span>";
+                                } else {
+                                    echo "<span class='composite'>COMPOSITE</span>";
+                                }
+                                echo "</div>";
+                            }
+                        }
+                        ?>
+                    </div>
+                    
+                    <h3>6. Performance Benchmark</h3>
                     <div class="output">
                         <?php
                         $start = microtime(true);
@@ -546,14 +630,65 @@ if (isset($_GET['action'])) {
                         <h3>O(1) Generation Result</h3>
                         <div class="result-value">
                             Position ${position}, Magnitude ${magnitude} = 
-                            ${data.prime > 0 ? 
-                                `<span class="prime">${data.prime} (PRIME)</span>` : 
-                                `<span class="composite">composite</span>`
-                            }
+                            <span class="${data.isPrime ? 'prime' : 'composite'}">${data.value}</span>
+                            ${data.isPrime ? '(PRIME)' : '(COMPOSITE)'}
                         </div>
                         <p style="margin-top: 10px; color: #666;">
                             Generated in O(1) constant time using deterministic formula
                         </p>
+                    `;
+                    result.classList.add('show');
+                });
+        }
+        
+        function reverseLookup() {
+            const number = document.getElementById('reverseNumber').value;
+            
+            if (!number || number < 2) {
+                alert('Please enter a number >= 2');
+                return;
+            }
+            
+            fetch(`?action=reverse&number=${number}`)
+                .then(r => r.json())
+                .then(data => {
+                    const result = document.getElementById('calcResult');
+                    
+                    if (data.error) {
+                        result.innerHTML = `
+                            <h3>Reverse Lookup Error</h3>
+                            <div class="result-value" style="color: #dc3545;">
+                                ${data.message}
+                            </div>
+                            <p style="margin-top: 10px; color: #666;">
+                                Only numbers with mod 12 ∈ {2, 3, 5, 7, 11} fit the clock lattice structure.
+                            </p>
+                        `;
+                    } else {
+                        result.innerHTML = `
+                            <h3>Reverse Lookup Result</h3>
+                            <div class="result-value">
+                                ${number} = <span class="${data.is_prime ? 'prime' : 'composite'}">${data.is_prime ? 'PRIME' : 'COMPOSITE'}</span>
+                            </div>
+                            <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <p style="margin: 5px 0;"><strong>Ring:</strong> ${data.ring}</p>
+                                <p style="margin: 5px 0;"><strong>Position:</strong> ${data.position}</p>
+                                <p style="margin: 5px 0;"><strong>Magnitude:</strong> ${data.magnitude}</p>
+                                <p style="margin: 10px 0 5px 0; color: #666; font-size: 0.9em;">
+                                    Formula: ${number} = base + ${data.magnitude} × 12
+                                </p>
+                            </div>
+                        `;
+                    }
+                    result.classList.add('show');
+                })
+                .catch(err => {
+                    const result = document.getElementById('calcResult');
+                    result.innerHTML = `
+                        <h3>Error</h3>
+                        <div class="result-value" style="color: #dc3545;">
+                            Request failed: ${err.message}
+                        </div>
                     `;
                     result.classList.add('show');
                 });
