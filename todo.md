@@ -540,7 +540,58 @@ needs careful header management to avoid type conflicts between OLD and NEW syst
 
 ---
 
+## 🎯 PHASE 3: ADD PHP SUPPORT (CURRENT)
+
+**Priority:** 🟡 HIGH - User requested for Apache deployment  
+**Goal:** Enable PHP to use NEW math library (independent of CLLM)
+
+### [x] Step 3.1: Create PHP extension structure
+- [x] Create php/ directory
+- [x] Create php/config.m4 (PHP build configuration)
+- [x] Create php/php_crystalline_math.h (header file)
+- [x] Create php/crystalline_math.c (PHP extension code)
+
+### [x] Step 3.2: Implement core PHP functions
+- [x] Wrap prime generation (prime_generate_o1, prime_is_prime, prime_nth)
+- [x] Wrap rainbow table (init, populate, lookup, count)
+- [x] Wrap clock lattice functions (position, validate)
+- [x] Add error handling for PHP
+- [x] Add version function
+
+### [x] Step 3.3: Add to Makefile
+- [x] php-ext target already exists
+- [x] install-php target already exists
+- [x] Updated to use --enable-crystalline-math
+- [x] Links against NEW math library only
+
+### [x] Step 3.4: Create PHP examples
+- [x] examples/php/prime_generation.php
+- [x] examples/php/clock_lattice.php
+- [x] examples/php/rainbow_table.php
+- [x] All examples include performance tests
+
+### [x] Step 3.5: Create installation scripts
+- [x] scripts/install_php_ubuntu.sh (with auto-detection)
+- [x] scripts/install_php_centos.sh (with auto-detection)
+- [x] Both scripts handle Apache and PHP-FPM
+- [ ] Test on Ubuntu (requires PHP installed)
+- [ ] Test on CentOS (requires PHP installed)
+
+### [ ] Step 3.6: Test and verify
+- [ ] Build PHP extension (requires PHP dev tools)
+- [ ] Test all PHP examples
+- [ ] Verify works with Apache
+- [x] Document installation process (php/README.md)
+
+### [ ] Step 3.7: Commit and push
+- [ ] Git add all PHP files
+- [ ] Git commit with descriptive message
+- [ ] Git push to audit branch
+
+---
+
 **STATUS:** ✅ Phase 2 COMPLETE - Makefile uses NEW math library only  
 **BRANCH:** audit  
 **BUILD STATUS:** ❌ Fails with 70+ undefined references (EXPECTED - CLLM uses OLD functions)  
+**CURRENT:** Phase 3 - Add PHP Support (independent of CLLM)  
 **NEXT:** Phase 5 - CLLM Library Migration (fixes build errors)

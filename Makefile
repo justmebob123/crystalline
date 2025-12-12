@@ -666,14 +666,14 @@ php-setup:
 	@echo "Setting up PHP extension structure..."
 	@mkdir -p $(PHP_EXT_DIR)
 	@mkdir -p examples/php
-	@./scripts/create_php_extension.sh
+	@echo "✓ PHP extension files ready"
 	@echo "✓ PHP extension structure created"
 
 php-ext: $(MATH_LIB) php-setup
 	@echo "Building PHP extension for Crystalline Math Library..."
 	@cd $(PHP_EXT_DIR) && \
 		phpize && \
-		./configure --with-crystalline-math=../math && \
+		./configure --enable-crystalline-math && \
 		$(MAKE)
 	@echo "✓ PHP extension built"
 	@echo ""
