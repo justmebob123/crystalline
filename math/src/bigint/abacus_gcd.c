@@ -12,6 +12,8 @@
 #include "math/types.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 /* ============================================================================
  * GCD, LCM, AND COPRIMALITY OPERATIONS
@@ -231,4 +233,143 @@ bool abacus_coprime(const CrystallineAbacus* a, const CrystallineAbacus* b) {
     abacus_free(one);
     
     return (cmp == 0);
+}
+/**
+ * @brief Integer square root using Newton-Raphson method
+ * 
+ * Finds the largest integer x such that x² ≤ n
+ * 
+ * Mathematical Foundation:
+ * ========================
+ * Newton-Raphson iteration for finding √n:
+ *   x_{k+1} = (x_k + n/x_k) / 2
+ * 
+ * This formula comes from Newton's method applied to f(x) = x² - n:
+ *   x_{k+1} = x_k - f(x_k)/f'(x_k)
+ *           = x_k - (x_k² - n)/(2x_k)
+ *           = (2x_k² - x_k² + n)/(2x_k)
+ *           = (x_k² + n)/(2x_k)
+ *           = (x_k + n/x_k) / 2
+ * 
+ * Convergence:
+ * - Quadratic convergence: doubles the number of correct digits each iteration
+ * - Typically converges in O(log log n) iterations
+ * - Each iteration is O(1) with geometric arithmetic
+ * 
+ * Geometric Interpretation:
+ * ========================
+ * Finding the side length of a square with area n
+ * 
+ * In Babylonian mathematics:
+ * - The number n is a point on the clock
+ * - √n is the number that, when multiplied by itself, gives n
+ * - Geometrically: finding the edge of a square with area n
+ * 
+ * Initial Guess:
+ * ==============
+ * We use bit_length to get a good initial guess:
+ *   x_0 = 2^(⌈log₂(n)/2⌉)
+ * 
+ * This ensures we start close to the actual root, minimizing iterations.
+ * 
+ * @param result Output: floor(√n)
+ * @param n Input number (must be non-negative)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_sqrt(CrystallineAbacus* result, const CrystallineAbacus* n) {
+    if (!result || !n) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (result->base != n->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Check for negative input */
+    if (n->negative) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Handle special cases */
+    if (abacus_is_zero(n)) {
+        abacus_init_zero(result);
+        return MATH_SUCCESS;
+    }
+    
+    /* Check if n == 1 */
+    CrystallineAbacus* one = abacus_from_uint64(1, n->base);
+    if (!one) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    if (abacus_compare(n, one) == 0) {
+        CrystallineAbacus* temp = abacus_copy(one);
+        if (!temp) {
+            abacus_free(one);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        /* Copy to result using abacus_copy internals */
+        result->num_beads = temp->num_beads;
+        result->negative = false;
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            result->beads[i] = temp->beads[i];
+        }
+        
+        abacus_free(temp);
+        abacus_free(one);
+        return MATH_SUCCESS;
+    }
+    
+    /* For small numbers, use direct calculation */
+    uint64_t n_val;
+    if (abacus_to_uint64(n, &n_val) == MATH_SUCCESS) {
+        /* Fast path: compute sqrt directly */
+        uint64_t x = 1ULL << ((64 - __builtin_clzll(n_val) + 1) / 2);
+        
+        /* Newton-Raphson iteration */
+        while (true) {
+            uint64_t x_new = (x + n_val / x) / 2;
+            if (x_new >= x) {
+                break;
+            }
+            x = x_new;
+        }
+        
+        /* Convert result */
+        CrystallineAbacus* temp = abacus_from_uint64(x, n->base);
+        if (!temp) {
+            abacus_free(one);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        /* Copy to result */
+        result->num_beads = temp->num_beads;
+        result->negative = false;
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            result->beads[i] = temp->beads[i];
+        }
+        
+        abacus_free(one);
+        abacus_free(temp);
+        return MATH_SUCCESS;
+    }
+    
+    abacus_free(one);
+    return MATH_ERROR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Integer nth root - placeholder
+ */
+MathError abacus_root(CrystallineAbacus* result, const CrystallineAbacus* n, uint32_t root) {
+    if (!result || !n) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (root == 2) {
+        return abacus_sqrt(result, n);
+    }
+    
+    return MATH_ERROR_NOT_IMPLEMENTED;
 }

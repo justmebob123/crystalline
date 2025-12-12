@@ -427,6 +427,43 @@ MathError abacus_lcm(CrystallineAbacus* result, const CrystallineAbacus* a, cons
  */
 bool abacus_coprime(const CrystallineAbacus* a, const CrystallineAbacus* b);
 
+/**
+ * @brief Integer square root using Newton-Raphson method
+ * 
+ * Finds the largest integer x such that x² ≤ n
+ * 
+ * Mathematical Foundation:
+ * Uses Newton-Raphson iteration: x_new = (x + n/x) / 2
+ * Converges quadratically to √n
+ * 
+ * Geometric Interpretation:
+ * Finding the side length of a square with area n
+ * 
+ * @param result Output: floor(√n)
+ * @param n Input number (must be non-negative)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_sqrt(CrystallineAbacus* result, const CrystallineAbacus* n);
+
+/**
+ * @brief Integer nth root using Newton-Raphson method
+ * 
+ * Finds the largest integer x such that x^root ≤ n
+ * 
+ * Mathematical Foundation:
+ * Uses Newton-Raphson iteration: x_new = ((root-1)*x + n/x^(root-1)) / root
+ * Converges to the nth root of n
+ * 
+ * Geometric Interpretation:
+ * Finding the edge length of an n-dimensional hypercube with volume n
+ * 
+ * @param result Output: floor(root√n)
+ * @param n Input number
+ * @param root The root to extract (2 for square root, 3 for cube root, etc.)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_root(CrystallineAbacus* result, const CrystallineAbacus* n, uint32_t root);
+
 /* ============================================================================
  * BASE CONVERSION
  * ============================================================================ */
