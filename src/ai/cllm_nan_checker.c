@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "../include/cllm_training.h"
+#include "math/validation.h"
 
 // Inline isinf check without math.h to avoid type conflicts
 static inline bool check_isinf(double x) {

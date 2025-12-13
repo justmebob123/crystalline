@@ -18,6 +18,7 @@ static char* strdup_safe(const char* str) {
     return copy;
 }
 
+__attribute__((unused))
 static void to_lowercase(char* str) {
     for (int i = 0; str[i]; i++) {
         str[i] = tolower(str[i]);
@@ -500,7 +501,7 @@ void cllm_vocab_print_stats(const CLLMVocabulary* vocab) {
     
     printf("Name: %s\n", vocab->name ? vocab->name : "unnamed");
     printf("Vocabulary Size: %u unique tokens\n", stats.vocab_size);
-    printf("Total Tokens Processed: %lu\n", stats.total_tokens);
+    printf("Total Tokens Processed: %u\n", stats.total_tokens);
     printf("Average Token Length: %.2f characters\n", stats.avg_token_length);
     printf("Token Length Range: %u - %u characters\n", 
            stats.min_token_length, stats.max_token_length);

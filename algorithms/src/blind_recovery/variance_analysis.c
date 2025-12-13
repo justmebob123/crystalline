@@ -47,6 +47,9 @@ static double compute_axis_mean(
     uint32_t num_dimensions,
     const uint32_t* dimension_sizes
 ) {
+    (void)axis;
+    (void)num_dimensions;
+    (void)dimension_sizes;
     if (!data || num_elements == 0) return 0.0;
     
     double sum = 0.0;
@@ -72,6 +75,9 @@ static double compute_axis_variance(
     const uint32_t* dimension_sizes,
     double mean
 ) {
+    (void)axis;
+    (void)num_dimensions;
+    (void)dimension_sizes;
     if (!data || num_elements == 0) return 0.0;
     
     double sum_squared_diff = 0.0;

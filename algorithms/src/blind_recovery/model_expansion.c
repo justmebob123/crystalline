@@ -95,6 +95,7 @@ static bool validate_expansion(
     const StructuralMap* source,
     PlatonicSolidType target_solid
 ) {
+    (void)target_solid;  // Unused in this implementation
     if (!source) return false;
     
     // Check if source has Platonic solid type

@@ -27,7 +27,6 @@
 #include "math/clock.h"
 #include "math/prime.h"  // For prime_validate_by_clock()
 
-#define MATH_PHI 1.618033988749895
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000
 static uint64_t prime_cache[PRIME_CACHE_SIZE];

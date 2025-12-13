@@ -8,6 +8,7 @@
 
 #include "cllm.h"
 #include "cllm_training.h"
+#include "cllm_inference_transformer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

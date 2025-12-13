@@ -94,7 +94,13 @@ static StructuralMap* downsample_structure(
 static ScaleLevel* create_scale_level(
     uint32_t scale_level,
     const StructuralMap* structure
+) __attribute__((unused));
+
+static ScaleLevel* create_scale_level(
+    uint32_t scale_level,
+    const StructuralMap* structure
 ) {
+    (void)structure;  // Unused in this implementation
     ScaleLevel* level = (ScaleLevel*)calloc(1, sizeof(ScaleLevel));
     if (!level) {
         return NULL;

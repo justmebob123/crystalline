@@ -156,10 +156,10 @@ bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result
  * Computes seed_prime^(seed_prime^(seed_prime^...)) (depth times) mod modulus
  * Uses arbitrary precision to handle large intermediate values
  */
-struct CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime, 
+CrystallineAbacus* nonce_build_tetration_stack_abacus(uint64_t seed_prime, 
                                                        uint32_t depth,
                                                        uint64_t modulus,
-                                                       struct ClockContext* ctx) {
+                                                       ClockContext* ctx) {
     if (depth == 0 || seed_prime == 0 || !ctx) {
         return NULL;
     }

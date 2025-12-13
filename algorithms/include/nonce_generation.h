@@ -129,13 +129,15 @@ uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
  * @param ctx Clock context for operations
  * @return CrystallineAbacus* result (caller must free) or NULL on error
  */
-struct CrystallineAbacus;
-struct ClockContext;
-struct CrystallineAbacus* nonce_build_tetration_stack_abacus(
+// Include the actual type definitions
+#include "math/abacus.h"
+#include "math/types.h"
+
+CrystallineAbacus* nonce_build_tetration_stack_abacus(
     uint64_t seed_prime, 
     uint32_t depth,
     uint64_t modulus,
-    struct ClockContext* ctx);
+    ClockContext* ctx);
 
 /**
  * @brief Apply difficulty-based bounds using entropy reduction

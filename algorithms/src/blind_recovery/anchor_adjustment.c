@@ -61,6 +61,9 @@ bool detect_anchor_corruption(
     const double* vertex_positions,
     uint32_t num_vertices
 ) {
+    (void)vertex_positions;  // Unused in this implementation
+    (void)num_vertices;      // Unused in this implementation
+    
     if (!system || anchor_idx >= system->num_anchors) {
         return false;
     }

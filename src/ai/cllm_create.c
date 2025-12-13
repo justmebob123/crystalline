@@ -15,6 +15,7 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/clock.h"
 #include "../include/cllm.h"
 #include "../include/ai/cllm_platonic.h"
 #include <stdlib.h>

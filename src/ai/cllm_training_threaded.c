@@ -38,6 +38,8 @@
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
 #include "ai/cllm_entropy_integration.h" // PHASE 6: Entropy integration
 #include "ai/cllm_adaptive_hierarchy.h"  // PHASE 6: Adaptive hierarchy
+#include "math/validation.h"             // For math_is_nan and math_is_inf
+#include "ai/cllm_cymatic_frequencies.h" // For cllm_get_dimensional_frequency
 #include "ai/cllm_entropy_allocation.h"  // PHASE 6: Entropy-based allocation
 #include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
@@ -470,8 +472,8 @@ double cllm_forward_training_threaded(
                 double* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
                 
                 // FeedForward (using new structure)
-                double* ffn_w1 = model->layers[layer].ffn_w1;
-                double* ffn_b1 = model->layers[layer].ffn_b1;
+                double* ffn_w1 __attribute__((unused)) = model->layers[layer].ffn_w1;
+                double* ffn_b1 __attribute__((unused)) = model->layers[layer].ffn_b1;
                 double* ff_hidden = &local_ctx->ff_hidden[layer][idx * model->hidden_dim];
                 (void)ff_hidden;  // Reserved for future use
                 

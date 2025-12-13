@@ -38,27 +38,22 @@ static bool is_prime_simple(uint64_t n) {
     
     if (mod12 == 5 || mod12 == 7 || mod12 == 11) {
         // Use O(1) formula for clock position primes!
-        uint32_t position;
         uint64_t base;
         
         if (mod12 == 5) {
-            position = 3;
             base = 5;
         } else if (mod12 == 7) {
-            position = 6;
             base = 7;
         } else {  // mod12 == 11
-            position = 9;
             base = 11;
         }
         
         // Check if n fits the arithmetic progression
         if (n >= base && (n - base) % 12 == 0) {
-            uint64_t magnitude = (n - base) / 12;
-            
             // Use O(1) formula (requires prime cache from prime_generate_o1)
             // For now, we'll use the optimized trial division below
             // TODO: Initialize clock context with prime cache for full O(1)
+            (void)base; // Suppress unused warning
         }
     }
     

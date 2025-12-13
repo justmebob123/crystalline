@@ -400,7 +400,7 @@ static int recursive_stabilization_pass_v2(
         }
         
         // PHASE 4: COMPUTE RECOVERY METRICS with adaptive threshold
-        RecoveryMetrics metrics;
+        RecoveryMetrics metrics = {0};  // Initialize to zero to suppress warning
         compute_recovery_metrics_adaptive(confidence_scores, corruption_mask, num_vertices, &metrics);
         
         if (verbose) {

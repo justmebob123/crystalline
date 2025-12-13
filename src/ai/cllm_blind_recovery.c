@@ -218,7 +218,7 @@ int cllm_recover_prime(CLLMModel* model) {
             
             // Validate position is on clock lattice
             // ClockPosition has: ring (0-3), position (1-based), angle, radius
-            if (pos->ring >= 0 && pos->ring < 4 && pos->position > 0) {
+            if (pos->ring < 4 && pos->position > 0) {
                 validated++;
             } else {
                 printf("  ⚠️  Token %u has invalid clock position\n", token);
@@ -237,7 +237,7 @@ int cllm_recover_prime(CLLMModel* model) {
             ClockPosition* pos = &model->vertex_positions[v];
             
             // Ensure vertex positions are valid
-            if (pos->ring < 0 || pos->ring >= 4 || pos->position <= 0) {
+            if (pos->ring >= 4 || pos->position <= 0) {
                 printf("  ⚠️  Vertex %u has invalid position, resetting\n", v);
                 pos->ring = v % 4;
                 pos->position = (v / 4) + 1;

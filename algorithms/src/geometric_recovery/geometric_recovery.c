@@ -179,6 +179,7 @@ TorusIntersectionCurve* find_torus_intersection_curve(
     const TorusOrbit* torus2,
     PlatonicModel* model
 ) {
+    (void)model;  // Unused in this implementation
     TorusIntersectionCurve* curve = calloc(1, sizeof(TorusIntersectionCurve));
     curve->torus1_id = 0;  // Will be set by caller
     curve->torus2_id = 0;
@@ -245,6 +246,7 @@ BIGNUM* search_torus_orbit(
     uint32_t num_anchors,
     uint32_t num_dimensions
 ) {
+    (void)curve;  // Unused in this implementation
     BIGNUM* best_k = NULL;
     double best_distance = 1.0;
     
@@ -370,6 +372,8 @@ BIGNUM* multi_scale_fractal_search(
     EC_POINT* target_Q,
     uint32_t max_scales
 ) {
+    (void)tori;
+    (void)num_tori;
     BIGNUM* best_k = NULL;
     double best_distance = 1.0;
     
@@ -638,7 +642,7 @@ BIGNUM* geometric_recovery_recover_k(
     memset(target_position, 0, sizeof(target_position));
     
     // Compute fractal partition bounds
-    FractalPartition partition = compute_fractal_partition(
+    FractalPartition partition __attribute__((unused)) = compute_fractal_partition(
         (const double**)ctx->anchor_k_positions,
         ctx->num_anchors,
         target_position,

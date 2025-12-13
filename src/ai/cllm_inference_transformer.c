@@ -79,6 +79,7 @@ static void gelu_activation(double* x, uint32_t size) {
  */
 static void attention_forward(const CLLMModel* model, uint32_t layer_idx,
                              const double* input, double* output, uint32_t seq_len) {
+    (void)seq_len;  // Unused in single-token inference
     uint32_t embed_dim = model->embedding_dim;
     
     // Get layer weights
@@ -171,7 +172,7 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     }
     
     // Check for NaN after first layer
-    bool has_nan_h1 = false;
+    bool has_nan_h1 __attribute__((unused)) = false;
     for (uint32_t i = 0; i < hidden_dim && i < 5; i++) {
         if (math_is_nan(hidden[i])) {
             has_nan_h1 = true;
@@ -183,7 +184,7 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     gelu_activation(hidden, hidden_dim);
     
     // Check for NaN after GELU
-    bool has_nan_gelu = false;
+    bool has_nan_gelu __attribute__((unused)) = false;
     for (uint32_t i = 0; i < hidden_dim && i < 5; i++) {
         if (math_is_nan(hidden[i])) {
             has_nan_gelu = true;
@@ -200,7 +201,7 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     }
     
     // Check for NaN in output
-    bool has_nan_out = false;
+    bool has_nan_out __attribute__((unused)) = false;
     for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
         if (math_is_nan(output[i])) {
             has_nan_out = true;

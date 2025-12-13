@@ -159,6 +159,7 @@ uint64_t reduce_entropy(uint64_t initial_space, uint64_t threshold) {
 /**
  * Generate deterministic target from Q (from user's Python code)
  */
+__attribute__((unused))
 static BIGNUM* generate_target_from_Q_v2(
     EC_POINT* Q,
     EC_GROUP* ec_group,

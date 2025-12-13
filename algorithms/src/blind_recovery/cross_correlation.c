@@ -50,6 +50,7 @@ static double compute_dimension_correlation(
     uint32_t num_dimensions,
     const uint32_t* dimension_sizes
 ) {
+    (void)num_dimensions;
     if (!data || num_elements == 0 || dim1 == dim2) return 0.0;
     
     // Simple correlation: based on GCD relationship

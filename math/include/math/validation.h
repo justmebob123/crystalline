@@ -135,12 +135,10 @@ static inline int math_sign(double x) {
  * @return 1 if approximately equal, 0 otherwise
  * 
  * Complexity: O(1)
+ * 
+ * Note: Declared in arithmetic.h, not redefined here to avoid conflicts
  */
-static inline int math_approx_equal(double a, double b, double epsilon) {
-    double diff = a - b;
-    if (diff < 0.0) diff = -diff;
-    return diff < epsilon;
-}
+// Removed inline definition - use declaration from arithmetic.h
 
 #ifdef __cplusplus
 }

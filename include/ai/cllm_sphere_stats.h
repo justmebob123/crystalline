@@ -233,4 +233,12 @@ void cllm_sphere_stats_reset(SphereStatistics* stats);
 void cllm_sphere_stats_merge(SphereStatistics* parent,
                              const SphereStatistics* child);
 
+/**
+ * Check if prime is near the 144000 boundary
+ * 
+ * @param prime Prime number to check
+ * @return 1 if near boundary, 0 otherwise
+ */
+int cllm_is_near_144000_boundary(uint64_t prime);
+
 #endif // CLLM_SPHERE_STATS_H

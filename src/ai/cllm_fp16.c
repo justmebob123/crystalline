@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "../include/cllm_fp16.h"
+#include "math/validation.h"
 
 /**
  * Software FP32 to FP16 conversion (fallback)

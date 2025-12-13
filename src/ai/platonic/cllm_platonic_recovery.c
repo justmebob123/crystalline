@@ -14,6 +14,8 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/prime.h"
+#include "math/clock.h"
 #include "ai/cllm_platonic.h"
 #include <stdio.h>
 #include <stdlib.h>

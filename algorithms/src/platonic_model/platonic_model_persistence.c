@@ -72,6 +72,7 @@ bool platonic_model_save(
     header.num_dimension_scales = model->num_dimension_scales;
     header.num_vertex_scales = model->num_vertex_scales;
     strncpy(header.model_id, model->model_id, sizeof(header.model_id) - 1);
+    header.model_id[sizeof(header.model_id) - 1] = '\0';  // Ensure null termination
     header.data_offset = sizeof(PlatonicFileHeader);
     
     if (fwrite(&header, sizeof(header), 1, file) != 1) {
@@ -181,6 +182,7 @@ PlatonicModel* platonic_model_load(const char* file_path) {
     
     // Copy header data
     strncpy(model->model_id, header.model_id, sizeof(model->model_id) - 1);
+    model->model_id[sizeof(model->model_id) - 1] = '\0';  // Ensure null termination
     model->base_type = (PlatonicSolidType)header.base_type;
     model->num_dimensions = header.num_dimensions;
     model->num_vertices = header.num_vertices;

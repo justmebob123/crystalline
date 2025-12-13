@@ -186,6 +186,8 @@ BIGNUM* map_position_to_k(
     const double* position,
     uint32_t num_dimensions
 ) {
+    (void)position;
+    (void)num_dimensions;
     // This function is DEPRECATED and should not be used!
     // It creates arbitrary k values that have no relationship to anchor k values.
     // Use triangulate_k_from_anchors() instead!
