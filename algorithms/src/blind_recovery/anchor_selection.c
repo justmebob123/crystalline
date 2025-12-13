@@ -7,11 +7,10 @@
  */
 
 #include "blind_recovery.h"
-#include "math/types.h"           // For MATH_PI and INFINITY
+#include "math/types.h"           // For MATH_PI and MATH_INFINITY
 #include "math/transcendental.h"  // For math_sqrt
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>  // For INFINITY constant
 
 /**
  * Compute Euclidean distance between two 3D points
@@ -31,9 +30,9 @@ static double min_distance_to_anchors(
     const AnchorPoint* anchors,
     uint32_t num_anchors
 ) {
-    if (num_anchors == 0) return INFINITY;
+    if (num_anchors == 0) return MATH_INFINITY;
     
-    double min_dist = INFINITY;
+    double min_dist = MATH_INFINITY;
     for (uint32_t i = 0; i < num_anchors; i++) {
         double dist = compute_distance(point, anchors[i].position);
         if (dist < min_dist) {
@@ -271,7 +270,7 @@ bool validate_anchor_system(const AnchorSystem* system) {
     // Check that anchors are well-separated
     // Minimum distance should be > 0.1 * max_distance
     double max_dist = 0.0;
-    double min_dist = INFINITY;
+    double min_dist = MATH_INFINITY;
     
     for (uint32_t i = 0; i < system->num_anchors; i++) {
         for (uint32_t j = i + 1; j < system->num_anchors; j++) {

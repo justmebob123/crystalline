@@ -12,11 +12,10 @@
 
 #include "validation.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
-#include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library (includes validation functions)
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>  // For isnan, isinf (C99 standard)
 
 double validation_calculate_harm(double P_misuse, double D_damage,
                                   double error, double scale_factor) {
@@ -132,12 +131,12 @@ bool validation_check_range(double value, double min_val, double max_val) {
 
 bool validation_check_stability(double value, double max_magnitude) {
     // Check for NaN
-    if (isnan(value)) {
+    if (math_is_nan(value)) {
         return false;
     }
     
     // Check for infinity
-    if (isinf(value)) {
+    if (math_is_inf(value)) {
         return false;
     }
     

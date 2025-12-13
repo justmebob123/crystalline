@@ -2,21 +2,26 @@
  * oscillation_decomposition.c - FFT-based Oscillation Decomposition
  * 
  * Decomposes multi-frequency oscillations into individual components.
+ * 
+ * PHASE 2: Migrated to NEW math library
+ * - Replaced <complex.h> with math/complex.h
+ * - Replaced double complex with MathComplex
+ * - Replaced creal/cimag/cabs/carg with MathComplex operations
+ * - Replaced I with math_complex_from_cartesian(0, 1)
  */
 
 #include "../include/oscillation_decomposition.h"
+#include "math/complex.h"        // PHASE 2: NEW math library complex numbers
+#include "math/transcendental.h" // PHASE 2: For math_cos, math_sin, math_sqrt
+#include "math/types.h"          // PHASE 2: For MATH_PI
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <complex.h>
-#include "prime_float_math.h"
-
-#define PI 3.141592653589793
 
 /**
  * Simple FFT implementation (Cooley-Tukey radix-2)
  */
-static void fft(double complex* x, int n, int stride) {
+static void fft(MathComplex* x, int n, int stride) {
     if (n == 1) return;
     
     int half = n / 2;
@@ -27,15 +32,15 @@ static void fft(double complex* x, int n, int stride) {
     
     // Combine results
     for (int k = 0; k < half; k++) {
-        double complex even = x[k * stride * 2];
-        double complex odd = x[(k * stride * 2) + stride];
+        MathComplex even = x[k * stride * 2];
+        MathComplex odd = x[(k * stride * 2) + stride];
         
-        double angle = -2.0 * PI * k / n;
-        double complex twiddle = math_cos(angle) + I * math_sin(angle);
-        double complex t = twiddle * odd;
+        double angle = -2.0 * MATH_PI * k / n;
+        MathComplex twiddle = math_complex_from_cartesian(math_cos(angle), math_sin(angle));
+        MathComplex t = math_complex_mul(twiddle, odd);
         
-        x[k * stride] = even + t;
-        x[(k + half) * stride] = even - t;
+        x[k * stride] = math_complex_add(even, t);
+        x[(k + half) * stride] = math_complex_sub(even, t);
     }
 }
 
@@ -43,14 +48,12 @@ static void fft(double complex* x, int n, int stride) {
  * Compute power spectrum from FFT
  */
 static void compute_power_spectrum(
-    const double complex* fft_result,
+    const MathComplex* fft_result,
     double* power_spectrum,
     int n
 ) {
     for (int i = 0; i < n / 2; i++) {
-        double real = creal(fft_result[i]);
-        double imag = cimag(fft_result[i]);
-        power_spectrum[i] = math_sqrt(real * real + imag * imag);
+        power_spectrum[i] = math_complex_magnitude(fft_result[i]);
     }
 }
 
@@ -115,7 +118,7 @@ int decompose_oscillations(OscillationDecomposer* decomposer) {
     int fft_size = next_power_of_2(n);
     
     // Allocate FFT buffers
-    double complex* fft_input = (double complex*)calloc(fft_size, sizeof(double complex));
+    MathComplex* fft_input = (MathComplex*)calloc(fft_size, sizeof(MathComplex));
     double* power_spectrum = (double*)calloc(fft_size / 2, sizeof(double));
     
     if (!fft_input || !power_spectrum) {
@@ -126,7 +129,7 @@ int decompose_oscillations(OscillationDecomposer* decomposer) {
     
     // Copy residual to FFT input (zero-padded)
     for (int i = 0; i < n; i++) {
-        fft_input[i] = decomposer->residual[i];
+        fft_input[i] = math_complex_from_cartesian(decomposer->residual[i], 0.0);
     }
     
     // Compute FFT
@@ -163,15 +166,15 @@ int decompose_oscillations(OscillationDecomposer* decomposer) {
         
         component->frequency = (double)peak_idx / fft_size;
         component->period = (int)(fft_size / peak_idx);
-        component->amplitude = 2.0 * cabs(fft_input[peak_idx]) / n;
-        component->phase = carg(fft_input[peak_idx]);
+        component->amplitude = 2.0 * math_complex_magnitude(fft_input[peak_idx]) / n;
+        component->phase = math_complex_phase(fft_input[peak_idx]);
         
         // Reconstruct this component
         component->signal_length = n;
         component->reconstructed = (double*)malloc(n * sizeof(double));
         
         for (int i = 0; i < n; i++) {
-            double angle = 2.0 * PI * component->frequency * i + component->phase;
+            double angle = 2.0 * MATH_PI * component->frequency * i + component->phase;
             component->reconstructed[i] = component->amplitude * math_cos(angle);
         }
         

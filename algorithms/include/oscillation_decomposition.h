@@ -3,13 +3,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <complex.h>
 
 /**
  * Oscillation Decomposition Library
  * 
  * Decomposes multi-frequency oscillations into individual components
  * using FFT and frequency domain analysis.
+ * 
+ * PHASE 2: Migrated to NEW math library
+ * - Removed <complex.h> dependency
+ * - Uses MathComplex from math/complex.h internally
  */
 
 typedef struct {

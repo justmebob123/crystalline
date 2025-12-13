@@ -8,11 +8,17 @@
  * - Stable oscillations → Valid geometric constraints
  * - Unstable oscillations → Corruption detected
  * - Oscillation patterns → Underlying structure revealed
+ * 
+ * PHASE 2: Migrated to NEW math library
+ * - Replaced double complex with MathComplex
+ * - Replaced cexp/cabs/carg with math_complex_* functions
+ * - Removed <complex.h> dependency
  */
 
 #include "blind_recovery/blind_recovery.h"
+#include "math/complex.h"        // PHASE 2: NEW math library complex numbers
 #include "math/types.h"           // For MATH_PI
-#include "math/transcendental.h"  // For math_sqrt, math_exp
+#include "math/transcendental.h"  // For math_sqrt, math_exp, math_cos, math_sin
 #include "math/arithmetic.h"      // For math_abs
 #include <stdlib.h>
 #include <string.h>
@@ -27,12 +33,12 @@
  * @param data Input/output data (in-place transform)
  * @param n Number of samples (must be power of 2)
  */
-static void fft_real(double complex* data, uint32_t n) {
+static void fft_real(MathComplex* data, uint32_t n) {
     if (n <= 1) return;
     
     // Divide
-    double complex* even = malloc((n/2) * sizeof(double complex));
-    double complex* odd = malloc((n/2) * sizeof(double complex));
+    MathComplex* even = malloc((n/2) * sizeof(MathComplex));
+    MathComplex* odd = malloc((n/2) * sizeof(MathComplex));
     
     for (uint32_t i = 0; i < n/2; i++) {
         even[i] = data[i*2];
@@ -45,9 +51,11 @@ static void fft_real(double complex* data, uint32_t n) {
     
     // Combine
     for (uint32_t k = 0; k < n/2; k++) {
-        double complex t = cexp(-2.0 * I * MATH_PI * k / n) * odd[k];
-        data[k] = even[k] + t;
-        data[k + n/2] = even[k] - t;
+        double angle = -2.0 * MATH_PI * k / n;
+        MathComplex twiddle = math_complex_from_cartesian(math_cos(angle), math_sin(angle));
+        MathComplex t = math_complex_mul(twiddle, odd[k]);
+        data[k] = math_complex_add(even[k], t);
+        data[k + n/2] = math_complex_sub(even[k], t);
     }
     
     free(even);
@@ -65,7 +73,7 @@ static void fft_real(double complex* data, uint32_t n) {
  * @param phase Output: phase
  */
 static void find_dominant_frequency(
-    const double complex* fft_data,
+    const MathComplex* fft_data,
     uint32_t n,
     double sampling_rate,
     double* frequency,
@@ -77,7 +85,7 @@ static void find_dominant_frequency(
     
     // Find peak in frequency domain (skip DC component)
     for (uint32_t i = 1; i < n/2; i++) {
-        double magnitude = cabs(fft_data[i]);
+        double magnitude = math_complex_magnitude(fft_data[i]);
         if (magnitude > max_magnitude) {
             max_magnitude = magnitude;
             max_index = i;
@@ -87,7 +95,7 @@ static void find_dominant_frequency(
     // Convert to frequency
     *frequency = (double)max_index * sampling_rate / (double)n;
     *amplitude = max_magnitude / (double)n;  // Normalize
-    *phase = carg(fft_data[max_index]);
+    *phase = math_complex_phase(fft_data[max_index]);
 }
 
 /**
@@ -184,11 +192,11 @@ OscillationMap* detect_oscillations(
     // Analyze each dimension
     for (uint32_t d = 0; d < num_dimensions; d++) {
         // Extract samples for this dimension
-        double complex* fft_data = malloc(num_samples * sizeof(double complex));
+        MathComplex* fft_data = malloc(num_samples * sizeof(MathComplex));
         if (!fft_data) continue;
         
         for (uint32_t i = 0; i < num_samples; i++) {
-            fft_data[i] = structure_data[d * num_samples + i] + 0.0 * I;
+            fft_data[i] = math_complex_from_cartesian(structure_data[d * num_samples + i], 0.0);
         }
         
         // Compute FFT
@@ -209,7 +217,7 @@ OscillationMap* detect_oscillations(
         // Check stability
         double* amplitudes = malloc(num_samples * sizeof(double));
         for (uint32_t i = 0; i < num_samples; i++) {
-            amplitudes[i] = cabs(fft_data[i]);
+            amplitudes[i] = math_complex_magnitude(fft_data[i]);
         }
         map->signatures[d].is_stable = is_oscillation_stable(amplitudes, num_samples);
         map->signatures[d].convergence_rate = compute_convergence_rate(amplitudes, num_samples);

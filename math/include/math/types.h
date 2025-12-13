@@ -132,6 +132,12 @@ typedef struct {
 /** Mathematical constant π (pi) */
 #define MATH_PI 3.14159265358979323846
 
+/** Derived π constants */
+#define MATH_TWO_PI (2.0 * MATH_PI)
+#define MATH_PI_OVER_2 (MATH_PI / 2.0)
+#define MATH_PI_OVER_4 (MATH_PI / 4.0)
+#define MATH_PI_OVER_6 (MATH_PI / 6.0)
+
 /** Mathematical constant e (Euler's number) */
 #define MATH_E 2.71828182845904523536
 
@@ -139,6 +145,10 @@ typedef struct {
 #ifndef INFINITY
 #define INFINITY (__builtin_inf())
 #endif
+
+/** Infinity constants with MATH_ prefix */
+#define MATH_INFINITY (__builtin_inf())
+#define MATH_NEG_INFINITY (-__builtin_inf())
 
 /** Mathematical constant for NaN */
 #ifndef NAN
@@ -148,8 +158,10 @@ typedef struct {
 /** Mathematical constant φ (golden ratio) */
 #define MATH_PHI 1.61803398874989484820
 
-/** Square root of 2 */
+/** Square roots */
 #define MATH_SQRT2 1.41421356237309504880
+#define MATH_SQRT3 1.73205080756887729352
+#define MATH_SQRT5 2.23606797749978969640
 
 /** Natural logarithm of 2 */
 #define MATH_LN2 0.69314718055994530942

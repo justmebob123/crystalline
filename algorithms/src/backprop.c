@@ -12,14 +12,10 @@
 #include "numerical.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/types.h"            // PHASE 2: For MATH_INFINITY
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
-
-#ifndef INFINITY
-#define INFINITY (__builtin_inff())
-#endif
 
 /* ============================================================================
  * Gradient Buffer Management
@@ -301,7 +297,7 @@ GradientStats gradient_compute_stats(const double* gradients, size_t size) {
     
     // Find max and min absolute values, count zeros, NaNs, Infs
     stats.max_abs = 0.0;
-    stats.min_abs = INFINITY;
+    stats.min_abs = MATH_INFINITY;
     stats.num_zero = 0;
     stats.num_nan = 0;
     stats.num_inf = 0;

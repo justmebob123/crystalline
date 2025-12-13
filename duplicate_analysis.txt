@@ -1,0 +1,6 @@
+=== algorithms/algorithms/src/loss_functions.c ===
+1
+=== algorithms/algorithms/src/loss_functions_bigfixed.c ===
+0
+=== algorithms/src/loss_functions.c ===
+2
