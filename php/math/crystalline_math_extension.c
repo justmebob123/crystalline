@@ -26,6 +26,7 @@
 #include "../../math/include/math/platonic_generator.h"
 #include "../../math/include/math/polytope.h"
 #include "../../math/include/math/rainbow.h"
+#include "../../math/include/math/clock.h"
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -816,7 +817,338 @@ PHP_FUNCTION(platonic_cross_polytope)
 }
 /* }}} */
 
+/* ============================================================================
+ * RAINBOW TABLE FUNCTIONS
+ * ============================================================================ */
+
+/* Global rainbow table */
+static RainbowTable g_php_rainbow_table = {0};
+static bool g_php_rainbow_initialized = false;
+
+/* {{{ proto bool rainbow_init(int capacity) */
+PHP_FUNCTION(rainbow_init)
+{
+    zend_long capacity;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(capacity)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (g_php_rainbow_initialized) {
+        rainbow_cleanup(&g_php_rainbow_table);
+    }
+    
+    MathError err = rainbow_init(&g_php_rainbow_table, (size_t)capacity);
+    g_php_rainbow_initialized = (err == MATH_SUCCESS);
+    RETURN_BOOL(err == MATH_SUCCESS);
+}
+/* }}} */
+
+/* {{{ proto void rainbow_cleanup() */
+PHP_FUNCTION(rainbow_cleanup)
+{
+    if (g_php_rainbow_initialized) {
+        rainbow_cleanup(&g_php_rainbow_table);
+        g_php_rainbow_initialized = false;
+    }
+}
+/* }}} */
+
+/* {{{ proto bool rainbow_populate_count(int n) */
+PHP_FUNCTION(rainbow_populate_count)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    MathError err = rainbow_populate_count(&g_php_rainbow_table, (uint64_t)n);
+    RETURN_BOOL(err == MATH_SUCCESS);
+}
+/* }}} */
+
+/* {{{ proto bool rainbow_populate_to_prime(int max_prime) */
+PHP_FUNCTION(rainbow_populate_to_prime)
+{
+    zend_long max_prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(max_prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    MathError err = rainbow_populate_to_prime(&g_php_rainbow_table, (uint64_t)max_prime);
+    RETURN_BOOL(err == MATH_SUCCESS);
+}
+/* }}} */
+
+/* {{{ proto int rainbow_lookup_by_index(int index) */
+PHP_FUNCTION(rainbow_lookup_by_index)
+{
+    zend_long index;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(index)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    uint64_t prime;
+    MathError err = rainbow_lookup_by_index(&g_php_rainbow_table, (uint64_t)index, &prime);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    RETURN_LONG(prime);
+}
+/* }}} */
+
+/* {{{ proto int rainbow_lookup_index(int prime) */
+PHP_FUNCTION(rainbow_lookup_index)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    uint64_t index;
+    MathError err = rainbow_lookup_index(&g_php_rainbow_table, (uint64_t)prime, &index);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    RETURN_LONG(index);
+}
+/* }}} */
+
+/* {{{ proto int rainbow_next_prime(int prime) */
+PHP_FUNCTION(rainbow_next_prime)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    uint64_t next;
+    MathError err = rainbow_next_prime(&g_php_rainbow_table, (uint64_t)prime, &next);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    RETURN_LONG(next);
+}
+/* }}} */
+
+/* {{{ proto int rainbow_prev_prime(int prime) */
+PHP_FUNCTION(rainbow_prev_prime)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    uint64_t prev;
+    MathError err = rainbow_prev_prime(&g_php_rainbow_table, (uint64_t)prime, &prev);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    RETURN_LONG(prev);
+}
+/* }}} */
+
+/* {{{ proto bool rainbow_contains(int prime) */
+PHP_FUNCTION(rainbow_contains)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_FALSE;
+    }
+    
+    RETURN_BOOL(rainbow_contains(&g_php_rainbow_table, (uint64_t)prime));
+}
+/* }}} */
+
+/* {{{ proto int rainbow_size() */
+PHP_FUNCTION(rainbow_size)
+{
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_LONG(0);
+    }
+    
+    RETURN_LONG(g_php_rainbow_table.size);
+}
+/* }}} */
+
+/* {{{ proto int rainbow_max_prime() */
+PHP_FUNCTION(rainbow_max_prime)
+{
+    if (!g_php_rainbow_initialized) {
+        php_error_docref(NULL, E_WARNING, "Rainbow table not initialized. Call rainbow_init() first.");
+        RETURN_LONG(0);
+    }
+    
+    RETURN_LONG(rainbow_max_prime(&g_php_rainbow_table));
+}
+/* }}} */
+
+/* ============================================================================
+ * CLOCK LATTICE FUNCTIONS
+ * ============================================================================ */
+
+/* Global clock context */
+static ClockContext g_php_clock_ctx = {0};
+static bool g_php_clock_initialized = false;
+
+/* {{{ proto bool clock_init() */
+PHP_FUNCTION(clock_init)
+{
+    if (g_php_clock_initialized) {
+        clock_cleanup(&g_php_clock_ctx);
+    }
+    
+    MathError err = clock_init(&g_php_clock_ctx);
+    g_php_clock_initialized = (err == MATH_SUCCESS);
+    RETURN_BOOL(err == MATH_SUCCESS);
+}
+/* }}} */
+
+/* {{{ proto void clock_cleanup() */
+PHP_FUNCTION(clock_cleanup)
+{
+    if (g_php_clock_initialized) {
+        clock_cleanup(&g_php_clock_ctx);
+        g_php_clock_initialized = false;
+    }
+}
+/* }}} */
+
+/* {{{ proto array clock_map_prime_to_position(int prime) */
+PHP_FUNCTION(clock_map_prime_to_position)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    ClockPosition pos;
+    MathError err = clock_map_prime_to_position((uint64_t)prime, &pos);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    
+    array_init(return_value);
+    add_assoc_long(return_value, "ring", pos.ring);
+    add_assoc_long(return_value, "position", pos.position);
+    add_assoc_double(return_value, "angle", pos.angle);
+    add_assoc_double(return_value, "radius", pos.radius);
+}
+/* }}} */
+
+/* {{{ proto int clock_position_to_prime(array position) */
+PHP_FUNCTION(clock_position_to_prime)
+{
+    zval *position_arr;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ARRAY(position_arr)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    zval *ring_val = zend_hash_str_find(Z_ARRVAL_P(position_arr), "ring", sizeof("ring")-1);
+    zval *pos_val = zend_hash_str_find(Z_ARRVAL_P(position_arr), "position", sizeof("position")-1);
+    
+    if (!ring_val || !pos_val) {
+        php_error_docref(NULL, E_WARNING, "Position array must contain 'ring' and 'position' keys");
+        RETURN_FALSE;
+    }
+    
+    ClockPosition pos;
+    pos.ring = (uint32_t)Z_LVAL_P(ring_val);
+    pos.position = (uint32_t)Z_LVAL_P(pos_val);
+    pos.angle = 0.0;
+    pos.radius = 0.0;
+    
+    uint64_t prime = clock_position_to_prime(&pos);
+    RETURN_LONG(prime);
+}
+/* }}} */
+
+/* {{{ proto bool clock_is_valid_position(array position) */
+PHP_FUNCTION(clock_is_valid_position)
+{
+    zval *position_arr;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ARRAY(position_arr)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    zval *ring_val = zend_hash_str_find(Z_ARRVAL_P(position_arr), "ring", sizeof("ring")-1);
+    zval *pos_val = zend_hash_str_find(Z_ARRVAL_P(position_arr), "position", sizeof("position")-1);
+    
+    if (!ring_val || !pos_val) {
+        RETURN_FALSE;
+    }
+    
+    ClockPosition pos;
+    pos.ring = (uint32_t)Z_LVAL_P(ring_val);
+    pos.position = (uint32_t)Z_LVAL_P(pos_val);
+    pos.angle = 0.0;
+    pos.radius = 0.0;
+    
+    RETURN_BOOL(clock_is_valid_position(&pos));
+}
+/* }}} */
+
+/* {{{ proto array clock_reverse_lookup(int number) */
+PHP_FUNCTION(clock_reverse_lookup)
+{
+    zend_long number;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(number)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    uint32_t ring, position;
+    uint64_t magnitude;
+    MathError err = clock_reverse_lookup((uint64_t)number, &ring, &position, &magnitude);
+    if (err != MATH_SUCCESS) {
+        RETURN_FALSE;
+    }
+    
+    array_init(return_value);
+    add_assoc_long(return_value, "ring", ring);
+    add_assoc_long(return_value, "position", position);
+    add_assoc_long(return_value, "magnitude", magnitude);
+}
+/* }}} */
+
 /* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_void, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO(arginfo_math_binary, 0)
     ZEND_ARG_INFO(0, a)
     ZEND_ARG_INFO(0, b)
@@ -905,6 +1237,28 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(platonic_simplex, arginfo_is_prime)
     PHP_FE(platonic_hypercube, arginfo_is_prime)
     PHP_FE(platonic_cross_polytope, arginfo_is_prime)
+    
+    /* Rainbow Table Functions */
+    PHP_FE(rainbow_init, arginfo_math_unary)
+    PHP_FE(rainbow_cleanup, arginfo_void)
+    PHP_FE(rainbow_populate_count, arginfo_math_unary)
+    PHP_FE(rainbow_populate_to_prime, arginfo_math_unary)
+    PHP_FE(rainbow_lookup_by_index, arginfo_math_unary)
+    PHP_FE(rainbow_lookup_index, arginfo_math_unary)
+    PHP_FE(rainbow_next_prime, arginfo_math_unary)
+    PHP_FE(rainbow_prev_prime, arginfo_math_unary)
+    PHP_FE(rainbow_contains, arginfo_math_unary)
+    PHP_FE(rainbow_size, arginfo_void)
+    PHP_FE(rainbow_max_prime, arginfo_void)
+    
+    /* Clock Lattice Functions */
+    PHP_FE(clock_init, arginfo_void)
+    PHP_FE(clock_cleanup, arginfo_void)
+    PHP_FE(clock_map_prime_to_position, arginfo_math_unary)
+    PHP_FE(clock_position_to_prime, arginfo_math_unary)
+    PHP_FE(clock_is_valid_position, arginfo_math_unary)
+    PHP_FE(clock_reverse_lookup, arginfo_math_unary)
+    
     PHP_FE_END
 };
 /* }}} */

@@ -109,4 +109,5 @@ crystalline_math_extension.lo: \
  /workspace/php/math/../../math/include/math/polytope.h \
  /workspace/php/math/../../math/include/math/schlafli.h \
  /workspace/php/math/../../math/include/math/polytope.h \
- /workspace/php/math/../../math/include/math/rainbow.h
+ /workspace/php/math/../../math/include/math/rainbow.h \
+ /workspace/php/math/../../math/include/math/clock.h
