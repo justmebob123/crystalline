@@ -22,6 +22,12 @@
 void cllm_free_model(CLLMModel* model) {
     if (!model) return;
     
+    // Free vocabulary
+    if (model->vocabulary) {
+        cllm_vocab_destroy(model->vocabulary);
+        model->vocabulary = NULL;
+    }
+    
     printf("🗑️  Freeing CLLM model...\n");
     
     // ========================================================================

@@ -29,6 +29,9 @@
 // Include optimizer types from algorithms layer
 #include "../algorithms/include/optimizers.h"
 
+// Include vocabulary
+#include "cllm_vocabulary.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -222,6 +225,9 @@ typedef struct {
     
     uint32_t vocab_size;
     uint32_t max_seq_len;
+    
+    // Vocabulary (integrated)
+    CLLMVocabulary* vocabulary;      // Token vocabulary with save/load support
     
     // Embeddings (clock lattice-based)
     double* embeddings;              // [vocab_size × embedding_dim]
@@ -523,6 +529,55 @@ CLLMModel* cllm_load_model(const char* filename);
  * Get default configuration for a Platonic solid
  */
 CLLMConfig cllm_default_config(PlatonicSolidType solid_type, uint32_t vocab_size);
+
+// ============================================================================
+// VOCABULARY INTEGRATION
+// ============================================================================
+
+/**
+ * Set vocabulary for model
+ * Takes ownership of the vocabulary
+ */
+void cllm_set_vocabulary(CLLMModel* model, CLLMVocabulary* vocab);
+
+/**
+ * Get vocabulary from model
+ * Returns pointer to internal vocabulary (do not free)
+ */
+CLLMVocabulary* cllm_get_vocabulary(CLLMModel* model);
+
+/**
+ * Build vocabulary from training file
+ * Returns number of tokens added
+ */
+uint32_t cllm_build_vocabulary_from_file(CLLMModel* model, const char* filename);
+
+/**
+ * Build vocabulary from multiple files
+ */
+uint32_t cllm_build_vocabulary_from_files(CLLMModel* model, const char** filenames, uint32_t num_files);
+
+/**
+ * Save model vocabulary to file
+ */
+bool cllm_save_vocabulary(CLLMModel* model, const char* filename);
+
+/**
+ * Load vocabulary into model
+ */
+bool cllm_load_vocabulary(CLLMModel* model, const char* filename);
+
+/**
+ * Tokenize text using model's vocabulary
+ * Returns allocated array of token IDs (caller must free)
+ */
+uint32_t* cllm_tokenize_text(CLLMModel* model, const char* text, uint32_t* num_tokens);
+
+/**
+ * Detokenize token IDs using model's vocabulary
+ * Returns allocated string (caller must free)
+ */
+char* cllm_detokenize_text(CLLMModel* model, const uint32_t* token_ids, uint32_t num_tokens);
 
 // ============================================================================
 // BLIND RECOVERY SYSTEM (OBJECTIVE 26)
