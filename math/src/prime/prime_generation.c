@@ -807,3 +807,124 @@ size_t prime_generate_sequence_o1(uint32_t position, uint64_t start_magnitude,
     
     return generated;
 }
+
+/**
+ * @brief Compute Euler's totient function φ(n)
+ * 
+ * The totient function φ(n) counts the number of integers from 1 to n
+ * that are coprime to n (i.e., gcd(k, n) = 1 for 1 ≤ k ≤ n).
+ * 
+ * For a prime p: φ(p) = p - 1
+ * For prime powers: φ(p^k) = p^k - p^(k-1) = p^(k-1) * (p - 1)
+ * For coprime integers: φ(mn) = φ(m) * φ(n)
+ * 
+ * Algorithm: Factor n and use the formula:
+ * φ(n) = n * ∏(1 - 1/p) for all prime factors p of n
+ * 
+ * @param n The input number
+ * @return φ(n) - the count of coprimes
+ */
+uint64_t prime_totient(uint64_t n) {
+    if (n == 0) return 0;
+    if (n == 1) return 1;
+    
+    uint64_t result = n;
+    uint64_t temp = n;
+    
+    // Handle factor 2
+    if (temp % 2 == 0) {
+        result -= result / 2;
+        while (temp % 2 == 0) {
+            temp /= 2;
+        }
+    }
+    
+    // Handle odd factors
+    for (uint64_t i = 3; i * i <= temp; i += 2) {
+        if (temp % i == 0) {
+            result -= result / i;
+            while (temp % i == 0) {
+                temp /= i;
+            }
+        }
+    }
+    
+    // If temp > 1, then it's a prime factor
+    if (temp > 1) {
+        result -= result / temp;
+    }
+    
+    return result;
+}
+
+/**
+ * @brief Get the index of a prime number (1-based)
+ * 
+ * Given a prime number, returns its position in the sequence of primes.
+ * For example:
+ *   prime_index(2) = 1
+ *   prime_index(3) = 2
+ *   prime_index(5) = 3
+ *   prime_index(7) = 4
+ *   prime_index(11) = 5
+ * 
+ * This uses the clock lattice structure to efficiently locate the prime's
+ * position by:
+ * 1. Determining which clock position it belongs to (3, 6, or 9)
+ * 2. Computing its magnitude within that position
+ * 3. Counting all primes before it
+ * 
+ * @param prime The prime number to find the index of
+ * @return The 1-based index of the prime, or 0 if not prime
+ */
+uint64_t prime_index(uint64_t prime) {
+    // Handle special cases
+    if (prime < 2) return 0;
+    if (prime == 2) return 1;
+    if (prime == 3) return 2;
+    
+    // Determine clock position
+    uint64_t mod12 = prime % 12;
+    uint32_t position;
+    uint64_t base;
+    
+    if (mod12 == 5) {
+        position = 3;
+        base = 5;
+    } else if (mod12 == 7) {
+        position = 6;
+        base = 7;
+    } else if (mod12 == 11) {
+        position = 9;
+        base = 11;
+    } else {
+        return 0; // Not a valid prime position
+    }
+    
+    // Calculate magnitude
+    uint64_t magnitude = (prime - base) / 12;
+    
+    // Verify it's actually prime using the clock lattice
+    if (!prime_is_prime_o1(position, magnitude)) {
+        return 0;
+    }
+    
+    // Count primes before this one
+    // Start with 2 and 3
+    uint64_t count = 2;
+    
+    // Count all primes in all three positions up to this magnitude
+    for (uint32_t pos = 3; pos <= 9; pos += 3) {
+        uint64_t pos_base = (pos == 3) ? 5 : (pos == 6) ? 7 : 11;
+        uint64_t max_mag = (pos == position) ? magnitude : magnitude + 1;
+        
+        for (uint64_t mag = 0; mag < max_mag; mag++) {
+            uint64_t candidate = pos_base + mag * 12;
+            if (candidate < prime && prime_is_prime_o1(pos, mag)) {
+                count++;
+            }
+        }
+    }
+    
+    return count;
+}

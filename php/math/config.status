@@ -424,7 +424,7 @@ Copyright (C) 2021 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/workspace/php/algorithms'
+ac_pwd='/workspace/php/math'
 srcdir='.'
 AWK='gawk'
 test -n "$AWK" || AWK=awk
@@ -780,7 +780,7 @@ D["PACKAGE_VERSION"]=" \"\""
 D["PACKAGE_STRING"]=" \"\""
 D["PACKAGE_BUGREPORT"]=" \"\""
 D["PACKAGE_URL"]=" \"\""
-D["COMPILE_DL_ALGORITHMS"]=" 1"
+D["COMPILE_DL_CRYSTALLINE_MATH"]=" 1"
 D["HAVE_STDIO_H"]=" 1"
 D["HAVE_STDLIB_H"]=" 1"
 D["HAVE_STRING_H"]=" 1"

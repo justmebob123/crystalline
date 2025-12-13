@@ -755,7 +755,7 @@ ac_user_opts='
 enable_option_checking
 with_libdir
 with_php_config
-enable_algorithms
+enable_crystalline_math
 enable_shared
 enable_static
 with_pic
@@ -1403,7 +1403,7 @@ Optional Features and Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-libdir=NAME      Look for libraries in .../NAME rather than .../lib
   --with-php-config=PATH  Path to php-config @<:@php-config@:>@
-  --enable-algorithms           Enable algorithms support
+  --enable-crystalline_math           Enable crystalline_math support
   --enable-shared@<:@=PKGS@:>@  build shared libraries @<:@default=yes@:>@
   --enable-static@<:@=PKGS@:>@  build static libraries @<:@default=yes@:>@
   --with-pic@<:@=PKGS@:>@       try to use only PIC/non-PIC objects @<:@default=use
@@ -4326,18 +4326,18 @@ printf "%s\n" "no" >&6; }
 
 
 
-php_enable_algorithms=no
+php_enable_crystalline_math=no
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable algorithms support" >&5
-printf %s "checking whether to enable algorithms support... " >&6; }
-@%:@ Check whether --enable-algorithms was given.
-if test ${enable_algorithms+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable crystalline_math support" >&5
+printf %s "checking whether to enable crystalline_math support... " >&6; }
+@%:@ Check whether --enable-crystalline_math was given.
+if test ${enable_crystalline_math+y}
 then :
-  enableval=$enable_algorithms; PHP_ALGORITHMS=$enableval
+  enableval=$enable_crystalline_math; PHP_CRYSTALLINE_MATH=$enableval
 else $as_nop
   
-  PHP_ALGORITHMS=no
-  test "$PHP_ENABLE_ALL" && PHP_ALGORITHMS=$PHP_ENABLE_ALL
+  PHP_CRYSTALLINE_MATH=no
+  test "$PHP_ENABLE_ALL" && PHP_CRYSTALLINE_MATH=$PHP_ENABLE_ALL
 
 fi
 
@@ -4345,12 +4345,12 @@ fi
 
 ext_output="yes, shared"
 ext_shared=yes
-case $PHP_ALGORITHMS in
+case $PHP_CRYSTALLINE_MATH in
 shared,*)
-  PHP_ALGORITHMS=`echo "$PHP_ALGORITHMS"|$SED 's/^shared,//'`
+  PHP_CRYSTALLINE_MATH=`echo "$PHP_CRYSTALLINE_MATH"|$SED 's/^shared,//'`
   ;;
 shared)
-  PHP_ALGORITHMS=yes
+  PHP_CRYSTALLINE_MATH=yes
   ;;
 no)
   ext_output=no
@@ -4365,7 +4365,7 @@ esac
 
   ext_output="yes, shared"
   ext_shared=yes
-  test "$PHP_ALGORITHMS" = "no" && PHP_ALGORITHMS=yes
+  test "$PHP_CRYSTALLINE_MATH" = "no" && PHP_CRYSTALLINE_MATH=yes
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
@@ -4374,7 +4374,7 @@ printf "%s\n" "$ext_output" >&6; }
 
 
 
-if test "$PHP_ALGORITHMS" != "no"; then
+if test "$PHP_CRYSTALLINE_MATH" != "no"; then
   
   ext_builddir=.
   ext_srcdir=$abs_srcdir
@@ -4383,7 +4383,7 @@ if test "$PHP_ALGORITHMS" != "no"; then
   ac_extra=
 
   if test "$ext_shared" != "shared" && test "$ext_shared" != "yes" && test "" != "cli"; then
-    PHP_ALGORITHMS_SHARED=no
+    PHP_CRYSTALLINE_MATH_SHARED=no
     
   
   case $ext_dir in
@@ -4404,7 +4404,7 @@ if test "$PHP_ALGORITHMS" != "no"; then
 
 
   old_IFS=$IFS
-  for ac_src in algorithms_extension.c; do
+  for ac_src in crystalline_math_extension.c; do
 
       IFS=.
       set $ac_src
@@ -4430,13 +4430,13 @@ EOF
   done
 
 
-    EXT_STATIC="$EXT_STATIC algorithms;$ext_dir"
+    EXT_STATIC="$EXT_STATIC crystalline_math;$ext_dir"
     if test "$ext_shared" != "nocli"; then
-      EXT_CLI_STATIC="$EXT_CLI_STATIC algorithms;$ext_dir"
+      EXT_CLI_STATIC="$EXT_CLI_STATIC crystalline_math;$ext_dir"
     fi
   else
     if test "$ext_shared" = "shared" || test "$ext_shared" = "yes"; then
-      PHP_ALGORITHMS_SHARED=yes
+      PHP_CRYSTALLINE_MATH_SHARED=yes
       
   case $ext_dir in
   "") ac_srcdir="$abs_srcdir/"; unset ac_bdir; ac_inc="-I. -I$abs_srcdir" ;;
@@ -4456,14 +4456,14 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in algorithms_extension.c; do
+  for ac_src in crystalline_math_extension.c; do
 
       IFS=.
       set $ac_src
       ac_obj=$1
       IFS=$old_IFS
 
-      shared_objects_algorithms="$shared_objects_algorithms $ac_bdir$ac_obj.lo"
+      shared_objects_crystalline_math="$shared_objects_crystalline_math $ac_bdir$ac_obj.lo"
 
       case $ac_src in
         *.c) ac_comp="$b_c_pre $ac_inc $b_c_meta $ac_extra -DZEND_COMPILE_DL_EXT=1 -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
@@ -4492,30 +4492,30 @@ EOF
   esac
 
   if test "x" = "xyes"; then
-    PHP_ZEND_EX="$PHP_ZEND_EX \$(phplibdir)/algorithms.$suffix"
+    PHP_ZEND_EX="$PHP_ZEND_EX \$(phplibdir)/crystalline_math.$suffix"
   else
-    PHP_MODULES="$PHP_MODULES \$(phplibdir)/algorithms.$suffix"
+    PHP_MODULES="$PHP_MODULES \$(phplibdir)/crystalline_math.$suffix"
   fi
   
-  PHP_VAR_SUBST="$PHP_VAR_SUBST shared_objects_algorithms"
+  PHP_VAR_SUBST="$PHP_VAR_SUBST shared_objects_crystalline_math"
 
   cat >>Makefile.objects<<EOF
-\$(phplibdir)/algorithms.$suffix: $ext_builddir/algorithms.$suffix
-	\$(LIBTOOL) --tag=CC --mode=install cp $ext_builddir/algorithms.$suffix \$(phplibdir)
+\$(phplibdir)/crystalline_math.$suffix: $ext_builddir/crystalline_math.$suffix
+	\$(LIBTOOL) --tag=CC --mode=install cp $ext_builddir/crystalline_math.$suffix \$(phplibdir)
 
-$ext_builddir/algorithms.$suffix: \$(shared_objects_algorithms) \$(ALGORITHMS_SHARED_DEPENDENCIES)
-	\$(LIBTOOL) --tag=CC --mode=link \$(CC) -shared \$(COMMON_FLAGS) \$(CFLAGS_CLEAN) \$(EXTRA_CFLAGS) \$(LDFLAGS) $additional_flags -o \$@ -export-dynamic -avoid-version -prefer-pic -module -rpath \$(phplibdir) \$(EXTRA_LDFLAGS) \$(shared_objects_algorithms) \$(ALGORITHMS_SHARED_LIBADD)
+$ext_builddir/crystalline_math.$suffix: \$(shared_objects_crystalline_math) \$(CRYSTALLINE_MATH_SHARED_DEPENDENCIES)
+	\$(LIBTOOL) --tag=CC --mode=link \$(CC) -shared \$(COMMON_FLAGS) \$(CFLAGS_CLEAN) \$(EXTRA_CFLAGS) \$(LDFLAGS) $additional_flags -o \$@ -export-dynamic -avoid-version -prefer-pic -module -rpath \$(phplibdir) \$(EXTRA_LDFLAGS) \$(shared_objects_crystalline_math) \$(CRYSTALLINE_MATH_SHARED_LIBADD)
 
 EOF
 
       
-printf "%s\n" "@%:@define COMPILE_DL_ALGORITHMS 1" >>confdefs.h
+printf "%s\n" "@%:@define COMPILE_DL_CRYSTALLINE_MATH 1" >>confdefs.h
 
     fi
   fi
 
   if test "$ext_shared" != "shared" && test "$ext_shared" != "yes" && test "" = "cli"; then
-    PHP_ALGORITHMS_SHARED=no
+    PHP_CRYSTALLINE_MATH_SHARED=no
     case "$PHP_SAPI" in
       cgi|embed|phpdbg)
         
@@ -4538,7 +4538,7 @@ printf "%s\n" "@%:@define COMPILE_DL_ALGORITHMS 1" >>confdefs.h
 
 
   old_IFS=$IFS
-  for ac_src in algorithms_extension.c; do
+  for ac_src in crystalline_math_extension.c; do
 
       IFS=.
       set $ac_src
@@ -4564,7 +4564,7 @@ EOF
   done
 
 
-        EXT_STATIC="$EXT_STATIC algorithms;$ext_dir"
+        EXT_STATIC="$EXT_STATIC crystalline_math;$ext_dir"
         ;;
       *)
         
@@ -4587,7 +4587,7 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in algorithms_extension.c; do
+  for ac_src in crystalline_math_extension.c; do
 
       IFS=.
       set $ac_src
@@ -4615,7 +4615,7 @@ EOF
 
         ;;
     esac
-    EXT_CLI_STATIC="$EXT_CLI_STATIC algorithms;$ext_dir"
+    EXT_CLI_STATIC="$EXT_CLI_STATIC crystalline_math;$ext_dir"
   fi
   
   
@@ -4624,75 +4624,13 @@ EOF
 
 
   if test "$ext_builddir" = "."; then
-    PHP_PECL_EXTENSION=algorithms
+    PHP_PECL_EXTENSION=crystalline_math
     
   PHP_VAR_SUBST="$PHP_VAR_SUBST PHP_PECL_EXTENSION"
 
   fi
 
   
-    
-  if test "../../include" != "/usr/include"; then
-    
-  if test -z "../../include" || echo "../../include" | grep '^/' >/dev/null ; then
-    ai_p=../../include
-  else
-    
-    ep_dir=`echo ../../include|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../include"`
-  fi
-
-    
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-    
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-    
-  fi
-
-  fi
-
-  
-  if test "../../algorithms/include" != "/usr/include"; then
-    
-  if test -z "../../algorithms/include" || echo "../../algorithms/include" | grep '^/' >/dev/null ; then
-    ai_p=../../algorithms/include
-  else
-    
-    ep_dir=`echo ../../algorithms/include|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../algorithms/include"`
-  fi
-
-    
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-    
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-    
-  fi
-
-  fi
-
   
   if test "../../math/include" != "/usr/include"; then
     
@@ -4725,10 +4663,41 @@ EOF
   fi
 
   
+  if test "../../include" != "/usr/include"; then
     
+  if test -z "../../include" || echo "../../include" | grep '^/' >/dev/null ; then
+    ai_p=../../include
+  else
+    
+    ep_dir=`echo ../../include|$SED 's%/*[^/][^/]*/*$%%'`
+    
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "../../include"`
+  fi
+
+    
+  
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+  
+  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INCLUDEPATH$unique=set"
+    
+      if test ""; then
+        INCLUDES="-I$ai_p $INCLUDES"
+      else
+        INCLUDES="$INCLUDES -I$ai_p"
+      fi
+    
+  fi
+
+  fi
+
+  
+  
 
   if test "$ext_shared" = "yes"; then
-    ALGORITHMS_SHARED_LIBADD="-lcrystallinemath $ALGORITHMS_SHARED_LIBADD"
+    CRYSTALLINE_MATH_SHARED_LIBADD="-lcrystallinemath $CRYSTALLINE_MATH_SHARED_LIBADD"
     if test -n "../../math/lib"; then
       
   if test "../../math/lib" != "/usr/$PHP_LIBDIR" && test "../../math/lib" != "/usr/lib"; then
@@ -4745,8 +4714,8 @@ EOF
 
     
       if test "$ext_shared" = "yes"; then
-        ALGORITHMS_SHARED_LIBADD="-L$ai_p $ALGORITHMS_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && ALGORITHMS_SHARED_LIBADD="$ld_runpath_switch$ai_p $ALGORITHMS_SHARED_LIBADD"
+        CRYSTALLINE_MATH_SHARED_LIBADD="-L$ai_p $CRYSTALLINE_MATH_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && CRYSTALLINE_MATH_SHARED_LIBADD="$ld_runpath_switch$ai_p $CRYSTALLINE_MATH_SHARED_LIBADD"
       else
         
   
@@ -4823,202 +4792,7 @@ EOF
 
 
   
-
-  if test "$ext_shared" = "yes"; then
-    ALGORITHMS_SHARED_LIBADD="-lcllm $ALGORITHMS_SHARED_LIBADD"
-    if test -n "../../"; then
-      
-  if test "../../" != "/usr/$PHP_LIBDIR" && test "../../" != "/usr/lib"; then
-    
-  if test -z "../../" || echo "../../" | grep '^/' >/dev/null ; then
-    ai_p=../../
-  else
-    
-    ep_dir=`echo ../../|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../"`
-  fi
-
-    
-      if test "$ext_shared" = "yes"; then
-        ALGORITHMS_SHARED_LIBADD="-L$ai_p $ALGORITHMS_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && ALGORITHMS_SHARED_LIBADD="$ld_runpath_switch$ai_p $ALGORITHMS_SHARED_LIBADD"
-      else
-        
-  
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-    
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-  
-  fi
-
-
-      fi
-    
-  fi
-
-    fi
-  else
-    
-
-  if test -n "../../"; then
-    
-  if test "../../" != "/usr/$PHP_LIBDIR" && test "../../" != "/usr/lib"; then
-    
-  if test -z "../../" || echo "../../" | grep '^/' >/dev/null ; then
-    ai_p=../../
-  else
-    
-    ep_dir=`echo ../../|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../"`
-  fi
-
-    
-      
-  
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-    
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-  
-  fi
-
-
-    
-  fi
-
-  fi
-  
-  
-  case cllm in
-  c|c_r) ;;
-  *) 
-      LIBS="-lcllm $LIBS" 
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-  
-
-  if test "$ext_shared" = "yes"; then
-    ALGORITHMS_SHARED_LIBADD="-lalgorithms $ALGORITHMS_SHARED_LIBADD"
-    if test -n "../../"; then
-      
-  if test "../../" != "/usr/$PHP_LIBDIR" && test "../../" != "/usr/lib"; then
-    
-  if test -z "../../" || echo "../../" | grep '^/' >/dev/null ; then
-    ai_p=../../
-  else
-    
-    ep_dir=`echo ../../|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../"`
-  fi
-
-    
-      if test "$ext_shared" = "yes"; then
-        ALGORITHMS_SHARED_LIBADD="-L$ai_p $ALGORITHMS_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && ALGORITHMS_SHARED_LIBADD="$ld_runpath_switch$ai_p $ALGORITHMS_SHARED_LIBADD"
-      else
-        
-  
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-    
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-  
-  fi
-
-
-      fi
-    
-  fi
-
-    fi
-  else
-    
-
-  if test -n "../../"; then
-    
-  if test "../../" != "/usr/$PHP_LIBDIR" && test "../../" != "/usr/lib"; then
-    
-  if test -z "../../" || echo "../../" | grep '^/' >/dev/null ; then
-    ai_p=../../
-  else
-    
-    ep_dir=`echo ../../|$SED 's%/*[^/][^/]*/*$%%'`
-    
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "../../"`
-  fi
-
-    
-      
-  
-  
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-  
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-    
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-  
-  fi
-
-
-    
-  fi
-
-  fi
-  
-  
-  case algorithms in
-  c|c_r) ;;
-  *) 
-      LIBS="-lalgorithms $LIBS" 
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-  
-  
-  PHP_VAR_SUBST="$PHP_VAR_SUBST ALGORITHMS_SHARED_LIBADD"
+  PHP_VAR_SUBST="$PHP_VAR_SUBST CRYSTALLINE_MATH_SHARED_LIBADD"
 
 fi
 
@@ -15103,3 +14877,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 printf "%s\n" "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+   

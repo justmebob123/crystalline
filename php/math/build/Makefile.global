@@ -1,47 +1,3 @@
-srcdir = /workspace/php/algorithms
-builddir = /workspace/php/algorithms
-top_srcdir = /workspace/php/algorithms
-top_builddir = /workspace/php/algorithms
-EGREP = /usr/bin/grep -E
-SED = /usr/bin/sed
-CONFIGURE_COMMAND = './configure'
-CONFIGURE_OPTIONS =
-SHLIB_SUFFIX_NAME = so
-SHLIB_DL_SUFFIX_NAME = so
-AWK = gawk
-shared_objects_algorithms = algorithms_extension.lo
-PHP_PECL_EXTENSION = algorithms
-ALGORITHMS_SHARED_LIBADD = -Wl,-rpath,/workspace/php/.. -L/workspace/php/.. -lalgorithms -Wl,-rpath,/workspace/php/.. -L/workspace/php/.. -lcllm -Wl,-rpath,/workspace/math/lib -L/workspace/math/lib -lcrystallinemath
-PHP_MODULES = $(phplibdir)/algorithms.la
-PHP_ZEND_EX =
-all_targets = $(PHP_MODULES) $(PHP_ZEND_EX)
-install_targets = install-modules install-headers
-prefix = /usr
-exec_prefix = $(prefix)
-libdir = ${exec_prefix}/lib
-prefix = /usr
-phplibdir = /workspace/php/algorithms/modules
-phpincludedir = /usr/include/php/20220829
-CC = cc
-CFLAGS = -g -O2
-CFLAGS_CLEAN = $(CFLAGS) -D_GNU_SOURCE
-CPP = cc -E
-CPPFLAGS = -DHAVE_CONFIG_H
-CXX =
-CXXFLAGS =
-CXXFLAGS_CLEAN = $(CXXFLAGS)
-EXTENSION_DIR = /usr/lib/php/20220829
-PHP_EXECUTABLE = /usr/bin/php8.2
-EXTRA_LDFLAGS =
-EXTRA_LIBS =
-INCLUDES = -I/usr/include/php/20220829 -I/usr/include/php/20220829/main -I/usr/include/php/20220829/TSRM -I/usr/include/php/20220829/Zend -I/usr/include/php/20220829/ext -I/usr/include/php/20220829/ext/date/lib -I/workspace/include -I/workspace/algorithms/include -I/workspace/math/include
-LFLAGS =
-LDFLAGS =
-SHARED_LIBTOOL =
-LIBTOOL = $(SHELL) $(top_builddir)/libtool
-SHELL = /bin/bash
-INSTALL_HEADERS =
-BUILD_CC = cc
 mkinstalldirs = $(top_srcdir)/build/shtool mkdir -p
 INSTALL = $(top_srcdir)/build/shtool install -c
 INSTALL_DATA = $(INSTALL) -m 644
@@ -205,12 +161,3 @@ prof-use:
 
 .PHONY: all clean install distclean test prof-gen prof-clean prof-use
 .NOEXPORT:
--include algorithms_extension.dep
-algorithms_extension.lo: /workspace/php/algorithms/algorithms_extension.c
-	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/workspace/php/algorithms $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /workspace/php/algorithms/algorithms_extension.c -o algorithms_extension.lo  -MMD -MF algorithms_extension.dep -MT algorithms_extension.lo
-$(phplibdir)/algorithms.la: ./algorithms.la
-	$(LIBTOOL) --tag=CC --mode=install cp ./algorithms.la $(phplibdir)
-
-./algorithms.la: $(shared_objects_algorithms) $(ALGORITHMS_SHARED_DEPENDENCIES)
-	$(LIBTOOL) --tag=CC --mode=link $(CC) -shared $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS)  -o $@ -export-dynamic -avoid-version -prefer-pic -module -rpath $(phplibdir) $(EXTRA_LDFLAGS) $(shared_objects_algorithms) $(ALGORITHMS_SHARED_LIBADD)
-
