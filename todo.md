@@ -1,29 +1,105 @@
-# Fix External Dependencies and Provide PHP Build Instructions
+# RULES (READ FIRST - ALWAYS AT TOP)
 
-## 1. Review Master Plan and Rules
-- [x] Read MASTER_PLAN.md to understand the project's core principles
-- [x] Identify all violations of the "no external dependencies" rule
-- [x] Document the correct approach
+## ⭐ RULE 0: ALWAYS READ THESE RULES FIRST ⭐
+**MANDATORY WITH EVERY RESPONSE**
 
-## 2. Fix External Math Library Dependencies
-- [x] Rewrite stock_trading_analysis.php to use ONLY Crystalline functions
-- [x] Remove ALL standard PHP math operations
-- [x] Use crystalline_* functions exclusively
-- [ ] Test that code works without external dependencies
+Before ANY action, you MUST:
+1. Read MASTER_PLAN.md completely
+2. Read AUDIT.md for current architectural state
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Update todo.md with current progress
 
-## 3. Create PHP Build and Installation Instructions
-- [x] Document the complete build process for PHP extensions
-- [x] Provide step-by-step installation instructions
-- [x] Include testing procedures
-- [x] Create a comprehensive BUILD_AND_INSTALL.md guide
+## RULE 1: CRITICAL REFERENCE FILES
+**Before making ANY code changes, ALWAYS check these files:**
 
-## 4. Verify and Test
-- [x] Ensure all code follows project rules
-- [x] Verify no external dependencies remain (no math.h in PHP code)
-- [x] crystalline_math extension builds successfully
-- [ ] algorithms extension needs core libraries (blocked by math library compilation errors)
-- [ ] Commit and push fixes
+1. **app/ui/sphere_visualization.c** - 3D kissing spheres visualization
+   - PURE crystalline mathematics ONLY (NO math.h)
+   - Uses ONLY prime_* functions from crystalline library
+   - Implements icosahedral geometry with golden ratio
+   - 13 spheres: 1 control + 12 workers
 
-## 5. Deliver Results
-- [ ] Provide clear build instructions to user
-- [ ] Confirm all violations are fixed
+2. **src/geometry/clock_lattice.c** - Babylonian clock structure
+   - Ring structure: 12, 60, 60, 100
+   - Prime position mapping
+
+3. **src/ai/cllm_kissing_spheres.c** - Kissing spheres implementation
+   - 12 neighbors per point
+   - Shared memory structure
+
+**CRITICAL**: Never use math.h or standard library functions. Only use prime_* functions.
+
+## RULE 2: NO EXTERNAL MATH LIBRARIES
+- NO math.h
+- NO complex.h
+- NO standard library math functions
+- ONLY use NEW math library (math/) with Crystalline Abacus
+- If missing operations, add to math library as O(1) functions
+
+## RULE 3: NO DUPLICATE CONSTANTS
+- Check for multiple definitions of constants (infinity, pi, phi, etc.)
+- Consolidate all constants in ONE location
+- Remove duplicates across codebase
+
+## RULE 4: PROPER NAMING CONVENTIONS
+- NO "bigfixed" in names
+- NO "complete" in names
+- NO "new" in names
+- NO "old" in names
+- Use clear, descriptive names that reflect purpose
+- Follow consistent naming across files and functions
+
+---
+
+# COMPREHENSIVE REASSESSMENT - PHASE 1
+
+## 1. Read All Master Plan and Related Documents
+- [x] Read MASTER_PLAN.md completely
+- [x] Read AUDIT.md
+- [x] Read SECONDARY_OBJECTIVES.md
+- [x] Read TERTIARY_OBJECTIVES.md
+- [x] Created COMPREHENSIVE_REASSESSMENT_ANALYSIS.md with all findings
+
+## 2. PRIORITY 1: Fix Duplicate Constants (IMMEDIATE)
+- [x] Remove duplicate MATH_TWO_PI from math/include/math/types.h (line 213)
+- [x] Remove M_PI alias from include/prime_types.h (line 430)
+- [x] Replace all M_PI references with MATH_PI
+- [x] Verify math library compiles successfully
+- [ ] Commit changes
+
+## 3. PRIORITY 2: Fix Bad Naming Conventions
+- [ ] Rename cross_entropy_loss_bigfixed → cross_entropy_loss
+- [ ] Rename softmax_bigfixed → softmax
+- [ ] Update algorithms/include/loss_functions.h
+- [ ] Update algorithms/src/loss_functions.c
+- [ ] Find and update all references across codebase
+- [ ] Verify compilation
+- [ ] Run tests
+- [ ] Commit changes
+
+## 4. PRIORITY 3: Audit Complex Operations
+- [ ] Review math/src/core/complex.c completely
+- [ ] Verify all operations are O(1)
+- [ ] Check for missing operations (complex exp, log, pow)
+- [ ] Add any missing complex functions
+- [ ] Ensure no math.h dependencies
+- [ ] Document findings
+
+## 5. PRIORITY 4: Deep CLLM Analysis
+- [ ] Analyze src/ai/cllm_token.c in detail
+- [ ] Analyze src/ai/cllm_embeddings.c in detail
+- [ ] Analyze src/ai/bigfixed_array_utils.c in detail
+- [ ] Analyze src/ai/cllm_lattice_conversion.c in detail
+- [ ] Analyze src/ai/cllm_optimizer.c in detail
+- [ ] Analyze src/ai/cllm_training_threaded.c in detail
+- [ ] Analyze src/ai/cllm_production.c in detail
+- [ ] Map dependencies between files
+- [ ] Identify Abacus integration points
+- [ ] Document current BigFixed usage
+- [ ] Create detailed migration specification
+
+## 6. Create Detailed Action Plan
+- [ ] Document migration order
+- [ ] Estimate time for each file
+- [ ] Identify potential challenges
+- [ ] Create step-by-step guide
+- [ ] Set milestones

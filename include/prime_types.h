@@ -426,8 +426,8 @@ typedef struct {
 #define DUST_GUARD_BITS_MAX 128       // Maximum guard bits
 
 // Math constants (standard names)
-// PHASE 2: Using MATH_PI from math/types.h
-#define M_PI MATH_PI
+// NOTE: Use MATH_PI directly from math/types.h - no alias needed
+// Removed: #define M_PI MATH_PI (duplicate)
 #define M_LN2 0.69314718055994530942
 #define M_LN10 2.30258509299404568402
 

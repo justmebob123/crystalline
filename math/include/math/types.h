@@ -209,8 +209,7 @@ typedef enum {
 /* Euler's number */
 #define MATH_E 2.71828182845904523536
 
-/* Two pi */
-#define MATH_TWO_PI (2.0 * MATH_PI)
+/* NOTE: MATH_TWO_PI already defined above at line 136 - duplicate removed */
 
 
 /* Vector culmination point and twin primes */

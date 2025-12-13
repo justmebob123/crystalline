@@ -44,7 +44,7 @@ void test_oscillation_detection() {
         double freq = 5.0 * (d + 1);  // 5 Hz, 10 Hz, 15 Hz
         for (uint32_t i = 0; i < num_samples; i++) {
             double t = (double)i / sampling_rate;
-            data[d * num_samples + i] = math_sin(2.0 * M_PI * freq * t);
+            data[d * num_samples + i] = math_sin(2.0 * MATH_PI * freq * t);
         }
     }
     

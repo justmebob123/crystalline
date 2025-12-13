@@ -338,18 +338,18 @@ void test_angular_operations(void) {
     ASSERT_NEAR(angle0, 0.0, 0.001, "Angle for 0 should be 0");
     
     double angle6 = map_to_angle(6);
-    ASSERT_NEAR(angle6, M_PI, 0.001, "Angle for 6 should be π");
+    ASSERT_NEAR(angle6, MATH_PI, 0.001, "Angle for 6 should be π");
     
     // Test angle_to_clock_position
     ASSERT_TRUE(angle_to_clock_position(0.0) == 0, "0 radians should be position 0");
-    ASSERT_TRUE(angle_to_clock_position(M_PI / 2.0) == 3, "π/2 should be position 3");
+    ASSERT_TRUE(angle_to_clock_position(MATH_PI / 2.0) == 3, "π/2 should be position 3");
     
     // Test clock_position_to_angle
     double angle_pos0 = clock_position_to_angle(0);
     ASSERT_NEAR(angle_pos0, 0.0, 0.001, "Position 0 should be 0 radians");
     
     double angle_pos3 = clock_position_to_angle(3);
-    ASSERT_NEAR(angle_pos3, M_PI / 2.0, 0.001, "Position 3 should be π/2");
+    ASSERT_NEAR(angle_pos3, MATH_PI / 2.0, 0.001, "Position 3 should be π/2");
     
     TEST_PASS(current_test);
 }
@@ -412,19 +412,19 @@ void test_generate_kissing_spheres(void) {
     }
     
     // Verify 12-fold symmetry (spheres evenly distributed)
-    double expected_angle_step = 2.0 * M_PI / 12.0;
+    double expected_angle_step = 2.0 * MATH_PI / 12.0;
     for (int i = 0; i < 12; i++) {
         double dx = kissing[i].center_x - central.center_x;
         double dy = kissing[i].center_y - central.center_y;
         double angle = prime_atan2(dy, dx);
-        if (angle < 0) angle += 2.0 * M_PI;
+        if (angle < 0) angle += 2.0 * MATH_PI;
         
         double expected_angle = (double)i * expected_angle_step;
         double angle_diff = math_abs(angle - expected_angle);
         
         // Allow for wraparound
-        if (angle_diff > M_PI) {
-            angle_diff = 2.0 * M_PI - angle_diff;
+        if (angle_diff > MATH_PI) {
+            angle_diff = 2.0 * MATH_PI - angle_diff;
         }
         
         ASSERT_TRUE(angle_diff < 0.1, "Sphere not at expected angle");
