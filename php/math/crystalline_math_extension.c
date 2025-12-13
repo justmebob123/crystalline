@@ -3,6 +3,9 @@
   
   Provides PHP bindings for the Crystalline Mathematics Library
   Focus: Arithmetic operations, prime numbers, mathematical functions
+  
+  IMPORTANT: This uses CUSTOM arbitrary precision math library
+  NO standard math.h functions are used in the core library
 */
 
 #ifdef HAVE_CONFIG_H
@@ -19,6 +22,7 @@
 #include "../../math/include/math/arithmetic.h"
 #include "../../math/include/math/prime.h"
 #include "../../math/include/math/transcendental.h"
+#include "../../math/include/math/validation.h"
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -47,193 +51,239 @@ PHP_MINFO_FUNCTION(crystalline_math)
 }
 /* }}} */
 
-/* {{{ proto double math_add(double a, double b)
-   Add two numbers */
+/* {{{ proto double math_add(double a, double b) */
 PHP_FUNCTION(math_add)
 {
     double a, b;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(a)
         Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_add(a, b));
 }
 /* }}} */
 
-/* {{{ proto double math_sub(double a, double b)
-   Subtract two numbers */
+/* {{{ proto double math_sub(double a, double b) */
 PHP_FUNCTION(math_sub)
 {
     double a, b;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(a)
         Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_sub(a, b));
 }
 /* }}} */
 
-/* {{{ proto double math_mul(double a, double b)
-   Multiply two numbers */
+/* {{{ proto double math_mul(double a, double b) */
 PHP_FUNCTION(math_mul)
 {
     double a, b;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(a)
         Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_mul(a, b));
 }
 /* }}} */
 
-/* {{{ proto double math_div(double a, double b)
-   Divide two numbers */
+/* {{{ proto double math_div(double a, double b) */
 PHP_FUNCTION(math_div)
 {
     double a, b;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(a)
         Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_div(a, b));
 }
 /* }}} */
 
-/* {{{ proto double math_mod(double a, double b)
-   Modulo operation */
+/* {{{ proto double math_mod(double a, double b) */
 PHP_FUNCTION(math_mod)
 {
     double a, b;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(a)
         Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_mod(a, b));
 }
 /* }}} */
 
-/* {{{ proto double math_sqrt(double x)
-   Square root */
-PHP_FUNCTION(math_sqrt)
+/* {{{ proto double math_abs(double x) */
+PHP_FUNCTION(math_abs)
 {
     double x;
-    
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
-    
+    RETURN_DOUBLE(math_abs(x));
+}
+/* }}} */
+
+/* {{{ proto double math_min(double a, double b) */
+PHP_FUNCTION(math_min)
+{
+    double a, b;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_min(a, b));
+}
+/* }}} */
+
+/* {{{ proto double math_max(double a, double b) */
+PHP_FUNCTION(math_max)
+{
+    double a, b;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_max(a, b));
+}
+/* }}} */
+
+/* {{{ proto double math_clamp(double x, double min, double max) */
+PHP_FUNCTION(math_clamp)
+{
+    double x, min_val, max_val;
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+        Z_PARAM_DOUBLE(x)
+        Z_PARAM_DOUBLE(min_val)
+        Z_PARAM_DOUBLE(max_val)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_clamp(x, min_val, max_val));
+}
+/* }}} */
+
+/* {{{ proto int math_sign(double x) */
+PHP_FUNCTION(math_sign)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(math_sign(x));
+}
+/* }}} */
+
+/* {{{ proto double math_floor(double x) */
+PHP_FUNCTION(math_floor)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_floor(x));
+}
+/* }}} */
+
+/* {{{ proto double math_ceil(double x) */
+PHP_FUNCTION(math_ceil)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_ceil(x));
+}
+/* }}} */
+
+/* {{{ proto double math_round(double x) */
+PHP_FUNCTION(math_round)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_round(x));
+}
+/* }}} */
+
+/* {{{ proto double math_trunc(double x) */
+PHP_FUNCTION(math_trunc)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_trunc(x));
+}
+/* }}} */
+
+/* {{{ proto double math_sqrt(double x) */
+PHP_FUNCTION(math_sqrt)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
     RETURN_DOUBLE(math_sqrt(x));
 }
 /* }}} */
 
-/* {{{ proto double math_pow(double base, double exp)
-   Power function */
+/* {{{ proto double math_pow(double base, double exp) */
 PHP_FUNCTION(math_pow)
 {
     double base, exp;
-    
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_DOUBLE(base)
         Z_PARAM_DOUBLE(exp)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_pow(base, exp));
 }
 /* }}} */
 
-/* {{{ proto double math_sin(double x)
-   Sine function */
+/* {{{ proto double math_sin(double x) */
 PHP_FUNCTION(math_sin)
 {
     double x;
-    
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_sin(x));
 }
 /* }}} */
 
-/* {{{ proto double math_cos(double x)
-   Cosine function */
+/* {{{ proto double math_cos(double x) */
 PHP_FUNCTION(math_cos)
 {
     double x;
-    
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_DOUBLE(math_cos(x));
 }
 /* }}} */
 
-/* {{{ proto bool is_prime(int n)
-   Check if number is prime */
+/* {{{ proto bool is_prime(int n) */
 PHP_FUNCTION(is_prime)
 {
     zend_long n;
-    
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_LONG(n)
     ZEND_PARSE_PARAMETERS_END();
-    
     RETURN_BOOL(prime_is_prime((uint64_t)n));
 }
 /* }}} */
 
 /* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO(arginfo_math_add, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_math_binary, 0)
     ZEND_ARG_INFO(0, a)
     ZEND_ARG_INFO(0, b)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_math_sub, 0)
-    ZEND_ARG_INFO(0, a)
-    ZEND_ARG_INFO(0, b)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_mul, 0)
-    ZEND_ARG_INFO(0, a)
-    ZEND_ARG_INFO(0, b)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_div, 0)
-    ZEND_ARG_INFO(0, a)
-    ZEND_ARG_INFO(0, b)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_mod, 0)
-    ZEND_ARG_INFO(0, a)
-    ZEND_ARG_INFO(0, b)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_sqrt, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_math_unary, 0)
     ZEND_ARG_INFO(0, x)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_math_pow, 0)
-    ZEND_ARG_INFO(0, base)
-    ZEND_ARG_INFO(0, exp)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_sin, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_math_clamp, 0)
     ZEND_ARG_INFO(0, x)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_math_cos, 0)
-    ZEND_ARG_INFO(0, x)
+    ZEND_ARG_INFO(0, min)
+    ZEND_ARG_INFO(0, max)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_is_prime, 0)
@@ -241,25 +291,32 @@ ZEND_BEGIN_ARG_INFO(arginfo_is_prime, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 
-/* {{{ crystalline_math_functions[]
- */
+/* {{{ crystalline_math_functions[] */
 const zend_function_entry crystalline_math_functions[] = {
-    PHP_FE(math_add, arginfo_math_add)
-    PHP_FE(math_sub, arginfo_math_sub)
-    PHP_FE(math_mul, arginfo_math_mul)
-    PHP_FE(math_div, arginfo_math_div)
-    PHP_FE(math_mod, arginfo_math_mod)
-    PHP_FE(math_sqrt, arginfo_math_sqrt)
-    PHP_FE(math_pow, arginfo_math_pow)
-    PHP_FE(math_sin, arginfo_math_sin)
-    PHP_FE(math_cos, arginfo_math_cos)
+    PHP_FE(math_add, arginfo_math_binary)
+    PHP_FE(math_sub, arginfo_math_binary)
+    PHP_FE(math_mul, arginfo_math_binary)
+    PHP_FE(math_div, arginfo_math_binary)
+    PHP_FE(math_mod, arginfo_math_binary)
+    PHP_FE(math_abs, arginfo_math_unary)
+    PHP_FE(math_min, arginfo_math_binary)
+    PHP_FE(math_max, arginfo_math_binary)
+    PHP_FE(math_clamp, arginfo_math_clamp)
+    PHP_FE(math_sign, arginfo_math_unary)
+    PHP_FE(math_floor, arginfo_math_unary)
+    PHP_FE(math_ceil, arginfo_math_unary)
+    PHP_FE(math_round, arginfo_math_unary)
+    PHP_FE(math_trunc, arginfo_math_unary)
+    PHP_FE(math_sqrt, arginfo_math_unary)
+    PHP_FE(math_pow, arginfo_math_binary)
+    PHP_FE(math_sin, arginfo_math_unary)
+    PHP_FE(math_cos, arginfo_math_unary)
     PHP_FE(is_prime, arginfo_is_prime)
     PHP_FE_END
 };
 /* }}} */
 
-/* {{{ crystalline_math_module_entry
- */
+/* {{{ crystalline_math_module_entry */
 zend_module_entry crystalline_math_module_entry = {
     STANDARD_MODULE_HEADER,
     "crystalline_math",
