@@ -280,6 +280,8 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
 	rm -f $(MATH_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(MATH_STATIC) $(ALGORITHMS_STATIC) $(CLLM_STATIC) $(CRAWLER_STATIC)
+	rm -f libcrystalline.a libcrystalline.so  # Remove OLD library
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/fix_html_entities # tools/validate_lattice
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
