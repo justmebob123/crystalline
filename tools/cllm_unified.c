@@ -628,6 +628,14 @@ int cmd_infer(int argc, char** argv) {
     if (tokenizer && cllm_load_vocab(tokenizer, vocab_path) != 0) {
         printf("✓ Vocabulary loaded from: %s\n", vocab_path);
         
+        // Allocate model tokens array if not already allocated
+        if (!model->tokens) {
+            model->tokens = (CLLMToken*)calloc(model->vocab_size, sizeof(CLLMToken));
+            if (!model->tokens) {
+                fprintf(stderr, "Error: Failed to allocate model tokens array\n");
+            }
+        }
+        
         // Copy vocabulary to model tokens
         if (model->tokens) {
             for (uint32_t i = 0; i < tokenizer->vocab_size && i < model->vocab_size; i++) {

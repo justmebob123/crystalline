@@ -175,7 +175,6 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     for (uint32_t i = 0; i < hidden_dim && i < 5; i++) {
         if (math_is_nan(hidden[i])) {
             has_nan_h1 = true;
-            fprintf(stderr, "DEBUG FFN: NaN in hidden[%u]=%.6f after first layer\n", i, hidden[i]);
             break;
         }
     }
@@ -188,7 +187,6 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     for (uint32_t i = 0; i < hidden_dim && i < 5; i++) {
         if (math_is_nan(hidden[i])) {
             has_nan_gelu = true;
-            fprintf(stderr, "DEBUG FFN: NaN in hidden[%u]=%.6f after GELU\n", i, hidden[i]);
             break;
         }
     }
@@ -206,7 +204,6 @@ static void feedforward_forward(const CLLMModel* model, uint32_t layer_idx,
     for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
         if (math_is_nan(output[i])) {
             has_nan_out = true;
-            fprintf(stderr, "DEBUG FFN: NaN in output[%u]=%.6f\n", i, output[i]);
             break;
         }
     }
@@ -256,7 +253,6 @@ void cllm_transformer_forward(const CLLMModel* model, double* hidden_states) {
             }
         }
         if (has_nan_input) {
-            fprintf(stderr, "DEBUG: NaN in hidden_states at start of layer %u\n", layer);
         }
         
         // Pre-layer norm
@@ -274,7 +270,6 @@ void cllm_transformer_forward(const CLLMModel* model, double* hidden_states) {
             }
         }
         if (has_nan_ln) {
-            fprintf(stderr, "DEBUG: NaN after layer_norm1 in layer %u\n", layer);
         }
         
         // Self-attention with residual connection
@@ -289,7 +284,6 @@ void cllm_transformer_forward(const CLLMModel* model, double* hidden_states) {
             }
         }
         if (has_nan_attn) {
-            fprintf(stderr, "DEBUG: NaN after attention in layer %u\n", layer);
         }
         
         for (uint32_t i = 0; i < embed_dim; i++) {
@@ -314,7 +308,6 @@ void cllm_transformer_forward(const CLLMModel* model, double* hidden_states) {
             }
         }
         if (has_nan_ffn) {
-            fprintf(stderr, "DEBUG: NaN after FFN in layer %u\n", layer);
         }
         
         for (uint32_t i = 0; i < embed_dim; i++) {
@@ -355,4 +348,93 @@ bool cllm_has_transformer_layers(const CLLMModel* model) {
     }
     
     return true;
+}
+
+/**
+ * Replace NaN values in model weights with zeros
+ * This is a safety measure for models that were saved with NaN values
+ */
+void cllm_fix_nan_weights(CLLMModel* model) {
+    if (!model || !model->layers) {
+        return;
+    }
+    
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t hidden_dim = model->hidden_dim;
+    uint32_t vocab_size = model->vocab_size;
+    uint32_t num_layers = model->num_layers;
+    
+    int total_nan_fixed = 0;
+    
+    // Fix embeddings
+    for (size_t i = 0; i < vocab_size * embed_dim; i++) {
+        if (math_is_nan(model->embeddings[i])) {
+            model->embeddings[i] = 0.0;
+            total_nan_fixed++;
+        }
+    }
+    
+    // Fix each layer
+    for (uint32_t layer = 0; layer < num_layers; layer++) {
+        // Fix attention weights
+        for (size_t i = 0; i < embed_dim * embed_dim; i++) {
+            if (math_is_nan(model->layers[layer].query_weights[i])) {
+                model->layers[layer].query_weights[i] = 0.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].key_weights[i])) {
+                model->layers[layer].key_weights[i] = 0.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].value_weights[i])) {
+                model->layers[layer].value_weights[i] = 0.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].output_weights[i])) {
+                model->layers[layer].output_weights[i] = 0.0;
+                total_nan_fixed++;
+            }
+        }
+        
+        // Fix FFN weights
+        for (size_t i = 0; i < embed_dim * hidden_dim; i++) {
+            if (math_is_nan(model->layers[layer].ffn_w1[i])) {
+                model->layers[layer].ffn_w1[i] = 0.0;
+                total_nan_fixed++;
+            }
+        }
+        
+        for (size_t i = 0; i < hidden_dim * embed_dim; i++) {
+            if (math_is_nan(model->layers[layer].ffn_w2[i])) {
+                model->layers[layer].ffn_w2[i] = 0.0;
+                total_nan_fixed++;
+            }
+        }
+        
+        // Fix layer norm parameters
+        for (size_t i = 0; i < embed_dim; i++) {
+            if (math_is_nan(model->layers[layer].ln1_gamma[i])) {
+                model->layers[layer].ln1_gamma[i] = 1.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].ln1_beta[i])) {
+                model->layers[layer].ln1_beta[i] = 0.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].ln2_gamma[i])) {
+                model->layers[layer].ln2_gamma[i] = 1.0;
+                total_nan_fixed++;
+            }
+            if (math_is_nan(model->layers[layer].ln2_beta[i])) {
+                model->layers[layer].ln2_beta[i] = 0.0;
+                total_nan_fixed++;
+            }
+        }
+    }
+    
+    if (total_nan_fixed > 0) {
+        fprintf(stderr, "WARNING: Fixed %d NaN values in model weights\n", total_nan_fixed);
+    } else {
+        fprintf(stderr, "INFO: No NaN values found in model weights\n");
+    }
 }

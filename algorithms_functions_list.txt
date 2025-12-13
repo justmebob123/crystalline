@@ -1,0 +1,441 @@
+=== anchor_tracking.h ===
+void update_anchor_estimate(
+void compute_anchor_errors(AnchorTracking* anchor);
+void analyze_anchor_convergence(AnchorTracking* anchor);
+void free_anchor_tracking(AnchorTracking* anchor);
+void add_anchor_to_system(
+void update_all_anchors(
+void compute_global_statistics(AnchorTrackingSystem* system);
+void analyze_lattice_structure(AnchorTrackingSystem* system);
+void analyze_error_patterns(AnchorTrackingSystem* system);
+bool check_global_convergence(const AnchorTrackingSystem* system);
+void print_anchor_tracking(const AnchorTracking* anchor);
+void print_tracking_system_summary(const AnchorTrackingSystem* system);
+void print_detailed_tracking_report(const AnchorTrackingSystem* system);
+void export_tracking_to_csv(const AnchorTrackingSystem* system, const char* filename);
+void visualize_error_vectors(const AnchorTrackingSystem* system, const char* filename);
+=== angular_attention.h ===
+float angular_attention_score(
+void angular_attention_scores_batch(
+void angular_attention_forward(
+=== backprop.h ===
+void gradient_buffer_free(GradientBuffer* buffer);
+void gradient_buffer_reset(GradientBuffer* buffer);
+bool gradient_buffer_set_weights(
+bool gradient_buffer_accumulate(
+bool gradient_buffer_accumulate_weighted(
+bool gradient_buffer_finalize(GradientBuffer* buffer);
+bool gradient_buffer_get_gradients(
+void gradient_add(
+void gradient_subtract(
+void gradient_scale(
+void gradient_multiply(
+size_t gradient_clip_by_value(
+bool gradient_clip_by_norm(
+bool gradient_clip_by_global_norm(
+GradientStats gradient_compute_stats(
+=== batch_processing.h ===
+void batch_free(GenericBatch* batch);
+void batch_retain(GenericBatch* batch);
+void batch_release(GenericBatch* batch);
+int batch_get_ref_count(const GenericBatch* batch);
+void batch_mark_processed(GenericBatch* batch, double processing_time);
+bool batch_is_processed(const GenericBatch* batch);
+void batch_queue_free(BatchQueue* queue);
+bool batch_queue_enqueue(BatchQueue* queue, GenericBatch* batch);
+bool batch_queue_try_enqueue(BatchQueue* queue, GenericBatch* batch);
+uint32_t batch_queue_size(const BatchQueue* queue);
+bool batch_queue_is_empty(const BatchQueue* queue);
+bool batch_queue_is_full(const BatchQueue* queue);
+void batch_queue_close(BatchQueue* queue);
+bool batch_queue_is_closed(const BatchQueue* queue);
+void batch_queue_clear(BatchQueue* queue);
+=== cymatic_modulation.h ===
+void apply_cymatic_modulation(
+void compute_cymatic_harmonics(
+void analyze_gradient_spectrum(
+void cymatic_simulate_wave(double* output, size_t len,
+bool cymatic_detect_alignment(const double* signal, size_t len,
+double cymatic_resonance_score(const double* signal, size_t len,
+size_t cymatic_find_peaks(const double* signal, size_t len,
+void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_symmetry);
+bool cymatic_harmonic_alignment(const double* signal, size_t len,
+size_t cymatic_find_top_peaks(const double* fft_result, size_t len,
+=== ecdsa_sample_loader.h ===
+void free_ecdsa_sample(ECDSASample* sample);
+void free_ecdsa_samples(ECDSASample** samples, int num_samples);
+void print_ecdsa_sample(const ECDSASample* sample);
+bool verify_ecdsa_sample(const ECDSASample* sample);
+void print_sample_statistics(ECDSASample** samples, int num_samples);
+=== ecdsa_test_generator.h ===
+bool verify_ecdsa_signature(const ECDSATestCase* test);
+void print_ecdsa_test_case(const ECDSATestCase* test);
+void free_ecdsa_test_case(ECDSATestCase* test);
+void compute_test_suite_statistics(ECDSATestSuite* suite);
+void print_test_suite_summary(const ECDSATestSuite* suite);
+void free_ecdsa_test_suite(ECDSATestSuite* suite);
+=== g_triangulation.h ===
+void free_g_triangulation_context(GTriangulationContext* ctx);
+uint64_t estimate_k_from_q(
+void perform_refinement_iteration(GTriangulationContext* ctx);
+bool check_convergence(GTriangulationContext* ctx, double threshold);
+void map_ec_point_to_lattice(
+void map_k_to_lattice(uint64_t k, double position[13]);
+double compute_distance(const double pos1[13], const double pos2[13]);
+=== geometric_anchors.h ===
+void free_geometric_anchor_system(GeometricAnchorSystem* system);
+void compute_anchor_stability(SharedVertex* anchors, int num_anchors);
+double pi_phi_distance_13d(const double* p1, const double* p2);
+void find_3_nearest_anchors(
+bool verify_pythagorean_triple(
+bool find_pythagorean_triple_anchors(
+void hash_Q_to_13d_position(EC_POINT* Q, EC_GROUP* group, double position[13]);
+void bias_toward_attractors(double position[13]);
+void map_13d_to_clock(const double position[13], int* ring, int* pos, double* angle);
+DetailedEntropy measure_detailed_entropy(
+double measure_dimensional_entropy(
+double measure_ring_entropy(
+TetrationAttractor compute_tetration_attractor(uint64_t base, int depth);
+void compute_all_attractors(TetrationAttractor attractors[13]);
+double distance_to_nearest_attractor(
+=== geometric_recovery.h ===
+OscillationVector compute_oscillation_vector(
+int determine_quadrant(const double* position, uint32_t num_dimensions);
+QuadrantPolarity create_quadrant_polarity(int quadrant);
+void apply_quadrant_polarity(
+void fold_to_first_quadrant(
+void sample_torus_orbit(
+FractalPartition compute_fractal_partition(
+double compute_tetration_score(
+void bias_toward_attractor(
+double validate_candidate_k(
+double measure_ec_point_distance(
+void geometric_recovery_add_anchor(
+bool geometric_recovery_initialize(GeometricRecoveryContext* ctx);
+void geometric_recovery_free(GeometricRecoveryContext* ctx);
+void map_k_to_position(
+=== hierarchical_prime_partitions.h ===
+void hierarchical_abacus_free(HierarchicalAbacus* abacus);
+int hierarchical_abacus_next_prime(HierarchicalAbacus* abacus, void* out_prime);
+bool hierarchical_abacus_is_prime(HierarchicalAbacus* abacus, const void* n);
+bool hierarchical_abacus_in_partition(const HierarchicalAbacus* abacus, 
+int hierarchical_abacus_cache_prime(HierarchicalAbacus* abacus, const void* prime);
+bool hierarchical_abacus_cache_lookup(HierarchicalAbacus* abacus, const void* prime);
+void hierarchical_abacus_get_stats(const HierarchicalAbacus* abacus,
+int hierarchical_abacus_generate_primes(HierarchicalAbacus* abacus, size_t count);
+=== hierarchical_primes.h ===
+void hierarchical_prime_free(HierarchicalPrimeGen* gen);
+bool hierarchical_prime_next(HierarchicalPrimeGen* gen, uint64_t* out_prime);
+bool hierarchical_prime_is_prime(HierarchicalPrimeGen* gen, uint64_t n);
+bool hierarchical_prime_in_partition(const HierarchicalPrimeGen* gen, uint64_t prime);
+bool hierarchical_prime_cache(HierarchicalPrimeGen* gen, uint64_t prime);
+bool hierarchical_prime_cache_lookup(HierarchicalPrimeGen* gen, uint64_t prime);
+void hierarchical_prime_get_stats(const HierarchicalPrimeGen* gen,
+void hierarchical_prime_reset_stats(HierarchicalPrimeGen* gen);
+double hierarchical_prime_cache_efficiency(const HierarchicalPrimeGen* gen);
+size_t hierarchical_prime_prefill_cache(HierarchicalPrimeGen* gen, size_t max_primes);
+size_t hierarchical_prime_symmetry_distribution(uint64_t range_start,
+bool hierarchical_prime_verify_symmetry(uint64_t range_start, uint64_t range_end);
+void hierarchical_prime_print_info(const HierarchicalPrimeGen* gen, const char* name);
+=== hierarchical_structures.h ===
+typedef int (*NodeVisitor)(HierarchicalNode* node, void* user_data);
+void hierarchical_node_free(HierarchicalNode* node);
+int hierarchical_node_add_child(HierarchicalNode* parent, HierarchicalNode* child);
+int hierarchical_node_remove_child(HierarchicalNode* parent, HierarchicalNode* child);
+int hierarchical_node_add_sibling(HierarchicalNode* node, HierarchicalNode* sibling);
+void hierarchical_node_discover_siblings(HierarchicalNode** nodes, int num_nodes);
+int hierarchical_node_traverse(
+int hierarchical_node_get_depth(const HierarchicalNode* root);
+int hierarchical_node_count(const HierarchicalNode* root);
+void hierarchical_node_print(const HierarchicalNode* root, int indent);
+int hierarchical_node_get_state(const HierarchicalNode* node);
+void hierarchical_node_set_state(HierarchicalNode* node, int new_state);
+int hierarchical_node_wait_for_state(
+void sync_barrier_free(SyncBarrier* barrier);
+int sync_barrier_wait(SyncBarrier* barrier);
+=== integrated_recovery.h ===
+void free_integrated_recovery(IntegratedRecoveryContext* ctx);
+void run_integrated_recovery_all(IntegratedRecoveryContext* ctx);
+void generate_recovery_report(
+void export_recovery_results_csv(
+void print_recovery_summary(const IntegratedRecoveryContext* ctx);
+=== iterative_search.h ===
+typedef double (*DistanceFunction)(const void* query, uint64_t candidate, void* user_data);
+typedef void (*AnchorGenerator)(uint64_t* anchors, size_t num_anchors, void* user_data);
+typedef bool (*OscillationDetector)(const uint64_t* anchors, size_t num_anchors, void* user_data);
+bool iterative_search(const void* query, const SearchConfig* config, SearchResult* result);
+uint64_t iterative_estimate_from_anchors(const void* query,
+uint64_t iterative_reduced_space_size(double current_entropy,
+void iterative_default_anchor_generator(uint64_t* anchors,
+bool iterative_default_oscillation_detector(const uint64_t* anchors,
+bool iterative_fft_oscillation_detector(const uint64_t* anchors,
+=== lattice_embeddings.h ===
+void lattice_embeddings_init_geometric(
+void lattice_get_token_embedding_geometric(
+bool lattice_verify_geometric_embeddings(
+void lattice_embeddings_init_geometric_abacus(
+void lattice_get_token_embedding_geometric_abacus(
+=== lattice_sphere_positions.h ===
+uint64_t get_next_sphere_id(void);
+LatticeClockPosition calculate_clock_position(int symmetry_group);
+void free_lattice_partition(LatticePartition* partition);
+void free_sphere_position(SpherePosition* position);
+bool is_prime_in_partition(const LatticePartition* partition, const void* prime);
+uint64_t get_partition_size(const LatticePartition* partition);
+void print_partition_info(const LatticePartition* partition);
+void print_sphere_position(const SpherePosition* position);
+void free_12_sphere_positions(SpherePosition** positions);
+=== lock_free_queue.h ===
+void lock_free_queue_free(LockFreeQueue* queue, void (*free_data_fn)(void*));
+bool lock_free_queue_enqueue(LockFreeQueue* queue, void* data);
+bool lock_free_queue_is_empty(const LockFreeQueue* queue);
+uint64_t lock_free_queue_size(const LockFreeQueue* queue);
+bool lock_free_queue_is_full(const LockFreeQueue* queue);
+double lock_free_queue_utilization(const LockFreeQueue* queue);
+void lock_free_queue_get_statistics(const LockFreeQueue* queue,
+void lock_free_queue_print_statistics(const LockFreeQueue* queue, const char* name);
+void lock_free_queue_reset_statistics(LockFreeQueue* queue);
+void lock_free_queue_clear(LockFreeQueue* queue, void (*free_data_fn)(void*));
+bool lock_free_queue_validate(const LockFreeQueue* queue);
+uint64_t lock_free_queue_preallocate_nodes(LockFreeQueue* queue, uint64_t count);
+uint64_t lock_free_queue_trim_free_nodes(LockFreeQueue* queue, uint64_t target_count);
+uint64_t lock_free_queue_enqueue_batch(LockFreeQueue* queue,
+uint64_t lock_free_queue_dequeue_batch(LockFreeQueue* queue,
+=== loss_functions.h ===
+void cross_entropy_loss_bigfixed(
+void softmax_bigfixed(
+=== math_wrappers.h ===
+=== mathematical_formulas.h ===
+double formula_lbs(const double* p_i, size_t len);
+double formula_matrix_entropy(const double* P, const double* f, 
+double formula_hps(double P, double f);
+double formula_e_approx(double P, double T);
+double formula_les(double P, double T, double f);
+double formula_tlm(double P, double f);
+double formula_wave_z(double P1, double P2, double P3, double P4, 
+double formula_psi_mn(uint32_t m, uint32_t n, double x, double y, 
+double formula_psm(double P, double x);
+double formula_eleventh_hg(double x, double dissonant);
+double formula_hd(double harmonic, double P);
+double formula_dps(double P, uint32_t n, double x, double y, 
+double formula_bga(uint32_t T, uint64_t p_mod);
+uint64_t formula_tv(uint64_t P, uint32_t T, uint64_t p_mod);
+uint64_t formula_tvg(uint64_t P, uint32_t T, uint64_t p_mod);
+=== memory_management.h ===
+void memory_free(MemoryManager* manager);
+int memory_create_pool(
+int memory_destroy_pool(MemoryManager* manager, uint32_t pool_index);
+void memory_dealloc(MemoryManager* manager, void* ptr);
+int memory_optimize_cache_layout(
+void memory_prefetch(const void* ptr, size_t size);
+int memory_get_statistics(
+void memory_print_statistics(const MemoryManager* manager, FILE* output);
+void memory_reset_statistics(MemoryManager* manager);
+int memory_is_cache_aligned(const void* ptr);
+size_t memory_get_cache_line_size(void);
+int memory_validate(const MemoryManager* manager);
+=== multi_torus_tracker.h ===
+void free_multi_torus_tracker(MultiTorusTracker* tracker);
+void multi_torus_add_sample(
+int identify_tori(MultiTorusTracker* tracker);
+bool compute_torus_intersection(MultiTorusTracker* tracker);
+bool is_k_in_intersection(
+double get_multi_torus_reduction_factor(const MultiTorusTracker* tracker);
+void print_multi_torus_analysis(const MultiTorusTracker* tracker);
+void export_multi_torus_csv(
+void free_multi_sample_intersection(MultiSampleIntersection* intersection);
+=== nonce_generation.h ===
+void nonce_config_init(NonceConfig* config, uint64_t block_height, 
+bool nonce_generate_deterministic(const NonceConfig* config, NonceResult* result);
+uint64_t nonce_build_tetration_stack(uint64_t seed_prime, uint32_t depth,
+uint64_t nonce_apply_difficulty_bounds(uint64_t tetration_value,
+double nonce_calculate_entropy_reduction(uint32_t difficulty_bits,
+uint64_t nonce_reassess(const NonceConfig* config, uint32_t attempt,
+bool nonce_validate_difficulty(uint64_t nonce, uint32_t difficulty_bits);
+=== ntt_attention.h ===
+int ntt_attention_forward(
+int ntt_attention_single_head(
+int ntt_attention_multi_head(
+int should_use_ntt_attention(uint32_t seq_len, const NTTAttentionConfig* config);
+void ntt_attention_config_init(
+double ntt_attention_estimate_speedup(uint32_t seq_len);
+int ntt_attention_forward_double(
+int ntt_attention_single_head_double(
+int ntt_attention_multi_head_double(
+=== numerical.h ===
+void numerical_softmax(
+void numerical_log_softmax(
+double numerical_log_sum_exp(
+void numerical_softmax_2d(
+void numerical_log_softmax_2d(
+double numerical_safe_log(double x, double epsilon);
+double numerical_safe_exp(double x, double max_exp);
+double numerical_safe_divide(
+double numerical_safe_sqrt(double x, double epsilon);
+bool numerical_is_nan(double x);
+bool numerical_is_inf(double x);
+bool numerical_is_finite(double x);
+void numerical_check_array(
+double numerical_clip(double x, double min_value, double max_value);
+void numerical_clip_array(
+=== optimizers.h ===
+OptimizerConfig optimizer_config_create(OptimizerType type);
+void optimizer_state_free(OptimizerState* state);
+void optimizer_state_reset(OptimizerState* state);
+bool optimizer_step(
+void optimizer_sgd_step(
+void optimizer_momentum_step(
+void optimizer_adam_step(
+void optimizer_rmsprop_step(
+LRScheduleConfig lr_schedule_config_create(
+double lr_schedule_get_lr(
+double lr_schedule_constant(double initial_lr, size_t step);
+double lr_schedule_step_decay(
+double lr_schedule_exponential_decay(
+double lr_schedule_cosine_annealing(
+double lr_schedule_warmup(
+=== oscillation_decomposition.h ===
+void free_oscillation_decomposer(OscillationDecomposer* decomposer);
+int decompose_oscillations(OscillationDecomposer* decomposer);
+void reconstruct_component_signal(
+void print_oscillation_decomposition(const OscillationDecomposer* decomposer);
+void export_decomposition_csv(
+=== plateau_detection.h ===
+void free_plateau_detector(PlateauDetector* detector);
+bool plateau_detector_add_sample(
+bool is_plateaued(const PlateauDetector* detector);
+double get_plateau_value(const PlateauDetector* detector);
+int get_plateau_iteration(const PlateauDetector* detector);
+void reset_plateau_detector(PlateauDetector* detector);
+=== platonic_model.h ===
+void platonic_model_free(PlatonicModel* model);
+void tetration_tower_free(TetrationTower* tower);
+void platonic_detect_spatial_oscillations(
+void platonic_detect_temporal_oscillations(PlatonicModel* model);
+bool platonic_stabilize_temporal_oscillations(PlatonicModel* model);
+bool platonic_scale_dimensions(
+bool platonic_scale_vertices(
+bool platonic_scale_tetration_depth(
+bool platonic_recover(
+bool platonic_model_save(
+bool platonic_model_validate_euler(const PlatonicModel* model);
+bool platonic_model_validate_coprime(const PlatonicModel* model);
+bool platonic_model_validate_geometry(const PlatonicModel* model);
+=== qk_mapping.h ===
+void qk_mapper_destroy(QtoK_Mapping* mapper);
+uint64_t qk_find_best(const QtoK_Mapping* mapper,
+size_t qk_find_top_n(const QtoK_Mapping* mapper,
+bool qk_set_candidates(QtoK_Mapping* mapper,
+=== shared_memory.h ===
+typedef void (*FreeFunction)(void* ptr);
+void shared_memory_free(SharedMemoryRegion* region);
+void shared_memory_release_read(SharedMemoryRegion* region);
+void shared_memory_release_write(SharedMemoryRegion* region);
+uint64_t shared_memory_get_version(const SharedMemoryRegion* region);
+bool shared_memory_is_modified(const SharedMemoryRegion* region, uint64_t version);
+int shared_memory_resize(SharedMemoryRegion* region, size_t new_size);
+void shared_memory_get_stats(const SharedMemoryRegion* region,
+void shared_memory_print_info(const SharedMemoryRegion* region, const char* name);
+void shared_memory_default_free(void* ptr);
+bool shared_memory_validate(const SharedMemoryRegion* region);
+=== sphere_packing.h ===
+bool spheres_are_kissing(const Sphere3D* s1, const Sphere3D* s2, double tolerance);
+double sphere_gap(const Sphere3D* s1, const Sphere3D* s2);
+double sphere_distance(const Sphere3D* s1, const Sphere3D* s2);
+bool spheres_overlap(const Sphere3D* s1, const Sphere3D* s2);
+double sphere_volume(const Sphere3D* sphere);
+double sphere_surface_area(const Sphere3D* sphere);
+void vector2d_add(const Vec2D* a, const Vec2D* b, Vec2D* result);
+void vector2d_subtract(const Vec2D* a, const Vec2D* b, Vec2D* result);
+void vector2d_scale(const Vec2D* v, double scalar, Vec2D* result);
+double vector2d_dot(const Vec2D* a, const Vec2D* b);
+double vector2d_magnitude(const Vec2D* v);
+bool vector2d_normalize(const Vec2D* v, Vec2D* result);
+void vector3d_add(const Vec3D* a, const Vec3D* b, Vec3D* result);
+void vector3d_subtract(const Vec3D* a, const Vec3D* b, Vec3D* result);
+void vector3d_scale(const Vec3D* v, double scalar, Vec3D* result);
+=== sphere_threading.h ===
+void sphere_threading_free(SphereThreadingModel* model);
+uint32_t sphere_find_neighbor_by_geometry(
+int sphere_get_neighbors(
+int sphere_optimize_cache_locality(
+int sphere_assign_work(
+typedef int (*SphereWorkFunction)(
+int sphere_process_work(
+int sphere_get_statistics(
+int sphere_get_system_statistics(
+int sphere_verify_model(const SphereThreadingModel* model);
+=== statistics.h ===
+double stats_mean(const double* values, size_t size);
+double stats_variance(
+double stats_std_dev(
+double stats_median(double* values, size_t size);
+double stats_mode(
+double stats_percentile(
+double stats_covariance(
+double stats_correlation(
+double stats_spearman_correlation(
+void stats_histogram(
+double stats_empirical_cdf(
+void stats_z_score_normalize(double* values, size_t size);
+void stats_min_max_normalize(double* values, size_t size);
+void stats_robust_scale(double* values, size_t size);
+double stats_min(const double* values, size_t size);
+=== symbolic_field_theory.h ===
+uint32_t sft_omega(uint64_t x);
+int64_t sft_psi_hybrid(uint64_t x);
+uint64_t sft_kappa(uint64_t x, int64_t psi);
+size_t sft_find_collapse_zones(uint64_t start, uint64_t end,
+size_t sft_deterministic_prime_map(uint64_t start, uint64_t end,
+bool sft_is_in_collapse_zone(uint64_t x, uint32_t window_size);
+int64_t sft_kappa_gradient(uint64_t x);
+=== tensor_ops.h ===
+double tensor_distance(const double* t1, const double* t2,
+void tensor_generate_anchors(double* anchors, size_t num_anchors,
+uint64_t tensor_estimate_from_anchors(const double* query,
+void tensor_outer_product(const double* a, size_t a_len,
+=== threading.h ===
+typedef uint64_t (*WorkloadEstimator)(int work_group, void* user_data);
+uint64_t default_workload_estimator(int work_group, void* user_data);
+uint64_t prime_workload_estimator(int work_group, void* user_data);
+int detect_num_cpu_cores(void);
+int get_optimal_thread_count(int num_work_groups);
+void thread_allocation_free(ThreadAllocationStrategy* strategy);
+int thread_allocation_get_work_groups(
+int thread_allocation_get_thread_for_group(
+double thread_allocation_get_workload(
+bool thread_allocation_validate(const ThreadAllocationStrategy* strategy);
+double thread_allocation_calculate_balance(ThreadAllocationStrategy* strategy);
+void thread_allocation_print(const ThreadAllocationStrategy* strategy);
+int thread_allocation_update_workloads(
+int thread_allocation_rebalance(ThreadAllocationStrategy* strategy);
+int thread_allocation_set_affinity(
+=== validation.h ===
+typedef ValidationResult (*CustomValidationFn)(double value, double threshold, void* user_data);
+double validation_calculate_harm(double P_misuse, double D_damage,
+double validation_safety_probability(double proof_level, double alpha);
+bool validation_assess_safety(double P_misuse, double D_damage,
+bool validation_check(double value, double* threshold,
+bool validation_check_residual(double value, double threshold);
+bool validation_check_entropy(double value, double threshold);
+bool validation_check_range(double value, double min_val, double max_val);
+bool validation_check_stability(double value, double max_magnitude);
+double validation_proof_level_from_error(double error);
+size_t validation_batch_check(const double* values, size_t num_values,
+double validation_default_threshold(ValidationMode mode);
+=== visualization.h ===
+void viz_free(VisualizationData* data);
+int viz_set_point_position(
+int viz_set_point_value(
+int viz_set_point_neighbors(
+int viz_set_point_label(
+int viz_project_2d(VisualizationData* data);
+int viz_project_3d(VisualizationData* data);
+int viz_project_crystalline(VisualizationData* data);
+int viz_calculate_statistics(
+int viz_update_bounds(VisualizationData* data);
+int viz_calculate_symmetry_distribution(VisualizationData* data);
+int viz_export_json(const VisualizationData* data, const char* filename);
+int viz_export_csv(const VisualizationData* data, const char* filename);
+int viz_get_2d_rendering_data(
+int viz_get_3d_rendering_data(

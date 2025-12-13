@@ -548,38 +548,21 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // This now uses the new CLLMModel structure with proper layer implementation
     extern void cllm_transformer_forward(const CLLMModel* model, double* hidden_states);
     extern bool cllm_has_transformer_layers(const CLLMModel* model);
-    
-    // Debug: Check hidden states before transformer
-    bool has_nan_before = false;
-    for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
-        if (math_is_nan(inference->hidden_states[i])) {
-            has_nan_before = true;
-            break;
-        }
-    }
-    if (has_nan_before) {
-        fprintf(stderr, "DEBUG: NaN in hidden states BEFORE transformer\n");
-    }
+    extern void cllm_fix_nan_weights(CLLMModel* model);
     
     if (cllm_has_transformer_layers(model)) {
-        cllm_transformer_forward(model, inference->hidden_states);
+        // Fix any NaN values in weights (safety measure for corrupted checkpoints)
+        static bool nan_fix_done = false;
+        if (!nan_fix_done) {
+            cllm_fix_nan_weights(model);
+            nan_fix_done = true;
+        }
         
-        // Debug: Check hidden states after transformer
-        bool has_nan_after = false;
-        for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
-            if (math_is_nan(inference->hidden_states[i])) {
-                has_nan_after = true;
-                break;
-            }
-        }
-        if (has_nan_after) {
-            fprintf(stderr, "DEBUG: NaN in hidden states AFTER transformer\n");
-        }
+        cllm_transformer_forward(model, inference->hidden_states);
     } else {
         // Transformer layers not initialized - using embedding-only mode
         // This is expected for models that haven't been properly trained yet
         // The model will still work but won't have learned patterns
-        fprintf(stderr, "DEBUG: No transformer layers - using embedding-only mode\n");
     }
     
     // Project to vocabulary - compute logits
@@ -692,12 +675,6 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
             next_token = cllm_sample_top_k(inference->logits, inference->model->vocab_size, inference->top_k);
         } else {
             next_token = cllm_sample_top_p(inference->logits, inference->model->vocab_size, inference->top_p);
-        }
-        
-        // Debug: Print sampled token
-        if (tokens_generated < 5) {  // Only print first 5 for debugging
-            fprintf(stderr, "DEBUG: Generated token %d: %u (prob=%.4f)\n", 
-                    tokens_generated, next_token, inference->logits[next_token]);
         }
         
         // Add to sequence

@@ -1,0 +1,265 @@
+=== abacus.h ===
+void abacus_free(CrystallineAbacus* abacus);
+MathError abacus_init_zero(CrystallineAbacus* abacus);
+MathError abacus_to_uint64(const CrystallineAbacus* abacus, uint64_t* value);
+MathError abacus_to_double(const CrystallineAbacus* abacus, double* value);
+MathError abacus_set_precision(CrystallineAbacus* abacus, int32_t precision);
+int32_t abacus_get_precision(const CrystallineAbacus* abacus);
+MathError abacus_round(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision);
+MathError abacus_truncate(CrystallineAbacus* result, const CrystallineAbacus* a, int32_t precision);
+MathError abacus_add(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b);
+MathError abacus_sub(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b);
+MathError abacus_mul(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* b);
+MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
+MathError abacus_shift_left(CrystallineAbacus* result, const CrystallineAbacus* a, size_t n);
+MathError abacus_shift_right(CrystallineAbacus* result, const CrystallineAbacus* a, size_t n);
+int abacus_compare(const CrystallineAbacus* a, const CrystallineAbacus* b);
+bool abacus_is_zero(const CrystallineAbacus* abacus);
+bool abacus_is_negative(const CrystallineAbacus* abacus);
+MathError abacus_normalize(CrystallineAbacus* abacus);
+void abacus_print(const CrystallineAbacus* abacus);
+MathError abacus_mod(CrystallineAbacus* result, const CrystallineAbacus* a, const CrystallineAbacus* modulus);
+=== angular_position.h ===
+void angular_position_calculate(uint64_t prime,
+double angular_position_spiral_term(uint64_t prime_index);
+double angular_position_index_term(int dimension);
+double angular_position_phonetic_term(double phonetic_wavelength);
+double angular_position_omega_correction(uint64_t prime);
+double angular_position_psi_correction(uint64_t prime);
+double angular_position_normalize(double theta);
+void angular_position_to_clock(double theta, int* hour, double* minute);
+int angular_position_symmetry_group(uint64_t prime);
+int angular_position_is_near_boundary(uint64_t prime, double* distance);
+int angular_position_is_twin_prime(uint64_t prime);
+double wavelength_to_frequency(double wavelength);
+double frequency_to_wavelength(double frequency);
+double get_phonetic_wavelength(char character);
+double get_phonetic_frequency(char character);
+bool is_coprime(uint64_t p, uint64_t q);
+bool verify_plimpton_constraints(uint64_t p, uint64_t q);
+PlimptonRatios calculate_plimpton_ratios(uint64_t p, uint64_t q);
+int find_nearest_plimpton_triple(uint64_t prime, PythagoreanTriple* triple);
+double calculate_plimpton_correction_factor(uint64_t prime, 
+=== arithmetic.h ===
+double math_add(double a, double b);
+double math_sub(double a, double b);
+double math_mul(double a, double b);
+double math_div(double a, double b);
+double math_mod(double a, double b);
+double math_abs(double x);
+double math_min(double a, double b);
+double math_max(double a, double b);
+double math_clamp(double x, double min_val, double max_val);
+int math_sign(double x);
+bool math_approx_equal(double a, double b, double epsilon);
+bool math_is_nan(double x);
+bool math_is_inf(double x);
+bool math_is_finite(double x);
+double math_floor(double x);
+double math_ceil(double x);
+double math_round(double x);
+double math_trunc(double x);
+=== clock.h ===
+MathError clock_init(ClockContext* ctx);
+void clock_free(ClockContext* ctx);
+void clock_cleanup(ClockContext* ctx);
+MathError clock_map_prime_to_position(uint64_t prime, ClockPosition* pos);
+uint64_t clock_position_to_prime(const ClockPosition* pos);
+uint64_t clock_position_to_prime_exact(uint32_t ring, uint32_t position, uint64_t magnitude);
+MathError clock_map_index_to_position(uint64_t prime_index, ClockPosition* pos);
+uint64_t clock_position_to_index(const ClockPosition* pos);
+bool clock_is_valid_position(const ClockPosition* pos);
+MathError clock_next_position(const ClockPosition* current, ClockPosition* next);
+MathError clock_prev_position(const ClockPosition* current, ClockPosition* prev);
+MathError clock_get_modular(uint64_t prime, PrimeModular* pm);
+bool clock_satisfies_modular(uint64_t n);
+MathError clock_fold_to_sphere(const ClockPosition* pos, SphereCoord* sphere);
+MathError clock_unfold_from_sphere(const SphereCoord* sphere, ClockPosition* pos);
+double clock_angular_distance(const ClockPosition* pos1, const ClockPosition* pos2);
+double clock_sphere_distance(const ClockPosition* pos1, const ClockPosition* pos2);
+MathError clock_populate_cache(ClockContext* ctx, uint64_t max_index);
+uint64_t clock_get_cached_prime(const ClockContext* ctx, uint64_t index);
+void clock_clear_cache(ClockContext* ctx);
+=== compact_vector.h ===
+MathError compact_vector_create(
+MathError compact_vector_distance(
+MathError compact_vector_angle(
+int compact_vector_compare(
+MathError compact_number_create(
+void compact_number_free(CompactNumber* number);
+MathError compact_number_from_uint64(
+MathError compact_number_to_uint64(
+MathError compact_number_get_digit(
+MathError compact_number_to_string(
+MathError triangulate_addition(
+MathError triangulate_subtraction(
+MathError triangulate_multiplication(
+MathError get_precise_clock_position(
+MathError calculate_precise_angle_with_factors(
+MathError find_prime_phase_offset(
+size_t compact_number_memory_usage(const CompactNumber* number);
+double compact_number_reduction_ratio(
+uint32_t map_angle_to_vertex(double angle, const PlatonicSolid* solid);
+MathError map_number_to_solid(
+=== complex.h ===
+MathComplex math_complex_from_cartesian(double real, double imag);
+MathComplex math_complex_from_polar(double r, double theta);
+MathComplex math_complex_add(MathComplex a, MathComplex b);
+MathComplex math_complex_sub(MathComplex a, MathComplex b);
+MathComplex math_complex_mul(MathComplex a, MathComplex b);
+MathComplex math_complex_div(MathComplex a, MathComplex b);
+MathComplex math_complex_conjugate(MathComplex z);
+double math_complex_magnitude(MathComplex z);
+double math_complex_magnitude_squared(MathComplex z);
+double math_complex_phase(MathComplex z);
+MathComplex math_complex_exp(MathComplex z);
+MathComplex math_complex_log(MathComplex z);
+MathComplex math_complex_pow(MathComplex z, double n);
+MathComplex math_complex_pow_complex(MathComplex z, MathComplex w);
+MathComplex math_complex_sin(MathComplex z);
+MathComplex math_complex_cos(MathComplex z);
+bool math_complex_is_zero(MathComplex z);
+bool math_complex_is_real(MathComplex z);
+bool math_complex_is_imaginary(MathComplex z);
+bool math_complex_equals(MathComplex a, MathComplex b, double epsilon);
+=== ntt.h ===
+void ntt_free(NTTContext* ctx);
+bool ntt_init_with_prime(NTTContext* ctx, size_t n, const CrystallineAbacus* prime);
+MathError ntt_find_primitive_root(CrystallineAbacus* root, size_t n, const CrystallineAbacus* p);
+MathError ntt_find_prime(CrystallineAbacus* prime, size_t n, uint32_t bits);
+bool ntt_is_primitive_root(const CrystallineAbacus* g, const CrystallineAbacus* p);
+MathError ntt_forward(const NTTContext* ctx, CrystallineAbacus** output, 
+MathError ntt_inverse(const NTTContext* ctx, CrystallineAbacus** output,
+MathError ntt_multiply(CrystallineAbacus* result, const CrystallineAbacus* a, 
+MathError ntt_poly_multiply(CrystallineAbacus** result, const CrystallineAbacus** a, size_t n,
+bool ntt_is_power_of_2(size_t n);
+size_t ntt_next_power_of_2(size_t n);
+uint32_t ntt_log2(size_t n);
+void ntt_bit_reverse(CrystallineAbacus** array, size_t n);
+MathError ntt_find_prime_lattice(CrystallineAbacus* prime, size_t n, uint32_t bits);
+MathError ntt_optimize_for_lattice(NTTContext* ctx);
+=== platonic_clock.h ===
+uint64_t platonic_vertex_to_prime(uint64_t vertex_idx);
+uint64_t platonic_prime_to_vertex(uint64_t prime);
+MathError platonic_prime_to_clock_position(uint64_t prime, ClockPosition* pos);
+MathError platonic_vertex_to_clock_position(uint64_t vertex_idx, ClockPosition* pos);
+MathError platonic_clock_to_coordinates(const ClockPosition* pos,
+MathError platonic_vertex_to_coordinates(uint64_t vertex_idx,
+bool platonic_validate_coordinates(CrystallineAbacus** coords, uint32_t dimension);
+MathError platonic_apply_12fold_rotation(CrystallineAbacus** coords,
+bool platonic_has_12fold_symmetry(CrystallineAbacus** coords, uint32_t dimension);
+=== platonic_generator.h ===
+bool platonic_compute_properties(PlatonicSolid* solid);
+bool platonic_compute_coordinates(PlatonicSolid* solid);
+bool platonic_compute_edges(PlatonicSolid* solid);
+bool platonic_compute_faces(PlatonicSolid* solid);
+bool platonic_compute_symmetries(PlatonicSolid* solid);
+bool platonic_compute_metrics(PlatonicSolid* solid);
+bool platonic_compute_cllm_properties(PlatonicSolid* solid);
+void platonic_print(const PlatonicSolid* solid);
+bool platonic_validate_euler(const PlatonicSolid* solid);
+bool platonic_validate_symmetry(const PlatonicSolid* solid);
+bool platonic_validate_regularity(const PlatonicSolid* solid);
+bool platonic_validate(const PlatonicSolid* solid);
+bool platonic_export(const PlatonicSolid* solid, 
+=== platonic_generator_abacus.h ===
+=== polytope.h ===
+void platonic_free(PlatonicSolid* solid);
+void platonic_print(const PlatonicSolid* solid);
+void platonic_print_detailed(const PlatonicSolid* solid);
+=== polytope_abacus.h ===
+void platonic_abacus_free(PlatonicSolidAbacus* solid);
+=== prime.h ===
+uint64_t prime_nth(uint64_t n);
+uint64_t prime_next(uint64_t n);
+uint64_t prime_prev(uint64_t n);
+uint64_t prime_index(uint64_t prime);
+bool prime_is_prime(uint64_t n);
+bool prime_validate_by_clock(uint64_t n);
+uint64_t prime_count_below(uint64_t n);
+uint64_t prime_count_range(uint64_t a, uint64_t b);
+uint64_t prime_gap_next(uint64_t prime);
+uint64_t prime_gap_prev(uint64_t prime);
+uint64_t prime_largest_gap_below(uint64_t n, uint64_t* gap_start, uint64_t* gap_end);
+MathError prime_factor(uint64_t n, Factorization* result);
+void prime_factorization_free(Factorization* fact);
+bool prime_are_coprime(uint64_t a, uint64_t b);
+uint64_t prime_totient(uint64_t n);
+bool prime_is_prime_power(uint64_t n, uint64_t* prime, uint32_t* exponent);
+uint64_t prime_generate_o1(uint32_t position, uint64_t magnitude);
+bool prime_is_prime_o1(uint32_t position, uint64_t magnitude);
+size_t prime_generate_sequence_o1(uint32_t position, uint64_t start_magnitude,
+=== rainbow.h ===
+MathError rainbow_init(RainbowTable* table, size_t initial_capacity);
+void rainbow_cleanup(RainbowTable* table);
+MathError rainbow_populate_to_prime(RainbowTable* table, uint64_t max_prime);
+MathError rainbow_populate_count(RainbowTable* table, uint64_t n);
+MathError rainbow_lookup_by_index(const RainbowTable* table, uint64_t index, uint64_t* prime);
+MathError rainbow_lookup_by_position(const RainbowTable* table, const ClockPosition* pos, uint64_t* prime);
+MathError rainbow_lookup_position(const RainbowTable* table, uint64_t prime, ClockPosition* pos);
+MathError rainbow_lookup_index(const RainbowTable* table, uint64_t prime, uint64_t* index);
+MathError rainbow_next_prime(const RainbowTable* table, uint64_t prime, uint64_t* next);
+MathError rainbow_prev_prime(const RainbowTable* table, uint64_t prime, uint64_t* prev);
+bool rainbow_contains(const RainbowTable* table, uint64_t prime);
+size_t rainbow_size(const RainbowTable* table);
+uint64_t rainbow_max_prime(const RainbowTable* table);
+MathError rainbow_populate_with_o1(RainbowTable* table, uint32_t position, 
+MathError rainbow_populate_all_positions_o1(RainbowTable* table, uint64_t max_magnitude);
+=== schlafli.h ===
+bool schlafli_validate(const SchlafliSymbol* symbol);
+bool schlafli_is_regular(const SchlafliSymbol* symbol);
+uint32_t schlafli_get_dimension(const SchlafliSymbol* symbol);
+uint32_t schlafli_get_vertices_per_face(const SchlafliSymbol* symbol);
+uint32_t schlafli_get_faces_per_vertex(const SchlafliSymbol* symbol);
+void schlafli_print(const SchlafliSymbol* symbol);
+void schlafli_free(SchlafliSymbol* symbol);
+bool schlafli_equals(const SchlafliSymbol* a, const SchlafliSymbol* b);
+=== sphere_trajectories.h ===
+uint64_t sphere_get_index(uint64_t prime);
+uint64_t sphere_get_local_position(uint64_t prime);
+MathError sphere_calculate_trajectory(uint64_t sphere_index, double* trajectory);
+MathError sphere_map_prime(uint64_t prime, uint64_t* sphere_index, ClockPosition* local_pos);
+MathError sphere_factor_by_overlap(uint64_t n, uint64_t* factor1, uint64_t* factor2);
+double sphere_prime_distance(uint64_t prime1, uint64_t prime2);
+=== transcendental.h ===
+double math_sqrt(double x);
+double math_cbrt(double x);
+double math_pow(double x, double y);
+double math_powi(double x, int n);
+double math_exp(double x);
+double math_expm1(double x);
+double math_log(double x);
+double math_log1p(double x);
+double math_log10(double x);
+double math_log2(double x);
+double math_sin(double x);
+double math_cos(double x);
+double math_tan(double x);
+void math_sincos(double x, double *sin_x, double *cos_x);
+double math_asin(double x);
+double math_acos(double x);
+double math_atan(double x);
+double math_atan2(double y, double x);
+double math_sinh(double x);
+double math_cosh(double x);
+=== types.h ===
+=== validation.h ===
+int math_is_normal(double x);
+=== visualization.h ===
+MathError clock_to_sphere_optimized(const ClockPosition* pos, SphereCoord* sphere);
+MathError clock_from_sphere_optimized(const SphereCoord* sphere, ClockPosition* pos);
+MathError clock_to_cartesian(const ClockPosition* pos, Point2D* cart);
+MathError clock_from_cartesian(const Point2D* cart, ClockPosition* pos);
+MathError clock_to_sphere_batch(const ClockPosition* positions,
+MathError clock_from_sphere_batch(const SphereCoord* spheres,
+MathError clock_to_cartesian_batch(const ClockPosition* positions,
+MathError clock_to_sphere_batch_simd(const ClockPosition* positions,
+MathError clock_interpolate(const ClockPosition* start,
+MathError abacus_to_ascii(const CrystallineAbacus* abacus, 
+void abacus_print_ascii(const CrystallineAbacus* abacus);
+MathError clock_position_to_ascii(const ClockPosition* pos,
+MathError abacus_to_svg(const CrystallineAbacus* abacus,
+MathError clock_lattice_to_svg(const char* filename,
+MathError abacus_to_json(const CrystallineAbacus* abacus, const char* filename);
+MathError clock_position_to_json(const ClockPosition* pos, const char* filename);
+MathError sphere_coords_to_obj(const SphereCoord* spheres,

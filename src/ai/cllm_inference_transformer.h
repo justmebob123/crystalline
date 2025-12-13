@@ -29,6 +29,14 @@ void cllm_transformer_forward(const CLLMModel* model, double* hidden_states);
  */
 bool cllm_has_transformer_layers(const CLLMModel* model);
 
+/**
+ * Replace NaN values in model weights with zeros
+ * This is a safety measure for models that were saved with NaN values
+ * 
+ * @param model The CLLM model
+ */
+void cllm_fix_nan_weights(CLLMModel* model);
+
 #ifdef __cplusplus
 }
 #endif
