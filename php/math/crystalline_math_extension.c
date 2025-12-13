@@ -259,6 +259,173 @@ PHP_FUNCTION(math_cos)
 }
 /* }}} */
 
+/* {{{ proto double math_tan(double x) */
+PHP_FUNCTION(math_tan)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_tan(x));
+}
+/* }}} */
+
+/* {{{ proto double math_asin(double x) */
+PHP_FUNCTION(math_asin)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_asin(x));
+}
+/* }}} */
+
+/* {{{ proto double math_acos(double x) */
+PHP_FUNCTION(math_acos)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_acos(x));
+}
+/* }}} */
+
+/* {{{ proto double math_atan(double x) */
+PHP_FUNCTION(math_atan)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_atan(x));
+}
+/* }}} */
+
+/* {{{ proto double math_sinh(double x) */
+PHP_FUNCTION(math_sinh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_sinh(x));
+}
+/* }}} */
+
+/* {{{ proto double math_cosh(double x) */
+PHP_FUNCTION(math_cosh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_cosh(x));
+}
+/* }}} */
+
+/* {{{ proto double math_tanh(double x) */
+PHP_FUNCTION(math_tanh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_tanh(x));
+}
+/* }}} */
+
+/* {{{ proto double math_cbrt(double x) */
+PHP_FUNCTION(math_cbrt)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_cbrt(x));
+}
+/* }}} */
+
+/* {{{ proto double math_exp(double x) */
+PHP_FUNCTION(math_exp)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_exp(x));
+}
+/* }}} */
+
+/* {{{ proto double math_log(double x) */
+PHP_FUNCTION(math_log)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_log(x));
+}
+/* }}} */
+
+/* {{{ proto double math_log10(double x) */
+PHP_FUNCTION(math_log10)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_log10(x));
+}
+/* }}} */
+
+/* {{{ proto bool math_is_nan(double x) */
+PHP_FUNCTION(math_is_nan)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(math_is_nan(x));
+}
+/* }}} */
+
+/* {{{ proto bool math_is_inf(double x) */
+PHP_FUNCTION(math_is_inf)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(math_is_inf(x));
+}
+/* }}} */
+
+/* {{{ proto bool math_is_finite(double x) */
+PHP_FUNCTION(math_is_finite)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(math_is_finite(x));
+}
+/* }}} */
+
+/* {{{ proto bool math_approx_equal(double a, double b, double epsilon) */
+PHP_FUNCTION(math_approx_equal)
+{
+    double a, b, epsilon;
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
+        Z_PARAM_DOUBLE(epsilon)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(math_approx_equal(a, b, epsilon));
+}
+/* }}} */
+
 /* {{{ proto bool is_prime(int n) */
 PHP_FUNCTION(is_prime)
 {
@@ -308,9 +475,24 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_round, arginfo_math_unary)
     PHP_FE(math_trunc, arginfo_math_unary)
     PHP_FE(math_sqrt, arginfo_math_unary)
+    PHP_FE(math_cbrt, arginfo_math_unary)
     PHP_FE(math_pow, arginfo_math_binary)
+    PHP_FE(math_exp, arginfo_math_unary)
+    PHP_FE(math_log, arginfo_math_unary)
+    PHP_FE(math_log10, arginfo_math_unary)
     PHP_FE(math_sin, arginfo_math_unary)
     PHP_FE(math_cos, arginfo_math_unary)
+    PHP_FE(math_tan, arginfo_math_unary)
+    PHP_FE(math_asin, arginfo_math_unary)
+    PHP_FE(math_acos, arginfo_math_unary)
+    PHP_FE(math_atan, arginfo_math_unary)
+    PHP_FE(math_sinh, arginfo_math_unary)
+    PHP_FE(math_cosh, arginfo_math_unary)
+    PHP_FE(math_tanh, arginfo_math_unary)
+    PHP_FE(math_is_nan, arginfo_math_unary)
+    PHP_FE(math_is_inf, arginfo_math_unary)
+    PHP_FE(math_is_finite, arginfo_math_unary)
+    PHP_FE(math_approx_equal, arginfo_math_clamp)
     PHP_FE(is_prime, arginfo_is_prime)
     PHP_FE_END
 };
