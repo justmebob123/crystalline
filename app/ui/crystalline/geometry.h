@@ -1,3 +1,7 @@
+#include "math/types.h"
+
+#define CRYSTALLINE_TWO_PI (2.0f * MATH_PI)
+#define CRYSTALLINE_PI_OVER_6 (MATH_PI / 6.0f)
 /*
  * Crystalline Geometry - Header
  * 
@@ -15,9 +19,21 @@
 #define CRYSTALLINE_GEOMETRY_H
 
 #include "math/arithmetic.h"
+
+#define CRYSTALLINE_TWO_PI (2.0f * MATH_PI)
+#define CRYSTALLINE_PI_OVER_6 (MATH_PI / 6.0f)
 #include "math/transcendental.h"
+
+#define CRYSTALLINE_TWO_PI (2.0f * MATH_PI)
+#define CRYSTALLINE_PI_OVER_6 (MATH_PI / 6.0f)
 #include "clock_lattice.h"
+
+#define CRYSTALLINE_TWO_PI (2.0f * MATH_PI)
+#define CRYSTALLINE_PI_OVER_6 (MATH_PI / 6.0f)
 #include <stdbool.h>
+
+#define CRYSTALLINE_TWO_PI (2.0f * MATH_PI)
+#define CRYSTALLINE_PI_OVER_6 (MATH_PI / 6.0f)
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +44,6 @@ extern "C" {
  */
 #define CRYSTALLINE_PHI 1.618033988749895f          // Golden ratio
 #define CRYSTALLINE_PHI_INV 0.618033988749895f      // 1/φ
-#define CRYSTALLINE_TWO_PI (2.0f * M_PI)
-#define CRYSTALLINE_PI_OVER_6 (M_PI / 6.0f)         // π/6 for 12-fold symmetry
 #define CRYSTALLINE_TWELVE_FOLD 12                   // 12-fold symmetry
 
 /*

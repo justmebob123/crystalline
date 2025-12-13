@@ -4,9 +4,12 @@
  */
 
 #include "ai/cllm_entropy_integration.h"
+#include "math/types.h"
 // Migrated to NEW math library - no prime_float_math needed
 #include <string.h>
+#include "math/types.h"
 #include <stdio.h>
+#include "math/types.h"
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -15,7 +18,6 @@
 
 // Define MATH_INFINITY without math.h to avoid type conflicts
 #ifndef MATH_INFINITY
-#define MATH_INFINITY (1.0 / 0.0)
 #endif
 
 /**

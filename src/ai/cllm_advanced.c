@@ -1,3 +1,4 @@
+#include "math/types.h"
 /**
  * Advanced Crystalline Features
  * 
@@ -18,7 +19,6 @@
 #include "math/arithmetic.h"
 
 #ifndef MATH_INFINITY
-#define MATH_INFINITY (1.0 / 0.0)
 #endif
 
 // Prime factorization cache entry

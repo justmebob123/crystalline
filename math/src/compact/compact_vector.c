@@ -1,3 +1,4 @@
+#include "math/types.h"
 /**
  * @file compact_vector.c
  * @brief Compact Vector Implementation
@@ -17,9 +18,6 @@
  * ============================================================================
  */
 
-#define PI 3.14159265358979323846
-#define DEG_TO_RAD(deg) ((deg) * PI / 180.0)
-#define RAD_TO_DEG(rad) ((rad) * 180.0 / PI)
 
 /* ============================================================================
  * COMPACT VECTOR OPERATIONS
@@ -58,16 +56,16 @@ MathError compact_vector_distance(
     }
     
     // Convert angles to radians
-    double angle1 = DEG_TO_RAD(v1->phase_angle);
-    double angle2 = DEG_TO_RAD(v2->phase_angle);
+    double angle1 = (v1->phase_angle * MATH_PI / 180.0);
+    double angle2 = (v2->phase_angle * MATH_PI / 180.0);
     
     // Magnitude difference
     double mag_diff = (double)(v2->magnitude_offset - v1->magnitude_offset);
     
     // Angular distance on unit sphere
     double angular_dist = (angle2 > angle1) ? (angle2 - angle1) : (angle1 - angle2);
-    if (angular_dist > PI) {
-        angular_dist = 2.0 * PI - angular_dist;
+    if (angular_dist > MATH_PI) {
+        angular_dist = 2.0 * MATH_PI - angular_dist;
     }
     
     // Combined distance (Euclidean in cylindrical coordinates)
@@ -374,8 +372,8 @@ MathError triangulate_addition(
     }
     
     // Convert angles to radians
-    double angle_a = DEG_TO_RAD(tri->p1.phase_angle);
-    double angle_b = DEG_TO_RAD(tri->p2.phase_angle);
+    double angle_a = (tri->p1.phase_angle * MATH_PI / 180.0);
+    double angle_b = (tri->p2.phase_angle * MATH_PI / 180.0);
     
     // Spherical law of cosines for result angle
     // For addition on a sphere, we use vector addition
@@ -385,7 +383,7 @@ MathError triangulate_addition(
     );
     
     // Convert back to degrees
-    double result_angle = RAD_TO_DEG(result_angle_rad);
+    double result_angle = (result_angle_rad * 180.0 / MATH_PI);
     if (result_angle < 0.0) result_angle += 360.0;
     
     // Magnitude is simple addition
@@ -412,11 +410,11 @@ MathError triangulate_subtraction(
     // Geometrically: rotate B by 180° and adjust magnitude
     
     // Convert angles to radians
-    double angle_a = DEG_TO_RAD(tri->p1.phase_angle);
-    double angle_b = DEG_TO_RAD(tri->p2.phase_angle);
+    double angle_a = (tri->p1.phase_angle * MATH_PI / 180.0);
+    double angle_b = (tri->p2.phase_angle * MATH_PI / 180.0);
     
     // For subtraction, we negate B (180° rotation)
-    angle_b += PI;
+    angle_b += MATH_PI;
     
     // Spherical law of cosines for result angle
     double result_angle_rad = math_atan2(
@@ -425,7 +423,7 @@ MathError triangulate_subtraction(
     );
     
     // Convert back to degrees
-    double result_angle = RAD_TO_DEG(result_angle_rad);
+    double result_angle = (result_angle_rad * 180.0 / MATH_PI);
     if (result_angle < 0.0) result_angle += 360.0;
     
     // Magnitude is subtraction (not addition!)

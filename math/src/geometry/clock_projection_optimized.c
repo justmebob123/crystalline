@@ -26,7 +26,6 @@
 #include <string.h>
 
 /* Mathematical constants */
-#define TWO_PI (2.0 * MATH_PI)
 #define EPSILON 1e-10
 
 /* Ring sizes */
@@ -113,7 +112,7 @@ MathError clock_from_sphere_optimized(const SphereCoord* sphere, ClockPosition* 
     
     /* Normalize angle to [0, 2π) */
     if (pos->angle < 0) {
-        pos->angle += TWO_PI;
+        pos->angle += MATH_TWO_PI;
     }
     
     /* Determine ring from radius */
@@ -132,7 +131,7 @@ MathError clock_from_sphere_optimized(const SphereCoord* sphere, ClockPosition* 
                          (pos->ring == 1) ? RING_1_SIZE :
                          (pos->ring == 2) ? RING_2_SIZE : RING_3_SIZE;
     
-    pos->position = (uint32_t)(pos->angle * ring_size / TWO_PI);
+    pos->position = (uint32_t)(pos->angle * ring_size / MATH_TWO_PI);
     
     /* Ensure position is within ring bounds */
     if (pos->position >= ring_size) {
@@ -407,7 +406,7 @@ MathError clock_from_cartesian(const Point2D* cart, ClockPosition* pos) {
     
     /* Normalize angle to [0, 2π) */
     if (pos->angle < 0) {
-        pos->angle += TWO_PI;
+        pos->angle += MATH_TWO_PI;
     }
     
     /* Determine ring from radius */
@@ -426,7 +425,7 @@ MathError clock_from_cartesian(const Point2D* cart, ClockPosition* pos) {
                          (pos->ring == 1) ? RING_1_SIZE :
                          (pos->ring == 2) ? RING_2_SIZE : RING_3_SIZE;
     
-    pos->position = (uint32_t)(pos->angle * ring_size / TWO_PI);
+    pos->position = (uint32_t)(pos->angle * ring_size / MATH_TWO_PI);
     
     /* Ensure position is within ring bounds */
     if (pos->position >= ring_size) {

@@ -1,3 +1,4 @@
+#include "math/types.h"
 /*
  * CLLM Symmetry Operations
  * Implements symmetry group transformations for lattice embeddings
@@ -10,7 +11,6 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 
-#define PI 3.14159265358979323846
 #define SYMMETRY_ORDER 12
 
 /**
@@ -89,7 +89,7 @@ void cllm_apply_symmetry_transform(double* embedding, int symmetry_group, int di
     }
     
     // Each symmetry group applies a different transformation
-    double angle = 2.0 * PI * (double)symmetry_group / (double)SYMMETRY_ORDER;
+    double angle = 2.0 * MATH_PI * (double)symmetry_group / (double)SYMMETRY_ORDER;
     
     switch (symmetry_group) {
         case 0:
@@ -146,7 +146,7 @@ void cllm_apply_inverse_symmetry_transform(double* embedding, int symmetry_group
     }
     
     // Apply inverse transformation (reverse order, negative angles)
-    double angle = -2.0 * PI * (double)symmetry_group / (double)SYMMETRY_ORDER;
+    double angle = -2.0 * MATH_PI * (double)symmetry_group / (double)SYMMETRY_ORDER;
     
     switch (symmetry_group) {
         case 0:

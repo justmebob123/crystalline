@@ -34,7 +34,6 @@
 #define BASE_CLOCK_SIZE (RING_0_SIZE * RING_1_SIZE * RING_2_SIZE * RING_3_SIZE)
 
 /* Mathematical constants */
-#define TWO_PI (2.0 * MATH_PI)
 
 /* ============================================================================
  * INTERNAL HELPERS
@@ -49,7 +48,7 @@
  */
 static double calculate_angle(uint32_t position, uint32_t ring_size) {
     /* Start at 3 o'clock (0 radians), go counterclockwise */
-    return TWO_PI * (double)position / (double)ring_size;
+    return MATH_TWO_PI * (double)position / (double)ring_size;
 }
 
 /**
@@ -592,7 +591,7 @@ MathError clock_from_sphere(const SphereCoord* sphere, ClockPosition* pos) {
     
     /* Normalize angle to [0, 2π) */
     if (pos->angle < 0) {
-        pos->angle += TWO_PI;
+        pos->angle += MATH_TWO_PI;
     }
     
     /* Determine ring from radius */
@@ -611,7 +610,7 @@ MathError clock_from_sphere(const SphereCoord* sphere, ClockPosition* pos) {
                          (pos->ring == 1) ? RING_1_SIZE :
                          (pos->ring == 2) ? RING_2_SIZE : RING_3_SIZE;
     
-    pos->position = (uint32_t)(pos->angle * ring_size / TWO_PI);
+    pos->position = (uint32_t)(pos->angle * ring_size / MATH_TWO_PI);
     
     return MATH_SUCCESS;
 }

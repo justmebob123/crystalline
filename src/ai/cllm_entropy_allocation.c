@@ -1,3 +1,4 @@
+#include "math/types.h"
 /**
  * @file cllm_entropy_allocation.c
  * @brief Implementation of entropy-based thread allocation
@@ -10,7 +11,6 @@
 #include <stdio.h>
 
 #ifndef MATH_INFINITY
-#define MATH_INFINITY (1.0 / 0.0)
 #endif
 
 /**

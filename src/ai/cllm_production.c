@@ -1,3 +1,4 @@
+#include "math/types.h"
 /**
  * Production Features for CLLM
  * 
@@ -20,7 +21,6 @@
 #include <time.h>
 
 #ifndef MATH_INFINITY
-#define MATH_INFINITY (1.0 / 0.0)
 #endif
 
 // Training checkpoint

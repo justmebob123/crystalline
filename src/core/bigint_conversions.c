@@ -1,3 +1,4 @@
+#include "math/types.h"
 /*
  * BigInt Conversion Functions
  * Provides conversion between BigInt and standard numeric types
@@ -21,8 +22,6 @@ static inline int custom_isinf(double x) {
 }
 
 // Custom positive infinity constant
-#define CUSTOM_INFINITY (1.0 / 0.0)
-#define CUSTOM_NEG_INFINITY (-1.0 / 0.0)
 
 /*
  * Convert BigInt to double
@@ -44,7 +43,7 @@ double bigint_to_double(const BigInt *n) {
         
         // Check for infinity
         if (custom_isinf(result)) {
-            return n->negative ? CUSTOM_NEG_INFINITY : CUSTOM_INFINITY;
+            return n->negative ? MATH_NEG_INFINITY : MATH_INFINITY;
         }
     }
     

@@ -1,3 +1,4 @@
+#include "math/types.h"
 #include "../include/anchor_tracking.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +8,6 @@
 
 // Constants
 #define PHI 1.618033988749895  // Golden ratio
-#define PI 3.141592653589793
 
 // 13 dimensional frequencies
 static const uint32_t DIMENSIONAL_FREQS[13] = {
@@ -22,7 +22,7 @@ static double compute_angle_from_k(const BIGNUM* k) {
     double k_val = atof(k_str);
     OPENSSL_free(k_str);
     
-    double angle = k_val * PI * PHI;
+    double angle = k_val * MATH_PI * PHI;
     // Normalize to [0, 360)
     while (angle >= 360.0) angle -= 360.0;
     while (angle < 0.0) angle += 360.0;
