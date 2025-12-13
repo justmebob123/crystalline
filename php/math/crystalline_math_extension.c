@@ -493,17 +493,6 @@ PHP_FUNCTION(prime_prev)
 }
 /* }}} */
 
-/* {{{ proto int prime_index(int prime) */
-PHP_FUNCTION(prime_index)
-{
-    zend_long prime;
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(prime)
-    ZEND_PARSE_PARAMETERS_END();
-    RETURN_LONG(prime_index((uint64_t)prime));
-}
-/* }}} */
-
 /* {{{ proto int prime_count_below(int n) */
 PHP_FUNCTION(prime_count_below)
 {
@@ -558,17 +547,6 @@ PHP_FUNCTION(prime_are_coprime)
         Z_PARAM_LONG(b)
     ZEND_PARSE_PARAMETERS_END();
     RETURN_BOOL(prime_are_coprime((uint64_t)a, (uint64_t)b));
-}
-/* }}} */
-
-/* {{{ proto int prime_totient(int n) */
-PHP_FUNCTION(prime_totient)
-{
-    zend_long n;
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(n)
-    ZEND_PARSE_PARAMETERS_END();
-    RETURN_LONG(prime_totient((uint64_t)n));
 }
 /* }}} */
 
@@ -718,13 +696,11 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(prime_nth, arginfo_is_prime)
     PHP_FE(prime_next, arginfo_is_prime)
     PHP_FE(prime_prev, arginfo_is_prime)
-    PHP_FE(prime_index, arginfo_is_prime)
     PHP_FE(prime_count_below, arginfo_is_prime)
     PHP_FE(prime_count_range, arginfo_math_binary)
     PHP_FE(prime_gap_next, arginfo_is_prime)
     PHP_FE(prime_gap_prev, arginfo_is_prime)
     PHP_FE(prime_are_coprime, arginfo_math_binary)
-    PHP_FE(prime_totient, arginfo_is_prime)
     PHP_FE(prime_is_prime_o1, arginfo_prime_generate)
     PHP_FE(math_atan2, arginfo_math_binary)
     PHP_FE(math_expm1, arginfo_math_unary)
