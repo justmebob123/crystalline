@@ -666,47 +666,66 @@ recovery-tools:
 # PHP Extension Support
 # ============================================================================
 
-PHP_EXT_DIR = php
-PHP_EXT_NAME = crystalline_math
+PHP_MATH_DIR = php/math
+PHP_ALGO_DIR = php/algorithms
 
-.PHONY: php-ext php-clean install-php install-php-ubuntu install-php-centos php-setup
+.PHONY: php-ext php-math php-algorithms php-clean install-php install-php-ubuntu install-php-centos php-setup
 
 php-setup:
 	@echo "Setting up PHP extension structure..."
-	@mkdir -p $(PHP_EXT_DIR)
+	@mkdir -p $(PHP_MATH_DIR)
+	@mkdir -p $(PHP_ALGO_DIR)
 	@mkdir -p examples/php
-	@echo "✓ PHP extension files ready"
-	@echo "✓ PHP extension structure created"
+	@echo "✓ PHP extension structure ready"
 
-php-ext: $(MATH_LIB) php-setup
-	@echo "Building PHP extension for Crystalline Math Library..."
-	@cd $(PHP_EXT_DIR) && \
+php-math: $(MATH_LIB) php-setup
+	@echo "Building crystalline_math PHP extension..."
+	@cd $(PHP_MATH_DIR) && \
 		phpize && \
-		./configure --enable-crystalline-math && \
+		./configure && \
 		$(MAKE)
-	@echo "✓ PHP extension built"
+	@echo "✓ crystalline_math extension built"
+
+php-algorithms: $(ALGO_LIB) php-setup
+	@echo "Building algorithms PHP extension..."
+	@cd $(PHP_ALGO_DIR) && \
+		phpize && \
+		./configure && \
+		$(MAKE)
+	@echo "✓ algorithms extension built"
+
+php-ext: php-math php-algorithms
+	@echo ""
+	@echo "✓ All PHP extensions built successfully"
 	@echo ""
 	@echo "To install: sudo make install-php"
 
 php-clean:
-	@echo "Cleaning PHP extension..."
-	@if [ -d $(PHP_EXT_DIR) ]; then \
-		cd $(PHP_EXT_DIR) && \
+	@echo "Cleaning PHP extensions..."
+	@if [ -d $(PHP_MATH_DIR) ]; then \
+		cd $(PHP_MATH_DIR) && \
 		if [ -f Makefile ]; then $(MAKE) clean; fi && \
 		phpize --clean 2>/dev/null || true; \
 	fi
-	@echo "✓ PHP extension cleaned"
+	@if [ -d $(PHP_ALGO_DIR) ]; then \
+		cd $(PHP_ALGO_DIR) && \
+		if [ -f Makefile ]; then $(MAKE) clean; fi && \
+		phpize --clean 2>/dev/null || true; \
+	fi
+	@echo "✓ PHP extensions cleaned"
 
 install-php: php-ext
-	@echo "Installing PHP extension..."
-	@cd $(PHP_EXT_DIR) && $(MAKE) install
-	@echo "✓ PHP extension installed"
+	@echo "Installing PHP extensions..."
+	@cd $(PHP_MATH_DIR) && $(MAKE) install
+	@cd $(PHP_ALGO_DIR) && $(MAKE) install
+	@echo "✓ PHP extensions installed"
 	@echo ""
-	@echo "Add to php.ini: extension=$(PHP_EXT_NAME).so"
+	@echo "Add to php.ini:"
+	@echo "  extension=crystalline_math.so"
+	@echo "  extension=algorithms.so"
 
 install-php-ubuntu: install-php
-	@./scripts/install_php_ubuntu.sh
+	@./php/scripts/install_php_ubuntu.sh
 
 install-php-centos: install-php
-	@./scripts/install_php_centos.sh
-
+	@./php/scripts/install_php_centos.sh

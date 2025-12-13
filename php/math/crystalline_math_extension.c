@@ -2,7 +2,7 @@
   Crystalline Math PHP Extension
   
   Provides PHP bindings for the Crystalline Mathematics Library
-  Focus: Prime numbers, GCD, mathematical operations
+  Focus: Arithmetic operations, prime numbers, mathematical functions
 */
 
 #ifdef HAVE_CONFIG_H
@@ -16,9 +16,9 @@
 
 // Include the crystalline math library headers
 #include "../../math/include/math/types.h"
-#include "../../math/include/math/basic.h"
+#include "../../math/include/math/arithmetic.h"
 #include "../../math/include/math/prime.h"
-#include "../../math/include/math/gcd.h"
+#include "../../math/include/math/transcendental.h"
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -41,146 +41,75 @@ PHP_MSHUTDOWN_FUNCTION(crystalline_math)
 PHP_MINFO_FUNCTION(crystalline_math)
 {
     php_info_print_table_start();
-    php_info_print_table_header(2, "Crystalline Math Support", "enabled");
-    php_info_print_table_row(2, "Version", PHP_CRYSTALLINE_MATH_VERSION);
+    php_info_print_table_header(2, "crystalline_math support", "enabled");
+    php_info_print_table_row(2, "Version", "1.0.0");
     php_info_print_table_end();
 }
 /* }}} */
 
-/* {{{ proto int crystalline_gcd(int a, int b)
-   Calculate GCD of two numbers */
-PHP_FUNCTION(crystalline_gcd)
+/* {{{ proto double math_add(double a, double b)
+   Add two numbers */
+PHP_FUNCTION(math_add)
 {
-    zend_long a, b;
+    double a, b;
     
     ZEND_PARSE_PARAMETERS_START(2, 2)
-        Z_PARAM_LONG(a)
-        Z_PARAM_LONG(b)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
     
-    uint64_t result = math_gcd((uint64_t)a, (uint64_t)b);
-    RETURN_LONG((zend_long)result);
+    RETURN_DOUBLE(math_add(a, b));
 }
 /* }}} */
 
-/* {{{ proto bool crystalline_is_prime(int n)
-   Check if a number is prime */
-PHP_FUNCTION(crystalline_is_prime)
+/* {{{ proto double math_sub(double a, double b)
+   Subtract two numbers */
+PHP_FUNCTION(math_sub)
 {
-    zend_long n;
+    double a, b;
     
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
     
-    if (n < 2) {
-        RETURN_FALSE;
-    }
-    
-    bool result = math_is_prime((uint64_t)n);
-    RETURN_BOOL(result);
+    RETURN_DOUBLE(math_sub(a, b));
 }
 /* }}} */
 
-/* {{{ proto int crystalline_next_prime(int n)
-   Get the next prime number after n */
-PHP_FUNCTION(crystalline_next_prime)
+/* {{{ proto double math_mul(double a, double b)
+   Multiply two numbers */
+PHP_FUNCTION(math_mul)
 {
-    zend_long n;
+    double a, b;
     
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
     
-    uint64_t result = math_next_prime((uint64_t)n);
-    RETURN_LONG((zend_long)result);
+    RETURN_DOUBLE(math_mul(a, b));
 }
 /* }}} */
 
-/* {{{ proto array crystalline_prime_factors(int n)
-   Get prime factorization of n */
-PHP_FUNCTION(crystalline_prime_factors)
+/* {{{ proto double math_div(double a, double b)
+   Divide two numbers */
+PHP_FUNCTION(math_div)
 {
-    zend_long n;
+    double a, b;
     
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
     ZEND_PARSE_PARAMETERS_END();
     
-    if (n < 2) {
-        array_init(return_value);
-        return;
-    }
-    
-    array_init(return_value);
-    
-    uint64_t num = (uint64_t)n;
-    
-    // Factor out 2s
-    while (num % 2 == 0) {
-        add_next_index_long(return_value, 2);
-        num /= 2;
-    }
-    
-    // Factor out odd primes
-    for (uint64_t i = 3; i * i <= num; i += 2) {
-        while (num % i == 0) {
-            add_next_index_long(return_value, (zend_long)i);
-            num /= i;
-        }
-    }
-    
-    // If num is still > 1, it's a prime factor
-    if (num > 1) {
-        add_next_index_long(return_value, (zend_long)num);
-    }
+    RETURN_DOUBLE(math_div(a, b));
 }
 /* }}} */
 
-/* {{{ proto array crystalline_sieve(int limit)
-   Generate all primes up to limit using Sieve of Eratosthenes */
-PHP_FUNCTION(crystalline_sieve)
-{
-    zend_long limit;
-    
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_LONG(limit)
-    ZEND_PARSE_PARAMETERS_END();
-    
-    if (limit < 2) {
-        array_init(return_value);
-        return;
-    }
-    
-    array_init(return_value);
-    
-    // Simple sieve implementation
-    bool *is_prime = (bool *)ecalloc(limit + 1, sizeof(bool));
-    for (zend_long i = 2; i <= limit; i++) {
-        is_prime[i] = true;
-    }
-    
-    for (zend_long i = 2; i * i <= limit; i++) {
-        if (is_prime[i]) {
-            for (zend_long j = i * i; j <= limit; j += i) {
-                is_prime[j] = false;
-            }
-        }
-    }
-    
-    for (zend_long i = 2; i <= limit; i++) {
-        if (is_prime[i]) {
-            add_next_index_long(return_value, i);
-        }
-    }
-    
-    efree(is_prime);
-}
-/* }}} */
-
-/* {{{ proto float crystalline_sqrt(float x)
-   Calculate square root */
-PHP_FUNCTION(crystalline_sqrt)
+/* {{{ proto double math_sqrt(double x)
+   Square root */
+PHP_FUNCTION(math_sqrt)
 {
     double x;
     
@@ -188,19 +117,13 @@ PHP_FUNCTION(crystalline_sqrt)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
     
-    if (x < 0) {
-        php_error_docref(NULL, E_WARNING, "Cannot calculate square root of negative number");
-        RETURN_FALSE;
-    }
-    
-    double result = math_sqrt(x);
-    RETURN_DOUBLE(result);
+    RETURN_DOUBLE(math_sqrt(x));
 }
 /* }}} */
 
-/* {{{ proto float crystalline_pow(float base, float exp)
-   Calculate power */
-PHP_FUNCTION(crystalline_pow)
+/* {{{ proto double math_pow(double base, double exp)
+   Power function */
+PHP_FUNCTION(math_pow)
 {
     double base, exp;
     
@@ -209,14 +132,13 @@ PHP_FUNCTION(crystalline_pow)
         Z_PARAM_DOUBLE(exp)
     ZEND_PARSE_PARAMETERS_END();
     
-    double result = math_pow(base, exp);
-    RETURN_DOUBLE(result);
+    RETURN_DOUBLE(math_pow(base, exp));
 }
 /* }}} */
 
-/* {{{ proto float crystalline_sin(float x)
-   Calculate sine */
-PHP_FUNCTION(crystalline_sin)
+/* {{{ proto double math_sin(double x)
+   Sine function */
+PHP_FUNCTION(math_sin)
 {
     double x;
     
@@ -224,14 +146,13 @@ PHP_FUNCTION(crystalline_sin)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
     
-    double result = math_sin(x);
-    RETURN_DOUBLE(result);
+    RETURN_DOUBLE(math_sin(x));
 }
 /* }}} */
 
-/* {{{ proto float crystalline_cos(float x)
-   Calculate cosine */
-PHP_FUNCTION(crystalline_cos)
+/* {{{ proto double math_cos(double x)
+   Cosine function */
+PHP_FUNCTION(math_cos)
 {
     double x;
     
@@ -239,60 +160,79 @@ PHP_FUNCTION(crystalline_cos)
         Z_PARAM_DOUBLE(x)
     ZEND_PARSE_PARAMETERS_END();
     
-    double result = math_cos(x);
-    RETURN_DOUBLE(result);
+    RETURN_DOUBLE(math_cos(x));
 }
 /* }}} */
 
-/* {{{ proto float crystalline_log(float x)
-   Calculate natural logarithm */
-PHP_FUNCTION(crystalline_log)
+/* {{{ proto bool is_prime(int n)
+   Check if number is prime */
+PHP_FUNCTION(is_prime)
 {
-    double x;
+    zend_long n;
     
     ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_DOUBLE(x)
+        Z_PARAM_LONG(n)
     ZEND_PARSE_PARAMETERS_END();
     
-    if (x <= 0) {
-        php_error_docref(NULL, E_WARNING, "Cannot calculate logarithm of non-positive number");
-        RETURN_FALSE;
-    }
-    
-    double result = math_log(x);
-    RETURN_DOUBLE(result);
+    RETURN_BOOL(is_prime((uint64_t)n));
 }
 /* }}} */
 
-/* {{{ proto float crystalline_exp(float x)
-   Calculate exponential */
-PHP_FUNCTION(crystalline_exp)
-{
-    double x;
-    
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_DOUBLE(x)
-    ZEND_PARSE_PARAMETERS_END();
-    
-    double result = math_exp(x);
-    RETURN_DOUBLE(result);
-}
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_math_add, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_sub, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_mul, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_div, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_sqrt, 0)
+    ZEND_ARG_INFO(0, x)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_pow, 0)
+    ZEND_ARG_INFO(0, base)
+    ZEND_ARG_INFO(0, exp)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_sin, 0)
+    ZEND_ARG_INFO(0, x)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_math_cos, 0)
+    ZEND_ARG_INFO(0, x)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_is_prime, 0)
+    ZEND_ARG_INFO(0, n)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ crystalline_math_functions[]
  */
 const zend_function_entry crystalline_math_functions[] = {
-    PHP_FE(crystalline_gcd,           NULL)
-    PHP_FE(crystalline_is_prime,      NULL)
-    PHP_FE(crystalline_next_prime,    NULL)
-    PHP_FE(crystalline_prime_factors, NULL)
-    PHP_FE(crystalline_sieve,         NULL)
-    PHP_FE(crystalline_sqrt,          NULL)
-    PHP_FE(crystalline_pow,           NULL)
-    PHP_FE(crystalline_sin,           NULL)
-    PHP_FE(crystalline_cos,           NULL)
-    PHP_FE(crystalline_log,           NULL)
-    PHP_FE(crystalline_exp,           NULL)
+    PHP_FE(math_add, arginfo_math_add)
+    PHP_FE(math_sub, arginfo_math_sub)
+    PHP_FE(math_mul, arginfo_math_mul)
+    PHP_FE(math_div, arginfo_math_div)
+    PHP_FE(math_sqrt, arginfo_math_sqrt)
+    PHP_FE(math_pow, arginfo_math_pow)
+    PHP_FE(math_sin, arginfo_math_sin)
+    PHP_FE(math_cos, arginfo_math_cos)
+    PHP_FE(is_prime, arginfo_is_prime)
     PHP_FE_END
 };
 /* }}} */
@@ -308,7 +248,7 @@ zend_module_entry crystalline_math_module_entry = {
     NULL,
     NULL,
     PHP_MINFO(crystalline_math),
-    PHP_CRYSTALLINE_MATH_VERSION,
+    "1.0.0",
     STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
