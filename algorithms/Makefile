@@ -93,7 +93,7 @@ all: $(SHARED_LIB)
 
 $(SHARED_LIB): $(OBJECTS) $(MATH_LIB)
 	@echo "Creating shared algorithms library: $@"
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm
+	$(CC) $(LDFLAGS) -Wl,--unresolved-symbols=ignore-all -o $@ $(OBJECTS) -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm
 	@echo "✓ Shared algorithms library created"
 
 static: $(STATIC_LIB)

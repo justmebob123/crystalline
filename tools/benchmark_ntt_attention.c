@@ -38,7 +38,7 @@ static void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim) {
     
     // Benchmark NTT attention
     clock_t start = clock();
-    double scale = 1.0 / prime_sqrt((double)head_dim);
+    double scale = 1.0 / math_sqrt((double)head_dim);
     ntt_attention_forward(output_ntt, query, key, value, seq_len, head_dim, scale);
     clock_t end = clock();
     double time_ntt = (double)(end - start) / CLOCKS_PER_SEC;

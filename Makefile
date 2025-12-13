@@ -48,6 +48,8 @@ SRC_UTILS = src/utils
 
 # Source files organized by category
 AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
+# CORE_SOURCES removed - contains OLD BigInt/BigFixed library (migrated to NEW math library)
+# Functions moved to src/ai/cllm_lattice_helpers.c
 INFRASTRUCTURE_SOURCES = $(wildcard src/ai/infrastructure/*.c)
 PLATONIC_SOURCES = $(wildcard src/ai/platonic/*.c)
 GEOMETRY_SOURCES = src/geometry/phonetic_values.c
@@ -335,7 +337,7 @@ crawler: $(CRAWLER_LIB)
 	@echo "Building crawler CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c \
-		-L. -lcrawler -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lpthread -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lcrawler -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Crawler CLI built: tools/cllm_crawler"
 
 
@@ -397,55 +399,55 @@ tools/cllm_inference: $(CLLM_LIB)
 	@echo "Building inference tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_inference tools/cllm_inference.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference tool built: tools/cllm_inference"
 
 tools/cllm_tokenize: $(CLLM_LIB)
 	@echo "Building tokenizer tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_tokenize tools/cllm_tokenize.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Tokenizer tool built: tools/cllm_tokenize"
 
 tools/cllm_vocab_build: $(CLLM_LIB)
 	@echo "Building vocabulary builder tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_vocab_build tools/cllm_vocab_build.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 
 tools/init_lattice_embeddings: $(CLLM_LIB)
 	@echo "Building lattice embeddings initializer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/init_lattice_embeddings tools/init_lattice_embeddings.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Lattice embeddings tool built: tools/init_lattice_embeddings"
 
 tools/benchmark_ntt_attention: $(CLLM_LIB)
 	@echo "Building NTT attention benchmark..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/benchmark_ntt_attention tools/benchmark_ntt_attention.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ NTT benchmark tool built: tools/benchmark_ntt_attention"
 
 # tools/validate_lattice: $(CLLM_LIB)
 # 	@echo "Building kissing spheres validator..."
 # 	@mkdir -p tools
 # 	$(CC) $(CFLAGS) -o tools/validate_lattice tools/validate_lattice.c \
-# 		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+# 		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 # 	@echo "✓ Kissing spheres validator built: tools/validate_lattice"
 
 tools/analyze_cymatic_resonance: $(CLLM_LIB)
 	@echo "Building cymatic resonance analyzer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/analyze_cymatic_resonance tools/analyze_cymatic_resonance.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Cymatic analyzer tool built: tools/analyze_cymatic_resonance"
 
 tools/visualize_angular_positions: $(CLLM_LIB)
 	@echo "Building angular position visualizer..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/visualize_angular_positions tools/visualize_angular_positions.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Angular visualizer tool built: tools/visualize_angular_positions"
 
 all_tools: tools tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
@@ -466,21 +468,21 @@ benchmark_large_scale: $(PROD_TEST_DIR)/benchmark_large_scale.c $(CLLM_LIB)
 	@echo "Building large-scale benchmark..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/benchmark_large_scale $(PROD_TEST_DIR)/benchmark_large_scale.c \
-		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Large-scale benchmark built: tools/benchmark_large_scale"
 
 validate_training_quality: $(PROD_TEST_DIR)/validate_training_quality.c $(CLLM_LIB)
 	@echo "Building training quality validator..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/validate_training_quality $(PROD_TEST_DIR)/validate_training_quality.c \
-		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Training validator built: tools/validate_training_quality"
 
 smoke_test_production: $(PROD_TEST_DIR)/smoke_test_production.c $(CLLM_LIB)
 	@echo "Building production smoke tests..."
 	@mkdir -p tools
 	$(CC) $(PROD_CFLAGS) -o tools/smoke_test_production $(PROD_TEST_DIR)/smoke_test_production.c \
-		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Smoke tests built: tools/smoke_test_production"
 
 # Production build target
@@ -522,21 +524,21 @@ tools/cllm: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building unified CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm tools/cllm_unified.c \
-		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Unified CLI tool built: tools/cllm"
 
 tools/cllm_model_manager: $(CLLM_LIB)
 	@echo "Building model manager tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm_model_manager tools/cllm_model_manager.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Model manager tool built: tools/cllm_model_manager"
 
 tools/diagnose_inference: $(CLLM_LIB)
 	@echo "Building inference diagnostic tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/diagnose_inference tools/diagnose_inference.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -lpthread -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Inference diagnostic tool built: tools/diagnose_inference"
 
 tools/benchmark_prime_validation: $(MATH_LIB)
@@ -558,7 +560,7 @@ tools/cllm-simple: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building simple (single-threaded) CLLM CLI tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/cllm-simple tools/cllm_simple.c \
-		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
+		-L. -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lssl -lcrypto -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Simple CLI tool built: tools/cllm-simple"
 
 tools/platonic_prime_resonance: $(MATH_LIB)
@@ -596,7 +598,7 @@ tools/test_tetrahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Tetrahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_tetrahedron tools/platonic/test_tetrahedron.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Tetrahedron test tool built: tools/test_tetrahedron"
 
 .PHONY: platonic-test
@@ -609,42 +611,42 @@ tools/test_cube: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Cube test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_cube tools/platonic/test_cube.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Cube test tool built: tools/test_cube"
 
 tools/test_octahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Octahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_octahedron tools/platonic/test_octahedron.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Octahedron test tool built: tools/test_octahedron"
 
 tools/test_dodecahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Dodecahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_dodecahedron tools/platonic/test_dodecahedron.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Dodecahedron test tool built: tools/test_dodecahedron"
 
 tools/test_icosahedron: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Icosahedron test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_icosahedron tools/platonic/test_icosahedron.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Icosahedron test tool built: tools/test_icosahedron"
 
 tools/test_blind_recovery: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Blind Recovery test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_blind_recovery tools/platonic/test_blind_recovery.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Blind Recovery test tool built: tools/test_blind_recovery"
 
 tools/test_harmonic: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building Harmonic Integration test tool..."
 	@mkdir -p tools
 	$(CC) $(CFLAGS) -o tools/test_harmonic tools/platonic/test_harmonic.c \
-		-L. -L./algorithms -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+		-L. -L./algorithms -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
 	@echo "✓ Harmonic Integration test tool built: tools/test_harmonic"
 
 # Recovery tools
