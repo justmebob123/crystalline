@@ -174,7 +174,7 @@ PHP_FUNCTION(is_prime)
         Z_PARAM_LONG(n)
     ZEND_PARSE_PARAMETERS_END();
     
-    RETURN_BOOL(is_prime((uint64_t)n));
+    RETURN_BOOL(prime_is_prime((uint64_t)n));
 }
 /* }}} */
 

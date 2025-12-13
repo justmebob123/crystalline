@@ -10,9 +10,8 @@ if test "$PHP_ALGORITHMS" != "no"; then
   PHP_ADD_INCLUDE(../../math/include)
   
   dnl Add library paths and libraries
-  PHP_ADD_LIBRARY_WITH_PATH(crystalline, ../../, ALGORITHMS_SHARED_LIBADD)
-  PHP_ADD_LIBRARY_WITH_PATH(algorithms, ../../algorithms, ALGORITHMS_SHARED_LIBADD)
   PHP_ADD_LIBRARY_WITH_PATH(crystallinemath, ../../math/lib, ALGORITHMS_SHARED_LIBADD)
+  PHP_ADD_LIBRARY_WITH_PATH(algorithms, ../../, ALGORITHMS_SHARED_LIBADD)
   
   PHP_SUBST(ALGORITHMS_SHARED_LIBADD)
 fi
