@@ -12,8 +12,9 @@ extern "C" {
  * Cross-entropy loss with Crystalline Abacus (arbitrary precision)
  * 
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
+ * RENAMED: Removed "_bigfixed" suffix - implementation detail should not be in name
  */
-void cross_entropy_loss_bigfixed(
+void cross_entropy_loss(
     CrystallineAbacus** predictions,
     uint32_t* targets,
     CrystallineAbacus* loss,
@@ -26,8 +27,9 @@ void cross_entropy_loss_bigfixed(
  * Softmax with Crystalline Abacus (arbitrary precision)
  * 
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
+ * RENAMED: Removed "_bigfixed" suffix - implementation detail should not be in name
  */
-void softmax_bigfixed(
+void softmax(
     CrystallineAbacus** input,
     int size,
     int precision

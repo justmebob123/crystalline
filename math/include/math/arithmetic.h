@@ -106,8 +106,10 @@ double math_clamp(double x, double min_val, double max_val);
  * @brief Sign of a number
  * @param x Input value
  * @return -1 if x < 0, 0 if x == 0, 1 if x > 0
+ * 
+ * NOTE: Implementation is in validation.h as static inline for O(1) performance
  */
-int math_sign(double x);
+// int math_sign(double x);  // Removed - conflicts with validation.h static inline
 
 /**
  * @brief Check if two numbers are approximately equal
@@ -122,22 +124,28 @@ bool math_approx_equal(double a, double b, double epsilon);
  * @brief Check if value is NaN
  * @param x Value to check
  * @return true if x is NaN
+ * 
+ * NOTE: Implementation is in validation.h as static inline for O(1) performance
  */
-bool math_is_nan(double x);
+// bool math_is_nan(double x);  // Removed - conflicts with validation.h static inline
 
 /**
  * @brief Check if value is infinite
  * @param x Value to check
  * @return true if x is infinite
+ * 
+ * NOTE: Implementation is in validation.h as static inline for O(1) performance
  */
-bool math_is_inf(double x);
+// bool math_is_inf(double x);  // Removed - conflicts with validation.h static inline
 
 /**
  * @brief Check if value is finite
  * @param x Value to check
  * @return true if x is finite (not NaN or infinite)
+ * 
+ * NOTE: Implementation is in validation.h as static inline for O(1) performance
  */
-bool math_is_finite(double x);
+// bool math_is_finite(double x);  // Removed - conflicts with validation.h static inline
 
 /**
  * @brief Round down to nearest integer

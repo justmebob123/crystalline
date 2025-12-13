@@ -9,6 +9,7 @@
  */
 
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf, math_is_finite
 #include <stdint.h>
 
 /* Forward declarations for internal helpers */
@@ -74,30 +75,16 @@ double math_clamp(double x, double min_val, double max_val) {
     return x;
 }
 
-int math_sign(double x) {
-    if (x < 0.0) return -1;
-    if (x > 0.0) return 1;
-    return 0;
-}
+// math_sign() removed - now implemented as static inline in validation.h for O(1) performance
+// This avoids duplicate definitions and improves performance
 
 bool math_approx_equal(double a, double b, double epsilon) {
     return math_abs(a - b) < epsilon;
 }
 
-bool math_is_nan(double x) {
-    // NaN is the only value that doesn't equal itself
-    return x != x;
-}
-
-bool math_is_inf(double x) {
-    // Check for infinity by comparing with a very large number
-    // Infinity is larger than any finite number
-    return (x > 1.7976931348623157e+308) || (x < -1.7976931348623157e+308);
-}
-
-bool math_is_finite(double x) {
-    return !math_is_nan(x) && !math_is_inf(x);
-}
+// math_is_nan(), math_is_inf(), math_is_finite() removed
+// Now implemented as static inline in validation.h for O(1) performance
+// This avoids duplicate definitions and improves performance
 
 // Rounding functions
 double math_floor(double x) {

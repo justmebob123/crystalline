@@ -1,5 +1,5 @@
 /**
- * lattice_embeddings_bigfixed.c - Geometric Pattern-Based Embeddings
+ * lattice_embeddings.c - Geometric Pattern-Based Embeddings (Crystalline Abacus)
  * 
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * - Replaced BigFixed with CrystallineAbacus

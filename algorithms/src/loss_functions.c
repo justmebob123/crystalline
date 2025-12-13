@@ -1,5 +1,5 @@
 /**
- * loss_functions_bigfixed.c - Loss Functions with Arbitrary Precision
+ * loss_functions.c - Loss Functions with Arbitrary Precision (Crystalline Abacus)
  * 
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * - Replaced BigFixed with CrystallineAbacus
@@ -19,7 +19,7 @@
  * 
  * Computes: -1/N * Σ log(softmax(logits)[target])
  */
-void cross_entropy_loss_bigfixed(
+void cross_entropy_loss(
     CrystallineAbacus** logits,
     uint32_t* targets,
     CrystallineAbacus* loss,
@@ -121,7 +121,7 @@ void cross_entropy_loss_bigfixed(
  * 
  * Computes: softmax(x) = exp(x) / Σ exp(x)
  */
-void softmax_bigfixed(
+void softmax(
     CrystallineAbacus** logits,
     int size,
     int precision
