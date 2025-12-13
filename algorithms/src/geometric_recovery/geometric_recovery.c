@@ -28,7 +28,7 @@
 #include <string.h>
 
 // Use NEW math library constants
-#define PRIME_PI MATH_PI
+// NOTE: PRIME_PI already defined in prime_types.h - no need to redefine
 
 // ============================================================================
 // TETRATION ATTRACTORS

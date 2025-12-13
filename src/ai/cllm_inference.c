@@ -1,13 +1,18 @@
 #include "cllm_inference.h"
 #include "cllm.h"
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/angular_position.h"  // For theta_n() angular position
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 
 // Constants
 #define MAX_SEQUENCE_LENGTH 512

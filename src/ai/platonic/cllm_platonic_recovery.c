@@ -280,7 +280,7 @@ RecoveryResult platonic_recover_prime(PlatonicModel* model) {
 
         clock_map_prime_to_position(prime_pos, &pos);
         
-        if (!clock_is_valid_position(pos)) {
+        if (!clock_is_valid_position(&pos)) {
             printf("  ✗ Vertex %u: invalid clock position\n", i);
             all_valid = false;
         }

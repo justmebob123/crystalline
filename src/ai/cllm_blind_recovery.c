@@ -19,7 +19,9 @@
  */
 
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "cllm.h"
 #include "cllm_utils.h"
 #include <stdio.h>

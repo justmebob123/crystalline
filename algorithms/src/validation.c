@@ -12,7 +12,8 @@
 
 #include "validation.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
-#include "math/arithmetic.h"       // PHASE 1: NEW math library (includes validation functions)
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/validation.h"       // For math_is_nan, math_is_inf
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>

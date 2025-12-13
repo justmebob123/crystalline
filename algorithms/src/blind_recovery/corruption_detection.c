@@ -1,35 +1,59 @@
 /**
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
  * @file corruption_detection.c
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
  * @brief Corruption detection (OBJECTIVE 28 - Layer 1)
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
  * 
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
  * Detects corrupted elements in structure data.
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
  */
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "blind_recovery/blind_recovery.h"
 #include "math/types.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include <stdlib.h>
 #include <stdio.h>
 

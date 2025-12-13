@@ -26,7 +26,9 @@
  */
 
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "ai/cllm_batch.h"
 #include <stdlib.h>
 #include <string.h>

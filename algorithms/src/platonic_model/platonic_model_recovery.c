@@ -16,7 +16,9 @@
 #include <stdio.h>
 #include <time.h>
 #include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 
 // Forward declarations
 extern void platonic_detect_spatial_oscillations(PlatonicModel*, uint32_t, double);

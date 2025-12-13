@@ -8,6 +8,7 @@
 
 #include "../../include/cllm.h"
 #include "../../math/include/math.h"
+#include "../../math/include/math/validation.h"  // For math_is_nan, math_is_inf
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
