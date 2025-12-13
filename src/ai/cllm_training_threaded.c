@@ -3292,10 +3292,10 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
                }
         }
         
-        // Report training progress to console
-        report_training_progress(system, false);
+        // REMOVED: Don't report progress while pushing - workers haven't processed yet!
+        // report_training_progress(system, false);
         
-        // Log progress
+        // Log progress (batches pushed, not processed)
         if (batches_pushed % 500 == 0) {
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
@@ -3328,10 +3328,17 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
         usleep(1000);  // 1ms
         
         wait_iterations++;
-        // Print progress every 1 second for debugging
+        // Report progress every 1 second with actual completed batches
         if (wait_iterations % 1000 == 0) {
             size_t pending, pushed, popped;
             work_queue_stats(system->work_queue, &pending, &pushed, &popped);
+            
+            // Update batches_processed to reflect actual completed batches
+            atomic_store(&system->batches_processed, popped);
+            
+            // Report training progress with actual completed batches
+            report_training_progress(system, false);
+            
 #ifdef CLLM_DEBUG
             int done = atomic_load(&system->work_queue->epoch_done);
             printf("  [DEBUG] Wait iteration %d: pushed=%zu, popped=%zu, epoch_done=%d, pending=%zu\n",
