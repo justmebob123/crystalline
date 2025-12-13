@@ -207,27 +207,41 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     
     CLLMModel* model = training->model;
     int num_tokens = training->config.batch_size * training->config.sequence_length;
+    uint32_t embed_dim = model->embedding_dim;
     
-    // Simple forward pass: lookup embeddings and compute output
+    // Allocate buffer for hidden states
+    double* hidden_states = (double*)calloc(embed_dim, sizeof(double));
+    if (!hidden_states) {
+        fprintf(stderr, "Failed to allocate hidden states buffer\n");
+        return 0.0;
+    }
+    
+    // CRITICAL FIX: Process each token through the full transformer pipeline
     for (int i = 0; i < num_tokens; i++) {
         uint32_t token = input_tokens[i];
         if (token >= model->vocab_size) continue;
         
-        // Get embedding
-        double* embedding = &model->embeddings[token * model->embedding_dim];
+        // Step 1: Get embedding
+        double* embedding = &model->embeddings[token * embed_dim];
+        memcpy(hidden_states, embedding, embed_dim * sizeof(double));
         
-        // Compute logits (simplified - just use output projection)
+        // Step 2: CRITICAL - Process through transformer layers
+        // This is what was missing - we must use the transformer!
+        cllm_transformer_forward(model, hidden_states);
+        
+        // Step 3: Project to vocabulary (output layer)
         double* logits = &training->logits[i * model->vocab_size];
         
         for (uint32_t v = 0; v < model->vocab_size; v++) {
             double sum = model->output_bias[v];
-            for (uint32_t d = 0; d < model->embedding_dim; d++) {
-                sum += embedding[d] * model->output_weights[d * model->vocab_size + v];
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                sum += hidden_states[d] * model->output_weights[d * model->vocab_size + v];
             }
             logits[v] = sum;
         }
     }
     
+    free(hidden_states);
     return 0.0;  // Loss computed separately
 }
 
