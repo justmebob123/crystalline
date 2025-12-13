@@ -2,10 +2,19 @@
 #include "config.h"
 #endif
 
+// Include math.h before PHP headers to avoid implicit declaration warnings
+#include <math.h>
+
+// Suppress warnings from PHP system headers
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_crystalline_math.h"
+
+#pragma GCC diagnostic pop
 
 #include "math/prime.h"
 #include "math/rainbow.h"

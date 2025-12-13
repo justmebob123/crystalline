@@ -1,14 +1,6 @@
 crystalline_math.lo: /workspace/php/crystalline_math.c \
- /workspace/php/config.h /usr/include/php/20220829/main/php.h \
- /usr/include/php/20220829/main/php_version.h \
- /usr/include/php/20220829/Zend/zend.h \
- /usr/include/php/20220829/Zend/zend_types.h \
- /usr/include/php/20220829/Zend/zend_portability.h \
- /usr/include/php/20220829/Zend/zend_config.h \
- /usr/include/php/20220829/main/../main/php_config.h \
- /usr/include/php/20220829/Zend/../TSRM/TSRM.h \
- /usr/include/php/20220829/main/php_config.h \
- /workspace/math/include/math.h /workspace/math/include/math/types.h \
+ /workspace/php/config.h /workspace/math/include/math.h \
+ /workspace/math/include/math/types.h \
  /workspace/math/include/math/arithmetic.h \
  /workspace/math/include/math/types.h \
  /workspace/math/include/math/transcendental.h \
@@ -20,6 +12,15 @@ crystalline_math.lo: /workspace/php/crystalline_math.c \
  /workspace/math/include/math/clock.h \
  /workspace/math/include/math/abacus.h /workspace/math/include/math/ntt.h \
  /workspace/math/include/math/abacus.h \
+ /usr/include/php/20220829/main/php.h \
+ /usr/include/php/20220829/main/php_version.h \
+ /usr/include/php/20220829/Zend/zend.h \
+ /usr/include/php/20220829/Zend/zend_types.h \
+ /usr/include/php/20220829/Zend/zend_portability.h \
+ /usr/include/php/20220829/Zend/zend_config.h \
+ /usr/include/php/20220829/main/../main/php_config.h \
+ /usr/include/php/20220829/Zend/../TSRM/TSRM.h \
+ /usr/include/php/20220829/main/php_config.h \
  /usr/include/php/20220829/Zend/zend_range_check.h \
  /usr/include/php/20220829/Zend/zend_long.h \
  /usr/include/php/20220829/Zend/zend_map_ptr.h \
