@@ -493,6 +493,164 @@ PHP_FUNCTION(prime_prev)
 }
 /* }}} */
 
+/* {{{ proto int prime_index(int prime) */
+PHP_FUNCTION(prime_index)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_index((uint64_t)prime));
+}
+/* }}} */
+
+/* {{{ proto int prime_count_below(int n) */
+PHP_FUNCTION(prime_count_below)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_count_below((uint64_t)n));
+}
+/* }}} */
+
+/* {{{ proto int prime_count_range(int a, int b) */
+PHP_FUNCTION(prime_count_range)
+{
+    zend_long a, b;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(a)
+        Z_PARAM_LONG(b)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_count_range((uint64_t)a, (uint64_t)b));
+}
+/* }}} */
+
+/* {{{ proto int prime_gap_next(int prime) */
+PHP_FUNCTION(prime_gap_next)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_gap_next((uint64_t)prime));
+}
+/* }}} */
+
+/* {{{ proto int prime_gap_prev(int prime) */
+PHP_FUNCTION(prime_gap_prev)
+{
+    zend_long prime;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(prime)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_gap_prev((uint64_t)prime));
+}
+/* }}} */
+
+/* {{{ proto bool prime_are_coprime(int a, int b) */
+PHP_FUNCTION(prime_are_coprime)
+{
+    zend_long a, b;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(a)
+        Z_PARAM_LONG(b)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(prime_are_coprime((uint64_t)a, (uint64_t)b));
+}
+/* }}} */
+
+/* {{{ proto int prime_totient(int n) */
+PHP_FUNCTION(prime_totient)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_totient((uint64_t)n));
+}
+/* }}} */
+
+/* {{{ proto bool prime_is_prime_o1(int position, int magnitude) */
+PHP_FUNCTION(prime_is_prime_o1)
+{
+    zend_long position, magnitude;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(position)
+        Z_PARAM_LONG(magnitude)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(prime_is_prime_o1((uint32_t)position, (uint64_t)magnitude));
+}
+/* }}} */
+
+/* {{{ proto double math_atan2(double y, double x) */
+PHP_FUNCTION(math_atan2)
+{
+    double y, x;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(y)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_atan2(y, x));
+}
+/* }}} */
+
+/* {{{ proto double math_expm1(double x) */
+PHP_FUNCTION(math_expm1)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_expm1(x));
+}
+/* }}} */
+
+/* {{{ proto double math_log1p(double x) */
+PHP_FUNCTION(math_log1p)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_log1p(x));
+}
+/* }}} */
+
+/* {{{ proto double math_asinh(double x) */
+PHP_FUNCTION(math_asinh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_asinh(x));
+}
+/* }}} */
+
+/* {{{ proto double math_acosh(double x) */
+PHP_FUNCTION(math_acosh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_acosh(x));
+}
+/* }}} */
+
+/* {{{ proto double math_atanh(double x) */
+PHP_FUNCTION(math_atanh)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_atanh(x));
+}
+/* }}} */
+
 /* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_math_binary, 0)
     ZEND_ARG_INFO(0, a)
@@ -560,6 +718,20 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(prime_nth, arginfo_is_prime)
     PHP_FE(prime_next, arginfo_is_prime)
     PHP_FE(prime_prev, arginfo_is_prime)
+    PHP_FE(prime_index, arginfo_is_prime)
+    PHP_FE(prime_count_below, arginfo_is_prime)
+    PHP_FE(prime_count_range, arginfo_math_binary)
+    PHP_FE(prime_gap_next, arginfo_is_prime)
+    PHP_FE(prime_gap_prev, arginfo_is_prime)
+    PHP_FE(prime_are_coprime, arginfo_math_binary)
+    PHP_FE(prime_totient, arginfo_is_prime)
+    PHP_FE(prime_is_prime_o1, arginfo_prime_generate)
+    PHP_FE(math_atan2, arginfo_math_binary)
+    PHP_FE(math_expm1, arginfo_math_unary)
+    PHP_FE(math_log1p, arginfo_math_unary)
+    PHP_FE(math_asinh, arginfo_math_unary)
+    PHP_FE(math_acosh, arginfo_math_unary)
+    PHP_FE(math_atanh, arginfo_math_unary)
     PHP_FE_END
 };
 /* }}} */

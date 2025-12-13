@@ -488,6 +488,117 @@ PHP_FUNCTION(algo_statistics)
 }
 /* }}} */
 
+/* {{{ proto double geometric_distance_2d(double x1, double y1, double x2, double y2) */
+PHP_FUNCTION(geometric_distance_2d)
+{
+    double x1, y1, x2, y2;
+    ZEND_PARSE_PARAMETERS_START(4, 4)
+        Z_PARAM_DOUBLE(x1)
+        Z_PARAM_DOUBLE(y1)
+        Z_PARAM_DOUBLE(x2)
+        Z_PARAM_DOUBLE(y2)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    RETURN_DOUBLE(math_sqrt(dx*dx + dy*dy));
+}
+/* }}} */
+
+/* {{{ proto double geometric_distance_3d(double x1, double y1, double z1, double x2, double y2, double z2) */
+PHP_FUNCTION(geometric_distance_3d)
+{
+    double x1, y1, z1, x2, y2, z2;
+    ZEND_PARSE_PARAMETERS_START(6, 6)
+        Z_PARAM_DOUBLE(x1)
+        Z_PARAM_DOUBLE(y1)
+        Z_PARAM_DOUBLE(z1)
+        Z_PARAM_DOUBLE(x2)
+        Z_PARAM_DOUBLE(y2)
+        Z_PARAM_DOUBLE(z2)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double dz = z2 - z1;
+    RETURN_DOUBLE(math_sqrt(dx*dx + dy*dy + dz*dz));
+}
+/* }}} */
+
+/* {{{ proto double geometric_angle_between_2d(double x1, double y1, double x2, double y2) */
+PHP_FUNCTION(geometric_angle_between_2d)
+{
+    double x1, y1, x2, y2;
+    ZEND_PARSE_PARAMETERS_START(4, 4)
+        Z_PARAM_DOUBLE(x1)
+        Z_PARAM_DOUBLE(y1)
+        Z_PARAM_DOUBLE(x2)
+        Z_PARAM_DOUBLE(y2)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    // Calculate angle using atan2
+    RETURN_DOUBLE(math_atan2(y2 - y1, x2 - x1));
+}
+/* }}} */
+
+/* {{{ proto double numerical_l2_distance(array $a, array $b) */
+PHP_FUNCTION(numerical_l2_distance)
+{
+    zval *a_arr, *b_arr;
+    size_t a_count, b_count;
+    
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ARRAY(a_arr)
+        Z_PARAM_ARRAY(b_arr)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    double *a = php_array_to_double(a_arr, &a_count);
+    double *b = php_array_to_double(b_arr, &b_count);
+    
+    if (!a || !b || a_count != b_count) {
+        if (a) efree(a);
+        if (b) efree(b);
+        RETURN_DOUBLE(0.0);
+    }
+    
+    double result = numerical_l2_distance(a, b, a_count);
+    
+    efree(a);
+    efree(b);
+    
+    RETURN_DOUBLE(result);
+}
+/* }}} */
+
+/* {{{ proto double numerical_l1_distance(array $a, array $b) */
+PHP_FUNCTION(numerical_l1_distance)
+{
+    zval *a_arr, *b_arr;
+    size_t a_count, b_count;
+    
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ARRAY(a_arr)
+        Z_PARAM_ARRAY(b_arr)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    double *a = php_array_to_double(a_arr, &a_count);
+    double *b = php_array_to_double(b_arr, &b_count);
+    
+    if (!a || !b || a_count != b_count) {
+        if (a) efree(a);
+        if (b) efree(b);
+        RETURN_DOUBLE(0.0);
+    }
+    
+    double result = numerical_l1_distance(a, b, a_count);
+    
+    efree(a);
+    efree(b);
+    
+    RETURN_DOUBLE(result);
+}
+/* }}} */
+
 /* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_array, 0)
     ZEND_ARG_INFO(0, data)
@@ -513,6 +624,22 @@ ZEND_BEGIN_ARG_INFO(arginfo_three_doubles, 0)
     ZEND_ARG_INFO(0, b)
     ZEND_ARG_INFO(0, c)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_four_doubles, 0)
+    ZEND_ARG_INFO(0, x1)
+    ZEND_ARG_INFO(0, y1)
+    ZEND_ARG_INFO(0, x2)
+    ZEND_ARG_INFO(0, y2)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_six_doubles, 0)
+    ZEND_ARG_INFO(0, x1)
+    ZEND_ARG_INFO(0, y1)
+    ZEND_ARG_INFO(0, z1)
+    ZEND_ARG_INFO(0, x2)
+    ZEND_ARG_INFO(0, y2)
+    ZEND_ARG_INFO(0, z2)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ algorithms_functions[] */
@@ -533,7 +660,12 @@ const zend_function_entry algorithms_functions[] = {
     PHP_FE(cross_entropy_loss, arginfo_two_arrays)
     PHP_FE(numerical_dot_product, arginfo_two_arrays)
     PHP_FE(numerical_cosine_similarity, arginfo_two_arrays)
+    PHP_FE(numerical_l2_distance, arginfo_two_arrays)
+    PHP_FE(numerical_l1_distance, arginfo_two_arrays)
     PHP_FE(algo_statistics, arginfo_array)
+    PHP_FE(geometric_distance_2d, arginfo_four_doubles)
+    PHP_FE(geometric_distance_3d, arginfo_six_doubles)
+    PHP_FE(geometric_angle_between_2d, arginfo_four_doubles)
     PHP_FE_END
 };
 /* }}} */
