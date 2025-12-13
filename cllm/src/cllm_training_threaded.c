@@ -2805,6 +2805,9 @@ static int sphere_spawn_children(SphereTrainingContext* parent, int num_children
 static void report_training_progress(ThreadedTrainingSystem* system, bool force) {
     if (!system) return;
     
+    printf("[TRACE] report_training_progress: ENTRY\n");
+    fflush(stdout);
+    
     time_t current_time = time(NULL);
     size_t batches_done = atomic_load(&system->batches_processed);
     
@@ -2812,6 +2815,9 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
     if (!force && batches_done % system->progress_update_interval != 0) {
         return;
     }
+    
+    printf("[TRACE] report_training_progress: Calculating progress\n");
+    fflush(stdout);
     
     // Calculate progress percentage
     double progress_pct = 0.0;
@@ -2835,16 +2841,33 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
     int eta_mins = (int)((eta_seconds - eta_hours * 3600) / 60);
     int eta_secs = (int)(eta_seconds - eta_hours * 3600 - eta_mins * 60);
     
+    printf("[TRACE] report_training_progress: Getting loss from spheres, num_worker_spheres=%d\n", system->num_worker_spheres);
+    fflush(stdout);
+    
     // Get current loss from sphere contexts
     double total_loss = 0.0;
     int active_spheres = 0;
+    
+    // SAFETY CHECK: Verify sphere_contexts array is valid
+    if (!system->sphere_contexts) {
+        fprintf(stderr, "[ERROR] report_training_progress: sphere_contexts is NULL!\n");
+        fflush(stderr);
+        return;
+    }
+    
     for (int i = 0; i < system->num_worker_spheres; i++) {
+        printf("[TRACE] report_training_progress: Checking sphere %d\n", i);
+        fflush(stdout);
+        
         if (system->sphere_contexts[i] && system->sphere_contexts[i]->batches_processed > 0) {
             total_loss += system->sphere_contexts[i]->batch_loss;
             active_spheres++;
         }
     }
     double current_loss = (active_spheres > 0) ? total_loss / active_spheres : 0.0;
+    
+    printf("[TRACE] report_training_progress: About to print progress line\n");
+    fflush(stdout);
     
     // Print progress line
     printf("\rEpoch %d/%d | Batch %zu/%zu (%.1f%%) | Loss: %.4f | %.1f batch/s | ETA: %02d:%02d:%02d",
@@ -2866,9 +2889,7 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
  * TODO: Implement gradient accumulation in future training enhancements
  */
 static void accumulate_gradients(ThreadedTrainingSystem* system) {
-    #ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: ENTRY - system=%p\n", (void*)system);
-#endif
+    printf("[TRACE] accumulate_gradients: ENTRY - system=%p\n", (void*)system);
     fflush(stdout);
     
     if (!system) {
@@ -2876,113 +2897,130 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         return;
     }
     
-    #ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: accumulated_gradients=%p, gradient_size=%zu\n", 
+    printf("[TRACE] accumulate_gradients: accumulated_gradients=%p, gradient_size=%zu\n", 
            (void*)system->accumulated_gradients, system->gradient_size);
     fflush(stdout);
-#endif
     
     if (!system->accumulated_gradients) {
         fprintf(stderr, "[ERROR] accumulate_gradients: accumulated_gradients is NULL!\n");
         return;
     }
     
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: About to acquire lock\n");
+    printf("[TRACE] accumulate_gradients: About to acquire gradient_lock\n");
     fflush(stdout);
-#endif
     
     // PHASE 3: Gradient accumulation with proper synchronization
     // Lock protects against concurrent reads from other threads (UI, crawler)
     // that call threaded_training_get_gradient_norm() while we're accumulating
     pthread_mutex_lock(&system->gradient_lock);
     
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: Lock acquired, starting accumulation\n");
+    printf("[TRACE] accumulate_gradients: gradient_lock ACQUIRED\n");
     fflush(stdout);
-#endif
     
     // Zero accumulated gradients
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: memset target=%p, size=%zu bytes\n",
+    printf("[TRACE] accumulate_gradients: About to memset, target=%p, size=%zu bytes\n",
            (void*)system->accumulated_gradients, system->gradient_size * sizeof(double));
     fflush(stdout);
-#endif
     
     memset(system->accumulated_gradients, 0, system->gradient_size * sizeof(double));
     
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: Gradients zeroed\n");
-#endif
+    printf("[TRACE] accumulate_gradients: Gradients zeroed\n");
+    fflush(stdout);
     
     int valid_spheres = 0;
     
     // Sum gradients from all spheres
+    printf("[TRACE] accumulate_gradients: Starting sphere loop, num_worker_spheres=%d\n", system->num_worker_spheres);
+    fflush(stdout);
+    
     for (int i = 0; i < system->num_worker_spheres; i++) {
+        printf("[TRACE] accumulate_gradients: Processing sphere %d\n", i);
+        fflush(stdout);
+        
         SphereTrainingContext* ctx = system->sphere_contexts[i];
-#ifdef CLLM_DEBUG
-        printf("[DEBUG] accumulate_gradients: Processing sphere %d (ctx=%p)\n", i, (void*)ctx);
-#endif
+        printf("[TRACE] accumulate_gradients: Sphere %d ctx=%p\n", i, (void*)ctx);
+        fflush(stdout);
         
         // Check if sphere has valid gradient storage (crystalline memory or legacy)
         if (!ctx) {
-#ifdef CLLM_DEBUG
-            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no ctx)\n", i);
-#endif
+            printf("[TRACE] accumulate_gradients: Sphere %d skipped (no ctx)\n", i);
+            fflush(stdout);
             continue;
         }
+        
+        printf("[TRACE] accumulate_gradients: Sphere %d checking gradient storage\n", i);
+        fflush(stdout);
         
         if (!ctx->crystalline_memory && !ctx->local_gradients) {
-#ifdef CLLM_DEBUG
-            printf("[DEBUG] accumulate_gradients: Sphere %d skipped (no gradient storage)\n", i);
-#endif
+            printf("[TRACE] accumulate_gradients: Sphere %d skipped (no gradient storage)\n", i);
+            fflush(stdout);
             continue;
         }
         
-#ifdef CLLM_DEBUG
-        printf("[DEBUG] accumulate_gradients: Sphere %d has gradient_size=%zu\n", i, ctx->gradient_size);
-#endif
+        printf("[TRACE] accumulate_gradients: Sphere %d has gradient_size=%zu\n", i, ctx->gradient_size);
+        fflush(stdout);
         
         // Validate gradients before accumulation
         char source[64];
         snprintf(source, sizeof(source), "Sphere %d", i);
-#ifdef CLLM_DEBUG
-        printf("[DEBUG] accumulate_gradients: Validating sphere %d gradients\n", i);
-#endif
+        printf("[TRACE] accumulate_gradients: About to validate sphere %d gradients\n", i);
+        fflush(stdout);
         
         // Get gradients from crystalline memory or fallback to local_gradients
         double* gradient_source = NULL;
         size_t gradient_count = 0;
         
+        printf("[TRACE] accumulate_gradients: Sphere %d checking crystalline_memory=%p\n", i, (void*)ctx->crystalline_memory);
+        fflush(stdout);
+        
         if (ctx->crystalline_memory) {
+            printf("[TRACE] accumulate_gradients: Sphere %d getting crystalline segment for symmetry_group=%u\n", i, ctx->symmetry_group);
+            fflush(stdout);
+            
             // Get segment for this sphere's symmetry group
             CrystallineSegment* segment = crystalline_memory_get_segment(
                 ctx->crystalline_memory, 
                 ctx->symmetry_group
             );
             
+            printf("[TRACE] accumulate_gradients: Sphere %d got segment=%p\n", i, (void*)segment);
+            fflush(stdout);
+            
             if (segment && segment->data) {
                 gradient_source = (double*)segment->data;
                 gradient_count = segment->size / sizeof(double);
+                printf("[TRACE] accumulate_gradients: Sphere %d using crystalline gradients, count=%zu\n", i, gradient_count);
             } else {
                 gradient_source = ctx->local_gradients;
                 gradient_count = ctx->gradient_size;
+                printf("[TRACE] accumulate_gradients: Sphere %d using local gradients (segment invalid), count=%zu\n", i, gradient_count);
             }
+            fflush(stdout);
         } else {
             gradient_source = ctx->local_gradients;
             gradient_count = ctx->gradient_size;
+            printf("[TRACE] accumulate_gradients: Sphere %d using local gradients (no crystalline), count=%zu\n", i, gradient_count);
+            fflush(stdout);
         }
+        
+        printf("[TRACE] accumulate_gradients: Sphere %d about to validate gradients\n", i);
+        fflush(stdout);
         
         if (!validate_gradients(gradient_source, gradient_count, source)) {
             fprintf(stderr, "WARNING: Skipping sphere %d due to invalid gradients\n", i);
             continue;
         }
-#ifdef CLLM_DEBUG
-        printf("[DEBUG] accumulate_gradients: Sphere %d gradients validated\n", i);
-#endif
+        
+        printf("[TRACE] accumulate_gradients: Sphere %d gradients validated\n", i);
+        fflush(stdout);
         
         // Clip gradients to prevent overflow
+        printf("[TRACE] accumulate_gradients: Sphere %d clipping gradients\n", i);
+        fflush(stdout);
         clip_gradients(gradient_source, gradient_count, 10.0);
+        
+        printf("[TRACE] accumulate_gradients: Sphere %d accumulating gradients\n", i);
+        fflush(stdout);
         
         // Accumulate gradients
         size_t accumulate_count = (gradient_count < system->gradient_size) ? gradient_count : system->gradient_size;
@@ -2991,26 +3029,37 @@ static void accumulate_gradients(ThreadedTrainingSystem* system) {
         }
         
         valid_spheres++;
+        printf("[TRACE] accumulate_gradients: Sphere %d complete, valid_spheres=%d\n", i, valid_spheres);
+        fflush(stdout);
     }
+    
+    printf("[TRACE] accumulate_gradients: Sphere loop complete, valid_spheres=%d\n", valid_spheres);
+    fflush(stdout);
     
     // Average gradients across valid spheres only
     if (valid_spheres > 0) {
+        printf("[TRACE] accumulate_gradients: Averaging gradients across %d spheres\n", valid_spheres);
+        fflush(stdout);
         for (size_t i = 0; i < system->gradient_size; i++) {
             system->accumulated_gradients[i] /= (double)valid_spheres;
         }
     }
+    
+    printf("[TRACE] accumulate_gradients: Final validation\n");
+    fflush(stdout);
     
     // Final validation of accumulated gradients
     if (!validate_gradients(system->accumulated_gradients, system->gradient_size, "Accumulated")) {
         fprintf(stderr, "CRITICAL: Accumulated gradients are invalid!\n");
     }
     
+    printf("[TRACE] accumulate_gradients: About to release gradient_lock\n");
+    fflush(stdout);
+    
     pthread_mutex_unlock(&system->gradient_lock);
     
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] accumulate_gradients: Accumulation complete, lock released\n");
+    printf("[TRACE] accumulate_gradients: gradient_lock RELEASED, function complete\n");
     fflush(stdout);
-#endif
 }
 
 /**
@@ -3304,33 +3353,89 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
     }
     
     printf("=== EPOCH %d COMPLETE: All %zu batches processed! ===\n", current_epoch, total_batches_in_epoch);
+    fflush(stdout);
     
     // Final progress report for this epoch
+    printf("[TRACE] About to call report_training_progress...\n");
+    fflush(stdout);
     report_training_progress(system, true);
+    printf("[TRACE] report_training_progress completed\n");
+    fflush(stdout);
+    
     printf("\n");  // New line after progress report
+    fflush(stdout);
     
     // Stop pre-fetch thread
     batch_queue_stop_prefetch(system);
     
-    // Accumulate gradients from all workers
-    printf("Accumulating gradients...\n");
-    fflush(stdout);  // Force output
-    
-#ifdef CLLM_DEBUG
-    printf("[DEBUG] Before accumulate: system=%p, accumulated_gradients=%p, gradient_size=%zu\n",
-           (void*)system, (void*)system->accumulated_gradients, system->gradient_size);
+    // CRITICAL: Ensure all worker threads have completely finished
+    // Wait for work queue to be truly empty and all threads idle
+    printf("Waiting for all threads to finish...\n");
     fflush(stdout);
-#endif
+    
+    // Wait longer to ensure threads are done
+    usleep(100000);  // 100ms delay
+    
+    printf("All threads finished, accumulating gradients...\n");
+    fflush(stdout);
+    
+    // Verify system state before accumulation
+    if (!system) {
+        fprintf(stderr, "[FATAL] system is NULL!\n");
+        return 0.0;
+    }
+    
+    printf("[DEBUG] Pre-accumulation validation:\n");
+    printf("  system: %p\n", (void*)system);
+    printf("  system->training: %p\n", (void*)system->training);
+    printf("  system->accumulated_gradients: %p\n", (void*)system->accumulated_gradients);
+    printf("  system->gradient_size: %zu\n", system->gradient_size);
+    fflush(stdout);
+    
+    if (!system->training) {
+        fprintf(stderr, "[FATAL] system->training is NULL!\n");
+        return 0.0;
+    }
+    
+    printf("  system->training->gradients: %p\n", (void*)system->training->gradients);
+    fflush(stdout);
+    
+    if (!system->training->gradients) {
+        fprintf(stderr, "[FATAL] system->training->gradients is NULL!\n");
+        fprintf(stderr, "  This means the training object was not properly initialized!\n");
+        return 0.0;
+    }
+    
+    if (!system->accumulated_gradients) {
+        fprintf(stderr, "[FATAL] system->accumulated_gradients is NULL!\n");
+        fprintf(stderr, "  This means the gradient buffer was not allocated!\n");
+        return 0.0;
+    }
+    
+    printf("[DEBUG] All pointers valid, calling accumulate_gradients...\n");
+    fflush(stdout);
     
     accumulate_gradients(system);
+    
+    printf("[DEBUG] accumulate_gradients completed, acquiring model lock...\n");
+    fflush(stdout);
     
     // KISSING BOUNDARY LOCK - Protect model weight updates
     // Control thread writes to model weights, workers read - this is a kissing boundary
     pthread_mutex_lock(&system->model_lock);
     
+    printf("[DEBUG] Model lock acquired, copying gradients...\n");
+    printf("  dst=%p, src=%p, size=%zu bytes\n",
+           (void*)system->training->gradients, (void*)system->accumulated_gradients,
+           system->gradient_size * sizeof(double));
+    fflush(stdout);
+    
     // Copy accumulated gradients to training object
     memcpy(system->training->gradients, system->accumulated_gradients, 
            system->gradient_size * sizeof(double));
+    
+    printf("[DEBUG] Gradient copy completed successfully\n");
+    fflush(stdout);
     
     // Apply cymatic frequency modulation to gradients (optional)
     // This modulates gradients with cymatic frequencies for smoother convergence

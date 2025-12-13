@@ -6,13 +6,12 @@
  * Includes: precomputation, initialization, loss computation, optimizer steps
  */
 
-#include "math/transcendental.h"
-#include "math/arithmetic.h"
 #include "cllm.h"
 #include "cllm_training.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "math/transcendental.h"
 
 // ============================================================================
 // EMBEDDING PRECOMPUTATION
@@ -42,7 +41,7 @@ void cllm_precompute_all_embeddings(CLLMModel* model) {
             for (uint32_t dim = 0; dim < model->embedding_dim; dim++) {
                 double freq_idx = (double)dim / model->embedding_dim;
                 double freq = model->harmonic.primary_frequency * (1.0 + freq_idx);
-                double modulation = math_cos(2.0 * MATH_PI * freq * token_id / model->vocab_size);
+                double modulation = math_cos(2.0 * M_PI * freq * token_id / model->vocab_size);
                 embedding[dim] *= (1.0 + 0.1 * modulation);  // 10% modulation
             }
         }
@@ -92,6 +91,16 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     // Allocate gradient buffer
     training->gradient_buffer = calloc(max_tokens * model->embedding_dim, sizeof(double));
     if (!training->gradient_buffer) {
+        free(training->logits);
+        free(training);
+        return NULL;
+    }
+    
+    // CRITICAL FIX: Allocate gradients buffer for optimizer
+    // This was missing and causing segfault in threaded training!
+    training->gradients = calloc(max_tokens * model->embedding_dim, sizeof(double));
+    if (!training->gradients) {
+        free(training->gradient_buffer);
         free(training->logits);
         free(training);
         return NULL;
@@ -156,6 +165,7 @@ void cllm_training_free(CLLMTraining* training) {
     
     free(training->logits);
     free(training->gradient_buffer);
+    free(training->gradients);  // CRITICAL FIX: Free gradients buffer
     free(training);
     
     printf("✓ Training freed\n");

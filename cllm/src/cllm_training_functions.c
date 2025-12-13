@@ -96,6 +96,16 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
         return NULL;
     }
     
+    // CRITICAL FIX: Allocate gradients buffer for optimizer
+    // This was missing and causing segfault in threaded training!
+    training->gradients = calloc(max_tokens * model->embedding_dim, sizeof(double));
+    if (!training->gradients) {
+        free(training->gradient_buffer);
+        free(training->logits);
+        free(training);
+        return NULL;
+    }
+    
     // Initialize optimizer buffers (Adam)
     if (model->optimizer.type == OPTIMIZER_ADAM) {
         // Calculate total parameters
@@ -155,6 +165,7 @@ void cllm_training_free(CLLMTraining* training) {
     
     free(training->logits);
     free(training->gradient_buffer);
+    free(training->gradients);  // CRITICAL FIX: Free gradients buffer
     free(training);
     
     printf("✓ Training freed\n");
