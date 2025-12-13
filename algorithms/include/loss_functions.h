@@ -1,7 +1,7 @@
 #ifndef LOSS_FUNCTIONS_H
 #define LOSS_FUNCTIONS_H
 
-#include "math/abacus.h"
+#include "../../math/include/math/abacus.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
