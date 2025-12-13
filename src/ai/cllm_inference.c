@@ -544,37 +544,43 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     // Apply positional encoding
     cllm_apply_positional_encoding(inference, inference->hidden_states, num_tokens - 1);
     
-    // TODO: Reimplement transformer layers using new CLLMModel structure
-    // The new structure has layers as an array with query_weights, key_weights, value_weights, etc.
-    // Need to integrate with cllm_attention.c (which has NTT support)
-    #if 0  // LEGACY TRANSFORMER LOOP - Needs reimplementation
-    // Pass through transformer layers using double precision throughout
-    if (model->attention_layers && model->ff_layers && model->layer_norms) {
-        // Allocate attention output buffer
-        double* attn_output = (double*)calloc(embed_dim, sizeof(double));
-        if (!attn_output) {
-            fprintf(stderr, "Error: Failed to allocate attention output buffer\n");
-            return;
+    // Process through transformer layers
+    // This now uses the new CLLMModel structure with proper layer implementation
+    extern void cllm_transformer_forward(const CLLMModel* model, double* hidden_states);
+    extern bool cllm_has_transformer_layers(const CLLMModel* model);
+    
+    // Debug: Check hidden states before transformer
+    bool has_nan_before = false;
+    for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
+        if (math_is_nan(inference->hidden_states[i])) {
+            has_nan_before = true;
+            break;
         }
-        
-        for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-            // Layer norm (in-place) - now uses double
-            cllm_layer_norm(&model->layer_norms[layer], inference->hidden_states, inference->hidden_states);
-            
-            // Attention - uses double
-            AttentionLayer* attn_layer = &model->attention_layers[layer];
-            cllm_attention_forward(attn_layer, inference->hidden_states, inference->hidden_states, NULL, NULL, 1);
-            
-            // Feed-forward (in-place) - uses double
-            cllm_feedforward(&model->ff_layers[layer], inference->hidden_states, inference->hidden_states);
-        }
-        
-        // Final layer norm
-        cllm_layer_norm(&model->layer_norms[model->num_layers - 1], inference->hidden_states, inference->hidden_states);
-        
-        free(attn_output);
     }
-    #endif  // LEGACY TRANSFORMER LOOP
+    if (has_nan_before) {
+        fprintf(stderr, "DEBUG: NaN in hidden states BEFORE transformer\n");
+    }
+    
+    if (cllm_has_transformer_layers(model)) {
+        cllm_transformer_forward(model, inference->hidden_states);
+        
+        // Debug: Check hidden states after transformer
+        bool has_nan_after = false;
+        for (uint32_t i = 0; i < embed_dim && i < 5; i++) {
+            if (math_is_nan(inference->hidden_states[i])) {
+                has_nan_after = true;
+                break;
+            }
+        }
+        if (has_nan_after) {
+            fprintf(stderr, "DEBUG: NaN in hidden states AFTER transformer\n");
+        }
+    } else {
+        // Transformer layers not initialized - using embedding-only mode
+        // This is expected for models that haven't been properly trained yet
+        // The model will still work but won't have learned patterns
+        fprintf(stderr, "DEBUG: No transformer layers - using embedding-only mode\n");
+    }
     
     // Project to vocabulary - compute logits
     for (uint32_t i = 0; i < model->vocab_size; i++) {
@@ -686,6 +692,12 @@ int cllm_generate(CLLMInference* inference, const char* prompt, char* output, in
             next_token = cllm_sample_top_k(inference->logits, inference->model->vocab_size, inference->top_k);
         } else {
             next_token = cllm_sample_top_p(inference->logits, inference->model->vocab_size, inference->top_p);
+        }
+        
+        // Debug: Print sampled token
+        if (tokens_generated < 5) {  // Only print first 5 for debugging
+            fprintf(stderr, "DEBUG: Generated token %d: %u (prob=%.4f)\n", 
+                    tokens_generated, next_token, inference->logits[next_token]);
         }
         
         // Add to sequence
