@@ -1,1 +1,0 @@
-NOTE: Will review and update 32-bit variables to 64-bit where appropriate

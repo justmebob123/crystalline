@@ -1,4 +1,0 @@
-set pagination off
-run test_segfault.php
-bt full
-quit
