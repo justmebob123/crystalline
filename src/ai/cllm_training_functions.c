@@ -97,8 +97,9 @@ CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     }
     
     // CRITICAL FIX: Allocate gradients buffer for optimizer
-    // This was missing and causing segfault in threaded training!
-    training->gradients = calloc(max_tokens * model->embedding_dim, sizeof(double));
+    // This buffer stores gradients for vocabulary embeddings
+    // So it needs vocab_size * embedding_dim, not max_tokens * embedding_dim
+    training->gradients = calloc(model->vocab_size * model->embedding_dim, sizeof(double));
     if (!training->gradients) {
         free(training->gradient_buffer);
         free(training->logits);

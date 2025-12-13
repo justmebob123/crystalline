@@ -97,6 +97,7 @@ struct SphereTrainingContext {
     CLLMBatch* current_batch;
     double batch_loss;
     int batches_processed;
+    double cumulative_loss;  // NEW: Accumulate loss across all batches
     
     // Synchronization
     pthread_mutex_t lock;
@@ -424,6 +425,14 @@ double cllm_forward_training_threaded(
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
+            
+            // CRITICAL: Bounds check to prevent buffer overflow
+            if (idx >= batch_size * seq_len) {
+                fprintf(stderr, "[ERROR] Index %d exceeds batch bounds %d\n", 
+                        idx, batch_size * seq_len);
+                continue;
+            }
+            
             uint32_t token_id = input_tokens[idx];
             if (token_id >= vocab_size) continue;
             
@@ -570,6 +579,14 @@ void cllm_backward_training_threaded(
     for (int b = 0; b < batch_size; b++) {
         for (int s = 0; s < seq_len; s++) {
             int idx = b * seq_len + s;
+            
+            // CRITICAL: Bounds check to prevent buffer overflow
+            if (idx >= batch_size * seq_len) {
+                fprintf(stderr, "[ERROR] Backward pass: Index %d exceeds batch bounds %d\n", 
+                        idx, batch_size * seq_len);
+                continue;
+            }
+            
             uint32_t target = target_tokens[idx];
             if (target >= vocab_size) continue;
             
@@ -689,7 +706,11 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->gradient_segment_start = sphere_id * segment_size;
     ctx->gradient_segment_end = (sphere_id + 1) * segment_size;
     
-    // Keep local_gradients for now (compatibility during transition)
+    // CRITICAL: local_gradients is used for vocabulary embedding gradients
+    // The backward pass needs vocab_size * embed_dim space
+    // But gradient_size is max_tokens * embed_dim
+    // We need to allocate based on vocab_size, not max_tokens
+    // For now, allocate gradient_size (will be fixed by passing correct size)
     ctx->local_gradients = (double*)calloc(gradient_size, sizeof(double));
     if (!ctx->local_gradients) {
         free(ctx);
@@ -704,6 +725,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     ctx->work_complete = 0;
     ctx->current_batch = NULL;
     ctx->batch_loss = 0.0;
+    ctx->cumulative_loss = 0.0;  // Initialize cumulative loss
     ctx->batches_processed = 0;
     
     
@@ -886,6 +908,13 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         
         if (!has_valid) continue;
         
+        // CRITICAL FIX: Update thread-local context to process ONE sequence at a time
+        // We're passing &batch->input_ids[offset] which is ONE sequence (seq_len tokens)
+        // But thread_local_training was created with batch_size=4
+        // Temporarily override batch_size to 1 for this sequence
+        int original_batch_size = ctx->thread_local_training->batch_size;
+        ctx->thread_local_training->batch_size = 1;
+        
         // PHASE 8: Use thread-local context (NO LOCKING NEEDED!)
         // Each thread has its own activation buffers, so no race conditions
         
@@ -895,6 +924,9 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
             ctx->thread_local_training,
             &batch->input_ids[offset]
         );
+        
+        // Restore original batch_size
+        ctx->thread_local_training->batch_size = original_batch_size;
         
         // PURE CRYSTALLINE LOSS (ASI Design - Phase 1)
         // Uses learned prime encodings and lattice positions
@@ -912,6 +944,9 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
         // pass needs to write ALL vocab_size * embed_dim gradients
         double* gradient_buffer = ctx->local_gradients;
         
+        // CRITICAL FIX: Set batch_size=1 for backward pass too
+        ctx->thread_local_training->batch_size = 1;
+        
         cllm_backward_training_threaded(
             training,
             ctx->thread_local_training,
@@ -919,11 +954,15 @@ static void sphere_process_batch(SphereTrainingContext* ctx, CLLMTraining* train
             gradient_buffer
         );
         
+        // Restore original batch_size
+        ctx->thread_local_training->batch_size = original_batch_size;
+        
         total_loss += seq_loss;
         valid_sequences++;
     }
     
     ctx->batch_loss = (valid_sequences > 0) ? total_loss / valid_sequences : 0.0;
+    ctx->cumulative_loss += ctx->batch_loss;  // Accumulate loss across batches
     ctx->batches_processed++;
     
     // PHASE 7: Record sphere statistics
@@ -1420,8 +1459,18 @@ ThreadedTrainingSystem* threaded_training_create(CLLMTraining* training,
     printf("  Control thread: Node Zero (NEVER processes batches)\n");
     printf("  Hierarchy levels: %d\n", hierarchy_levels);
     
-    // Calculate gradient size
-    system->gradient_size = training->model->vocab_size * training->model->embedding_dim;
+    // Calculate gradient sizes
+    // We need TWO different sizes:
+    // 1. vocab_gradient_size: for vocabulary embedding gradients (vocab_size * embed_dim)
+    // 2. sequence_gradient_size: for sequence gradients (max_tokens * embed_dim)
+    // The backward pass accumulates gradients for ALL vocabulary embeddings
+    size_t vocab_size = training->model->vocab_size;
+    size_t embed_dim = training->model->embedding_dim;
+    size_t vocab_gradient_size = vocab_size * embed_dim;
+    
+    // For now, use vocab_gradient_size as the gradient_size
+    // This ensures we have enough space for vocabulary gradients
+    system->gradient_size = vocab_gradient_size;
     
     // Create shared gradient buffer (kissing spheres architecture)
     system->shared_gradients = shared_memory_create(
@@ -2860,8 +2909,8 @@ static void report_training_progress(ThreadedTrainingSystem* system, bool force)
         fflush(stdout);
         
         if (system->sphere_contexts[i] && system->sphere_contexts[i]->batches_processed > 0) {
-            total_loss += system->sphere_contexts[i]->batch_loss;
-            active_spheres++;
+            total_loss += system->sphere_contexts[i]->cumulative_loss;
+            active_spheres += system->sphere_contexts[i]->batches_processed;
         }
     }
     double current_loss = (active_spheres > 0) ? total_loss / active_spheres : 0.0;
@@ -3489,17 +3538,17 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
     
     pthread_mutex_unlock(&system->model_lock);
     
-    // Calculate average loss
-    double epoch_loss = 0.0;
-    int valid_workers = 0;
+    // Calculate average loss across all batches
+    double total_loss = 0.0;
+    int total_batches_processed = 0;
     for (int i = 0; i < system->num_worker_spheres; i++) {
         if (system->sphere_contexts[i]->batches_processed > 0) {
-            epoch_loss += system->sphere_contexts[i]->batch_loss;
-            valid_workers++;
+            total_loss += system->sphere_contexts[i]->cumulative_loss;
+            total_batches_processed += system->sphere_contexts[i]->batches_processed;
         }
     }
     
-    double avg_loss = (valid_workers > 0) ? epoch_loss / (double)valid_workers : 0.0;
+    double avg_loss = (total_batches_processed > 0) ? total_loss / (double)total_batches_processed : 0.0;
     
     // UI Integration: Update final loss and invoke callbacks
     if (system->metrics) {
@@ -3510,7 +3559,7 @@ double threaded_train_epoch_lockfree(ThreadedTrainingSystem* system, int current
     printf("\nEpoch complete (LOCK-FREE):\n");
     printf("  Total batches: %d\n", batches_pushed);
     printf("  Average loss: %.4f\n", avg_loss);
-    printf("  Workers active: %d\n", valid_workers);
+    printf("  Total batches processed: %d\n", total_batches_processed);
     
     return avg_loss;
 }
@@ -3533,7 +3582,7 @@ void threaded_training_print_stats(ThreadedTrainingSystem* system) {
         SphereTrainingContext* ctx = system->sphere_contexts[i];
         printf("  Sphere %2d (Group %2d): %d batches processed, avg loss: %.4f\n",
                ctx->sphere_id, ctx->symmetry_group, ctx->batches_processed,
-               ctx->batches_processed > 0 ? ctx->batch_loss / ctx->batches_processed : 0.0);
+               ctx->batches_processed > 0 ? ctx->cumulative_loss / ctx->batches_processed : 0.0);
     }
     
     printf("\n");
@@ -3556,7 +3605,7 @@ int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system,
     
     if (avg_loss) {
         *avg_loss = ctx->batches_processed > 0 ? 
-                    ctx->batch_loss / ctx->batches_processed : 0.0;
+                    ctx->cumulative_loss / ctx->batches_processed : 0.0;
     }
     
     return 0;
