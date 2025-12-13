@@ -11,12 +11,12 @@
 
 #include "cllm_training.h"
 #include "cllm_pure_crystalline.h"
-#include "prime_lattice.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/types.h"  // For MATH_INFINITY
 
 #ifndef MATH_INFINITY
 #endif

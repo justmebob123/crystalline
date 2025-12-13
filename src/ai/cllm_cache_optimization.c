@@ -8,7 +8,7 @@
 #include "ai/cllm_cache_optimization.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
-#include "prime_types.h"
+#include "math/types.h"  // For mathematical constants
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,15 +28,15 @@ uint32_t map_theta_to_cache_line(double theta) {
     // Normalize theta to [0, 2π]
     double normalized_theta = theta;
     while (normalized_theta < 0.0) {
-        normalized_theta += 2.0 * PRIME_PI;
+        normalized_theta += 2.0 * MATH_PI;
     }
-    while (normalized_theta >= 2.0 * PRIME_PI) {
-        normalized_theta -= 2.0 * PRIME_PI;
+    while (normalized_theta >= 2.0 * MATH_PI) {
+        normalized_theta -= 2.0 * MATH_PI;
     }
     
     // Map to cache line [0, NUM_CACHE_LINES-1]
     // Use linear mapping for simplicity
-    uint32_t cache_line = (uint32_t)((normalized_theta / (2.0 * PRIME_PI)) * NUM_CACHE_LINES);
+    uint32_t cache_line = (uint32_t)((normalized_theta / (2.0 * MATH_PI)) * NUM_CACHE_LINES);
     
     // Ensure within bounds
     if (cache_line >= NUM_CACHE_LINES) {
@@ -59,14 +59,14 @@ uint32_t map_theta_to_numa_node(double theta, int num_numa_nodes) {
     // Normalize theta to [0, 2π]
     double normalized_theta = theta;
     while (normalized_theta < 0.0) {
-        normalized_theta += 2.0 * PRIME_PI;
+        normalized_theta += 2.0 * MATH_PI;
     }
-    while (normalized_theta >= 2.0 * PRIME_PI) {
-        normalized_theta -= 2.0 * PRIME_PI;
+    while (normalized_theta >= 2.0 * MATH_PI) {
+        normalized_theta -= 2.0 * MATH_PI;
     }
     
     // Map to NUMA node
-    uint32_t numa_node = (uint32_t)((normalized_theta / (2.0 * PRIME_PI)) * num_numa_nodes);
+    uint32_t numa_node = (uint32_t)((normalized_theta / (2.0 * MATH_PI)) * num_numa_nodes);
     
     // Ensure within bounds
     if (numa_node >= (uint32_t)num_numa_nodes) {
@@ -86,12 +86,12 @@ double calculate_cache_proximity(double theta1, double theta2) {
     double diff = math_abs(theta1 - theta2);
     
     // Normalize to [0, π] (shortest angular distance)
-    if (diff > PRIME_PI) {
-        diff = 2.0 * PRIME_PI - diff;
+    if (diff > MATH_PI) {
+        diff = 2.0 * MATH_PI - diff;
     }
     
     // Normalize to [0, 1]
-    double proximity = diff / PRIME_PI;
+    double proximity = diff / MATH_PI;
     
     return proximity;
 }
@@ -331,7 +331,7 @@ int validate_cache_placement(const CachePlacement* placement) {
     }
     
     // Check theta bounds
-    if (placement->theta < 0.0 || placement->theta > 2.0 * PRIME_PI) {
+    if (placement->theta < 0.0 || placement->theta > 2.0 * MATH_PI) {
         return 0;
     }
     

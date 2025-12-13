@@ -2,7 +2,7 @@
 #include "cllm.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "prime_lattice_core.h"  // For theta_n() angular position
+#include "math/angular_position.h"  // For theta_n() angular position
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

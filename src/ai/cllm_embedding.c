@@ -27,12 +27,11 @@
 #include "../include/cllm_inference.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/angular_position.h"
+#include "math/prime.h"  // For prime_validate_by_clock(), prime_nth()
+#include "math/clock.h"  // For clock_map_prime_to_position()
 #include "../include/clock_lattice.h"
 #include "../include/ai/cllm_platonic.h"
-#include "../include/prime_lattice_core.h"
-#include "math/angular_position.h"
-#include "math/arithmetic.h"
-#include "math/transcendental.h"
 
 #define SYMMETRY_ORDER 12
 

@@ -19,7 +19,7 @@
 #include "ai/cllm_platonic.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"
+#include "math/types.h"  // For MATH_PHI and other constants
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

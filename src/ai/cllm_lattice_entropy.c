@@ -5,9 +5,8 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 #include "ai/cllm_lattice_entropy.h"
-#include "prime_lattice.h"
-#include "crystal_abacus.h"
 #include <string.h>
 #include <stdio.h>
 
