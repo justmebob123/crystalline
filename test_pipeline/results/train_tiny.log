@@ -1,0 +1,168 @@
+
+=== CLLM Training ===
+
+Configuration:
+  Data directory: data
+  Checkpoint dir: checkpoints
+  Vocab size:     100
+  Embedding dim:  64
+  Layers:         2
+  Heads:          4
+  Epochs:         1
+  Batch size:     2
+  Sequence len:   32
+  Learning rate:  0.000100
+  Threads:        0 (auto)
+  Debug output:   enabled (requires CLLM_DEBUG=1 build)
+
+Initializing CLLM Training Pipeline...
+
+Phase 1/5: Loading Data Files [                                                  ]   0.0% | 0/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KInitializing 12-fold symmetry tokenizer:
+  Max vocab size: 100
+  Partition capacity: 10008 tokens each
+  Total capacity: 120096 tokens across 12 partitions
+  Successfully allocated all 12 partitions
+Loaded: data/train.txt (510 bytes)
+
+Phase 1/5: Loading Data Files [==================================================] 100.0% | 1/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KPhase 1/5: Loading Data Files [==================================================] 100.0% | 1/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KBuilding vocabulary...
+Building vocabulary from 1 documents...
+Using 12-fold symmetry thread-safe tokenizer
+Activating 2 of 12 symmetry spheres
+Phase 2/5: Building Vocabulary [                                                  ]   0.0% | 0/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KConsolidating 12 vocabulary partitions...
+  Partition 0: 3 tokens
+  Partition 1: 16 tokens
+  Partition 2: 7 tokens
+  Partition 3: 3 tokens
+  Partition 4: 2 tokens
+  Partition 5: 7 tokens
+  Partition 6: 3 tokens
+  Partition 7: 6 tokens
+  Partition 8: 4 tokens
+  Partition 9: 2 tokens
+  Partition 10: 6 tokens
+  Partition 11: 4 tokens
+Total tokens across partitions: 63
+Consolidated vocabulary: 68 unique tokens (hash collisions: 0)
+Hash table retained for O(1) token lookups during tokenization
+Phase 2/5: Building Vocabulary [==================================================] 100.0% | 1/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KWARNING: Rainbow table failed, using fallback for prime 0
+Warning: model->tokens is NULL, vocabulary not transferred
+✓ Vocabulary built
+
+Creating training dataset...
+Creating training dataset...
+Using single-threaded tokenization (1 documents)
+Dataset created: 66 tokens
+✓ Dataset created
+
+⚠️  WARNING: Configuration creates only 1 batch(es) for 2 workers
+   This will result in very slow training with poor thread utilization.
+   Recommendation: Use smaller batch/seq-len parameters:
+   Try: --batch 4 --seq-len 16 (creates ~1 batches)
+
+⚠️  WARNING: Very small dataset (66 tokens)
+   Consider using a larger dataset for better model quality.
+
+Creating model...
+🔷 Initializing geometric foundation...
+  ✓ Platonic solid: Cube (8V, 12E, 6F)
+  ✓ Dimensions: embedding=64, hidden=256, layers=2, heads=12
+  ✓ Euler's formula: V - E + F = 2 (expected 2)
+🕐 Initializing clock lattice mapping...
+Initializing rainbow table (100,000 primes using crystalline sieve)...
+✓ Rainbow table initialized: 100000 primes (2 to 827927)
+  ✓ Mapped 8 vertices and 68 tokens to clock lattice
+💾 Allocating model parameters...
+  ✓ Allocated all parameters
+🛡️  Initializing blind recovery...
+  ✓ Blind recovery enabled (tolerance: 0%)
+🎵 Initializing harmonic integration...
+  ✓ Harmonic integration enabled (primary: 0 Hz)
+⚡ Initializing NTT attention...
+  ✓ NTT attention enabled (threshold: 512)
+🔮 Initializing kissing spheres threading...
+  ✓ Kissing spheres threading enabled (13 spheres)
+🎲 Initializing weights with geometric structure...
+  ✓ Weights initialized
+✅ Model creation complete!
+   Platonic solid: 8V, 12E, 6F (Euler: 2)
+   Dimensions: 64 embedding, 256 hidden, 2 layers, 12 heads
+   Features: recovery=1, harmonic=1, ntt=1, threading=1
+✓ Model created
+
+Transferring vocabulary to model...
+  Tokenizer vocabulary size: 68
+Pre-computing embeddings for 68 tokens...
+✓ Pre-computed all 68 embeddings
+
+✓ Training initialized
+  Batch size: 2
+  Sequence length: 32
+  Learning rate: 0.000100
+  Optimizer: Adam
+Auto-detected 2 CPU cores, using 2 threads
+Starting THREADED training with 2 threads...
+Using kissing spheres architecture
+
+Creating 12-fold symmetric threading system (MASTER PLAN):
+  Symmetry positions: 12 (12-fold structure)
+  Active workers: 2 (rotating through positions)
+  Control thread: Node Zero (NEVER processes batches)
+  Hierarchy levels: 2
+  ✓ Created shared gradient buffer: 0.03 MB
+  ✓ Control process infrastructure initialized
+  ✓ Root lattice hierarchy created (12-fold structure)
+[Sphere 0] Clock position: ring=0, position=0, offset=0, segment_size=2901
+[Sphere 0] Cache placement: theta=0.0000, cache_line=0, numa_node=0, cpu_core=0
+[Sphere 1] Clock position: ring=0, position=1, offset=2901, segment_size=2901
+[Sphere 1] Cache placement: theta=0.5236, cache_line=85, numa_node=0, cpu_core=1
+  ✓ Batch queue created (capacity: 128 batches)
+  ✓ Work queue created (capacity: 256 work items)
+  ✓ Node Zero created (control thread NEVER processes batches)
+  Creating 2 worker threads (PHASE 2B: LOCK-FREE MODE)...
+[Node Zero] Control thread started - Message-based coordination
+[Node Zero] NEVER processes batches - only coordinates
+[Worker 0] Dynamic thread started (symmetry group 0, level 0)
+  ✓ Threaded training system created successfully
+    - 1 control thread (Node Zero)
+    - 2 worker threads
+    - 12-fold symmetry structure
+
+  ✓ Metrics system initialized for UI integration
+  Initializing entropy optimization systems...
+  ✓ Entropy integration initialized (12 dimensions)
+  ✓ Adaptive hierarchy initialized (multi-factor scoring)
+[Worker 0] CPU affinity set: cache_line=0, numa_node=0, cpu_core=0
+  ✓ Entropy-based thread allocation calculated:
+    Total threads: 0
+    Active dimensions: 0
+  ✓ Entropy work distribution plan initialized
+  ✓ All entropy optimization systems initialized
+
+  Initializing Plimpton 322 work distribution...
+  ✓ Plimpton integration initialized
+  Initializing cymatic timing synchronization...
+  ✓ Cymatic barriers created:
+    - Epoch barrier: Schumann resonance (7.83 Hz)
+    - Batch barrier: 432 Hz (natural tuning)
+[Worker 1] Dynamic thread started (symmetry group 1, level 0)
+[Worker 1] CPU affinity set: cache_line=85, numa_node=0, cpu_core=1
+Phase 4/5: Training Model [                                                  ]   0.0% | 0/1 | Time: 0s | ETA: calculating... | Speed: 0.00/s[KWARNING: Failed to calculate entropy work distribution, using uniform distribution
+
+=== PHASE 2B: LOCK-FREE TRAINING EPOCH ===
+Epoch 1 - Using 2 worker threads (lock-free work queue)
+[Pre-fetch] Started background batch loading
+Batch pre-fetching enabled + Lock-free work queue active
+
+=== EPOCH 0: 1 batches to process ===
+Calculating entropy-based work distribution...
+    [Worker 0] Assigned 1 batches
+    [Worker 1] Assigned 0 batches
+Pushing batches to work queue...
+[Pre-fetch] Thread started
+[Pre-fetch] Loaded 1 batches total, iterator exhausted
+[Pre-fetch] Thread exiting
+All 1 batches pushed to work queue
+Waiting for workers to complete...
+=== EPOCH 0 COMPLETE: All 1 batches processed! ===
+Epoch 1/1 | Batch 1/1 (100.0%) | Loss: 0.0000 | 0.0 batch/s | ETA: 00:00:00
+Accumulating gradients...
