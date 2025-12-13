@@ -4,7 +4,7 @@
  */
 
 #include "sigma_spiral.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdlib.h>

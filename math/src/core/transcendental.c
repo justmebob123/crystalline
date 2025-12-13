@@ -310,9 +310,9 @@ double math_log2(double x) {
 
 double math_sin(double x) {
     /* Reduce to range [-π, π] */
-    const double TWO_PI = 2.0 * MATH_PI;
-    while (x > MATH_PI) x -= TWO_PI;
-    while (x < -MATH_PI) x += TWO_PI;
+    const double two_pi = 2.0 * MATH_PI;
+    while (x > MATH_PI) x -= two_pi;
+    while (x < -MATH_PI) x += two_pi;
     
     /* Taylor series: sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ... */
     double result = x;
@@ -330,9 +330,9 @@ double math_sin(double x) {
 
 double math_cos(double x) {
     /* Reduce to range [-π, π] */
-    const double TWO_PI = 2.0 * MATH_PI;
-    while (x > MATH_PI) x -= TWO_PI;
-    while (x < -MATH_PI) x += TWO_PI;
+    const double two_pi = 2.0 * MATH_PI;
+    while (x > MATH_PI) x -= two_pi;
+    while (x < -MATH_PI) x += two_pi;
     
     /* Taylor series: cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ... */
     double result = 1.0;
@@ -359,9 +359,9 @@ double math_tan(double x) {
 void math_sincos(double x, double *sin_x, double *cos_x) {
     /* More efficient to compute both simultaneously */
     /* Reduce to range [-π, π] */
-    const double TWO_PI = 2.0 * MATH_PI;
-    while (x > MATH_PI) x -= TWO_PI;
-    while (x < -MATH_PI) x += TWO_PI;
+    const double two_pi = 2.0 * MATH_PI;
+    while (x > MATH_PI) x -= two_pi;
+    while (x < -MATH_PI) x += two_pi;
     
     double x_squared = x * x;
     

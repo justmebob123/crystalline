@@ -5,10 +5,10 @@
 #include "ai/cllm_cymatic_frequencies.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <assert.h>
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 // Test counter
 static int tests_passed = 0;
@@ -33,9 +33,9 @@ int test_period_constants(void) {
     double period_528 = 1.0 / FREQ_528_HZ;
     double period_schumann = 1.0 / FREQ_SCHUMANN;
     
-    if (fabs(PERIOD_432_HZ - period_432) > EPSILON) return 0;
-    if (fabs(PERIOD_528_HZ - period_528) > EPSILON) return 0;
-    if (fabs(PERIOD_SCHUMANN - period_schumann) > EPSILON) return 0;
+    if (fabs(PERIOD_432_HZ - period_432) > MATH_EPSILON) return 0;
+    if (fabs(PERIOD_528_HZ - period_528) > MATH_EPSILON) return 0;
+    if (fabs(PERIOD_SCHUMANN - period_schumann) > MATH_EPSILON) return 0;
     
     return 1;
 }

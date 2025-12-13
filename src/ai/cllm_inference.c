@@ -318,7 +318,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
     
     // Compute attention scores with numerical stability
     double scale = 1.0 / math_sqrt((double)head_dim);
-    const double EPSILON = 1e-10;
+    const double MATH_EPSILON = 1e-10;
     const double MAX_SCORE = 10.0;  // Clip scores to prevent overflow
     
     for (uint32_t h = 0; h < num_heads; h++) {
@@ -362,7 +362,7 @@ void cllm_attention_forward(AttentionLayer* layer, double* input, double* output
             }
             
             // Normalize with epsilon to prevent division by zero
-            sum_exp = sum_exp + EPSILON;
+            sum_exp = sum_exp + MATH_EPSILON;
             for (int j = 0; j < seq_len; j++) {
                 scores[i * seq_len + j] /= sum_exp;
             }

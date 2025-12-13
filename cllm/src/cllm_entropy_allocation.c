@@ -11,7 +11,7 @@
 /**
  * @brief Small epsilon for floating point comparisons
  */
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 /**
  * @brief Initialize allocation configuration with defaults
@@ -57,7 +57,7 @@ int calculate_dimension_threads(
     int available_threads,
     const AllocationConfig* config
 ) {
-    if (!config || total_entropy < EPSILON || available_threads <= 0) {
+    if (!config || total_entropy < MATH_EPSILON || available_threads <= 0) {
         return 0;
     }
     
@@ -140,7 +140,7 @@ bool calculate_thread_allocation(
     }
     plan->total_entropy = total_entropy;
     
-    if (total_entropy < EPSILON) {
+    if (total_entropy < MATH_EPSILON) {
         // No entropy, no allocation
         return true;
     }
@@ -342,7 +342,7 @@ double calculate_allocation_balance(const ThreadAllocationPlan* plan) {
     
     // Return coefficient of variation (normalized standard deviation)
     double std_dev = math_sqrt(variance);
-    return (mean > EPSILON) ? (std_dev / mean) : 0.0;
+    return (mean > MATH_EPSILON) ? (std_dev / mean) : 0.0;
 }
 
 /**

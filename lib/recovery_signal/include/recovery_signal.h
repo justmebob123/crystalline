@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <complex.h>
+#include "math/complex.h"
 
 #ifdef __cplusplus
 extern "C" {

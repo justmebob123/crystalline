@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
 // Test counter
 static int tests_passed = 0;

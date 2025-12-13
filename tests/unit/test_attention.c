@@ -12,11 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include "cllm.h"
 #include "cllm_inference.h"
 
-#define EPSILON 1e-5f
+#define MATH_EPSILON 1e-5f
 #define TEST_PASSED 1
 #define TEST_FAILED 0
 
@@ -107,7 +107,7 @@ int test_single_head_attention() {
     // Check output is not all zeros
     int passed = 0;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (fabsf(output[i]) > EPSILON) {
+        if (fabsf(output[i]) > MATH_EPSILON) {
             passed = 1;
             break;
         }
@@ -526,7 +526,7 @@ int test_attention_consistency() {
     // Outputs should be identical
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (!float_equals(output1[i], output2[i], EPSILON)) {
+        if (!float_equals(output1[i], output2[i], MATH_EPSILON)) {
             passed = 0;
             break;
         }

@@ -6,7 +6,7 @@
  * Only includes functions needed by CLLM that don't use OLD BigInt/BigFixed library
  */
 
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdint.h>
 #include <stdio.h>
 

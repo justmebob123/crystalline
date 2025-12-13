@@ -51,8 +51,8 @@ extern bool platonic_icosahedron_init_attention(PlatonicModel* model);
 // GEOMETRIC CONSTANTS
 // ============================================================================
 
-// Golden ratio for dodecahedron/icosahedron (use existing PHI from prime_types.h)
-// #define PHI ((1.0 + math_sqrt(5.0)) / 2.0)  // Already defined in prime_types.h
+// Golden ratio for dodecahedron/icosahedron (use existing MATH_PHI from prime_types.h)
+// #define MATH_PHI ((1.0 + math_sqrt(5.0)) / 2.0)  // Already defined in prime_types.h
 
 // Platonic solid properties
 static const PlatonicGeometry PLATONIC_GEOMETRIES[] = {

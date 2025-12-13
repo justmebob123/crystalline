@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
 #include "cllm_angular_position.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -21,7 +21,7 @@ static int tests_failed = 0;
         tests_failed++; \
     }
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 // ============================================================================
 // INDIVIDUAL TERM TESTS
@@ -32,7 +32,7 @@ int test_spiral_term() {
     
     // For k=0, should be 0
     double term0 = angular_position_spiral_term(0);
-    if (fabs(term0) > EPSILON) {
+    if (fabs(term0) > MATH_EPSILON) {
         printf("ERROR: spiral_term(0) = %.6f, expected 0\n", term0);
         return 0;
     }
@@ -40,7 +40,7 @@ int test_spiral_term() {
     // For k=1, should be π(1+√5) ≈ 7.024815
     double term1 = angular_position_spiral_term(1);
     double expected1 = M_PI * (1.0 + sqrt(5.0));
-    if (fabs(term1 - expected1) > EPSILON) {
+    if (fabs(term1 - expected1) > MATH_EPSILON) {
         printf("ERROR: spiral_term(1) = %.6f, expected %.6f\n", term1, expected1);
         return 0;
     }
@@ -48,7 +48,7 @@ int test_spiral_term() {
     // For k=10
     double term10 = angular_position_spiral_term(10);
     double expected10 = 10.0 * M_PI * (1.0 + sqrt(5.0));
-    if (fabs(term10 - expected10) > EPSILON) {
+    if (fabs(term10 - expected10) > MATH_EPSILON) {
         printf("ERROR: spiral_term(10) = %.6f, expected %.6f\n", term10, expected10);
         return 0;
     }
@@ -61,7 +61,7 @@ int test_index_term() {
     
     // For n=1, should be 0
     double term1 = angular_position_index_term(1);
-    if (fabs(term1) > EPSILON) {
+    if (fabs(term1) > MATH_EPSILON) {
         printf("ERROR: index_term(1) = %.6f, expected 0\n", term1);
         return 0;
     }
@@ -69,14 +69,14 @@ int test_index_term() {
     // For n=2, should be 2π/(12·ln3)
     double term2 = angular_position_index_term(2);
     double expected2 = (2.0 * M_PI) / (12.0 * LN_3);
-    if (fabs(term2 - expected2) > EPSILON) {
+    if (fabs(term2 - expected2) > MATH_EPSILON) {
         printf("ERROR: index_term(2) = %.6f, expected %.6f\n", term2, expected2);
         return 0;
     }
     
     // For n=0 or negative, should be 0
     double term0 = angular_position_index_term(0);
-    if (fabs(term0) > EPSILON) {
+    if (fabs(term0) > MATH_EPSILON) {
         printf("ERROR: index_term(0) = %.6f, expected 0\n", term0);
         return 0;
     }
@@ -96,14 +96,14 @@ int test_phonetic_term() {
     double frequency = 343.0;
     double expected = log(frequency) / LN_3;
     
-    if (fabs(term - expected) > EPSILON) {
+    if (fabs(term - expected) > MATH_EPSILON) {
         printf("ERROR: phonetic_term(1.0) = %.6f, expected %.6f\n", term, expected);
         return 0;
     }
     
     // Test with zero or negative wavelength
     double term_zero = angular_position_phonetic_term(0.0);
-    if (fabs(term_zero) > EPSILON) {
+    if (fabs(term_zero) > MATH_EPSILON) {
         printf("ERROR: phonetic_term(0) should be 0\n");
         return 0;
     }
@@ -119,7 +119,7 @@ int test_omega_correction() {
     double lambda = cllm_get_einstein_lambda();
     
     // At 144000, distance = 0, so f(p) = 1
-    if (fabs(omega_144000 - lambda) > EPSILON) {
+    if (fabs(omega_144000 - lambda) > MATH_EPSILON) {
         printf("ERROR: omega(144000) = %.10f, expected %.10f\n", omega_144000, lambda);
         return 0;
     }
@@ -179,7 +179,7 @@ int test_normalize() {
     double norm1 = angular_position_normalize(theta1);
     double expected1 = M_PI;
     
-    if (fabs(norm1 - expected1) > EPSILON) {
+    if (fabs(norm1 - expected1) > MATH_EPSILON) {
         printf("ERROR: normalize(3π) = %.6f, expected %.6f\n", norm1, expected1);
         return 0;
     }
@@ -189,7 +189,7 @@ int test_normalize() {
     double norm2 = angular_position_normalize(theta2);
     double expected2 = 3.0 * M_PI / 2.0;
     
-    if (fabs(norm2 - expected2) > EPSILON) {
+    if (fabs(norm2 - expected2) > MATH_EPSILON) {
         printf("ERROR: normalize(-π/2) = %.6f, expected %.6f\n", norm2, expected2);
         return 0;
     }
@@ -198,7 +198,7 @@ int test_normalize() {
     double theta3 = M_PI;
     double norm3 = angular_position_normalize(theta3);
     
-    if (fabs(norm3 - theta3) > EPSILON) {
+    if (fabs(norm3 - theta3) > MATH_EPSILON) {
         printf("ERROR: normalize(π) = %.6f, expected %.6f\n", norm3, theta3);
         return 0;
     }
@@ -214,28 +214,28 @@ int test_clock_position() {
     
     // Test 0 radians = 12 o'clock
     angular_position_to_clock(0.0, &hour, &minute);
-    if (hour != 0 || fabs(minute) > EPSILON) {
+    if (hour != 0 || fabs(minute) > MATH_EPSILON) {
         printf("ERROR: 0 rad should be 0:00, got %d:%.2f\n", hour, minute);
         return 0;
     }
     
     // Test π/2 radians = 3 o'clock
     angular_position_to_clock(M_PI / 2.0, &hour, &minute);
-    if (hour != 3 || fabs(minute) > EPSILON) {
+    if (hour != 3 || fabs(minute) > MATH_EPSILON) {
         printf("ERROR: π/2 rad should be 3:00, got %d:%.2f\n", hour, minute);
         return 0;
     }
     
     // Test π radians = 6 o'clock
     angular_position_to_clock(M_PI, &hour, &minute);
-    if (hour != 6 || fabs(minute) > EPSILON) {
+    if (hour != 6 || fabs(minute) > MATH_EPSILON) {
         printf("ERROR: π rad should be 6:00, got %d:%.2f\n", hour, minute);
         return 0;
     }
     
     // Test 3π/2 radians = 9 o'clock
     angular_position_to_clock(3.0 * M_PI / 2.0, &hour, &minute);
-    if (hour != 9 || fabs(minute) > EPSILON) {
+    if (hour != 9 || fabs(minute) > MATH_EPSILON) {
         printf("ERROR: 3π/2 rad should be 9:00, got %d:%.2f\n", hour, minute);
         return 0;
     }
@@ -275,7 +275,7 @@ int test_boundary_detection() {
         return 0;
     }
     
-    if (fabs(distance) > EPSILON) {
+    if (fabs(distance) > MATH_EPSILON) {
         printf("ERROR: Distance at 144000 should be 0, got %.2f\n", distance);
         return 0;
     }
@@ -332,7 +332,7 @@ int test_wavelength_frequency_conversion() {
     double frequency = wavelength_to_frequency(wavelength);
     double expected_freq = 343.0;  // Hz
     
-    if (fabs(frequency - expected_freq) > EPSILON) {
+    if (fabs(frequency - expected_freq) > MATH_EPSILON) {
         printf("ERROR: wavelength_to_frequency(1.0) = %.2f, expected %.2f\n", 
                frequency, expected_freq);
         return 0;
@@ -340,7 +340,7 @@ int test_wavelength_frequency_conversion() {
     
     // Test round-trip conversion
     double wavelength2 = frequency_to_wavelength(frequency);
-    if (fabs(wavelength2 - wavelength) > EPSILON) {
+    if (fabs(wavelength2 - wavelength) > MATH_EPSILON) {
         printf("ERROR: Round-trip conversion failed\n");
         return 0;
     }
@@ -371,7 +371,7 @@ int test_phonetic_wavelength() {
     
     // Test case insensitivity
     double lambda_A = get_phonetic_wavelength('A');
-    if (fabs(lambda_A - lambda_a) > EPSILON) {
+    if (fabs(lambda_A - lambda_a) > MATH_EPSILON) {
         printf("ERROR: Phonetic wavelength should be case-insensitive\n");
         return 0;
     }
@@ -464,14 +464,14 @@ int test_angular_position_144000() {
     }
     
     // Distance should be 0
-    if (fabs(pos.distance_to_144000) > EPSILON) {
+    if (fabs(pos.distance_to_144000) > MATH_EPSILON) {
         printf("ERROR: Distance to 144000 should be 0, got %.2f\n", pos.distance_to_144000);
         return 0;
     }
     
     // Omega correction should be maximum
     double lambda = cllm_get_einstein_lambda();
-    if (fabs(pos.omega_correction - lambda) > EPSILON) {
+    if (fabs(pos.omega_correction - lambda) > MATH_EPSILON) {
         printf("ERROR: Omega correction at 144000 should be lambda\n");
         return 0;
     }
@@ -546,14 +546,14 @@ int test_angular_position_distance() {
     }
     
     // Distance should be at most π
-    if (distance > M_PI + EPSILON) {
+    if (distance > M_PI + MATH_EPSILON) {
         printf("ERROR: Distance should be at most π, got %.6f\n", distance);
         return 0;
     }
     
     // Distance to self should be 0
     double self_distance = angular_position_distance(&pos1, &pos1);
-    if (fabs(self_distance) > EPSILON) {
+    if (fabs(self_distance) > MATH_EPSILON) {
         printf("ERROR: Distance to self should be 0, got %.6f\n", self_distance);
         return 0;
     }

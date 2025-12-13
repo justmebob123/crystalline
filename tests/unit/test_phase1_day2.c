@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include "cllm_hierarchical_abacus.h"
 #include "ai/cllm_sphere_stats.h"
 

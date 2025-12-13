@@ -13,7 +13,7 @@
 #include <string.h>
 
 // Epsilon for floating point comparisons
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 // ============================================================================
 // CONSTRUCTION
@@ -166,15 +166,15 @@ MathComplex math_complex_cos(MathComplex z) {
 // ============================================================================
 
 bool math_complex_is_zero(MathComplex z) {
-    return (math_abs(z.real) < EPSILON) && (math_abs(z.imag) < EPSILON);
+    return (math_abs(z.real) < MATH_EPSILON) && (math_abs(z.imag) < MATH_EPSILON);
 }
 
 bool math_complex_is_real(MathComplex z) {
-    return math_abs(z.imag) < EPSILON;
+    return math_abs(z.imag) < MATH_EPSILON;
 }
 
 bool math_complex_is_imaginary(MathComplex z) {
-    return math_abs(z.real) < EPSILON;
+    return math_abs(z.real) < MATH_EPSILON;
 }
 
 bool math_complex_equals(MathComplex a, MathComplex b, double epsilon) {

@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 // Test counter
 static int tests_passed = 0;
@@ -111,7 +111,7 @@ int test_calculate_distribution(void) {
     
     // Verify ratios sum to 1.0
     double sum = dist.parent_keeps + dist.child_gets;
-    if (fabs(sum - 1.0) > EPSILON) {
+    if (fabs(sum - 1.0) > MATH_EPSILON) {
         plimpton_integration_free(ctx);
         return 0;
     }

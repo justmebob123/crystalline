@@ -138,11 +138,11 @@ float math_pow(float x, float y) {
  */
 float math_sin(float x) {
     // Reduce to range [-π, π]
-    const float PI = 3.14159265358979323846f;
-    const float TWO_PI = 2.0f * PI;
+    const float MATH_PI = 3.14159265358979323846f;
+    const float MATH_TWO_PI = 2.0f * MATH_PI;
     
-    while (x > PI) x -= TWO_PI;
-    while (x < -PI) x += TWO_PI;
+    while (x > MATH_PI) x -= MATH_TWO_PI;
+    while (x < -MATH_PI) x += MATH_TWO_PI;
     
     // Taylor series
     float result = x;
@@ -164,11 +164,11 @@ float math_sin(float x) {
  */
 float math_cos(float x) {
     // Reduce to range [-π, π]
-    const float PI = 3.14159265358979323846f;
-    const float TWO_PI = 2.0f * PI;
+    const float MATH_PI = 3.14159265358979323846f;
+    const float MATH_TWO_PI = 2.0f * MATH_PI;
     
-    while (x > PI) x -= TWO_PI;
-    while (x < -PI) x += TWO_PI;
+    while (x > MATH_PI) x -= MATH_TWO_PI;
+    while (x < -MATH_PI) x += MATH_TWO_PI;
     
     // Taylor series
     float result = 1.0f;

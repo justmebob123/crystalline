@@ -12,7 +12,7 @@
 #include "math/abacus.h"
 #include "math/types.h"
 #include "math/clock.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -25,7 +25,7 @@ static int tests_failed = 0;
         tests_failed++; \
     }
 
-#define EPSILON 0.0001
+#define MATH_EPSILON 0.0001
 
 // ============================================================================
 // BASIC DISTRIBUTION TESTS
@@ -45,7 +45,7 @@ int test_calculate_distribution() {
     
     // Check ratios sum to approximately 1.0
     double sum = dist.parent_keeps + dist.child_gets;
-    assert(fabs(sum - 1.0) < EPSILON);
+    assert(fabs(sum - 1.0) < MATH_EPSILON);
     
     return 1;
 }
@@ -72,32 +72,32 @@ int test_known_plimpton_distributions() {
     // (2,1)
     WorkDistribution dist = calculate_work_distribution(2, 1);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     // (3,2)
     dist = calculate_work_distribution(3, 2);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     // (4,1)
     dist = calculate_work_distribution(4, 1);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     // (4,3)
     dist = calculate_work_distribution(4, 3);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     // (5,2)
     dist = calculate_work_distribution(5, 2);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     // (5,4)
     dist = calculate_work_distribution(5, 4);
     assert(dist.is_valid == true);
-    assert(fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(fabs(get_ratio_sum(&dist) - 1.0) < MATH_EPSILON);
     
     return 1;
 }
@@ -108,17 +108,17 @@ int test_known_plimpton_distributions() {
 
 int test_ratio_sum_validation() {
     // Valid sum
-    assert(ratios_sum_to_one(0.6, 0.4, EPSILON) == true);
-    assert(ratios_sum_to_one(0.5, 0.5, EPSILON) == true);
-    assert(ratios_sum_to_one(0.7, 0.3, EPSILON) == true);
+    assert(ratios_sum_to_one(0.6, 0.4, MATH_EPSILON) == true);
+    assert(ratios_sum_to_one(0.5, 0.5, MATH_EPSILON) == true);
+    assert(ratios_sum_to_one(0.7, 0.3, MATH_EPSILON) == true);
     
     // Invalid sum
-    assert(ratios_sum_to_one(0.6, 0.5, EPSILON) == false);
-    assert(ratios_sum_to_one(0.3, 0.3, EPSILON) == false);
+    assert(ratios_sum_to_one(0.6, 0.5, MATH_EPSILON) == false);
+    assert(ratios_sum_to_one(0.3, 0.3, MATH_EPSILON) == false);
     
     // Edge cases
-    assert(ratios_sum_to_one(1.0, 0.0, EPSILON) == true);
-    assert(ratios_sum_to_one(0.0, 1.0, EPSILON) == true);
+    assert(ratios_sum_to_one(1.0, 0.0, MATH_EPSILON) == true);
+    assert(ratios_sum_to_one(0.0, 1.0, MATH_EPSILON) == true);
     
     return 1;
 }
@@ -128,23 +128,23 @@ int test_distribution_validation() {
     
     // Valid distribution
     dist = calculate_work_distribution(3, 2);
-    assert(validate_work_distribution(&dist, EPSILON) == true);
+    assert(validate_work_distribution(&dist, MATH_EPSILON) == true);
     
     // Invalid distribution (ratios don't sum to 1)
     dist.parent_keeps = 0.6;
     dist.child_gets = 0.5;
     dist.is_valid = false;
-    assert(validate_work_distribution(&dist, EPSILON) == false);
+    assert(validate_work_distribution(&dist, MATH_EPSILON) == false);
     
     // Invalid distribution (negative ratio)
     dist.parent_keeps = -0.1;
     dist.child_gets = 1.1;
-    assert(validate_work_distribution(&dist, EPSILON) == false);
+    assert(validate_work_distribution(&dist, MATH_EPSILON) == false);
     
     // Invalid distribution (ratio > 1)
     dist.parent_keeps = 1.5;
     dist.child_gets = -0.5;
-    assert(validate_work_distribution(&dist, EPSILON) == false);
+    assert(validate_work_distribution(&dist, MATH_EPSILON) == false);
     
     return 1;
 }
@@ -239,7 +239,7 @@ int test_multi_child_distribution() {
     
     // Check ratios sum to approximately 1.0
     double sum = get_multi_child_ratio_sum(&dist);
-    assert(fabs(sum - 1.0) < EPSILON);
+    assert(fabs(sum - 1.0) < MATH_EPSILON);
     
     // Cleanup
     free(dist.child_ids);
@@ -254,7 +254,7 @@ int test_multi_child_validation() {
         10, child_ids, 3
     );
     
-    assert(validate_multi_child_distribution(&dist, EPSILON) == true);
+    assert(validate_multi_child_distribution(&dist, MATH_EPSILON) == true);
     
     // Cleanup
     free(dist.child_ids);
@@ -411,7 +411,7 @@ int test_ratio_sum_getters() {
     // Single child
     WorkDistribution dist = calculate_work_distribution(3, 2);
     double sum = get_ratio_sum(&dist);
-    assert(fabs(sum - 1.0) < EPSILON);
+    assert(fabs(sum - 1.0) < MATH_EPSILON);
     
     // Multiple children
     uint64_t child_ids[] = {1, 3, 7};
@@ -419,7 +419,7 @@ int test_ratio_sum_getters() {
         10, child_ids, 3
     );
     sum = get_multi_child_ratio_sum(&multi_dist);
-    assert(fabs(sum - 1.0) < EPSILON);
+    assert(fabs(sum - 1.0) < MATH_EPSILON);
     
     // Cleanup
     free(multi_dist.child_ids);

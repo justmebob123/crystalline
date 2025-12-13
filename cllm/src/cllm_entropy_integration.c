@@ -11,7 +11,7 @@
 /**
  * @brief Small epsilon for floating point comparisons
  */
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 /**
  * @brief Initialize dimension statistics

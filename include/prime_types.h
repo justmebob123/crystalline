@@ -356,8 +356,6 @@ typedef struct {
 // Symmetry and lattice constants
 #define SYMMETRY_ORDER 12             // 12-fold symmetry (clock structure)
 #define GOLDEN_RATIO 1.618033988749895
-#define PHI 1.618033988749895         // Golden ratio (alias)
-#define PI 3.14159265358979323846
 #define PRIME_PI 3.14159265358979323846  // Pi constant (alias)
 #define LATTICE_PI 3.14159265358979323846  // Lattice Pi constant
 #define LATTICE_PHI 1.618033988749895      // Lattice golden ratio
@@ -369,9 +367,6 @@ typedef struct {
 #define EINSTEIN_LAMBDA (3.0 / 144000.0)  // ω = 3/144000
 
 // Vector culmination and twin primes
-#define VECTOR_CULMINATION 144000     // 3 × 12³ × (250/9)
-#define TWIN_PRIME_LOWER 143999       // Lattice twin (lower)
-#define TWIN_PRIME_UPPER 144001       // Lattice twin (upper)
 
 // π dust (Zu Chongzhi approximation)
 #define PI_DUST_NUMERATOR 355

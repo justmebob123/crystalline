@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 // Golden ratio: φ = (1 + √5) / 2
-#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 
 // ============================================================================
 // COORDINATE GENERATION
@@ -43,7 +42,7 @@ static bool generate_icosahedron_coordinates(PlatonicSolid* solid) {
         return false;
     }
     
-    double phi = PHI;
+    double phi = MATH_PHI;
     
     // Allocate coordinate array (12 vertices × 3 dimensions)
     solid->vertex_coords = (double*)calloc(12 * 3, sizeof(double));

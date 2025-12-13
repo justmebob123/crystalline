@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include <unistd.h>
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"

@@ -14,7 +14,7 @@
  */
 
 #include "mathematical_formulas.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
@@ -89,8 +89,8 @@ double formula_tlm(double P, double f) {
 
 double formula_wave_z(double P1, double P2, double P3, double P4, 
                       double x, double y) {
-    double term1 = math_sin(P1 * PI * x) * math_cos(P2 * PI * y);
-    double term2 = math_sin(P3 * PI * x) * math_cos(P4 * PI * y);
+    double term1 = math_sin(P1 * MATH_PI * x) * math_cos(P2 * MATH_PI * y);
+    double term2 = math_sin(P3 * MATH_PI * x) * math_cos(P4 * MATH_PI * y);
     return term1 + term2;
 }
 
@@ -98,17 +98,17 @@ double formula_psi_mn(uint32_t m, uint32_t n, double x, double y,
                       double L, double W) {
     if (L == 0.0 || W == 0.0) return 0.0;
     
-    double term1 = math_sin((double)m * PI * x / L);
-    double term2 = math_sin((double)n * PI * y / W);
+    double term1 = math_sin((double)m * MATH_PI * x / L);
+    double term2 = math_sin((double)n * MATH_PI * y / W);
     return term1 * term2;
 }
 
 double formula_psm(double P, double x) {
-    return P * math_sin(P * PI * x);
+    return P * math_sin(P * MATH_PI * x);
 }
 
 double formula_eleventh_hg(double x, double dissonant) {
-    return math_sin(11.0 * PI * x) + dissonant;
+    return math_sin(11.0 * MATH_PI * x) + dissonant;
 }
 
 double formula_hd(double harmonic, double P) {
@@ -120,8 +120,8 @@ double formula_dps(double P, uint32_t n, double x, double y,
                    double L, double W) {
     if (L == 0.0 || W == 0.0) return 0.0;
     
-    double term1 = math_sin(P * PI * x / L);
-    double term2 = math_sin((double)n * PI * y / W);
+    double term1 = math_sin(P * MATH_PI * x / L);
+    double term2 = math_sin((double)n * MATH_PI * y / W);
     return term1 * term2;
 }
 
@@ -131,7 +131,7 @@ double formula_dps(double P, uint32_t n, double x, double y,
 
 double formula_bga(uint32_t T, uint64_t p_mod) {
     uint64_t tet = formula_tv(2, T, p_mod);
-    return PHI * (double)tet;
+    return MATH_PHI * (double)tet;
 }
 
 uint64_t formula_tv(uint64_t P, uint32_t T, uint64_t p_mod) {
@@ -147,7 +147,7 @@ uint64_t formula_tv(uint64_t P, uint32_t T, uint64_t p_mod) {
         // Damping factor: φ^(-i) where φ = 1.618...
         double damping = 1.0;
         for (uint32_t j = 0; j < i; j++) {
-            damping /= PHI;
+            damping /= MATH_PHI;
         }
         
         // Compute P^result mod p_mod with damping
@@ -177,7 +177,7 @@ uint64_t formula_tvg(uint64_t P, uint32_t T, uint64_t p_mod) {
 
 double formula_tv_pi(uint64_t P, uint32_t T, uint64_t p_mod) {
     uint64_t tv = formula_tv(P, T, p_mod);
-    return (double)tv * PI;
+    return (double)tv * MATH_PI;
 }
 
 double formula_rif(uint64_t P, uint32_t T, double SE, uint64_t p_mod) {
@@ -233,7 +233,7 @@ double formula_qss(double H, double C, double P) {
 }
 
 double formula_pre(uint32_t n, double P) {
-    return math_pow(PHI, (double)n) * P;
+    return math_pow(MATH_PHI, (double)n) * P;
 }
 
 double formula_gnr(double P, double G_val) {
@@ -396,7 +396,7 @@ double formula_c_d(double r, uint32_t d) {
         gamma_val = 1.0;  // Γ(2) = 1
     } else {
         // Stirling: Γ(x) ≈ √(2π/x) * (x/e)^x
-        gamma_val = math_sqrt(TWO_PI / x) * math_pow(x / E, x);
+        gamma_val = math_sqrt(MATH_TWO_PI / x) * math_pow(x / MATH_E, x);
     }
     
     double exponent = -r_d / gamma_val;

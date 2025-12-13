@@ -26,7 +26,7 @@
 #include <string.h>
 
 /* Mathematical constants */
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 /* Ring sizes */
 #define RING_0_SIZE 12
@@ -89,7 +89,7 @@ MathError clock_from_sphere_optimized(const SphereCoord* sphere, ClockPosition* 
     }
     
     /* Check for north pole (z ≈ 1) */
-    if (math_abs(sphere->z - 1.0) < EPSILON) {
+    if (math_abs(sphere->z - 1.0) < MATH_EPSILON) {
         /* Point at north pole - map to origin */
         pos->radius = 0.0;
         pos->angle = 0.0;
@@ -347,7 +347,7 @@ MathError clock_interpolate(const ClockPosition* start,
     double omega = math_acos(dot);
     
     /* Check for very small angles (linear interpolation) */
-    if (math_abs(omega) < EPSILON) {
+    if (math_abs(omega) < MATH_EPSILON) {
         /* Points are very close, use linear interpolation */
         result->radius = start->radius + t * (end->radius - start->radius);
         result->angle = start->angle + t * (end->angle - start->angle);

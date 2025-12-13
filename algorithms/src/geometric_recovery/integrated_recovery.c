@@ -7,8 +7,7 @@
 #include "math/transcendental.h"
 #include "../../math/include/math/types.h"  // PHASE 2: For MATH_PHI, MATH_PI, MATH_TWO_PI
 
-#define PHI MATH_PHI
-#define PI MATH_PI
+#define MATH_PHI MATH_PHI
 
 // 13 dimensional frequencies
 static const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -40,7 +39,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * MATH_TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 3);
         }
         idx++;
     }
@@ -65,7 +64,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * MATH_TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 2);
         }
         idx++;
     }
@@ -76,7 +75,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * MATH_TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
+            anchors[idx].position[d] = math_cos(angle * phi_d * MATH_PHI) * math_pow(MATH_PHI, d % 5);
         }
         idx++;
     }
@@ -87,7 +86,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * MATH_TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 4);
         }
         idx++;
     }
@@ -268,7 +267,7 @@ static uint64_t multi_layer_search(
             uint64_t k = (uint64_t)candidate_k;
             
             // Forward mapping: θ = k·π·φ
-            double computed_angle = (double)k * PI * PHI;
+            double computed_angle = (double)k * MATH_PI * MATH_PHI;
             
             // Normalize to [0, 2π)
             while (computed_angle < 0) computed_angle += MATH_TWO_PI;
@@ -276,7 +275,7 @@ static uint64_t multi_layer_search(
             
             // Compute error (handle wraparound)
             double error = math_abs(computed_angle - normalized_target);
-            if (error > PI) error = MATH_TWO_PI - error;
+            if (error > MATH_PI) error = MATH_TWO_PI - error;
             
             // Update best
             if (error < best_error) {
@@ -312,8 +311,8 @@ static uint64_t recover_k_simple(
         uint64_t qy_val = strtoull(qy_str, NULL, 16);
         
         // Compute position using π×φ metric
-        double angle = (double)(qx_val % 360) * PI / 180.0;
-        q_position[d] = math_cos(angle * freq) * math_pow(PHI, d % 5);
+        double angle = (double)(qx_val % 360) * MATH_PI / 180.0;
+        q_position[d] = math_cos(angle * freq) * math_pow(MATH_PHI, d % 5);
         
         OPENSSL_free(qx_str);
         OPENSSL_free(qy_str);
@@ -375,7 +374,7 @@ static uint64_t recover_k_simple(
     uint64_t qx_val = strtoull(qx_str, NULL, 16);
     OPENSSL_free(qx_str);
     
-    double target_angle = (double)(qx_val % 360) * PI / 180.0;
+    double target_angle = (double)(qx_val % 360) * MATH_PI / 180.0;
     
     // Perform multi-layer search
     double final_error = 0.0;

@@ -13,14 +13,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <stdbool.h>
 #include "clock_lattice.h"
 #include "prime_basic.h"
 #include "cllm_pure_crystalline.h"
 
 #define TEST_PRIMES 232  // First 4 rings
-#define EPSILON 0.0001
+#define MATH_EPSILON 0.0001
 
 // Color codes for output
 #define COLOR_GREEN "\033[32m"
@@ -145,7 +145,7 @@ bool test_sacred_positions(TestResults* results) {
         
         if (is_sacred_position(pos)) {
             // Check if it's π position (3 o'clock, angle = 0)
-            if (fabs(pos.angle) < EPSILON) {
+            if (fabs(pos.angle) < MATH_EPSILON) {
                 found_pi = true;
                 char msg[256];
                 snprintf(msg, sizeof(msg), 
@@ -155,7 +155,7 @@ bool test_sacred_positions(TestResults* results) {
             }
             
             // Check if it's 12 o'clock (angle = -π/2)
-            if (fabs(pos.angle + M_PI/2) < EPSILON) {
+            if (fabs(pos.angle + M_PI/2) < MATH_EPSILON) {
                 found_12 = true;
                 char msg[256];
                 snprintf(msg, sizeof(msg), 
@@ -243,7 +243,7 @@ bool test_stereographic_projection(TestResults* results) {
                           sphere.y * sphere.y + 
                           sphere.z * sphere.z;
         
-        if (fabs(radius_sq - 1.0) < EPSILON) {
+        if (fabs(radius_sq - 1.0) < MATH_EPSILON) {
             on_sphere++;
         } else {
             off_sphere++;
@@ -281,7 +281,7 @@ bool test_folding_properties(TestResults* results) {
     BabylonianClockPosition center = {0, 0, 0.0, 0.0};
     SphereCoord sphere_center = fold_clock_to_sphere(center);
     
-    bool center_correct = fabs(sphere_center.z - 1.0) < EPSILON;
+    bool center_correct = fabs(sphere_center.z - 1.0) < MATH_EPSILON;
     if (center_correct) {
         print_pass("Center (radius=0) correctly maps to north pole (z=1)");
         results->passed++;
@@ -297,7 +297,7 @@ bool test_folding_properties(TestResults* results) {
     BabylonianClockPosition boundary = {3, 99, 0.0, 1.0};
     SphereCoord sphere_boundary = fold_clock_to_sphere(boundary);
     
-    bool boundary_correct = fabs(sphere_boundary.z + 1.0) < EPSILON;
+    bool boundary_correct = fabs(sphere_boundary.z + 1.0) < MATH_EPSILON;
     if (boundary_correct) {
         print_pass("Boundary (radius=1) correctly maps to south pole (z=-1)");
         results->passed++;
@@ -321,7 +321,7 @@ bool test_ring_radii(TestResults* results) {
     
     for (int ring = 0; ring < 4; ring++) {
         double radius = get_ring_radius_for_visualization(ring, 1.0);
-        bool correct = fabs(radius - expected_radii[ring]) < EPSILON;
+        bool correct = fabs(radius - expected_radii[ring]) < MATH_EPSILON;
         
         char msg[256];
         snprintf(msg, sizeof(msg), 

@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 /**
  * @brief Create a minimal test model
@@ -137,7 +137,7 @@ static void test_combined_distribution(void) {
     assert(dist.is_valid == true);
     assert(dist.parent_keeps > 0.0 && dist.parent_keeps < 1.0);
     assert(dist.child_gets > 0.0 && dist.child_gets < 1.0);
-    assert(fabs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
+    assert(fabs(dist.parent_keeps + dist.child_gets - 1.0) < MATH_EPSILON);
     
     printf("PASSED\n");
 }

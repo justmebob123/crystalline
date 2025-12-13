@@ -10,7 +10,7 @@
 
 #include "qk_mapping.h"
 #include "tensor_ops.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdlib.h>
 #include <string.h>
 

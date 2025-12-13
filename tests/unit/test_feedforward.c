@@ -12,10 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include "cllm.h"
 
-#define EPSILON 1e-5f
+#define MATH_EPSILON 1e-5f
 #define TEST_PASSED 1
 #define TEST_FAILED 0
 
@@ -117,7 +117,7 @@ int test_feedforward_forward_pass() {
     // Check output is not all zeros
     int passed = 0;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (fabsf(output[i]) > EPSILON) {
+        if (fabsf(output[i]) > MATH_EPSILON) {
             passed = 1;
             break;
         }
@@ -220,16 +220,16 @@ int test_activation_relu() {
     cllm_activation_relu(x, size);
     
     // Check ReLU: max(0, x)
-    int passed = float_equals(x[0], 0.0f, EPSILON) &&
-                 float_equals(x[1], 0.0f, EPSILON) &&
-                 float_equals(x[2], 1.0f, EPSILON) &&
-                 float_equals(x[3], 0.0f, EPSILON) &&
-                 float_equals(x[4], 5.0f, EPSILON) &&
-                 float_equals(x[5], 0.0f, EPSILON) &&
-                 float_equals(x[6], 0.5f, EPSILON) &&
-                 float_equals(x[7], 0.0f, EPSILON) &&
-                 float_equals(x[8], 10.0f, EPSILON) &&
-                 float_equals(x[9], 0.0f, EPSILON);
+    int passed = float_equals(x[0], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[1], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[2], 1.0f, MATH_EPSILON) &&
+                 float_equals(x[3], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[4], 5.0f, MATH_EPSILON) &&
+                 float_equals(x[5], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[6], 0.5f, MATH_EPSILON) &&
+                 float_equals(x[7], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[8], 10.0f, MATH_EPSILON) &&
+                 float_equals(x[9], 0.0f, MATH_EPSILON);
     
     free(x);
     return passed;
@@ -475,7 +475,7 @@ int test_feedforward_consistency() {
     // Outputs should be identical
     int passed = 1;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (!float_equals(output1[i], output2[i], EPSILON)) {
+        if (!float_equals(output1[i], output2[i], MATH_EPSILON)) {
             passed = 0;
             break;
         }
@@ -503,9 +503,9 @@ int test_activation_relu_edge_cases() {
     cllm_activation_relu(x, size);
     
     // Check edge cases
-    int passed = float_equals(x[0], 0.0f, EPSILON) &&
-                 float_equals(x[1], 0.0f, EPSILON) &&
-                 float_equals(x[2], 0.0f, EPSILON) &&
+    int passed = float_equals(x[0], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[1], 0.0f, MATH_EPSILON) &&
+                 float_equals(x[2], 0.0f, MATH_EPSILON) &&
                  (x[3] > 0.0f) &&
                  (x[4] > 0.0f) &&
                  (x[5] > 0.0f);

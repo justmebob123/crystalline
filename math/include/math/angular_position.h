@@ -39,13 +39,10 @@ extern "C" {
 #define SPEED_OF_SOUND 343.0
 
 /** Vector culmination point (144000) */
-#define VECTOR_CULMINATION 144000
 
 /** Twin prime lower bound */
-#define TWIN_PRIME_LOWER 143999
 
 /** Twin prime upper bound */
-#define TWIN_PRIME_UPPER 144001
 
 /** Natural logarithm of 3 */
 #define LN_3 1.0986122886681096

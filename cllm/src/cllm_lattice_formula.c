@@ -7,7 +7,7 @@
 #include "ai/cllm_lattice_entropy.h"
 #include "ai/cllm_cymatic_frequencies.h"
 #include "cllm_angular_position.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include "plimpton_322.h"
 #include "phonetic_values.h"
 #include <string.h>

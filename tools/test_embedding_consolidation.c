@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include "../include/cllm.h"
 #include "../include/cllm_inference.h"
 #include "../include/ai/cllm_platonic.h"
@@ -28,7 +28,7 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime, uint32_t
 
 #define TEST_VOCAB_SIZE 100
 #define TEST_EMBED_DIM 64
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 // Test counters
 static int tests_run = 0;
@@ -105,7 +105,7 @@ void test_basic_initialization() {
     // Check that embeddings are non-zero
     int non_zero_count = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (fabs(model->embeddings.embeddings[i]) > MATH_EPSILON) {
             non_zero_count++;
         }
     }
@@ -142,7 +142,7 @@ void test_legacy_compatibility() {
     // Verify embeddings were initialized
     int initialized = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (fabs(model->embeddings.embeddings[i]) > MATH_EPSILON) {
             initialized = 1;
             break;
         }
@@ -216,7 +216,7 @@ void test_lattice_utilities() {
     
     int non_zero = 0;
     for (int i = 0; i < TEST_EMBED_DIM; i++) {
-        if (fabs(output[i]) > EPSILON) non_zero++;
+        if (fabs(output[i]) > MATH_EPSILON) non_zero++;
     }
     TEST("Lattice embedding generation", non_zero > 0);
     
@@ -256,7 +256,7 @@ void test_platonic_integration() {
     // Verify embeddings were initialized
     int initialized = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (fabs(model->embeddings.embeddings[i]) > MATH_EPSILON) {
             initialized = 1;
             break;
         }

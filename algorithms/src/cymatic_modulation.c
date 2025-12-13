@@ -13,7 +13,7 @@
  * - Replaced math_sqrt with math_sqrt (1 call)
  * - Replaced math_pow with math_pow (1 call)
  * - Replaced PRIME_PI with MATH_PI
- * - Replaced PHI with MATH_PHI
+ * - Replaced MATH_PHI with MATH_PHI
  * Total: 15 function calls migrated to NEW math library
  * 
  * PHASE 2: Consolidated constants
@@ -30,7 +30,6 @@
 
 // Use NEW math library constants
 #define PRIME_PI MATH_PI
-#define PHI MATH_PHI
 
 /**
  * Apply cymatic resonance modulation to gradients
@@ -283,7 +282,7 @@ void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_sym
         double angle = t * (double)shape_symmetry * MATH_TWO_PI;
         
         // Apply golden ratio scaling
-        double scale = 1.0 + 0.1 * math_cos(angle / PHI);
+        double scale = 1.0 + 0.1 * math_cos(angle / MATH_PHI);
         
         signal[i] *= scale;
     }

@@ -18,7 +18,7 @@
 #include "math/transcendental.h"
 
 // Golden ratio for dodecahedron and icosahedron
-#define PHI 1.618033988749895
+#define MATH_PHI 1.618033988749895
 
 typedef struct {
     double x, y, z;
@@ -237,20 +237,20 @@ PlatonicSolid* create_dodecahedron() {
     solid->vertices[7] = (Vertex){-1.0, -1.0, -1.0};
     
     // 12 vertices on rectangular faces
-    solid->vertices[8] = (Vertex){0.0, 1.0/PHI, PHI};
-    solid->vertices[9] = (Vertex){0.0, 1.0/PHI, -PHI};
-    solid->vertices[10] = (Vertex){0.0, -1.0/PHI, PHI};
-    solid->vertices[11] = (Vertex){0.0, -1.0/PHI, -PHI};
+    solid->vertices[8] = (Vertex){0.0, 1.0/MATH_PHI, MATH_PHI};
+    solid->vertices[9] = (Vertex){0.0, 1.0/MATH_PHI, -MATH_PHI};
+    solid->vertices[10] = (Vertex){0.0, -1.0/MATH_PHI, MATH_PHI};
+    solid->vertices[11] = (Vertex){0.0, -1.0/MATH_PHI, -MATH_PHI};
     
-    solid->vertices[12] = (Vertex){1.0/PHI, PHI, 0.0};
-    solid->vertices[13] = (Vertex){1.0/PHI, -PHI, 0.0};
-    solid->vertices[14] = (Vertex){-1.0/PHI, PHI, 0.0};
-    solid->vertices[15] = (Vertex){-1.0/PHI, -PHI, 0.0};
+    solid->vertices[12] = (Vertex){1.0/MATH_PHI, MATH_PHI, 0.0};
+    solid->vertices[13] = (Vertex){1.0/MATH_PHI, -MATH_PHI, 0.0};
+    solid->vertices[14] = (Vertex){-1.0/MATH_PHI, MATH_PHI, 0.0};
+    solid->vertices[15] = (Vertex){-1.0/MATH_PHI, -MATH_PHI, 0.0};
     
-    solid->vertices[16] = (Vertex){PHI, 0.0, 1.0/PHI};
-    solid->vertices[17] = (Vertex){PHI, 0.0, -1.0/PHI};
-    solid->vertices[18] = (Vertex){-PHI, 0.0, 1.0/PHI};
-    solid->vertices[19] = (Vertex){-PHI, 0.0, -1.0/PHI};
+    solid->vertices[16] = (Vertex){MATH_PHI, 0.0, 1.0/MATH_PHI};
+    solid->vertices[17] = (Vertex){MATH_PHI, 0.0, -1.0/MATH_PHI};
+    solid->vertices[18] = (Vertex){-MATH_PHI, 0.0, 1.0/MATH_PHI};
+    solid->vertices[19] = (Vertex){-MATH_PHI, 0.0, -1.0/MATH_PHI};
     
     // Edges (30 edges)
     solid->edges = malloc(30 * sizeof(Edge));
@@ -301,22 +301,22 @@ PlatonicSolid* create_icosahedron() {
     solid->vertices = malloc(12 * sizeof(Vertex));
     
     // 4 vertices on XY plane
-    solid->vertices[0] = (Vertex){0.0, 1.0, PHI};
-    solid->vertices[1] = (Vertex){0.0, -1.0, PHI};
-    solid->vertices[2] = (Vertex){0.0, 1.0, -PHI};
-    solid->vertices[3] = (Vertex){0.0, -1.0, -PHI};
+    solid->vertices[0] = (Vertex){0.0, 1.0, MATH_PHI};
+    solid->vertices[1] = (Vertex){0.0, -1.0, MATH_PHI};
+    solid->vertices[2] = (Vertex){0.0, 1.0, -MATH_PHI};
+    solid->vertices[3] = (Vertex){0.0, -1.0, -MATH_PHI};
     
     // 4 vertices on YZ plane
-    solid->vertices[4] = (Vertex){1.0, PHI, 0.0};
-    solid->vertices[5] = (Vertex){-1.0, PHI, 0.0};
-    solid->vertices[6] = (Vertex){1.0, -PHI, 0.0};
-    solid->vertices[7] = (Vertex){-1.0, -PHI, 0.0};
+    solid->vertices[4] = (Vertex){1.0, MATH_PHI, 0.0};
+    solid->vertices[5] = (Vertex){-1.0, MATH_PHI, 0.0};
+    solid->vertices[6] = (Vertex){1.0, -MATH_PHI, 0.0};
+    solid->vertices[7] = (Vertex){-1.0, -MATH_PHI, 0.0};
     
     // 4 vertices on XZ plane
-    solid->vertices[8] = (Vertex){PHI, 0.0, 1.0};
-    solid->vertices[9] = (Vertex){-PHI, 0.0, 1.0};
-    solid->vertices[10] = (Vertex){PHI, 0.0, -1.0};
-    solid->vertices[11] = (Vertex){-PHI, 0.0, -1.0};
+    solid->vertices[8] = (Vertex){MATH_PHI, 0.0, 1.0};
+    solid->vertices[9] = (Vertex){-MATH_PHI, 0.0, 1.0};
+    solid->vertices[10] = (Vertex){MATH_PHI, 0.0, -1.0};
+    solid->vertices[11] = (Vertex){-MATH_PHI, 0.0, -1.0};
     
     // Edges (30 edges)
     solid->edges = malloc(30 * sizeof(Edge));

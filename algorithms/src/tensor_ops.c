@@ -10,7 +10,7 @@
 #include "tensor_ops.h"
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include "math/transcendental.h"   // For math_pow
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdlib.h>
 
 double tensor_distance(const double* t1, const double* t2,
@@ -32,8 +32,8 @@ double tensor_distance(const double* t1, const double* t2,
         double dx = t1[0] - t2[0];
         double dy = t1[1] - t2[1];
         
-        double gx = PHI;
-        double gy = PHI * PHI;
+        double gx = MATH_PHI;
+        double gy = MATH_PHI * MATH_PHI;
         
         double det = dx * gy - dy * gx;
         
@@ -58,7 +58,7 @@ double tensor_distance(const double* t1, const double* t2,
         
         // Scale by φ^i
         sum += diff * phi_power;
-        phi_power *= PHI;
+        phi_power *= MATH_PHI;
     }
     
     // Apply modulus
@@ -74,7 +74,7 @@ void tensor_generate_anchors(double* anchors, size_t num_anchors,
     if (!anchors || num_anchors == 0 || dim == 0) return;
     
     // Use golden ratio for deterministic "random" generation
-    double phi = PHI;
+    double phi = MATH_PHI;
     uint64_t state = seed;
     
     for (size_t a = 0; a < num_anchors; a++) {
@@ -115,7 +115,7 @@ uint64_t tensor_estimate_from_anchors(const double* query,
     
     // Estimate value based on anchor index and distance
     // Use golden ratio for mapping
-    double phi = PHI;
+    double phi = MATH_PHI;
     double estimate = (double)closest_idx * phi + min_distance;
     
     // Convert to uint64_t with modulus

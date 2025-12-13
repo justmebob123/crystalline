@@ -11,7 +11,7 @@
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
-#include <math.h>
+#include "math/math.h"
 
 // Test counter
 static int tests_passed = 0;

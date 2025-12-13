@@ -15,13 +15,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <stdbool.h>
 #include <string.h>
 
 #define MAX_PRIMES 1000
 #define MAX_MAGNITUDE 200
-#define PI 3.14159265358979323846
 #define PHI 1.61803398874989484820
 
 // Clock positions
@@ -79,7 +78,7 @@ int get_clock_position(int prime) {
 double get_phase_angle(int prime) {
     int pos = get_clock_position(prime);
     if (pos < 0) return 0.0;
-    return (pos * PI / 6.0);  // 0, π/2, π, 3π/2
+    return (pos * MATH_PI / 6.0);  // 0, π/2, π, 3π/2
 }
 
 // Check if number is prime
@@ -115,7 +114,7 @@ void analyze_position_interference(int position, int max_magnitude, FILE *out) {
     fprintf(out, "\n=== POSITION %d (Base Prime %d) ===\n", position, pos->base_prime);
     fprintf(out, "Phase Angle: %.4f radians (%.1f degrees)\n\n", 
             get_phase_angle(pos->base_prime), 
-            get_phase_angle(pos->base_prime) * 180.0 / PI);
+            get_phase_angle(pos->base_prime) * 180.0 / MATH_PI);
     
     InterferenceData data[MAX_MAGNITUDE];
     int composite_count = 0;
@@ -192,8 +191,8 @@ void analyze_position_interference(int position, int max_magnitude, FILE *out) {
             for (int i = 0; i < data[mag].interference_count; i++) {
                 for (int j = i + 1; j < data[mag].interference_count; j++) {
                     double diff = fabs(data[mag].phase_angles[i] - data[mag].phase_angles[j]);
-                    if (diff > PI) diff = 2 * PI - diff;
-                    int bin = (int)(diff * 6.0 / PI);  // 12 bins for 0 to 2π
+                    if (diff > MATH_PI) diff = 2 * MATH_PI - diff;
+                    int bin = (int)(diff * 6.0 / MATH_PI);  // 12 bins for 0 to 2π
                     if (bin >= 0 && bin < 13) {
                         phase_diff_histogram[bin]++;
                         phase_pair_count++;
@@ -206,9 +205,9 @@ void analyze_position_interference(int position, int max_magnitude, FILE *out) {
     fprintf(out, "Phase Difference | Count | Percentage\n");
     fprintf(out, "-----------------|-------|------------\n");
     for (int i = 0; i < 13; i++) {
-        double angle = i * PI / 6.0;
+        double angle = i * MATH_PI / 6.0;
         fprintf(out, "%7.4f (%.0f°) | %5.0f | %9.1f%%\n",
-                angle, angle * 180.0 / PI,
+                angle, angle * 180.0 / MATH_PI,
                 phase_diff_histogram[i],
                 phase_pair_count > 0 ? 100.0 * phase_diff_histogram[i] / phase_pair_count : 0.0);
     }
@@ -431,13 +430,13 @@ void analyze_emergent_patterns(int max_magnitude, FILE *out) {
         }
         
         double avg_spacing = spacing_count > 0 ? spacing_sum / spacing_count : 0.0;
-        double pi_phi = PI * PHI;
+        double pi_phi = MATH_PI * PHI;
         
         fprintf(out, "Position %d: Average composite spacing = %.4f\n", 
                 pos->position, avg_spacing);
         fprintf(out, "  Ratio to π×φ (%.4f): %.4f\n", pi_phi, avg_spacing / pi_phi);
         fprintf(out, "  Ratio to φ (%.4f): %.4f\n", PHI, avg_spacing / PHI);
-        fprintf(out, "  Ratio to π (%.4f): %.4f\n\n", PI, avg_spacing / PI);
+        fprintf(out, "  Ratio to π (%.4f): %.4f\n\n", MATH_PI, avg_spacing / MATH_PI);
     }
 }
 

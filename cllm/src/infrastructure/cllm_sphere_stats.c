@@ -1,5 +1,5 @@
 #include "ai/cllm_sphere_stats.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdio.h>
 #include <string.h>
 #include "math/transcendental.h"

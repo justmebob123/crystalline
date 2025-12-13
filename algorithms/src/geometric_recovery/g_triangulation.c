@@ -24,8 +24,7 @@
 #include "math/transcendental.h"
 #include "../../math/include/math/types.h"  // PHASE 2: For MATH_PHI, MATH_PI, MATH_TWO_PI
 
-#define PHI MATH_PHI
-#define PI MATH_PI
+#define MATH_PHI MATH_PHI
 
 // 13 dimensional frequencies
 static const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -92,11 +91,11 @@ void map_ec_point_to_lattice(
     
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
-        double angle = (double)(x_val % 360) * PI / 180.0;
-        position[d] = math_cos(angle * freq) * math_pow(PHI, d % 5);
+        double angle = (double)(x_val % 360) * MATH_PI / 180.0;
+        position[d] = math_cos(angle * freq) * math_pow(MATH_PHI, d % 5);
         
-        double y_angle = (double)(y_val % 360) * PI / 180.0;
-        position[d] += math_sin(y_angle * freq) * math_pow(PHI, (d + 1) % 5) * 0.5;
+        double y_angle = (double)(y_val % 360) * MATH_PI / 180.0;
+        position[d] += math_sin(y_angle * freq) * math_pow(MATH_PHI, (d + 1) % 5) * 0.5;
     }
     
     OPENSSL_free(x_str);
@@ -109,13 +108,13 @@ void map_ec_point_to_lattice(
  * Map k to clock lattice position using π×φ metric
  */
 void map_k_to_lattice(uint64_t k, double position[13]) {
-    double base_angle = (double)k * PI * PHI;
+    double base_angle = (double)k * MATH_PI * MATH_PHI;
     while (base_angle < 0) base_angle += MATH_TWO_PI;
     while (base_angle >= MATH_TWO_PI) base_angle -= MATH_TWO_PI;
     
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
-        position[d] = math_cos(base_angle * freq) * math_pow(PHI, d % 5);
+        position[d] = math_cos(base_angle * freq) * math_pow(MATH_PHI, d % 5);
     }
 }
 
@@ -142,7 +141,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * MATH_TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 3);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -169,7 +168,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * MATH_TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 2);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -181,7 +180,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * MATH_TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
+            anchors[idx].position[d] = math_cos(angle * phi_d * MATH_PHI) * math_pow(MATH_PHI, d % 5);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -193,7 +192,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * MATH_TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 4);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;

@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <string.h>
 #include "ai/cllm_loss.h"
 
-#define EPSILON 1e-5f
+#define MATH_EPSILON 1e-5f
 #define TEST_PASSED 1
 #define TEST_FAILED 0
 
@@ -151,7 +151,7 @@ int test_mse_forward() {
     );
     
     // Expected: mean of (1^2) = 1.0
-    int passed = float_equals(loss, 1.0f, EPSILON);
+    int passed = float_equals(loss, 1.0f, MATH_EPSILON);
     
     tensor_free(predictions);
     tensor_free(targets);
@@ -177,7 +177,7 @@ int test_mse_backward() {
     // Check gradient values: d_loss/d_pred = 2 * (pred - target) / N
     if (passed) {
         float expected_grad = 2.0f * (-1.0f) / (2.0f * 3.0f);  // -1/3
-        passed = float_equals(gradients->data[0], expected_grad, EPSILON);
+        passed = float_equals(gradients->data[0], expected_grad, MATH_EPSILON);
     }
     
     tensor_free(predictions);
@@ -204,7 +204,7 @@ int test_mae_forward() {
     );
     
     // Expected: mean of |2| = 2.0
-    int passed = float_equals(loss, 2.0f, EPSILON);
+    int passed = float_equals(loss, 2.0f, MATH_EPSILON);
     
     tensor_free(predictions);
     tensor_free(targets);
@@ -230,7 +230,7 @@ int test_mae_backward() {
     // Check gradient values: sign of (pred - target) / N
     if (passed) {
         float expected_grad = 1.0f / (2.0f * 3.0f);  // 1/6
-        passed = float_equals(gradients->data[0], expected_grad, EPSILON);
+        passed = float_equals(gradients->data[0], expected_grad, MATH_EPSILON);
     }
     
     tensor_free(predictions);
@@ -258,7 +258,7 @@ int test_huber_forward() {
     );
     
     // Expected: mean of 0.5 * (0.5^2) = 0.125
-    int passed = float_equals(loss, 0.125f, EPSILON);
+    int passed = float_equals(loss, 0.125f, MATH_EPSILON);
     
     tensor_free(predictions);
     tensor_free(targets);
@@ -372,8 +372,8 @@ int test_label_smoothing() {
         float expected_target = 1.0f - smoothing + smoothing / 3.0f;
         float expected_non_target = smoothing / 3.0f;
         
-        passed = float_equals(target_val, expected_target, EPSILON) &&
-                 float_equals(non_target_val, expected_non_target, EPSILON);
+        passed = float_equals(target_val, expected_target, MATH_EPSILON) &&
+                 float_equals(non_target_val, expected_non_target, MATH_EPSILON);
     }
     
     tensor_free(targets);
@@ -422,9 +422,9 @@ int test_gradient_clipping_by_value() {
     float clip_value = 2.0f;
     loss_clip_gradients_by_value(gradients, clip_value);
     
-    int passed = float_equals(gradients->data[0], 2.0f, EPSILON) &&
-                 float_equals(gradients->data[1], -2.0f, EPSILON) &&
-                 float_equals(gradients->data[2], 0.5f, EPSILON);
+    int passed = float_equals(gradients->data[0], 2.0f, MATH_EPSILON) &&
+                 float_equals(gradients->data[1], -2.0f, MATH_EPSILON) &&
+                 float_equals(gradients->data[2], 0.5f, MATH_EPSILON);
     
     tensor_free(gradients);
     
@@ -448,7 +448,7 @@ int test_gradient_clipping_by_norm() {
     
     // New norm should be max_norm
     float new_norm = loss_compute_gradient_norm(gradients);
-    passed = passed && float_equals(new_norm, max_norm, EPSILON);
+    passed = passed && float_equals(new_norm, max_norm, MATH_EPSILON);
     
     tensor_free(gradients);
     

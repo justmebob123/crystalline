@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>
+#include "math/math.h"
 
 #define MAX_ELEMENTS 100
 #define SCREEN_WIDTH 160

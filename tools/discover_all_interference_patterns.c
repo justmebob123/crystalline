@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
+#include "math/math.h"
 
 #define MAX_PRIMES 1000
 #define MAX_MAGNITUDE 500

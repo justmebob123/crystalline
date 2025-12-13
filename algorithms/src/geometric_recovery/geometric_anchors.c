@@ -18,8 +18,7 @@
 #include "math/transcendental.h"
 
 // Mathematical constants
-#define PHI MATH_PHI
-#define PI MATH_PI
+#define MATH_PHI MATH_PHI
 
 // Dimensional frequencies (from cllm_mathematical_constants.h)
 const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -27,7 +26,7 @@ const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
 };
 
 // 42° phase offset (7/60 on clock = 7 minutes)
-#define PHASE_OFFSET_42_DEG (42.0 * PI / 180.0)
+#define PHASE_OFFSET_42_DEG (42.0 * MATH_PI / 180.0)
 
 // ============================================================================
 // PLATONIC SOLID GENERATION IN 13D
@@ -50,7 +49,7 @@ static void generate_tetrahedron_13d(GeometricAnchor* anchors, int start_idx) {
             
             // Position = math_cos(angle * φ_d) * golden_ratio^d
             anchors[start_idx + v].position[d] = 
-                math_cos(angle * phi_d) * math_pow(PHI, d % 3);
+                math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 3);
         }
     }
 }
@@ -92,7 +91,7 @@ static void generate_octahedron_13d(GeometricAnchor* anchors, int start_idx) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             
             anchors[start_idx + v].position[d] = 
-                math_cos(angle * phi_d) * math_pow(PHI, (d % 2));
+                math_cos(angle * phi_d) * math_pow(MATH_PHI, (d % 2));
         }
     }
 }
@@ -113,7 +112,7 @@ static void generate_dodecahedron_13d(GeometricAnchor* anchors, int start_idx) {
             
             // Use golden ratio for dodecahedron
             anchors[start_idx + v].position[d] = 
-                math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
+                math_cos(angle * phi_d * MATH_PHI) * math_pow(MATH_PHI, d % 5);
         }
     }
 }
@@ -134,7 +133,7 @@ static void generate_icosahedron_13d(GeometricAnchor* anchors, int start_idx) {
             
             // 12-fold symmetry with golden ratio
             anchors[start_idx + v].position[d] = 
-                math_cos(angle * phi_d) * math_pow(PHI, d % 4);
+                math_cos(angle * phi_d) * math_pow(MATH_PHI, d % 4);
         }
     }
 }
@@ -171,7 +170,7 @@ double pi_phi_distance_13d(const double* p1, const double* p2) {
     }
     
     // Normalize by π×φ
-    return math_sqrt(sum) / (PI * PHI);
+    return math_sqrt(sum) / (MATH_PI * MATH_PHI);
 }
 
 // ============================================================================
@@ -424,7 +423,7 @@ void hash_Q_to_13d_position(EC_POINT* Q, EC_GROUP* group, double position[13]) {
         double x_contrib = (double)x_mod / (double)phi_i;
         double y_contrib = (double)y_mod / (double)(phi_i * phi_i);
         
-        position[d] = math_fmod(x_contrib * MATH_TWO_PI + y_contrib * PI, MATH_TWO_PI);
+        position[d] = math_fmod(x_contrib * MATH_TWO_PI + y_contrib * MATH_PI, MATH_TWO_PI);
     }
     
     BN_free(x);
@@ -530,7 +529,7 @@ double distance_to_nearest_attractor(
             double dist = math_abs(position[d] - attractor_angle);
             
             // Handle wraparound
-            if (dist > PI) dist = MATH_TWO_PI - dist;
+            if (dist > MATH_PI) dist = MATH_TWO_PI - dist;
             
             if (dist < min_dist) min_dist = dist;
         }

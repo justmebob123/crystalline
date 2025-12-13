@@ -70,7 +70,7 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
     *radius = math_sqrt((double)prime_index);
     
     // Angle based on golden angle for optimal packing
-    double golden_angle = 2.0 * MATH_PI / (PHI * PHI);
+    double golden_angle = 2.0 * MATH_PI / (MATH_PHI * MATH_PHI);
     *angle = golden_angle * (double)prime_index;
     
     // Normalize angle to [0, 2π)
@@ -232,7 +232,7 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
     
     // Apply golden ratio-based rotations
     for (int i = 0; i < dim - 1; i++) {
-        double angle = 2.0 * MATH_PI * PHI * (double)i / (double)dim;
+        double angle = 2.0 * MATH_PI * MATH_PHI * (double)i / (double)dim;
         double cos_a = math_cos(angle);
         double sin_a = math_sin(angle);
         

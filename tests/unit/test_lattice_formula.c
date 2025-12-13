@@ -6,7 +6,7 @@
 #include "ai/cllm_lattice_formula.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <string.h>
 #include <assert.h>
 

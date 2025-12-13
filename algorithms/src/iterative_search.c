@@ -10,7 +10,7 @@
 
 #include "iterative_search.h"
 #include "statistics.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
@@ -99,7 +99,7 @@ bool iterative_search(const void* query, const SearchConfig* config, SearchResul
                 oscillating = config->oscillation_fn(anchors, config->num_anchors, config->user_data);
             }
             
-            if (oscillating || result->min_distance > EPSILON) {
+            if (oscillating || result->min_distance > MATH_EPSILON) {
                 // Regenerate anchors and reduce entropy
                 config->anchor_gen_fn(anchors, config->num_anchors, config->user_data);
                 current_entropy = stats_entropy_reduction(current_entropy, 1, 0.18, 0.45);
@@ -152,7 +152,7 @@ uint64_t iterative_estimate_from_anchors(const void* query,
     double weight_sum = 0.0;
     
     for (size_t i = 0; i < num_anchors; i++) {
-        double weight = 1.0 / (distances[i] + EPSILON);
+        double weight = 1.0 / (distances[i] + MATH_EPSILON);
         weighted_sum += (double)anchors[i] * weight;
         weight_sum += weight;
     }
@@ -200,7 +200,7 @@ void iterative_default_anchor_generator(uint64_t* anchors,
     // Generate anchors using golden ratio spacing
     for (size_t i = 0; i < num_anchors; i++) {
         // Use golden ratio for quasi-random distribution
-        double t = (double)i * PHI;
+        double t = (double)i * MATH_PHI;
         t = t - (uint64_t)t;  // Fractional part
         
         anchors[i] = (uint64_t)(t * (double)search_space_size);
@@ -235,7 +235,7 @@ bool iterative_default_oscillation_detector(const uint64_t* anchors,
     double std_dev = math_sqrt(variance);
     
     // Oscillation detected if std_dev is too high relative to mean
-    double coefficient_of_variation = std_dev / (mean + EPSILON);
+    double coefficient_of_variation = std_dev / (mean + MATH_EPSILON);
     
     return coefficient_of_variation > 0.5;  // 50% threshold
 }
@@ -265,7 +265,7 @@ bool iterative_fft_oscillation_detector(const uint64_t* anchors,
     
     // Normalize signal
     double range = (double)(max_val - min_val);
-    if (range < EPSILON) {
+    if (range < MATH_EPSILON) {
         free(signal);
         return false;  // All values the same, no oscillation
     }

@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <string.h>
 #include "ai/cllm_backprop.h"
 #include "ai/cllm_loss.h"
 
-#define EPSILON 1e-5f
+#define MATH_EPSILON 1e-5f
 #define TEST_PASSED 1
 #define TEST_FAILED 0
 
@@ -120,7 +120,7 @@ int test_gradient_buffer_add() {
     
     if (passed) {
         for (size_t i = 0; i < buffer1->size; i++) {
-            if (!float_equals(buffer1->data[i], 3.0f, EPSILON)) {
+            if (!float_equals(buffer1->data[i], 3.0f, MATH_EPSILON)) {
                 passed = 0;
                 break;
             }
@@ -144,7 +144,7 @@ int test_gradient_buffer_scale() {
     
     int passed = 1;
     for (size_t i = 0; i < buffer->size; i++) {
-        if (!float_equals(buffer->data[i], 1.0f, EPSILON)) {
+        if (!float_equals(buffer->data[i], 1.0f, MATH_EPSILON)) {
             passed = 0;
             break;
         }
@@ -170,9 +170,9 @@ int test_gradient_buffer_compute_stats() {
     // min = 1, max = 4
     
     int passed = (buffer->norm > 5.4f && buffer->norm < 5.5f) &&
-                 float_equals(buffer->mean_value, 2.5f, EPSILON) &&
-                 float_equals(buffer->min_value, 1.0f, EPSILON) &&
-                 float_equals(buffer->max_value, 4.0f, EPSILON);
+                 float_equals(buffer->mean_value, 2.5f, MATH_EPSILON) &&
+                 float_equals(buffer->min_value, 1.0f, MATH_EPSILON) &&
+                 float_equals(buffer->max_value, 4.0f, MATH_EPSILON);
     
     gradient_buffer_free(buffer);
     return passed;
@@ -215,11 +215,11 @@ int test_gradient_buffer_clip_by_value() {
     
     gradient_buffer_clip_by_value(buffer, 2.0f);
     
-    int passed = float_equals(buffer->data[0], 2.0f, EPSILON) &&
-                 float_equals(buffer->data[1], -2.0f, EPSILON) &&
-                 float_equals(buffer->data[2], 0.5f, EPSILON) &&
-                 float_equals(buffer->data[3], -2.0f, EPSILON) &&
-                 float_equals(buffer->data[4], 2.0f, EPSILON);
+    int passed = float_equals(buffer->data[0], 2.0f, MATH_EPSILON) &&
+                 float_equals(buffer->data[1], -2.0f, MATH_EPSILON) &&
+                 float_equals(buffer->data[2], 0.5f, MATH_EPSILON) &&
+                 float_equals(buffer->data[3], -2.0f, MATH_EPSILON) &&
+                 float_equals(buffer->data[4], 2.0f, MATH_EPSILON);
     
     gradient_buffer_free(buffer);
     return passed;
@@ -244,7 +244,7 @@ int test_gradient_buffer_clip_by_norm() {
     }
     float new_norm = sqrtf(sum_sq);
     
-    passed = passed && float_equals(new_norm, 2.0f, EPSILON);
+    passed = passed && float_equals(new_norm, 2.0f, MATH_EPSILON);
     
     gradient_buffer_free(buffer);
     return passed;
@@ -326,7 +326,7 @@ int test_backprop_accumulate_batch() {
     
     if (passed) {
         for (size_t i = 0; i < ctx->local_gradients->size; i++) {
-            if (!float_equals(ctx->local_gradients->data[i], 2.0f, EPSILON)) {
+            if (!float_equals(ctx->local_gradients->data[i], 2.0f, MATH_EPSILON)) {
                 passed = 0;
                 break;
             }
@@ -361,7 +361,7 @@ int test_backprop_accumulate_from_children() {
     
     if (passed) {
         for (size_t i = 0; i < ctx->local_gradients->size; i++) {
-            if (!float_equals(ctx->local_gradients->data[i], 3.0f, EPSILON)) {
+            if (!float_equals(ctx->local_gradients->data[i], 3.0f, MATH_EPSILON)) {
                 passed = 0;
                 break;
             }
@@ -386,7 +386,7 @@ int test_backprop_average_gradients() {
     
     int passed = 1;
     for (size_t i = 0; i < ctx->local_gradients->size; i++) {
-        if (!float_equals(ctx->local_gradients->data[i], 2.0f, EPSILON)) {
+        if (!float_equals(ctx->local_gradients->data[i], 2.0f, MATH_EPSILON)) {
             passed = 0;
             break;
         }
@@ -471,7 +471,7 @@ int test_tensor_to_buffer_conversion() {
     
     if (passed) {
         for (size_t i = 0; i < tensor->total_size; i++) {
-            if (!float_equals(buffer->data[i], tensor->data[i], EPSILON)) {
+            if (!float_equals(buffer->data[i], tensor->data[i], MATH_EPSILON)) {
                 passed = 0;
                 break;
             }
@@ -498,7 +498,7 @@ int test_buffer_to_tensor_conversion() {
     
     if (passed) {
         for (size_t i = 0; i < buffer->size; i++) {
-            if (!float_equals(tensor->data[i], buffer->data[i], EPSILON)) {
+            if (!float_equals(tensor->data[i], buffer->data[i], MATH_EPSILON)) {
                 passed = 0;
                 break;
             }
@@ -529,7 +529,7 @@ int test_merge_buffers() {
     
     if (passed) {
         for (size_t i = 0; i < merged->size; i++) {
-            if (!float_equals(merged->data[i], 3.0f, EPSILON)) {
+            if (!float_equals(merged->data[i], 3.0f, MATH_EPSILON)) {
                 passed = 0;
                 break;
             }

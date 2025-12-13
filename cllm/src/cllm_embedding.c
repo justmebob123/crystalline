@@ -31,7 +31,6 @@
 #include "math/transcendental.h"
 #include "math/transcendental.h"
 
-#define PI 3.14159265358979323846
 #define SYMMETRY_ORDER 12
 
 // ============================================================================
@@ -69,12 +68,12 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
     *radius = math_sqrt((double)prime_index);
     
     // Angle based on golden angle for optimal packing
-    double golden_angle = 2.0 * PI / (PHI * PHI);
+    double golden_angle = 2.0 * MATH_PI / (MATH_PHI * MATH_PHI);
     *angle = golden_angle * (double)prime_index;
     
     // Normalize angle to [0, 2π)
-    while (*angle >= 2.0 * PI) {
-        *angle -= 2.0 * PI;
+    while (*angle >= 2.0 * MATH_PI) {
+        *angle -= 2.0 * MATH_PI;
     }
 }
 
@@ -169,7 +168,7 @@ void cllm_generate_lattice_embedding(uint32_t token_id, uint64_t prime,
                        math_sin(freq * coords[2] / 10.0) * 0.3;
         
         // Add symmetry-based component
-        double symmetry_phase = 2.0 * PI * (double)symmetry / (double)SYMMETRY_ORDER;
+        double symmetry_phase = 2.0 * MATH_PI * (double)symmetry / (double)SYMMETRY_ORDER;
         double symmetry_component = math_cos(freq * symmetry_phase) * 0.1;
         
         output[i] = spatial + symmetry_component;
@@ -203,7 +202,7 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
     
     // Apply golden ratio-based rotations
     for (int i = 0; i < dim - 1; i++) {
-        double angle = 2.0 * PI * PHI * (double)i / (double)dim;
+        double angle = 2.0 * MATH_PI * MATH_PHI * (double)i / (double)dim;
         double cos_a = math_cos(angle);
         double sin_a = math_sin(angle);
         

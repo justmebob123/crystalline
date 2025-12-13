@@ -14,7 +14,7 @@
 /**
  * @brief Small epsilon for floating point comparisons
  */
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 // Define MATH_INFINITY without math.h to avoid type conflicts
 #ifndef MATH_INFINITY

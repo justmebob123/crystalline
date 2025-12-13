@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
+#include "math/math.h"
 
 #define M_PI 3.14159265358979323846
 #define M_PHI ((1.0 + sqrt(5.0)) / 2.0)

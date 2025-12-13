@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 /**
  * @brief Create a minimal test model
@@ -391,7 +391,7 @@ static void test_rebalancing(void) {
     
     double new_balance = calculate_allocation_balance(&plan);
     // Balance should improve or stay the same
-    assert(new_balance <= original_balance + EPSILON);
+    assert(new_balance <= original_balance + MATH_EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);
@@ -418,12 +418,12 @@ static void test_plan_comparison(void) {
     
     // Same plans should have zero difference
     double diff = compare_allocation_plans(&plan1, &plan2);
-    assert(diff < EPSILON);
+    assert(diff < MATH_EPSILON);
     
     // Different plans should have non-zero difference
     calculate_thread_allocation(&ctx, 96, &config, &plan2);
     diff = compare_allocation_plans(&plan1, &plan2);
-    assert(diff > EPSILON);
+    assert(diff > MATH_EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);

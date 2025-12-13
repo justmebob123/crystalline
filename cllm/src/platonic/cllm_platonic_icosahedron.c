@@ -20,7 +20,7 @@
 
 #include "ai/cllm_platonic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"  // For PHI constant
+#include "prime_types.h"  // For MATH_PHI constant
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +30,7 @@
 // ICOSAHEDRON GEOMETRY
 // ============================================================================
 
-// Golden ratio is already defined in prime_types.h as PHI
+// Golden ratio is already defined in prime_types.h as MATH_PHI
 // φ = (1 + √5) / 2 ≈ 1.618033988749895
 
 /**
@@ -52,7 +52,7 @@ static bool vertices_initialized = false;
 static void init_icosahedron_vertices(void) {
     if (vertices_initialized) return;
     
-    double phi = PHI;  // Golden ratio from prime_types.h
+    double phi = MATH_PHI;  // Golden ratio from prime_types.h
     
     int idx = 0;
     
@@ -129,7 +129,7 @@ bool platonic_icosahedron_init_geometry(PlatonicModel* model) {
         model->face_vertices[i * 4 + 3] = 0;  // Padding (faces are triangles)
     }
     
-    printf("  ✓ 12 vertices initialized (with golden ratio φ = %.6f)\n", PHI);
+    printf("  ✓ 12 vertices initialized (with golden ratio φ = %.6f)\n", MATH_PHI);
     printf("  ✓ 30 edges initialized\n");
     printf("  ✓ 20 triangular faces initialized\n");
     

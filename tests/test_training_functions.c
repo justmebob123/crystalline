@@ -8,12 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include <assert.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 // Test result tracking
 static int tests_passed = 0;
@@ -44,7 +44,7 @@ static int tests_failed = 0;
  * Compare two doubles with epsilon tolerance
  */
 static int doubles_equal(double a, double b) {
-    return fabs(a - b) < EPSILON;
+    return fabs(a - b) < MATH_EPSILON;
 }
 
 // ============================================================================
@@ -231,7 +231,7 @@ static int test_forward_pass() {
     // Verify logits were computed
     int non_zero = 0;
     for (int i = 0; i < 16 * (int)model->vocab_size && i < 100; i++) {
-        if (fabs(training->logits[i]) > EPSILON) {
+        if (fabs(training->logits[i]) > MATH_EPSILON) {
             non_zero++;
         }
     }

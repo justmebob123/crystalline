@@ -134,7 +134,6 @@ PlatonicSolidAbacus* platonic_generate_16cell_abacus(uint32_t base, int32_t prec
  * @param precision Fractional precision
  * @return Pointer to Abacus with golden ratio, or NULL on error
  */
-CrystallineAbacus* compute_golden_ratio_abacus(uint32_t base, int32_t precision);
 
 #ifdef __cplusplus
 }

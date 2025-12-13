@@ -23,7 +23,6 @@
 #include <stdio.h>
 
 // Golden ratio: φ = (1 + √5) / 2
-#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 
 // ============================================================================
 // COORDINATE GENERATION
@@ -43,7 +42,7 @@ static bool generate_dodecahedron_coordinates(PlatonicSolid* solid) {
         return false;
     }
     
-    double phi = PHI;
+    double phi = MATH_PHI;
     double inv_phi = 1.0 / phi;
     
     // Allocate coordinate array (20 vertices × 3 dimensions)
@@ -115,7 +114,7 @@ static bool generate_dodecahedron_edges(PlatonicSolid* solid) {
     }
     
     // Edge length for dodecahedron with these coordinates
-    double edge_length_sq = 4.0 / (PHI * PHI);  // (2/φ)²
+    double edge_length_sq = 4.0 / (MATH_PHI * MATH_PHI);  // (2/φ)²
     double tolerance = 0.01;
     
     // Count edges first

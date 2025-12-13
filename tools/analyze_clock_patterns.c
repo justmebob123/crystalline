@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <string.h>
 #include "math/prime.h"
 #include "math/clock.h"

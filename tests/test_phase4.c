@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdatomic.h>
-#include <math.h>
+#include "math/math.h"
 #include "cllm.h"
 #include "cllm_training.h"
 #include "cllm_training_threaded.h"

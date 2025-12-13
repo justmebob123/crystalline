@@ -6,7 +6,7 @@
 #include "ai/cllm_cymatic_frequencies.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <string.h>
 #include <assert.h>
 

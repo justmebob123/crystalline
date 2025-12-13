@@ -17,10 +17,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <stdbool.h>
 
-#define PI 3.14159265358979323846
 #define PHI 1.61803398874989484820
 #define MAX_PRIMES 100
 

@@ -25,7 +25,6 @@
 #include <time.h>
 
 // Golden ratio (for Icosahedron/Dodecahedron)
-#define PHI MATH_PHI
 
 /**
  * Generate base Platonic solid vertices in 3D
@@ -71,8 +70,8 @@ static void generate_base_vertices_3d(
             // Dodecahedron vertices (using golden ratio)
             {
                 double a = 1.0;
-                double b = 1.0 / PHI;
-                double c = PHI;
+                double b = 1.0 / MATH_PHI;
+                double c = MATH_PHI;
                 
                 int idx = 0;
                 // 8 vertices of a cube
@@ -100,7 +99,7 @@ static void generate_base_vertices_3d(
             // Icosahedron vertices (using golden ratio)
             {
                 double a = 1.0;
-                double b = PHI;
+                double b = MATH_PHI;
                 
                 int idx = 0;
                 double coords[][3] = {

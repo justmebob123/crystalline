@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>

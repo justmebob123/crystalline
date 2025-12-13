@@ -24,8 +24,7 @@
 #include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
 #include "math/transcendental.h"
 
-#define PI 3.14159265358979323846
-#define PHI 1.618033988749895
+#define MATH_PHI 1.618033988749895
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000
 static uint64_t prime_cache[PRIME_CACHE_SIZE];
@@ -144,12 +143,12 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     double radius = math_sqrt((double)prime_index + 1.0);
     
     // Golden angle for optimal packing (use macros from prime_types.h)
-    double golden_angle = 2.0 * PI / (PHI * PHI);
+    double golden_angle = 2.0 * MATH_PI / (MATH_PHI * MATH_PHI);
     double angle = golden_angle * (double)prime_index;
     
     // Normalize angle
-    while (angle >= 2.0 * PI) {
-        angle -= 2.0 * PI;
+    while (angle >= 2.0 * MATH_PI) {
+        angle -= 2.0 * MATH_PI;
     }
     
     // Convert to 3D coordinates
@@ -158,10 +157,10 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     coords[2] = math_log((double)prime + 1.0);
     
     // Add token-specific perturbation
-    double token_phase = 2.0 * PI * (double)token_id / 1000.0;
+    double token_phase = 2.0 * MATH_PI * (double)token_id / 1000.0;
     coords[0] += 0.1f * math_cos(token_phase);
     coords[1] += 0.1f * math_sin(token_phase);
-    coords[2] += 0.1f * math_sin(token_phase * PHI);
+    coords[2] += 0.1f * math_sin(token_phase * MATH_PHI);
 }
 
 /**
@@ -321,14 +320,14 @@ void cllm_compute_attention_fourier(const float* attention_weights,
                                     int seq_len) {
     if (!attention_weights || !fourier_output || seq_len <= 0) return;
     
-    // Use PI macro from prime_types.h
+    // Use MATH_PI macro from prime_types.h
     
     for (int k = 0; k < seq_len; k++) {
         double real = 0.0;
         double imag = 0.0;
         
         for (int n = 0; n < seq_len; n++) {
-            double angle = -2.0 * PI * (double)k * (double)n / (double)seq_len;
+            double angle = -2.0 * MATH_PI * (double)k * (double)n / (double)seq_len;
             real += attention_weights[n] * math_cos(angle);
             imag += attention_weights[n] * math_sin(angle);
         }

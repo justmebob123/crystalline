@@ -13,7 +13,7 @@
 /**
  * @brief Small epsilon for floating point comparisons
  */
-#define EPSILON 1e-10
+#define MATH_EPSILON 1e-10
 
 /**
  * @brief Initialize work distribution configuration
@@ -89,7 +89,7 @@ size_t calculate_dimension_work(
 ) {
     (void)dimension;  // Unused for now
     
-    if (total_entropy < EPSILON || total_work == 0) {
+    if (total_entropy < MATH_EPSILON || total_work == 0) {
         return 0;
     }
     
@@ -129,7 +129,7 @@ WorkDistribution calculate_combined_work_distribution(
     double entropy_parent_ratio = 0.5;  // Default to equal
     double entropy_child_ratio = 0.5;
     
-    if (total_entropy > EPSILON) {
+    if (total_entropy > MATH_EPSILON) {
         entropy_parent_ratio = parent_entropy / total_entropy;
         entropy_child_ratio = child_entropy / total_entropy;
     }
@@ -146,12 +146,12 @@ WorkDistribution calculate_combined_work_distribution(
     
     // Normalize to ensure sum = 1.0
     double sum = dist.parent_keeps + dist.child_gets;
-    if (sum > EPSILON) {
+    if (sum > MATH_EPSILON) {
         dist.parent_keeps /= sum;
         dist.child_gets /= sum;
     }
     
-    dist.is_valid = (math_abs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
+    dist.is_valid = (math_abs(dist.parent_keeps + dist.child_gets - 1.0) < MATH_EPSILON);
     
     return dist;
 }
@@ -184,7 +184,7 @@ bool calculate_entropy_work_distribution(
         total_entropy += entropies[i];
     }
     
-    if (total_entropy < EPSILON) {
+    if (total_entropy < MATH_EPSILON) {
         return false;
     }
     
@@ -392,7 +392,7 @@ double calculate_work_distribution_balance(const WorkDistributionPlan* plan) {
     
     // Return coefficient of variation
     double std_dev = math_sqrt(variance);
-    return (mean > EPSILON) ? (std_dev / mean) : 0.0;
+    return (mean > MATH_EPSILON) ? (std_dev / mean) : 0.0;
 }
 
 /**

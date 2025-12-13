@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include "math/math.h"
 
-#define EPSILON 1e-6
+#define MATH_EPSILON 1e-6
 
 /**
  * @brief Create a minimal test model
@@ -165,7 +165,7 @@ static void test_model_entropy(void) {
     for (int i = 0; i < 12; i++) {
         sum += calculate_dimension_entropy(&ctx, i, 100);
     }
-    assert(fabs(entropy - sum) < EPSILON);
+    assert(fabs(entropy - sum) < MATH_EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);
@@ -374,7 +374,7 @@ static void test_entropy_distribution(void) {
     }
     
     double total = calculate_model_entropy(&ctx, 100);
-    assert(fabs(sum - total) < EPSILON);
+    assert(fabs(sum - total) < MATH_EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);

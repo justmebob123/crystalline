@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
-#include <math.h>
+#include "math/math.h"
 #include "recovery_core.h"
 #include "recovery_crypto.h"
 #include "recovery_network.h"

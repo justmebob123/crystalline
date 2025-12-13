@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <math.h>
+#include "math/math.h"
 
 // OpenSSL for cryptographic operations (optional - stub implementations provided)
 #ifdef HAVE_OPENSSL

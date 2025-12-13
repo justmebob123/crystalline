@@ -201,3 +201,20 @@ typedef enum {
 #endif
 
 #endif /* MATH_TYPES_H */
+/* Numerical tolerances */
+#define MATH_EPSILON 1e-10
+#define MATH_SMALL_VALUE 1e-15
+
+
+/* Euler's number */
+#define MATH_E 2.71828182845904523536
+
+/* Two pi */
+#define MATH_TWO_PI (2.0 * MATH_PI)
+
+
+/* Vector culmination point and twin primes */
+#define VECTOR_CULMINATION 144000ULL
+#define TWIN_PRIME_LOWER 143999ULL
+#define TWIN_PRIME_UPPER 144001ULL
+

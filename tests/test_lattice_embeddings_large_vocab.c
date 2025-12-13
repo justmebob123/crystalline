@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "math/math.h"
 #include <assert.h>
 #include "lattice_embeddings.h"
 #include "math/arithmetic.h"

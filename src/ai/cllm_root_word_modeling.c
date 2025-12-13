@@ -27,7 +27,7 @@
 #include "math/clock.h"
 #include "math/prime.h"  // For prime_validate_by_clock()
 
-#define PHI 1.618033988749895
+#define MATH_PHI 1.618033988749895
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000
 static uint64_t prime_cache[PRIME_CACHE_SIZE];
@@ -146,7 +146,7 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     double radius = math_sqrt((double)prime_index + 1.0);
     
     // Golden angle for optimal packing (use macros from prime_types.h)
-    double golden_angle = 2.0 * MATH_PI / (PHI * PHI);
+    double golden_angle = 2.0 * MATH_PI / (MATH_PHI * MATH_PHI);
     double angle = golden_angle * (double)prime_index;
     
     // Normalize angle
@@ -163,7 +163,7 @@ void cllm_compute_token_lattice_coords(uint32_t token_id, uint64_t prime, float*
     double token_phase = 2.0 * MATH_PI * (double)token_id / 1000.0;
     coords[0] += 0.1f * math_cos(token_phase);
     coords[1] += 0.1f * math_sin(token_phase);
-    coords[2] += 0.1f * math_sin(token_phase * PHI);
+    coords[2] += 0.1f * math_sin(token_phase * MATH_PHI);
 }
 
 /**

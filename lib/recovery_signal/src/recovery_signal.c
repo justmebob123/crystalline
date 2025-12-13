@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
+#include "math/math.h"
 #include <time.h>
 
 #ifndef M_PI

@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/math.h"
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
 #include "../../include/prime_float_math.h"
 
-#define EPSILON 1e-4f
+#define MATH_EPSILON 1e-4f
 #define TOLERANCE 5e-2f  // Relaxed tolerance for numerical gradient checking
 
 // Helper: Create a tiny test model for gradient checking
@@ -164,7 +164,7 @@ int test_softmax_gradient() {
         // Forward pass with +epsilon
         float input_plus[5];
         memcpy(input_plus, input, sizeof(input));
-        input_plus[i] += EPSILON;
+        input_plus[i] += MATH_EPSILON;
         
         float softmax_plus[5];
         max_val = input_plus[0];
@@ -190,7 +190,7 @@ int test_softmax_gradient() {
         // Forward pass with -epsilon
         float input_minus[5];
         memcpy(input_minus, input, sizeof(input));
-        input_minus[i] -= EPSILON;
+        input_minus[i] -= MATH_EPSILON;
         
         float softmax_minus[5];
         max_val = input_minus[0];
@@ -214,7 +214,7 @@ int test_softmax_gradient() {
         }
         
         // Numerical gradient
-        grad_in_numerical[i] = (loss_plus - loss_minus) / (2.0f * EPSILON);
+        grad_in_numerical[i] = (loss_plus - loss_minus) / (2.0f * MATH_EPSILON);
     }
     
     // Compare gradients

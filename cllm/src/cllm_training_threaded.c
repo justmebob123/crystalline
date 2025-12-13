@@ -43,7 +43,7 @@
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
 #include "ai/cllm_cymatic_sync.h"           // PHASE 5: Cymatic timing synchronization
 #include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
-#include "cllm_mathematical_constants.h"  // For dimensional frequencies
+#include "math/types.h"  // For dimensional frequencies
 #include "math/transcendental.h"
 #include "prime_types.h"                 // For PRIME_PI
 #include <stdlib.h>

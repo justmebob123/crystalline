@@ -13,7 +13,7 @@
 #include "statistics.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
-#include "cllm_mathematical_constants.h"
+#include "math/types.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -386,7 +386,7 @@ double stats_entropy_reduction(double initial_bits, uint32_t steps,
     for (uint32_t step = 0; step < steps; step++) {
         // Deterministic cut using golden ratio (from mathematical_constants.h)
         // This provides reproducible, testable results
-        double t = (double)(step + 1) * PHI;
+        double t = (double)(step + 1) * MATH_PHI;
         t = t - (uint64_t)t;  // Fractional part
         
         double cut_fraction = cut_min + t * (cut_max - cut_min);
@@ -452,7 +452,7 @@ double stats_entropy_residuals(const uint64_t* layers, size_t num_layers,
         
         // Fold into golden ratio bounds
         // residual = entropy mod (φ * scale)
-        double bound = PHI * phi_scale;
+        double bound = MATH_PHI * phi_scale;
         if (bound > 0.0) {
             // Use prime_fmod for modular arithmetic
             while (layer_entropy >= bound) {
@@ -469,7 +469,7 @@ double stats_entropy_residuals(const uint64_t* layers, size_t num_layers,
     free(prob_dist);
     
     // Final folding
-    double final_bound = PHI * phi_scale * (double)num_layers;
+    double final_bound = MATH_PHI * phi_scale * (double)num_layers;
     if (final_bound > 0.0) {
         while (total_residual >= final_bound) {
             total_residual -= final_bound;

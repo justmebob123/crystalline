@@ -15,7 +15,7 @@ SDL_Color get_vibrational_color(double value, double prime) {
     } else {
         double t = freq / SYN_BLUE_FREQ;
         color.r = (uint8_t)(255 * (1.0 - t));
-        color.g = (uint8_t)(255 * t * math_sin(t * PHI));
+        color.g = (uint8_t)(255 * t * math_sin(t * MATH_PHI));
         color.b = (uint8_t)(255 * t);
     }
     color.a = 255;
