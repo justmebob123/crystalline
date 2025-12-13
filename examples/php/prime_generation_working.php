@@ -14,8 +14,8 @@ if (!extension_loaded('crystalline_math')) {
 
 echo "=== Crystalline Math - Prime Generation (Working Features) ===\n\n";
 
-// Display version
-echo "Extension Version: " . crystalline_version() . "\n\n";
+// Display loaded extension info
+echo "Extension loaded: crystalline_math\n\n";
 
 // Example 1: Generate primes using O(1) formula
 echo "1. O(1) Prime Generation:\n";
@@ -31,7 +31,7 @@ echo "   Position 9, Magnitude 1: " . crystalline_prime_generate_o1(9, 1) . "\n\
 echo "2. Primality Testing:\n";
 $test_numbers = [2, 3, 4, 5, 17, 100, 157, 997, 1009, 10007];
 foreach ($test_numbers as $n) {
-    $is_prime = crystalline_prime_is_prime($n);
+    $is_prime = is_prime($n);
     echo "   $n is " . ($is_prime ? "PRIME" : "composite") . "\n";
 }
 echo "\n";
@@ -41,7 +41,7 @@ echo "3. First 20 Primes (using is_prime):\n";
 $primes = [];
 $candidate = 2;
 while (count($primes) < 20) {
-    if (crystalline_prime_is_prime($candidate)) {
+    if (is_prime($candidate)) {
         $primes[] = $candidate;
     }
     $candidate++;
@@ -65,7 +65,7 @@ echo "5. Performance Test (Primality Testing):\n";
 $start = microtime(true);
 $count = 1000;
 for ($i = 0; $i < $count; $i++) {
-    crystalline_prime_is_prime(rand(1, 10000));
+    is_prime(rand(1, 10000));
 }
 $elapsed = microtime(true) - $start;
 $per_second = $count / $elapsed;
@@ -76,7 +76,7 @@ echo "   Rate: " . number_format($per_second, 0) . " checks/second\n\n";
 echo "6. Twin Primes (p and p+2 both prime):\n";
 $twin_primes = [];
 for ($p = 3; $p < 100 && count($twin_primes) < 10; $p += 2) {
-    if (crystalline_prime_is_prime($p) && crystalline_prime_is_prime($p + 2)) {
+    if (is_prime($p) && is_prime($p + 2)) {
         $twin_primes[] = "($p, " . ($p + 2) . ")";
     }
 }
@@ -84,5 +84,5 @@ echo "   " . implode(", ", $twin_primes) . "\n\n";
 
 echo "=== Example Complete ===\n";
 echo "\nNote: crystalline_prime_nth() has a known issue and is not used in this example.\n";
-echo "Use crystalline_prime_is_prime() in a loop as shown above to find the nth prime.\n";
+echo "Use is_prime() in a loop as shown above to find the nth prime.\n";
 ?>

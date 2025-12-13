@@ -68,11 +68,12 @@ echo "Mapping prices to prime positions on clock lattice:\n\n";
 for ($i = 0; $i < min(10, count($stock_prices)); $i++) {
     $price_scaled = (int)($stock_prices[$i] * 10); // Scale to integer
     
-    // Find nearest prime using Crystalline O(1) generation
-    $prime = crystalline_prime_generate_o1($price_scaled);
+    // Map price to clock position (0-11)
+    $position = (int)($price_scaled % 12);
     
-    // Get clock lattice position
-    $position = crystalline_clock_position($prime);
+    // Generate prime at this position with magnitude based on price
+    $magnitude = (int)($price_scaled / 12);
+    $prime = crystalline_prime_generate_o1($position, $magnitude);
     
     echo "  Day " . ($i + 1) . ": $" . number_format($stock_prices[$i], 2);
     echo " → Prime: " . $prime;
@@ -101,9 +102,13 @@ for ($i = 1; $i < count($stock_prices); $i++) {
     $scaled = (int)($magnitude * 100);
     
     if ($scaled > 0) {
-        $prime = crystalline_prime_generate_o1($scaled);
-        $position = crystalline_clock_position($prime);
-        $prime_positions[] = $position['ring'];
+        // Map to clock position and magnitude
+        $position = (int)($scaled % 12);
+        if ($position == 3 || $position == 6 || $position == 9) {
+            $mag = (int)($scaled / 12);
+            $prime = crystalline_prime_generate_o1($position, $mag);
+            $prime_positions[] = $position;
+        }
     }
 }
 
@@ -179,17 +184,10 @@ echo "\n";
 // 5. PRIME RAINBOW TABLE ANALYSIS
 // ============================================================================
 
-echo "5. PRIME RAINBOW TABLE ANALYSIS\n";
+echo "5. PRIME-BASED PRICE LEVEL ANALYSIS\n";
 echo str_repeat("=", 60) . "\n\n";
 
-// Initialize rainbow table for fast prime lookups
-crystalline_rainbow_init(10000);
-crystalline_rainbow_populate(1000);
-
-$rainbow_count = crystalline_rainbow_count();
-echo "Rainbow Table Initialized: " . $rainbow_count . " primes cached\n\n";
-
-// Analyze price levels using rainbow table
+// Analyze key price levels using prime generation
 echo "Key Price Levels (Prime-Aligned):\n";
 
 $key_levels = [
@@ -212,13 +210,19 @@ for ($i = 0; $i < count($key_levels); $i++) {
     $level = $key_levels[$i];
     $scaled = (int)($level * 10);
     
-    // Find nearest prime
-    $prime = crystalline_prime_generate_o1($scaled);
-    $position = crystalline_clock_position($prime);
-    
-    echo "  " . $level_names[$i] . ": $" . number_format($level, 2);
-    echo " → Prime: " . $prime;
-    echo " (Ring " . $position['ring'] . ")\n";
+    // Map to clock position
+    $position = (int)($scaled % 12);
+    if ($position == 3 || $position == 6 || $position == 9) {
+        $mag = (int)($scaled / 12);
+        $prime = crystalline_prime_generate_o1($position, $mag);
+        
+        echo "  " . $level_names[$i] . ": $" . number_format($level, 2);
+        echo " → Prime: " . $prime;
+        echo " (Position " . $position . ", Magnitude " . $mag . ")\n";
+    } else {
+        echo "  " . $level_names[$i] . ": $" . number_format($level, 2);
+        echo " → Not on prime position\n";
+    }
 }
 echo "\n";
 

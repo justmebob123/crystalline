@@ -1,4 +1,11 @@
-# CRITICAL FIXES: IMPLEMENT MISSING MATH LIBRARY FUNCTIONS
+# CRITICAL FIXES: PHP EXAMPLES BROKEN - IMMEDIATE ACTION REQUIRED
+
+## PRIORITY 0: FIX BROKEN PHP EXAMPLES (CRITICAL!)
+- [ ] Fix examples/php/prime_generation_working.php - missing crystalline_version()
+- [ ] Fix php/examples/stock_trading_analysis.php - wrong function signature for crystalline_prime_generate_o1()
+- [ ] Fix bindings/php/examples/*.php - missing recovery functions
+- [ ] Add missing functions to PHP extensions
+- [ ] Test ALL PHP examples to ensure they work
 
 ## PRIORITY 1: IMPLEMENT MISSING PRIME FUNCTIONS ✅ COMPLETE
 - [x] Implement prime_totient() - Euler's totient function φ(n)
