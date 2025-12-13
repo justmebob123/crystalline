@@ -448,6 +448,46 @@ PHP_FUNCTION(numerical_cosine_similarity)
 }
 /* }}} */
 
+/* {{{ proto array algo_statistics(array $data)
+   Calculate comprehensive statistics for array */
+PHP_FUNCTION(algo_statistics)
+{
+    zval *data;
+    size_t count;
+    
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ARRAY(data)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    double *values = php_array_to_double(data, &count);
+    if (!values || count == 0) {
+        if (values) efree(values);
+        RETURN_EMPTY_ARRAY();
+    }
+    
+    // Calculate all statistics
+    double mean = stats_mean(values, count);
+    double variance = stats_variance(values, count, true);
+    double std_dev = stats_std_dev(values, count, true);
+    double median = stats_median(values, count);
+    double min = stats_min(values, count);
+    double max = stats_max(values, count);
+    
+    efree(values);
+    
+    // Return associative array with all stats
+    array_init(return_value);
+    add_assoc_double(return_value, "mean", mean);
+    add_assoc_double(return_value, "variance", variance);
+    add_assoc_double(return_value, "std_dev", std_dev);
+    add_assoc_double(return_value, "median", median);
+    add_assoc_double(return_value, "min", min);
+    add_assoc_double(return_value, "max", max);
+    add_assoc_double(return_value, "range", max - min);
+    add_assoc_long(return_value, "count", count);
+}
+/* }}} */
+
 /* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_array, 0)
     ZEND_ARG_INFO(0, data)
@@ -493,6 +533,7 @@ const zend_function_entry algorithms_functions[] = {
     PHP_FE(cross_entropy_loss, arginfo_two_arrays)
     PHP_FE(numerical_dot_product, arginfo_two_arrays)
     PHP_FE(numerical_cosine_similarity, arginfo_two_arrays)
+    PHP_FE(algo_statistics, arginfo_array)
     PHP_FE_END
 };
 /* }}} */

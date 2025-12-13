@@ -380,6 +380,17 @@ PHP_FUNCTION(math_log10)
 }
 /* }}} */
 
+/* {{{ proto double math_log2(double x) */
+PHP_FUNCTION(math_log2)
+{
+    double x;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(x)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(math_log2(x));
+}
+/* }}} */
+
 /* {{{ proto bool math_is_nan(double x) */
 PHP_FUNCTION(math_is_nan)
 {
@@ -437,6 +448,51 @@ PHP_FUNCTION(is_prime)
 }
 /* }}} */
 
+/* {{{ proto int crystalline_prime_generate_o1(int position, int magnitude) */
+PHP_FUNCTION(crystalline_prime_generate_o1)
+{
+    zend_long position, magnitude;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(position)
+        Z_PARAM_LONG(magnitude)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_generate_o1((uint32_t)position, (uint64_t)magnitude));
+}
+/* }}} */
+
+/* {{{ proto int prime_nth(int n) */
+PHP_FUNCTION(prime_nth)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_nth((uint64_t)n));
+}
+/* }}} */
+
+/* {{{ proto int prime_next(int n) */
+PHP_FUNCTION(prime_next)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_next((uint64_t)n));
+}
+/* }}} */
+
+/* {{{ proto int prime_prev(int n) */
+PHP_FUNCTION(prime_prev)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(prime_prev((uint64_t)n));
+}
+/* }}} */
+
 /* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_math_binary, 0)
     ZEND_ARG_INFO(0, a)
@@ -455,6 +511,11 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_is_prime, 0)
     ZEND_ARG_INFO(0, n)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_prime_generate, 0)
+    ZEND_ARG_INFO(0, position)
+    ZEND_ARG_INFO(0, magnitude)
 ZEND_END_ARG_INFO()
 /* }}} */
 
@@ -480,6 +541,7 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_exp, arginfo_math_unary)
     PHP_FE(math_log, arginfo_math_unary)
     PHP_FE(math_log10, arginfo_math_unary)
+    PHP_FE(math_log2, arginfo_math_unary)
     PHP_FE(math_sin, arginfo_math_unary)
     PHP_FE(math_cos, arginfo_math_unary)
     PHP_FE(math_tan, arginfo_math_unary)
@@ -494,6 +556,10 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_is_finite, arginfo_math_unary)
     PHP_FE(math_approx_equal, arginfo_math_clamp)
     PHP_FE(is_prime, arginfo_is_prime)
+    PHP_FE(crystalline_prime_generate_o1, arginfo_prime_generate)
+    PHP_FE(prime_nth, arginfo_is_prime)
+    PHP_FE(prime_next, arginfo_is_prime)
+    PHP_FE(prime_prev, arginfo_is_prime)
     PHP_FE_END
 };
 /* }}} */
