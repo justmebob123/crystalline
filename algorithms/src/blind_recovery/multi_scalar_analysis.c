@@ -1,15 +1,41 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file multi_scalar_analysis.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Multi-scalar recursive analysis
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Analyzes structures at multiple scales simultaneously, enabling
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * detection of patterns and corruption across different resolution levels.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Create scalar analysis for a specific scale

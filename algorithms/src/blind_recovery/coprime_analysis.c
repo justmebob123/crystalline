@@ -1,12 +1,39 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file coprime_analysis.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Coprime relationship analysis (OBJECTIVE 28 - Layer 1)
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Computes GCD matrix to analyze coprime relationships between dimensions.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * These relationships reveal structural constraints and enable validation.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery/blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 

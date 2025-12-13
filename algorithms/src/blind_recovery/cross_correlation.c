@@ -1,15 +1,41 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file cross_correlation.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Cross-dimensional correlation analysis
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Analyzes correlations between different dimensions to identify
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * structural relationships and detect corruption patterns.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Compute cross-correlation between two dimensions

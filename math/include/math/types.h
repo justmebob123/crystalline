@@ -135,6 +135,16 @@ typedef struct {
 /** Mathematical constant e (Euler's number) */
 #define MATH_E 2.71828182845904523536
 
+/** Mathematical constant for infinity */
+#ifndef INFINITY
+#define INFINITY (__builtin_inf())
+#endif
+
+/** Mathematical constant for NaN */
+#ifndef NAN
+#define NAN (__builtin_nan(""))
+#endif
+
 /** Mathematical constant φ (golden ratio) */
 #define MATH_PHI 1.61803398874989484820
 

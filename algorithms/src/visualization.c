@@ -5,10 +5,10 @@
  */
 
 #include "visualization.h"
+#include "math/transcendental.h"
 #include "../../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 // ============================================================================
 // INITIALIZATION

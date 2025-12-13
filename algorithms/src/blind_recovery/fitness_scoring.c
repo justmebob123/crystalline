@@ -1,15 +1,41 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file fitness_scoring.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Fitness scoring for candidate evaluation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Evaluates candidate fitness based on structural consistency,
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * oscillation patterns, and geometric constraints.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Score candidate based on structural consistency

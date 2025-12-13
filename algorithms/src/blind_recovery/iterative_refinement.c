@@ -1,15 +1,41 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file iterative_refinement.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Iterative structure refinement using candidate search
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Refines corrupted structures through iterative candidate evaluation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * and application of best-fit values.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Apply candidate to structure

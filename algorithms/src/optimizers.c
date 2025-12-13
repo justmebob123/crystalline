@@ -12,9 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+// Using MATH_PI from math library
 
 /* ============================================================================
  * Configuration
@@ -467,7 +465,7 @@ double lr_schedule_cosine_annealing(
     if (total_steps == 0 || step >= total_steps) return final_lr;
     
     double progress = (double)step / (double)total_steps;
-    double cosine = 0.5 * (1.0 + math_cos(M_PI * progress));  // PHASE 1: NEW math library
+    double cosine = 0.5 * (1.0 + math_cos(MATH_PI * progress));  // PHASE 1: NEW math library
     
     return final_lr + (initial_lr - final_lr) * cosine;
 }

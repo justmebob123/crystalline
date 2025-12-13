@@ -7,9 +7,11 @@
  */
 
 #include "blind_recovery.h"
+#include "math/types.h"           // For MATH_PI and INFINITY
+#include "math/transcendental.h"  // For math_sqrt
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include <math.h>  // For INFINITY constant
 
 /**
  * Compute Euclidean distance between two 3D points

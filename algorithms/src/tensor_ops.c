@@ -9,6 +9,7 @@
 
 #include "tensor_ops.h"
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/transcendental.h"   // For math_pow
 #include "cllm_mathematical_constants.h"
 #include <stdlib.h>
 

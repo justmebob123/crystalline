@@ -12,8 +12,8 @@
 
 // Mathematical constants
 #define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
-#define PI M_PI
-#define TWO_PI (2.0 * M_PI)
+#define PI MATH_PI
+#define TWO_PI (2.0 * MATH_PI)
 
 // Dimensional frequencies (from cllm_mathematical_constants.h)
 const uint64_t DIMENSIONAL_FREQUENCIES[13] = {

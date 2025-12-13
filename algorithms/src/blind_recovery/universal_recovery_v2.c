@@ -1,20 +1,55 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file universal_recovery_v2.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief FIXED Universal Blind Recovery - OBJECTIVE 28 Implementation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * CRITICAL FIXES:
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 1. Oscillation detection now tracks ACTUAL vertex evolution across passes
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 2. Recovery metrics use adaptive threshold based on confidence distribution
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 3. Tetration attractors use proper logarithmic representation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 4. Vertex positions are actually modified by triangulation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery/blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "prime_float_math.h"
 
 // History tracking for oscillation detection
 typedef struct {

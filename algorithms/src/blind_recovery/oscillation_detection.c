@@ -11,10 +11,12 @@
  */
 
 #include "blind_recovery/blind_recovery.h"
+#include "math/types.h"           // For MATH_PI
+#include "math/transcendental.h"  // For math_sqrt, math_exp
+#include "math/arithmetic.h"      // For math_abs
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
 
 // Simple FFT implementation (Cooley-Tukey algorithm)
 // For production, would use FFTW library
@@ -43,7 +45,7 @@ static void fft_real(double complex* data, uint32_t n) {
     
     // Combine
     for (uint32_t k = 0; k < n/2; k++) {
-        double complex t = cexp(-2.0 * I * M_PI * k / n) * odd[k];
+        double complex t = cexp(-2.0 * I * MATH_PI * k / n) * odd[k];
         data[k] = even[k] + t;
         data[k + n/2] = even[k] - t;
     }

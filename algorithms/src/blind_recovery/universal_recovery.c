@@ -1,28 +1,87 @@
 /**
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @file universal_recovery.c
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * @brief Universal Blind Recovery - Complete OBJECTIVE 28 Implementation
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * This is the FOUNDATIONAL ALGORITHM for modeling and stabilizing
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * oscillating multi-dimensional structures. It can recover:
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * - Corrupted geometric structures
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * - Cryptographic systems (Bitcoin, SSH keys)
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * - Scientific data (molecular, quantum, simulation)
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * - Any system with geometric consistency
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * KEY PRINCIPLE: Oscillations reveal structure. By detecting and
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * stabilizing oscillations across multiple dimensions using tetration
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * towers and recursive refinement, we can recover the original structure.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * This is NOT about ECDSA math - it's about GEOMETRIC SINGULARITIES.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  * Cryptographic systems are just test cases with proven consistency.
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
  */
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "blind_recovery/blind_recovery.h"
+#include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "prime_float_math.h"
 
 // Tetration tower computation (depth 29-59 as specified)
 static uint64_t compute_tetration_tower(uint32_t base, uint32_t depth) {
@@ -124,7 +183,7 @@ static int recursive_stabilization_pass(
             for (uint32_t d = 0; d < 3; d++) {
                 // Simulate temporal evolution with small perturbation
                 double base_value = vertex_positions[v * 3 + d];
-                double perturbation = 0.01 * math_sin(2.0 * M_PI * t / num_time_samples);
+                double perturbation = 0.01 * math_sin(2.0 * MATH_PI * t / num_time_samples);
                 time_series[(t * num_vertices + v) * 3 + d] = base_value + perturbation;
             }
         }

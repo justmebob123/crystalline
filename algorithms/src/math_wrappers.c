@@ -16,7 +16,7 @@
  * - Supports ALL bases >= 2
  */
 
-#include "bigfixed_math_wrappers.h"
+#include "math_wrappers.h"
 #include "math/abacus.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"

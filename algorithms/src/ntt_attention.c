@@ -8,9 +8,9 @@
  */
 
 #include "ntt_attention.h"
-#include "../../include/prime_math_custom.h"
 #include "math/ntt.h"
 #include "math/abacus.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
