@@ -80,6 +80,9 @@ fi
 
 echo "Creating configuration in $INI_DIR..."
 
+# Remove any old configurations first
+rm -f "$INI_DIR"/*crystalline*.ini 2>/dev/null || true
+
 cat > "$INI_DIR/20-crystalline_math.ini" << 'EOF'
 ; configuration for Crystalline Math extension
 ; priority=20

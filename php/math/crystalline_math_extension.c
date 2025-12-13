@@ -107,6 +107,21 @@ PHP_FUNCTION(math_div)
 }
 /* }}} */
 
+/* {{{ proto double math_mod(double a, double b)
+   Modulo operation */
+PHP_FUNCTION(math_mod)
+{
+    double a, b;
+    
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_DOUBLE(a)
+        Z_PARAM_DOUBLE(b)
+    ZEND_PARSE_PARAMETERS_END();
+    
+    RETURN_DOUBLE(math_mod(a, b));
+}
+/* }}} */
+
 /* {{{ proto double math_sqrt(double x)
    Square root */
 PHP_FUNCTION(math_sqrt)
@@ -199,6 +214,11 @@ ZEND_BEGIN_ARG_INFO(arginfo_math_div, 0)
     ZEND_ARG_INFO(0, b)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(arginfo_math_mod, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO(arginfo_math_sqrt, 0)
     ZEND_ARG_INFO(0, x)
 ZEND_END_ARG_INFO()
@@ -228,6 +248,7 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_sub, arginfo_math_sub)
     PHP_FE(math_mul, arginfo_math_mul)
     PHP_FE(math_div, arginfo_math_div)
+    PHP_FE(math_mod, arginfo_math_mod)
     PHP_FE(math_sqrt, arginfo_math_sqrt)
     PHP_FE(math_pow, arginfo_math_pow)
     PHP_FE(math_sin, arginfo_math_sin)
