@@ -21,6 +21,7 @@
 #include "../../algorithms/include/numerical.h"
 #include "../../algorithms/include/statistics.h"
 #include "../../algorithms/include/loss_functions.h"
+#include "../../algorithms/include/sphere_packing.h"
 
 /* Helper function to convert PHP array to C double array */
 static double* php_array_to_double(zval *arr, size_t *count) {
@@ -640,6 +641,136 @@ ZEND_BEGIN_ARG_INFO(arginfo_six_doubles, 0)
     ZEND_ARG_INFO(0, y2)
     ZEND_ARG_INFO(0, z2)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_one_long, 0)
+    ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_two_longs, 0)
+    ZEND_ARG_INFO(0, a)
+    ZEND_ARG_INFO(0, b)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_long_two_doubles, 0)
+    ZEND_ARG_INFO(0, num)
+    ZEND_ARG_INFO(0, radius1)
+    ZEND_ARG_INFO(0, radius2)
+ZEND_END_ARG_INFO()
+/* }}} */
+
+/* {{{ proto double map_to_angle(int value) */
+PHP_FUNCTION(map_to_angle)
+{
+    zend_long value;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(value)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(map_to_angle((uint64_t)value));
+}
+/* }}} */
+
+/* {{{ proto int angle_to_clock_position(double angle) */
+PHP_FUNCTION(angle_to_clock_position)
+{
+    double angle;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_DOUBLE(angle)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(angle_to_clock_position(angle));
+}
+/* }}} */
+
+/* {{{ proto double clock_position_to_angle(int position) */
+PHP_FUNCTION(clock_position_to_angle)
+{
+    zend_long position;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(position)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(clock_position_to_angle((int)position));
+}
+/* }}} */
+
+/* {{{ proto int map_to_radial_line(int value) */
+PHP_FUNCTION(map_to_radial_line)
+{
+    zend_long value;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(value)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(map_to_radial_line((uint64_t)value));
+}
+/* }}} */
+
+/* {{{ proto int map_to_concentric_ring(int value) */
+PHP_FUNCTION(map_to_concentric_ring)
+{
+    zend_long value;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(value)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(map_to_concentric_ring((uint64_t)value));
+}
+/* }}} */
+
+/* {{{ proto bool is_on_radial_line(int value, int line_index) */
+PHP_FUNCTION(is_on_radial_line)
+{
+    zend_long value, line_index;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(value)
+        Z_PARAM_LONG(line_index)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(is_on_radial_line((uint64_t)value, (int)line_index));
+}
+/* }}} */
+
+/* {{{ proto bool is_on_concentric_ring(int value, int ring_number) */
+PHP_FUNCTION(is_on_concentric_ring)
+{
+    zend_long value, ring_number;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(value)
+        Z_PARAM_LONG(ring_number)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(is_on_concentric_ring((uint64_t)value, (int)ring_number));
+}
+/* }}} */
+
+/* {{{ proto int map_to_symmetry_group(int value) */
+PHP_FUNCTION(map_to_symmetry_group)
+{
+    zend_long value;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(value)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(map_to_symmetry_group((uint64_t)value));
+}
+/* }}} */
+
+/* {{{ proto double calculate_packing_density(int num_spheres, double container_radius, double sphere_radius) */
+PHP_FUNCTION(calculate_packing_density)
+{
+    zend_long num_spheres;
+    double container_radius, sphere_radius;
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+        Z_PARAM_LONG(num_spheres)
+        Z_PARAM_DOUBLE(container_radius)
+        Z_PARAM_DOUBLE(sphere_radius)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_DOUBLE(calculate_packing_density((int)num_spheres, container_radius, sphere_radius));
+}
+/* }}} */
+
+/* {{{ proto int get_kissing_number(int dimension) */
+PHP_FUNCTION(get_kissing_number)
+{
+    zend_long dimension;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(dimension)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_LONG(get_kissing_number((int)dimension));
+}
 /* }}} */
 
 /* {{{ algorithms_functions[] */
@@ -666,6 +797,16 @@ const zend_function_entry algorithms_functions[] = {
     PHP_FE(geometric_distance_2d, arginfo_four_doubles)
     PHP_FE(geometric_distance_3d, arginfo_six_doubles)
     PHP_FE(geometric_angle_between_2d, arginfo_four_doubles)
+    PHP_FE(map_to_angle, arginfo_one_long)
+    PHP_FE(angle_to_clock_position, arginfo_two_doubles)
+    PHP_FE(clock_position_to_angle, arginfo_one_long)
+    PHP_FE(map_to_radial_line, arginfo_one_long)
+    PHP_FE(map_to_concentric_ring, arginfo_one_long)
+    PHP_FE(is_on_radial_line, arginfo_two_longs)
+    PHP_FE(is_on_concentric_ring, arginfo_two_longs)
+    PHP_FE(map_to_symmetry_group, arginfo_one_long)
+    PHP_FE(calculate_packing_density, arginfo_long_two_doubles)
+    PHP_FE(get_kissing_number, arginfo_one_long)
     PHP_FE_END
 };
 /* }}} */
