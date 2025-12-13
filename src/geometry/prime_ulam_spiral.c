@@ -129,7 +129,7 @@ double prime_ulam_density(const uint64_t* grid, uint32_t size,
         return 0.0;
     }
     
-    return prime_divide((double)prime_count, (double)total_count);
+    return math_div((double)prime_count, (double)total_count);
 }
 
 uint32_t prime_ulam_find_diagonals(const uint64_t* grid, uint32_t size,
@@ -155,7 +155,7 @@ uint32_t prime_ulam_find_diagonals(const uint64_t* grid, uint32_t size,
         }
         
         double density = (total_count > 0) ? 
-                         prime_divide((double)prime_count, (double)total_count) : 0.0;
+                         math_div((double)prime_count, (double)total_count) : 0.0;
         diagonal_scores[offset] = density;
         
         if (density > threshold) {
@@ -177,7 +177,7 @@ uint32_t prime_ulam_find_diagonals(const uint64_t* grid, uint32_t size,
         }
         
         double density = (total_count > 0) ?
-                         prime_divide((double)prime_count, (double)total_count) : 0.0;
+                         math_div((double)prime_count, (double)total_count) : 0.0;
         diagonal_scores[size + offset] = density;
         
         if (density > threshold) {
