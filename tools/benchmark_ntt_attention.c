@@ -2,6 +2,8 @@
  * NTT Attention Benchmark Tool
  * 
  * Benchmarks NTT-based O(n log n) attention against standard O(n²) attention.
+ * 
+ * PHASE 2: Added missing includes
  */
 
 #include <stdio.h>
@@ -11,6 +13,7 @@
 #include "../include/cllm_inference.h"
 #include "../include/prime_float_math.h"
 #include "../../algorithms/include/ntt_attention.h"
+#include "../math/include/math/transcendental.h"  // For math_sqrt
 
 // Simple benchmark implementation
 static void benchmark_ntt_attention(uint32_t seq_len, uint32_t head_dim) {
