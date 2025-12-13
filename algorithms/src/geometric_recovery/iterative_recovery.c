@@ -10,6 +10,9 @@
  * 5. Iterate until convergence
  */
 
+// Suppress OpenSSL 3.0 deprecation warnings for SHA256 and BN functions
+#define OPENSSL_SUPPRESS_DEPRECATED
+
 #include "geometric_recovery.h"
 #include "prime_types.h"
 #include <openssl/sha.h>

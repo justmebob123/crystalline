@@ -71,8 +71,11 @@ bool platonic_model_save(
     header.final_oscillation_amplitude = model->final_oscillation_amplitude;
     header.num_dimension_scales = model->num_dimension_scales;
     header.num_vertex_scales = model->num_vertex_scales;
-    strncpy(header.model_id, model->model_id, sizeof(header.model_id) - 1);
-    header.model_id[sizeof(header.model_id) - 1] = '\0';  // Ensure null termination
+    // Use memcpy to avoid strncpy truncation warning
+    size_t id_len = strlen(model->model_id);
+    size_t copy_len = (id_len < sizeof(header.model_id) - 1) ? id_len : sizeof(header.model_id) - 1;
+    memcpy(header.model_id, model->model_id, copy_len);
+    header.model_id[copy_len] = '\0';  // Ensure null termination
     header.data_offset = sizeof(PlatonicFileHeader);
     
     if (fwrite(&header, sizeof(header), 1, file) != 1) {

@@ -76,7 +76,7 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(MATH_LIB) $(MATH_STATIC) $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools
+all: $(MATH_LIB) $(MATH_STATIC) $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools php-ext
 	@echo "✓ Build complete!"
 	@echo "  Shared Libraries:"
 	@echo "    - $(MATH_LIB)"
@@ -194,18 +194,21 @@ app: $(STATIC_LIB)
 # Installation
 # ============================================================================
 
-install: all
+install: all install-php
 	@echo "Installing Crystalline CLLM Libraries..."
 	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 math/lib/libcrystallinemath.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libalgorithms.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libcllm.so $(DESTDIR)$(LIBDIR)
 	install -m 755 libcrawler.so $(DESTDIR)$(LIBDIR)
 	install -m 644 libalgorithms.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libcllm.a $(DESTDIR)$(LIBDIR)
+	install -m 644 math/lib/libcrystallinemath.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libcrawler.a $(DESTDIR)$(LIBDIR)
 	install -d $(DESTDIR)$(INCLUDEDIR)/crystalline
 	cp -r include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/
 	ldconfig
+	cp -r math/include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/
 	@echo "✓ Installation complete"
 
 uninstall:
