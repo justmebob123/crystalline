@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "../math/include/math/types.h"  // PHASE 2: For MATH_PI
 
 #ifdef __cplusplus
 extern "C" {
@@ -430,7 +431,8 @@ typedef struct {
 #define DUST_GUARD_BITS_MAX 128       // Maximum guard bits
 
 // Math constants (standard names)
-#define M_PI 3.14159265358979323846
+// PHASE 2: Using MATH_PI from math/types.h
+#define M_PI MATH_PI
 #define M_LN2 0.69314718055994530942
 #define M_LN10 2.30258509299404568402
 

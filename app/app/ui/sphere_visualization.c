@@ -3,6 +3,10 @@
  * 
  * Displays the 12 kissing spheres in a circular arrangement
  * with real-time activity indicators, batch counts, and loss values.
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local M_PI definition
+ * - Using MATH_PI from math/types.h (via prime_float_math.h)
  */
 
 #include "../app_common.h"
@@ -15,10 +19,6 @@
 // Global crystalline visualization state
 static CrystallineVizState g_crystalline_viz_state = {0};
 static bool g_crystalline_viz_initialized = false;
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 /**
  * Draw a filled circle (sphere representation)

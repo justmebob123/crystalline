@@ -7,20 +7,19 @@
  * - Replaced math_log with math_log
  * - Replaced math_sqrt with math_sqrt
  * - Added high-precision variants using Crystalline Abacus
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local INFINITY definition
+ * - Using MATH_INFINITY from math/types.h
  */
 
 #include "numerical.h"
 #include "math/transcendental.h"
 #include "math/abacus.h"
+#include "math/types.h"  // PHASE 2: For MATH_INFINITY
 #include <string.h>
 #include <float.h>
 #include <stdbool.h>
-
-// INDEPENDENT MATHEMATICS - NO math.h!
-// Define INFINITY constant ourselves
-#ifndef INFINITY
-#define INFINITY (1.0 / 0.0)
-#endif
 
 /* ============================================================================
  * Softmax and Related Functions
@@ -136,7 +135,7 @@ bool numerical_is_nan(double x) {
 }
 
 bool numerical_is_inf(double x) {
-    return x == INFINITY || x == -INFINITY;
+    return x == MATH_INFINITY || x == MATH_NEG_INFINITY;
 }
 
 bool numerical_is_finite(double x) {

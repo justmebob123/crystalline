@@ -15,19 +15,19 @@
  * - Replaced math_log with math_log (2 calls)
  * - Replaced math_abs with math_abs (3 calls)
  * Total: 9 function calls migrated to NEW math library
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local INFINITY definition
+ * - Using MATH_INFINITY from math/types.h
  */
 
 #include "platonic_model.h"
 #include "../../../math/include/math/transcendental.h"  // NEW math library
 #include "../../../math/include/math/arithmetic.h"       // NEW math library
+#include "../../../math/include/math/types.h"            // PHASE 2: For MATH_INFINITY
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-// Define INFINITY without math.h to avoid type conflicts
-#ifndef INFINITY
-#define INFINITY (1.0 / 0.0)
-#endif
 
 /**
  * Compute a single level of tetration in log space
@@ -136,7 +136,7 @@ static double find_1d_attractor(
     uint32_t num_towers
 ) {
     double nearest = value;
-    double min_distance = INFINITY;
+    double min_distance = MATH_INFINITY;
     
     for (uint32_t t = 0; t < num_towers; t++) {
         TetrationTower* tower = towers[t];

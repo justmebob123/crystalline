@@ -5,33 +5,38 @@
  * Provides replacements for standard math.h functions.
  * 
  * CRITICAL: Maintains mathematical independence!
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local INFINITY, M_PI definitions
+ * - Using MATH_INFINITY, MATH_PI from math/types.h
  */
 
 #ifndef PRIME_FLOAT_MATH_H
 #define PRIME_FLOAT_MATH_H
+
+#include "../math/include/math/types.h"  // PHASE 2: For MATH_INFINITY, MATH_PI, MATH_E
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*
- * Mathematical Constants
+ * Mathematical Constants - Use math/types.h definitions
  */
-#ifndef INFINITY
-#define INFINITY (__builtin_inff())
-#endif
-
 #ifndef NAN
 #define NAN (__builtin_nanf(""))
 #endif
 
+// Legacy compatibility - redirect to math/types.h
 #ifndef M_PI
-#define M_PI 3.14159265358979323846
+#define M_PI MATH_PI
 #endif
 
 #ifndef M_E
-#define M_E 2.71828182845904523536
+#define M_E MATH_E
 #endif
+
+// Note: INFINITY already defined in math/types.h, no need to redefine
 
 /*
  * Basic Mathematical Functions

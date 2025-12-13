@@ -3,17 +3,22 @@
  * 
  * This implements the corrected algorithm where anchors are Platonic solid
  * vertices, NOT known k values. In production, NO known k is needed!
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local MATH_TWO_PI definition
+ * - Using MATH_TWO_PI, MATH_PHI from math/types.h
  */
 
 #include "geometric_anchors.h"
+#include "math/types.h"           // PHASE 2: For MATH_PI, MATH_TWO_PI, MATH_PHI
+#include "math/transcendental.h"  // For math_sqrt
 #include <stdlib.h>
 #include <string.h>
 #include "prime_float_math.h"
 
 // Mathematical constants
-#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
+#define PHI MATH_PHI
 #define PI MATH_PI
-#define TWO_PI (2.0 * MATH_PI)
 
 // Dimensional frequencies (from cllm_mathematical_constants.h)
 const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -36,7 +41,7 @@ static void generate_tetrahedron_13d(GeometricAnchor* anchors, int start_idx) {
         anchors[start_idx + v].vertex_index = v;
         
         // Generate vertex using tetrahedral angles
-        double angle = v * TWO_PI / 4.0;
+        double angle = v * MATH_TWO_PI / 4.0;
         
         for (int d = 0; d < 13; d++) {
             // Use dimensional frequency for this dimension
@@ -80,7 +85,7 @@ static void generate_octahedron_13d(GeometricAnchor* anchors, int start_idx) {
         anchors[start_idx + v].vertex_index = v;
         
         // Octahedral angles (6-fold symmetry)
-        double angle = v * TWO_PI / 6.0;
+        double angle = v * MATH_TWO_PI / 6.0;
         
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
@@ -100,7 +105,7 @@ static void generate_dodecahedron_13d(GeometricAnchor* anchors, int start_idx) {
         anchors[start_idx + v].vertex_index = v;
         
         // Dodecahedral angles with golden ratio
-        double angle = v * TWO_PI / 20.0;
+        double angle = v * MATH_TWO_PI / 20.0;
         
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
@@ -121,7 +126,7 @@ static void generate_icosahedron_13d(GeometricAnchor* anchors, int start_idx) {
         anchors[start_idx + v].vertex_index = v;
         
         // Icosahedral angles (12-fold symmetry)
-        double angle = v * TWO_PI / 12.0;
+        double angle = v * MATH_TWO_PI / 12.0;
         
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
@@ -418,7 +423,7 @@ void hash_Q_to_13d_position(EC_POINT* Q, EC_GROUP* group, double position[13]) {
         double x_contrib = (double)x_mod / (double)phi_i;
         double y_contrib = (double)y_mod / (double)(phi_i * phi_i);
         
-        position[d] = prime_fmod(x_contrib * TWO_PI + y_contrib * PI, TWO_PI);
+        position[d] = prime_fmod(x_contrib * MATH_TWO_PI + y_contrib * PI, MATH_TWO_PI);
     }
     
     BN_free(x);
@@ -431,12 +436,12 @@ void map_13d_to_clock(const double position[13], int* ring, int* pos, double* an
     for (int d = 0; d < 13; d++) {
         *angle += position[d] * DIMENSIONAL_FREQUENCIES[d];
     }
-    *angle = prime_fmod(*angle, TWO_PI);
-    if (*angle < 0) *angle += TWO_PI;
+    *angle = prime_fmod(*angle, MATH_TWO_PI);
+    if (*angle < 0) *angle += MATH_TWO_PI;
     
     // Add 42° phase offset
     *angle += PHASE_OFFSET_42_DEG;
-    *angle = prime_fmod(*angle, TWO_PI);
+    *angle = prime_fmod(*angle, MATH_TWO_PI);
     
     // Compute radius
     double radius = 0.0;
@@ -453,7 +458,7 @@ void map_13d_to_clock(const double position[13], int* ring, int* pos, double* an
     
     // Determine position on ring
     int ring_sizes[] = {12, 60, 60, 100};
-    *pos = (int)(*angle / TWO_PI * ring_sizes[*ring]);
+    *pos = (int)(*angle / MATH_TWO_PI * ring_sizes[*ring]);
 }
 
 // ============================================================================
@@ -503,7 +508,7 @@ void bias_toward_attractors(double position[13]) {
     for (int d = 0; d < 13; d++) {
         if (attractors[d].converged) {
             // Bias toward attractor
-            double attractor_angle = prime_fmod(attractors[d].value, TWO_PI);
+            double attractor_angle = prime_fmod(attractors[d].value, MATH_TWO_PI);
             double bias_strength = 0.05;  // 5% bias
             
             position[d] = (1.0 - bias_strength) * position[d] + 
@@ -520,11 +525,11 @@ double distance_to_nearest_attractor(
     
     for (int d = 0; d < 13; d++) {
         if (attractors[d].converged) {
-            double attractor_angle = prime_fmod(attractors[d].value, TWO_PI);
+            double attractor_angle = prime_fmod(attractors[d].value, MATH_TWO_PI);
             double dist = math_abs(position[d] - attractor_angle);
             
             // Handle wraparound
-            if (dist > PI) dist = TWO_PI - dist;
+            if (dist > PI) dist = MATH_TWO_PI - dist;
             
             if (dist < min_dist) min_dist = dist;
         }

@@ -9,18 +9,22 @@
  * - Replaced math_cos with math_cos (1 call)
  * - Replaced math_abs with math_abs (1 call)
  * Total: 8 function calls migrated to NEW math library
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local MATH_TWO_PI definition
+ * - Using MATH_TWO_PI from math/types.h
  */
 
 #include "sphere_packing.h"
 #include "../../math/include/math/transcendental.h"  // PHASE 1: NEW math library
 #include "../../math/include/math/arithmetic.h"       // PHASE 1: NEW math library
+#include "../../math/include/math/types.h"            // PHASE 2: For MATH_TWO_PI
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 // Constants
 #define TWELVE_FOLD_SYMMETRY 12
-#define TWO_PI (2.0 * MATH_PI)
 
 // ============================================================================
 // SPHERE OPERATIONS
@@ -257,17 +261,17 @@ int map_to_symmetry_group(uint64_t value) {
 double map_to_angle(uint64_t value) {
     // Map value to angle using 12-fold symmetry
     int group = map_to_symmetry_group(value);
-    return (double)group * TWO_PI / (double)TWELVE_FOLD_SYMMETRY;
+    return (double)group * MATH_TWO_PI / (double)TWELVE_FOLD_SYMMETRY;
 }
 
 int angle_to_clock_position(double angle_radians) {
     // Normalize angle to [0, 2π)
-    while (angle_radians < 0) angle_radians += TWO_PI;
-    while (angle_radians >= TWO_PI) angle_radians -= TWO_PI;
+    while (angle_radians < 0) angle_radians += MATH_TWO_PI;
+    while (angle_radians >= MATH_TWO_PI) angle_radians -= MATH_TWO_PI;
     
     // Map to 12 positions (0-11)
     // 0 = 12 o'clock (top), 3 = 3 o'clock (right), etc.
-    int position = (int)(angle_radians * TWELVE_FOLD_SYMMETRY / TWO_PI);
+    int position = (int)(angle_radians * TWELVE_FOLD_SYMMETRY / MATH_TWO_PI);
     
     if (position >= TWELVE_FOLD_SYMMETRY) position = TWELVE_FOLD_SYMMETRY - 1;
     if (position < 0) position = 0;
@@ -280,7 +284,7 @@ double clock_position_to_angle(int position) {
         return 0.0;
     }
     
-    return (double)position * TWO_PI / (double)TWELVE_FOLD_SYMMETRY;
+    return (double)position * MATH_TWO_PI / (double)TWELVE_FOLD_SYMMETRY;
 }
 
 // ============================================================================
@@ -333,7 +337,7 @@ int generate_kissing_spheres(const Sphere3D* central, Sphere3D* kissing_spheres,
     double distance = 2.0 * central->radius; // Centers are 2r apart for kissing
     
     for (int i = 0; i < 12; i++) {
-        double angle = (double)i * TWO_PI / 12.0;
+        double angle = (double)i * MATH_TWO_PI / 12.0;
         
         // Place sphere on XY plane at angle
         kissing_spheres[i].center_x = central->center_x + distance * math_cos(angle);

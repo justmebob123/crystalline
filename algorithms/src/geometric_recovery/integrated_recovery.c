@@ -4,10 +4,10 @@
 #include <string.h>
 #include <time.h>
 #include "prime_float_math.h"
+#include "../../math/include/math/types.h"  // PHASE 2: For MATH_PHI, MATH_PI, MATH_TWO_PI
 
-#define PHI 1.618033988749895
-#define PI 3.141592653589793
-#define TWO_PI (2.0 * PI)
+#define PHI MATH_PHI
+#define PI MATH_PI
 
 // 13 dimensional frequencies
 static const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -36,7 +36,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
     // Tetrahedron: 4 vertices
     for (int v = 0; v < 4; v++) {
         anchors[idx].anchor_id = idx;
-        double angle = v * TWO_PI / 4.0;
+        double angle = v * MATH_TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
@@ -61,7 +61,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
     // Octahedron: 6 vertices
     for (int v = 0; v < 6; v++) {
         anchors[idx].anchor_id = idx;
-        double angle = v * TWO_PI / 6.0;
+        double angle = v * MATH_TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
@@ -72,7 +72,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
     // Dodecahedron: 20 vertices
     for (int v = 0; v < 20; v++) {
         anchors[idx].anchor_id = idx;
-        double angle = v * TWO_PI / 20.0;
+        double angle = v * MATH_TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
@@ -83,7 +83,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
     // Icosahedron: 12 vertices
     for (int v = 0; v < 12; v++) {
         anchors[idx].anchor_id = idx;
-        double angle = v * TWO_PI / 12.0;
+        double angle = v * MATH_TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);
@@ -251,8 +251,8 @@ static uint64_t multi_layer_search(
     
     // Normalize target angle to [0, 2π)
     double normalized_target = target_angle;
-    while (normalized_target < 0) normalized_target += TWO_PI;
-    while (normalized_target >= TWO_PI) normalized_target -= TWO_PI;
+    while (normalized_target < 0) normalized_target += MATH_TWO_PI;
+    while (normalized_target >= MATH_TWO_PI) normalized_target -= MATH_TWO_PI;
     
     // Iterate through layers
     for (int layer = 0; layer < num_layers && layer < 3; layer++) {
@@ -270,12 +270,12 @@ static uint64_t multi_layer_search(
             double computed_angle = (double)k * PI * PHI;
             
             // Normalize to [0, 2π)
-            while (computed_angle < 0) computed_angle += TWO_PI;
-            while (computed_angle >= TWO_PI) computed_angle -= TWO_PI;
+            while (computed_angle < 0) computed_angle += MATH_TWO_PI;
+            while (computed_angle >= MATH_TWO_PI) computed_angle -= MATH_TWO_PI;
             
             // Compute error (handle wraparound)
             double error = math_abs(computed_angle - normalized_target);
-            if (error > PI) error = TWO_PI - error;
+            if (error > PI) error = MATH_TWO_PI - error;
             
             // Update best
             if (error < best_error) {

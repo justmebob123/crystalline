@@ -2,13 +2,15 @@
  * Crystalline Visualization Projection
  * 
  * Implements crystalline structure projection using Babylonian clock lattice.
+ * 
+ * PHASE 2: Fixed include order to prevent type conflicts
  */
 
 #include "visualization.h"
+#include "prime_float_math.h"  // PHASE 2: Include math types first
 #include "../../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
 
 /**
  * Project to Crystalline structure

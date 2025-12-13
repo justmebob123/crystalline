@@ -15,6 +15,10 @@
  * - Replaced PRIME_PI with MATH_PI
  * - Replaced PHI with MATH_PHI
  * Total: 15 function calls migrated to NEW math library
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local MATH_TWO_PI definition
+ * - Using MATH_TWO_PI from math/types.h
  */
 
 #include <stdlib.h>
@@ -27,7 +31,6 @@
 // Use NEW math library constants
 #define PRIME_PI MATH_PI
 #define PHI MATH_PHI
-#define TWO_PI (2.0 * MATH_PI)
 
 /**
  * Apply cymatic resonance modulation to gradients
@@ -277,7 +280,7 @@ void cymatic_geometric_modulation(double* signal, size_t len, uint32_t shape_sym
         double t = (double)i / (double)len;
         
         // Calculate symmetry angle
-        double angle = t * (double)shape_symmetry * TWO_PI;
+        double angle = t * (double)shape_symmetry * MATH_TWO_PI;
         
         // Apply golden ratio scaling
         double scale = 1.0 + 0.1 * math_cos(angle / PHI);
@@ -309,7 +312,7 @@ bool cymatic_harmonic_alignment(const double* signal, size_t len,
         double imag = 0.0;
         
         for (size_t n = 0; n < len; n++) {
-            double angle = -TWO_PI * (double)k * (double)n / (double)len;
+            double angle = -MATH_TWO_PI * (double)k * (double)n / (double)len;
             real += signal[n] * math_cos(angle);
             imag += signal[n] * math_sin(angle);
         }

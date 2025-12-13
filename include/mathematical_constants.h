@@ -6,12 +6,15 @@
  * used throughout the crystalline, algorithms, and CLLM libraries.
  * 
  * CRITICAL: All code must use these constants. Do NOT redefine locally.
+ * 
+ * PHASE 2: Consolidated constants - using math/types.h as single source of truth
  */
 
 #ifndef MATHEMATICAL_CONSTANTS_H
 #define MATHEMATICAL_CONSTANTS_H
 
 #include <stdint.h>
+#include "../math/include/math/types.h"  // PHASE 2: For MATH_PI, MATH_TWO_PI, etc.
 
 /* ============================================================================
  * Golden Ratio Constants
@@ -37,16 +40,17 @@
  * ============================================================================ */
 
 /** Pi: π */
-#define PI 3.14159265358979323846
+// PHASE 2: Using MATH_PI from math/types.h
+#define PI MATH_PI
 
-/** Two pi: 2π */
-#define TWO_PI 6.28318530717958647692
+/** Two pi: 2π - Using MATH_TWO_PI from math/types.h */
+#define TWO_PI MATH_TWO_PI
 
-/** Half pi: π/2 */
-#define HALF_PI 1.57079632679489661923
+/** Half pi: π/2 - Using MATH_PI_OVER_2 from math/types.h */
+#define HALF_PI MATH_PI_OVER_2
 
-/** Quarter pi: π/4 */
-#define QUARTER_PI 0.78539816339744830962
+/** Quarter pi: π/4 - Using MATH_PI_OVER_4 from math/types.h */
+#define QUARTER_PI MATH_PI_OVER_4
 
 /** Pi squared: π² */
 #define PI_SQUARED 9.86960440108935861883

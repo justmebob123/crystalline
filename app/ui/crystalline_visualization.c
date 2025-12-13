@@ -1,16 +1,15 @@
 /**
  * Crystalline Memory Visualization Implementation
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local M_PI definition
+ * - Using MATH_PI from math/types.h (via prime_float_math.h)
  */
 
 #include "crystalline_visualization.h"
 #include "../../include/prime_float_math.h"
 #include <stdio.h>
 #include <string.h>
-#include "../../include/prime_float_math.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 // ============================================================================
 // HELPER FUNCTIONS

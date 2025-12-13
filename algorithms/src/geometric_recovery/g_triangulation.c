@@ -9,6 +9,9 @@
  * 5. Track oscillation in k estimates
  * 6. Re-triangulate G from oscillation patterns
  * 7. Repeat until convergence
+ * 
+ * PHASE 2: Consolidated constants
+ * - Using MATH_PHI, MATH_PI, MATH_TWO_PI from math/types.h
  */
 
 #include <stdio.h>
@@ -18,10 +21,10 @@
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 #include "prime_float_math.h"
+#include "../../math/include/math/types.h"  // PHASE 2: For MATH_PHI, MATH_PI, MATH_TWO_PI
 
-#define PHI 1.618033988749895
-#define PI 3.141592653589793
-#define TWO_PI (2.0 * PI)
+#define PHI MATH_PHI
+#define PI MATH_PI
 
 // 13 dimensional frequencies
 static const uint64_t DIMENSIONAL_FREQUENCIES[13] = {
@@ -106,8 +109,8 @@ void map_ec_point_to_lattice(
  */
 void map_k_to_lattice(uint64_t k, double position[13]) {
     double base_angle = (double)k * PI * PHI;
-    while (base_angle < 0) base_angle += TWO_PI;
-    while (base_angle >= TWO_PI) base_angle -= TWO_PI;
+    while (base_angle < 0) base_angle += MATH_TWO_PI;
+    while (base_angle >= MATH_TWO_PI) base_angle -= MATH_TWO_PI;
     
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
@@ -135,7 +138,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
     
     // Tetrahedron: 4 vertices
     for (int v = 0; v < 4; v++) {
-        double angle = v * TWO_PI / 4.0;
+        double angle = v * MATH_TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
@@ -162,7 +165,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
     
     // Octahedron: 6 vertices
     for (int v = 0; v < 6; v++) {
-        double angle = v * TWO_PI / 6.0;
+        double angle = v * MATH_TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
@@ -174,7 +177,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
     
     // Dodecahedron: 20 vertices
     for (int v = 0; v < 20; v++) {
-        double angle = v * TWO_PI / 20.0;
+        double angle = v * MATH_TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
@@ -186,7 +189,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
     
     // Icosahedron: 12 vertices
     for (int v = 0; v < 12; v++) {
-        double angle = v * TWO_PI / 12.0;
+        double angle = v * MATH_TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);

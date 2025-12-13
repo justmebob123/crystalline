@@ -3,12 +3,15 @@
 
 #include <stdint.h>
 #include "bigfixed_core.h"
+#include "../math/include/math/types.h"  // PHASE 2: For MATH_PI, MATH_TWO_PI, etc.
 
 /**
  * Mathematical Constants for Crystalline Lattice Language Model
  * 
  * These constants are IMMUTABLE and represent fundamental mathematical
  * relationships in the prime lattice structure.
+ * 
+ * PHASE 2: Consolidated constants - using math/types.h as single source of truth
  */
 
 // ============================================================================
@@ -171,23 +174,25 @@ extern const size_t CYMATIC_FREQUENCIES_COUNT;
 /**
  * Pi (π)
  * π ≈ 3.14159265358979323846
+ * 
+ * PHASE 2: Using MATH_PI from math/types.h
  */
 #ifndef M_PI
-#define M_PI 3.14159265358979323846264338327950288419716939937510
+#define M_PI MATH_PI
 #endif
 
 #ifndef PI
-#define PI M_PI
+#define PI MATH_PI
 #endif
 
-/** Two pi: 2π */
+/** Two pi: 2π - Using MATH_TWO_PI from math/types.h */
 #ifndef TWO_PI
-#define TWO_PI 6.28318530717958647692
+#define TWO_PI MATH_TWO_PI
 #endif
 
-/** Half pi: π/2 */
+/** Half pi: π/2 - Using MATH_PI_OVER_2 from math/types.h */
 #ifndef HALF_PI
-#define HALF_PI 1.57079632679489661923
+#define HALF_PI MATH_PI_OVER_2
 #endif
 
 /** Pi squared: π² */
