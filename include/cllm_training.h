@@ -149,7 +149,7 @@ typedef struct {
     int store_attention_weights;     // Flag to enable full attention backward (1=enabled, 0=simplified)
     
     // Algorithm layer integration (WIRED)
-    LossConfig loss_config;          // Loss function configuration from algorithms layer
+    // LossConfig loss_config;  // TODO: Define LossConfig type or remove          // Loss function configuration from algorithms layer
     OptimizerState* optimizer_state_alg;  // Optimizer state from algorithms layer
     GradientBuffer* gradient_buffer; // Gradient buffer from algorithms layer
 } CLLMTraining;

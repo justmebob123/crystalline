@@ -12,7 +12,7 @@
  */
 
 #include "prime_bigint_transcendental.h"
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

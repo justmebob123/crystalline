@@ -1,7 +1,7 @@
 #ifndef BIGFIXED_ARRAY_UTILS_H
 #define BIGFIXED_ARRAY_UTILS_H
 
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 #include <stddef.h>
 
 /*

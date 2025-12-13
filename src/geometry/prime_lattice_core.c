@@ -9,7 +9,7 @@
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include "../include/bigint_core.h"
-#include "../include/bigfixed_core.h"
+#include "../include/abacus_legacy.h"
 #include "../include/prime_bigint_transcendental.h"
 #include "../include/cllm_mathematical_constants.h"
 #include "../include/phonetic_values.h"

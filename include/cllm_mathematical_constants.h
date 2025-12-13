@@ -2,7 +2,7 @@
 #define CLLM_MATHEMATICAL_CONSTANTS_H
 
 #include <stdint.h>
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 #include "../math/include/math/types.h"  // PHASE 2: For MATH_PI, MATH_TWO_PI, etc.
 
 /**

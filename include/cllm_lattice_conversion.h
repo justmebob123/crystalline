@@ -1,7 +1,7 @@
 #ifndef CLLM_LATTICE_CONVERSION_H
 #define CLLM_LATTICE_CONVERSION_H
 
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 
 #ifdef __cplusplus
 extern "C" {

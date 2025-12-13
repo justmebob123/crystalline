@@ -15,7 +15,7 @@
 #include <time.h>
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "../include/bigfixed_core.h"
+#include "../include/abacus_legacy.h"
 
 // Forward declarations from cllm_inference.c
 void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens);

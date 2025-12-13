@@ -20,7 +20,7 @@
  * All algorithms implemented WITHOUT external dependencies.
  */
 
-#include "../include/bigfixed_core.h"
+#include "../include/abacus_legacy.h"
 #include "../include/prime_matrix.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"

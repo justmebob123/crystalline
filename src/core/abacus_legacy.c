@@ -13,7 +13,7 @@
  * Representation: value = (integer_part + fractional_part / 2^scale_bits) * sign
  */
 
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdlib.h>

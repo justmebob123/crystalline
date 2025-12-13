@@ -2,7 +2,7 @@
 #define BIGFIXED_CONSTANTS_H
 
 /*
- * bigfixed_constants.h - Auto-generated header file
+ * constants_legacy.h - Auto-generated header file
  * Source: bigfixed_constants.c
  */
 
@@ -14,7 +14,7 @@
 
 /* Local includes */
 #include "prime_bigint_transcendental.h"
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 
 /* Type definitions */
 typedef struct {

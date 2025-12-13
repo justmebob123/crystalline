@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "bigint_core.h"
-#include "bigfixed_core.h"
+#include "abacus_legacy.h"
 
 // Forward declarations
 void big_pi(BigFixed *result, int precision_bits);

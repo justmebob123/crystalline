@@ -16,7 +16,7 @@
 
 /* Local includes */
 #include "prime_lattice.h"
-#include "crystal_abacus.h"
+/* REMOVED: #include "crystal_abacus.h" - Conflicts with NEW math library */
 
 /* Function declarations */
 double lattice_add(double a, double b, int depth);
