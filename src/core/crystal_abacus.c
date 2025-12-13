@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CRYSTAL ABACUS - INTEGER PRIME GENERATION
@@ -162,10 +163,10 @@ double vibrational_transducer(double input, double prime_factor) {
     // Map input value to a frequency using prime-based transformation
     // This is part of the crystalline lattice architecture
     double base_freq = 432.0; // A4 tuning (crystalline resonance)
-    double freq = base_freq * prime_pow(2.0, input / 12.0); // Musical scale mapping
+    double freq = base_freq * math_pow(2.0, input / 12.0); // Musical scale mapping
     
     // Apply prime factor modulation through golden ratio
-    freq *= (1.0 + prime_sin(prime_factor * PHI) * 0.1);
+    freq *= (1.0 + math_sin(prime_factor * PHI) * 0.1);
     
     return freq;
 }

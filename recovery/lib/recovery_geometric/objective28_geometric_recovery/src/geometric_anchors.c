@@ -8,10 +8,11 @@
 #include "geometric_anchors.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Mathematical constants
-#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 #define PI M_PI
 #define TWO_PI (2.0 * M_PI)
 
@@ -42,9 +43,9 @@ static void generate_tetrahedron_13d(GeometricAnchor* anchors, int start_idx) {
             // Use dimensional frequency for this dimension
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             
-            // Position = prime_cos(angle * φ_d) * golden_ratio^d
+            // Position = math_cos(angle * φ_d) * golden_ratio^d
             anchors[start_idx + v].position[d] = 
-                prime_cos(angle * phi_d) * prime_pow(PHI, d % 3);
+                math_cos(angle * phi_d) * math_pow(PHI, d % 3);
         }
     }
 }
@@ -67,7 +68,7 @@ static void generate_cube_13d(GeometricAnchor* anchors, int start_idx) {
             
             // Combine x,y,z with dimensional frequency
             anchors[start_idx + v].position[d] = 
-                (x * prime_cos(phi_d) + y * prime_sin(phi_d) + z * prime_cos(2.0 * phi_d)) / prime_sqrt(3.0);
+                (x * math_cos(phi_d) + y * math_sin(phi_d) + z * math_cos(2.0 * phi_d)) / math_sqrt(3.0);
         }
     }
 }
@@ -86,7 +87,7 @@ static void generate_octahedron_13d(GeometricAnchor* anchors, int start_idx) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             
             anchors[start_idx + v].position[d] = 
-                prime_cos(angle * phi_d) * prime_pow(PHI, (d % 2));
+                math_cos(angle * phi_d) * math_pow(PHI, (d % 2));
         }
     }
 }
@@ -107,7 +108,7 @@ static void generate_dodecahedron_13d(GeometricAnchor* anchors, int start_idx) {
             
             // Use golden ratio for dodecahedron
             anchors[start_idx + v].position[d] = 
-                prime_cos(angle * phi_d * PHI) * prime_pow(PHI, d % 5);
+                math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
         }
     }
 }
@@ -128,7 +129,7 @@ static void generate_icosahedron_13d(GeometricAnchor* anchors, int start_idx) {
             
             // 12-fold symmetry with golden ratio
             anchors[start_idx + v].position[d] = 
-                prime_cos(angle * phi_d) * prime_pow(PHI, d % 4);
+                math_cos(angle * phi_d) * math_pow(PHI, d % 4);
         }
     }
 }
@@ -165,7 +166,7 @@ double pi_phi_distance_13d(const double* p1, const double* p2) {
     }
     
     // Normalize by π×φ
-    return prime_sqrt(sum) / (PI * PHI);
+    return math_sqrt(sum) / (PI * PHI);
 }
 
 // ============================================================================
@@ -247,7 +248,7 @@ void compute_anchor_stability(SharedVertex* anchors, int num_anchors) {
         for (int d = 0; d < 13; d++) {
             radius += anchors[i].position[d] * anchors[i].position[d];
         }
-        radius = prime_sqrt(radius);
+        radius = math_sqrt(radius);
         
         if (radius < 0.375) anchors[i].clock_ring = 0;
         else if (radius < 0.625) anchors[i].clock_ring = 1;
@@ -335,7 +336,7 @@ bool verify_pythagorean_triple(
     // Check Pythagorean relationship: a² + b² ≈ c²
     double lhs = a*a + b*b;
     double rhs = c*c;
-    double error = prime_fabs(lhs - rhs) / (rhs + 1e-10);
+    double error = math_abs(lhs - rhs) / (rhs + 1e-10);
     
     return error < 0.05;  // 5% tolerance
 }
@@ -418,7 +419,7 @@ void hash_Q_to_13d_position(EC_POINT* Q, EC_GROUP* group, double position[13]) {
         double x_contrib = (double)x_mod / (double)phi_i;
         double y_contrib = (double)y_mod / (double)(phi_i * phi_i);
         
-        position[d] = prime_fmod(x_contrib * TWO_PI + y_contrib * PI, TWO_PI);
+        position[d] = math_fmod(x_contrib * TWO_PI + y_contrib * PI, TWO_PI);
     }
     
     BN_free(x);
@@ -431,19 +432,19 @@ void map_13d_to_clock(const double position[13], int* ring, int* pos, double* an
     for (int d = 0; d < 13; d++) {
         *angle += position[d] * DIMENSIONAL_FREQUENCIES[d];
     }
-    *angle = prime_fmod(*angle, TWO_PI);
+    *angle = math_fmod(*angle, TWO_PI);
     if (*angle < 0) *angle += TWO_PI;
     
     // DISABLED: 42° phase offset (was hardcoded for k=42 test case)
     // *angle += PHASE_OFFSET_42_DEG;
-    // *angle = prime_fmod(*angle, TWO_PI);
+    // *angle = math_fmod(*angle, TWO_PI);
     
     // Compute radius
     double radius = 0.0;
     for (int d = 0; d < 13; d++) {
         radius += position[d] * position[d];
     }
-    radius = prime_sqrt(radius);
+    radius = math_sqrt(radius);
     
     // Determine ring
     if (radius < 0.375) *ring = 0;
@@ -471,16 +472,16 @@ TetrationAttractor compute_tetration_attractor(uint64_t base, int depth) {
     
     for (int i = 1; i < depth; i++) {
         prev = result;
-        result = prime_pow((double)base, result);
+        result = math_pow((double)base, result);
         
         // Check for convergence
-        if (prime_fabs(result - prev) < 1e-6) {
+        if (math_abs(result - prev) < 1e-6) {
             attractor.converged = true;
             break;
         }
         
         // Prevent overflow
-        if (result > 1e15 || prime_isnan(result) || prime_isinf(result)) {
+        if (result > 1e15 || math_is_nan(result) || math_is_inf(result)) {
             result = prev;
             break;
         }
@@ -503,7 +504,7 @@ void bias_toward_attractors(double position[13]) {
     for (int d = 0; d < 13; d++) {
         if (attractors[d].converged) {
             // Bias toward attractor
-            double attractor_angle = prime_fmod(attractors[d].value, TWO_PI);
+            double attractor_angle = math_fmod(attractors[d].value, TWO_PI);
             double bias_strength = 0.05;  // 5% bias
             
             position[d] = (1.0 - bias_strength) * position[d] + 
@@ -520,8 +521,8 @@ double distance_to_nearest_attractor(
     
     for (int d = 0; d < 13; d++) {
         if (attractors[d].converged) {
-            double attractor_angle = prime_fmod(attractors[d].value, TWO_PI);
-            double dist = prime_fabs(position[d] - attractor_angle);
+            double attractor_angle = math_fmod(attractors[d].value, TWO_PI);
+            double dist = math_abs(position[d] - attractor_angle);
             
             // Handle wraparound
             if (dist > PI) dist = TWO_PI - dist;

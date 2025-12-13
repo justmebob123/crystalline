@@ -11,9 +11,10 @@
 #include "anchor_grid_24.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
-#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 #define PI M_PI
 
 SearchRecoveryV3Context* init_search_recovery_v3(uint64_t min_k, uint64_t max_k) {
@@ -59,7 +60,7 @@ static uint64_t recursive_search_v3(
     double best_error = 1e9;
     
     // Normalize target angle
-    double normalized = prime_fmod(target_angle, 2.0 * PI);
+    double normalized = math_fmod(target_angle, 2.0 * PI);
     if (normalized < 0) normalized += 2.0 * PI;
     
     // Iterate through layers
@@ -78,11 +79,11 @@ static uint64_t recursive_search_v3(
             uint64_t k = (uint64_t)candidate_k;
             
             // Forward mapping: θ = k·π(1+√5)
-            double computed_angle = prime_fmod((double)k * PI * PHI, 2.0 * PI);
+            double computed_angle = math_fmod((double)k * PI * PHI, 2.0 * PI);
             if (computed_angle < 0) computed_angle += 2.0 * PI;
             
             // Compute error (handle wraparound)
-            double error = prime_fabs(computed_angle - normalized);
+            double error = math_abs(computed_angle - normalized);
             if (error > PI) error = 2.0 * PI - error;
             
             // Update best

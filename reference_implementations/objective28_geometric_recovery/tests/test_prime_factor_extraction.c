@@ -24,10 +24,10 @@ void test_simple_extraction() {
     // This simulates the torus structure for n=10
     for (int i = 0; i < 100; i++) {
         // Oscillation with period 2 (p=2)
-        double osc_p = 2.0 * prime_sin((double)i * 3.14159 / 2.0);
+        double osc_p = 2.0 * math_sin((double)i * 3.14159 / 2.0);
         
         // Oscillation with period 5 (q=5)
-        double osc_q = 3.0 * prime_sin((double)i * 3.14159 / 5.0);
+        double osc_q = 3.0 * math_sin((double)i * 3.14159 / 5.0);
         
         // Combined signal
         double k_estimate = 5.0 + osc_p + osc_q;
@@ -76,10 +76,10 @@ void test_larger_primes() {
     // Simulate oscillations with periods 3 and 5
     for (int i = 0; i < 150; i++) {
         // Oscillation with period 3 (p=3)
-        double osc_p = 2.5 * prime_sin((double)i * 3.14159 / 3.0);
+        double osc_p = 2.5 * math_sin((double)i * 3.14159 / 3.0);
         
         // Oscillation with period 5 (q=5)
-        double osc_q = 3.5 * prime_sin((double)i * 3.14159 / 5.0);
+        double osc_q = 3.5 * math_sin((double)i * 3.14159 / 5.0);
         
         // Combined signal
         double k_estimate = 7.5 + osc_p + osc_q;
@@ -127,8 +127,8 @@ void test_export() {
     
     // Simulate oscillations
     for (int i = 0; i < 100; i++) {
-        double osc_p = 2.0 * prime_sin((double)i * 3.14159 / 2.0);
-        double osc_q = 3.0 * prime_sin((double)i * 3.14159 / 5.0);
+        double osc_p = 2.0 * math_sin((double)i * 3.14159 / 2.0);
+        double osc_q = 3.0 * math_sin((double)i * 3.14159 / 5.0);
         double k_estimate = 5.0 + osc_p + osc_q;
         multi_torus_add_sample(tracker, k_estimate);
     }

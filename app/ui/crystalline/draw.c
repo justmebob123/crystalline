@@ -103,8 +103,8 @@ void crystalline_draw_circle_points(CrystallinePoint center,
                                    CrystallinePoint* out_points) {
     for (int i = 0; i < segments; i++) {
         float angle = CRYSTALLINE_TWO_PI * i / segments;
-        float x = center.x + radius * prime_cosf(angle);
-        float y = center.y + radius * prime_sinf(angle);
+        float x = center.x + radius * math_cos(angle);
+        float y = center.y + radius * math_sin(angle);
         out_points[i] = crystalline_point_cartesian(x, y);
     }
 }
@@ -120,8 +120,8 @@ void crystalline_draw_arc_points(CrystallinePoint center,
     for (int i = 0; i < segments; i++) {
         float t = (float)i / (float)(segments - 1);
         float angle = start_angle + angle_range * t;
-        float x = center.x + radius * prime_cosf(angle);
-        float y = center.y + radius * prime_sinf(angle);
+        float x = center.x + radius * math_cos(angle);
+        float y = center.y + radius * math_sin(angle);
         out_points[i] = crystalline_point_cartesian(x, y);
     }
 }
@@ -139,14 +139,14 @@ void crystalline_draw_spiral_points(CrystallinePoint center,
         // Exponential growth for golden spiral
         float radius;
         if (end_radius > 0.0f && start_radius > 0.0f) {
-            float growth = prime_logf(end_radius / start_radius);
-            radius = start_radius * prime_expf(growth * t);
+            float growth = math_log(end_radius / start_radius);
+            radius = start_radius * math_exp(growth * t);
         } else {
             radius = start_radius + (end_radius - start_radius) * t;
         }
         
-        float x = center.x + radius * prime_cosf(angle);
-        float y = center.y + radius * prime_sinf(angle);
+        float x = center.x + radius * math_cos(angle);
+        float y = center.y + radius * math_sin(angle);
         out_points[i] = crystalline_point_cartesian(x, y);
     }
 }
@@ -227,8 +227,8 @@ void crystalline_draw_circle(SDL_Renderer* renderer,
         
         for (int y = min_y; y <= max_y; y++) {
             float dy = y - center.y;
-            float dx = prime_sqrtf(radius * radius - dy * dy);
-            if (!prime_isnanf(dx)) {
+            float dx = math_sqrt(radius * radius - dy * dy);
+            if (!math_is_nan(dx)) {
                 int x1 = (int)(center.x - dx);
                 int x2 = (int)(center.x + dx);
                 SDL_RenderDrawLine(renderer, x1, y, x2, y);
@@ -286,8 +286,8 @@ void crystalline_draw_polygon(SDL_Renderer* renderer,
     
     for (int i = 0; i < sides; i++) {
         float angle = rotation + CRYSTALLINE_TWO_PI * i / sides;
-        float x = center.x + radius * prime_cosf(angle);
-        float y = center.y + radius * prime_sinf(angle);
+        float x = center.x + radius * math_cos(angle);
+        float y = center.y + radius * math_sin(angle);
         points[i] = crystalline_point_cartesian(x, y);
     }
     
@@ -534,8 +534,8 @@ void crystalline_draw_seed_of_life(SDL_Renderer* renderer,
     for (int i = 0; i < 6; i++) {
         float angle = CRYSTALLINE_TWO_PI * i / 6.0f;
         CrystallinePoint circle_center = crystalline_point_cartesian(
-            center.x + radius * prime_cosf(angle),
-            center.y + radius * prime_sinf(angle)
+            center.x + radius * math_cos(angle),
+            center.y + radius * math_sin(angle)
         );
         crystalline_draw_circle(renderer, circle_center, radius, style);
     }
@@ -553,8 +553,8 @@ void crystalline_draw_twelve_fold(SDL_Renderer* renderer,
     for (int i = 0; i < 12; i++) {
         float angle = crystalline_twelve_fold_angle(i);
         CrystallinePoint end = crystalline_point_cartesian(
-            center.x + radius * prime_cosf(angle),
-            center.y + radius * prime_sinf(angle)
+            center.x + radius * math_cos(angle),
+            center.y + radius * math_sin(angle)
         );
         crystalline_draw_line(renderer, center, end, style);
     }
@@ -729,8 +729,8 @@ void crystalline_draw_text_arc(SDL_Renderer* renderer,
     // Full arc text would require character-by-character rotation
     if (!renderer || !font || !text) return;
     
-    float x = center.x + radius * prime_cosf(start_angle);
-    float y = center.y + radius * prime_sinf(start_angle);
+    float x = center.x + radius * math_cos(start_angle);
+    float y = center.y + radius * math_sin(start_angle);
     
     CrystallinePoint pos = crystalline_point_cartesian(x, y);
     crystalline_draw_text_centered(renderer, text, pos, color, font);

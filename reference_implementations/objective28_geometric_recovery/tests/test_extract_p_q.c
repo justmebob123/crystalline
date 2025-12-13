@@ -24,7 +24,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_SAMPLES 20
 
@@ -108,7 +109,7 @@ int load_sample_data(const char* filename, SampleTorusData* samples, int max_sam
 void estimate_p_q_from_n(uint64_t n, uint64_t* p, uint64_t* q) {
     // Try to factor n
     // Start with sqrt(n) and work down
-    uint64_t sqrt_n = (uint64_t)prime_sqrt((double)n);
+    uint64_t sqrt_n = (uint64_t)math_sqrt((double)n);
     
     *p = 0;
     *q = 0;

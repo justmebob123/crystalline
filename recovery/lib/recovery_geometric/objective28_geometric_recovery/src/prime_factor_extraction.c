@@ -15,7 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /**
  * Compute GCD using Euclidean algorithm

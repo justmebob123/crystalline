@@ -6,7 +6,8 @@
 #include "../include/cllm_utils.h"
 #include "../include/cllm_data_loader.h"
 #include "../include/cllm_tokenizer.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper to print gradient statistics
 void print_gradient_stats(const char* name, double* grads, size_t size) {
@@ -19,7 +20,7 @@ void print_gradient_stats(const char* name, double* grads, size_t size) {
     size_t non_zero = 0;
     
     for (size_t i = 0; i < size; i++) {
-        double abs_val = prime_fabs(grads[i]);
+        double abs_val = math_abs(grads[i]);
         sum += abs_val;
         if (abs_val > max_abs) max_abs = abs_val;
         if (abs_val < min_abs && abs_val > 1e-15) min_abs = abs_val;

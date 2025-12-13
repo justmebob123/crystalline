@@ -13,7 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // ============================================================================
 // SEARCH STATE MANAGEMENT

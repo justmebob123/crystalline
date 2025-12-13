@@ -73,7 +73,7 @@ CrystallineButton* crystalline_button_create(CrystallineElementStyle style,
     } else {
         button->width = size_param1;
         button->height = size_param2;
-        button->radius = prime_fminf(size_param1, size_param2) / 2.0f;
+        button->radius = math_min(size_param1, size_param2) / 2.0f;
         button->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
     }
     
@@ -313,7 +313,7 @@ CrystallineSlider* crystalline_slider_create(CrystallineElementStyle style,
         #ifdef SLIDER_HANDLE_SIZE
         slider->handle_size = SLIDER_HANDLE_SIZE;
         #else
-        slider->handle_size = prime_fminf(size_param1 * 0.1f, size_param2);
+        slider->handle_size = math_min(size_param1 * 0.1f, size_param2);
         #endif
         slider->base.bounds = crystalline_rect_create(x, y, size_param1, size_param2);
     }
@@ -458,7 +458,7 @@ bool crystalline_slider_handle_mouse(CrystallineSlider* slider, SDL_Event* event
                 if (slider->step > 0.0f) {
                     float range = slider->max_value - slider->min_value;
                     float steps = range / slider->step;
-                    slider->value = prime_round(slider->value * steps) / steps;
+                    slider->value = math_round(slider->value * steps) / steps;
                 }
                 
                 // Trigger callback

@@ -214,7 +214,7 @@ int micro_model_recover(
     double dx = q_sphere.x - g_sphere.x;
     double dy = q_sphere.y - g_sphere.y;
     double dz = q_sphere.z - g_sphere.z;
-    double geometric_distance = prime_sqrtf(dx*dx + dy*dy + dz*dz);
+    double geometric_distance = math_sqrt(dx*dx + dy*dy + dz*dz);
     
     // STEP 7: Apply torus constraints based on geometric position
     TorusParams* primary_torus = &model->tori[0];
@@ -224,7 +224,7 @@ int micro_model_recover(
     // Modulate center based on Q's geometric properties
     // Use angle difference for primary modulation
     double angle_diff = q_angle - fast_prime_angle(g_prime_index);
-    double angle_factor = prime_cos(angle_diff);  // -1 to 1
+    double angle_factor = math_cos(angle_diff);  // -1 to 1
     
     // Use radius difference for secondary modulation
     double radius_diff = q_radius - fast_prime_radius(g_prime_index);
@@ -253,7 +253,7 @@ int micro_model_recover(
     
     // STEP 9: Apply cymatic frequency resonance
     // Use Q's frequency to modulate amplitude
-    double freq_resonance = prime_sin(q_frequency / 432.0 * 2.0 * PRIME_PI);
+    double freq_resonance = math_sin(q_frequency / 432.0 * 2.0 * PRIME_PI);
     double resonance_factor = 1.0 + freq_resonance * 0.1;
     
     // STEP 10: Apply sacred position bonus
@@ -406,7 +406,7 @@ double micro_model_validate(
             
             // Calculate error
             double center = (k_min + k_max) / 2.0;
-            double error = prime_fabs(center - samples[i].k);
+            double error = math_abs(center - samples[i].k);
             total_error += error;
         }
     }

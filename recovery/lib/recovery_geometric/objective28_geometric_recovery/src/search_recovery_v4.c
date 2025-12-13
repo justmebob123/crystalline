@@ -11,9 +11,10 @@
 
 #include "search_recovery_v4.h"
 #include <stdlib.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
-#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 #define PI M_PI
 
 SearchRecoveryV4Context* init_search_recovery_v4(uint64_t min_k, uint64_t max_k) {
@@ -95,7 +96,7 @@ uint64_t recover_k_direct_anchors(
     uint64_t anchor_k = find_nearest_anchor_k(ctx, target_k);
     
     // Compute target angle for verification
-    double target_angle = prime_fmod((double)target_k * PI * PHI, 2.0 * PI);
+    double target_angle = math_fmod((double)target_k * PI * PHI, 2.0 * PI);
     if (target_angle < 0) target_angle += 2.0 * PI;
     
     // Perform 3-layer recursive search centered on anchor
@@ -116,11 +117,11 @@ uint64_t recover_k_direct_anchors(
             uint64_t k = (uint64_t)candidate_k;
             
             // Forward mapping: θ = k·π·φ
-            double computed_angle = prime_fmod((double)k * PI * PHI, 2.0 * PI);
+            double computed_angle = math_fmod((double)k * PI * PHI, 2.0 * PI);
             if (computed_angle < 0) computed_angle += 2.0 * PI;
             
             // Compute error (handle wraparound)
-            double error = prime_fabs(computed_angle - target_angle);
+            double error = math_abs(computed_angle - target_angle);
             if (error > PI) error = 2.0 * PI - error;
             
             // Update best
@@ -171,7 +172,7 @@ uint64_t recover_k_from_angle_v4(
     uint64_t anchor_k = find_nearest_anchor_k(ctx, estimated_k);
     
     // Normalize target angle
-    double normalized = prime_fmod(target_angle, 2.0 * PI);
+    double normalized = math_fmod(target_angle, 2.0 * PI);
     if (normalized < 0) normalized += 2.0 * PI;
     
     // Perform 3-layer search
@@ -192,11 +193,11 @@ uint64_t recover_k_from_angle_v4(
             uint64_t k = (uint64_t)candidate_k;
             
             // Forward mapping
-            double computed_angle = prime_fmod((double)k * PI * PHI, 2.0 * PI);
+            double computed_angle = math_fmod((double)k * PI * PHI, 2.0 * PI);
             if (computed_angle < 0) computed_angle += 2.0 * PI;
             
             // Compute error
-            double error = prime_fabs(computed_angle - normalized);
+            double error = math_abs(computed_angle - normalized);
             if (error > PI) error = 2.0 * PI - error;
             
             if (error < best_error) {

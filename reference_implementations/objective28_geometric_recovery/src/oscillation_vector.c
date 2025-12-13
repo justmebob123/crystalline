@@ -4,7 +4,8 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <string.h>
 #include <math.h>
 
@@ -30,7 +31,7 @@ OscillationVector compute_oscillation_vector(
         double diff = candidate_pos[d] - target_pos[d];
         dist_sq += diff * diff;
     }
-    vec.distance = prime_sqrt(dist_sq);
+    vec.distance = math_sqrt(dist_sq);
     
     // 2. Compute direction using anchors as gradient
     // Find 3 nearest anchors to candidate
@@ -43,7 +44,7 @@ OscillationVector compute_oscillation_vector(
             double diff = candidate_pos[d] - anchor_positions[a][d];
             anchor_dist_sq += diff * diff;
         }
-        double anchor_dist = prime_sqrt(anchor_dist_sq);
+        double anchor_dist = math_sqrt(anchor_dist_sq);
         
         if (anchor_dist < distances[0]) {
             distances[2] = distances[1];
@@ -91,7 +92,7 @@ OscillationVector compute_oscillation_vector(
         vec.direction[d] = gradient / total_weight;
         vec.gradient_strength += vec.direction[d] * vec.direction[d];
     }
-    vec.gradient_strength = prime_sqrt(vec.gradient_strength);
+    vec.gradient_strength = math_sqrt(vec.gradient_strength);
     
     // 3. Normalize direction vector
     if (vec.gradient_strength > 1e-6) {

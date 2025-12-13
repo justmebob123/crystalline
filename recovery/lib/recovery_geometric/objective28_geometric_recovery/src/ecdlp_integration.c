@@ -11,7 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // First 15 primes for lattice embedding
 static const uint64_t FIRST_15_PRIMES[15] = {
@@ -300,7 +301,7 @@ bool lattice_embed_ec_point(const ECPointCoords* coords, ECLatticeEmbedding* emb
     for (int i = 0; i < 15; i++) {
         sum_squares += embedding->coords[i] * embedding->coords[i];
     }
-    embedding->magnitude = prime_sqrt(sum_squares);
+    embedding->magnitude = math_sqrt(sum_squares);
     
     // Compute angle using prime_atan2
     if (embedding->magnitude > 1e-10) {
@@ -321,7 +322,7 @@ double lattice_distance(const ECLatticeEmbedding* emb1, const ECLatticeEmbedding
         sum_squares += diff * diff;
     }
     
-    return prime_sqrt(sum_squares);
+    return math_sqrt(sum_squares);
 }
 
 double lattice_angle(const ECLatticeEmbedding* emb1, const ECLatticeEmbedding* emb2) {
@@ -343,7 +344,7 @@ double lattice_angle(const ECLatticeEmbedding* emb1, const ECLatticeEmbedding* e
     if (cos_angle > 1.0) cos_angle = 1.0;
     if (cos_angle < -1.0) cos_angle = -1.0;
     
-    return prime_acos(cos_angle);
+    return math_acos(cos_angle);
 }
 
 // ============================================================================

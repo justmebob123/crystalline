@@ -92,13 +92,13 @@ float crystalline_ease_inout_cubic(float t) {
 float crystalline_ease_in_expo(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
     if (t == 0.0f) return 0.0f;
-    return prime_powf(2.0f, 10.0f * (t - 1.0f));
+    return math_pow(2.0f, 10.0f * (t - 1.0f));
 }
 
 float crystalline_ease_out_expo(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
     if (t == 1.0f) return 1.0f;
-    return 1.0f - prime_powf(2.0f, -10.0f * t);
+    return 1.0f - math_pow(2.0f, -10.0f * t);
 }
 
 float crystalline_ease_inout_expo(float t) {
@@ -107,25 +107,25 @@ float crystalline_ease_inout_expo(float t) {
     if (t == 1.0f) return 1.0f;
     
     if (t < 0.5f) {
-        return 0.5f * prime_powf(2.0f, 20.0f * t - 10.0f);
+        return 0.5f * math_pow(2.0f, 20.0f * t - 10.0f);
     } else {
-        return 1.0f - 0.5f * prime_powf(2.0f, -20.0f * t + 10.0f);
+        return 1.0f - 0.5f * math_pow(2.0f, -20.0f * t + 10.0f);
     }
 }
 
 float crystalline_ease_in_sine(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
-    return 1.0f - prime_cosf(t * M_PI / 2.0f);
+    return 1.0f - math_cos(t * M_PI / 2.0f);
 }
 
 float crystalline_ease_out_sine(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
-    return prime_sinf(t * M_PI / 2.0f);
+    return math_sin(t * M_PI / 2.0f);
 }
 
 float crystalline_ease_inout_sine(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
-    return 0.5f * (1.0f - prime_cosf(t * M_PI));
+    return 0.5f * (1.0f - math_cos(t * M_PI));
 }
 
 float crystalline_ease_elastic(float t) {
@@ -135,8 +135,8 @@ float crystalline_ease_elastic(float t) {
     
     float p = 0.3f;
     float s = p / 4.0f;
-    float post = prime_powf(2.0f, -10.0f * t);
-    return post * prime_sinf((t - s) * CRYSTALLINE_TWO_PI / p) + 1.0f;
+    float post = math_pow(2.0f, -10.0f * t);
+    return post * math_sin((t - s) * CRYSTALLINE_TWO_PI / p) + 1.0f;
 }
 
 float crystalline_ease_bounce(float t) {
@@ -159,7 +159,7 @@ float crystalline_ease_bounce(float t) {
 float crystalline_ease_golden(float t) {
     t = crystalline_clamp(t, 0.0f, 1.0f);
     // Use golden ratio for non-linear easing
-    return prime_powf(t, CRYSTALLINE_PHI_INV);
+    return math_pow(t, CRYSTALLINE_PHI_INV);
 }
 
 /*
@@ -365,8 +365,8 @@ void crystalline_anim_spiral_update(CrystallineSpiralAnim* anim, float delta_tim
     
     // Exponential growth for golden spiral
     if (anim->end_radius > 0.0f && anim->start_radius > 0.0f) {
-        float growth = prime_logf(anim->end_radius / anim->start_radius);
-        anim->current_radius = anim->start_radius * prime_expf(growth * t);
+        float growth = math_log(anim->end_radius / anim->start_radius);
+        anim->current_radius = anim->start_radius * math_exp(growth * t);
     } else {
         anim->current_radius = anim->start_radius + (anim->end_radius - anim->start_radius) * t;
     }
@@ -422,7 +422,7 @@ float crystalline_anim_get_progress(CrystallineAnimation* anim) {
 float crystalline_pulse_value(CrystallinePulseAnim* anim, float time) {
     // Pulse using sine wave: base + amplitude * sin(2πft + phase)
     float value = anim->base_value + anim->amplitude * 
-                  prime_sinf(CRYSTALLINE_TWO_PI * anim->frequency * time + anim->phase);
+                  math_sin(CRYSTALLINE_TWO_PI * anim->frequency * time + anim->phase);
     return value;
 }
 
@@ -466,8 +466,8 @@ CrystallinePoint crystalline_spiral_position(CrystallineSpiralAnim* anim, float 
     
     float radius;
     if (anim->end_radius > 0.0f && anim->start_radius > 0.0f) {
-        float growth = prime_logf(anim->end_radius / anim->start_radius);
-        radius = anim->start_radius * prime_expf(growth * t);
+        float growth = math_log(anim->end_radius / anim->start_radius);
+        radius = anim->start_radius * math_exp(growth * t);
     } else {
         radius = anim->start_radius + (anim->end_radius - anim->start_radius) * t;
     }

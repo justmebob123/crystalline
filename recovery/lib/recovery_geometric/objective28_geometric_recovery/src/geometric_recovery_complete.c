@@ -15,7 +15,8 @@
 #include "prime_types.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // ============================================================================
 // TETRATION ATTRACTORS
@@ -43,14 +44,14 @@ TetrationAttractor* create_tetration_towers(uint32_t* num_towers_out) {
             tower->depth = depth;
             
             // Compute logarithmic representation to avoid overflow
-            // tetration(base, depth) ≈ prime_exp(depth * prime_log(base))
-            tower->log_value = depth * prime_log((double)base);
+            // tetration(base, depth) ≈ math_exp(depth * math_log(base))
+            tower->log_value = depth * math_log((double)base);
             
             // Map tower to position in high-dimensional space
             // Use prime-based positioning
             for (uint32_t d = 0; d < GEO_NUM_DIMENSIONS; d++) {
                 double phase = (double)(base * depth + d) / (double)GEO_NUM_DIMENSIONS;
-                tower->position[d] = prime_sin(2.0 * PRIME_PI * phase);
+                tower->position[d] = math_sin(2.0 * PRIME_PI * phase);
             }
             
             // Attractor strength increases with depth
@@ -84,7 +85,7 @@ double compute_tetration_score(
         }
         
         // Attraction decreases with distance (inverse square law)
-        double dist = prime_sqrt(dist_sq);
+        double dist = math_sqrt(dist_sq);
         if (dist < 0.001) dist = 0.001;  // Avoid division by zero
         
         double attraction = tower->attractor_strength / (dist * dist);
@@ -145,9 +146,9 @@ void sample_torus_orbit(
     double angle = 2.0 * PRIME_PI * t;
     
     for (uint32_t d = 0; d < GEO_NUM_DIMENSIONS; d++) {
-        // Point on torus = center + radius * (prime_cos(angle) * axis + prime_sin(angle) * perpendicular)
-        double radial = torus->radius * prime_cos(angle);
-        double tangential = torus->radius * prime_sin(angle);
+        // Point on torus = center + radius * (math_cos(angle) * axis + math_sin(angle) * perpendicular)
+        double radial = torus->radius * math_cos(angle);
+        double tangential = torus->radius * math_sin(angle);
         
         point_out[d] = torus->center[d] + radial * torus->axis[d];
         
@@ -189,7 +190,7 @@ TorusIntersectionCurve* find_torus_intersection_curve(
             point[d] = (torus1->center[d] * w1 + torus2->center[d] * w2) / (w1 + w2);
             
             // Add oscillation along curve
-            point[d] += 0.1 * prime_sin(2.0 * PRIME_PI * t * torus1->frequency);
+            point[d] += 0.1 * math_sin(2.0 * PRIME_PI * t * torus1->frequency);
         }
     }
     
@@ -212,7 +213,7 @@ TorusIntersectionCurve* find_torus_intersection_curve(
             double diff = p2[d] - p1[d];
             seg_len_sq += diff * diff;
         }
-        curve->arc_length += prime_sqrt(seg_len_sq);
+        curve->arc_length += math_sqrt(seg_len_sq);
     }
     
     return curve;
@@ -304,7 +305,7 @@ FractalPartition compute_fractal_partition(
             dist_sq += diff * diff;
         }
         
-        if (prime_sqrt(dist_sq) < partition_threshold) {
+        if (math_sqrt(dist_sq) < partition_threshold) {
             num_in_partition++;
             
             // Update bounds
@@ -362,7 +363,7 @@ BIGNUM* multi_scale_fractal_search(
     
     // Search at multiple scales
     for (uint32_t scale = 0; scale < max_scales; scale++) {
-        double scale_factor = prime_pow(0.5, scale);  // 1.0, 0.5, 0.25, ...
+        double scale_factor = math_pow(0.5, scale);  // 1.0, 0.5, 0.25, ...
         
         // Search in neighborhood at this scale
         for (uint32_t step = 0; step < 100; step++) {
@@ -577,7 +578,7 @@ bool geometric_recovery_initialize(GeometricRecoveryContext* ctx) {
             torus->axis[dd] = (dd == d) ? 1.0 : 0.0;
         }
         
-        torus->radius = prime_sqrt(variance);
+        torus->radius = math_sqrt(variance);
         torus->frequency = variance;
         torus->complexity = 1ULL << 40;
     }

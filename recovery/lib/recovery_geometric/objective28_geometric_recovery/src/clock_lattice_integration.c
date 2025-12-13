@@ -16,7 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Ring structure for Babylonian clock
 #define RING_0_SIZE 12
@@ -130,8 +131,8 @@ ClockPosition map_prime_to_clock(uint64_t prime, int prime_index) {
     pos.radius = get_radial_distance(pos.ring);
     
     // Compute Cartesian coordinates
-    pos.x = pos.radius * prime_cos(pos.angle);
-    pos.y = pos.radius * prime_sin(pos.angle);
+    pos.x = pos.radius * math_cos(pos.angle);
+    pos.y = pos.radius * math_sin(pos.angle);
     
     return pos;
 }
@@ -170,7 +171,7 @@ ClockFactorVisualization* visualize_factors_on_clock(
     // Compute Euclidean distance
     double dx = viz->q_position.x - viz->p_position.x;
     double dy = viz->q_position.y - viz->p_position.y;
-    viz->euclidean_distance = prime_sqrt(dx * dx + dy * dy);
+    viz->euclidean_distance = math_sqrt(dx * dx + dy * dy);
     
     // Check if q is at sacred position (π, 3 o'clock)
     // Sacred position is at angle 0 (3 o'clock in standard math convention)

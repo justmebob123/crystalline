@@ -17,7 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_ELEMENTS 100
 #define SCREEN_WIDTH 160

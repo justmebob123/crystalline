@@ -12,7 +12,8 @@
 #include <assert.h>
 #include "../include/cllm.h"
 #include "../include/cllm_format.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define TEST_MODEL_FILE "test_model.cllm"
 #define EPSILON 1e-6
@@ -46,7 +47,7 @@ static int tests_failed = 0;
  * Compare two doubles with epsilon tolerance
  */
 static int doubles_equal(double a, double b) {
-    return prime_fabs(a - b) < EPSILON;
+    return math_abs(a - b) < EPSILON;
 }
 
 /**

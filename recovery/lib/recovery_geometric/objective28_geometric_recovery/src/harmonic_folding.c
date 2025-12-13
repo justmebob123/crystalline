@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Prime frequencies for harmonic folding
 static const uint32_t PRIME_FREQUENCIES[] = {5, 7, 11, 13, 17, 19, 23, 29, 31};
@@ -99,7 +100,7 @@ bool apply_harmonic_folding(HarmonicFoldingResult* result) {
             double phase = TWO_PI * (double)freq * (double)i / (double)result->signal_length;
             
             // Compute sin(phase)
-            double sin_val = prime_sin(phase);
+            double sin_val = math_sin(phase);
             
             // Fold: signal[i] * sin(phase)
             comp->folded_signal[i] = result->original_signal[i] * sin_val;
@@ -108,7 +109,7 @@ bool apply_harmonic_folding(HarmonicFoldingResult* result) {
         // Compute amplitude (max absolute value of folded signal)
         double max_abs = 0.0;
         for (uint32_t i = 0; i < result->signal_length; i++) {
-            double abs_val = prime_fabs(comp->folded_signal[i]);
+            double abs_val = math_abs(comp->folded_signal[i]);
             if (abs_val > max_abs) {
                 max_abs = abs_val;
             }
@@ -117,7 +118,7 @@ bool apply_harmonic_folding(HarmonicFoldingResult* result) {
         
         // Compute phase (angle of first peak)
         for (uint32_t i = 0; i < result->signal_length; i++) {
-            if (prime_fabs(comp->folded_signal[i]) > max_abs * 0.9) {
+            if (math_abs(comp->folded_signal[i]) > max_abs * 0.9) {
                 // Found peak - compute phase
                 double phase = TWO_PI * (double)freq * (double)i / (double)result->signal_length;
                 comp->phase = phase;

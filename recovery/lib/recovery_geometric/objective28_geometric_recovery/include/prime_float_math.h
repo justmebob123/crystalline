@@ -38,93 +38,93 @@ extern "C" {
  */
 
 // Square root
-float prime_sqrtf(float x);
+float math_sqrt(float x);
 
 // Exponential (e^x)
-float prime_expf(float x);
+float math_exp(float x);
 
 // Natural logarithm
-float prime_logf(float x);
+float math_log(float x);
 
 // Power (x^y)
-float prime_powf(float x, float y);
+float math_pow(float x, float y);
 
 /*
  * Trigonometric Functions
  */
 
 // Sine
-float prime_sinf(float x);
+float math_sin(float x);
 
 // Cosine
-float prime_cosf(float x);
+float math_cos(float x);
 
 // Tangent
-float prime_tanf(float x);
+float math_tan(float x);
 
 /*
  * Hyperbolic Functions
  */
 
 // Hyperbolic tangent
-float prime_tanhf(float x);
+float math_tanh(float x);
 
 /*
  * Utility Functions
  */
 
 // Absolute value
-float prime_fabsf(float x);
-float prime_fmodf(float x, float y);
-double prime_fabs(double x);
+float math_abs(float x);
+float math_fmod(float x, float y);
+double math_abs(double x);
 
 // Double precision math functions (for compatibility)
-double prime_exp(double x);
-double prime_sqrt(double x);
-double prime_log(double x);
-double prime_cos(double x);
-double prime_sin(double x);
-double prime_tan(double x);
-double prime_tanh(double x);
-double prime_pow(double x, double y);
-double prime_atan(double x);
+double math_exp(double x);
+double math_sqrt(double x);
+double math_log(double x);
+double math_cos(double x);
+double math_sin(double x);
+double math_tan(double x);
+double math_tanh(double x);
+double math_pow(double x, double y);
+double math_atan(double x);
 double prime_atan2(double y, double x);
 
 // Float precision math functions
-float prime_expf(float x);
-float prime_sqrtf(float x);
-float prime_logf(float x);
-float prime_cosf(float x);
-float prime_sinf(float x);
-float prime_tanf(float x);
-float prime_tanhf(float x);
-float prime_powf(float x, float y);
-float prime_atanf(float x);
+float math_exp(float x);
+float math_sqrt(float x);
+float math_log(float x);
+float math_cos(float x);
+float math_sin(float x);
+float math_tan(float x);
+float math_tanh(float x);
+float math_pow(float x, float y);
+float math_atan(float x);
 float prime_atan2f(float y, float x);
 
 // Additional math functions
-double prime_floor(double x);
-double prime_ceil(double x);
-double prime_round(double x);
-double prime_fmod(double x, double y);
-double prime_acos(double x);
+double math_floor(double x);
+double math_ceil(double x);
+double math_round(double x);
+double math_fmod(double x, double y);
+double math_acos(double x);
 double prime_log2(double x);
 
 // Maximum of two values
-float prime_fmaxf(float x, float y);
-double prime_fmax(double x, double y);
+float math_max(float x, float y);
+double math_max(double x, double y);
 
 // Minimum of two values
-float prime_fminf(float x, float y);
-double prime_fmin(double x, double y);
+float math_min(float x, float y);
+double math_min(double x, double y);
 
 // Check if NaN
-int prime_isnanf(float x);
-int prime_isnan(double x);
+int math_is_nan(float x);
+int math_is_nan(double x);
 
 // Check if infinite
-int prime_isinff(float x);
-int prime_isinf(double x);
+int math_is_inf(float x);
+int math_is_inf(double x);
 
 #ifdef __cplusplus
 }

@@ -55,7 +55,7 @@ void crystalline_point_update_polar(CrystallinePoint* point) {
     if (point->polar_valid) return;
     
     // Calculate radius using prime_sqrtf
-    point->radius = prime_sqrtf(point->x * point->x + point->y * point->y);
+    point->radius = math_sqrt(point->x * point->x + point->y * point->y);
     
     // Calculate angle using prime_atan2f
     point->angle = prime_atan2f(point->y, point->x);
@@ -67,8 +67,8 @@ void crystalline_point_update_cartesian(CrystallinePoint* point) {
     if (point->cart_valid) return;
     
     // Calculate Cartesian coordinates using prime_sinf and prime_cosf
-    point->x = point->radius * prime_cosf(point->angle);
-    point->y = point->radius * prime_sinf(point->angle);
+    point->x = point->radius * math_cos(point->angle);
+    point->y = point->radius * math_sin(point->angle);
     
     point->cart_valid = true;
 }
@@ -80,7 +80,7 @@ void crystalline_point_update_cartesian(CrystallinePoint* point) {
 float crystalline_distance(CrystallinePoint a, CrystallinePoint b) {
     float dx = b.x - a.x;
     float dy = b.y - a.y;
-    return prime_sqrtf(dx * dx + dy * dy);
+    return math_sqrt(dx * dx + dy * dy);
 }
 
 float crystalline_distance_squared(CrystallinePoint a, CrystallinePoint b) {
@@ -123,8 +123,8 @@ CrystallinePoint crystalline_point_scale(CrystallinePoint point, float scale) {
 
 CrystallinePoint crystalline_point_rotate(CrystallinePoint point, float angle) {
     // Use prime_sinf and prime_cosf for rotation
-    float cos_a = prime_cosf(angle);
-    float sin_a = prime_sinf(angle);
+    float cos_a = math_cos(angle);
+    float sin_a = math_sin(angle);
     
     float new_x = point.x * cos_a - point.y * sin_a;
     float new_y = point.x * sin_a + point.y * cos_a;
@@ -165,8 +165,8 @@ CrystallinePoint crystalline_point_spiral_lerp(CrystallinePoint a, CrystallinePo
     // r(t) = r_a * φ^t where φ is adjusted to reach r_b at t=1
     float radius;
     if (b_copy.radius > 0.0f && a_copy.radius > 0.0f) {
-        float growth = prime_logf(b_copy.radius / a_copy.radius);
-        radius = a_copy.radius * prime_expf(growth * t);
+        float growth = math_log(b_copy.radius / a_copy.radius);
+        radius = a_copy.radius * math_exp(growth * t);
     } else {
         radius = a_copy.radius + (b_copy.radius - a_copy.radius) * t;
     }
@@ -220,8 +220,8 @@ float crystalline_clock_ring_radius(int ring) {
     // Ring 3 = φ^3 = 4.236
     // Normalize to [0.2, 1.0] range
     
-    float phi_power = prime_powf(CRYSTALLINE_PHI, (float)ring);
-    float max_power = prime_powf(CRYSTALLINE_PHI, 3.0f);
+    float phi_power = math_pow(CRYSTALLINE_PHI, (float)ring);
+    float max_power = math_pow(CRYSTALLINE_PHI, 3.0f);
     
     // Normalize and scale to [0.2, 1.0]
     return 0.2f + 0.8f * (phi_power / max_power);
@@ -273,8 +273,8 @@ bool crystalline_rect_contains_point(CrystallineRect rect, CrystallinePoint poin
         // Axis-aligned rectangle: simple bounds check
         float half_w = rect.width / 2.0f;
         float half_h = rect.height / 2.0f;
-        float dx = prime_fabsf(point.x - rect.center.x);
-        float dy = prime_fabsf(point.y - rect.center.y);
+        float dx = math_abs(point.x - rect.center.x);
+        float dy = math_abs(point.y - rect.center.y);
         return dx <= half_w && dy <= half_h;
     } else {
         // Polygon: use winding number algorithm
@@ -287,8 +287,8 @@ bool crystalline_rect_contains_point(CrystallineRect rect, CrystallinePoint poin
 bool crystalline_rect_intersects(CrystallineRect a, CrystallineRect b) {
     // Simple circle-based intersection for now
     float dist = crystalline_distance(a.center, b.center);
-    float radius_sum = prime_fmaxf(a.radius, a.width / 2.0f) + 
-                       prime_fmaxf(b.radius, b.width / 2.0f);
+    float radius_sum = math_max(a.radius, a.width / 2.0f) + 
+                       math_max(b.radius, b.width / 2.0f);
     return dist <= radius_sum;
 }
 
@@ -303,7 +303,7 @@ CrystallinePoint crystalline_rect_center(CrystallineRect rect) {
 CrystallinePoint crystalline_golden_spiral(float angle, float scale) {
     // Golden spiral: r = a * φ^(θ/π)
     // where φ is the golden ratio
-    float radius = scale * prime_powf(CRYSTALLINE_PHI, angle / M_PI);
+    float radius = scale * math_pow(CRYSTALLINE_PHI, angle / M_PI);
     return crystalline_point_polar(angle, radius);
 }
 
@@ -329,7 +329,7 @@ CrystallinePoint crystalline_vesica_piscis_point(float t, float radius) {
     // Vesica Piscis: intersection of two circles
     // Parametric form for the lens shape
     float angle = t * CRYSTALLINE_TWO_PI;
-    float r = radius * prime_cosf(angle / 2.0f);
+    float r = radius * math_cos(angle / 2.0f);
     return crystalline_point_polar(angle, r);
 }
 

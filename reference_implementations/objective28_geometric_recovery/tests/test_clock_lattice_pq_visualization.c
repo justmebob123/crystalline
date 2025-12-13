@@ -14,7 +14,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define PHI ((1.0 + sqrt(5.0)) / 2.0)
 #define PI 3.14159265358979323846

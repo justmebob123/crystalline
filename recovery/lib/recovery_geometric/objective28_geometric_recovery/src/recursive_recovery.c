@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Compute π×φ distance
 double pi_phi_distance(const double* p1, const double* p2, int dims) {
@@ -12,7 +13,7 @@ double pi_phi_distance(const double* p1, const double* p2, int dims) {
         double diff = p1[d] - p2[d];
         sum += diff * diff;
     }
-    return prime_sqrt(sum) / PI_PHI;
+    return math_sqrt(sum) / PI_PHI;
 }
 
 // Compute distance from origin
@@ -21,7 +22,7 @@ double distance_from_origin(const double* p, int dims) {
     for (int d = 0; d < dims; d++) {
         sum += p[d] * p[d];
     }
-    return prime_sqrt(sum) / PI_PHI;
+    return math_sqrt(sum) / PI_PHI;
 }
 
 // Create recursive recovery context
@@ -142,7 +143,7 @@ double analyze_partition_boundaries(
             variance += diff * diff;
         }
         variance /= 3.0;
-        double stddev = prime_sqrt(variance);
+        double stddev = math_sqrt(variance);
         
         if (stddev < 0.01) {
             num_uniform++;
@@ -264,7 +265,7 @@ TorusState* map_torus_recursive(
         variance += diff * diff;
     }
     variance /= ctx->num_samples;
-    ctx->current_torus->entropy = prime_sqrt(variance);
+    ctx->current_torus->entropy = math_sqrt(variance);
     ctx->current_torus->is_stable = (ctx->current_torus->entropy < ctx->params->entropy_threshold);
     
     printf("Torus properties:\n");

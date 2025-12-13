@@ -10,17 +10,16 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
-#include "../include/prime_math_custom.h"
-#include "../include/prime_math.h"
 
 /* Function declarations */
 double prime_add(double a, double b);
 double prime_subtract(double a, double b);
 double prime_multiply(double a, double b);
 double prime_divide(double a, double b);
-double prime_abs(double x);
 double shannon_entropy(const double* data, int n);
 double relative_entropy(const double* p, const double* q, int n);
 double wave_simulation(double amplitude, double frequency, int harmonics, double phase, int overtones, double damping);

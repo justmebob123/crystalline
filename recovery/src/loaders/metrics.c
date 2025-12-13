@@ -1,5 +1,6 @@
 #include "recovery_common/recovery_common.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /*
  * Metrics Calculation Module
@@ -23,7 +24,7 @@ double calculate_rmse(double* data1, double* data2, size_t size) {
         sum_squared_error += diff * diff;
     }
     
-    return prime_sqrt(sum_squared_error / size);
+    return math_sqrt(sum_squared_error / size);
 }
 
 double calculate_max_error(double* data1, double* data2, size_t size) {
@@ -34,7 +35,7 @@ double calculate_max_error(double* data1, double* data2, size_t size) {
     double max_error = 0.0;
     
     for (size_t i = 0; i < size; i++) {
-        double diff = prime_fabs(data1[i] - data2[i]);
+        double diff = math_abs(data1[i] - data2[i]);
         if (diff > max_error) {
             max_error = diff;
         }
@@ -56,11 +57,11 @@ double calculate_quality_score(double rmse, double max_error, double recovery_ra
     // Lower RMSE and max_error are better, higher recovery_rate is better
     
     // Normalize RMSE and max_error (assuming they're in range 0-1)
-    double rmse_score = 1.0 - prime_fmin(rmse, 1.0);
-    double max_error_score = 1.0 - prime_fmin(max_error, 1.0);
+    double rmse_score = 1.0 - math_min(rmse, 1.0);
+    double max_error_score = 1.0 - math_min(max_error, 1.0);
     
     // Weighted average
     double quality = 0.4 * rmse_score + 0.3 * max_error_score + 0.3 * recovery_rate;
     
-    return prime_fmin(prime_fmax(quality, 0.0), 1.0); // Clamp to [0, 1]
+    return math_min(math_max(quality, 0.0), 1.0); // Clamp to [0, 1]
 }

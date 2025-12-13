@@ -6,8 +6,10 @@
  */
 
 #include "../include/lattice_entropy.h"
-#include "../include/prime_lowlevel.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/prime_types.h"
 #include "../include/crystal_abacus.h"
 #include "math/clock.h"
@@ -84,7 +86,7 @@ double calculate_point_entropy(uint32_t n, uint32_t d, uint64_t max_prime) {
     for (int i = 0; i < 12; i++) {
         if (counts[i] > 0) {
             double p_i = (double)counts[i] / (double)total_primes;
-            entropy -= p_i * (prime_log(p_i) / prime_log(2.0));
+            entropy -= p_i * (math_log(p_i) / math_log(2.0));
         }
     }
     
@@ -118,12 +120,12 @@ double calculate_lattice_entropy(uint32_t n, uint32_t d) {
     
     if (point_entropy <= 0.0) {
         // If entropy is zero or negative, use prime count only
-        return prime_log((double)prime_count) / prime_log(2.0);
+        return math_log((double)prime_count) / math_log(2.0);
     }
     
     // Complete formula: log₂(count / entropy)
     double ratio = (double)prime_count / point_entropy;
-    double gamma = prime_log(ratio) / prime_log(2.0);
+    double gamma = math_log(ratio) / math_log(2.0);
     
     return gamma;
 }
@@ -150,7 +152,7 @@ double calculate_lattice_density(uint32_t n, uint32_t d) {
     if (count == 0) return 0.0;
     
     double density = (double)count / (double)d;
-    return prime_log(density) / prime_log(2.0);
+    return math_log(density) / math_log(2.0);
 }
 
 /**

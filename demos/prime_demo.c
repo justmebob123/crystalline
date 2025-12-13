@@ -116,9 +116,9 @@ void demonstrate_trigonometric_functions() {
     
     for (int i = 0; i < num_angles; i++) {
         double angle = angles[i];
-        double sin_p = prime_sin(angle);
+        double sin_p = math_sin(angle);
         double sin_l = lattice_sin(angle, 3);
-        double cos_p = prime_cos(angle);
+        double cos_p = math_cos(angle);
         double cos_l = lattice_cos(angle, 3);
         
         printf("%.4f\t\t%.6f\t%.6f\t%.6f\t%.6f\n",

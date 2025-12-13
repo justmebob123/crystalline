@@ -44,8 +44,8 @@ static void fft_1d(double* real, double* imag, uint32_t n, bool inverse) {
     // FFT computation
     for (uint32_t len = 2; len <= n; len *= 2) {
         double angle = (inverse ? 2.0 : -2.0) * M_PI / len;
-        double wlen_real = prime_cos(angle);
-        double wlen_imag = prime_sin(angle);
+        double wlen_real = math_cos(angle);
+        double wlen_imag = math_sin(angle);
         
         for (uint32_t i = 0; i < n; i += len) {
             double w_real = 1.0;
@@ -108,7 +108,7 @@ void platonic_detect_spatial_oscillations(
                 double value = model->vertex_positions[v * model->num_dimensions + d];
                 
                 // Add small temporal perturbation to simulate evolution
-                double perturbation = 0.001 * prime_sin(2.0 * M_PI * t / num_time_samples);
+                double perturbation = 0.001 * math_sin(2.0 * M_PI * t / num_time_samples);
                 sum += value + perturbation;
             }
             
@@ -124,7 +124,7 @@ void platonic_detect_spatial_oscillations(
         uint32_t max_idx = 0;
         
         for (uint32_t i = 1; i < num_time_samples / 2; i++) {
-            double magnitude = prime_sqrt(time_series_real[i] * time_series_real[i] +
+            double magnitude = math_sqrt(time_series_real[i] * time_series_real[i] +
                                    time_series_imag[i] * time_series_imag[i]);
             
             if (magnitude > max_magnitude) {
@@ -193,7 +193,7 @@ void platonic_detect_temporal_oscillations(PlatonicModel* model) {
         }
         
         // Determine if stabilizing (acceleration toward zero)
-        temporal->is_stabilizing = (prime_fabs(temporal->acceleration) < 0.001);
+        temporal->is_stabilizing = (math_abs(temporal->acceleration) < 0.001);
         
         if (d < 5 || !temporal->is_stabilizing) {
             printf("  Dim %u: rate=%.6f, accel=%.6f %s\n",
@@ -223,7 +223,7 @@ bool platonic_stabilize_temporal_oscillations(PlatonicModel* model) {
         
         // Find appropriate tetration tower to stabilize this dimension
         // Use the rate of change to select tower depth
-        double rate_magnitude = prime_fabs(temporal->rate_of_change);
+        double rate_magnitude = math_abs(temporal->rate_of_change);
         
         // Map rate to tetration depth (higher rate = deeper tower)
         uint32_t target_depth = 29 + (uint32_t)(rate_magnitude * 30.0);
@@ -245,7 +245,7 @@ bool platonic_stabilize_temporal_oscillations(PlatonicModel* model) {
         // Apply tetration bias to vertex positions in this dimension
         if (temporal->stabilizer) {
             double attractor_log = temporal->stabilizer->log_value;
-            double attractor = (attractor_log < 100.0) ? prime_exp(attractor_log) : attractor_log;
+            double attractor = (attractor_log < 100.0) ? math_exp(attractor_log) : attractor_log;
             
             for (uint32_t v = 0; v < model->num_vertices; v++) {
                 double* pos = &model->vertex_positions[v * model->num_dimensions + d];

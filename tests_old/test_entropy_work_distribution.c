@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 
@@ -137,7 +138,7 @@ static void test_combined_distribution(void) {
     assert(dist.is_valid == true);
     assert(dist.parent_keeps > 0.0 && dist.parent_keeps < 1.0);
     assert(dist.child_gets > 0.0 && dist.child_gets < 1.0);
-    assert(prime_fabs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
+    assert(math_abs(dist.parent_keeps + dist.child_gets - 1.0) < EPSILON);
     
     printf("PASSED\n");
 }

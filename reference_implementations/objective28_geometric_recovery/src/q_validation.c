@@ -4,7 +4,8 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 

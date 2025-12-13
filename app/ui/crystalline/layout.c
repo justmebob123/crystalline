@@ -272,7 +272,7 @@ CrystallinePoint crystalline_layout_spiral_custom(CrystallinePoint center,
     float angle = CRYSTALLINE_TWO_PI * index / CRYSTALLINE_TWELVE_FOLD;
     
     // Calculate radius with exponential growth
-    float radius = start_radius * prime_expf(growth_rate * angle);
+    float radius = start_radius * math_exp(growth_rate * angle);
     
     // Create point
     CrystallinePoint point = crystalline_point_polar(angle, radius);
@@ -325,7 +325,7 @@ CrystallineLayoutResult crystalline_layout_grid_golden(CrystallinePoint center,
         }
     }
     
-    result.actual_radius = prime_sqrtf(width * width + height * height) / 2.0f;
+    result.actual_radius = math_sqrt(width * width + height * height) / 2.0f;
     result.bounds = crystalline_layout_bounds(result.positions, result.count);
     return result;
 }
@@ -513,7 +513,7 @@ void crystalline_layout_scale_to_fit(CrystallineLayoutResult* result,
     // Calculate scale factor
     float scale_x = target_bounds.width / result->bounds.width;
     float scale_y = target_bounds.height / result->bounds.height;
-    float scale = prime_fminf(scale_x, scale_y);
+    float scale = math_min(scale_x, scale_y);
     
     // Scale and translate each position
     for (int i = 0; i < result->count; i++) {

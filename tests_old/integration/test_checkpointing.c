@@ -11,7 +11,8 @@
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
 #include "../../include/cllm_production.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper: Create a minimal test model
 CLLMModel* create_test_model() {
@@ -155,8 +156,8 @@ int test_load_checkpoint() {
     if (success) {
         if (training2->current_epoch != training1->current_epoch ||
             training2->current_step != training1->current_step ||
-            prime_fabsf(training2->current_loss - training1->current_loss) > 0.001f ||
-            prime_fabsf(training2->best_loss - training1->best_loss) > 0.001f) {
+            math_abs(training2->current_loss - training1->current_loss) > 0.001f ||
+            math_abs(training2->best_loss - training1->best_loss) > 0.001f) {
             success = 0;
         }
     }

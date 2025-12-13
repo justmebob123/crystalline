@@ -22,7 +22,8 @@
 #include <openssl/ripemd.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #else
 // Stub implementations when OpenSSL is not available
 // In production, install OpenSSL development libraries

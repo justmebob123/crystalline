@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Forward declaration of softmax_backward (it's static in cllm_training.c)
 // We'll need to expose it or reimplement for testing
@@ -42,7 +43,7 @@ static void softmax(float* output, const float* input, int size) {
     // Compute exp and sum
     float sum = 0.0f;
     for (int i = 0; i < size; i++) {
-        output[i] = prime_expf(input[i] - max_val);
+        output[i] = math_exp(input[i] - max_val);
         sum += output[i];
     }
     
@@ -67,7 +68,7 @@ int test_simple_2element() {
     // Expected: grad_in should sum to 0 (property of softmax gradient)
     float sum = grad_in[0] + grad_in[1];
     
-    if (prime_fabs(sum) < 1e-6) {
+    if (math_abs(sum) < 1e-6) {
         printf("PASS\n");
         return 1;
     } else {
@@ -100,7 +101,7 @@ int test_10element_uniform() {
         sum += grad_in[i];
     }
     
-    if (prime_fabs(sum) < 1e-5) {
+    if (math_abs(sum) < 1e-5) {
         printf("PASS\n");
         return 1;
     } else {
@@ -124,7 +125,7 @@ int test_numerical_stability() {
     // Check for NaN or Inf
     int has_nan_inf = 0;
     for (int i = 0; i < 5; i++) {
-        if (prime_isnan(grad_in[i]) || prime_isinf(grad_in[i])) {
+        if (math_is_nan(grad_in[i]) || math_is_inf(grad_in[i])) {
             has_nan_inf = 1;
             break;
         }
@@ -154,7 +155,7 @@ int test_zero_gradient() {
     // Expected: all gradients should be 0
     int all_zero = 1;
     for (int i = 0; i < 5; i++) {
-        if (prime_fabs(grad_in[i]) > 1e-6) {
+        if (math_abs(grad_in[i]) > 1e-6) {
             all_zero = 0;
             break;
         }
@@ -182,7 +183,7 @@ int test_single_element() {
     softmax_backward(grad_in, grad_out, softmax_out, 1);
     
     // Expected: gradient should be 0 (derivative of constant)
-    if (prime_fabs(grad_in[0]) < 1e-6) {
+    if (math_abs(grad_in[0]) < 1e-6) {
         printf("PASS\n");
         return 1;
     } else {

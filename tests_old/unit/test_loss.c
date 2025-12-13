@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ai/cllm_loss.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-5f
 #define TEST_PASSED 1
@@ -14,7 +15,7 @@ static int tests_passed = 0;
 
 // Helper function to check if two floats are approximately equal
 static int float_equals(float a, float b, float epsilon) {
-    return prime_fabsf(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 // Helper function to print test result
@@ -82,7 +83,7 @@ int test_cross_entropy_forward() {
         LOSS_REDUCTION_MEAN, 0.0f, 1e-7f, NULL
     );
     
-    int passed = !prime_isnan(loss) && !prime_isinf(loss) && loss > 0.0f;
+    int passed = !math_is_nan(loss) && !math_is_inf(loss) && loss > 0.0f;
     
     tensor_free(predictions);
     tensor_free(targets);
@@ -306,11 +307,11 @@ int test_log_softmax() {
     
     int passed = (log_probs != NULL) && (log_probs->total_size == logits->total_size);
     
-    // Check that prime_exp(log_probs) sum to 1 for each sample
+    // Check that math_exp(log_probs) sum to 1 for each sample
     if (passed) {
-        float sum0 = prime_expf(tensor_get(log_probs, (uint32_t[]){0, 0})) +
-                     prime_expf(tensor_get(log_probs, (uint32_t[]){0, 1})) +
-                     prime_expf(tensor_get(log_probs, (uint32_t[]){0, 2}));
+        float sum0 = math_exp(tensor_get(log_probs, (uint32_t[]){0, 0})) +
+                     math_exp(tensor_get(log_probs, (uint32_t[]){0, 1})) +
+                     math_exp(tensor_get(log_probs, (uint32_t[]){0, 2}));
         
         passed = float_equals(sum0, 1.0f, 1e-4f);
     }
@@ -443,7 +444,7 @@ int test_gradient_clipping_by_norm() {
     float max_norm = 2.0f;
     float original_norm = loss_clip_gradients_by_norm(gradients, max_norm);
     
-    // Original norm should be prime_sqrt(6) ≈ 2.45
+    // Original norm should be math_sqrt(6) ≈ 2.45
     int passed = (original_norm > 2.4f && original_norm < 2.5f);
     
     // New norm should be max_norm
@@ -481,7 +482,7 @@ int test_loss_with_mask() {
         LOSS_REDUCTION_MEAN, 0.0f, 1e-7f, NULL
     );
     
-    int passed = !prime_isnan(loss) && !prime_isinf(loss);
+    int passed = !math_is_nan(loss) && !math_is_inf(loss);
     
     tensor_free(predictions);
     tensor_free(targets);

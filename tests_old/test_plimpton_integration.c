@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 
@@ -111,7 +112,7 @@ int test_calculate_distribution(void) {
     
     // Verify ratios sum to 1.0
     double sum = dist.parent_keeps + dist.child_gets;
-    if (prime_fabs(sum - 1.0) > EPSILON) {
+    if (math_abs(sum - 1.0) > EPSILON) {
         plimpton_integration_free(ctx);
         return 0;
     }

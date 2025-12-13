@@ -15,7 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Forward declarations
 extern void platonic_detect_spatial_oscillations(PlatonicModel*, uint32_t, double);
@@ -194,7 +195,7 @@ bool platonic_model_validate_geometry(const PlatonicModel* model) {
     for (uint32_t v = 0; v < model->num_vertices; v++) {
         for (uint32_t d = 0; d < model->num_dimensions; d++) {
             double value = model->vertex_positions[v * model->num_dimensions + d];
-            if (prime_isinf(value) || prime_isnan(value)) {
+            if (math_is_inf(value) || math_is_nan(value)) {
                 printf("  ❌ Non-finite value at vertex %u, dimension %u\n", v, d);
                 return false;
             }

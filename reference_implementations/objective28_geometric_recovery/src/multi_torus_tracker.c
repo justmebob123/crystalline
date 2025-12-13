@@ -3,7 +3,8 @@
  */
 
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 
@@ -33,9 +34,9 @@ int test_period_constants(void) {
     double period_528 = 1.0 / FREQ_528_HZ;
     double period_schumann = 1.0 / FREQ_SCHUMANN;
     
-    if (prime_fabs(PERIOD_432_HZ - period_432) > EPSILON) return 0;
-    if (prime_fabs(PERIOD_528_HZ - period_528) > EPSILON) return 0;
-    if (prime_fabs(PERIOD_SCHUMANN - period_schumann) > EPSILON) return 0;
+    if (math_abs(PERIOD_432_HZ - period_432) > EPSILON) return 0;
+    if (math_abs(PERIOD_528_HZ - period_528) > EPSILON) return 0;
+    if (math_abs(PERIOD_SCHUMANN - period_schumann) > EPSILON) return 0;
     
     return 1;
 }
@@ -89,15 +90,15 @@ int test_frequency_to_ns(void) {
 int test_ns_to_frequency(void) {
     // Test 432 Hz
     double freq_432 = cymatic_ns_to_frequency(NS_432_HZ);
-    if (prime_fabs(freq_432 - FREQ_432_HZ) > 0.1) return 0;
+    if (math_abs(freq_432 - FREQ_432_HZ) > 0.1) return 0;
     
     // Test 528 Hz
     double freq_528 = cymatic_ns_to_frequency(NS_528_HZ);
-    if (prime_fabs(freq_528 - FREQ_528_HZ) > 0.1) return 0;
+    if (math_abs(freq_528 - FREQ_528_HZ) > 0.1) return 0;
     
     // Test Schumann
     double freq_schumann = cymatic_ns_to_frequency(NS_SCHUMANN);
-    if (prime_fabs(freq_schumann - FREQ_SCHUMANN) > 0.01) return 0;
+    if (math_abs(freq_schumann - FREQ_SCHUMANN) > 0.01) return 0;
     
     // Test zero period
     double freq_zero = cymatic_ns_to_frequency(0);
@@ -121,7 +122,7 @@ int test_round_trip_conversion(void) {
         double freq_back = cymatic_ns_to_frequency(ns);
         
         // Should be approximately equal (within 1%)
-        double error = prime_fabs(freq_back - freq) / freq;
+        double error = math_abs(freq_back - freq) / freq;
         if (error > 0.01) return 0;
     }
     

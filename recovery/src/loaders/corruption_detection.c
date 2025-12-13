@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /*
  * Corruption Detection Module
@@ -69,7 +70,7 @@ static CorruptionReport* detect_geometric_corruption(GeometricData* data) {
                 double dx = data->vertices[i * 3 + 0] - centroid[0];
                 double dy = data->vertices[i * 3 + 1] - centroid[1];
                 double dz = data->vertices[i * 3 + 2] - centroid[2];
-                vertex_distances[i] = prime_sqrt(dx*dx + dy*dy + dz*dz);
+                vertex_distances[i] = math_sqrt(dx*dx + dy*dy + dz*dz);
                 mean_distance += vertex_distances[i];
             }
             mean_distance /= data->num_vertices;
@@ -80,11 +81,11 @@ static CorruptionReport* detect_geometric_corruption(GeometricData* data) {
                 double diff = vertex_distances[i] - mean_distance;
                 variance += diff * diff;
             }
-            double std_dev = prime_sqrt(variance / data->num_vertices);
+            double std_dev = math_sqrt(variance / data->num_vertices);
             
             // Count outliers (> 3 standard deviations)
             for (size_t i = 0; i < data->num_vertices; i++) {
-                if (prime_fabs(vertex_distances[i] - mean_distance) > 3 * std_dev) {
+                if (math_abs(vertex_distances[i] - mean_distance) > 3 * std_dev) {
                     num_outliers++;
                 }
             }
@@ -157,7 +158,7 @@ static CorruptionReport* detect_signal_corruption(SignalData* data) {
     double threshold = 1e-10;
     
     for (size_t i = 0; i < data->num_samples * data->num_channels; i++) {
-        if (prime_fabs(data->samples[i]) < threshold) {
+        if (math_abs(data->samples[i]) < threshold) {
             num_dropout++;
         }
     }
@@ -167,7 +168,7 @@ static CorruptionReport* detect_signal_corruption(SignalData* data) {
     double clip_threshold = 0.99;
     
     for (size_t i = 0; i < data->num_samples * data->num_channels; i++) {
-        if (prime_fabs(data->samples[i]) > clip_threshold) {
+        if (math_abs(data->samples[i]) > clip_threshold) {
             num_clipped++;
         }
     }
@@ -187,7 +188,7 @@ static CorruptionReport* detect_signal_corruption(SignalData* data) {
         variance += diff * diff;
     }
     variance /= total_samples;
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     
     // Determine corruption type and severity
     if (num_dropout > total_samples * 0.01) { // More than 1% dropout
@@ -208,7 +209,7 @@ static CorruptionReport* detect_signal_corruption(SignalData* data) {
                 num_clipped, total_samples);
     } else if (std_dev > 1.0) { // High variance suggests noise
         report->type = CORRUPTION_NOISE;
-        report->severity = prime_fmin(std_dev / 10.0, 1.0); // Normalize to 0-1
+        report->severity = math_min(std_dev / 10.0, 1.0); // Normalize to 0-1
         report->num_corrupted = total_samples / 10; // Estimate
         report->total_elements = total_samples;
         snprintf(report->description, sizeof(report->description),
@@ -272,7 +273,7 @@ static CorruptionReport* detect_image_corruption(ImageData* data) {
         variance += diff * diff;
     }
     variance /= total_pixels;
-    double std_dev = prime_sqrt(variance);
+    double std_dev = math_sqrt(variance);
     
     // Determine corruption type and severity
     if (num_black > total_pixels * 0.1 || num_white > total_pixels * 0.1) {

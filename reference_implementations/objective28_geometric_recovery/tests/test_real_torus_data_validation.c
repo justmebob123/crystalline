@@ -80,17 +80,17 @@ void find_coprime_pairs_real_data(TorusData* tori, int num_tori, const char* bit
             double period_j = tori[j].period;
             
             // Skip if periods are too similar
-            if (prime_fabs(period_i - period_j) < 0.01) continue;
+            if (math_abs(period_i - period_j) < 0.01) continue;
             
             // Check if periods have integer ratio
             double ratio = period_j / period_i;
-            double nearest_int = prime_round(ratio);
-            double error = prime_fabs(ratio - nearest_int);
+            double nearest_int = math_round(ratio);
+            double error = math_abs(ratio - nearest_int);
             
             // Also check inverse ratio
             double inv_ratio = period_i / period_j;
-            double inv_nearest = prime_round(inv_ratio);
-            double inv_error = prime_fabs(inv_ratio - inv_nearest);
+            double inv_nearest = math_round(inv_ratio);
+            double inv_error = math_abs(inv_ratio - inv_nearest);
             
             if ((error < 0.1 && nearest_int >= 2.0) || (inv_error < 0.1 && inv_nearest >= 2.0)) {
                 coprime_count++;
@@ -149,7 +149,7 @@ void extract_pq_from_real_data(TorusData* tori, int num_tori, const char* bit_la
     double period_2 = -1.0;
     
     for (int i = 1; i < num_tori; i++) {
-        if (prime_fabs(tori[i].period - period_1) > 0.1) {
+        if (math_abs(tori[i].period - period_1) > 0.1) {
             period_2 = tori[i].period;
             break;
         }
@@ -161,8 +161,8 @@ void extract_pq_from_real_data(TorusData* tori, int num_tori, const char* bit_la
         printf("  Period 2: %.4f (candidate q)\n", period_2);
         
         // Round to nearest integers
-        uint64_t p_candidate = (uint64_t)prime_round(period_1);
-        uint64_t q_candidate = (uint64_t)prime_round(period_2);
+        uint64_t p_candidate = (uint64_t)math_round(period_1);
+        uint64_t q_candidate = (uint64_t)math_round(period_2);
         
         printf("\nRounded to integers:\n");
         printf("  p candidate: %lu\n", p_candidate);

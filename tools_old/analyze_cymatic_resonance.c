@@ -10,7 +10,8 @@
 #include "../include/cllm.h"
 #include "../include/cllm_mathematical_constants.h"
 #include "../../algorithms/include/cymatic_modulation.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper functions (previously in cllm_cymatic_training.c)
 static double cllm_get_cymatic_modulation(uint32_t training_step) {
@@ -20,7 +21,7 @@ static double cllm_get_cymatic_modulation(uint32_t training_step) {
     double resonance = 0.0;
     for (int f = 0; f < num_freqs; f++) {
         double freq_phase = global_phase * frequencies[f] / 432.0;
-        resonance += prime_cos(freq_phase) / (double)num_freqs;
+        resonance += math_cos(freq_phase) / (double)num_freqs;
     }
     return resonance;
 }
@@ -40,7 +41,7 @@ static void cllm_print_cymatic_stats(uint32_t training_step) {
     printf("\nIndividual frequency contributions:\n");
     for (int f = 0; f < 6; f++) {
         double freq_phase = global_phase * frequencies[f] / 432.0;
-        double contribution = prime_cos(freq_phase);
+        double contribution = math_cos(freq_phase);
         printf("  %s: %.6f\n", names[f], contribution);
     }
     printf("\n");

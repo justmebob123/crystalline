@@ -30,7 +30,8 @@
 #include "../include/ai/cllm_platonic.h"
 #include "../include/prime_lattice_core.h"
 #include "math/angular_position.h"
-#include "../include/prime_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define PI 3.14159265358979323846
 #define SYMMETRY_ORDER 12
@@ -385,7 +386,7 @@ static int compute_neighbor_weights(
         );
         
         // Use absolute value and normalize
-        weights[i] = (double)prime_fabsf((double)interaction);
+        weights[i] = (double)math_abs((double)interaction);
         sum += weights[i];
     }
     

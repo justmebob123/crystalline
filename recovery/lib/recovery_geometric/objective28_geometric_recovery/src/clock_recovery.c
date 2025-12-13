@@ -13,7 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Mathematical constants
 #define PI 3.141592653589793
@@ -150,7 +151,7 @@ ClockPosition map_k_to_clock(const BIGNUM* k) {
  */
 double clock_distance_pi_phi(ClockPosition pos1, ClockPosition pos2) {
     // Distance in π×φ metric is based on angular separation
-    double angle_diff = prime_fabs(pos1.angle - pos2.angle);
+    double angle_diff = math_abs(pos1.angle - pos2.angle);
     
     // Normalize to [0, π]
     if (angle_diff > PI) {
@@ -158,10 +159,10 @@ double clock_distance_pi_phi(ClockPosition pos1, ClockPosition pos2) {
     }
     
     // Include radius difference
-    double radius_diff = prime_fabs(pos1.radius - pos2.radius);
+    double radius_diff = math_abs(pos1.radius - pos2.radius);
     
     // Combined distance
-    return prime_sqrt(angle_diff * angle_diff + radius_diff * radius_diff);
+    return math_sqrt(angle_diff * angle_diff + radius_diff * radius_diff);
 }
 
 /**
@@ -184,7 +185,7 @@ bool is_pythagorean_triple(ClockPosition pos1, ClockPosition pos2, ClockPosition
     double rhs = c * c;
     double tolerance = 0.1;  // 10% tolerance
     
-    return prime_fabs(lhs - rhs) < tolerance * rhs;
+    return math_abs(lhs - rhs) < tolerance * rhs;
 }
 
 /**
@@ -203,10 +204,10 @@ bool find_pythagorean_triple(ClockPosition pos1, ClockPosition pos2, ClockPositi
     
     // Find p and q such that (p²-q², 2pq, p²+q²) matches distances
     // This is a simplified approximation
-    double max_dist = prime_fmax(d12, prime_fmax(d13, d23));
+    double max_dist = math_max(d12, math_max(d13, d23));
     
     // Estimate p and q
-    uint32_t p = (uint32_t)prime_sqrt(max_dist * 10.0);
+    uint32_t p = (uint32_t)math_sqrt(max_dist * 10.0);
     uint32_t q = p / 2;
     
     // Ensure coprime and not both odd
@@ -282,7 +283,7 @@ void init_dimensional_frequencies(DimensionalFrequency dims[13]) {
  * Compute dimensional alignment
  */
 double compute_dimensional_alignment(double angle, double frequency) {
-    return prime_cos(angle * frequency);
+    return math_cos(angle * frequency);
 }
 
 /**

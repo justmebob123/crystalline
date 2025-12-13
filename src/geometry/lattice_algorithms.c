@@ -4,7 +4,8 @@
  * Revolutionary lattice algorithms for the Crystalline Lattice Math Library:
  * - LLL lattice reduction (Lenstra-Lenstra-Lovász)
  * - Gram-Schmidt orthogonalization
-#include "prime_float_math.h"  // For prime_fabs
+#include "math/arithmetic.h"
+#include "math/transcendental.h"  // For prime_fabs
  * - Closest Vector Problem (CVP)
  * - Shortest Vector Problem (SVP)
  * - Babai's nearest plane algorithm
@@ -21,7 +22,8 @@
 
 #include "../include/bigfixed_core.h"
 #include "../include/prime_matrix.h"
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -185,7 +187,7 @@ int big_lll_reduce(BigFixed** basis, int n, int dim, double delta, int precision
         for (int j = k - 1; j >= 0; j--) {
             double mu_kj = big_fixed_to_double(&mu[k][j]);
             
-            if (prime_fabs(mu_kj) > 0.5) {
+            if (math_abs(mu_kj) > 0.5) {
                 // Round μₖⱼ to nearest integer
                 int64_t q = (int64_t)(mu_kj + (mu_kj > 0 ? 0.5 : -0.5));
                 
@@ -515,7 +517,7 @@ int big_is_valid_basis(BigFixed** basis, int n, int dim) {
         big_lattice_determinant(&det, basis, n, 128);
         
         double det_double = big_fixed_to_double(&det);
-        return prime_fabs(det_double) > 1e-10;
+        return math_abs(det_double) > 1e-10;
     }
     
     return 1;
@@ -547,7 +549,7 @@ double big_hermite_factor(BigFixed** basis, int n, int dim) {
         big_fixed_add(&norm_sq, &norm_sq, &temp);
     }
     
-    double norm = prime_sqrt(big_fixed_to_double(&norm_sq));
+    double norm = math_sqrt(big_fixed_to_double(&norm_sq));
     
     // Compute det(L)
     BigFixed det;
@@ -555,8 +557,8 @@ double big_hermite_factor(BigFixed** basis, int n, int dim) {
     double det_double = big_fixed_to_double(&det);
     
     // γ = (‖b₁‖ / det^(1/n))^n
-    double det_root = prime_pow(prime_fabs(det_double), 1.0 / n);
-    double gamma = prime_pow(norm / det_root, (double)n);
+    double det_root = math_pow(math_abs(det_double), 1.0 / n);
+    double gamma = math_pow(norm / det_root, (double)n);
     
     return gamma;
 }

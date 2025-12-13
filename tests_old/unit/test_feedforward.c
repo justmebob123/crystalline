@@ -13,7 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cllm.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-5f
 #define TEST_PASSED 1
@@ -25,7 +26,7 @@ static int tests_passed = 0;
 
 // Helper function to check if two floats are approximately equal
 static int float_equals(float a, float b, float epsilon) {
-    return prime_fabsf(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 // Helper function to print test result
@@ -117,7 +118,7 @@ int test_feedforward_forward_pass() {
     // Check output is not all zeros
     int passed = 0;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (prime_fabsf(output[i]) > EPSILON) {
+        if (math_abs(output[i]) > EPSILON) {
             passed = 1;
             break;
         }
@@ -188,7 +189,7 @@ int test_feedforward_batch_processing() {
     // Check output is valid
     int passed = 1;
     for (int i = 0; i < batch_size * output_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -251,14 +252,14 @@ int test_activation_gelu() {
     // Check that output is not NaN or Inf
     int passed = 1;
     for (int i = 0; i < size; i++) {
-        if (prime_isnan(x[i]) || prime_isinf(x[i])) {
+        if (math_is_nan(x[i]) || math_is_inf(x[i])) {
             passed = 0;
             break;
         }
     }
     
     // GELU(0) should be approximately 0
-    if (passed && prime_fabsf(x[2]) > 0.1f) {
+    if (passed && math_abs(x[2]) > 0.1f) {
         passed = 0;
     }
     
@@ -297,7 +298,7 @@ int test_feedforward_numerical_stability() {
     // Check for NaN or Inf
     int passed = 1;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -328,7 +329,7 @@ int test_feedforward_zero_input() {
     // Output should be bias values (or zeros if bias is zero)
     int passed = 1;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -394,7 +395,7 @@ int test_feedforward_asymmetric_dimensions() {
     // Should work with different dimensions
     int passed = 1;
     for (uint32_t i = 0; i < output_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -570,7 +571,7 @@ int test_feedforward_large_batch() {
     // Check all outputs are valid
     int passed = 1;
     for (int i = 0; i < batch_size * output_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -609,7 +610,7 @@ int test_feedforward_identity_weights() {
     // With identity weights and GELU, output should be related to input
     int passed = 1;
     for (uint32_t i = 0; i < dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }

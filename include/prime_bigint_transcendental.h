@@ -18,7 +18,8 @@ void big_pi(BigFixed *result, int precision_bits);
 
 /* Local includes */
 #include "prime_bigint_transcendental.h"
-#include "prime_lowlevel.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Function declarations */
 void big_set_precision_guard(int bits);

@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define TEST_EPSILON 1e-6
 
@@ -16,7 +17,7 @@
  * @brief Test helper: Check if two doubles are approximately equal
  */
 static int doubles_equal(double a, double b, double epsilon) {
-    return prime_fabs(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 /**
@@ -189,15 +190,15 @@ static void test_L_lattice_complete(void) {
     
     // Calculate without context
     double L1 = L_lattice_complete(&params, NULL);
-    assert(!prime_isnan(L1));
-    assert(!prime_isinf(L1));
+    assert(!math_is_nan(L1));
+    assert(!math_is_inf(L1));
     
     // Calculate with context
     LatticeFormulaContext ctx;
     lattice_formula_context_init(&ctx, true, false);
     double L2 = L_lattice_complete(&params, &ctx);
-    assert(!prime_isnan(L2));
-    assert(!prime_isinf(L2));
+    assert(!math_is_nan(L2));
+    assert(!math_is_inf(L2));
     
     // Results should be the same
     assert(doubles_equal(L1, L2, TEST_EPSILON));
@@ -226,8 +227,8 @@ static void test_formula_variations(void) {
         };
         
         double L = L_lattice_complete(&params, NULL);
-        assert(!prime_isnan(L));
-        assert(!prime_isinf(L));
+        assert(!math_is_nan(L));
+        assert(!math_is_inf(L));
     }
     
     // Test different phonetic layers
@@ -244,8 +245,8 @@ static void test_formula_variations(void) {
         };
         
         double L = L_lattice_complete(&params, NULL);
-        assert(!prime_isnan(L));
-        assert(!prime_isinf(L));
+        assert(!math_is_nan(L));
+        assert(!math_is_inf(L));
     }
     
     // Test different cymatic frequencies
@@ -262,8 +263,8 @@ static void test_formula_variations(void) {
         };
         
         double L = L_lattice_complete(&params, NULL);
-        assert(!prime_isnan(L));
-        assert(!prime_isinf(L));
+        assert(!math_is_nan(L));
+        assert(!math_is_inf(L));
     }
     
     printf("✓ Formula variations test passed\n");
@@ -276,12 +277,12 @@ static void test_L_lattice_simple(void) {
     printf("Testing simplified L_lattice...\n");
     
     double L1 = L_lattice_simple(10, 6, 5);
-    assert(!prime_isnan(L1));
-    assert(!prime_isinf(L1));
+    assert(!math_is_nan(L1));
+    assert(!math_is_inf(L1));
     
     double L2 = L_lattice_simple(100, 12, 10);
-    assert(!prime_isnan(L2));
-    assert(!prime_isinf(L2));
+    assert(!math_is_nan(L2));
+    assert(!math_is_inf(L2));
     
     // Both should be valid values
     // (We don't require them to be different as the formula is complex)
@@ -310,14 +311,14 @@ static void test_formula_breakdown(void) {
     L_lattice_breakdown(&params, &O, &theta, &product, &mobius, &nu, &einstein, &psi, &gamma);
     
     // Verify all components are valid
-    assert(!prime_isnan(O) && !prime_isinf(O));
-    assert(!prime_isnan(theta) && !prime_isinf(theta));
-    assert(!prime_isnan(product) && !prime_isinf(product));
-    assert(!prime_isnan(mobius) && !prime_isinf(mobius));
-    assert(!prime_isnan(nu) && !prime_isinf(nu));
-    assert(!prime_isnan(einstein) && !prime_isinf(einstein));
-    assert(!prime_isnan(psi) && !prime_isinf(psi));
-    assert(!prime_isnan(gamma) && !prime_isinf(gamma));
+    assert(!math_is_nan(O) && !math_is_inf(O));
+    assert(!math_is_nan(theta) && !math_is_inf(theta));
+    assert(!math_is_nan(product) && !math_is_inf(product));
+    assert(!math_is_nan(mobius) && !math_is_inf(mobius));
+    assert(!math_is_nan(nu) && !math_is_inf(nu));
+    assert(!math_is_nan(einstein) && !math_is_inf(einstein));
+    assert(!math_is_nan(psi) && !math_is_inf(psi));
+    assert(!math_is_nan(gamma) && !math_is_inf(gamma));
     
     // Verify specific values
     assert(mobius == 1.0 || mobius == -1.0); // Möbius twist

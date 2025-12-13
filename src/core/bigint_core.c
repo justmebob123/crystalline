@@ -11,7 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/crystal_abacus.h"
 
 /* Forward declarations */

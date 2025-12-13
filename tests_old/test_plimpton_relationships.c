@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_passed = 0;

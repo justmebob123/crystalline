@@ -6,8 +6,10 @@
  */
 
 #include "url_priority.h"
-#include "../../include/prime_math_custom.h"
-#include "../../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -201,7 +203,7 @@ int url_priority_calculate(URLPriority* priority, URLEntry* entry, int total_dom
         // Decay: older = higher priority
         // Use exponential decay: e^(-decay * age_in_days)
         float age_days = (float)age / (24.0f * 3600.0f);
-        float decay_factor = 1.0f - prime_expf(-priority->factors.time_decay * age_days);
+        float decay_factor = 1.0f - math_exp(-priority->factors.time_decay * age_days);
         score += decay_factor * 50.0f;  // Max 50 points from age
     } else {
         // Never crawled - full age bonus

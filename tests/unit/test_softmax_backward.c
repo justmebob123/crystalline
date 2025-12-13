@@ -43,7 +43,7 @@ static void softmax(float* output, const float* input, int size) {
     // Compute exp and sum
     float sum = 0.0f;
     for (int i = 0; i < size; i++) {
-        output[i] = prime_expf(input[i] - max_val);
+        output[i] = math_exp(input[i] - max_val);
         sum += output[i];
     }
     

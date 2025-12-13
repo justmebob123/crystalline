@@ -3,11 +3,11 @@
 #include <stdio.h>
 
 // Prime math functions (crystalline library - NO math.h!)
-extern double prime_sqrt(double x);
-extern double prime_pow(double x, double y);
+extern double math_sqrt(double x);
+extern double math_pow(double x, double y);
 
 // Inline fabs for double precision
-static inline double prime_fabs(double x) {
+static inline double math_abs(double x) {
     return (x < 0.0) ? -x : x;
 }
 

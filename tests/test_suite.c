@@ -9,8 +9,10 @@
 #include <time.h>
 
 // Crystalline headers
-#include "prime_float_math.h"
-#include "prime_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "bigint_core.h"
 
 // Test counters
@@ -41,123 +43,123 @@ void test_prime_sqrt() {
     TEST_SECTION("Prime Square Root Tests");
     
     // Test basic square roots
-    float result = prime_sqrtf(4.0f);
+    float result = math_sqrt(4.0f);
     TEST_ASSERT(result > 1.99f && result < 2.01f, "sqrt(4) ≈ 2");
     
-    result = prime_sqrtf(9.0f);
+    result = math_sqrt(9.0f);
     TEST_ASSERT(result > 2.99f && result < 3.01f, "sqrt(9) ≈ 3");
     
-    result = prime_sqrtf(16.0f);
+    result = math_sqrt(16.0f);
     TEST_ASSERT(result > 3.99f && result < 4.01f, "sqrt(16) ≈ 4");
     
-    result = prime_sqrtf(25.0f);
+    result = math_sqrt(25.0f);
     TEST_ASSERT(result > 4.99f && result < 5.01f, "sqrt(25) ≈ 5");
     
-    result = prime_sqrtf(2.0f);
+    result = math_sqrt(2.0f);
     TEST_ASSERT(result > 1.41f && result < 1.42f, "sqrt(2) ≈ 1.414");
     
     // Test edge cases
-    result = prime_sqrtf(0.0f);
+    result = math_sqrt(0.0f);
     TEST_ASSERT(result == 0.0f, "sqrt(0) = 0");
     
-    result = prime_sqrtf(1.0f);
+    result = math_sqrt(1.0f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "sqrt(1) = 1");
     
     // Test small values
-    result = prime_sqrtf(0.25f);
+    result = math_sqrt(0.25f);
     TEST_ASSERT(result > 0.49f && result < 0.51f, "sqrt(0.25) = 0.5");
     
     // Test large values
-    result = prime_sqrtf(100.0f);
+    result = math_sqrt(100.0f);
     TEST_ASSERT(result > 9.99f && result < 10.01f, "sqrt(100) = 10");
 }
 
 void test_prime_exp() {
     TEST_SECTION("Prime Exponential Tests");
     
-    float result = prime_expf(0.0f);
+    float result = math_exp(0.0f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "exp(0) = 1");
     
-    result = prime_expf(1.0f);
+    result = math_exp(1.0f);
     TEST_ASSERT(result > 2.71f && result < 2.72f, "exp(1) ≈ e ≈ 2.718");
     
-    result = prime_expf(2.0f);
+    result = math_exp(2.0f);
     TEST_ASSERT(result > 7.38f && result < 7.40f, "exp(2) ≈ 7.389");
     
-    result = prime_expf(-1.0f);
+    result = math_exp(-1.0f);
     TEST_ASSERT(result > 0.36f && result < 0.37f, "exp(-1) ≈ 0.368");
     
-    result = prime_expf(-2.0f);
+    result = math_exp(-2.0f);
     TEST_ASSERT(result > 0.13f && result < 0.14f, "exp(-2) ≈ 0.135");
     
     // Test small values
-    result = prime_expf(0.5f);
+    result = math_exp(0.5f);
     TEST_ASSERT(result > 1.64f && result < 1.65f, "exp(0.5) ≈ 1.649");
 }
 
 void test_prime_log() {
     TEST_SECTION("Prime Logarithm Tests");
     
-    float result = prime_logf(1.0f);
+    float result = math_log(1.0f);
     TEST_ASSERT(result > -0.01f && result < 0.01f, "log(1) = 0");
     
-    result = prime_logf(2.718281828f);
+    result = math_log(2.718281828f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "log(e) ≈ 1");
     
-    result = prime_logf(10.0f);
+    result = math_log(10.0f);
     TEST_ASSERT(result > 2.30f && result < 2.31f, "log(10) ≈ 2.303");
     
-    result = prime_logf(2.0f);
+    result = math_log(2.0f);
     TEST_ASSERT(result > 0.69f && result < 0.70f, "log(2) ≈ 0.693");
     
-    result = prime_logf(100.0f);
+    result = math_log(100.0f);
     TEST_ASSERT(result > 4.60f && result < 4.61f, "log(100) ≈ 4.605");
 }
 
 void test_prime_pow() {
     TEST_SECTION("Prime Power Tests");
     
-    float result = prime_powf(2.0f, 3.0f);
+    float result = math_pow(2.0f, 3.0f);
     TEST_ASSERT(result > 7.99f && result < 8.01f, "pow(2, 3) = 8");
     
-    result = prime_powf(3.0f, 2.0f);
+    result = math_pow(3.0f, 2.0f);
     TEST_ASSERT(result > 8.99f && result < 9.01f, "pow(3, 2) = 9");
     
-    result = prime_powf(10.0f, 2.0f);
+    result = math_pow(10.0f, 2.0f);
     TEST_ASSERT(result > 99.9f && result < 100.1f, "pow(10, 2) = 100");
     
-    result = prime_powf(2.0f, 0.0f);
+    result = math_pow(2.0f, 0.0f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "pow(2, 0) = 1");
     
-    result = prime_powf(5.0f, 1.0f);
+    result = math_pow(5.0f, 1.0f);
     TEST_ASSERT(result > 4.99f && result < 5.01f, "pow(5, 1) = 5");
 }
 
 void test_prime_trig() {
     TEST_SECTION("Prime Trigonometric Tests");
     
-    float result = prime_sinf(0.0f);
+    float result = math_sin(0.0f);
     TEST_ASSERT(result > -0.01f && result < 0.01f, "sin(0) = 0");
     
-    result = prime_cosf(0.0f);
+    result = math_cos(0.0f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "cos(0) = 1");
     
-    result = prime_sinf(M_PI / 2.0f);
+    result = math_sin(M_PI / 2.0f);
     TEST_ASSERT(result > 0.99f && result < 1.01f, "sin(π/2) = 1");
     
-    result = prime_cosf(M_PI);
+    result = math_cos(M_PI);
     TEST_ASSERT(result > -1.01f && result < -0.99f, "cos(π) = -1");
     
-    result = prime_sinf(M_PI);
+    result = math_sin(M_PI);
     TEST_ASSERT(result > -0.01f && result < 0.01f, "sin(π) ≈ 0");
     
-    result = prime_cosf(M_PI / 2.0f);
+    result = math_cos(M_PI / 2.0f);
     TEST_ASSERT(result > -0.01f && result < 0.01f, "cos(π/2) ≈ 0");
     
-    result = prime_tanhf(0.0f);
+    result = math_tanh(0.0f);
     TEST_ASSERT(result > -0.01f && result < 0.01f, "tanh(0) = 0");
     
-    result = prime_tanhf(1.0f);
+    result = math_tanh(1.0f);
     TEST_ASSERT(result > 0.76f && result < 0.77f, "tanh(1) ≈ 0.762");
 }
 
@@ -166,49 +168,49 @@ void test_prime_special_values() {
     
     // Test NaN detection
     float nan_val = 0.0f / 0.0f;
-    TEST_ASSERT(prime_isnanf(nan_val), "isnan(NAN) = true");
-    TEST_ASSERT(!prime_isnanf(1.0f), "isnan(1.0) = false");
-    TEST_ASSERT(!prime_isnanf(0.0f), "isnan(0.0) = false");
+    TEST_ASSERT(math_is_nan(nan_val), "isnan(NAN) = true");
+    TEST_ASSERT(!math_is_nan(1.0f), "isnan(1.0) = false");
+    TEST_ASSERT(!math_is_nan(0.0f), "isnan(0.0) = false");
     
     // Test infinity detection
     float inf_val = 1.0f / 0.0f;
-    TEST_ASSERT(prime_isinff(inf_val), "isinf(INFINITY) = true");
-    TEST_ASSERT(!prime_isinff(1.0f), "isinf(1.0) = false");
-    TEST_ASSERT(!prime_isinff(0.0f), "isinf(0.0) = false");
+    TEST_ASSERT(math_is_inf(inf_val), "isinf(INFINITY) = true");
+    TEST_ASSERT(!math_is_inf(1.0f), "isinf(1.0) = false");
+    TEST_ASSERT(!math_is_inf(0.0f), "isinf(0.0) = false");
     
     // Test absolute value
-    float result = prime_fabsf(-5.5f);
+    float result = math_abs(-5.5f);
     TEST_ASSERT(result > 5.49f && result < 5.51f, "fabs(-5.5) = 5.5");
     
-    result = prime_fabsf(5.5f);
+    result = math_abs(5.5f);
     TEST_ASSERT(result > 5.49f && result < 5.51f, "fabs(5.5) = 5.5");
     
-    result = prime_fabsf(0.0f);
+    result = math_abs(0.0f);
     TEST_ASSERT(result == 0.0f, "fabs(0) = 0");
     
-    result = prime_fabsf(-0.0f);
+    result = math_abs(-0.0f);
     TEST_ASSERT(result == 0.0f, "fabs(-0) = 0");
 }
 
 void test_prime_floor_ceil() {
     TEST_SECTION("Prime Floor/Ceil Tests");
     
-    float result = prime_floor(3.7f);
+    float result = math_floor(3.7f);
     TEST_ASSERT(result == 3.0f, "floor(3.7) = 3");
     
-    result = prime_floor(-3.7f);
+    result = math_floor(-3.7f);
     TEST_ASSERT(result == -4.0f, "floor(-3.7) = -4");
     
-    result = prime_ceil(3.2f);
+    result = math_ceil(3.2f);
     TEST_ASSERT(result == 4.0f, "ceil(3.2) = 4");
     
-    result = prime_ceil(-3.2f);
+    result = math_ceil(-3.2f);
     TEST_ASSERT(result == -3.0f, "ceil(-3.2) = -3");
     
-    result = prime_floor(5.0f);
+    result = math_floor(5.0f);
     TEST_ASSERT(result == 5.0f, "floor(5.0) = 5");
     
-    result = prime_ceil(5.0f);
+    result = math_ceil(5.0f);
     TEST_ASSERT(result == 5.0f, "ceil(5.0) = 5");
 }
 
@@ -262,24 +264,24 @@ void test_prime_math_accuracy() {
     
     // Test that exp(log(x)) ≈ x
     float x = 5.0f;
-    float result = prime_expf(prime_logf(x));
+    float result = math_exp(math_log(x));
     TEST_ASSERT(result > 4.99f && result < 5.01f, "exp(log(5)) ≈ 5");
     
     // Test that log(exp(x)) ≈ x
     x = 2.0f;
-    result = prime_logf(prime_expf(x));
+    result = math_log(math_exp(x));
     TEST_ASSERT(result > 1.99f && result < 2.01f, "log(exp(2)) ≈ 2");
     
     // Test that sin²(x) + cos²(x) = 1
     x = 0.5f;
-    float sin_val = prime_sinf(x);
-    float cos_val = prime_cosf(x);
+    float sin_val = math_sin(x);
+    float cos_val = math_cos(x);
     result = sin_val * sin_val + cos_val * cos_val;
     TEST_ASSERT(result > 0.99f && result < 1.01f, "sin²(x) + cos²(x) = 1");
     
     // Test that sqrt(x²) = |x|
     x = -7.0f;
-    result = prime_sqrtf(x * x);
+    result = math_sqrt(x * x);
     TEST_ASSERT(result > 6.99f && result < 7.01f, "sqrt((-7)²) = 7");
 }
 
@@ -287,22 +289,22 @@ void test_edge_cases() {
     TEST_SECTION("Edge Cases and Boundary Tests");
     
     // Test very small values
-    float result = prime_sqrtf(0.0001f);
+    float result = math_sqrt(0.0001f);
     TEST_ASSERT(result > 0.009f && result < 0.011f, "sqrt(0.0001) = 0.01");
     
     // Test values near 1
-    result = prime_logf(1.001f);
+    result = math_log(1.001f);
     TEST_ASSERT(result > 0.0f && result < 0.002f, "log(1.001) ≈ 0.001");
     
     // Test negative inputs where appropriate
-    result = prime_fabsf(-1000.0f);
+    result = math_abs(-1000.0f);
     TEST_ASSERT(result == 1000.0f, "fabs(-1000) = 1000");
     
     // Test zero
-    result = prime_expf(0.0f);
+    result = math_exp(0.0f);
     TEST_ASSERT(result == 1.0f, "exp(0) = 1");
     
-    result = prime_sinf(0.0f);
+    result = math_sin(0.0f);
     TEST_ASSERT(result == 0.0f, "sin(0) = 0");
 }
 
@@ -316,7 +318,7 @@ void test_performance() {
     // Test sqrt performance
     start = clock();
     for (int i = 0; i < iterations; i++) {
-        prime_sqrtf((float)(i % 1000 + 1));
+        math_sqrt((float)(i % 1000 + 1));
     }
     end = clock();
     time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -327,7 +329,7 @@ void test_performance() {
     // Test exp performance
     start = clock();
     for (int i = 0; i < iterations; i++) {
-        prime_expf((float)(i % 10));
+        math_exp((float)(i % 10));
     }
     end = clock();
     time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -338,7 +340,7 @@ void test_performance() {
     // Test sin performance
     start = clock();
     for (int i = 0; i < iterations; i++) {
-        prime_sinf((float)(i % 100) / 10.0f);
+        math_sin((float)(i % 100) / 10.0f);
     }
     end = clock();
     time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;

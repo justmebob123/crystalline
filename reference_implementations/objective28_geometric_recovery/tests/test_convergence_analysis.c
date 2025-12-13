@@ -16,7 +16,8 @@
 #include <openssl/bn.h>
 #include <openssl/obj_mac.h>
 #include "../include/g_triangulation.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 typedef struct {
     int iteration;
@@ -53,7 +54,7 @@ void compute_metrics(
         uint64_t k_estimated = estimate_k_from_q(ctx, Q);
         
         // Compute error
-        double error = prime_fabs((double)k_estimated - (double)training_k[i]);
+        double error = math_abs((double)k_estimated - (double)training_k[i]);
         double error_pct = (error / (double)training_k[i]) * 100.0;
         
         errors[i] = error;
@@ -77,7 +78,7 @@ void compute_metrics(
         double diff = errors[i] - avg_error;
         variance += diff * diff;
     }
-    double std_dev = prime_sqrt(variance / num_pairs);
+    double std_dev = math_sqrt(variance / num_pairs);
     
     // Fill metrics
     metrics->iteration = iteration;
@@ -190,7 +191,7 @@ int main() {
         bool plateaued = true;
         double plateau_start_error = metrics_history[450].avg_error;
         for (int i = 451; i < 500; i++) {
-            double change = prime_fabs(metrics_history[i].avg_error - plateau_start_error);
+            double change = math_abs(metrics_history[i].avg_error - plateau_start_error);
             double change_pct = (change / plateau_start_error) * 100.0;
             if (change_pct > 1.0) {
                 plateaued = false;

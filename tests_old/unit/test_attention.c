@@ -14,7 +14,8 @@
 #include <string.h>
 #include "cllm.h"
 #include "cllm_inference.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-5f
 #define TEST_PASSED 1
@@ -26,7 +27,7 @@ static int tests_passed = 0;
 
 // Helper function to check if two floats are approximately equal
 static int float_equals(float a, float b, float epsilon) {
-    return prime_fabsf(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 // Helper function to print test result
@@ -107,7 +108,7 @@ int test_single_head_attention() {
     // Check output is not all zeros
     int passed = 0;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_fabsf(output[i]) > EPSILON) {
+        if (math_abs(output[i]) > EPSILON) {
             passed = 1;
             break;
         }
@@ -151,7 +152,7 @@ int test_multi_head_attention() {
     // Check output has reasonable values
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -205,7 +206,7 @@ int test_attention_with_cache() {
     // Just verify it doesn't crash and produces output
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_isnan(output2[i]) || prime_isinf(output2[i])) {
+        if (math_is_nan(output2[i]) || math_is_inf(output2[i])) {
             passed = 0;
             break;
         }
@@ -288,7 +289,7 @@ int test_attention_numerical_stability() {
     // Check for NaN or Inf
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -320,7 +321,7 @@ int test_attention_zero_input() {
     // Output should be all zeros or very small
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_fabsf(output[i]) > 0.1f) {
+        if (math_abs(output[i]) > 0.1f) {
             passed = 0;
             break;
         }
@@ -362,7 +363,7 @@ int test_attention_single_token() {
     // Should not crash and produce valid output
     int passed = 1;
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }
@@ -404,7 +405,7 @@ int test_attention_long_sequence() {
     // Check output is valid
     int passed = 1;
     for (uint32_t i = 0; i < seq_len * embedding_dim; i++) {
-        if (prime_isnan(output[i]) || prime_isinf(output[i])) {
+        if (math_is_nan(output[i]) || math_is_inf(output[i])) {
             passed = 0;
             break;
         }

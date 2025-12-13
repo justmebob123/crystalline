@@ -12,7 +12,8 @@
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
 #include "../../include/cllm_production.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper: Create a minimal test model
 CLLMModel* create_test_model() {
@@ -129,7 +130,7 @@ int test_checkpoint_load() {
         
         if (result == 0 && training2->current_epoch == 5 &&
             training2->current_step == 100 &&
-            prime_fabs(training2->best_loss - 2.5f) < 0.01f) {
+            math_abs(training2->best_loss - 2.5f) < 0.01f) {
             success = 1;
         }
         
@@ -259,7 +260,7 @@ int test_gradient_clipping() {
         float max_grad = 0.0f;
         if (training->gradients) {
             for (size_t i = 0; i < 100 && i < model->vocab_size * model->embedding_dim; i++) {
-                float abs_grad = prime_fabsf(training->gradients[i]);
+                float abs_grad = math_abs(training->gradients[i]);
                 if (abs_grad > max_grad) {
                     max_grad = abs_grad;
                 }
@@ -290,7 +291,7 @@ int test_lr_scheduler() {
         float initial_lr = get_learning_rate(scheduler);
         
         // Verify initial LR is set
-        if (prime_fabsf(initial_lr - 0.001f) < 0.0001f) {
+        if (math_abs(initial_lr - 0.001f) < 0.0001f) {
             success = 1;
         }
         

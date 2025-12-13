@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define TEST_EPSILON 1e-6
 
@@ -15,7 +16,7 @@
  * @brief Test helper: Check if two doubles are approximately equal
  */
 static int doubles_equal(double a, double b, double epsilon) {
-    return prime_fabs(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 /**
@@ -169,8 +170,8 @@ static void test_lattice_entropy(void) {
     for (uint32_t d = 1; d <= 12; d++) {
         double entropy_d = calculate_lattice_entropy(NULL, 1000, d);
         assert(entropy_d >= 0.0);
-        assert(!prime_isnan(entropy_d));
-        assert(!prime_isinf(entropy_d));
+        assert(!math_is_nan(entropy_d));
+        assert(!math_is_inf(entropy_d));
     }
     
     // Edge cases

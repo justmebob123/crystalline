@@ -11,12 +11,13 @@
 #include "bigint_core.h"
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
    #include "clock_lattice.h"
 
 /* Local includes */
 #include "prime_rainbow.h"
 #include "crystal_abacus.h"
-#include "../include/prime_math_custom.h"
 
 /* Function declarations */
 void rainbow_table_init(void);

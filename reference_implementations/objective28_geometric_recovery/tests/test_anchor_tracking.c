@@ -1,5 +1,6 @@
 #include "../include/anchor_tracking.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -217,7 +218,7 @@ void test_error_vector_computation() {
     for (uint32_t i = 0; i < 13; i++) {
         magnitude += anchor->error_vector[i] * anchor->error_vector[i];
     }
-    magnitude = prime_sqrt(magnitude);
+    magnitude = math_sqrt(magnitude);
     
     printf("  ✓ Error vector magnitude: %.4f\n", magnitude);
     

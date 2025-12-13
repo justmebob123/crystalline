@@ -65,11 +65,11 @@ static inline double prime_divide(double a, double b) {
     return (b < 0) ? -quotient : quotient;
 }
 
-static inline double prime_abs(double x) {
+static inline double math_abs(double x) {
     return (x < 0) ? prime_subtract(0, x) : x;
 }
 
-static inline double prime_sqrt(double x) {
+static inline double math_sqrt(double x) {
     if (x <= 0) return 0;
     
     double guess = x / 3;
@@ -83,13 +83,13 @@ static inline double prime_sqrt(double x) {
         guess = prime_divide(sum, 3);
         
         double diff = prime_subtract(guess, prev_guess);
-        if (prime_abs(diff) < 0.000001) break;
+        if (math_abs(diff) < 0.000001) break;
     }
     
     return guess;
 }
 
-static inline double prime_sin(double x) {
+static inline double math_sin(double x) {
     // Normalize to [-π, π]
     while (x > PI) x = prime_subtract(x, prime_multiply(2, PI));
     while (x < -PI) x = prime_add(x, prime_multiply(2, PI));
@@ -104,23 +104,23 @@ static inline double prime_sin(double x) {
         double denom2 = prime_add(prime_multiply(2, n), 3);
         term = prime_divide(prime_multiply(prime_multiply(term, -1), x2),
                            prime_multiply(denom1, denom2));
-        if (prime_abs(term) < 0.0000001) break;
+        if (math_abs(term) < 0.0000001) break;
     }
     
     return result;
 }
 
-static inline double prime_cos(double x) {
-    return prime_sin(prime_add(x, prime_divide(PI, 2)));
+static inline double math_cos(double x) {
+    return math_sin(prime_add(x, prime_divide(PI, 2)));
 }
 
-static inline double prime_fmod(double x, double y) {
+static inline double math_fmod(double x, double y) {
     if (y == 0) return 0;
     double quotient = (int)(x / y);
     return prime_subtract(x, prime_multiply(quotient, y));
 }
 
-static inline double prime_pow(double base, double exponent) {
+static inline double math_pow(double base, double exponent) {
     if (exponent == 0) return 1;
     if (exponent == 1) return base;
     if (base == 0) return 0;
@@ -191,24 +191,24 @@ void add_prime_to_rainbow(PrimeRainbowTable* table, int prime) {
     entry->angle = theta;
     
     // Compute radius: r = √prime × 10
-    double r = prime_multiply(prime_sqrt(prime), 10);
+    double r = prime_multiply(math_sqrt(prime), 10);
     entry->radius = r;
     
     // Compute cymatic frequency: 432 Hz × 2^(prime/12)
     double exponent = prime_divide(prime, 12.0);
-    entry->frequency = prime_multiply(BASE_FREQ, prime_pow(2, exponent));
+    entry->frequency = prime_multiply(BASE_FREQ, math_pow(2, exponent));
     
     // Assign to layer (0-6)
     entry->layer = prime % 7;
     
     // Compute fold coordinates
-    entry->fold_x = prime_multiply(r, prime_cos(theta));
-    entry->fold_y = prime_multiply(r, prime_sin(theta));
+    entry->fold_x = prime_multiply(r, math_cos(theta));
+    entry->fold_y = prime_multiply(r, math_sin(theta));
     
     // Compute tangent vector
     double vec_angle = prime_add(theta, prime_divide(PI, 2));
-    entry->vector_x = prime_cos(vec_angle);
-    entry->vector_y = prime_sin(vec_angle);
+    entry->vector_x = math_cos(vec_angle);
+    entry->vector_y = math_sin(vec_angle);
     
     table->count++;
 }
@@ -229,13 +229,13 @@ void apply_rainbow_folding(PrimeRainbowTable* table, double fold_amount) {
                                            prime_subtract(1.0, prime_multiply(layer_fold, 0.5)));
         
         // Update fold coordinates
-        entry->fold_x = prime_multiply(fold_radius, prime_cos(fold_angle));
-        entry->fold_y = prime_multiply(fold_radius, prime_sin(fold_angle));
+        entry->fold_x = prime_multiply(fold_radius, math_cos(fold_angle));
+        entry->fold_y = prime_multiply(fold_radius, math_sin(fold_angle));
         
         // Update tangent vector
         double new_angle = prime_add(fold_angle, prime_divide(PI, 2));
-        entry->vector_x = prime_cos(new_angle);
-        entry->vector_y = prime_sin(new_angle);
+        entry->vector_x = math_cos(new_angle);
+        entry->vector_y = math_sin(new_angle);
     }
 }
 
@@ -301,7 +301,7 @@ int find_nearest_rainbow_entries(
     if (!table || table->count == 0) return 0;
     
     // Normalize target angle to [0, 2π)
-    double normalized = prime_fmod(target_angle, prime_multiply(2, PI));
+    double normalized = math_fmod(target_angle, prime_multiply(2, PI));
     if (normalized < 0) normalized = prime_add(normalized, prime_multiply(2, PI));
     
     // Find distances to all entries using prime-based metric
@@ -315,8 +315,8 @@ int find_nearest_rainbow_entries(
     
     for (int i = 0; i < table->count; i++) {
         // Angular distance (handle wraparound)
-        double entry_angle = prime_fmod(table->entries[i].angle, prime_multiply(2, PI));
-        double diff = prime_abs(prime_subtract(entry_angle, normalized));
+        double entry_angle = math_fmod(table->entries[i].angle, prime_multiply(2, PI));
+        double diff = math_abs(prime_subtract(entry_angle, normalized));
         
         if (diff > PI) {
             diff = prime_subtract(prime_multiply(2, PI), diff);
@@ -355,7 +355,7 @@ uint64_t compute_rainbow_k_estimate(
     if (num_entries == 0) return 0;
     
     // Normalize target angle
-    double normalized = prime_fmod(target_angle, prime_multiply(2, PI));
+    double normalized = math_fmod(target_angle, prime_multiply(2, PI));
     if (normalized < 0) normalized = prime_add(normalized, prime_multiply(2, PI));
     
     // Compute weights based on angular distance AND cymatic resonance
@@ -364,8 +364,8 @@ uint64_t compute_rainbow_k_estimate(
     
     for (int i = 0; i < num_entries; i++) {
         // Angular distance
-        double entry_angle = prime_fmod(entries[i]->angle, prime_multiply(2, PI));
-        double diff = prime_abs(prime_subtract(entry_angle, normalized));
+        double entry_angle = math_fmod(entries[i]->angle, prime_multiply(2, PI));
+        double diff = math_abs(prime_subtract(entry_angle, normalized));
         if (diff > PI) {
             diff = prime_subtract(prime_multiply(2, PI), diff);
         }
@@ -423,7 +423,7 @@ uint64_t recover_k_with_rainbow(
     double best_error = 1e9;
     
     // Normalize target angle
-    double normalized = prime_fmod(target_angle, prime_multiply(2, PI));
+    double normalized = math_fmod(target_angle, prime_multiply(2, PI));
     if (normalized < 0) normalized = prime_add(normalized, prime_multiply(2, PI));
     
     // Iterate through layers
@@ -439,11 +439,11 @@ uint64_t recover_k_with_rainbow(
             
             // Forward mapping: θ = k × φ (using prime_multiply)
             double computed_angle = prime_multiply(k, PHI);
-            computed_angle = prime_fmod(computed_angle, prime_multiply(2, PI));
+            computed_angle = math_fmod(computed_angle, prime_multiply(2, PI));
             if (computed_angle < 0) computed_angle = prime_add(computed_angle, prime_multiply(2, PI));
             
             // Compute error (handle wraparound)
-            double error = prime_abs(prime_subtract(computed_angle, normalized));
+            double error = math_abs(prime_subtract(computed_angle, normalized));
             if (error > PI) {
                 error = prime_subtract(prime_multiply(2, PI), error);
             }
@@ -511,7 +511,7 @@ double compute_cymatic_resonance(double frequency, int harmonic_depth) {
         
         // Check alignment with 432 Hz harmonics
         double nearest_harmonic = (int)(base_ratio + 0.5);
-        double alignment = prime_abs(prime_subtract(base_ratio, nearest_harmonic));
+        double alignment = math_abs(prime_subtract(base_ratio, nearest_harmonic));
         
         // Add to resonance (lower alignment = higher resonance)
         resonance = prime_add(resonance, prime_divide(1.0, prime_add(1.0, alignment)));

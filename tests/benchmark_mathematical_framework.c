@@ -18,7 +18,8 @@
 #include "../include/ai/cllm_angular_attention.h"
 #include "../include/ai/cllm_ntt_attention.h"
 #include "../include/ai/cllm_cymatic_training.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Timing utilities
 double get_time_ms() {
@@ -196,7 +197,7 @@ void benchmark_cymatic_resonance() {
         for (uint32_t iter = 0; iter < num_iterations; iter++) {
             // Simulate cymatic modulation overhead
             for (uint32_t j = 0; j < size; j++) {
-                double modulation = prime_cosf(2.0f * 3.14159f * 432.0f * iter / 1000.0f);
+                double modulation = math_cos(2.0f * 3.14159f * 432.0f * iter / 1000.0f);
                 gradients[j] *= (0.8f + 0.2f * modulation);
             }
         }

@@ -13,7 +13,8 @@
 #include <stdio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Mathematical constants
 #define PI 3.141592653589793

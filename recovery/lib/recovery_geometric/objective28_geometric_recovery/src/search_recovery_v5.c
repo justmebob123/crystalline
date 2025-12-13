@@ -1,7 +1,8 @@
 #include "../include/search_recovery_v5.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Normalize angle to [0, 2π]
 static double normalize_angle(double angle) {
@@ -12,7 +13,7 @@ static double normalize_angle(double angle) {
 
 // Compute angle difference (shortest path)
 static double angle_difference(double a1, double a2) {
-    double diff = prime_fabs(a1 - a2);
+    double diff = math_abs(a1 - a2);
     if (diff > M_PI) diff = 2.0 * M_PI - diff;
     return diff;
 }
@@ -30,7 +31,7 @@ double compute_combined_error(
     double angle_error = angle_difference(target_angle, candidate_angle) / M_PI;
     
     // Compute radius error (already in [0, 1] range)
-    double radius_error = prime_fabs(target.radius - candidate.radius);
+    double radius_error = math_abs(target.radius - candidate.radius);
     
     // Combined error with weights
     double combined = weights.angle_weight * angle_error + 
@@ -71,7 +72,7 @@ RadiusConfidenceMetrics compute_radius_confidence(
     double best_angle = normalize_angle(best.angle);
     
     metrics.angle_error = angle_difference(target_angle, best_angle);
-    metrics.radius_error = prime_fabs(target.radius - best.radius);
+    metrics.radius_error = math_abs(target.radius - best.radius);
     metrics.combined_error = combined_error;
     
     // Compute confidences (1 - normalized_error)

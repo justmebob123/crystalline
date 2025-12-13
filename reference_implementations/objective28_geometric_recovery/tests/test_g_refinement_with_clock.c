@@ -60,7 +60,7 @@ double refine_g_with_clock_positions(uint64_t p, uint64_t q, double g_initial) {
     // For n = p * q, the geometric mean is sqrt(n) = sqrt(p*q)
     // The clock positions give us additional geometric information
     
-    double geometric_mean = prime_sqrt(p * q);
+    double geometric_mean = math_sqrt(p * q);
     printf("\nGeometric Mean: sqrt(%lu * %lu) = %.4f\n", p, q, geometric_mean);
     
     // Refine G using weighted average of:
@@ -112,8 +112,8 @@ void test_g_refinement() {
     double g_initial = 6.5;  // Slightly off from true value
     printf("\nInitial G Estimate: %.4f\n", g_initial);
     printf("Initial Error: %.4f (%.1f%%)\n",
-           prime_fabs(g_initial - TEST_G_TRUE),
-           prime_fabs(g_initial - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
+           math_abs(g_initial - TEST_G_TRUE),
+           math_abs(g_initial - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
     
     // Refine G using clock positions
     double g_refined = refine_g_with_clock_positions(TEST_P, TEST_Q, g_initial);
@@ -121,17 +121,17 @@ void test_g_refinement() {
     printf("\n=== Results ===\n");
     printf("  Initial G:  %.4f (error: %.4f, %.1f%%)\n",
            g_initial,
-           prime_fabs(g_initial - TEST_G_TRUE),
-           prime_fabs(g_initial - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
+           math_abs(g_initial - TEST_G_TRUE),
+           math_abs(g_initial - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
     printf("  Refined G:  %.4f (error: %.4f, %.1f%%)\n",
            g_refined,
-           prime_fabs(g_refined - TEST_G_TRUE),
-           prime_fabs(g_refined - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
+           math_abs(g_refined - TEST_G_TRUE),
+           math_abs(g_refined - TEST_G_TRUE) / TEST_G_TRUE * 100.0);
     printf("  True G:     %.4f\n", (double)TEST_G_TRUE);
     
     // Calculate improvement
-    double initial_error = prime_fabs(g_initial - TEST_G_TRUE);
-    double refined_error = prime_fabs(g_refined - TEST_G_TRUE);
+    double initial_error = math_abs(g_initial - TEST_G_TRUE);
+    double refined_error = math_abs(g_refined - TEST_G_TRUE);
     double improvement = (initial_error - refined_error) / initial_error * 100.0;
     
     printf("\nImprovement: %.1f%%\n", improvement);
@@ -168,8 +168,8 @@ void test_multiple_initial_estimates() {
         double g_initial = initial_estimates[i];
         double g_refined = refine_g_with_clock_positions(TEST_P, TEST_Q, g_initial);
         
-        double initial_error = prime_fabs(g_initial - TEST_G_TRUE);
-        double refined_error = prime_fabs(g_refined - TEST_G_TRUE);
+        double initial_error = math_abs(g_initial - TEST_G_TRUE);
+        double refined_error = math_abs(g_refined - TEST_G_TRUE);
         double improvement = (initial_error - refined_error) / initial_error * 100.0;
         
         printf("%-12.4f %-12.4f %-12.4f %-12.4f %-12.1f%%",
@@ -217,12 +217,12 @@ void test_different_n_values() {
                i + 1, test_cases[i].n, test_cases[i].p, test_cases[i].q);
         
         // Use geometric mean as initial estimate
-        double g_initial = prime_sqrt(test_cases[i].n);
+        double g_initial = math_sqrt(test_cases[i].n);
         double g_refined = refine_g_with_clock_positions(
             test_cases[i].p, test_cases[i].q, g_initial);
         
-        double initial_error = prime_fabs(g_initial - test_cases[i].true_g);
-        double refined_error = prime_fabs(g_refined - test_cases[i].true_g);
+        double initial_error = math_abs(g_initial - test_cases[i].true_g);
+        double refined_error = math_abs(g_refined - test_cases[i].true_g);
         
         printf("  Initial: %.4f (error: %.4f)\n", g_initial, initial_error);
         printf("  Refined: %.4f (error: %.4f)\n", g_refined, refined_error);

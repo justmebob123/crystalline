@@ -17,7 +17,8 @@
 #include "../include/cllm_inference.h"
 #include "../include/ai/cllm_platonic.h"
 #include "../include/clock_lattice.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Forward declarations for functions in cllm_embedding.c
 double cllm_embedding_similarity(const double* emb1, const double* emb2, uint32_t dim);
@@ -105,7 +106,7 @@ void test_basic_initialization() {
     // Check that embeddings are non-zero
     int non_zero_count = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (prime_fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (math_abs(model->embeddings.embeddings[i]) > EPSILON) {
             non_zero_count++;
         }
     }
@@ -119,7 +120,7 @@ void test_basic_initialization() {
             double val = model->embeddings.embeddings[i * TEST_EMBED_DIM + j];
             norm += val * val;
         }
-        total_norm += prime_sqrt(norm);
+        total_norm += math_sqrt(norm);
     }
     double avg_norm = total_norm / TEST_VOCAB_SIZE;
     TEST("Average embedding norm reasonable", avg_norm > 0.1 && avg_norm < 10.0);
@@ -142,7 +143,7 @@ void test_legacy_compatibility() {
     // Verify embeddings were initialized
     int initialized = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (prime_fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (math_abs(model->embeddings.embeddings[i]) > EPSILON) {
             initialized = 1;
             break;
         }
@@ -169,7 +170,7 @@ void test_embedding_utilities() {
     
     // Test self-similarity
     double self_sim = cllm_embedding_similarity(emb1, emb1, TEST_EMBED_DIM);
-    TEST("Self-similarity is 1.0", prime_fabs(self_sim - 1.0) < 0.01);
+    TEST("Self-similarity is 1.0", math_abs(self_sim - 1.0) < 0.01);
     
     // Test normalization
     float test_vec[TEST_EMBED_DIM];
@@ -182,8 +183,8 @@ void test_embedding_utilities() {
     for (int i = 0; i < TEST_EMBED_DIM; i++) {
         norm += test_vec[i] * test_vec[i];
     }
-    norm = prime_sqrtf(norm);
-    TEST("Normalization produces unit vector", prime_fabsf(norm - 1.0f) < 0.01f);
+    norm = math_sqrt(norm);
+    TEST("Normalization produces unit vector", math_abs(norm - 1.0f) < 0.01f);
     
     free_test_model(model);
 }
@@ -216,7 +217,7 @@ void test_lattice_utilities() {
     
     int non_zero = 0;
     for (int i = 0; i < TEST_EMBED_DIM; i++) {
-        if (prime_fabs(output[i]) > EPSILON) non_zero++;
+        if (math_abs(output[i]) > EPSILON) non_zero++;
     }
     TEST("Lattice embedding generation", non_zero > 0);
     
@@ -256,7 +257,7 @@ void test_platonic_integration() {
     // Verify embeddings were initialized
     int initialized = 0;
     for (uint32_t i = 0; i < TEST_VOCAB_SIZE * TEST_EMBED_DIM; i++) {
-        if (prime_fabs(model->embeddings.embeddings[i]) > EPSILON) {
+        if (math_abs(model->embeddings.embeddings[i]) > EPSILON) {
             initialized = 1;
             break;
         }

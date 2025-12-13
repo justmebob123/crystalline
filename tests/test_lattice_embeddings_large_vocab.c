@@ -18,7 +18,8 @@
 #include <math.h>
 #include <assert.h>
 #include "lattice_embeddings.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EMBEDDING_DIM 128
 
@@ -195,7 +196,7 @@ void test_exponent_bounds() {
     printf("  Testing 3^O for various ring values:\n");
     for (int ring = 0; ring <= 7; ring++) {
         double O = (double)ring + 0.5;  // Mid-point of ring
-        double result = prime_pow(3.0, O);
+        double result = math_pow(3.0, O);
         printf("    Ring %d: O=%.1f, 3^O=%.2f\n", ring, O, result);
         
         assert(!isnan(result) && !isinf(result) && "FAIL: 3^O produced NaN/Inf");

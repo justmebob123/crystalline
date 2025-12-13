@@ -15,7 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 bool platonic_scale_dimensions(
     PlatonicModel* model,
@@ -55,9 +56,9 @@ bool platonic_scale_dimensions(
             for (uint32_t i = 0; i < model->num_dimensions; i++) {
                 double coord = model->vertex_positions[v * model->num_dimensions + i];
                 uint32_t prime = primes[d % 15];
-                sum += coord * prime_cos(2.0 * M_PI * prime * d / new_dimensions);
+                sum += coord * math_cos(2.0 * M_PI * prime * d / new_dimensions);
             }
-            new_positions[v * new_dimensions + d] = sum / prime_sqrt((double)new_dimensions);
+            new_positions[v * new_dimensions + d] = sum / math_sqrt((double)new_dimensions);
         }
     }
     
@@ -159,7 +160,7 @@ bool platonic_scale_vertices(
             double base_value = model->vertex_positions[source * model->num_dimensions + d];
             
             // Add perturbation based on vertex index and dimension
-            double perturbation = 0.01 * prime_sin(2.0 * M_PI * v / new_vertices + d);
+            double perturbation = 0.01 * math_sin(2.0 * M_PI * v / new_vertices + d);
             
             new_positions[v * model->num_dimensions + d] = base_value + perturbation;
         }

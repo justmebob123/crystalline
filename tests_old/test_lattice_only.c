@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "clock_lattice.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main() {
     printf("\n=== Clock Lattice Mapping Test ===\n");
@@ -28,10 +29,10 @@ int main() {
         else positions_in_ring = 1000.0;
         
         double O = (double)pos.ring + ((double)pos.position / positions_in_ring);
-        printf("    O = %.3f (3^O would be %.2f)\n", O, prime_pow(3.0, O));
+        printf("    O = %.3f (3^O would be %.2f)\n", O, math_pow(3.0, O));
         
         assert(O >= 0.0 && O <= 10.0);
-        assert(prime_pow(3.0, O) < 100000.0);
+        assert(math_pow(3.0, O) < 100000.0);
     }
     
     printf("\n✓ ALL TESTS PASSED\n\n");

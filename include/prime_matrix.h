@@ -11,11 +11,11 @@
 #include "bigint_core.h"
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
-#include "../include/prime_math_custom.h"
 #include "../include/prime_matrix.h"
-#include "../include/prime_math.h"
 #include "../include/crystal_abacus.h"
 
 /* Function declarations */

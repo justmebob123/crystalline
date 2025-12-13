@@ -16,7 +16,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "../include/crystal_abacus.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Maximum safe tetration value (to avoid overflow)
 #define MAX_TETRATION_VALUE 1000000000000ULL
@@ -224,7 +225,7 @@ void map_tetration_relationships_depth_29() {
                 int platonic_targets[] = {4, 27, 125, 243};
                 for (int i = 0; i < 4; i++) {
                     double dist = (double)nearest_prime - (double)platonic_targets[i];
-                    resonance += prime_exp(-(dist * dist) / 100.0);
+                    resonance += math_exp(-(dist * dist) / 100.0);
                 }
                 
                 printf("%5d  %14lu  %13lu  %5lu  %9.6f\n",

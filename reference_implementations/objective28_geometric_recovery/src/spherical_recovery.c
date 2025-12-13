@@ -10,7 +10,8 @@
  */
 
 #include "spherical_recovery.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

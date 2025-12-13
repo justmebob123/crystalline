@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Golden ratio
 #define PHI 1.618033988749895
@@ -110,13 +111,13 @@ static void generate_tetrahedron_vertices(PlatonicSolid* solid) {
         double radius = 0.25;  // Ring 0 radius
         
         // First 3 dimensions: circular arrangement
-        v[i * 13 + 0] = radius * prime_cos(angle);
-        v[i * 13 + 1] = radius * prime_sin(angle);
-        v[i * 13 + 2] = radius * prime_cos(angle * PHI);
+        v[i * 13 + 0] = radius * math_cos(angle);
+        v[i * 13 + 1] = radius * math_sin(angle);
+        v[i * 13 + 2] = radius * math_cos(angle * PHI);
         
         // Remaining dimensions: golden ratio spiral
         for (uint32_t d = 3; d < 13; d++) {
-            v[i * 13 + d] = radius * prime_cos(angle * prime_pow(PHI, d - 2));
+            v[i * 13 + d] = radius * math_cos(angle * math_pow(PHI, d - 2));
         }
     }
 }
@@ -135,12 +136,12 @@ static void generate_cube_vertices(PlatonicSolid* solid) {
         double angle = i * 7.5 * angle_step;  // Spread across ring
         double radius = 0.50;  // Ring 1 radius
         
-        v[i * 13 + 0] = radius * prime_cos(angle);
-        v[i * 13 + 1] = radius * prime_sin(angle);
-        v[i * 13 + 2] = radius * prime_cos(angle * PHI);
+        v[i * 13 + 0] = radius * math_cos(angle);
+        v[i * 13 + 1] = radius * math_sin(angle);
+        v[i * 13 + 2] = radius * math_cos(angle * PHI);
         
         for (uint32_t d = 3; d < 13; d++) {
-            v[i * 13 + d] = radius * prime_sin(angle * prime_pow(PHI, d - 2));
+            v[i * 13 + d] = radius * math_sin(angle * math_pow(PHI, d - 2));
         }
     }
 }
@@ -159,12 +160,12 @@ static void generate_octahedron_vertices(PlatonicSolid* solid) {
         double angle = i * 10 * angle_step;  // Every 10th position
         double radius = 0.50;  // Ring 1 radius
         
-        v[i * 13 + 0] = radius * prime_cos(angle);
-        v[i * 13 + 1] = radius * prime_sin(angle);
-        v[i * 13 + 2] = radius * prime_cos(angle / PHI);
+        v[i * 13 + 0] = radius * math_cos(angle);
+        v[i * 13 + 1] = radius * math_sin(angle);
+        v[i * 13 + 2] = radius * math_cos(angle / PHI);
         
         for (uint32_t d = 3; d < 13; d++) {
-            v[i * 13 + d] = radius * prime_cos(angle * prime_pow(PHI, d - 3));
+            v[i * 13 + d] = radius * math_cos(angle * math_pow(PHI, d - 3));
         }
     }
 }
@@ -183,12 +184,12 @@ static void generate_dodecahedron_vertices(PlatonicSolid* solid) {
         double angle = i * 3 * angle_step;  // Every 3rd position
         double radius = 0.75;  // Ring 2 radius
         
-        v[i * 13 + 0] = radius * prime_cos(angle);
-        v[i * 13 + 1] = radius * prime_sin(angle);
-        v[i * 13 + 2] = radius * prime_cos(angle * PHI);
+        v[i * 13 + 0] = radius * math_cos(angle);
+        v[i * 13 + 1] = radius * math_sin(angle);
+        v[i * 13 + 2] = radius * math_cos(angle * PHI);
         
         for (uint32_t d = 3; d < 13; d++) {
-            v[i * 13 + d] = radius * prime_sin(angle * prime_pow(PHI, d - 2));
+            v[i * 13 + d] = radius * math_sin(angle * math_pow(PHI, d - 2));
         }
     }
 }
@@ -207,12 +208,12 @@ static void generate_icosahedron_vertices(PlatonicSolid* solid) {
         double angle = i * angle_step;  // Each position
         double radius = 0.25;  // Ring 0 radius
         
-        v[i * 13 + 0] = radius * prime_cos(angle);
-        v[i * 13 + 1] = radius * prime_sin(angle);
-        v[i * 13 + 2] = radius * prime_sin(angle * PHI);
+        v[i * 13 + 0] = radius * math_cos(angle);
+        v[i * 13 + 1] = radius * math_sin(angle);
+        v[i * 13 + 2] = radius * math_sin(angle * PHI);
         
         for (uint32_t d = 3; d < 13; d++) {
-            v[i * 13 + d] = radius * prime_cos(angle * prime_pow(PHI, d - 1));
+            v[i * 13 + d] = radius * math_cos(angle * math_pow(PHI, d - 1));
         }
     }
 }
@@ -254,7 +255,7 @@ void map_solid_to_clock(PlatonicSolid* solid) {
         if (angle < 0) angle += 2.0 * M_PI;
         
         // Compute radius (distance from origin in first 3 dimensions)
-        double radius = prime_sqrt(vertex[0] * vertex[0] + 
+        double radius = math_sqrt(vertex[0] * vertex[0] + 
                            vertex[1] * vertex[1] + 
                            vertex[2] * vertex[2]);
         
@@ -542,7 +543,7 @@ double compute_13d_distance(const double* v1, const double* v2) {
         double diff = v1[i] - v2[i];
         sum += diff * diff;
     }
-    return prime_sqrt(sum);
+    return math_sqrt(sum);
 }
 
 /**

@@ -33,7 +33,8 @@
 #include "recovery_core.h"
 #include "recovery_crypto.h"
 #include "recovery_network.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define VERSION "1.0.0"
 #define MAX_THREADS 128

@@ -6,7 +6,8 @@
 #include "geometric_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /**
  * Find nearest vertex to a position
@@ -194,7 +195,7 @@ SharedFace* find_shared_faces(
                 sf->normal[2] = edge1[0] * edge2[1] - edge1[1] * edge2[0];
                 
                 // Normalize
-                double norm = prime_sqrt(sf->normal[0]*sf->normal[0] + 
+                double norm = math_sqrt(sf->normal[0]*sf->normal[0] + 
                                         sf->normal[1]*sf->normal[1] + 
                                         sf->normal[2]*sf->normal[2]);
                 if (norm > 1e-6) {

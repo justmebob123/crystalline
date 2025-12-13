@@ -5,12 +5,12 @@
 #include <string.h>
 
 // Prime math functions (crystalline library)
-extern double prime_sqrt(double x);
-extern double prime_pow(double x, double y);
-extern float prime_fabsf(float x);
+extern double math_sqrt(double x);
+extern double math_pow(double x, double y);
+extern float math_abs(float x);
 
 // Wrapper for double precision fabs
-static inline double prime_fabs(double x) {
+static inline double math_abs(double x) {
     return (x < 0.0) ? -x : x;
 }
 
@@ -34,7 +34,7 @@ static const double ICOSAHEDRON_VERTICES[12][3] = {
 double compute_sphere_radius(uint64_t k, uint32_t depth) {
     // Base radius scaled by golden ratio and depth
     double base_radius = 150.0;
-    double scale = prime_pow(PHI, -(double)depth);  // Smaller at deeper levels
+    double scale = math_pow(PHI, -(double)depth);  // Smaller at deeper levels
     return base_radius * scale * (1.0 + (double)(k % 100) / 100.0);
 }
 
@@ -48,7 +48,7 @@ uint64_t compute_neighbor_k(uint64_t center, uint32_t neighbor_idx, uint32_t dep
     uint64_t offset = SMALL_PRIMES[neighbor_idx] * (depth + 1);
     
     // Apply golden ratio scaling
-    offset = (uint64_t)(offset * prime_pow(PHI, (double)depth));
+    offset = (uint64_t)(offset * math_pow(PHI, (double)depth));
     
     // Alternate between adding and subtracting
     if (neighbor_idx % 2 == 0) {
@@ -67,7 +67,7 @@ double* compute_3d_position(uint64_t k, uint32_t depth) {
     uint32_t vertex_idx = k % NUM_KISSING_NEIGHBORS;
     
     // Scale by depth and k value
-    double scale = prime_pow(PHI, (double)depth) * (1.0 + (double)k / 1000.0);
+    double scale = math_pow(PHI, (double)depth) * (1.0 + (double)k / 1000.0);
     
     for (int i = 0; i < 3; i++) {
         pos[i] = ICOSAHEDRON_VERTICES[vertex_idx][i] * scale;
@@ -149,7 +149,7 @@ double sphere_distance(const KissingSphere* a, const KissingSphere* b) {
     double dy = a->position_3d[1] - b->position_3d[1];
     double dz = a->position_3d[2] - b->position_3d[2];
     
-    return prime_sqrt(dx*dx + dy*dy + dz*dz);
+    return math_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 bool spheres_kissing(const KissingSphere* a, const KissingSphere* b) {
@@ -159,7 +159,7 @@ bool spheres_kissing(const KissingSphere* a, const KissingSphere* b) {
     double sum_radii = a->radius + b->radius;
     
     // Kissing if distance ≈ sum of radii (within epsilon)
-    return prime_fabs(dist - sum_radii) < EPSILON;
+    return math_abs(dist - sum_radii) < EPSILON;
 }
 
 KissingSphere* find_nearest_sphere(KissingSphere* root, uint64_t target) {
@@ -167,7 +167,7 @@ KissingSphere* find_nearest_sphere(KissingSphere* root, uint64_t target) {
     
     KissingSphere* nearest = root;
     int64_t diff = (int64_t)root->center - (int64_t)target;
-    uint64_t min_dist = (uint64_t)prime_fabs((double)diff);
+    uint64_t min_dist = (uint64_t)math_abs((double)diff);
     
     // Check all neighbors recursively
     if (root->neighbors) {
@@ -175,7 +175,7 @@ KissingSphere* find_nearest_sphere(KissingSphere* root, uint64_t target) {
             KissingSphere* candidate = find_nearest_sphere(root->neighbors[i], target);
             if (candidate) {
                 int64_t diff2 = (int64_t)candidate->center - (int64_t)target;
-                uint64_t dist = (uint64_t)prime_fabs((double)diff2);
+                uint64_t dist = (uint64_t)math_abs((double)diff2);
                 if (dist < min_dist) {
                     min_dist = dist;
                     nearest = candidate;
@@ -218,8 +218,8 @@ uint32_t find_n_nearest_spheres(KissingSphere* root, uint64_t target,
         for (uint32_t j = i + 1; j < collected; j++) {
             int64_t diff_i = (int64_t)all_spheres[i]->center - (int64_t)target;
             int64_t diff_j = (int64_t)all_spheres[j]->center - (int64_t)target;
-            uint64_t dist_i = (uint64_t)prime_fabs((double)diff_i);
-            uint64_t dist_j = (uint64_t)prime_fabs((double)diff_j);
+            uint64_t dist_i = (uint64_t)math_abs((double)diff_i);
+            uint64_t dist_j = (uint64_t)math_abs((double)diff_j);
             
             if (dist_j < dist_i) {
                 KissingSphere* temp = all_spheres[i];

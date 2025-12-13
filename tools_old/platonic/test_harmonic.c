@@ -11,7 +11,8 @@
 #include "ai/cllm_platonic.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main(void) {
     printf("\n");
@@ -50,7 +51,7 @@ int main(void) {
     
     // Create test signal (sine wave)
     for (size_t i = 0; i < signal_size; i++) {
-        signal[i] = prime_sin(2.0 * M_PI * i / signal_size);
+        signal[i] = math_sin(2.0 * M_PI * i / signal_size);
     }
     
     platonic_fourier_transform(model, signal, coefficients, signal_size);
@@ -58,7 +59,7 @@ int main(void) {
     // Verify coefficients are computed
     bool has_coefficients = false;
     for (size_t i = 0; i < signal_size; i++) {
-        if (prime_fabs(coefficients[i]) > 0.001) {
+        if (math_abs(coefficients[i]) > 0.001) {
             has_coefficients = true;
             break;
         }
@@ -96,7 +97,7 @@ int main(void) {
     platonic_cymatic_modulate(model, gradients, gradient_size, 432.0);
     
     // Verify gradients were modulated
-    if (prime_fabs(gradients[0] - original_grad) > 0.001) {
+    if (math_abs(gradients[0] - original_grad) > 0.001) {
         printf("\n✓ PASS: Cymatic modulation successful\n");
         printf("  Gradients smoothed with 432 Hz resonance\n");
         tests_passed++;
@@ -126,7 +127,7 @@ int main(void) {
     platonic_align_attention_resonance(model, attention, attention_size);
     
     // Verify attention was aligned
-    if (prime_fabs(attention[0] - original_attention) > 0.001) {
+    if (math_abs(attention[0] - original_attention) > 0.001) {
         printf("\n✓ PASS: Prime resonance alignment successful\n");
         printf("  Attention aligned with Platonic prime\n");
         tests_passed++;
@@ -207,7 +208,7 @@ int main(void) {
         double gradient = -loss * 0.1;  // Simplified gradient
         
         // Apply cymatic modulation
-        double modulation = prime_cos(2.0 * M_PI * epoch / 10.0);
+        double modulation = math_cos(2.0 * M_PI * epoch / 10.0);
         gradient *= (1.0 + 0.1 * modulation);
         
         // Update loss

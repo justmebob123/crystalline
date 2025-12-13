@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 

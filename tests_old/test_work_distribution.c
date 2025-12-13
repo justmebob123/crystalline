@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -45,7 +46,7 @@ int test_calculate_distribution() {
     
     // Check ratios sum to approximately 1.0
     double sum = dist.parent_keeps + dist.child_gets;
-    assert(prime_fabs(sum - 1.0) < EPSILON);
+    assert(math_abs(sum - 1.0) < EPSILON);
     
     return 1;
 }
@@ -72,32 +73,32 @@ int test_known_plimpton_distributions() {
     // (2,1)
     WorkDistribution dist = calculate_work_distribution(2, 1);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     // (3,2)
     dist = calculate_work_distribution(3, 2);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     // (4,1)
     dist = calculate_work_distribution(4, 1);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     // (4,3)
     dist = calculate_work_distribution(4, 3);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     // (5,2)
     dist = calculate_work_distribution(5, 2);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     // (5,4)
     dist = calculate_work_distribution(5, 4);
     assert(dist.is_valid == true);
-    assert(prime_fabs(get_ratio_sum(&dist) - 1.0) < EPSILON);
+    assert(math_abs(get_ratio_sum(&dist) - 1.0) < EPSILON);
     
     return 1;
 }
@@ -185,8 +186,8 @@ int test_split_work() {
     // Check ratios are approximately correct
     double parent_ratio = (double)parent_work / 1000.0;
     double child_ratio = (double)child_work / 1000.0;
-    assert(prime_fabs(parent_ratio - dist.parent_keeps) < 0.01);
-    assert(prime_fabs(child_ratio - dist.child_gets) < 0.01);
+    assert(math_abs(parent_ratio - dist.parent_keeps) < 0.01);
+    assert(math_abs(child_ratio - dist.child_gets) < 0.01);
     
     return 1;
 }
@@ -239,7 +240,7 @@ int test_multi_child_distribution() {
     
     // Check ratios sum to approximately 1.0
     double sum = get_multi_child_ratio_sum(&dist);
-    assert(prime_fabs(sum - 1.0) < EPSILON);
+    assert(math_abs(sum - 1.0) < EPSILON);
     
     // Cleanup
     free(dist.child_ids);
@@ -309,7 +310,7 @@ int test_twelve_fold_distribution() {
     
     // Check ratios sum to approximately 1.0
     double sum = get_multi_child_ratio_sum(&dist);
-    assert(prime_fabs(sum - 1.0) < 0.1);  // Larger epsilon for 12 children
+    assert(math_abs(sum - 1.0) < 0.1);  // Larger epsilon for 12 children
     
     // Cleanup
     free(dist.child_ids);
@@ -411,7 +412,7 @@ int test_ratio_sum_getters() {
     // Single child
     WorkDistribution dist = calculate_work_distribution(3, 2);
     double sum = get_ratio_sum(&dist);
-    assert(prime_fabs(sum - 1.0) < EPSILON);
+    assert(math_abs(sum - 1.0) < EPSILON);
     
     // Multiple children
     uint64_t child_ids[] = {1, 3, 7};
@@ -419,7 +420,7 @@ int test_ratio_sum_getters() {
         10, child_ids, 3
     );
     sum = get_multi_child_ratio_sum(&multi_dist);
-    assert(prime_fabs(sum - 1.0) < EPSILON);
+    assert(math_abs(sum - 1.0) < EPSILON);
     
     // Cleanup
     free(multi_dist.child_ids);

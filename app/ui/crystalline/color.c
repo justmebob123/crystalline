@@ -56,8 +56,8 @@ void crystalline_color_rgb_to_hsv(SDL_Color rgb, float* h, float* s, float* v) {
     float g = rgb.g / 255.0f;
     float b = rgb.b / 255.0f;
     
-    float max = prime_fmaxf(r, prime_fmaxf(g, b));
-    float min = prime_fminf(r, prime_fminf(g, b));
+    float max = math_max(r, math_max(g, b));
+    float min = math_min(r, math_min(g, b));
     float delta = max - min;
     
     // Value
@@ -129,8 +129,8 @@ void crystalline_color_rgb_to_hsl(SDL_Color rgb, float* h, float* s, float* l) {
     float g = rgb.g / 255.0f;
     float b = rgb.b / 255.0f;
     
-    float max = prime_fmaxf(r, prime_fmaxf(g, b));
-    float min = prime_fminf(r, prime_fminf(g, b));
+    float max = math_max(r, math_max(g, b));
+    float min = math_min(r, math_min(g, b));
     float delta = max - min;
     
     // Lightness
@@ -213,9 +213,9 @@ SDL_Color crystalline_color_from_frequency(float frequency) {
     frequency = clamp_float(frequency, min_freq, max_freq);
     
     // Logarithmic mapping using prime_logf
-    float log_freq = prime_logf(frequency);
-    float log_min = prime_logf(min_freq);
-    float log_max = prime_logf(max_freq);
+    float log_freq = math_log(frequency);
+    float log_min = math_log(min_freq);
+    float log_max = math_log(max_freq);
     
     float t = (log_freq - log_min) / (log_max - log_min);
     float hue = t * 360.0f;
@@ -628,7 +628,7 @@ float crystalline_color_distance(SDL_Color a, SDL_Color b) {
     float dg = (float)(b.g - a.g);
     float db = (float)(b.b - a.b);
     
-    return prime_sqrtf(dr * dr + dg * dg + db * db);
+    return math_sqrt(dr * dr + dg * dg + db * db);
 }
 
 /*

@@ -5,7 +5,8 @@
 #include "../include/plateau_detection.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 PlateauDetector* create_plateau_detector(
     int history_size,
@@ -76,7 +77,7 @@ bool plateau_detector_add_sample(
     double max_deviation = 0.0;
     for (int i = 0; i < detector->window_size; i++) {
         int idx = (start_idx + i) % detector->history_size;
-        double deviation = prime_fabs(detector->history[idx] - mean);
+        double deviation = math_abs(detector->history[idx] - mean);
         if (deviation > max_deviation) {
             max_deviation = deviation;
         }

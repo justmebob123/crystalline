@@ -11,7 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -248,7 +249,7 @@ frequency_data_t* signal_fft(const signal_data_t* signal) {
         double complex sum = 0.0;
         for (size_t n_idx = 0; n_idx < n; n_idx++) {
             double angle = -2.0 * M_PI * k * n_idx / n;
-            sum += samples[n_idx] * (prime_cos(angle) + I * prime_sin(angle));
+            sum += samples[n_idx] * (math_cos(angle) + I * math_sin(angle));
         }
         freq->spectrum[k] = sum;
         freq->magnitudes[k] = cabs(sum);
@@ -274,7 +275,7 @@ signal_data_t* signal_ifft(const frequency_data_t* freq) {
         double complex sum = 0.0;
         for (size_t k = 0; k < freq->num_bins; k++) {
             double angle = 2.0 * M_PI * k * n_idx / n;
-            sum += freq->spectrum[k] * (prime_cos(angle) + I * prime_sin(angle));
+            sum += freq->spectrum[k] * (math_cos(angle) + I * math_sin(angle));
         }
         samples[n_idx] = creal(sum) / n;
     }

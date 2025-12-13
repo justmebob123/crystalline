@@ -3,9 +3,11 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/prime_matrix.h"
-#include "../include/prime_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/crystal_abacus.h"
 
 // Create a matrix
@@ -205,7 +207,7 @@ bool matrix_is_identity(const Matrix* m) {
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
             double expected = (i == j) ? 1.0 : 0.0;
-            if (prime_fabs(m->data[i][j] - expected) > 1e-10) {
+            if (math_abs(m->data[i][j] - expected) > 1e-10) {
                 return 0;
             }
         }
@@ -225,7 +227,7 @@ bool matrix_is_diagonal(const Matrix* m) {
     
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
-            if (i != j && prime_fabs(m->data[i][j]) > 1e-10) {
+            if (i != j && math_abs(m->data[i][j]) > 1e-10) {
                 return 0;
             }
         }

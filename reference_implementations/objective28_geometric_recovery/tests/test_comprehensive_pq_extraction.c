@@ -28,7 +28,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_TORI 20
 #define MAX_SAMPLES 20
@@ -283,7 +284,7 @@ void approach_c_clock_lattice(
     // Try to factor n
     printf("Attempting factorization of n...\n");
     
-    uint64_t sqrt_n = (uint64_t)prime_sqrt((double)n);
+    uint64_t sqrt_n = (uint64_t)math_sqrt((double)n);
     bool found = false;
     
     for (uint64_t p = 2; p <= sqrt_n && !found; p++) {
@@ -345,7 +346,7 @@ void test_graph_dimensions(uint64_t n, PQExtractionResult* result) {
     
     // Compute ellipse dimensions
     // Major axis = n, Minor axis = n/φ (golden ratio)
-    double phi = (1.0 + prime_sqrt(5.0)) / 2.0;
+    double phi = (1.0 + math_sqrt(5.0)) / 2.0;
     result->ellipse_major = (double)n;
     result->ellipse_minor = (double)n / phi;
     

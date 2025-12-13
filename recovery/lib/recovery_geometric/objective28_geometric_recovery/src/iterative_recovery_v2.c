@@ -54,7 +54,7 @@ BIGNUM* triangulate_k_with_truncation(
             double diff = position[d] - anchor_positions[a][d];
             dist += diff * diff;
         }
-        dist = prime_sqrt(dist);
+        dist = math_sqrt(dist);
         
         for (uint32_t i = 0; i < k; i++) {
             if (dist < distances[i]) {
@@ -300,7 +300,7 @@ double measure_point_distance(
     OPENSSL_free(dx_str);
     OPENSSL_free(dy_str);
     
-    double distance = prime_sqrt(dx_val * dx_val + dy_val * dy_val);
+    double distance = math_sqrt(dx_val * dx_val + dy_val * dy_val);
     
     BN_free(x1);
     BN_free(y1);
@@ -360,7 +360,7 @@ BIGNUM* geometric_recovery_iterative(
         
         target_position[d] = 0.0;
         for (uint32_t b = 0; b < 16 && b < 32; b++) {
-            target_position[d] += target_bytes[b] * prime_pow((double)prime, (double)(b % 8));
+            target_position[d] += target_bytes[b] * math_pow((double)prime, (double)(b % 8));
         }
         // Use prime_fmod (modulo operation)
         while (target_position[d] >= 1.0) target_position[d] -= 1.0;

@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -26,9 +27,9 @@ static int tests_failed = 0;
     }
 
 #define ASSERT_FLOAT_EQ(a, b, epsilon) \
-    if (prime_fabs((a) - (b)) > (epsilon)) { \
+    if (math_abs((a) - (b)) > (epsilon)) { \
         printf("ASSERTION FAILED: %f != %f (diff: %f, epsilon: %f)\n", \
-               (float)(a), (float)(b), prime_fabs((a) - (b)), (float)(epsilon)); \
+               (float)(a), (float)(b), math_abs((a) - (b)), (float)(epsilon)); \
         return false; \
     }
 
@@ -226,7 +227,7 @@ bool test_gradient_clipping_by_value(void) {
 bool test_gradient_clipping_by_norm(void) {
     float gradients[3] = {3.0f, 4.0f, 0.0f};
     
-    // Norm = prime_sqrt(9 + 16) = 5.0
+    // Norm = math_sqrt(9 + 16) = 5.0
     float norm = optimizer_clip_gradients_by_norm(gradients, 3, 2.5f);
     
     printf("Original norm: %f\n", norm);
@@ -246,7 +247,7 @@ bool test_gradient_norm_computation(void) {
     
     float norm = optimizer_compute_gradient_norm(gradients, 3);
     
-    // Norm = prime_sqrt(9 + 16) = 5.0
+    // Norm = math_sqrt(9 + 16) = 5.0
     ASSERT_FLOAT_EQ(norm, 5.0f, 1e-5f);
     
     printf("Gradient norm: %f\n", norm);

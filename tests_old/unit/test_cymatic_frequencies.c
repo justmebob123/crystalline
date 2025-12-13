@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define TEST_EPSILON 1e-6
 
@@ -16,7 +17,7 @@
  * @brief Test helper: Check if two doubles are approximately equal
  */
 static int doubles_equal(double a, double b, double epsilon) {
-    return prime_fabs(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 /**

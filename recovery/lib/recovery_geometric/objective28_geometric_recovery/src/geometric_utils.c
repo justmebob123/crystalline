@@ -5,7 +5,8 @@
 
 #include "geometric_recovery.h"
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /**
  * Map k (BIGNUM) to position in high-dimensional space

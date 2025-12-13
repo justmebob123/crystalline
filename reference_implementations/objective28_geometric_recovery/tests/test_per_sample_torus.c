@@ -23,7 +23,8 @@
 #include "../include/g_triangulation.h"
 #include "../include/multi_torus_tracker.h"
 #include "../include/oscillation_decomposition.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_ITERATIONS 2000
 #define NUM_TRAINING 20

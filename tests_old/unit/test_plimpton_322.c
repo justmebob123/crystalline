@@ -6,7 +6,8 @@
 #include "../../include/plimpton_322.h"
 #include <stdio.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 0.0001
 
@@ -59,8 +60,8 @@ void test_plimpton_ratios() {
     // p²=4, q²=1, p²+q²=5, p²-q²=3, 2pq=4
     // ratio_b_d = 3/5 = 0.6
     // ratio_c_d = 4/5 = 0.8
-    assert(prime_fabs(ratios1.ratio_b_d - 0.6) < EPSILON);
-    assert(prime_fabs(ratios1.ratio_c_d - 0.8) < EPSILON);
+    assert(math_abs(ratios1.ratio_b_d - 0.6) < EPSILON);
+    assert(math_abs(ratios1.ratio_c_d - 0.8) < EPSILON);
     
     // Verify ratios sum to 1.0 (approximately, due to product)
     // Actually they don't sum to 1, but their squares do: (3/5)² + (4/5)² = 1
@@ -75,8 +76,8 @@ void test_plimpton_ratios() {
     // p²=9, q²=4, p²+q²=13, p²-q²=5, 2pq=12
     // ratio_b_d = 5/13 ≈ 0.3846
     // ratio_c_d = 12/13 ≈ 0.9231
-    assert(prime_fabs(ratios2.ratio_b_d - 5.0/13.0) < EPSILON);
-    assert(prime_fabs(ratios2.ratio_c_d - 12.0/13.0) < EPSILON);
+    assert(math_abs(ratios2.ratio_b_d - 5.0/13.0) < EPSILON);
+    assert(math_abs(ratios2.ratio_c_d - 12.0/13.0) < EPSILON);
     
     printf("  p=3, q=2: b/d=%.4f, c/d=%.4f, product=%.4f\n", 
            ratios2.ratio_b_d, ratios2.ratio_c_d, ratios2.product);
@@ -173,7 +174,7 @@ void test_ratio_properties() {
                            ratios.ratio_c_d * ratios.ratio_c_d;
     
     printf("  (b/d)² + (c/d)² = %.6f (should be 1.0)\n", sum_of_squares);
-    assert(prime_fabs(sum_of_squares - 1.0) < EPSILON);
+    assert(math_abs(sum_of_squares - 1.0) < EPSILON);
     
     printf("✓ Ratios satisfy Pythagorean relationship\n");
 }

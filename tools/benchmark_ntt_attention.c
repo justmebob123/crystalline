@@ -11,7 +11,8 @@
 #include <string.h>
 #include <time.h>
 #include "../include/cllm_inference.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../../algorithms/include/ntt_attention.h"
 #include "../math/include/math/transcendental.h"  // For math_sqrt
 

@@ -120,7 +120,7 @@ int main(void) {
     // Test prime_pow
     MEASURE_START(prime_pow_test);
     for (int i = 0; i < 1000; i++) {
-        prime_pow(3.0, 2.5);
+        math_pow(3.0, 2.5);
     }
     MEASURE_END(prime_pow_test);
     printf("prime_pow: %.6f ms per 1000 calls (%.6f µs each)\n", 
@@ -129,7 +129,7 @@ int main(void) {
     // Test prime_cos
     MEASURE_START(prime_cos_test);
     for (int i = 0; i < 1000; i++) {
-        prime_cos(1.5);
+        math_cos(1.5);
     }
     MEASURE_END(prime_cos_test);
     printf("prime_cos: %.6f ms per 1000 calls (%.6f µs each)\n", 
@@ -138,7 +138,7 @@ int main(void) {
     // Test prime_log
     MEASURE_START(prime_log_test);
     for (int i = 0; i < 1000; i++) {
-        prime_log(3.0);
+        math_log(3.0);
     }
     MEASURE_END(prime_log_test);
     printf("prime_log: %.6f ms per 1000 calls (%.6f µs each)\n\n", 

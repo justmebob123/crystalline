@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -92,7 +93,7 @@ void test_sphere_position_144000_boundary() {
     double omega = get_einstein_lambda_correction(pos);
     double expected = 3.0 / 144000.0;
     TEST_ASSERT(omega > 0.0, "Should have omega correction");
-    TEST_ASSERT(prime_fabs(omega - expected) < 1e-10, "Should have correct omega value");
+    TEST_ASSERT(math_abs(omega - expected) < 1e-10, "Should have correct omega value");
     
     printf("  Einstein's Lambda correction: %.10f\n", omega);
     

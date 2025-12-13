@@ -4,7 +4,8 @@
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 #include "../include/cllm_utils.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main() {
     printf("=== Learning Verification Test ===\n\n");
@@ -178,7 +179,7 @@ int main() {
             for (int d = 0; d < model->embedding_dim; d++) {
                 double initial = initial_embeddings[i * model->embedding_dim + d];
                 double current = model->embeddings.embeddings[i * model->embedding_dim + d];
-                double change = prime_fabs(current - initial);
+                double change = math_abs(current - initial);
                 
                 total_change += change;
                 if (change > max_change) max_change = change;

@@ -14,8 +14,10 @@
 
 /* Local includes */
 #include "prime_lattice_geometry.h"
-#include "prime_lowlevel.h"
-#include "prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Function declarations */
 void map_prime_to_clock(uint64_t prime, LegacyClockPosition *pos);

@@ -9,7 +9,8 @@
 #include "../include/ecdlp_integration.h"
 #include "../include/oscillation_detection.h"
 #include "../include/tetration_attractors.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

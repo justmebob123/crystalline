@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "../include/crystal_abacus.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Extended Platonic solid structure
 typedef struct {
@@ -30,7 +31,7 @@ double calculate_extended_resonance(uint64_t n, uint64_t* targets, int num_targe
     
     for (int i = 0; i < num_targets; i++) {
         double dist = (double)n - (double)targets[i];
-        score += prime_exp(-(dist * dist) / sigma);
+        score += math_exp(-(dist * dist) / sigma);
     }
     
     return score;
@@ -156,7 +157,7 @@ void discover_platonic_solids(int max_dimension, uint64_t max_value) {
                     solid.prime = prime;
                     solid.resonance = resonance;
                     solid.mod12 = prime % 12;
-                    solid.distance = prime_fabs((double)prime - (double)target);
+                    solid.distance = math_abs((double)prime - (double)target);
                     
                     solids[solid_count++] = solid;
                 }

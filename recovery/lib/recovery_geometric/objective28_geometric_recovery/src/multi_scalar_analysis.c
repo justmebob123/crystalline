@@ -5,8 +5,8 @@
 #include <time.h>
 
 // Crystalline library includes
-extern double prime_sqrt(double x);
-extern double prime_fabs(double x);
+extern double math_sqrt(double x);
+extern double math_abs(double x);
 
 // Inline helper for absolute value
 static inline double prime_fabs_inline(double x) {
@@ -312,7 +312,7 @@ double compute_oscillation_correlation(
         denom2 += diff2 * diff2;
     }
     
-    double denominator = prime_sqrt(denom1 * denom2);
+    double denominator = math_sqrt(denom1 * denom2);
     if (denominator < 1e-10) return 0.0;
     
     return numerator / denominator;

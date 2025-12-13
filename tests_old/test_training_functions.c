@@ -11,7 +11,8 @@
 #include <assert.h>
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 
@@ -44,7 +45,7 @@ static int tests_failed = 0;
  * Compare two doubles with epsilon tolerance
  */
 static int doubles_equal(double a, double b) {
-    return prime_fabs(a - b) < EPSILON;
+    return math_abs(a - b) < EPSILON;
 }
 
 // ============================================================================
@@ -231,7 +232,7 @@ static int test_forward_pass() {
     // Verify logits were computed
     int non_zero = 0;
     for (int i = 0; i < 16 * (int)model->vocab_size && i < 100; i++) {
-        if (prime_fabs(training->logits[i]) > EPSILON) {
+        if (math_abs(training->logits[i]) > EPSILON) {
             non_zero++;
         }
     }

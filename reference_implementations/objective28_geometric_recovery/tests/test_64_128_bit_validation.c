@@ -68,8 +68,8 @@ void analyze_coprime_pairs(const char* csv_file, uint64_t true_p, uint64_t true_
             
             // Check if periods are coprime (ratio is close to integer)
             double ratio = period_j / period_i;
-            double nearest_int = prime_round(ratio);
-            double error = prime_fabs(ratio - nearest_int);
+            double nearest_int = math_round(ratio);
+            double error = math_abs(ratio - nearest_int);
             
             if (error < 0.1 && nearest_int >= 2.0) {
                 coprime_count++;

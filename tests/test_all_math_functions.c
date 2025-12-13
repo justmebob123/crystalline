@@ -17,7 +17,8 @@
 #include <math.h>
 #include <assert.h>
 #include <float.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "clock_lattice.h"
 #include "prime_coords.h"
 #include "prime_rainbow.h"
@@ -55,9 +56,9 @@ void test_prime_exp() {
     
     for (int i = 0; i < num_tests; i++) {
         double x = test_values[i];
-        double result = prime_exp(x);
+        double result = math_exp(x);
         
-        printf("  prime_exp(%.1f) = %.6e\n", x, result);
+        printf("  math_exp(%.1f) = %.6e\n", x, result);
         
         ASSERT_NO_NAN(result, "prime_exp");
         // Note: prime_exp returns HUGE_VAL for x > 700, which is correct behavior
@@ -78,9 +79,9 @@ void test_prime_log() {
     
     for (int i = 0; i < num_tests; i++) {
         double x = test_values[i];
-        double result = prime_log(x);
+        double result = math_log(x);
         
-        printf("  prime_log(%.0e) = %.6f\n", x, result);
+        printf("  math_log(%.0e) = %.6f\n", x, result);
         
         ASSERT_NO_NAN(result, "prime_log");
         ASSERT_NO_INF(result, "prime_log");
@@ -118,9 +119,9 @@ void test_prime_pow() {
     int num_tests = sizeof(tests) / sizeof(tests[0]);
     
     for (int i = 0; i < num_tests; i++) {
-        double result = prime_pow(tests[i].base, tests[i].exp);
+        double result = math_pow(tests[i].base, tests[i].exp);
         
-        printf("  prime_pow(%.1f, %.1f) = %.2f (expected ≤ %.2f)\n", 
+        printf("  math_pow(%.1f, %.1f) = %.2f (expected ≤ %.2f)\n", 
                tests[i].base, tests[i].exp, result, tests[i].expected_max);
         
         ASSERT_NO_NAN(result, "prime_pow");
@@ -141,9 +142,9 @@ void test_prime_trig() {
     
     for (int i = 0; i < num_tests; i++) {
         double angle = test_angles[i];
-        double sin_val = prime_sin(angle);
-        double cos_val = prime_cos(angle);
-        double tan_val = prime_tan(angle);
+        double sin_val = math_sin(angle);
+        double cos_val = math_cos(angle);
+        double tan_val = math_tan(angle);
         
         printf("  angle=%.2f: sin=%.6f, cos=%.6f, tan=%.6f\n", 
                angle, sin_val, cos_val, tan_val);
@@ -175,9 +176,9 @@ void test_prime_tanh() {
     
     for (int i = 0; i < num_tests; i++) {
         double x = test_values[i];
-        double result = prime_tanh(x);
+        double result = math_tanh(x);
         
-        printf("  prime_tanh(%.1f) = %.6f\n", x, result);
+        printf("  math_tanh(%.1f) = %.6f\n", x, result);
         
         ASSERT_NO_NAN(result, "prime_tanh");
         ASSERT_NO_INF(result, "prime_tanh");
@@ -232,7 +233,7 @@ void test_O_calculation() {
         else positions_in_ring = 1000.0;
         
         double O = (double)pos.ring + ((double)pos.position / positions_in_ring);
-        double three_to_O = prime_pow(3.0, O);
+        double three_to_O = math_pow(3.0, O);
         
         printf("  Prime %d → O=%.3f, 3^O=%.2f\n", prime_index, O, three_to_O);
         
@@ -269,20 +270,20 @@ void test_L_formula() {
         else positions_in_ring = 1000.0;
         
         double O = (double)pos.ring + ((double)pos.position / positions_in_ring);
-        double base = prime_pow(3.0, O);
+        double base = math_pow(3.0, O);
         
         // Test one dimension
         uint64_t phi_i = 3;  // First dimensional frequency
         double theta = pos.angle;
-        double cos_term = prime_cos(theta * (double)phi_i);
+        double cos_term = math_cos(theta * (double)phi_i);
         
-        double gamma_k = prime_cos(2.0 * PRIME_PI * (double)symmetry_group / 12.0);
+        double gamma_k = math_cos(2.0 * PRIME_PI * (double)symmetry_group / 12.0);
         
         double entropy_factor = 1.0 + (double)pos.ring * 0.1 + 0.01;
-        double gamma_nd = prime_tanh(entropy_factor);
+        double gamma_nd = math_tanh(entropy_factor);
         
         double L = base * cos_term * gamma_k * gamma_nd;
-        double result = prime_tanh(L / 100.0);
+        double result = math_tanh(L / 100.0);
         
         printf("  Token %d → L=%.6f, tanh(L/100)=%.6f\n", token_id, L, result);
         
@@ -321,7 +322,7 @@ void test_extreme_values() {
         assert(O >= 0.0 && O <= 10.0 && "O out of bounds");
         
         // Test 3^O
-        double three_to_O = prime_pow(3.0, O);
+        double three_to_O = math_pow(3.0, O);
         printf("    3^O: %.2f\n", three_to_O);
         ASSERT_NO_NAN(three_to_O, "3^O extreme");
         ASSERT_NO_INF(three_to_O, "3^O extreme");

@@ -10,10 +10,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
 #include "../include/prime_lattice_core.h"
-#include "../include/prime_math_custom.h"
 
 /* Function declarations */
 void lattice_init(void);

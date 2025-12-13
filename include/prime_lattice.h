@@ -11,11 +11,12 @@
 #include "prime_basic.h"
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
 #include "prime_lattice.h"
 #include "crystal_abacus.h"
-#include "../include/prime_math_custom.h"
 
 /* Function declarations */
 double lattice_add(double a, double b, int depth);

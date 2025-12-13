@@ -9,7 +9,8 @@
 #include <string.h>
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper: Create a minimal test model
 CLLMModel* create_minimal_model() {

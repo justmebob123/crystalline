@@ -165,7 +165,7 @@ void test_bit_length(uint32_t bit_length, uint64_t n, uint64_t p, uint64_t q, Te
                 
                 // Calculate error (distance from center to true k)
                 double center = (k_min + k_max) / 2.0;
-                double error = prime_fabs(center - sample.k);
+                double error = math_abs(center - sample.k);
                 total_error += error;
                 
                 // Update best/worst

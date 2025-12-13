@@ -10,11 +10,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
-#include "../include/prime_math_custom.h"
 #include "../include/prime_coords.h"
-#include "../include/prime_math.h"
 #include "../include/crystal_abacus.h"
 
 /* Function declarations */

@@ -9,7 +9,8 @@
 #include <string.h>
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-4f
 #define TOLERANCE 5e-2f  // Relaxed tolerance for numerical gradient checking
@@ -140,7 +141,7 @@ int test_softmax_gradient() {
     
     float sum = 0.0f;
     for (int i = 0; i < size; i++) {
-        softmax_out[i] = prime_expf(input[i] - max_val);
+        softmax_out[i] = math_exp(input[i] - max_val);
         sum += softmax_out[i];
     }
     
@@ -173,7 +174,7 @@ int test_softmax_gradient() {
         
         sum = 0.0f;
         for (int j = 0; j < size; j++) {
-            softmax_plus[j] = prime_expf(input_plus[j] - max_val);
+            softmax_plus[j] = math_exp(input_plus[j] - max_val);
             sum += softmax_plus[j];
         }
         
@@ -199,7 +200,7 @@ int test_softmax_gradient() {
         
         sum = 0.0f;
         for (int j = 0; j < size; j++) {
-            softmax_minus[j] = prime_expf(input_minus[j] - max_val);
+            softmax_minus[j] = math_exp(input_minus[j] - max_val);
             sum += softmax_minus[j];
         }
         
@@ -219,8 +220,8 @@ int test_softmax_gradient() {
     // Compare gradients
     float max_error = 0.0f;
     for (int i = 0; i < size; i++) {
-        float error = prime_fabsf(grad_in_analytical[i] - grad_in_numerical[i]);
-        float denom = prime_fmaxf(prime_fabsf(grad_in_analytical[i]), prime_fabsf(grad_in_numerical[i]));
+        float error = math_abs(grad_in_analytical[i] - grad_in_numerical[i]);
+        float denom = math_max(math_abs(grad_in_analytical[i]), math_abs(grad_in_numerical[i]));
         if (denom > 1e-8f) {
             error /= denom;
         }
@@ -359,7 +360,7 @@ int test_gradient_magnitude() {
             training->gradients[0] = 0.1f;
             
             // Verify we can read it back
-            if (prime_fabsf(training->gradients[0] - 0.1f) < 1e-6f) {
+            if (math_abs(training->gradients[0] - 0.1f) < 1e-6f) {
                 success = 1;
             }
         }
@@ -412,7 +413,7 @@ int test_gradient_flow() {
             size_t weight_size = dim * dim;
             
             for (size_t i = 0; i < weight_size && all_zero; i++) {
-                if (prime_fabsf(training->attention_grads[0].query_lattice[i]) > 1e-8f) {
+                if (math_abs(training->attention_grads[0].query_lattice[i]) > 1e-8f) {
                     all_zero = 0;
                 }
             }

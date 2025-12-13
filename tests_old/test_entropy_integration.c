@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-6
 
@@ -165,7 +166,7 @@ static void test_model_entropy(void) {
     for (int i = 0; i < 12; i++) {
         sum += calculate_dimension_entropy(&ctx, i, 100);
     }
-    assert(prime_fabs(entropy - sum) < EPSILON);
+    assert(math_abs(entropy - sum) < EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);
@@ -374,7 +375,7 @@ static void test_entropy_distribution(void) {
     }
     
     double total = calculate_model_entropy(&ctx, 100);
-    assert(prime_fabs(sum - total) < EPSILON);
+    assert(math_abs(sum - total) < EPSILON);
     
     entropy_integration_destroy(&ctx);
     free_test_model(model);

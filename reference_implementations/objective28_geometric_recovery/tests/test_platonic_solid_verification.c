@@ -16,7 +16,8 @@
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 #include "../include/g_triangulation.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Forward declarations for internal functions
 void generate_platonic_anchors(Anchor* anchors, int* num_anchors);
@@ -157,7 +158,7 @@ void test_anchor_adjustment() {
     // Create a test G position
     double g_position[13];
     for (int d = 0; d < 13; d++) {
-        g_position[d] = 0.5 * prime_cos(d * 0.1);
+        g_position[d] = 0.5 * math_cos(d * 0.1);
     }
     
     // Store original positions
@@ -286,7 +287,7 @@ void test_geometric_properties() {
             double diff = anchors[i].position[d] - centroid[d];
             dist += diff * diff;
         }
-        avg_dist += prime_sqrt(dist);
+        avg_dist += math_sqrt(dist);
     }
     avg_dist /= num_anchors;
     
@@ -300,7 +301,7 @@ void test_geometric_properties() {
     
     // Test 2: Check golden ratio usage
     printf("\nChecking golden ratio usage...\n");
-    double phi = (1.0 + prime_sqrt(5.0)) / 2.0;
+    double phi = (1.0 + math_sqrt(5.0)) / 2.0;
     printf("  Golden ratio φ = %.6f\n", phi);
     printf("  φ is used in dodecahedron and icosahedron generation\n");
     printf("✓ Golden ratio integrated\n");

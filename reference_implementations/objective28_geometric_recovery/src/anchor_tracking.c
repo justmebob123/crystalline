@@ -1,5 +1,6 @@
 #include "../include/anchor_tracking.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +41,7 @@ static void compute_lattice_position(const BIGNUM* k, double* position) {
     for (uint32_t i = 0; i < 13; i++) {
         // Map k to dimension using frequency
         double freq = (double)DIMENSIONAL_FREQS[i];
-        position[i] = prime_fmod(k_val, freq);
+        position[i] = math_fmod(k_val, freq);
     }
 }
 
@@ -159,7 +160,7 @@ void compute_anchor_errors(AnchorTracking* anchor) {
     double error_val = atof(error_str);
     OPENSSL_free(error_str);
     
-    anchor->error_magnitude = prime_fabs(error_val);
+    anchor->error_magnitude = math_abs(error_val);
     
     // Compute error direction
     if (BN_cmp(anchor->estimated_k, anchor->real_k) > 0) {
@@ -389,7 +390,7 @@ void compute_global_statistics(AnchorTrackingSystem* system) {
         
         // Compute standard deviation
         double variance = (sum_sq_error / count) - (system->avg_error * system->avg_error);
-        system->error_std_dev = prime_sqrt(prime_fabs(variance));
+        system->error_std_dev = math_sqrt(math_abs(variance));
         
         system->num_overestimates = num_over;
         system->num_underestimates = num_under;
@@ -427,7 +428,7 @@ void analyze_lattice_structure(AnchorTrackingSystem* system) {
                 dist_sq += diff * diff;
             }
             
-            double dist = prime_sqrt(dist_sq);
+            double dist = math_sqrt(dist_sq);
             sum_distances += dist;
             num_pairs++;
         }
@@ -454,14 +455,14 @@ void analyze_lattice_structure(AnchorTrackingSystem* system) {
                     dist_sq += diff * diff;
                 }
                 
-                double dist = prime_sqrt(dist_sq);
+                double dist = math_sqrt(dist_sq);
                 double dev = dist - system->avg_neighbor_distance;
                 sum_sq_dev += dev * dev;
             }
         }
         
         double variance = sum_sq_dev / num_pairs;
-        double std_dev = prime_sqrt(variance);
+        double std_dev = math_sqrt(variance);
         system->lattice_regularity = std_dev / system->avg_neighbor_distance;
     }
 }

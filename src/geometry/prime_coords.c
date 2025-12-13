@@ -3,9 +3,11 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/prime_coords.h"
-#include "../include/prime_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/crystal_abacus.h"
 
 // Ulam spiral coordinates
@@ -23,7 +25,7 @@ void ulam_spiral_coords(int n, double* x, double* y) {
     }
     
     // Find the layer (square ring) containing n
-    int layer = (int)prime_ceil((prime_sqrt(n) - 1) / 2);
+    int layer = (int)math_ceil((math_sqrt(n) - 1) / 2);
     int max_in_layer = (2 * layer + 1) * (2 * layer + 1);
     int side_length = 2 * layer;
     
@@ -73,10 +75,10 @@ void golden_spiral_coords(int n, double* x, double* y) {
     
     // Golden spiral: r = a * e^(b * θ)
     double theta = n * 0.5; // Angular increment
-    double r = prime_pow(PHI, n / 10.0); // Radial distance using golden ratio
+    double r = math_pow(PHI, n / 10.0); // Radial distance using golden ratio
     
-    *x = r * prime_cos(theta);
-    *y = r * prime_sin(theta);
+    *x = r * math_cos(theta);
+    *y = r * math_sin(theta);
 }
 
 // Archimedes spiral coordinates
@@ -90,8 +92,8 @@ void archimedes_spiral_coords(double angle, double spacing, double* x, double* y
     // Archimedes spiral: r = a * θ
     double r = spacing * angle;
     
-    *x = r * prime_cos(angle);
-    *y = r * prime_sin(angle);
+    *x = r * math_cos(angle);
+    *y = r * math_sin(angle);
 }
 
 // Logarithmic spiral coordinates
@@ -103,10 +105,10 @@ void log_spiral_coords(double a, double b, double angle, double* x, double* y) {
     }
     
     // Logarithmic spiral: r = a * e^(b * θ)
-    double r = a * prime_exp(b * angle);
+    double r = a * math_exp(b * angle);
     
-    *x = r * prime_cos(angle);
-    *y = r * prime_sin(angle);
+    *x = r * math_cos(angle);
+    *y = r * math_sin(angle);
 }
 
 // Cartesian to polar conversion
@@ -117,7 +119,7 @@ void cartesian_to_polar(double x, double y, double* r, double* theta) {
         return;
     }
     
-    *r = prime_sqrt(x * x + y * y);
+    *r = math_sqrt(x * x + y * y);
     *theta = prime_atan2(y, x);
     
     // Normalize theta to [0, 2π]
@@ -134,8 +136,8 @@ void polar_to_cartesian(double r, double theta, double* x, double* y) {
         return;
     }
     
-    *x = r * prime_cos(theta);
-    *y = r * prime_sin(theta);
+    *x = r * math_cos(theta);
+    *y = r * math_sin(theta);
 }
 
 // 3D Cartesian to spherical conversion
@@ -147,9 +149,9 @@ void cartesian_to_spherical(double x, double y, double z, double* r, double* the
         return;
     }
     
-    *r = prime_sqrt(x * x + y * y + z * z);
+    *r = math_sqrt(x * x + y * y + z * z);
     *theta = prime_atan2(y, x);
-    *phi = prime_acos(z / (*r));
+    *phi = math_acos(z / (*r));
 }
 
 // Map number to clock position
@@ -189,8 +191,8 @@ void quadratic_mirror_fold(double x, double y, double fold_amount, double* new_x
     
     // Additional prime-based modulation
     int prime_mod = 2;
-    while (prime_mod * prime_mod <= prime_fabs(x) + prime_fabs(y)) {
-        if (prime_fmod(prime_fabs(x) + prime_fabs(y), prime_mod) < 1.0) {
+    while (prime_mod * prime_mod <= math_abs(x) + math_abs(y)) {
+        if (math_fmod(math_abs(x) + math_abs(y), prime_mod) < 1.0) {
             *new_x *= (1.0 + 0.01 / prime_mod);
             *new_y *= (1.0 + 0.01 / prime_mod);
         }
@@ -212,7 +214,7 @@ void spiral_collapse(double x, double y, double collapse_rate, double* new_x, do
     cartesian_to_polar(x, y, &r, &theta);
     
     // Apply spiral collapse
-    double new_r = r * prime_exp(-collapse_rate);
+    double new_r = r * math_exp(-collapse_rate);
     double new_theta = theta + collapse_rate * 2; // Spiral inward
     
     // Convert back to cartesian
@@ -221,9 +223,9 @@ void spiral_collapse(double x, double y, double collapse_rate, double* new_x, do
     // Add prime-based perturbation
     int prime_factor = 2;
     while (prime_factor < 20) {
-        if (prime_fmod(r, prime_factor) < collapse_rate) {
-            *new_x += 0.01 * prime_sin(prime_factor * theta);
-            *new_y += 0.01 * prime_cos(prime_factor * theta);
+        if (math_fmod(r, prime_factor) < collapse_rate) {
+            *new_x += 0.01 * math_sin(prime_factor * theta);
+            *new_y += 0.01 * math_cos(prime_factor * theta);
         }
         prime_factor++;
     }
@@ -256,7 +258,7 @@ void big_ulam_spiral_coords(BigInt* n, double* x, double* y) {
         ulam_spiral_coords(reduced_n, x, y);
         
         // Scale up for large numbers
-        double scale = prime_log(n_val) / 10.0;
+        double scale = math_log(n_val) / 10.0;
         *x *= scale;
         *y *= scale;
     }
@@ -272,15 +274,15 @@ void prime_transform_coords(double x, double y, int prime, double* new_x, double
     
     // Apply rotation based on prime
     double angle = (2 * PRIME_PI * prime) / (prime + 1);
-    double cos_a = prime_cos(angle);
-    double sin_a = prime_sin(angle);
+    double cos_a = math_cos(angle);
+    double sin_a = math_sin(angle);
     
     // Rotate coordinates
     *new_x = x * cos_a - y * sin_a;
     *new_y = x * sin_a + y * cos_a;
     
     // Apply scaling based on prime properties
-    double scale = 1.0 + 0.1 * prime_sin(prime);
+    double scale = 1.0 + 0.1 * math_sin(prime);
     *new_x *= scale;
     *new_y *= scale;
 }
@@ -298,8 +300,8 @@ void torus_fold_coords(double x, double y, double major_radius, double minor_rad
     double phi = y / minor_radius;
     
     // Torus parametric equations (2D projection)
-    *new_x = (major_radius + minor_radius * prime_cos(phi)) * prime_cos(theta);
-    *new_y = (major_radius + minor_radius * prime_cos(phi)) * prime_sin(theta);
+    *new_x = (major_radius + minor_radius * math_cos(phi)) * math_cos(theta);
+    *new_y = (major_radius + minor_radius * math_cos(phi)) * math_sin(theta);
 }
 
 // Hilbert curve coordinate mapping

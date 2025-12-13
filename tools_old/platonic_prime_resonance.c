@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <time.h>
 #include "../include/crystal_abacus.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Platonic solid definitions
 typedef struct {
@@ -32,7 +33,7 @@ double geometric_resonance(uint64_t n) {
     
     for (int i = 0; i < NUM_SOLIDS; i++) {
         double dist = (double)n - (double)SOLIDS[i].target;
-        score += prime_exp(-(dist * dist) / sigma);
+        score += math_exp(-(dist * dist) / sigma);
     }
     
     return score;
@@ -41,14 +42,14 @@ double geometric_resonance(uint64_t n) {
 // Calculate P_d(n) magnitude (simplified version)
 double calculate_resonance_magnitude(uint64_t n, int d, uint64_t p_d) {
     // Cyclic term: e^(i·2π·n/p_d^d)
-    double grid_size = prime_pow((double)p_d, (double)d);
+    double grid_size = math_pow((double)p_d, (double)d);
     double phase = (2.0 * M_PI * (double)n) / grid_size;
     
     // Geometric resonance
     double geom_res = geometric_resonance(n);
     
     // Simplified magnitude (full formula would include sine product)
-    return geom_res * (1.0 + prime_cos(phase));
+    return geom_res * (1.0 + math_cos(phase));
 }
 
 // Test if a prime is a Platonic representative
@@ -69,7 +70,7 @@ void analyze_prime_dimension(uint64_t prime) {
     // Check proximity to each Platonic target
     for (int i = 0; i < NUM_SOLIDS; i++) {
         int64_t dist = (int64_t)prime - (int64_t)SOLIDS[i].target;
-        double resonance = prime_exp(-(dist * dist) / 100.0);
+        double resonance = math_exp(-(dist * dist) / 100.0);
         
         printf("    %s (p_s=%d, d=%d, target=%d): distance=%ld, resonance=%.6f\n",
                SOLIDS[i].name, SOLIDS[i].p_s, SOLIDS[i].d, 

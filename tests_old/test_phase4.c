@@ -7,7 +7,8 @@
 #include "cllm_training.h"
 #include "cllm_training_threaded.h"
 #include "cllm_batch.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main() {
     printf("=== Phase 4 Lock-Free Gradient Test ===\n\n");
@@ -81,7 +82,7 @@ int main() {
     float norm = threaded_training_get_gradient_norm(system);
     printf("✓ Gradient norm: %.4f\n", norm);
     
-    if (norm > 0.0f && !prime_isnan(norm) && !prime_isinf(norm)) {
+    if (norm > 0.0f && !math_is_nan(norm) && !math_is_inf(norm)) {
         printf("\n✅ Phase 4 Test PASSED\n");
         printf("  - Lock-free gradient accumulation working\n");
         printf("  - No NaN gradients\n");

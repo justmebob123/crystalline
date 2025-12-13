@@ -5,7 +5,8 @@
  */
 
 #include "../include/oscillation_decomposition.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,7 @@ static void fft(double complex* x, int n, int stride) {
         double complex odd = x[(k * stride * 2) + stride];
         
         double angle = -2.0 * PI * k / n;
-        double complex twiddle = prime_cos(angle) + I * prime_sin(angle);
+        double complex twiddle = math_cos(angle) + I * math_sin(angle);
         double complex t = twiddle * odd;
         
         x[k * stride] = even + t;
@@ -50,7 +51,7 @@ static void compute_power_spectrum(
     for (int i = 0; i < n / 2; i++) {
         double real = creal(fft_result[i]);
         double imag = cimag(fft_result[i]);
-        power_spectrum[i] = prime_sqrt(real * real + imag * imag);
+        power_spectrum[i] = math_sqrt(real * real + imag * imag);
     }
 }
 
@@ -172,7 +173,7 @@ int decompose_oscillations(OscillationDecomposer* decomposer) {
         
         for (int i = 0; i < n; i++) {
             double angle = 2.0 * PI * component->frequency * i + component->phase;
-            component->reconstructed[i] = component->amplitude * prime_cos(angle);
+            component->reconstructed[i] = component->amplitude * math_cos(angle);
         }
         
         // Remove this component from residual

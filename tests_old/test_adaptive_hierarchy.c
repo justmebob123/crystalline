@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_run = 0;
@@ -42,7 +43,7 @@ static int tests_passed = 0;
         double _a = (a); \
         double _b = (b); \
         double _epsilon = (epsilon); \
-        if (prime_fabs(_a - _b) > _epsilon) { \
+        if (math_abs(_a - _b) > _epsilon) { \
             printf(" FAILED at line %d: |%f - %f| > %f\n", __LINE__, _a, _b, _epsilon); \
             return; \
         } \

@@ -11,7 +11,8 @@
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -428,7 +429,7 @@ int test_concurrent_weight_updates() {
     double result = lockfree_get_weight(updater, 0);
     double expected = (double)(num_threads * iterations) * 0.01;
     double epsilon = 0.0001;
-    assert(prime_fabs(result - expected) < epsilon);
+    assert(math_abs(result - expected) < epsilon);
     
     lockfree_weight_updater_destroy(updater);
     return 1;

@@ -6,7 +6,8 @@
 #include "cllm_mathematical_constants.h"
 #include "cllm_hierarchical_abacus.h"
 #include "ai/cllm_sphere_stats.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test counter
 static int tests_passed = 0;
@@ -54,7 +55,7 @@ int test_twin_primes() {
 int test_einstein_lambda() {
     double lambda = cllm_get_einstein_lambda();
     double expected = 3.0 / 144000.0;
-    double error = prime_fabs(lambda - expected);
+    double error = math_abs(lambda - expected);
     
     if (error > 1e-10) {
         printf("ERROR: Einstein's Lambda = %.15f, expected %.15f\n",
@@ -340,7 +341,7 @@ int test_sphere_stats_cache_tracking() {
     double hit_rate = cllm_sphere_stats_get_cache_hit_rate(&stats);
     double expected_rate = 2.0 / 3.0;
     
-    if (prime_fabs(hit_rate - expected_rate) > 0.01) {
+    if (math_abs(hit_rate - expected_rate) > 0.01) {
         printf("ERROR: Cache hit rate = %.2f, expected %.2f\n",
                hit_rate, expected_rate);
         return 0;

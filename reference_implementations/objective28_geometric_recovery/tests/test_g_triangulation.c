@@ -15,7 +15,8 @@
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 #include <openssl/obj_mac.h>
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define PHI 1.618033988749895
 #define PI 3.141592653589793
@@ -96,11 +97,11 @@ void map_ec_point_to_lattice(
         double angle = (double)(x_val % 360) * PI / 180.0;
         
         // Compute position using π×φ metric with frequency modulation
-        position[d] = prime_cos(angle * freq) * prime_pow(PHI, d % 5);
+        position[d] = math_cos(angle * freq) * math_pow(PHI, d % 5);
         
         // Add y component for additional structure
         double y_angle = (double)(y_val % 360) * PI / 180.0;
-        position[d] += prime_sin(y_angle * freq) * prime_pow(PHI, (d + 1) % 5) * 0.5;
+        position[d] += math_sin(y_angle * freq) * math_pow(PHI, (d + 1) % 5) * 0.5;
     }
     
     OPENSSL_free(x_str);
@@ -123,7 +124,7 @@ void map_k_to_lattice(uint64_t k, double position[13]) {
     // Map to 13D using dimensional frequencies
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
-        position[d] = prime_cos(base_angle * freq) * prime_pow(PHI, d % 5);
+        position[d] = math_cos(base_angle * freq) * math_pow(PHI, d % 5);
     }
 }
 
@@ -190,7 +191,7 @@ double compute_distance(const double pos1[13], const double pos2[13]) {
         double diff = pos1[d] - pos2[d];
         sum += diff * diff;
     }
-    return prime_sqrt(sum);
+    return math_sqrt(sum);
 }
 
 int main() {

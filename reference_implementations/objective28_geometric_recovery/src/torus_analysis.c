@@ -3,7 +3,8 @@
  */
 
 #include "../include/torus_analysis.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,7 +101,7 @@ OscillationMetrics compute_oscillation_metrics(
         // Clamp to [-1, 1]
         if (normalized > 1.0) normalized = 1.0;
         if (normalized < -1.0) normalized = -1.0;
-        metrics.phase = prime_acos(normalized);
+        metrics.phase = math_acos(normalized);
     }
     
     return metrics;

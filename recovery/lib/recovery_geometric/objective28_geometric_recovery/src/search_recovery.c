@@ -8,9 +8,10 @@
 #include "search_recovery.h"
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
-#define PHI ((1.0 + prime_sqrt(5.0)) / 2.0)
+#define PHI ((1.0 + math_sqrt(5.0)) / 2.0)
 #define PI M_PI
 
 SearchRecoveryContext* init_search_recovery(
@@ -49,18 +50,18 @@ uint64_t binary_search_k(
     double best_error = 1e9;
     
     // Normalize target angle to [0, 2π)
-    double target_angle = prime_fmod(target.angle, 2.0 * PI);
+    double target_angle = math_fmod(target.angle, 2.0 * PI);
     if (target_angle < 0) target_angle += 2.0 * PI;
     
     for (uint32_t iter = 0; iter < max_iterations && left <= right; iter++) {
         uint64_t mid = left + (right - left) / 2;
         
         // Compute angle using forward mapping: θ = k·π(1+√5)
-        double computed_angle = prime_fmod((double)mid * PI * PHI, 2.0 * PI);
+        double computed_angle = math_fmod((double)mid * PI * PHI, 2.0 * PI);
         if (computed_angle < 0) computed_angle += 2.0 * PI;
         
         // Compute error (handle wraparound)
-        double error = prime_fabs(computed_angle - target_angle);
+        double error = math_abs(computed_angle - target_angle);
         if (error > PI) error = 2.0 * PI - error;
         
         // Update best
@@ -105,7 +106,7 @@ uint64_t anchor_guided_search_k(
         for (uint32_t i = 0; i < icosa->num_vertices; i++) {
             double dx = target.angle - icosa->clock_positions[i].angle;
             double dy = target.radius - icosa->clock_positions[i].radius;
-            double dist = prime_sqrt(dx*dx + dy*dy);
+            double dist = math_sqrt(dx*dx + dy*dy);
             
             if (dist < min_dist) {
                 min_dist = dist;
@@ -167,7 +168,7 @@ uint64_t quadrant_search_k(
     // Use quadrant to set search bounds
     // Based on discovery that k values are distributed across quadrants
     
-    double angle = prime_fmod(target.angle, 2.0 * PI);
+    double angle = math_fmod(target.angle, 2.0 * PI);
     if (angle < 0) angle += 2.0 * PI;
     
     uint64_t min_k = ctx->min_k;
@@ -231,7 +232,7 @@ uint64_t recursive_torus_search_k(
     // Verify with forward mapping
     ClockPosition computed = map_k_to_clock_u64(k_coarse);
     
-    double angle_error = prime_fabs(computed.angle - target.angle);
+    double angle_error = math_abs(computed.angle - target.angle);
     if (angle_error > PI) angle_error = 2.0 * PI - angle_error;
     
     // If error is small enough, we're done

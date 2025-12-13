@@ -6,7 +6,8 @@
  */
 
 #include "../include/prime_lattice_core.h"
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/bigint_core.h"
 #include "../include/bigfixed_core.h"
 #include "../include/prime_bigint_transcendental.h"
@@ -185,7 +186,7 @@ double theta_n(uint64_t n, int k, const char *lambda_phon,
     // Term 3: log₃(ν(λ))
     double term3 = 0.0;
     if (nu > 0) {
-        term3 = prime_log(nu) / prime_log(3.0);
+        term3 = math_log(nu) / math_log(3.0);
     }
     
     // Term 4: ω/432
@@ -207,8 +208,8 @@ double r_n(uint64_t prime) {
     
     if (prime == 0) return 0.0;
     
-    double log_val = prime_log((double)prime) / prime_log(3.0);
-    double dust = log_val - prime_floor(log_val);  // Fractional part
+    double log_val = math_log((double)prime) / math_log(3.0);
+    double dust = log_val - math_floor(log_val);  // Fractional part
     
     return log_val + dust * GROWTH_FACTOR;
 }
@@ -237,14 +238,14 @@ void map_prime_to_clock_phonetic(uint64_t prime, LegacyClockPosition *pos,
     double r = r_n(prime);
     
     // Fold to single quadrant
-    double theta_fold = prime_fmod(theta, LATTICE_PI / 2.0);
+    double theta_fold = math_fmod(theta, LATTICE_PI / 2.0);
     
     pos->theta = theta_fold;
     pos->r = r;
     pos->quadrant = 1;  // All folded to Q1
     
     // Calculate clock position (0-11)
-    double clock_angle = prime_fmod(theta, 2.0 * LATTICE_PI);
+    double clock_angle = math_fmod(theta, 2.0 * LATTICE_PI);
     pos->clock_pos = (uint8_t)(clock_angle / (2.0 * LATTICE_PI / 12.0));
     if (pos->clock_pos >= 12) pos->clock_pos = 11;
 }
@@ -269,7 +270,7 @@ uint64_t map_clock_to_prime(double theta, double r, uint8_t quadrant,
         // Calculate Euclidean distance
         double dt = theta - pos.theta;
         double dr = r - pos.r;
-        double dist = prime_sqrt(dt * dt + dr * dr);
+        double dist = math_sqrt(dt * dt + dr * dr);
         
         if (dist < min_dist) {
             min_dist = dist;
@@ -314,7 +315,7 @@ double lattice_entropy(uint64_t n, uint64_t d) {
     if (count == 0) return 0.0;
     
     double density = (double)count / (double)d;
-    return prime_log(density) / prime_log(2.0);
+    return math_log(density) / math_log(2.0);
 }
 
 /* ============================================================================
@@ -332,24 +333,24 @@ double gmp_tetration(double base, int height, bool damp) {
     
     // Apply damping
     if (damp) {
-        double damping_factor = prime_pow(LATTICE_PHI, -(double)height);
+        double damping_factor = math_pow(LATTICE_PHI, -(double)height);
         tower *= damping_factor;
     }
     
     // Limit tower to prevent overflow
     if (tower > 100.0) tower = 100.0;
     
-    return prime_pow(base, tower);
+    return math_pow(base, tower);
 }
 
 double lattice_tetration_log_approx(double P, int T) {
     // lattice_tetration_log_approx(P, T) = T × lattice_tetration_log_approx(P, T-1) / log(φ)
     
     if (T <= 0) return 0.0;
-    if (T == 1) return prime_log(P);
+    if (T == 1) return math_log(P);
     
     double prev = lattice_tetration_log_approx(P, T - 1);
-    return (double)T * prev / prime_log(LATTICE_PHI);
+    return (double)T * prev / math_log(LATTICE_PHI);
 }
 
 double entropy_equilibrator(double exp, double P, int T) {
@@ -360,7 +361,7 @@ double entropy_equilibrator(double exp, double P, int T) {
     double tet = gmp_tetration(P, T, true);
     if (tet <= 0) return 0.0;
     
-    double log_ratio = prime_log(exp) / prime_log(tet);
+    double log_ratio = math_log(exp) / math_log(tet);
     return 0.0047 * log_ratio;
 }
 
@@ -459,12 +460,12 @@ double O_exponent(uint64_t n, int k, const char *lambda_phon) {
     double nu = nu_lambda(lambda_phon);
     
     // Term 1: (n-1)·(π/6)/ln(3)
-    double term1 = ((double)n - 1.0) * (LATTICE_PI / 6.0) / prime_log(3.0);
+    double term1 = ((double)n - 1.0) * (LATTICE_PI / 6.0) / math_log(3.0);
     
     // Term 2: log₃(ν(λ))
     double term2 = 0.0;
     if (nu > 0) {
-        term2 = prime_log(nu) / prime_log(3.0);
+        term2 = math_log(nu) / math_log(3.0);
     }
     
     // Term 3: k·π·(1+√5)
@@ -482,7 +483,7 @@ double L_lattice(uint64_t n, uint64_t d, int k, const char *lambda_phon,
     double o = O_exponent(n, k, lambda_phon);
     
     // Base: 3^O
-    double base = prime_pow(3.0, o);
+    double base = math_pow(3.0, o);
     
     // Product: ∏cos(Θ×φᵢ)
     double theta = theta_n(n, k, lambda_phon, omega, p, q, false);
@@ -493,7 +494,7 @@ double L_lattice(uint64_t n, uint64_t d, int k, const char *lambda_phon,
     
     double prod = 1.0;
     for (uint64_t i = 0; i < d && i < NUM_PHI_FREQS; i++) {
-        prod *= prime_cos(theta * phi_updated[i]);
+        prod *= math_cos(theta * phi_updated[i]);
     }
     
     // Γ(k): Möbius twist
@@ -659,7 +660,7 @@ double Z_n_d(uint64_t n, uint64_t d, const char *lambda_phon) {
     double phi_d = phi_updated[d % 12];
     
     // Z_n^(d) = φ_d × log₃(n) × ν(λ)
-    double log3_n = prime_log((double)n) / prime_log(3.0);
+    double log3_n = math_log((double)n) / math_log(3.0);
     double nu = nu_lambda(lambda_phon);
     
     return phi_d * log3_n * nu;
@@ -675,10 +676,10 @@ double P_n_d_k(uint64_t n, uint64_t d, int k, const char *lambda_phon,
     double theta = theta_n(n, k, lambda_phon, omega, p, q, false);
     
     // Exponent: θ(k,n)/ln(12) - ln(3)
-    double exp_val = theta / prime_log(12.0) - prime_log(3.0);
+    double exp_val = theta / math_log(12.0) - math_log(3.0);
     
     // P_n^(d)(k) = 12^exp × Z_n^(d)
-    double base = prime_pow(12.0, exp_val);
+    double base = math_pow(12.0, exp_val);
     double z_val = Z_n_d(n, d, lambda_phon);
     
     return base * z_val;
@@ -703,7 +704,7 @@ void map_prime_complete(uint64_t prime, uint64_t n, CompleteClockMapping *mappin
     
     // M₁₂ projection (simplified - full implementation would use all 12 dimensions)
     for (int i = 0; i < 12; i++) {
-        mapping->m12.coordinates[i] = prime_cos(mapping->theta * (i + 1));
+        mapping->m12.coordinates[i] = math_cos(mapping->theta * (i + 1));
     }
     mapping->m12.prime = prime;
     mapping->m12.index = n;

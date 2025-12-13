@@ -3,7 +3,8 @@
 #include <string.h>
 #include "ai/cllm_backprop.h"
 #include "ai/cllm_loss.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define EPSILON 1e-5f
 #define TEST_PASSED 1
@@ -15,7 +16,7 @@ static int tests_passed = 0;
 
 // Helper function to check if two floats are approximately equal
 static int float_equals(float a, float b, float epsilon) {
-    return prime_fabsf(a - b) < epsilon;
+    return math_abs(a - b) < epsilon;
 }
 
 // Helper function to print test result
@@ -165,7 +166,7 @@ int test_gradient_buffer_compute_stats() {
     
     gradient_buffer_compute_stats(buffer);
     
-    // Expected: norm = prime_sqrt(1+4+9+16) = prime_sqrt(30) ≈ 5.477
+    // Expected: norm = math_sqrt(1+4+9+16) = math_sqrt(30) ≈ 5.477
     // mean = (1+2+3+4)/4 = 2.5
     // min = 1, max = 4
     
@@ -228,7 +229,7 @@ int test_gradient_buffer_clip_by_value() {
 int test_gradient_buffer_clip_by_norm() {
     GradientBuffer* buffer = gradient_buffer_create(3, 1, 0);
     
-    // Set values with norm = prime_sqrt(1+4+9) = prime_sqrt(14) ≈ 3.74
+    // Set values with norm = math_sqrt(1+4+9) = math_sqrt(14) ≈ 3.74
     buffer->data[0] = 1.0f;
     buffer->data[1] = 2.0f;
     buffer->data[2] = 3.0f;
@@ -242,7 +243,7 @@ int test_gradient_buffer_clip_by_norm() {
     for (size_t i = 0; i < buffer->size; i++) {
         sum_sq += buffer->data[i] * buffer->data[i];
     }
-    float new_norm = prime_sqrtf(sum_sq);
+    float new_norm = math_sqrt(sum_sq);
     
     passed = passed && float_equals(new_norm, 2.0f, EPSILON);
     

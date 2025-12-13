@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 TorusAnalyzer* create_torus_analyzer(int history_size, uint64_t original_space_size) {
     TorusAnalyzer* analyzer = (TorusAnalyzer*)calloc(1, sizeof(TorusAnalyzer));
@@ -100,7 +101,7 @@ OscillationMetrics compute_oscillation_metrics(
         // Clamp to [-1, 1]
         if (normalized > 1.0) normalized = 1.0;
         if (normalized < -1.0) normalized = -1.0;
-        metrics.phase = prime_acos(normalized);
+        metrics.phase = math_acos(normalized);
     }
     
     return metrics;

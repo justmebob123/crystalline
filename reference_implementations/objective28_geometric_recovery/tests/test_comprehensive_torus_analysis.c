@@ -26,7 +26,8 @@
 #include "../include/oscillation_decomposition.h"
 #include "../include/multi_torus_tracker.h"
 #include "../include/harmonic_folding.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_ITERATIONS 2000
 #define NUM_TRAINING 20
@@ -97,7 +98,7 @@ FactorizationStructure* analyze_torus_relationships(MultiTorusTracker* tracker) 
             // Check if harmonic (ratio close to integer)
             double ratio = rel.frequency_ratio;
             int nearest_int = (int)(ratio + 0.5);
-            if (prime_fabs(ratio - nearest_int) < 0.1) {
+            if (math_abs(ratio - nearest_int) < 0.1) {
                 rel.is_harmonic = true;
                 rel.harmonic_number = nearest_int;
             } else {

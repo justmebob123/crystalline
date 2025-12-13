@@ -12,7 +12,8 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <time.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Internal context structure
 struct recovery_context {
@@ -62,7 +63,7 @@ static double* bytes_to_structure_data(const uint8_t* bytes, size_t len, uint32_
     for (size_t i = 0; i < len; i++) {
         data[i*3 + 0] = (double)bytes[i] / 255.0;
         data[i*3 + 1] = (double)i / (double)len;
-        data[i*3 + 2] = prime_sqrt(data[i*3 + 0] * data[i*3 + 1]);
+        data[i*3 + 2] = math_sqrt(data[i*3 + 0] * data[i*3 + 1]);
     }
     
     return data;
@@ -134,13 +135,13 @@ static double* compute_confidence_scores_from_samples(
                     double dx = vertex_positions[i*3 + 0] - vertex_positions[anchor_idx*3 + 0];
                     double dy = vertex_positions[i*3 + 1] - vertex_positions[anchor_idx*3 + 1];
                     double dz = vertex_positions[i*3 + 2] - vertex_positions[anchor_idx*3 + 2];
-                    double dist = prime_sqrt(dx*dx + dy*dy + dz*dz);
+                    double dist = math_sqrt(dx*dx + dy*dy + dz*dz);
                     if (dist < min_dist) {
                         min_dist = dist;
                     }
                 }
             }
-            scores[i] = prime_exp(-min_dist * 5.0);
+            scores[i] = math_exp(-min_dist * 5.0);
         }
     }
     
@@ -292,7 +293,7 @@ static recovery_error_t apply_blind_recovery_algorithm_OLD(
             for (uint32_t dim = 0; dim < 3; dim++) {
                 double value = vertex_positions[i*3 + dim];
                 // Simple tetration attractor: pull toward powers of small primes
-                double attractor = prime_round(value * 2.0) / 2.0; // Simplified
+                double attractor = math_round(value * 2.0) / 2.0; // Simplified
                 double bias_weight = 0.1 * (pass + 1) / max_passes;
                 vertex_positions[i*3 + dim] = value * (1.0 - bias_weight) + attractor * bias_weight;
             }
@@ -521,7 +522,7 @@ static double calculate_oscillation(const uint8_t* current,
         count++;
     }
     
-    return count > 0 ? prime_sqrt(osc / count) : 0.0;
+    return count > 0 ? math_sqrt(osc / count) : 0.0;
 }
 
 // Run recovery
@@ -600,7 +601,7 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
         double diff = (double)ctx->result_data[i] - (double)ctx->q_data[i];
         ctx->initial_error += diff * diff;
     }
-    ctx->initial_error = prime_sqrt(ctx->initial_error / ctx->q_len);
+    ctx->initial_error = math_sqrt(ctx->initial_error / ctx->q_len);
     ctx->current_error = ctx->initial_error;
     
     double prev_osc = INFINITY;
@@ -628,7 +629,7 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
             double diff = (double)ctx->result_data[i] - (double)ctx->q_data[i];
             ctx->current_error += diff * diff;
         }
-        ctx->current_error = prime_sqrt(ctx->current_error / ctx->q_len);
+        ctx->current_error = math_sqrt(ctx->current_error / ctx->q_len);
         
         if (ctx->config.verbose >= 2 && ctx->current_iteration % 100 == 0) {
             printf("Iteration %d: Oscillation = %.6f, Error = %.6f\n", 
@@ -636,7 +637,7 @@ recovery_error_t recovery_run(recovery_context_t* ctx) {
         }
         
         // Check convergence
-        if (prime_fabs(prev_osc - ctx->current_oscillation) < ctx->config.convergence_threshold) {
+        if (math_abs(prev_osc - ctx->current_oscillation) < ctx->config.convergence_threshold) {
             ctx->converged = true;
             if (ctx->config.verbose) {
                 printf("\nConverged after %d iterations!\n", ctx->current_iteration);

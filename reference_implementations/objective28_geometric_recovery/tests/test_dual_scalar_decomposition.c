@@ -20,7 +20,8 @@
 #include "../include/plateau_detection.h"
 #include "../include/oscillation_decomposition.h"
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main() {
     printf("\n========================================\n");
@@ -97,7 +98,7 @@ int main() {
                 EC_POINT_mul(group, Q, k_bn, NULL, NULL, NULL);
                 
                 uint64_t k_estimated = estimate_k_from_q(ctx, Q);
-                double error = prime_fabs((double)k_estimated - (double)training_k[i]);
+                double error = math_abs((double)k_estimated - (double)training_k[i]);
                 
                 total_error += error;
                 total_k_estimate += k_estimated;

@@ -20,7 +20,8 @@
 #include <openssl/bn.h>
 #include <openssl/obj_mac.h>
 #include "../include/g_triangulation.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 int main() {
     printf("\n========================================\n");
@@ -78,7 +79,7 @@ int main() {
         uint64_t k_estimated = estimate_k_from_q(ctx, Q);
         
         // Compute error
-        double error = prime_fabs((double)k_estimated - (double)training_k[i]);
+        double error = math_abs((double)k_estimated - (double)training_k[i]);
         double error_pct = (error / (double)training_k[i]) * 100.0;
         total_initial_error += error;
         
@@ -129,7 +130,7 @@ int main() {
                 EC_POINT_mul(group, Q, k_bn, NULL, NULL, NULL);
                 
                 uint64_t k_estimated = estimate_k_from_q(ctx, Q);
-                double error = prime_fabs((double)k_estimated - (double)training_k[i]);
+                double error = math_abs((double)k_estimated - (double)training_k[i]);
                 double error_pct = (error / (double)training_k[i]) * 100.0;
                 
                 total_error += error;
@@ -175,7 +176,7 @@ int main() {
         EC_POINT_mul(group, Q, k_bn, NULL, NULL, NULL);
         
         uint64_t k_estimated = estimate_k_from_q(ctx, Q);
-        double error = prime_fabs((double)k_estimated - (double)training_k[i]);
+        double error = math_abs((double)k_estimated - (double)training_k[i]);
         double error_pct = (error / (double)training_k[i]) * 100.0;
         total_final_error += error;
         

@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define PHI 1.618033988749895
 #define PI 3.141592653589793
@@ -39,7 +40,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 3);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
         }
         idx++;
     }
@@ -53,7 +54,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = 
-                (x * prime_cos(phi_d) + y * prime_sin(phi_d) + z * prime_cos(2.0 * phi_d)) / prime_sqrt(3.0);
+                (x * math_cos(phi_d) + y * math_sin(phi_d) + z * math_cos(2.0 * phi_d)) / math_sqrt(3.0);
         }
         idx++;
     }
@@ -64,7 +65,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 2);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
         }
         idx++;
     }
@@ -75,7 +76,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d * PHI) * prime_pow(PHI, d % 5);
+            anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
         }
         idx++;
     }
@@ -86,7 +87,7 @@ static SimpleGeometricAnchor* generate_simple_anchors(int* num_anchors) {
         double angle = v * TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 4);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);
         }
         idx++;
     }
@@ -198,7 +199,7 @@ static int find_nearest_geometric_anchor(
             dist_sq += diff * diff;
         }
         
-        double dist = prime_sqrt(dist_sq);
+        double dist = math_sqrt(dist_sq);
         
         if (dist < min_distance) {
             min_distance = dist;
@@ -274,7 +275,7 @@ static uint64_t multi_layer_search(
             while (computed_angle >= TWO_PI) computed_angle -= TWO_PI;
             
             // Compute error (handle wraparound)
-            double error = prime_fabs(computed_angle - normalized_target);
+            double error = math_abs(computed_angle - normalized_target);
             if (error > PI) error = TWO_PI - error;
             
             // Update best
@@ -312,7 +313,7 @@ static uint64_t recover_k_simple(
         
         // Compute position using π×φ metric
         double angle = (double)(qx_val % 360) * PI / 180.0;
-        q_position[d] = prime_cos(angle * freq) * prime_pow(PHI, d % 5);
+        q_position[d] = math_cos(angle * freq) * math_pow(PHI, d % 5);
         
         OPENSSL_free(qx_str);
         OPENSSL_free(qy_str);
@@ -333,7 +334,7 @@ static uint64_t recover_k_simple(
             double diff = q_position[d] - ctx->geo_anchors[i].position[d];
             distance += diff * diff;
         }
-        distance = prime_sqrt(distance);
+        distance = math_sqrt(distance);
         
         // Update nearest 3
         for (int j = 0; j < 3; j++) {
@@ -420,7 +421,7 @@ RecoveryResult* run_integrated_recovery_single(
     OPENSSL_free(real_k_str);
     
     // Compute error
-    double error = prime_fabs((double)recovered_k - (double)real_k);
+    double error = math_abs((double)recovered_k - (double)real_k);
     
     // Check success (within 10% of real k)
     double tolerance = (double)real_k * 0.1;

@@ -5,7 +5,8 @@
 #include <time.h>
 #include <string.h>
 #include "../include/crystal_abacus.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Platonic target definitions
 typedef struct {
@@ -66,7 +67,7 @@ double geometric_resonance(uint64_t n) {
     for (size_t i = 0; i < NUM_TARGETS; i++) {
         if (PLATONIC_TARGETS[i].target > 1000000) continue;
         double dist = (double)n - (double)PLATONIC_TARGETS[i].target;
-        score += prime_exp(-(dist * dist) / sigma);
+        score += math_exp(-(dist * dist) / sigma);
     }
     
     return score;
@@ -149,7 +150,7 @@ void analyze_all_primes(uint64_t limit) {
         int nearest_idx = -1;
         for (size_t j = 0; j < NUM_TARGETS; j++) {
             if (PLATONIC_TARGETS[j].target > limit) continue;
-            double dist = prime_fabs((double)primes[i] - (double)PLATONIC_TARGETS[j].target);
+            double dist = math_abs((double)primes[i] - (double)PLATONIC_TARGETS[j].target);
             if (dist < min_dist) {
                 min_dist = dist;
                 nearest_idx = j;

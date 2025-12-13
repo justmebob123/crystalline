@@ -16,7 +16,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include "../include/multi_torus_tracker.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define MAX_SAMPLES 20
 #define TOP_N 5

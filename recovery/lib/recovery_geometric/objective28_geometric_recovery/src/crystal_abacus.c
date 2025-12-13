@@ -3,11 +3,11 @@
 #include <stdio.h>
 
 // Prime math functions (crystalline library)
-extern double prime_sqrt(double x);
-extern float prime_fabsf(float x);
+extern double math_sqrt(double x);
+extern float math_abs(float x);
 
 // Wrapper for double precision fabs
-static inline double prime_fabs(double x) {
+static inline double math_abs(double x) {
     return (x < 0.0) ? -x : x;
 }
 
@@ -165,7 +165,7 @@ bool near_dynamic_gate(uint64_t k, uint32_t recurse_depth) {
     
     for (uint32_t i = 0; i < gate->num_centers; i++) {
         uint64_t center = gate->centers[i];
-        double dist = prime_fabs((double)k - (double)center);
+        double dist = math_abs((double)k - (double)center);
         
         // Kissing/tangent check
         if (dist < gate->radius + EPSILON) {
@@ -271,7 +271,7 @@ uint64_t abacus_next_prime(CrystalAbacus* abacus) {
         
         // Trial division (optimized with entropy cut for large k)
         if (k > SMALL_PRIMES[49]) {
-            uint64_t sqrt_k = (uint64_t)prime_sqrt((double)k);
+            uint64_t sqrt_k = (uint64_t)math_sqrt((double)k);
             bool is_composite = false;
             
             for (uint32_t i = 0; i < abacus->num_primes; i++) {
@@ -326,7 +326,7 @@ bool abacus_is_prime(CrystalAbacus* abacus, uint64_t m) {
     
     if (!pre_filter_candidate(m)) return false;
     
-    uint64_t sqrt_m = (uint64_t)prime_sqrt((double)m);
+    uint64_t sqrt_m = (uint64_t)math_sqrt((double)m);
     
     // Generate primes up to sqrt(m)
     while (abacus->num_primes > 0 && abacus->primes[abacus->num_primes - 1] < sqrt_m) {

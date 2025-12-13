@@ -15,7 +15,8 @@
 #include <openssl/sha.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /**
  * Generate large deterministic target from Q (from your Python code)

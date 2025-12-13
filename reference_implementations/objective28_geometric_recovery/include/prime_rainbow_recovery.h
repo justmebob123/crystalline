@@ -23,11 +23,11 @@ static inline double prime_multiply(double a, double b);
 static inline double prime_divide(double a, double b);
 static inline double prime_add(double a, double b);
 static inline double prime_subtract(double a, double b);
-static inline double prime_sqrt(double x);
-static inline double prime_sin(double x);
-static inline double prime_cos(double x);
-static inline double prime_fmod(double x, double y);
-static inline double prime_abs(double x);
+static inline double math_sqrt(double x);
+static inline double math_sin(double x);
+static inline double math_cos(double x);
+static inline double math_fmod(double x, double y);
+static inline double math_abs(double x);
 
 // Constants
 #define PHI 1.61803398874989484820  // Golden ratio

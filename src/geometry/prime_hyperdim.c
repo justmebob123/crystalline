@@ -3,9 +3,11 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include "../include/prime_math_custom.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "../include/prime_hyperdim.h"
-#include "../include/prime_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Convert prime to hyperdimensional vector
 HyperVector prime_to_hypervector(int prime) {
@@ -16,7 +18,7 @@ HyperVector prime_to_hypervector(int prime) {
     if (hv.components) {
         // Initialize components based on prime properties
         for (int i = 0; i < hv.dim; i++) {
-            hv.components[i] = prime * (1.0 + 0.1 * i) * prime_sin(prime + i);
+            hv.components[i] = prime * (1.0 + 0.1 * i) * math_sin(prime + i);
         }
     }
     
@@ -41,7 +43,7 @@ double hypervector_magnitude(const HyperVector* hv) {
         sum += hv->components[i] * hv->components[i];
     }
     
-    return prime_sqrt(sum);
+    return math_sqrt(sum);
 }
 
 // Add two hypervectors
@@ -105,12 +107,12 @@ double hyper_sin(double x, int dimension) {
     if (dimension <= 0) dimension = 3; // Default to 3D
     
     // Base sine with dimensional modulation
-    double result = prime_sin(x);
+    double result = math_sin(x);
     
     // Apply dimensional correction based on prime patterns
     for (int d = 2; d <= dimension && d <= 7; d++) {
         if (x > 0) {
-            result += 0.1 * prime_sin(x * d) / d;
+            result += 0.1 * math_sin(x * d) / d;
         }
     }
     
@@ -122,12 +124,12 @@ double hyper_cos(double x, int dimension) {
     if (dimension <= 0) dimension = 3; // Default to 3D
     
     // Base cosine with dimensional modulation
-    double result = prime_cos(x);
+    double result = math_cos(x);
     
     // Apply dimensional correction
     for (int d = 2; d <= dimension && d <= 7; d++) {
         if (x > 0) {
-            result += 0.1 * prime_cos(x * d) / d;
+            result += 0.1 * math_cos(x * d) / d;
         }
     }
     
@@ -149,8 +151,8 @@ void hypervector_project_2d(const HyperVector* hv, double* x, double* y) {
     // Add influence from higher dimensions
     for (int i = 2; i < hv->dim; i++) {
         double weight = 1.0 / (i + 1);
-        *x += weight * hv->components[i] * prime_cos(i);
-        *y += weight * hv->components[i] * prime_sin(i);
+        *x += weight * hv->components[i] * math_cos(i);
+        *y += weight * hv->components[i] * math_sin(i);
     }
 }
 
@@ -225,7 +227,7 @@ double hypervector_distance(const HyperVector* a, const HyperVector* b) {
         sum += diff * diff;
     }
     
-    return prime_sqrt(sum);
+    return math_sqrt(sum);
 }
 
 // Check if two hypervectors are similar (within threshold)

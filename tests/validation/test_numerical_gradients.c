@@ -141,7 +141,7 @@ int test_softmax_gradient() {
     
     float sum = 0.0f;
     for (int i = 0; i < size; i++) {
-        softmax_out[i] = prime_expf(input[i] - max_val);
+        softmax_out[i] = math_exp(input[i] - max_val);
         sum += softmax_out[i];
     }
     
@@ -174,7 +174,7 @@ int test_softmax_gradient() {
         
         sum = 0.0f;
         for (int j = 0; j < size; j++) {
-            softmax_plus[j] = prime_expf(input_plus[j] - max_val);
+            softmax_plus[j] = math_exp(input_plus[j] - max_val);
             sum += softmax_plus[j];
         }
         
@@ -200,7 +200,7 @@ int test_softmax_gradient() {
         
         sum = 0.0f;
         for (int j = 0; j < size; j++) {
-            softmax_minus[j] = prime_expf(input_minus[j] - max_val);
+            softmax_minus[j] = math_exp(input_minus[j] - max_val);
             sum += softmax_minus[j];
         }
         

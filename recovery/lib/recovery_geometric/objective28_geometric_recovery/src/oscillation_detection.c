@@ -11,7 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Mathematical constants (computed using crystalline math)
 #define PI 3.14159265358979323846
@@ -37,8 +38,8 @@ void dft_crystalline(const double* input, Complex* output, uint32_t n) {
             double angle = -TWO_PI * (double)k * (double)t / (double)n;
             
             // Use prime_cos and prime_sin (NO math.h)
-            double cos_val = prime_cos(angle);
-            double sin_val = prime_sin(angle);
+            double cos_val = math_cos(angle);
+            double sin_val = math_sin(angle);
             
             output[k].real += input[t] * cos_val;
             output[k].imag += input[t] * sin_val;
@@ -94,8 +95,8 @@ bool fft_crystalline(const double* input, Complex* output, uint32_t n) {
         double angle = -TWO_PI * (double)k / (double)n;
         
         // Twiddle factor using prime_cos and prime_sin
-        double cos_val = prime_cos(angle);
-        double sin_val = prime_sin(angle);
+        double cos_val = math_cos(angle);
+        double sin_val = math_sin(angle);
         
         // Complex multiplication: twiddle * odd_output[k]
         double t_real = cos_val * odd_output[k].real - sin_val * odd_output[k].imag;
@@ -347,7 +348,7 @@ OscillationMap* detect_oscillations(const ECTrajectory* trajectory) {
         double frequency = find_dominant_frequency(power_spectrum, fft_size, trajectory->sampling_rate);
         
         // Compute amplitude (from power spectrum peak)
-        double amplitude = prime_sqrt(power_spectrum[(uint32_t)(frequency * fft_size / trajectory->sampling_rate)]);
+        double amplitude = math_sqrt(power_spectrum[(uint32_t)(frequency * fft_size / trajectory->sampling_rate)]);
         
         // Compute phase (from FFT output)
         uint32_t freq_idx = (uint32_t)(frequency * fft_size / trajectory->sampling_rate);
@@ -436,7 +437,7 @@ double compute_cross_correlation(const ECTrajectory* trajectory, uint32_t dim1, 
     
     double correlation = 0.0;
     if (denom1 > 0.0 && denom2 > 0.0) {
-        correlation = numerator / prime_sqrt(denom1 * denom2);
+        correlation = numerator / math_sqrt(denom1 * denom2);
     }
     
     free(series1);
@@ -591,7 +592,7 @@ uint32_t next_power_of_2(uint32_t n) {
 
 double complex_magnitude(const Complex* z) {
     if (!z) return 0.0;
-    return prime_sqrt(z->real * z->real + z->imag * z->imag);
+    return math_sqrt(z->real * z->real + z->imag * z->imag);
 }
 
 double complex_phase(const Complex* z) {

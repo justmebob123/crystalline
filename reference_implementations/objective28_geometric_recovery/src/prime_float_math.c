@@ -8,14 +8,15 @@
  * CRITICAL: This maintains mathematical independence - NO external math dependencies!
  */
 
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdint.h>
 
 /*
  * Square Root: sqrt(x)
  * Uses Newton-Raphson method: x_{n+1} = (x_n + a/x_n) / 2
  */
-float prime_sqrtf(float x) {
+float math_sqrt(float x) {
     if (x < 0.0f) return 0.0f;  // Return 0 for negative (or could return NaN)
     if (x == 0.0f) return 0.0f;
     if (x == 1.0f) return 1.0f;
@@ -36,7 +37,7 @@ float prime_sqrtf(float x) {
  * Exponential: exp(x) = e^x
  * Uses Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
  */
-float prime_expf(float x) {
+float math_exp(float x) {
     if (x == 0.0f) return 1.0f;
     
     // Clamp to prevent overflow/underflow
@@ -45,7 +46,7 @@ float prime_expf(float x) {
     
     // For large x, use exp(x) = exp(x/2)²
     if (x > 10.0f || x < -10.0f) {
-        float half = prime_expf(x * 0.5f);
+        float half = math_exp(x * 0.5f);
         return half * half;
     }
     
@@ -66,7 +67,7 @@ float prime_expf(float x) {
  * Natural Logarithm: log(x) = ln(x)
  * Uses series expansion for ln(1+x): ln(1+x) = x - x²/2 + x³/3 - x⁴/4 + ...
  */
-float prime_logf(float x) {
+float math_log(float x) {
     if (x <= 0.0f) return -1e10f;  // Return large negative for invalid input
     if (x == 1.0f) return 0.0f;
     
@@ -102,7 +103,7 @@ float prime_logf(float x) {
  * Power: pow(x, y) = x^y
  * Uses exp and log: x^y = exp(y * ln(x))
  */
-float prime_powf(float x, float y) {
+float math_pow(float x, float y) {
     if (x == 0.0f) return 0.0f;
     if (y == 0.0f) return 1.0f;
     if (x == 1.0f) return 1.0f;
@@ -128,14 +129,14 @@ float prime_powf(float x, float y) {
     }
     
     // x^y = exp(y * ln(x))
-    return prime_expf(y * prime_logf(x));
+    return math_exp(y * math_log(x));
 }
 
 /*
  * Sine: sin(x)
  * Uses Taylor series: sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ...
  */
-float prime_sinf(float x) {
+float math_sin(float x) {
     // Reduce to range [-π, π]
     const float PI = 3.14159265358979323846f;
     const float TWO_PI = 2.0f * PI;
@@ -161,7 +162,7 @@ float prime_sinf(float x) {
  * Cosine: cos(x)
  * Uses Taylor series: cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ...
  */
-float prime_cosf(float x) {
+float math_cos(float x) {
     // Reduce to range [-π, π]
     const float PI = 3.14159265358979323846f;
     const float TWO_PI = 2.0f * PI;
@@ -186,21 +187,21 @@ float prime_cosf(float x) {
 /*
  * Tangent: tan(x) = sin(x) / cos(x)
  */
-float prime_tanf(float x) {
-    float cos_x = prime_cosf(x);
+float math_tan(float x) {
+    float cos_x = math_cos(x);
     if (cos_x == 0.0f) return 1e10f;  // Return large value for undefined
-    return prime_sinf(x) / cos_x;
+    return math_sin(x) / cos_x;
 }
 
 /*
  * Hyperbolic Tangent: tanh(x) = (e^x - e^-x) / (e^x + e^-x)
  */
-float prime_tanhf(float x) {
+float math_tanh(float x) {
     if (x > 10.0f) return 1.0f;
     if (x < -10.0f) return -1.0f;
     
-    float exp_x = prime_expf(x);
-    float exp_neg_x = prime_expf(-x);
+    float exp_x = math_exp(x);
+    float exp_neg_x = math_exp(-x);
     
     return (exp_x - exp_neg_x) / (exp_x + exp_neg_x);
 }
@@ -208,7 +209,7 @@ float prime_tanhf(float x) {
 /*
  * Absolute Value: fabs(x)
  */
-float prime_fabsf(float x) {
+float math_abs(float x) {
     return (x < 0.0f) ? -x : x;
 }
 
@@ -217,7 +218,7 @@ float prime_fabsf(float x) {
 
 static inline double prime_fabs_custom(double x) { return (x < 0.0) ? -x : x; }
 
-double prime_exp(double x) {
+double math_exp(double x) {
     // Simple exponential approximation
     if (x > 700.0) return HUGE_VAL;
     if (x < -700.0) return 0.0;
@@ -235,7 +236,7 @@ double prime_exp(double x) {
     return result;
 }
 
-double prime_sqrt(double x) {
+double math_sqrt(double x) {
     if (x < 0.0) return 0.0;
     if (x == 0.0) return 0.0;
     
@@ -252,7 +253,7 @@ double prime_sqrt(double x) {
     return guess;
 }
 
-double prime_log(double x) {
+double math_log(double x) {
     if (x <= 0.0) return -HUGE_VAL;
     if (x == 1.0) return 0.0;
     
@@ -270,7 +271,7 @@ double prime_log(double x) {
     return 2.0 * result;
 }
 
-double prime_cos(double x) {
+double math_cos(double x) {
     // Reduce angle to [-π, π]
     while (x > 3.141592653589793) x -= 2 * 3.141592653589793;
     while (x < -3.141592653589793) x += 2 * 3.141592653589793;
@@ -288,7 +289,7 @@ double prime_cos(double x) {
     return result;
 }
 
-double prime_sin(double x) {
+double math_sin(double x) {
     // Reduce angle to [-π, π]
     while (x > 3.141592653589793) x -= 2 * 3.141592653589793;
     while (x < -3.141592653589793) x += 2 * 3.141592653589793;
@@ -306,18 +307,18 @@ double prime_sin(double x) {
     return result;
 }
 
-double prime_tan(double x) {
-    double cos_val = prime_cos(x);
+double math_tan(double x) {
+    double cos_val = math_cos(x);
     if (prime_fabs_custom(cos_val) < 1e-10) return 0.0;
-    return prime_sin(x) / cos_val;
+    return math_sin(x) / cos_val;
 }
 
-double prime_tanh(double x) {
+double math_tanh(double x) {
     if (x > 20.0) return 1.0;
     if (x < -20.0) return -1.0;
     
-    double exp_x = prime_exp(x);
-    double exp_neg_x = prime_exp(-x);
+    double exp_x = math_exp(x);
+    double exp_neg_x = math_exp(-x);
     return (exp_x - exp_neg_x) / (exp_x + exp_neg_x);
 }
 
@@ -331,13 +332,13 @@ static void init_pow3_cache(void) {
     // Pre-compute 3^x for x in [0.0, 10.0] with 0.1 precision
     for (int i = 0; i < 100; i++) {
         double exp = (double)i / 10.0;
-        pow3_cache[i] = prime_exp(exp * prime_log(3.0));
+        pow3_cache[i] = math_exp(exp * math_log(3.0));
     }
     
     pow3_cache_initialized = 1;
 }
 
-double prime_pow(double x, double y) {
+double math_pow(double x, double y) {
     // Fast path: y == 0
     if (y == 0.0) return 1.0;
     
@@ -394,12 +395,12 @@ double prime_pow(double x, double y) {
     }
     
     // Standard path: Use exp(y * log(x))
-    return prime_exp(y * prime_log(x));
+    return math_exp(y * math_log(x));
 }
 
-double prime_atan(double x) {
-    if (x > 1.0) return 1.570796326794897 - prime_atan(1.0 / x);
-    if (x < -1.0) return -1.570796326794897 - prime_atan(1.0 / x);
+double math_atan(double x) {
+    if (x > 1.0) return 1.570796326794897 - math_atan(1.0 / x);
+    if (x < -1.0) return -1.570796326794897 - math_atan(1.0 / x);
     
     double result = 0.0;
     double term = x;
@@ -415,10 +416,10 @@ double prime_atan(double x) {
 }
 
 double prime_atan2(double y, double x) {
-    if (x > 0.0) return prime_atan(y / x);
+    if (x > 0.0) return math_atan(y / x);
     if (x < 0.0) {
-        if (y >= 0.0) return prime_atan(y / x) + 3.141592653589793;
-        else return prime_atan(y / x) - 3.141592653589793;
+        if (y >= 0.0) return math_atan(y / x) + 3.141592653589793;
+        else return math_atan(y / x) - 3.141592653589793;
     }
     if (y > 0.0) return 1.570796326794897;
     if (y < 0.0) return -1.570796326794897;
@@ -430,21 +431,21 @@ double prime_atan2(double y, double x) {
 /*
  * Maximum: fmax(x, y)
  */
-float prime_fmaxf(float x, float y) {
+float math_max(float x, float y) {
     return (x > y) ? x : y;
 }
 
 /*
  * Minimum: fmin(x, y)
  */
-float prime_fminf(float x, float y) {
+float math_min(float x, float y) {
     return (x < y) ? x : y;
 }
 
 /*
  * Check if NaN
  */
-int prime_isnanf(float x) {
+int math_is_nan(float x) {
     // NaN is the only value that doesn't equal itself
     return (x != x);
 }
@@ -452,22 +453,22 @@ int prime_isnanf(float x) {
 /*
  * Check if infinite
  */
-int prime_isinff(float x) {
+int math_is_inf(float x) {
     // Check if absolute value is greater than max float
     return (x > 1e38f || x < -1e38f);
 }
 
 /* Additional double precision functions */
 
-double prime_fmax(double x, double y) {
+double math_max(double x, double y) {
     return (x > y) ? x : y;
 }
 
-double prime_fmin(double x, double y) {
+double math_min(double x, double y) {
     return (x < y) ? x : y;
 }
 
-double prime_floor(double x) {
+double math_floor(double x) {
     if (x >= 0.0) {
         return (double)(int64_t)x;
     } else {
@@ -476,7 +477,7 @@ double prime_floor(double x) {
     }
 }
 
-double prime_ceil(double x) {
+double math_ceil(double x) {
     if (x <= 0.0) {
         return (double)(int64_t)x;
     } else {
@@ -485,7 +486,7 @@ double prime_ceil(double x) {
     }
 }
 
-double prime_round(double x) {
+double math_round(double x) {
     if (x >= 0.0) {
         return (double)(int64_t)(x + 0.5);
     } else {
@@ -493,28 +494,28 @@ double prime_round(double x) {
     }
 }
 
-double prime_fmod(double x, double y) {
+double math_fmod(double x, double y) {
     if (y == 0.0) return 0.0;
     return x - (int64_t)(x / y) * y;
 }
 
 // Float version of prime_fmod
-float prime_fmodf(float x, float y) {
+float math_fmod(float x, float y) {
     if (y == 0.0f) return 0.0f;
     return x - (int32_t)(x / y) * y;
 }
 
-double prime_acos(double x) {
+double math_acos(double x) {
     // Simple approximation - for production use proper series or lookup
     if (x < -1.0) x = -1.0;
     if (x > 1.0) x = 1.0;
     // acos(x) = atan2(sqrt(1-x*x), 1)
-    return prime_atan2(prime_sqrt(1.0 - x * x), 1.0);
+    return prime_atan2(math_sqrt(1.0 - x * x), 1.0);
 }
 
 double prime_log2(double x) {
     if (x <= 0.0) return -1e308;  // Return large negative for invalid input
-    return prime_log(x) / 0.6931471805599453;  // divide by ln(2)
+    return math_log(x) / 0.6931471805599453;  // divide by ln(2)
 }
 
 // Float version of prime_atan2
@@ -523,14 +524,14 @@ float prime_atan2f(float y, float x) {
 }
 
 // Double precision versions
-double prime_fabs(double x) {
+double math_abs(double x) {
     return (x < 0.0) ? -x : x;
 }
 
-int prime_isnan(double x) {
+int math_is_nan(double x) {
     return (x != x);
 }
 
-int prime_isinf(double x) {
+int math_is_inf(double x) {
     return (x == x + 1.0) || (x == x - 1.0);
 }

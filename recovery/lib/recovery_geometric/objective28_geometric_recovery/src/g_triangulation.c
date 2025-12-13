@@ -17,7 +17,8 @@
 #include <stdbool.h>
 #include <openssl/ec.h>
 #include <openssl/bn.h>
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 #define PHI 1.618033988749895
 #define PI 3.141592653589793
@@ -89,10 +90,10 @@ void map_ec_point_to_lattice(
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
         double angle = (double)(x_val % 360) * PI / 180.0;
-        position[d] = prime_cos(angle * freq) * prime_pow(PHI, d % 5);
+        position[d] = math_cos(angle * freq) * math_pow(PHI, d % 5);
         
         double y_angle = (double)(y_val % 360) * PI / 180.0;
-        position[d] += prime_sin(y_angle * freq) * prime_pow(PHI, (d + 1) % 5) * 0.5;
+        position[d] += math_sin(y_angle * freq) * math_pow(PHI, (d + 1) % 5) * 0.5;
     }
     
     OPENSSL_free(x_str);
@@ -111,7 +112,7 @@ void map_k_to_lattice(uint64_t k, double position[13]) {
     
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
-        position[d] = prime_cos(base_angle * freq) * prime_pow(PHI, d % 5);
+        position[d] = math_cos(base_angle * freq) * math_pow(PHI, d % 5);
     }
 }
 
@@ -124,7 +125,7 @@ double compute_distance(const double pos1[13], const double pos2[13]) {
         double diff = pos1[d] - pos2[d];
         sum += diff * diff;
     }
-    return prime_sqrt(sum);
+    return math_sqrt(sum);
 }
 
 /**
@@ -138,7 +139,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * TWO_PI / 4.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 3);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 3);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -153,7 +154,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
             anchors[idx].position[d] = 
-                (x * prime_cos(phi_d) + y * prime_sin(phi_d) + z * prime_cos(2.0 * phi_d)) / prime_sqrt(3.0);
+                (x * math_cos(phi_d) + y * math_sin(phi_d) + z * math_cos(2.0 * phi_d)) / math_sqrt(3.0);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -165,7 +166,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * TWO_PI / 6.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 2);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 2);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -177,7 +178,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * TWO_PI / 20.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d * PHI) * prime_pow(PHI, d % 5);
+            anchors[idx].position[d] = math_cos(angle * phi_d * PHI) * math_pow(PHI, d % 5);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -189,7 +190,7 @@ void generate_platonic_anchors(Anchor* anchors, int* num_anchors) {
         double angle = v * TWO_PI / 12.0;
         for (int d = 0; d < 13; d++) {
             double phi_d = (double)DIMENSIONAL_FREQUENCIES[d];
-            anchors[idx].position[d] = prime_cos(angle * phi_d) * prime_pow(PHI, d % 4);
+            anchors[idx].position[d] = math_cos(angle * phi_d) * math_pow(PHI, d % 4);
         }
         anchors[idx].k_estimate = 0;
         anchors[idx].confidence = 0.0;
@@ -411,7 +412,7 @@ void perform_refinement_iteration(GTriangulationContext* ctx) {
         for (int i = 0; i < ctx->num_training_pairs; i++) {
             double prev = ctx->k_estimates_history[ctx->current_iteration - 1][i];
             double curr = ctx->k_estimates_history[ctx->current_iteration][i];
-            total_oscillation += prime_fabs(curr - prev);
+            total_oscillation += math_abs(curr - prev);
         }
         ctx->k_oscillation = total_oscillation / ctx->num_training_pairs;
     }
@@ -459,8 +460,8 @@ void refine_G_with_pq(
     
     for (int d = 0; d < 13; d++) {
         double freq = (double)DIMENSIONAL_FREQUENCIES[d];
-        p_position[d] = prime_cos(p_angle * freq) * prime_pow(PHI, d % 5);
-        q_position[d] = prime_cos(q_angle * freq) * prime_pow(PHI, d % 5);
+        p_position[d] = math_cos(p_angle * freq) * math_pow(PHI, d % 5);
+        q_position[d] = math_cos(q_angle * freq) * math_pow(PHI, d % 5);
     }
     
     // Compute the geometric center between p and q positions
@@ -529,13 +530,13 @@ double measure_refinement_improvement(
     for (int i = 0; i < num_samples && i < ctx->num_training_pairs; i++) {
         // Get k estimate from current iteration
         double k_estimate = ctx->k_estimates_history[ctx->current_iteration - 1][i];
-        double error = prime_fabs(k_estimate - (double)true_k_values[i]);
+        double error = math_abs(k_estimate - (double)true_k_values[i]);
         total_error_after += error;
         
         // Get k estimate from first iteration (before refinement)
         if (ctx->current_iteration > 1) {
             double k_estimate_initial = ctx->k_estimates_history[0][i];
-            double error_initial = prime_fabs(k_estimate_initial - (double)true_k_values[i]);
+            double error_initial = math_abs(k_estimate_initial - (double)true_k_values[i]);
             total_error_before += error_initial;
         }
     }

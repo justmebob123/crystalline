@@ -7,7 +7,8 @@
 
 #include "../include/oscillation_detection.h"
 #include "../include/ecdlp_integration.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -126,7 +127,7 @@ bool test_dft_simple() {
     // Generate sine wave at frequency 2
     for (uint32_t i = 0; i < n; i++) {
         double t = (double)i / (double)n;
-        input[i] = prime_sin(2.0 * 2.0 * 3.14159265358979323846 * t);
+        input[i] = math_sin(2.0 * 2.0 * 3.14159265358979323846 * t);
     }
     
     // Compute DFT
@@ -176,7 +177,7 @@ bool test_fft_simple() {
     // Generate sine wave at frequency 4
     for (uint32_t i = 0; i < n; i++) {
         double t = (double)i / (double)n;
-        input[i] = prime_sin(2.0 * 4.0 * 3.14159265358979323846 * t);
+        input[i] = math_sin(2.0 * 4.0 * 3.14159265358979323846 * t);
     }
     
     // Compute FFT
@@ -234,7 +235,7 @@ bool test_power_spectrum() {
     // Generate sine wave
     for (uint32_t i = 0; i < n; i++) {
         double t = (double)i / (double)n;
-        input[i] = prime_sin(2.0 * 8.0 * 3.14159265358979323846 * t);
+        input[i] = math_sin(2.0 * 8.0 * 3.14159265358979323846 * t);
     }
     
     // Compute FFT

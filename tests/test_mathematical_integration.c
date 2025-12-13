@@ -22,7 +22,8 @@
 #include "../include/ai/cllm_lattice.h"
 #include "../include/ai/cllm_ntt_attention.h"
 #include "../include/ai/cllm_cymatic_training.h"
-#include "../include/prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Test result tracking
 static int tests_passed = 0;
@@ -95,7 +96,7 @@ void test_lattice_embeddings() {
                 norm_j += vj * vj;
             }
             
-            float sim = dot / (prime_sqrtf(norm_i) * prime_sqrtf(norm_j) + 1e-8f);
+            float sim = dot / (math_sqrt(norm_i) * math_sqrt(norm_j) + 1e-8f);
             
             if (model->tokens[i].symmetry_group == model->tokens[j].symmetry_group) {
                 same_group_sim += sim;
@@ -282,8 +283,8 @@ void test_ntt_attention() {
     // Test 1: Verify outputs are similar (< 5% relative error)
     double max_rel_error = 0.0;
     for (uint32_t i = 0; i < seq_len * head_dim; i++) {
-        double diff = (double)prime_fabsf((float)(output_std[i] - output_ntt[i]));
-        double rel_error = diff / ((double)prime_fabsf((float)output_std[i]) + 1e-6);
+        double diff = (double)math_abs((float)(output_std[i] - output_ntt[i]));
+        double rel_error = diff / ((double)math_abs((float)output_std[i]) + 1e-6);
         if (rel_error > max_rel_error) max_rel_error = rel_error;
     }
     TEST_ASSERT(max_rel_error < 0.05, "NTT output matches standard (< 5% error)");
@@ -330,7 +331,7 @@ void test_cymatic_resonance() {
     // Test 1: Verify gradients still in reasonable range
     int in_range = 1;
     for (uint32_t i = 0; i < grad_size; i++) {
-        if (prime_fabsf(gradients[i]) > 10.0f) {
+        if (math_abs(gradients[i]) > 10.0f) {
             in_range = 0;
             break;
         }
@@ -348,7 +349,7 @@ void test_cymatic_resonance() {
     cllm_apply_cymatic_resonance(model, gradients, 100);
     
     for (uint32_t i = 0; i < grad_size; i++) {
-        if (prime_fabsf(gradients[i] - original[i]) > 1e-6f) {
+        if (math_abs(gradients[i] - original[i]) > 1e-6f) {
             changed = 1;
             break;
         }

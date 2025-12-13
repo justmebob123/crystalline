@@ -14,7 +14,8 @@
 #ifndef CRYSTALLINE_GEOMETRY_H
 #define CRYSTALLINE_GEOMETRY_H
 
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include "clock_lattice.h"
 #include <stdbool.h>
 

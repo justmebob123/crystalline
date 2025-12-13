@@ -10,11 +10,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "prime_types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 /* Local includes */
-#include "../include/prime_math_custom.h"
 #include "../include/prime_hyperdim.h"
-#include "../include/prime_math.h"
 
 /* Function declarations */
 void hypervector_free(HyperVector* hv);

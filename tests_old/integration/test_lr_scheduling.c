@@ -9,7 +9,8 @@
 #include <string.h>
 #include "../../include/cllm.h"
 #include "../../include/cllm_training.h"
-#include "prime_float_math.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
 
 // Helper: Create a minimal test model
 CLLMModel* create_test_model() {
@@ -185,7 +186,7 @@ int test_scheduler_types() {
             float lr = training->config.learning_rate;
             
             // Check that we get a valid learning rate
-            if (lr <= 0.0f || prime_isnan(lr) || prime_isinf(lr)) {
+            if (lr <= 0.0f || math_is_nan(lr) || math_is_inf(lr)) {
                 all_work = 0;
             }
             
@@ -245,7 +246,7 @@ int test_lr_bounds() {
             }
             
             // Check for NaN/Inf
-            if (prime_isnan(lr) || prime_isinf(lr)) {
+            if (math_is_nan(lr) || math_is_inf(lr)) {
                 success = 0;
                 break;
             }
@@ -304,7 +305,7 @@ int test_scheduler_integration() {
         // Check that learning rates change over time
         int changes = 0;
         for (int i = 1; i < 10; i++) {
-            if (prime_fabs(lrs[i] - lrs[i-1]) > 1e-6) {
+            if (math_abs(lrs[i] - lrs[i-1]) > 1e-6) {
                 changes++;
             }
         }
