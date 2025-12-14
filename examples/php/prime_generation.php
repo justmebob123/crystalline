@@ -29,18 +29,18 @@ echo "   Position 9, Magnitude 1: " . crystalline_prime_generate_o1(9, 1) . "\n\
 echo "2. Primality Testing:\n";
 $test_numbers = [2, 3, 4, 5, 17, 100, 157, 997, 1009, 10007];
 foreach ($test_numbers as $n) {
-    $is_prime = is_prime($n);
+    $is_prime = prime_is_prime($n);
     echo "   $n is " . ($is_prime ? "PRIME" : "composite") . "\n";
 }
 echo "\n";
 
-// Example 3: First 20 primes using is_prime
-echo "3. First 20 Primes (using is_prime):\n   ";
+// Example 3: First 20 primes using prime_is_prime
+echo "3. First 20 Primes (using prime_is_prime):\n   ";
 $count = 0;
 $n = 2;
 $primes = [];
 while ($count < 20) {
-    if (is_prime($n)) {
+    if (prime_is_prime($n)) {
         $primes[] = $n;
         $count++;
     }
@@ -110,7 +110,7 @@ echo "9. Performance Test (Primality Testing):\n";
 $start = microtime(true);
 $count = 0;
 for ($i = 0; $i < 1000; $i++) {
-    is_prime(rand(1, 10000));
+    prime_is_prime(rand(1, 10000));
     $count++;
 }
 $elapsed = microtime(true) - $start;
@@ -123,7 +123,7 @@ echo "10. Twin Primes (first 10 pairs):\n";
 $twin_count = 0;
 $p = 3;
 while ($twin_count < 10) {
-    if (is_prime($p) && is_prime($p + 2)) {
+    if (prime_is_prime($p) && prime_is_prime($p + 2)) {
         echo "   ($p, " . ($p + 2) . ")\n";
         $twin_count++;
     }
@@ -131,7 +131,7 @@ while ($twin_count < 10) {
 }
 echo "\n";
 
-echo "Use is_prime() in a loop as shown above to find the nth prime.\n";
+echo "Use prime_is_prime() in a loop as shown above to find the nth prime.\n";
 echo "Use rainbow table for fast lookups of cached primes.\n";
 echo "Use clock lattice for geometric prime analysis.\n";
 

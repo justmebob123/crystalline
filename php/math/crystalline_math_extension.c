@@ -450,6 +450,16 @@ PHP_FUNCTION(is_prime)
     ZEND_PARSE_PARAMETERS_END();
     RETURN_BOOL(prime_is_prime((uint64_t)n));
 }
+
+/* {{{ proto bool prime_is_prime(int n) */
+PHP_FUNCTION(prime_is_prime)
+{
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    RETURN_BOOL(prime_is_prime((uint64_t)n));
+}
 /* }}} */
 
 /* {{{ proto int crystalline_prime_generate_o1(int position, int magnitude) */
@@ -1211,6 +1221,7 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_is_finite, arginfo_math_unary)
     PHP_FE(math_approx_equal, arginfo_math_clamp)
     PHP_FE(is_prime, arginfo_is_prime)
+    PHP_FE(prime_is_prime, arginfo_is_prime)
     PHP_FE(crystalline_prime_generate_o1, arginfo_prime_generate)
     PHP_FE(prime_nth, arginfo_is_prime)
     PHP_FE(prime_next, arginfo_is_prime)
@@ -1229,11 +1240,11 @@ const zend_function_entry crystalline_math_functions[] = {
     PHP_FE(math_asinh, arginfo_math_unary)
     PHP_FE(math_acosh, arginfo_math_unary)
     PHP_FE(math_atanh, arginfo_math_unary)
-    PHP_FE(platonic_tetrahedron, NULL)
-    PHP_FE(platonic_cube, NULL)
-    PHP_FE(platonic_octahedron, NULL)
-    PHP_FE(platonic_dodecahedron, NULL)
-    PHP_FE(platonic_icosahedron, NULL)
+    PHP_FE(platonic_tetrahedron, arginfo_void)
+    PHP_FE(platonic_cube, arginfo_void)
+    PHP_FE(platonic_octahedron, arginfo_void)
+    PHP_FE(platonic_dodecahedron, arginfo_void)
+    PHP_FE(platonic_icosahedron, arginfo_void)
     PHP_FE(platonic_simplex, arginfo_is_prime)
     PHP_FE(platonic_hypercube, arginfo_is_prime)
     PHP_FE(platonic_cross_polytope, arginfo_is_prime)

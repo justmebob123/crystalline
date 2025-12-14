@@ -69,16 +69,27 @@ for ($i = 0; $i < min(10, count($stock_prices)); $i++) {
     $price_scaled = (int)($stock_prices[$i] * 10); // Scale to integer
     
     // Map price to clock position (0-11)
-    $position = (int)($price_scaled % 12);
+    $clock_pos = (int)($price_scaled % 12);
     
-    // Generate prime at this position with magnitude based on price
-    $magnitude = (int)($price_scaled / 12);
-    $prime = crystalline_prime_generate_o1($position, $magnitude);
+    // Use smaller magnitude for O(1) generation (0-5 range)
+    $magnitude = (int)(($price_scaled / 12) % 6);
+    $prime = crystalline_prime_generate_o1($clock_pos, $magnitude);
+    
+    // If prime generation failed, use next prime after scaled price
+    if ($prime == 0) {
+        $prime = prime_next($price_scaled);
+    }
+    
+    // Map prime to clock position to get ring and position info
+    $position = clock_map_prime_to_position($prime);
     
     echo "  Day " . ($i + 1) . ": $" . number_format($stock_prices[$i], 2);
     echo " → Prime: " . $prime;
-    echo " → Ring: " . $position['ring'];
-    echo ", Position: " . $position['position'] . "\n";
+    if ($position !== false) {
+        echo " → Ring: " . $position['ring'];
+        echo ", Position: " . $position['position'];
+    }
+    echo "\n";
 }
 echo "\n";
 
