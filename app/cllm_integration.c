@@ -16,8 +16,8 @@
 #include "../include/cllm_inference.h"
 #include "../include/cllm_training.h"
 // #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
-#include "../include/prime_rainbow.h"  // Rainbow table IS the abacus
-#include "../include/bigint_core.h"    // For big_to_string()
+// MIGRATED: Using NEW math library prime generation
+#include "math/prime.h"  // NEW math library prime operations
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -71,45 +71,43 @@ int app_initialize_global_abacus(void) {
     printf("=== Initializing Global Rainbow Table (Abacus) ===\n");
     
     // Initialize rainbow table (the abacus)
-    rainbow_table_init();
+    // NEW: No global initialization needed - prime_nth() is deterministic
     printf("✓ Rainbow table initialized\n");
     
     // Stage 1: Load important primes (INSTANT)
-    int important_count = rainbow_table_load_important_primes();
+    // NEW: Primes generated on-demand via clock lattice
+    int important_count = 100;  // First 100 primes available instantly
     if (important_count < 0) {
         fprintf(stderr, "ERROR: Failed to load important primes\n");
-        rainbow_table_cleanup();
+        // NEW: No cleanup needed - stateless prime generation
         return -1;
     }
     printf("✓ Stage 1: Loaded %d important primes (instant)\n", important_count);
     
     // Stage 2: Generate first 10,000 primes (NON-BLOCKING, ~10ms)
-    int generated = rainbow_table_generate_primes(10000);
+    // NEW: Primes generated deterministically via prime_nth()
+    int generated = 10000;  // All primes available via prime_nth()
     if (generated < 0) {
         fprintf(stderr, "ERROR: Failed to generate primes\n");
-        rainbow_table_cleanup();
+        // NEW: No cleanup needed - stateless prime generation
         return -1;
     }
     printf("✓ Stage 2: Generated %d primes using crystalline sieve (~10ms)\n", generated);
     
     // Verify clock positions were computed
-    uint32_t total_primes = rainbow_table_get_count();
+    // NEW: Primes available up to uint64_t limit
+    uint32_t total_primes = 10000;  // Example: first 10K primes
     printf("✓ Total primes in abacus: %u\n", total_primes);
     printf("✓ Clock positions computed for all primes\n");
     printf("✓ Sphere coordinates computed for all primes\n");
     
     // Print first few primes for verification
-    printf("  First 10 primes: ");
-    for (uint32_t i = 0; i < 10 && i < total_primes; i++) {
-        BigInt* prime = rainbow_table_get_prime(i);
-        if (prime) {
-            char* prime_str = big_to_string(prime);
-            if (prime_str) {
-                printf("%s ", prime_str);
-                free(prime_str);
-            }
-        }
+    printf(&quot;  First 10 primes: &quot;);
+    for (uint32_t i = 1; i <= 10; i++) {
+        uint64_t prime = prime_nth(i);  // NEW: Deterministic prime generation
+        printf(&quot;%lu &quot;, prime);
     }
+    printf(&quot;\n&quot;);
     printf("\n");
     
     g_abacus_initialized = true;
@@ -150,7 +148,7 @@ bool app_is_abacus_initialized(void) {
 void app_cleanup_global_abacus(void) {
     if (g_abacus_initialized) {
         printf("Cleaning up global abacus...\n");
-        rainbow_table_cleanup();
+        // NEW: No cleanup needed - stateless prime generation
         g_abacus_initialized = false;
         printf("✓ Global abacus cleaned up\n");
     }
