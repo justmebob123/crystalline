@@ -45,7 +45,7 @@
 #include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
 #include "math/types.h"  // For dimensional frequencies
 #include "math/transcendental.h"
-#include "prime_types.h"                 // For MATH_PI
+#include "math/types.h"                  // For MATH_PI (NEW math library)
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

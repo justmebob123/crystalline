@@ -23,8 +23,7 @@
 #include "../include/cllm_attention.h"
 #include "../include/clock_lattice.h"  // For validate_prime_by_clock_position()
 #include "math/transcendental.h"
-
-#define MATH_PHI 1.618033988749895
+#include "math/types.h"  // For MATH_PI and MATH_PHI constants (NEW math library)
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000
 static uint64_t prime_cache[PRIME_CACHE_SIZE];

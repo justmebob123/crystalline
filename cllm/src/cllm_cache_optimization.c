@@ -6,7 +6,7 @@
 
 #define _GNU_SOURCE  // For CPU_SET macros
 #include "ai/cllm_cache_optimization.h"
-#include "prime_types.h"
+#include "math/types.h"  // For MATH_PI (NEW math library)
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

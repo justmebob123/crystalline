@@ -20,7 +20,7 @@
 
 #include "ai/cllm_platonic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"  // For MATH_PHI constant
+#include "math/types.h"  // For MATH_PHI constant (NEW math library)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,8 +30,8 @@
 // DODECAHEDRON GEOMETRY
 // ============================================================================
 
-// Golden ratio is already defined in prime_types.h as MATH_PHI
-// φ = (1 + √5) / 2 ≈ 1.618033988749895
+// Golden ratio is defined in math/types.h as MATH_PHI
+// φ = (1 + √5) / 2 ≈ 1.61803398874989484820
 
 /**
  * Regular dodecahedron vertices (normalized)
@@ -51,7 +51,7 @@ static bool vertices_initialized = false;
 static void init_dodecahedron_vertices(void) {
     if (vertices_initialized) return;
     
-    double phi = MATH_PHI;  // Golden ratio from prime_types.h
+    double phi = MATH_PHI;  // Golden ratio from math/types.h
     double inv_phi = 1.0 / phi;
     
     int idx = 0;

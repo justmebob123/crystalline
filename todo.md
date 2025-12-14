@@ -354,9 +354,9 @@ libssl, libcrypto, libm
 - All builds clean with no warnings about MATH_PHI redefinition
 
 ### [ ] Step 15: Migrate Include Headers
-- [ ] Update all headers in include/ directory
-- [ ] Replace legacy types with NEW math library types
-- [ ] Test build
+- [ ] Identify which include/ headers actually need prime_types.h
+- [ ] Check if they use legacy types or just constants
+- [ ] Migrate or mark for deletion
 
 ### [ ] Step 16: Delete Legacy Code
 - [ ] Remove prime_types.h
