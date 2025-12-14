@@ -510,26 +510,32 @@ Where **p and q are coprime, not both odd**.
 
 ## 📚 REFERENCE DOCUMENTS
 
+### Planning Documents (READ THESE FIRST)
+1. **PRIMARY_OBJECTIVES.md** - Thesis completion and production readiness (SUPPLEMENTS THIS PLAN, PREEMPTS SECONDARY)
+2. **MASTER_PLAN.md** (this file) - Core objectives and architectural rules
+3. **SECONDARY_OBJECTIVES.md** - Detailed implementation tasks
+4. **TERTIARY_OBJECTIVES.md** - Mathematical proofs and derivations
+
 ### Core Mathematical Framework
-1. **documents/O1_PRIME_GENERATION_THESIS.md** (455 lines, peer-review ready)
-2. **documents/O1_DETERMINISTIC_PRIME_FORMULA_BREAKTHROUGH.md**
-3. **documents/COMPLETE_INVESTIGATION_SUMMARY.md**
-4. **DEEP_ANALYSIS_COMPLETE.md** (this session's comprehensive analysis)
+5. **documents/O1_PRIME_GENERATION_THESIS.md** (455 lines, peer-review ready)
+6. **documents/O1_DETERMINISTIC_PRIME_FORMULA_BREAKTHROUGH.md**
+7. **documents/COMPLETE_INVESTIGATION_SUMMARY.md**
+8. **DEEP_ANALYSIS_COMPLETE.md** (this session's comprehensive analysis)
 
 ### Babylonian Mathematics
-5. **research/THE_ANCIENT_PROVERB_DECODED.md** (479 lines)
-6. **research/BABYLONIAN_MATHEMATICS_DEEP_RESEARCH.md** (539 lines)
-7. **research/ALL_ARITHMETIC_OPERATIONS_BABYLONIAN.md** (838 lines)
-8. **research/COMPREHENSIVE_ACTION_PLAN.md** (843 lines)
+9. **research/THE_ANCIENT_PROVERB_DECODED.md** (479 lines)
+10. **research/BABYLONIAN_MATHEMATICS_DEEP_RESEARCH.md** (539 lines)
+11. **research/ALL_ARITHMETIC_OPERATIONS_BABYLONIAN.md** (838 lines)
+12. **research/COMPREHENSIVE_ACTION_PLAN.md** (843 lines)
 
 ### Implementation Status
-9. **documents/PHASE_2_COMPLETE_SUMMARY.md**
-10. **documents/COMPREHENSIVE_LIBRARY_ANALYSIS.md**
-11. **documents/MATH_LIBRARY_DETAILED_ANALYSIS.md**
+13. **documents/PHASE_2_COMPLETE_SUMMARY.md**
+14. **documents/COMPREHENSIVE_LIBRARY_ANALYSIS.md**
+15. **documents/MATH_LIBRARY_DETAILED_ANALYSIS.md**
 
 ### Visual Framework
-12. **IMG_20251211_175221.jpg** - Alchemical clock diagram
-13. **docs/mathematical_framework/*.jpeg** - 8 mathematical framework images
+16. **IMG_20251211_175221.jpg** - Alchemical clock diagram
+17. **docs/mathematical_framework/*.jpeg** - 8 mathematical framework images
 
 ---
 
