@@ -1,5 +1,60 @@
 # COMPREHENSIVE REPOSITORY CLEANUP AND THESIS CREATION
 
+## 📋 MASTER PLAN RULES (PERMANENT - READ ALWAYS)
+
+### 🔴 RULE 0: MANDATORY READING SEQUENCE
+1. Read PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Read TERTIARY_OBJECTIVES.md for implementation details
+5. Update todo.md with current progress
+
+### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES
+- ❌ NEVER use math.h, complex.h, or any standard math libraries
+- ❌ NEVER use floating-point arithmetic for core operations
+- ✅ ALL operations must use CrystallineAbacus (arbitrary precision)
+- ✅ PURE crystalline mathematics only
+
+### 🔴 RULE 2: NO DUPLICATE CONSTANTS
+- ❌ NO multiple definitions of π, φ, infinity, etc.
+- ✅ ALL constants defined ONCE in `math/include/math/constants.h`
+
+### 🔴 RULE 3: PROPER NAMING CONVENTIONS
+- ❌ NO "bigfixed", "complete", "new", or temporal suffixes
+- ❌ NO "old", "backup", "temp", "legacy" in names (except _legacy for refactoring)
+- ✅ CLEAR descriptive names reflecting Babylonian/clock lattice design
+
+### 🔴 RULE 4: BABYLONIAN MATHEMATICS FOUNDATION
+- ✅ BASE-60 (sexagesimal) system
+- ✅ 12-FOLD clock symmetry (zodiac structure)
+- ✅ 4,320,000 = 12 × 60 × 60 × 100 (complete clock cycle)
+
+### 🔴 RULE 5: O(1) DETERMINISTIC OPERATIONS
+- ✅ PRIME GENERATION via clock lattice (position + magnitude)
+- ✅ ALL OPERATIONS should be O(1) or O(log n) maximum
+- ❌ NO trial division or brute force loops
+
+### 🔴 RULE 6: 12-FOLD SYMMETRY EVERYWHERE
+- ✅ THREAD COUNT must be 12n or 12n+1 (with control thread)
+- ✅ ALL TRANSFORMATIONS preserve 12-fold symmetry
+
+### 🔴 RULE 7: KISSING SPHERES THREADING
+- ✅ EACH THREAD maps to sphere vertex
+- ✅ 12 NEIGHBORS per sphere
+
+### 🔴 RULE 8: CLOCK LATTICE VALIDATION
+- ✅ POSITION IS THE PRIME (deterministic)
+- ✅ STRUCTURE IS VALIDATION
+
+### 🔴 RULE 9: GEOMETRIC OPERATIONS
+- ✅ ALL ARITHMETIC via CrystallineAbacus
+- ✅ OPERATIONS performed on clock lattice
+- ✅ TRIANGULATION for all calculations
+
+---
+
+# COMPREHENSIVE REPOSITORY CLEANUP AND THESIS CREATION
+
 ## PHASE 1: DEEP SOURCE CODE ANALYSIS ✅ COMPLETE
 - [x] Pass 1: Read all math library source files ✅
 - [x] Pass 2: Read all math library source files again ✅
@@ -716,10 +771,39 @@
 
 **Total:** 168/196 questions answered and integrated (85.7%)
 
-## IMMEDIATE NEXT STEPS
+## 🔴 CRITICAL: UNIFIED DESIGN REFACTORING (HIGHEST PRIORITY)
 
-1. [ ] Implement visualizations (25+ specified, scripts created)
-   - Note: Requires disk space cleanup or external generation
+**Status:** 🔴 READY TO BEGIN  
+**Analysis Complete:** Deep analysis reveals major misalignment between thesis and implementation
+
+### Critical Findings:
+- ❌ Multiple arithmetic systems (should be ONE)
+- ❌ 8 redundant platonic generators (should be ONE)
+- ❌ Inconsistent threading (should be ONE model)
+- ❌ Clock lattice only 50% usage (should be 100%)
+- ❌ Geometric operations secondary (should be PRIMARY)
+
+### Refactoring Phases:
+- [ ] Phase 1: Unify Arithmetic System (2 files → 1 unified geometric system)
+- [ ] Phase 2: Consolidate Platonic Generators (8 files → 1 unified generator)
+- [ ] Phase 3: Unify Threading Model (multiple → 1 kissing spheres model)
+- [ ] Phase 4: Make Clock Lattice Central (50% → 100% usage)
+- [ ] Phase 5: Reorganize File Structure (73 files → ~45 files)
+
+### Expected Outcomes:
+- Files: 73 → 45 (-38%)
+- Clock lattice usage: 50% → 100%
+- Alignment score: 2.3 → 4.5 (+96%)
+- Code duplication: -70%
+- **UNIFIED DESIGN: ✅ ACHIEVED**
+
+**See:** UNIFIED_DESIGN_ACTION_PLAN.md for complete detailed plan
+
+---
+
+## IMMEDIATE NEXT STEPS (AFTER REFACTORING)
+
+1. [ ] Implement remaining visualizations (19+ more)
 2. [ ] Continue answering Additional Topics questions (28 remaining)
 3. [ ] Add more worked examples
 4. [ ] Add comprehensive bibliography
