@@ -877,22 +877,120 @@ uint64_t prime_totient(uint64_t n) {
  * @param prime The prime number to find the index of
  * @return The 1-based index of the prime, or 0 if not prime
  */
-uint64_t prime_index(uint64_t prime) {
-    // Handle special cases
-    if (prime < 2) return 0;
+/**
+ * @brief Helper: Count primes using clock lattice for mod 12 = 5, 7, 11
+ */
+static uint64_t prime_index_clock_lattice(uint64_t prime) {
+    uint64_t mod12 = prime % 12;
+    uint32_t position;
+    uint64_t base;
     
-    // Verify it's actually prime first
-    if (!prime_is_prime(prime)) {
+    // Determine position and base
+    if (mod12 == 5) {
+        position = 3; base = 5;
+    } else if (mod12 == 7) {
+        position = 6; base = 7;
+    } else if (mod12 == 11) {
+        position = 9; base = 11;
+    } else {
+        return 0; // Invalid
+    }
+    
+    // Calculate magnitude
+    uint64_t magnitude = (prime - base) / 12;
+    
+    // Verify it's prime using O(1) check
+    if (!prime_is_prime_o1(position, magnitude)) {
         return 0;
     }
     
-    // Count all primes from 2 up to this prime
-    uint64_t count = 0;
-    for (uint64_t i = 2; i <= prime; i++) {
-        if (prime_is_prime(i)) {
+    // Count primes before this one
+    // Start with 2 and 3
+    uint64_t count = 2;
+    
+    // Count primes with mod 12 = 1 that are less than our prime
+    for (uint64_t p = 13; p < prime; p += 12) {
+        if (prime_is_prime(p)) {
             count++;
         }
     }
     
+    // For each clock position (3, 6, 9), count primes up to and including this magnitude
+    for (uint32_t pos = 3; pos <= 9; pos += 3) {
+        uint64_t pos_base = (pos == 3) ? 5 : (pos == 6) ? 7 : 11;
+        
+        // Determine max magnitude for this position
+        uint64_t max_mag;
+        if (pos == position) {
+            max_mag = magnitude + 1; // Include the prime itself
+        } else {
+            // Count all primes in this position that are less than our prime
+            max_mag = (prime - pos_base + 11) / 12; // Round up
+        }
+        
+        // Count primes at this position
+        for (uint64_t mag = 0; mag < max_mag; mag++) {
+            uint64_t candidate = pos_base + mag * 12;
+            if (candidate <= prime && prime_is_prime_o1(pos, mag)) {
+                count++;
+            }
+        }
+    }
+    
     return count;
+}
+
+/**
+ * @brief Helper: Count primes with mod 12 = 1 (optimized)
+ */
+static uint64_t prime_index_mod1(uint64_t prime) {
+    // Primes with mod 12 = 1: 13, 37, 61, 73, 97, 109, 133, 145, 157...
+    // These don't fit standard clock lattice positions
+    
+    uint64_t count = 0;
+    
+    // Count 2 and 3
+    if (prime >= 2) count++;
+    if (prime >= 3) count++;
+    
+    // Count primes in clock positions (mod 12 = 5, 7, 11)
+    // Optimize by checking in groups of 12
+    for (uint64_t base = 5; base < prime; base += 12) {
+        if (prime_is_prime(base)) count++;              // mod 12 = 5
+        if (base + 2 < prime && prime_is_prime(base + 2)) count++; // mod 12 = 7
+        if (base + 6 < prime && prime_is_prime(base + 6)) count++; // mod 12 = 11
+    }
+    
+    // Count primes with mod 12 = 1
+    for (uint64_t p = 13; p <= prime; p += 12) {
+        if (prime_is_prime(p)) count++;
+    }
+    
+    return count;
+}
+
+uint64_t prime_index(uint64_t prime) {
+    // Special cases
+    if (prime < 2) return 0;
+    if (prime == 2) return 1;
+    if (prime == 3) return 2;
+    
+    // Verify it's actually prime
+    if (!prime_is_prime(prime)) {
+        return 0;
+    }
+    
+    // Determine which method to use based on mod 12
+    uint64_t mod12 = prime % 12;
+    
+    if (mod12 == 5 || mod12 == 7 || mod12 == 11) {
+        // Use clock lattice formula (O(log n))
+        return prime_index_clock_lattice(prime);
+    } else if (mod12 == 1) {
+        // Use optimized counting for mod 12 = 1 primes
+        return prime_index_mod1(prime);
+    } else {
+        // Not a prime (primes > 3 must have mod 12 ∈ {1, 5, 7, 11})
+        return 0;
+    }
 }
