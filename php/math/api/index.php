@@ -8,6 +8,11 @@
  * Usage: GET /math/?operation=function_name&param1=value1&param2=value2
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors in output
+ini_set('log_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -96,6 +101,24 @@ function ensure_clock_initialized() {
 // Route handling
 try {
     switch ($operation) {
+        // ====================================================================
+        // DEBUG / TEST
+        // ====================================================================
+        case 'debug':
+        case 'test':
+            send_response([
+                'success' => true,
+                'php_version' => phpversion(),
+                'extensions' => [
+                    'crystalline_math' => extension_loaded('crystalline_math'),
+                    'algorithms' => extension_loaded('algorithms'),
+                ],
+                'available_functions' => extension_loaded('crystalline_math') ? get_extension_funcs('crystalline_math') : [],
+                'test_is_prime' => function_exists('is_prime') ? is_prime(17) : 'function not found',
+                'test_math_add' => function_exists('math_add') ? math_add(5, 3) : 'function not found',
+            ]);
+            break;
+
         // ====================================================================
         // HELP / DOCUMENTATION
         // ====================================================================
