@@ -77,7 +77,11 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/q_validation.c \
           src/geometric_recovery/geometric_recovery.c \
           src/geometric_recovery/iterative_recovery.c \
-          src/geometric_recovery/iterative_recovery_v2.c
+          src/geometric_recovery/iterative_recovery_v2.c \
+          src/geometric_recovery/tetration_attractors.c \
+          src/geometric_recovery/torus_analysis.c \
+          src/geometric_recovery/harmonic_folding.c \
+          src/geometric_recovery/kissing_spheres.c
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
