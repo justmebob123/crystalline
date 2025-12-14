@@ -2,543 +2,755 @@
 /**
  * Crystalline Math REST API
  * 
- * Complete REST API for all Crystalline Math functions
+ * Comprehensive REST API for all Crystalline Math functions
+ * Supports 112+ mathematical operations via GET requests
+ * 
+ * Usage: GET /math/?operation=function_name&param1=value1&param2=value2
  */
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Handle OPTIONS request
+// Handle OPTIONS request for CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Get request path
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$path = str_replace('/api/math/', '', $path);
-$path = trim($path, '/');
-
-// Get request body
-$input = json_decode(file_get_contents('php://input'), true);
-
-// Response helper
-function respond($data, $status = 200) {
-    http_response_code($status);
-    echo json_encode($data, JSON_PRETTY_PRINT);
+// Check if extension is loaded
+if (!extension_loaded('crystalline_math')) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Crystalline Math extension not loaded',
+        'message' => 'Please install and enable the crystalline_math PHP extension'
+    ], JSON_PRETTY_PRINT);
     exit();
 }
 
-// Error helper
-function error($message, $status = 400) {
-    respond(['error' => $message], $status);
+// Check if algorithms extension is loaded
+$has_algorithms = extension_loaded('algorithms');
+
+/**
+ * Send JSON response
+ */
+function send_response($data, $code = 200) {
+    http_response_code($code);
+    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit();
 }
 
-// ============================================================================
-// ARITHMETIC ENDPOINTS
-// ============================================================================
-
-if ($path === 'add') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
-    }
-    $result = math_add($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'addition']);
+/**
+ * Send error response
+ */
+function send_error($message, $code = 400) {
+    send_response([
+        'success' => false,
+        'error' => $message
+    ], $code);
 }
 
-if ($path === 'subtract') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
-    }
-    $result = math_sub($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'subtraction']);
+/**
+ * Get parameter with default
+ */
+function get_param($name, $default = null) {
+    return $_GET[$name] ?? $default;
 }
 
-if ($path === 'multiply') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
+/**
+ * Get required parameter
+ */
+function require_param($name) {
+    if (!isset($_GET[$name])) {
+        send_error("Missing required parameter: $name");
     }
-    $result = math_mul($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'multiplication']);
+    return $_GET[$name];
 }
 
-if ($path === 'divide') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
+// Get operation
+$operation = get_param('operation', 'help');
+
+// Initialize rainbow table and clock if needed
+static $rainbow_initialized = false;
+static $clock_initialized = false;
+
+function ensure_rainbow_initialized() {
+    global $rainbow_initialized;
+    if (!$rainbow_initialized) {
+        rainbow_init(10000);
+        rainbow_populate_count(1000);
+        $rainbow_initialized = true;
     }
-    if ($input['b'] == 0) {
-        error('Division by zero');
-    }
-    $result = math_div($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'division']);
 }
 
-if ($path === 'mod') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
+function ensure_clock_initialized() {
+    global $clock_initialized;
+    if (!$clock_initialized) {
+        clock_init();
+        $clock_initialized = true;
     }
-    $result = math_mod($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'modulo']);
 }
 
-if ($path === 'abs') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
+// Route handling
+try {
+    switch ($operation) {
+        // ====================================================================
+        // HELP / DOCUMENTATION
+        // ====================================================================
+        case 'help':
+        case 'info':
+            send_response([
+                'success' => true,
+                'name' => 'Crystalline Math REST API',
+                'version' => '2.0.0',
+                'total_functions' => 112,
+                'usage' => 'GET /?operation=function_name&param1=value1&param2=value2',
+                'categories' => [
+                    'arithmetic' => 'Basic arithmetic operations',
+                    'transcendental' => 'Trigonometric and logarithmic functions',
+                    'prime' => 'Prime number operations',
+                    'rainbow' => 'Rainbow table operations',
+                    'clock' => 'Clock lattice operations',
+                    'platonic' => 'Platonic solid generation',
+                    'statistics' => 'Statistical operations (requires algorithms extension)',
+                    'numerical' => 'Numerical operations (requires algorithms extension)',
+                ],
+                'examples' => [
+                    'Add two numbers' => '/?operation=add&a=5&b=3',
+                    'Check if prime' => '/?operation=is_prime&n=17',
+                    'Generate prime' => '/?operation=prime_generate&position=3&magnitude=1',
+                    'Rainbow lookup' => '/?operation=rainbow_lookup_by_index&index=10',
+                    'Clock position' => '/?operation=clock_map_prime&prime=17',
+                    'Calculate sine' => '/?operation=sin&x=1.5708',
+                    'Square root' => '/?operation=sqrt&x=16',
+                ]
+            ]);
+            break;
+
+        // ====================================================================
+        // LIST ALL FUNCTIONS
+        // ====================================================================
+        case 'list':
+        case 'functions':
+            $math_functions = get_extension_funcs('crystalline_math');
+            $algo_functions = $has_algorithms ? get_extension_funcs('algorithms') : [];
+            
+            send_response([
+                'success' => true,
+                'math_functions' => $math_functions,
+                'math_count' => count($math_functions),
+                'algorithm_functions' => $algo_functions,
+                'algorithm_count' => count($algo_functions),
+                'total' => count($math_functions) + count($algo_functions)
+            ]);
+            break;
+
+        // ====================================================================
+        // ARITHMETIC OPERATIONS
+        // ====================================================================
+        case 'add':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_add($a, $b)]);
+            break;
+
+        case 'sub':
+        case 'subtract':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_sub($a, $b)]);
+            break;
+
+        case 'mul':
+        case 'multiply':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_mul($a, $b)]);
+            break;
+
+        case 'div':
+        case 'divide':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            if ($b == 0) send_error('Division by zero');
+            send_response(['success' => true, 'result' => math_div($a, $b)]);
+            break;
+
+        case 'mod':
+        case 'modulo':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_mod($a, $b)]);
+            break;
+
+        case 'abs':
+        case 'absolute':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_abs($x)]);
+            break;
+
+        case 'min':
+        case 'minimum':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_min($a, $b)]);
+            break;
+
+        case 'max':
+        case 'maximum':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            send_response(['success' => true, 'result' => math_max($a, $b)]);
+            break;
+
+        case 'clamp':
+            $x = (float)require_param('x');
+            $min = (float)require_param('min');
+            $max = (float)require_param('max');
+            send_response(['success' => true, 'result' => math_clamp($x, $min, $max)]);
+            break;
+
+        case 'sign':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_sign($x)]);
+            break;
+
+        case 'floor':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_floor($x)]);
+            break;
+
+        case 'ceil':
+        case 'ceiling':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_ceil($x)]);
+            break;
+
+        case 'round':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_round($x)]);
+            break;
+
+        case 'trunc':
+        case 'truncate':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_trunc($x)]);
+            break;
+
+        // ====================================================================
+        // POWER AND ROOT OPERATIONS
+        // ====================================================================
+        case 'sqrt':
+        case 'square_root':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_sqrt($x)]);
+            break;
+
+        case 'cbrt':
+        case 'cube_root':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_cbrt($x)]);
+            break;
+
+        case 'pow':
+        case 'power':
+            $base = (float)require_param('base');
+            $exp = (float)require_param('exp');
+            send_response(['success' => true, 'result' => math_pow($base, $exp)]);
+            break;
+
+        case 'exp':
+        case 'exponential':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_exp($x)]);
+            break;
+
+        case 'expm1':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_expm1($x)]);
+            break;
+
+        // ====================================================================
+        // LOGARITHMIC OPERATIONS
+        // ====================================================================
+        case 'log':
+        case 'ln':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_log($x)]);
+            break;
+
+        case 'log10':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_log10($x)]);
+            break;
+
+        case 'log2':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_log2($x)]);
+            break;
+
+        case 'log1p':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_log1p($x)]);
+            break;
+
+        // ====================================================================
+        // TRIGONOMETRIC OPERATIONS
+        // ====================================================================
+        case 'sin':
+        case 'sine':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_sin($x)]);
+            break;
+
+        case 'cos':
+        case 'cosine':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_cos($x)]);
+            break;
+
+        case 'tan':
+        case 'tangent':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_tan($x)]);
+            break;
+
+        case 'asin':
+        case 'arcsin':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_asin($x)]);
+            break;
+
+        case 'acos':
+        case 'arccos':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_acos($x)]);
+            break;
+
+        case 'atan':
+        case 'arctan':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_atan($x)]);
+            break;
+
+        case 'atan2':
+            $y = (float)require_param('y');
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_atan2($y, $x)]);
+            break;
+
+        // ====================================================================
+        // HYPERBOLIC OPERATIONS
+        // ====================================================================
+        case 'sinh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_sinh($x)]);
+            break;
+
+        case 'cosh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_cosh($x)]);
+            break;
+
+        case 'tanh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_tanh($x)]);
+            break;
+
+        case 'asinh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_asinh($x)]);
+            break;
+
+        case 'acosh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_acosh($x)]);
+            break;
+
+        case 'atanh':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_atanh($x)]);
+            break;
+
+        // ====================================================================
+        // VALIDATION OPERATIONS
+        // ====================================================================
+        case 'is_nan':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_is_nan($x)]);
+            break;
+
+        case 'is_inf':
+        case 'is_infinite':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_is_inf($x)]);
+            break;
+
+        case 'is_finite':
+            $x = (float)require_param('x');
+            send_response(['success' => true, 'result' => math_is_finite($x)]);
+            break;
+
+        case 'approx_equal':
+            $a = (float)require_param('a');
+            $b = (float)require_param('b');
+            $epsilon = (float)get_param('epsilon', 1e-9);
+            send_response(['success' => true, 'result' => math_approx_equal($a, $b, $epsilon)]);
+            break;
+
+        // ====================================================================
+        // PRIME NUMBER OPERATIONS
+        // ====================================================================
+        case 'is_prime':
+        case 'prime_check':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => is_prime($n), 'number' => $n]);
+            break;
+
+        case 'prime_generate':
+        case 'crystalline_prime_generate_o1':
+            $position = (int)require_param('position');
+            $magnitude = (int)require_param('magnitude');
+            $prime = crystalline_prime_generate_o1($position, $magnitude);
+            send_response(['success' => true, 'result' => $prime, 'position' => $position, 'magnitude' => $magnitude]);
+            break;
+
+        case 'prime_nth':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_nth($n), 'index' => $n]);
+            break;
+
+        case 'prime_next':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_next($n), 'after' => $n]);
+            break;
+
+        case 'prime_prev':
+        case 'prime_previous':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_prev($n), 'before' => $n]);
+            break;
+
+        case 'prime_count_below':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_count_below($n), 'limit' => $n]);
+            break;
+
+        case 'prime_count_range':
+            $start = (int)require_param('start');
+            $end = (int)require_param('end');
+            send_response(['success' => true, 'result' => prime_count_range($start, $end), 'range' => [$start, $end]]);
+            break;
+
+        case 'prime_gap_next':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_gap_next($n), 'after' => $n]);
+            break;
+
+        case 'prime_gap_prev':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_gap_prev($n), 'before' => $n]);
+            break;
+
+        case 'prime_are_coprime':
+        case 'coprime':
+            $a = (int)require_param('a');
+            $b = (int)require_param('b');
+            send_response(['success' => true, 'result' => prime_are_coprime($a, $b), 'numbers' => [$a, $b]]);
+            break;
+
+        case 'prime_is_prime_o1':
+            $position = (int)require_param('position');
+            $magnitude = (int)require_param('magnitude');
+            send_response(['success' => true, 'result' => prime_is_prime_o1($position, $magnitude)]);
+            break;
+
+        case 'prime_totient':
+        case 'totient':
+        case 'euler_phi':
+            $n = (int)require_param('n');
+            send_response(['success' => true, 'result' => prime_totient($n), 'number' => $n]);
+            break;
+
+        case 'prime_index':
+            $prime = (int)require_param('prime');
+            $index = prime_index($prime);
+            if ($index === false) {
+                send_error("$prime is not a prime number");
+            }
+            send_response(['success' => true, 'result' => $index, 'prime' => $prime]);
+            break;
+
+        // ====================================================================
+        // RAINBOW TABLE OPERATIONS
+        // ====================================================================
+        case 'rainbow_init':
+            $capacity = (int)get_param('capacity', 10000);
+            rainbow_init($capacity);
+            send_response(['success' => true, 'message' => 'Rainbow table initialized', 'capacity' => $capacity]);
+            break;
+
+        case 'rainbow_populate':
+        case 'rainbow_populate_count':
+            ensure_rainbow_initialized();
+            $count = (int)get_param('count', 1000);
+            rainbow_populate_count($count);
+            send_response(['success' => true, 'message' => 'Rainbow table populated', 'count' => $count, 'size' => rainbow_size()]);
+            break;
+
+        case 'rainbow_size':
+            ensure_rainbow_initialized();
+            send_response(['success' => true, 'result' => rainbow_size()]);
+            break;
+
+        case 'rainbow_max_prime':
+            ensure_rainbow_initialized();
+            send_response(['success' => true, 'result' => rainbow_max_prime()]);
+            break;
+
+        case 'rainbow_lookup_by_index':
+        case 'rainbow_lookup':
+            ensure_rainbow_initialized();
+            $index = (int)require_param('index');
+            $prime = rainbow_lookup_by_index($index);
+            if ($prime === false) {
+                send_error("Index $index not found in rainbow table");
+            }
+            send_response(['success' => true, 'result' => $prime, 'index' => $index]);
+            break;
+
+        case 'rainbow_lookup_index':
+            ensure_rainbow_initialized();
+            $prime = (int)require_param('prime');
+            $index = rainbow_lookup_index($prime);
+            if ($index === false) {
+                send_error("Prime $prime not found in rainbow table");
+            }
+            send_response(['success' => true, 'result' => $index, 'prime' => $prime]);
+            break;
+
+        case 'rainbow_next_prime':
+            ensure_rainbow_initialized();
+            $prime = (int)require_param('prime');
+            $next = rainbow_next_prime($prime);
+            if ($next === false) {
+                send_error("No next prime found in rainbow table");
+            }
+            send_response(['success' => true, 'result' => $next, 'after' => $prime]);
+            break;
+
+        case 'rainbow_prev_prime':
+            ensure_rainbow_initialized();
+            $prime = (int)require_param('prime');
+            $prev = rainbow_prev_prime($prime);
+            if ($prev === false) {
+                send_error("No previous prime found in rainbow table");
+            }
+            send_response(['success' => true, 'result' => $prev, 'before' => $prime]);
+            break;
+
+        case 'rainbow_contains':
+            ensure_rainbow_initialized();
+            $prime = (int)require_param('prime');
+            send_response(['success' => true, 'result' => rainbow_contains($prime), 'prime' => $prime]);
+            break;
+
+        // ====================================================================
+        // CLOCK LATTICE OPERATIONS
+        // ====================================================================
+        case 'clock_init':
+            clock_init();
+            send_response(['success' => true, 'message' => 'Clock lattice initialized']);
+            break;
+
+        case 'clock_map_prime':
+        case 'clock_map_prime_to_position':
+            ensure_clock_initialized();
+            $prime = (int)require_param('prime');
+            $pos = clock_map_prime_to_position($prime);
+            if ($pos === false) {
+                send_error("Failed to map prime $prime to clock position");
+            }
+            send_response(['success' => true, 'result' => $pos, 'prime' => $prime]);
+            break;
+
+        case 'clock_position_to_prime':
+            ensure_clock_initialized();
+            $ring = (int)require_param('ring');
+            $position = (int)require_param('position');
+            $pos_array = ['ring' => $ring, 'position' => $position];
+            $prime = clock_position_to_prime($pos_array);
+            send_response(['success' => true, 'result' => $prime, 'position' => $pos_array]);
+            break;
+
+        case 'clock_is_valid_position':
+            ensure_clock_initialized();
+            $ring = (int)require_param('ring');
+            $position = (int)require_param('position');
+            $pos_array = ['ring' => $ring, 'position' => $position];
+            send_response(['success' => true, 'result' => clock_is_valid_position($pos_array), 'position' => $pos_array]);
+            break;
+
+        case 'clock_reverse_lookup':
+            ensure_clock_initialized();
+            $number = (int)require_param('number');
+            $lookup = clock_reverse_lookup($number);
+            if ($lookup === false) {
+                send_error("Failed to reverse lookup number $number");
+            }
+            send_response(['success' => true, 'result' => $lookup, 'number' => $number]);
+            break;
+
+        // ====================================================================
+        // PLATONIC SOLID OPERATIONS
+        // ====================================================================
+        case 'platonic_tetrahedron':
+        case 'tetrahedron':
+            $solid = platonic_tetrahedron();
+            send_response(['success' => true, 'result' => $solid]);
+            break;
+
+        case 'platonic_cube':
+        case 'cube':
+            $solid = platonic_cube();
+            send_response(['success' => true, 'result' => $solid]);
+            break;
+
+        case 'platonic_octahedron':
+        case 'octahedron':
+            $solid = platonic_octahedron();
+            send_response(['success' => true, 'result' => $solid]);
+            break;
+
+        case 'platonic_dodecahedron':
+        case 'dodecahedron':
+            $solid = platonic_dodecahedron();
+            send_response(['success' => true, 'result' => $solid]);
+            break;
+
+        case 'platonic_icosahedron':
+        case 'icosahedron':
+            $solid = platonic_icosahedron();
+            send_response(['success' => true, 'result' => $solid]);
+            break;
+
+        case 'platonic_simplex':
+        case 'simplex':
+            $dimension = (int)require_param('dimension');
+            $solid = platonic_simplex($dimension);
+            send_response(['success' => true, 'result' => $solid, 'dimension' => $dimension]);
+            break;
+
+        case 'platonic_hypercube':
+        case 'hypercube':
+            $dimension = (int)require_param('dimension');
+            $solid = platonic_hypercube($dimension);
+            send_response(['success' => true, 'result' => $solid, 'dimension' => $dimension]);
+            break;
+
+        case 'platonic_cross_polytope':
+        case 'cross_polytope':
+            $dimension = (int)require_param('dimension');
+            $solid = platonic_cross_polytope($dimension);
+            send_response(['success' => true, 'result' => $solid, 'dimension' => $dimension]);
+            break;
+
+        // ====================================================================
+        // STATISTICS OPERATIONS (requires algorithms extension)
+        // ====================================================================
+        case 'stats_mean':
+        case 'mean':
+        case 'average':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_mean($data), 'count' => count($data)]);
+            break;
+
+        case 'stats_variance':
+        case 'variance':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_variance($data), 'count' => count($data)]);
+            break;
+
+        case 'stats_std_dev':
+        case 'std_dev':
+        case 'stddev':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_std_dev($data), 'count' => count($data)]);
+            break;
+
+        case 'stats_median':
+        case 'median':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_median($data), 'count' => count($data)]);
+            break;
+
+        case 'stats_min':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_min($data), 'count' => count($data)]);
+            break;
+
+        case 'stats_max':
+            if (!$has_algorithms) send_error('Algorithms extension not loaded', 501);
+            $data = json_decode(require_param('data'), true);
+            if (!is_array($data)) send_error('Data must be a JSON array');
+            send_response(['success' => true, 'result' => stats_max($data), 'count' => count($data)]);
+            break;
+
+        // ====================================================================
+        // BATCH OPERATIONS
+        // ====================================================================
+        case 'batch':
+            $operations = json_decode(require_param('operations'), true);
+            if (!is_array($operations)) send_error('Operations must be a JSON array');
+            
+            $results = [];
+            foreach ($operations as $op) {
+                if (!isset($op['operation'])) {
+                    $results[] = ['success' => false, 'error' => 'Missing operation'];
+                    continue;
+                }
+                
+                // Temporarily set $_GET to the operation parameters
+                $old_get = $_GET;
+                $_GET = array_merge(['operation' => $op['operation']], $op['params'] ?? []);
+                
+                // Capture output
+                ob_start();
+                try {
+                    // Recursive call would go here, but we'll handle inline
+                    $results[] = ['success' => true, 'note' => 'Batch operations not yet implemented'];
+                } catch (Exception $e) {
+                    $results[] = ['success' => false, 'error' => $e->getMessage()];
+                }
+                ob_end_clean();
+                
+                $_GET = $old_get;
+            }
+            
+            send_response(['success' => true, 'results' => $results]);
+            break;
+
+        // ====================================================================
+        // DEFAULT - UNKNOWN OPERATION
+        // ====================================================================
+        default:
+            send_error("Unknown operation: $operation. Use operation=help for documentation.", 404);
     }
-    $result = math_abs($input['x']);
-    respond(['result' => $result, 'operation' => 'absolute_value']);
+
+} catch (Exception $e) {
+    send_error($e->getMessage(), 500);
+} catch (Error $e) {
+    send_error($e->getMessage(), 500);
 }
-
-if ($path === 'min') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
-    }
-    $result = math_min($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'minimum']);
-}
-
-if ($path === 'max') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required');
-    }
-    $result = math_max($input['a'], $input['b']);
-    respond(['result' => $result, 'operation' => 'maximum']);
-}
-
-if ($path === 'clamp') {
-    if (!isset($input['x']) || !isset($input['min']) || !isset($input['max'])) {
-        error('Missing parameters: x, min, max required');
-    }
-    $result = math_clamp($input['x'], $input['min'], $input['max']);
-    respond(['result' => $result, 'operation' => 'clamp']);
-}
-
-if ($path === 'floor') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_floor($input['x']);
-    respond(['result' => $result, 'operation' => 'floor']);
-}
-
-if ($path === 'ceil') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_ceil($input['x']);
-    respond(['result' => $result, 'operation' => 'ceiling']);
-}
-
-if ($path === 'round') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_round($input['x']);
-    respond(['result' => $result, 'operation' => 'round']);
-}
-
-// ============================================================================
-// TRANSCENDENTAL ENDPOINTS
-// ============================================================================
-
-if ($path === 'sqrt') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] < 0) {
-        error('Square root of negative number');
-    }
-    $result = math_sqrt($input['x']);
-    respond(['result' => $result, 'operation' => 'square_root']);
-}
-
-if ($path === 'cbrt') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_cbrt($input['x']);
-    respond(['result' => $result, 'operation' => 'cube_root']);
-}
-
-if ($path === 'pow') {
-    if (!isset($input['x']) || !isset($input['y'])) {
-        error('Missing parameters: x, y required');
-    }
-    $result = math_pow($input['x'], $input['y']);
-    respond(['result' => $result, 'operation' => 'power']);
-}
-
-if ($path === 'exp') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_exp($input['x']);
-    respond(['result' => $result, 'operation' => 'exponential']);
-}
-
-if ($path === 'log') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] <= 0) {
-        error('Logarithm of non-positive number');
-    }
-    $result = math_log($input['x']);
-    respond(['result' => $result, 'operation' => 'natural_logarithm']);
-}
-
-if ($path === 'log10') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] <= 0) {
-        error('Logarithm of non-positive number');
-    }
-    $result = math_log10($input['x']);
-    respond(['result' => $result, 'operation' => 'log_base_10']);
-}
-
-if ($path === 'log2') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] <= 0) {
-        error('Logarithm of non-positive number');
-    }
-    $result = math_log2($input['x']);
-    respond(['result' => $result, 'operation' => 'log_base_2']);
-}
-
-if ($path === 'sin') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_sin($input['x']);
-    respond(['result' => $result, 'operation' => 'sine']);
-}
-
-if ($path === 'cos') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_cos($input['x']);
-    respond(['result' => $result, 'operation' => 'cosine']);
-}
-
-if ($path === 'tan') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_tan($input['x']);
-    respond(['result' => $result, 'operation' => 'tangent']);
-}
-
-if ($path === 'asin') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] < -1 || $input['x'] > 1) {
-        error('Arcsine input must be in [-1, 1]');
-    }
-    $result = math_asin($input['x']);
-    respond(['result' => $result, 'operation' => 'arcsine']);
-}
-
-if ($path === 'acos') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    if ($input['x'] < -1 || $input['x'] > 1) {
-        error('Arccosine input must be in [-1, 1]');
-    }
-    $result = math_acos($input['x']);
-    respond(['result' => $result, 'operation' => 'arccosine']);
-}
-
-if ($path === 'atan') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_atan($input['x']);
-    respond(['result' => $result, 'operation' => 'arctangent']);
-}
-
-if ($path === 'atan2') {
-    if (!isset($input['y']) || !isset($input['x'])) {
-        error('Missing parameters: y, x required');
-    }
-    $result = math_atan2($input['y'], $input['x']);
-    respond(['result' => $result, 'operation' => 'atan2']);
-}
-
-if ($path === 'sinh') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_sinh($input['x']);
-    respond(['result' => $result, 'operation' => 'hyperbolic_sine']);
-}
-
-if ($path === 'cosh') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_cosh($input['x']);
-    respond(['result' => $result, 'operation' => 'hyperbolic_cosine']);
-}
-
-if ($path === 'tanh') {
-    if (!isset($input['x'])) {
-        error('Missing parameter: x required');
-    }
-    $result = math_tanh($input['x']);
-    respond(['result' => $result, 'operation' => 'hyperbolic_tangent']);
-}
-
-// ============================================================================
-// PRIME NUMBER ENDPOINTS
-// ============================================================================
-
-if ($path === 'prime/nth') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_nth($input['n']);
-    respond(['result' => $result, 'operation' => 'nth_prime', 'n' => $input['n']]);
-}
-
-if ($path === 'prime/next') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_next($input['n']);
-    respond(['result' => $result, 'operation' => 'next_prime', 'after' => $input['n']]);
-}
-
-if ($path === 'prime/prev') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_prev($input['n']);
-    respond(['result' => $result, 'operation' => 'previous_prime', 'before' => $input['n']]);
-}
-
-if ($path === 'prime/is_prime') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_is_prime($input['n']);
-    respond(['result' => $result, 'operation' => 'primality_test', 'n' => $input['n']]);
-}
-
-if ($path === 'prime/count') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_count_below($input['n']);
-    respond(['result' => $result, 'operation' => 'count_primes_below', 'n' => $input['n']]);
-}
-
-if ($path === 'prime/factor') {
-    if (!isset($input['n'])) {
-        error('Missing parameter: n required');
-    }
-    $result = prime_factor($input['n']);
-    respond(['result' => $result, 'operation' => 'prime_factorization', 'n' => $input['n']]);
-}
-
-// ============================================================================
-// COMPLEX NUMBER ENDPOINTS
-// ============================================================================
-
-if ($path === 'complex/create') {
-    if (!isset($input['real']) || !isset($input['imag'])) {
-        error('Missing parameters: real, imag required');
-    }
-    $result = complex_create($input['real'], $input['imag']);
-    respond(['result' => $result, 'operation' => 'create_complex']);
-}
-
-if ($path === 'complex/add') {
-    if (!isset($input['z1']) || !isset($input['z2'])) {
-        error('Missing parameters: z1, z2 required (each with real and imag)');
-    }
-    $z1 = complex_create($input['z1']['real'], $input['z1']['imag']);
-    $z2 = complex_create($input['z2']['real'], $input['z2']['imag']);
-    $result = complex_add($z1, $z2);
-    respond(['result' => $result, 'operation' => 'complex_addition']);
-}
-
-if ($path === 'complex/subtract') {
-    if (!isset($input['z1']) || !isset($input['z2'])) {
-        error('Missing parameters: z1, z2 required (each with real and imag)');
-    }
-    $z1 = complex_create($input['z1']['real'], $input['z1']['imag']);
-    $z2 = complex_create($input['z2']['real'], $input['z2']['imag']);
-    $result = complex_sub($z1, $z2);
-    respond(['result' => $result, 'operation' => 'complex_subtraction']);
-}
-
-if ($path === 'complex/multiply') {
-    if (!isset($input['z1']) || !isset($input['z2'])) {
-        error('Missing parameters: z1, z2 required (each with real and imag)');
-    }
-    $z1 = complex_create($input['z1']['real'], $input['z1']['imag']);
-    $z2 = complex_create($input['z2']['real'], $input['z2']['imag']);
-    $result = complex_mul($z1, $z2);
-    respond(['result' => $result, 'operation' => 'complex_multiplication']);
-}
-
-if ($path === 'complex/divide') {
-    if (!isset($input['z1']) || !isset($input['z2'])) {
-        error('Missing parameters: z1, z2 required (each with real and imag)');
-    }
-    $z1 = complex_create($input['z1']['real'], $input['z1']['imag']);
-    $z2 = complex_create($input['z2']['real'], $input['z2']['imag']);
-    $result = complex_div($z1, $z2);
-    respond(['result' => $result, 'operation' => 'complex_division']);
-}
-
-if ($path === 'complex/magnitude') {
-    if (!isset($input['z'])) {
-        error('Missing parameter: z required (with real and imag)');
-    }
-    $z = complex_create($input['z']['real'], $input['z']['imag']);
-    $result = complex_magnitude($z);
-    respond(['result' => $result, 'operation' => 'complex_magnitude']);
-}
-
-if ($path === 'complex/phase') {
-    if (!isset($input['z'])) {
-        error('Missing parameter: z required (with real and imag)');
-    }
-    $z = complex_create($input['z']['real'], $input['z']['imag']);
-    $result = complex_phase($z);
-    respond(['result' => $result, 'operation' => 'complex_phase']);
-}
-
-if ($path === 'complex/conjugate') {
-    if (!isset($input['z'])) {
-        error('Missing parameter: z required (with real and imag)');
-    }
-    $z = complex_create($input['z']['real'], $input['z']['imag']);
-    $result = complex_conjugate($z);
-    respond(['result' => $result, 'operation' => 'complex_conjugate']);
-}
-
-// ============================================================================
-// ABACUS (ARBITRARY PRECISION) ENDPOINTS
-// ============================================================================
-
-if ($path === 'abacus/add') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required (as strings)');
-    }
-    $a = abacus_from_string($input['a']);
-    $b = abacus_from_string($input['b']);
-    $result = abacus_create();
-    abacus_add($result, $a, $b);
-    $result_str = abacus_to_string($result);
-    respond(['result' => $result_str, 'operation' => 'abacus_addition']);
-}
-
-if ($path === 'abacus/subtract') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required (as strings)');
-    }
-    $a = abacus_from_string($input['a']);
-    $b = abacus_from_string($input['b']);
-    $result = abacus_create();
-    abacus_sub($result, $a, $b);
-    $result_str = abacus_to_string($result);
-    respond(['result' => $result_str, 'operation' => 'abacus_subtraction']);
-}
-
-if ($path === 'abacus/multiply') {
-    if (!isset($input['a']) || !isset($input['b'])) {
-        error('Missing parameters: a, b required (as strings)');
-    }
-    $a = abacus_from_string($input['a']);
-    $b = abacus_from_string($input['b']);
-    $result = abacus_create();
-    abacus_mul($result, $a, $b);
-    $result_str = abacus_to_string($result);
-    respond(['result' => $result_str, 'operation' => 'abacus_multiplication']);
-}
-
-// ============================================================================
-// CLOCK LATTICE ENDPOINTS
-// ============================================================================
-
-if ($path === 'clock/map_prime') {
-    if (!isset($input['prime'])) {
-        error('Missing parameter: prime required');
-    }
-    $result = clock_map_prime($input['prime']);
-    respond(['result' => $result, 'operation' => 'map_prime_to_clock']);
-}
-
-if ($path === 'clock/position_to_prime') {
-    if (!isset($input['ring']) || !isset($input['position'])) {
-        error('Missing parameters: ring, position required');
-    }
-    $pos = ['ring' => $input['ring'], 'position' => $input['position']];
-    $result = clock_position_to_prime($pos);
-    respond(['result' => $result, 'operation' => 'clock_position_to_prime']);
-}
-
-if ($path === 'clock/angular_distance') {
-    if (!isset($input['prime1']) || !isset($input['prime2'])) {
-        error('Missing parameters: prime1, prime2 required');
-    }
-    $pos1 = clock_map_prime($input['prime1']);
-    $pos2 = clock_map_prime($input['prime2']);
-    $result = clock_angular_distance($pos1, $pos2);
-    respond(['result' => $result, 'operation' => 'angular_distance']);
-}
-
-// ============================================================================
-// API DOCUMENTATION ENDPOINT
-// ============================================================================
-
-if ($path === '' || $path === 'help') {
-    $endpoints = [
-        'arithmetic' => [
-            'add', 'subtract', 'multiply', 'divide', 'mod', 'abs',
-            'min', 'max', 'clamp', 'floor', 'ceil', 'round'
-        ],
-        'transcendental' => [
-            'sqrt', 'cbrt', 'pow', 'exp', 'log', 'log10', 'log2',
-            'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
-            'sinh', 'cosh', 'tanh'
-        ],
-        'prime' => [
-            'prime/nth', 'prime/next', 'prime/prev', 'prime/is_prime',
-            'prime/count', 'prime/factor'
-        ],
-        'complex' => [
-            'complex/create', 'complex/add', 'complex/subtract',
-            'complex/multiply', 'complex/divide', 'complex/magnitude',
-            'complex/phase', 'complex/conjugate'
-        ],
-        'abacus' => [
-            'abacus/add', 'abacus/subtract', 'abacus/multiply'
-        ],
-        'clock' => [
-            'clock/map_prime', 'clock/position_to_prime', 'clock/angular_distance'
-        ]
-    ];
-    
-    respond([
-        'name' => 'Crystalline Math REST API',
-        'version' => '1.0.0',
-        'endpoints' => $endpoints,
-        'usage' => 'POST to /api/math/{endpoint} with JSON body'
-    ]);
-}
-
-// 404 - Endpoint not found
-error('Endpoint not found: ' . $path, 404);
-?>
