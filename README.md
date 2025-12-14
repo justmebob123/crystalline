@@ -2,6 +2,20 @@
 
 A revolutionary language model architecture based on prime number lattices and crystalline structures, featuring autonomous web crawling and continuous learning capabilities.
 
+## 📚 Comprehensive Thesis Available
+
+**NEW**: A comprehensive 85,736-line treatise documenting the complete theoretical foundations, mathematical proofs, and practical applications is now available in `thesis/THESIS.md`.
+
+**Key Topics Covered**:
+- Geometric arithmetic and clock lattice structure
+- O(1) deterministic prime generation
+- Blind recovery and compression techniques
+- Blockchain and cryptocurrency applications
+- AI/ML optimization strategies
+- 168+ questions answered in depth
+
+**See `thesis/README.md` for complete documentation structure.**
+
 ## Project Structure
 
 This project consists of three independent libraries and two consumer applications:
