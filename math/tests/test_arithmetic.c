@@ -6,6 +6,7 @@
  */
 
 #include "math/arithmetic.h"
+#include "math/validation.h"
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -7,6 +7,7 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/validation.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -80,38 +81,38 @@ void test_exponential_and_logarithm(void) {
 void test_trigonometric(void) {
     printf("\n=== Testing Trigonometric Functions ===\n");
     
-    const double MATH_PI = 3.14159265358979323846;
+    const double PI_VALUE = 3.14159265358979323846;
     
     TEST_APPROX("Sine: sin(0)", math_sin(0.0), 0.0);
-    TEST_APPROX("Sine: sin(π/2)", math_sin(MATH_PI/2.0), 1.0);
-    TEST_APPROX("Sine: sin(π)", math_sin(MATH_PI), 0.0);
+    TEST_APPROX("Sine: sin(π/2)", math_sin(PI_VALUE/2.0), 1.0);
+    TEST_APPROX("Sine: sin(π)", math_sin(PI_VALUE), 0.0);
     
     TEST_APPROX("Cosine: cos(0)", math_cos(0.0), 1.0);
-    TEST_APPROX("Cosine: cos(π/2)", math_cos(MATH_PI/2.0), 0.0);
-    TEST_APPROX("Cosine: cos(π)", math_cos(MATH_PI), -1.0);
+    TEST_APPROX("Cosine: cos(π/2)", math_cos(PI_VALUE/2.0), 0.0);
+    TEST_APPROX("Cosine: cos(π)", math_cos(PI_VALUE), -1.0);
     
     TEST_APPROX("Tangent: tan(0)", math_tan(0.0), 0.0);
-    TEST_APPROX("Tangent: tan(π/4)", math_tan(MATH_PI/4.0), 1.0);
+    TEST_APPROX("Tangent: tan(π/4)", math_tan(PI_VALUE/4.0), 1.0);
 }
 
 void test_inverse_trigonometric(void) {
     printf("\n=== Testing Inverse Trigonometric Functions ===\n");
     
-    const double MATH_PI = 3.14159265358979323846;
+    const double PI_VALUE = 3.14159265358979323846;
     
     TEST_APPROX("Arcsine: asin(0)", math_asin(0.0), 0.0);
-    TEST_APPROX("Arcsine: asin(1)", math_asin(1.0), MATH_PI/2.0);
-    TEST_APPROX("Arcsine: asin(-1)", math_asin(-1.0), -MATH_PI/2.0);
+    TEST_APPROX("Arcsine: asin(1)", math_asin(1.0), PI_VALUE/2.0);
+    TEST_APPROX("Arcsine: asin(-1)", math_asin(-1.0), -PI_VALUE/2.0);
     
     TEST_APPROX("Arccosine: acos(1)", math_acos(1.0), 0.0);
-    TEST_APPROX("Arccosine: acos(0)", math_acos(0.0), MATH_PI/2.0);
-    TEST_APPROX("Arccosine: acos(-1)", math_acos(-1.0), MATH_PI);
+    TEST_APPROX("Arccosine: acos(0)", math_acos(0.0), PI_VALUE/2.0);
+    TEST_APPROX("Arccosine: acos(-1)", math_acos(-1.0), PI_VALUE);
     
     TEST_APPROX("Arctangent: atan(0)", math_atan(0.0), 0.0);
-    TEST_APPROX("Arctangent: atan(1)", math_atan(1.0), MATH_PI/4.0);
+    TEST_APPROX("Arctangent: atan(1)", math_atan(1.0), PI_VALUE/4.0);
     
-    TEST_APPROX("Arctangent2: atan2(1, 1)", math_atan2(1.0, 1.0), MATH_PI/4.0);
-    TEST_APPROX("Arctangent2: atan2(1, 0)", math_atan2(1.0, 0.0), MATH_PI/2.0);
+    TEST_APPROX("Arctangent2: atan2(1, 1)", math_atan2(1.0, 1.0), PI_VALUE/4.0);
+    TEST_APPROX("Arctangent2: atan2(1, 0)", math_atan2(1.0, 0.0), PI_VALUE/2.0);
 }
 
 void test_hyperbolic(void) {

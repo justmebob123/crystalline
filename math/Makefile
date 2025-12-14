@@ -15,8 +15,8 @@ BUILD_DIR = build
 LIB_DIR = lib
 TEST_DIR = tests
 
-# Source files
-CORE_SRCS = $(wildcard $(SRC_DIR)/core/*.c)
+# Source files (exclude _legacy files)
+CORE_SRCS = $(filter-out %_legacy.c, $(wildcard $(SRC_DIR)/core/*.c))
 
 ABACUS_SRCS = $(wildcard $(SRC_DIR)/bigint/*.c)
 NTT_SRCS = $(wildcard $(SRC_DIR)/ntt/*.c)
@@ -24,7 +24,7 @@ GEOMETRY_SRCS = $(wildcard $(SRC_DIR)/geometry/*.c)
 PRIME_SRCS = $(wildcard $(SRC_DIR)/prime/*.c)
 CRYPTO_SRCS = $(wildcard $(SRC_DIR)/crypto/*.c)
 VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
-COMPACT_SRCS = $(wildcard $(SRC_DIR)/compact/*.c)
+COMPACT_SRCS = $(filter-out %_legacy.c, $(wildcard $(SRC_DIR)/compact/*.c))
 PLATONIC_SRCS = $(wildcard $(SRC_DIR)/platonic/*.c)
 BABYLONIAN_SRCS = $(wildcard $(SRC_DIR)/babylonian/*.c)
 
