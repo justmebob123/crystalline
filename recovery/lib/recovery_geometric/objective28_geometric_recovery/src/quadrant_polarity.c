@@ -42,7 +42,7 @@ QuadrantPolarity create_quadrant_polarity(int quadrant) {
             pol.mirror_quadrants[0] = 1;
             pol.mirror_quadrants[1] = 3;
             pol.mirror_quadrants[2] = 4;
-            pol.fold_angle = PRIME_PI / 2.0;
+            pol.fold_angle = MATH_PI / 2.0;
             break;
             
         case 3:  // (-, -)
@@ -52,7 +52,7 @@ QuadrantPolarity create_quadrant_polarity(int quadrant) {
             pol.mirror_quadrants[0] = 1;
             pol.mirror_quadrants[1] = 2;
             pol.mirror_quadrants[2] = 4;
-            pol.fold_angle = PRIME_PI;
+            pol.fold_angle = MATH_PI;
             break;
             
         case 4:  // (+, -)
@@ -62,7 +62,7 @@ QuadrantPolarity create_quadrant_polarity(int quadrant) {
             pol.mirror_quadrants[0] = 1;
             pol.mirror_quadrants[1] = 2;
             pol.mirror_quadrants[2] = 3;
-            pol.fold_angle = 3.0 * PRIME_PI / 2.0;
+            pol.fold_angle = 3.0 * MATH_PI / 2.0;
             break;
             
         default:

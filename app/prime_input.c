@@ -62,7 +62,7 @@ void analyze_number(AppState* state, int number) {
         double angle = get_clock_angle(position, ring);
         
         analysis->ring = ring;
-        analysis->angle = angle * 180.0 / PRIME_PI;
+        analysis->angle = angle * 180.0 / MATH_PI;
         analysis->angle_degrees = analysis->angle;
         analysis->ring_distance = calculate_ring_distance(number, state);
         analysis->clock_position = position;

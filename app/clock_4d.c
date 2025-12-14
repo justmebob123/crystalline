@@ -32,7 +32,7 @@ void draw_hyperdim_projection(SDL_Renderer* renderer, AppState* state) {
         SDL_SetRenderDrawColor(renderer, ring_colors[ring].r, ring_colors[ring].g, ring_colors[ring].b, 255);
         
         for (int i = 0; i < 360; i++) {
-            double angle = i * PRIME_PI / 180.0;
+            double angle = i * MATH_PI / 180.0;
             
             // 4D coordinates
             double x4d = radius * math_cos(angle);

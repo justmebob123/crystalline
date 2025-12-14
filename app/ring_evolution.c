@@ -27,7 +27,7 @@ void draw_self_similar_layers(SDL_Renderer* renderer, AppState* state) {
         SDL_SetRenderDrawColor(renderer, ring_colors[ring].r, ring_colors[ring].g, ring_colors[ring].b, 255);
         
         for (int i = 0; i < 360; i++) {
-            double angle = i * PRIME_PI / 180.0;
+            double angle = i * MATH_PI / 180.0;
             int x = cx + (int)(radius * math_cos(angle));
             int y = cy + (int)(radius * math_sin(angle));
             SDL_RenderDrawPoint(renderer, x, y);

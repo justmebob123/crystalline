@@ -12,7 +12,7 @@
  * - Replaced math_sin with math_sin (6 calls)
  * - Replaced math_sqrt with math_sqrt (1 call)
  * - Replaced math_pow with math_pow (1 call)
- * - Replaced PRIME_PI with MATH_PI
+ * - Replaced MATH_PI with MATH_PI
  * - Replaced MATH_PHI with MATH_PHI
  * Total: 15 function calls migrated to NEW math library
  * 
@@ -28,8 +28,7 @@
 #include "../../math/include/math/arithmetic.h"       // NEW math library
 #include "../../math/include/math/types.h"            // NEW math library constants
 
-// Use NEW math library constants
-#define PRIME_PI MATH_PI
+// MATH_PI is already defined in math/types.h - no need to redefine
 
 /**
  * Apply cymatic resonance modulation to gradients
@@ -50,7 +49,7 @@ void apply_cymatic_modulation(
     
     // Compute global phase based on training step
     // This creates a slowly varying modulation over training
-    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
+    double global_phase = 2.0 * MATH_PI * (double)training_step / 1000.0;
     
     // Apply to each element
     for (uint32_t elem_id = 0; elem_id < num_elements; elem_id++) {
@@ -70,7 +69,7 @@ void apply_cymatic_modulation(
         uint64_t phi_i = dimensional_freqs[symmetry_group % 12];
         
         // Modulate resonance with φᵢ
-        double modulation = math_cos(2.0 * PRIME_PI * (double)phi_i * resonance / 100.0);
+        double modulation = math_cos(2.0 * MATH_PI * (double)phi_i * resonance / 100.0);
         
         // Apply to gradients with specified modulation strength
         double scale = 1.0 + modulation_strength * modulation;
@@ -122,7 +121,7 @@ void analyze_gradient_spectrum(
         double imag = 0.0;
         
         for (uint32_t n = 0; n < size; n++) {
-            double angle = -2.0 * PRIME_PI * (double)k * (double)n / (double)size;
+            double angle = -2.0 * MATH_PI * (double)k * (double)n / (double)size;
             real += (double)gradients[n] * math_cos(angle);
             imag += (double)gradients[n] * math_sin(angle);
         }
@@ -154,12 +153,12 @@ void cymatic_simulate_wave(double* output, size_t len,
             double t = (double)x / (double)len;
             
             // Add sine component
-            output[x] += math_sin(freq * t * 2.0 * PRIME_PI);
+            output[x] += math_sin(freq * t * 2.0 * MATH_PI);
             
             // Add cosine component from next prime
             if (i + 1 < num_primes) {
                 double freq2 = (double)primes[i + 1];
-                output[x] += math_cos(freq2 * t * 2.0 * PRIME_PI);
+                output[x] += math_cos(freq2 * t * 2.0 * MATH_PI);
             }
         }
     }
@@ -199,7 +198,7 @@ bool cymatic_detect_alignment(const double* signal, size_t len,
         double correlation = 0.0;
         for (size_t i = 0; i < len; i++) {
             double t = (double)i / (double)len;
-            double expected = math_sin(freq * t * 2.0 * PRIME_PI);
+            double expected = math_sin(freq * t * 2.0 * MATH_PI);
             correlation += signal[i] * expected;
         }
         
@@ -233,7 +232,7 @@ double cymatic_resonance_score(const double* signal, size_t len,
         
         for (size_t i = 0; i < len; i++) {
             double t = (double)i / (double)len;
-            double angle = freq * t * 2.0 * PRIME_PI;
+            double angle = freq * t * 2.0 * MATH_PI;
             real += signal[i] * math_cos(angle);
             imag += signal[i] * math_sin(angle);
         }

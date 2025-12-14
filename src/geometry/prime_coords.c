@@ -124,7 +124,7 @@ void cartesian_to_polar(double x, double y, double* r, double* theta) {
     
     // Normalize theta to [0, 2π]
     if (*theta < 0) {
-        *theta += 2 * PRIME_PI;
+        *theta += 2 * MATH_PI;
     }
 }
 
@@ -163,11 +163,11 @@ void map_to_clock_position(int number, int max_numbers, double* angle, double* r
     }
     
     // Clock angles start from 12 o'clock (π/2) and go clockwise
-    double clock_angle = PRIME_PI / 2 - (2 * PRIME_PI * number / max_numbers);
+    double clock_angle = MATH_PI / 2 - (2 * MATH_PI * number / max_numbers);
     
     // Normalize to [0, 2π]
-    while (clock_angle < 0) clock_angle += 2 * PRIME_PI;
-    while (clock_angle >= 2 * PRIME_PI) clock_angle -= 2 * PRIME_PI;
+    while (clock_angle < 0) clock_angle += 2 * MATH_PI;
+    while (clock_angle >= 2 * MATH_PI) clock_angle -= 2 * MATH_PI;
     
     *angle = clock_angle;
     *radius = 1.0 + 0.1 * (number % 12); // Vary radius slightly
@@ -273,7 +273,7 @@ void prime_transform_coords(double x, double y, int prime, double* new_x, double
     }
     
     // Apply rotation based on prime
-    double angle = (2 * PRIME_PI * prime) / (prime + 1);
+    double angle = (2 * MATH_PI * prime) / (prime + 1);
     double cos_a = math_cos(angle);
     double sin_a = math_sin(angle);
     

@@ -52,7 +52,7 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
                               ring_colors[ring].g, ring_colors[ring].b, 128);
         
         for (int i = 0; i < 360; i++) {
-            double angle = i * PRIME_PI / 180.0;
+            double angle = i * MATH_PI / 180.0;
             int x = cx + (int)(ring_radii[ring] * math_cos(angle));
             int y = cy + (int)(ring_radii[ring] * math_sin(angle));
             if (x >= 0 && x < RENDER_WIDTH && y >= 0 && y < WINDOW_HEIGHT) {
@@ -64,7 +64,7 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
     // Draw clock ticks (12, 3, 6, 9 o'clock)
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     for (int hour = 0; hour < 12; hour++) {
-        double angle = (hour - 3) * (2.0 * PRIME_PI / 12.0);  // 3 o'clock = 0°
+        double angle = (hour - 3) * (2.0 * MATH_PI / 12.0);  // 3 o'clock = 0°
         int x1 = cx + (int)(ring_radii[0] * 0.9 * math_cos(angle));
         int y1 = cy + (int)(ring_radii[0] * 0.9 * math_sin(angle));
         int x2 = cx + (int)(ring_radii[3] * 1.1 * math_cos(angle));
@@ -87,7 +87,7 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
     }
     
     // 12 o'clock (top)
-    double top_angle = -PRIME_PI / 2.0;
+    double top_angle = -MATH_PI / 2.0;
     int top_x = cx + (int)(ring_radii[0] * math_cos(top_angle));
     int top_y = cy + (int)(ring_radii[0] * math_sin(top_angle));
     for (int dy = -4; dy <= 4; dy++) {
@@ -212,8 +212,8 @@ void draw_clock_sudoku_crystalline(SDL_Renderer* renderer, AppState* state) {
         SDL_SetRenderDrawColor(renderer, 255, 215, 0, 200);
         for (int r = 14; r <= 18; r++) {
             for (int a = 0; a < 360; a += 5) {
-                int px = x + (int)(r * math_cos(a * PRIME_PI / 180.0));
-                int py = y + (int)(r * math_sin(a * PRIME_PI / 180.0));
+                int px = x + (int)(r * math_cos(a * MATH_PI / 180.0));
+                int py = y + (int)(r * math_sin(a * MATH_PI / 180.0));
                 if (px >= 0 && px < RENDER_WIDTH && py >= 0 && py < WINDOW_HEIGHT) {
                     SDL_RenderDrawPoint(renderer, px, py);
                 }

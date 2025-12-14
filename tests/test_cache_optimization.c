@@ -49,12 +49,12 @@ void test_theta_to_cache_line_basic() {
     ASSERT(cache_line == 0, "θ=0 should map to cache line 0");
     
     // Test θ = π
-    cache_line = map_theta_to_cache_line(PRIME_PI);
+    cache_line = map_theta_to_cache_line(MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     ASSERT(cache_line == NUM_CACHE_LINES / 2, "θ=π should map to middle cache line");
     
     // Test θ = 2π
-    cache_line = map_theta_to_cache_line(2.0 * PRIME_PI);
+    cache_line = map_theta_to_cache_line(2.0 * MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     
     PASS();
@@ -65,7 +65,7 @@ void test_theta_to_cache_line_bounds() {
     
     // Test various theta values
     for (int i = 0; i < 100; i++) {
-        double theta = (i / 100.0) * 2.0 * PRIME_PI;
+        double theta = (i / 100.0) * 2.0 * MATH_PI;
         uint32_t cache_line = map_theta_to_cache_line(theta);
         ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should always be within bounds");
     }
@@ -77,10 +77,10 @@ void test_theta_to_cache_line_negative() {
     TEST("Theta to cache line with negative values");
     
     // Test negative theta (should be normalized)
-    uint32_t cache_line = map_theta_to_cache_line(-PRIME_PI);
+    uint32_t cache_line = map_theta_to_cache_line(-MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     
-    cache_line = map_theta_to_cache_line(-2.0 * PRIME_PI);
+    cache_line = map_theta_to_cache_line(-2.0 * MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     
     PASS();
@@ -90,10 +90,10 @@ void test_theta_to_cache_line_large() {
     TEST("Theta to cache line with large values");
     
     // Test large theta (should be normalized)
-    uint32_t cache_line = map_theta_to_cache_line(10.0 * PRIME_PI);
+    uint32_t cache_line = map_theta_to_cache_line(10.0 * MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     
-    cache_line = map_theta_to_cache_line(100.0 * PRIME_PI);
+    cache_line = map_theta_to_cache_line(100.0 * MATH_PI);
     ASSERT(cache_line < NUM_CACHE_LINES, "Cache line should be within bounds");
     
     PASS();
@@ -114,11 +114,11 @@ void test_theta_to_numa_node() {
     ASSERT(numa_node == 0, "θ=0 should map to NUMA node 0");
     
     // Test θ = π
-    numa_node = map_theta_to_numa_node(PRIME_PI, num_numa_nodes);
+    numa_node = map_theta_to_numa_node(MATH_PI, num_numa_nodes);
     ASSERT(numa_node < (uint32_t)num_numa_nodes, "NUMA node should be within bounds");
     
     // Test θ = 2π
-    numa_node = map_theta_to_numa_node(2.0 * PRIME_PI, num_numa_nodes);
+    numa_node = map_theta_to_numa_node(2.0 * MATH_PI, num_numa_nodes);
     ASSERT(numa_node < (uint32_t)num_numa_nodes, "NUMA node should be within bounds");
     
     PASS();
@@ -131,7 +131,7 @@ void test_numa_node_single() {
     uint32_t numa_node = map_theta_to_numa_node(0.0, 1);
     ASSERT(numa_node == 0, "Single NUMA node should always return 0");
     
-    numa_node = map_theta_to_numa_node(PRIME_PI, 1);
+    numa_node = map_theta_to_numa_node(MATH_PI, 1);
     ASSERT(numa_node == 0, "Single NUMA node should always return 0");
     
     PASS();
@@ -145,7 +145,7 @@ void test_numa_node_distribution() {
     
     // Test 400 theta values
     for (int i = 0; i < 400; i++) {
-        double theta = (i / 400.0) * 2.0 * PRIME_PI;
+        double theta = (i / 400.0) * 2.0 * MATH_PI;
         uint32_t numa_node = map_theta_to_numa_node(theta, num_numa_nodes);
         counts[numa_node]++;
     }
@@ -168,7 +168,7 @@ void test_cache_proximity_same() {
     double proximity = calculate_cache_proximity(0.0, 0.0);
     ASSERT(proximity == 0.0, "Same theta should have zero proximity");
     
-    proximity = calculate_cache_proximity(PRIME_PI, PRIME_PI);
+    proximity = calculate_cache_proximity(MATH_PI, MATH_PI);
     ASSERT(proximity == 0.0, "Same theta should have zero proximity");
     
     PASS();
@@ -177,10 +177,10 @@ void test_cache_proximity_same() {
 void test_cache_proximity_opposite() {
     TEST("Cache proximity for opposite theta");
     
-    double proximity = calculate_cache_proximity(0.0, PRIME_PI);
+    double proximity = calculate_cache_proximity(0.0, MATH_PI);
     ASSERT(proximity == 1.0, "Opposite theta should have proximity 1.0");
     
-    proximity = calculate_cache_proximity(PRIME_PI / 2.0, 3.0 * PRIME_PI / 2.0);
+    proximity = calculate_cache_proximity(MATH_PI / 2.0, 3.0 * MATH_PI / 2.0);
     ASSERT(proximity == 1.0, "Opposite theta should have proximity 1.0");
     
     PASS();
@@ -191,9 +191,9 @@ void test_cache_proximity_bounds() {
     
     // Test various theta pairs
     for (int i = 0; i < 100; i++) {
-        double theta1 = (i / 100.0) * 2.0 * PRIME_PI;
+        double theta1 = (i / 100.0) * 2.0 * MATH_PI;
         for (int j = 0; j < 100; j++) {
-            double theta2 = (j / 100.0) * 2.0 * PRIME_PI;
+            double theta2 = (j / 100.0) * 2.0 * MATH_PI;
             double proximity = calculate_cache_proximity(theta1, theta2);
             ASSERT(proximity >= 0.0 && proximity <= 1.0, "Proximity should be in [0, 1]");
         }
@@ -277,7 +277,7 @@ void test_cache_placement_basic() {
 void test_cache_placement_validation() {
     TEST("Cache placement validation");
     
-    CachePlacement placement = calculate_cache_placement(PRIME_PI, 5);
+    CachePlacement placement = calculate_cache_placement(MATH_PI, 5);
     
     int valid = validate_cache_placement(&placement);
     ASSERT(valid == 1, "Valid placement should pass validation");

@@ -47,7 +47,7 @@ void draw_recursive_pattern(SDL_Renderer* renderer, double cx, double cy, double
     double mini_radius = radius * 0.3;
     SDL_SetRenderDrawColor(renderer, 60, 60, 60, 128);
     for (int i = 0; i < 360; i += 30) {
-        double a = i * PRIME_PI / 180.0;
+        double a = i * MATH_PI / 180.0;
         int mx = x + (int)(mini_radius * math_cos(a));
         int my = y + (int)(mini_radius * math_sin(a));
         if (mx >= 0 && mx < RENDER_WIDTH && my >= 0 && my < WINDOW_HEIGHT) {

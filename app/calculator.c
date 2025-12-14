@@ -206,7 +206,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
             
             // Draw circle
             for (int angle = 0; angle < 360; angle += 5) {
-                double rad = angle * PRIME_PI / 180.0;
+                double rad = angle * MATH_PI / 180.0;
                 int px = cx + (int)(r * math_cos(rad));
                 int py = cy + (int)(r * math_sin(rad));
                 if (px >= x && px < x + width && py >= y && py < y + height) {
@@ -218,7 +218,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
         // Draw 12 spokes
         SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
         for (int i = 0; i < 12; i++) {
-            double angle = i * 30.0 * PRIME_PI / 180.0;
+            double angle = i * 30.0 * MATH_PI / 180.0;
             int x2 = cx + (int)(200 * scale * state->zoom * math_cos(angle));
             int y2 = cy + (int)(200 * scale * state->zoom * math_sin(angle));
             SDL_RenderDrawLine(renderer, cx, cy, x2, y2);
@@ -249,7 +249,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
                 for (int level = 1; level <= 3; level++) {
                     int r = (int)(50 * level * scale * state->zoom);
                     for (int angle = 0; angle < 360; angle += 10) {
-                        double rad = angle * PRIME_PI / 180.0;
+                        double rad = angle * MATH_PI / 180.0;
                         int px = cx + (int)(r * math_cos(rad));
                         int py = cy + (int)(r * math_sin(rad));
                         if (px >= x && px < x + width && py >= y && py < y + height) {
@@ -262,7 +262,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
             case MODE_HARMONIC_RESONANCE:
                 // Wave pattern
                 for (int i = 0; i < 360; i += 5) {
-                    double angle = i * PRIME_PI / 180.0;
+                    double angle = i * MATH_PI / 180.0;
                     double r = 100 * scale * state->zoom * (1.0 + 0.3 * math_sin(angle * 3));
                     int px = cx + (int)(r * math_cos(angle));
                     int py = cy + (int)(r * math_sin(angle));
@@ -291,7 +291,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
                 for (int i = 1; i <= 5; i++) {
                     int r = (int)(30 * i * scale * state->zoom);
                     for (int angle = 0; angle < 360; angle += 10) {
-                        double rad = angle * PRIME_PI / 180.0;
+                        double rad = angle * MATH_PI / 180.0;
                         int px = cx + (int)(r * math_cos(rad));
                         int py = cy + (int)(r * math_sin(rad));
                         if (px >= x && px < x + width && py >= y && py < y + height) {
@@ -304,7 +304,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
             case MODE_FOLDED_ORIGAMI:
                 // Triangle pattern
                 for (int i = 0; i < 3; i++) {
-                    double angle = i * 120.0 * PRIME_PI / 180.0;
+                    double angle = i * 120.0 * MATH_PI / 180.0;
                     int r = (int)(120 * scale * state->zoom);
                     int px = cx + (int)(r * math_cos(angle));
                     int py = cy + (int)(r * math_sin(angle));
@@ -348,7 +348,7 @@ void draw_minimap_visualization(SDL_Renderer* renderer, AppState* state, int x, 
         if (is_selected) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             for (int angle = 0; angle < 360; angle += 30) {
-                double rad = angle * PRIME_PI / 180.0;
+                double rad = angle * MATH_PI / 180.0;
                 int ox = px + (int)(4 * math_cos(rad));
                 int oy = py + (int)(4 * math_sin(rad));
                 if (ox >= x && ox < x + width && oy >= y && oy < y + height) {

@@ -178,10 +178,10 @@ double theta_n(uint64_t n, int k, const char *lambda_phon,
     double nu = nu_lambda(lambda_phon);
     
     // Term 1: k·π·(1+√5)
-    double term1 = (double)k * LATTICE_PI * (1.0 + LATTICE_SQRT5);
+    double term1 = (double)k * MATH_PI * (1.0 + LATTICE_SQRT5);
     
     // Term 2: n·(2π/12)
-    double term2 = (double)n * (2.0 * LATTICE_PI / 12.0);
+    double term2 = (double)n * (2.0 * MATH_PI / 12.0);
     
     // Term 3: log₃(ν(λ))
     double term3 = 0.0;
@@ -238,15 +238,15 @@ void map_prime_to_clock_phonetic(uint64_t prime, LegacyClockPosition *pos,
     double r = r_n(prime);
     
     // Fold to single quadrant
-    double theta_fold = math_fmod(theta, LATTICE_PI / 2.0);
+    double theta_fold = math_fmod(theta, MATH_PI / 2.0);
     
     pos->theta = theta_fold;
     pos->r = r;
     pos->quadrant = 1;  // All folded to Q1
     
     // Calculate clock position (0-11)
-    double clock_angle = math_fmod(theta, 2.0 * LATTICE_PI);
-    pos->clock_pos = (uint8_t)(clock_angle / (2.0 * LATTICE_PI / 12.0));
+    double clock_angle = math_fmod(theta, 2.0 * MATH_PI);
+    pos->clock_pos = (uint8_t)(clock_angle / (2.0 * MATH_PI / 12.0));
     if (pos->clock_pos >= 12) pos->clock_pos = 11;
 }
 
@@ -254,7 +254,7 @@ uint64_t map_clock_to_prime(double theta, double r, uint8_t quadrant,
                             double tolerance, uint64_t max_search) {
     // Unfold from quadrant if needed
     if (quadrant != 1) {
-        theta += (quadrant - 1) * (LATTICE_PI / 2.0);
+        theta += (quadrant - 1) * (MATH_PI / 2.0);
     }
     
     // Search for closest prime
@@ -333,7 +333,7 @@ double gmp_tetration(double base, int height, bool damp) {
     
     // Apply damping
     if (damp) {
-        double damping_factor = math_pow(LATTICE_PHI, -(double)height);
+        double damping_factor = math_pow(MATH_PHI, -(double)height);
         tower *= damping_factor;
     }
     
@@ -350,7 +350,7 @@ double lattice_tetration_log_approx(double P, int T) {
     if (T == 1) return math_log(P);
     
     double prev = lattice_tetration_log_approx(P, T - 1);
-    return (double)T * prev / math_log(LATTICE_PHI);
+    return (double)T * prev / math_log(MATH_PHI);
 }
 
 double entropy_equilibrator(double exp, double P, int T) {
@@ -460,7 +460,7 @@ double O_exponent(uint64_t n, int k, const char *lambda_phon) {
     double nu = nu_lambda(lambda_phon);
     
     // Term 1: (n-1)·(π/6)/ln(3)
-    double term1 = ((double)n - 1.0) * (LATTICE_PI / 6.0) / math_log(3.0);
+    double term1 = ((double)n - 1.0) * (MATH_PI / 6.0) / math_log(3.0);
     
     // Term 2: log₃(ν(λ))
     double term2 = 0.0;
@@ -469,7 +469,7 @@ double O_exponent(uint64_t n, int k, const char *lambda_phon) {
     }
     
     // Term 3: k·π·(1+√5)
-    double term3 = (double)k * LATTICE_PI * (1.0 + LATTICE_SQRT5);
+    double term3 = (double)k * MATH_PI * (1.0 + LATTICE_SQRT5);
     
     return term1 + term2 + term3;
 }

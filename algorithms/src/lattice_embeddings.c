@@ -27,7 +27,7 @@ extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
 extern uint64_t cllm_get_dimensional_frequency(int dim_mod_12);
 
 // Constants
-#define PRIME_PI 3.14159265358979323846
+#define MATH_PI 3.14159265358979323846
 
 /**
  * Compute L(n,d,k,λ) using Crystalline Abacus
@@ -73,7 +73,7 @@ static double compute_L_abacus(
     double cos_term = math_cos(theta_phi);
     
     // Compute Γ(k): Symmetry group contribution
-    double gamma_k_angle = 2.0 * PRIME_PI * (double)symmetry_group / 12.0;
+    double gamma_k_angle = 2.0 * MATH_PI * (double)symmetry_group / 12.0;
     double gamma_k = math_cos(gamma_k_angle);
     
     // Compute Γ(n,d): Lattice entropy

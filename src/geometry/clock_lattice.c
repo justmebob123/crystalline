@@ -55,7 +55,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.position = prime_index;
         // 12 o'clock = position 12, 3 o'clock = position 3
         // Angle: position 3 = 0°, position 12 = -90° (top)
-        pos.angle = (pos.position - 3) * (2.0 * PRIME_PI / 12.0);
+        pos.angle = (pos.position - 3) * (2.0 * MATH_PI / 12.0);
         pos.radius = 0.25;  // Outer ring (25% from center)
         
     } else if (prime_index <= 72) {
@@ -63,14 +63,14 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.ring = 1;
         pos.position = prime_index - 12;
         // Position 15 = 3 o'clock (0°)
-        pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
+        pos.angle = (pos.position - 15) * (2.0 * MATH_PI / 60.0);
         pos.radius = 0.50;  // 50% from center
         
     } else if (prime_index <= 132) {
         // Ring 2: Seconds (60 positions)
         pos.ring = 2;
         pos.position = prime_index - 72;
-        pos.angle = (pos.position - 15) * (2.0 * PRIME_PI / 60.0);
+        pos.angle = (pos.position - 15) * (2.0 * MATH_PI / 60.0);
         pos.radius = 0.75;  // 75% from center
         
     } else if (prime_index <= 232) {
@@ -78,7 +78,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.ring = 3;
         pos.position = prime_index - 132;
         // Position 25 = 3 o'clock (0°)
-        pos.angle = (pos.position - 25) * (2.0 * PRIME_PI / 100.0);
+        pos.angle = (pos.position - 25) * (2.0 * MATH_PI / 100.0);
         pos.radius = 1.00;  // Inner ring (100% from center)
         
     } else {
@@ -100,7 +100,7 @@ BabylonianClockPosition map_prime_index_to_clock(int prime_index) {
         pos.position = adjusted_index % 1000;
         
         // Angle based on position (full rotation per 1000 positions)
-        pos.angle = (pos.position * 2.0 * PRIME_PI) / 1000.0;
+        pos.angle = (pos.position * 2.0 * MATH_PI) / 1000.0;
         
         // Radius grows slowly with ring (1.0 to 1.75)
         pos.radius = 1.0 + (pos.ring - 4) * 0.25;
@@ -135,20 +135,20 @@ SphereCoord fold_clock_to_sphere(BabylonianClockPosition clock_pos) {
     
     // Normalize angle to [0, 2π]
     double theta = clock_pos.angle;
-    double two_pi = 2.0 * PRIME_PI;
+    double two_pi = 2.0 * MATH_PI;
     while (theta < 0) theta += two_pi;
     while (theta >= two_pi) theta -= two_pi;
     
     // Fold into first quadrant (mirrored sudoku folding)
     // This maps all 4 quadrants into the sacred triangle
-    double quarter_pi = PRIME_PI / 2.0;
+    double quarter_pi = MATH_PI / 2.0;
     double folded_theta = theta;
     while (folded_theta >= quarter_pi) folded_theta -= quarter_pi;
     
     // Radius determines latitude on sphere
     // Outer rings (small radius) → near north pole
     // Inner rings (large radius) → near equator
-    double phi = clock_pos.radius * PRIME_PI;  // 0 to π
+    double phi = clock_pos.radius * MATH_PI;  // 0 to π
     
     // Convert to 3D sphere coordinates (unit sphere)
     sphere.x = math_sin(phi) * math_cos(folded_theta);

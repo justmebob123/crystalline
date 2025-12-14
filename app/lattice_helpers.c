@@ -146,7 +146,7 @@ void draw_prime_from_cache(
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         int ring_size = size + 2;
         for (int i = 0; i < 360; i += 10) {
-            double a = i * PRIME_PI / 180.0;
+            double a = i * MATH_PI / 180.0;
             int rx = x + (int)(ring_size * math_cos(a));
             int ry = y + (int)(ring_size * math_sin(a));
             SDL_RenderDrawPoint(renderer, rx, ry);
@@ -183,7 +183,7 @@ void draw_mobius_void(SDL_Renderer* renderer, AppState* state) {
     // Draw boundary circle
     SDL_SetRenderDrawColor(renderer, 100, 100, 150, 255);
     for (int i = 0; i < 360; i++) {
-        double a = i * PRIME_PI / 180.0;
+        double a = i * MATH_PI / 180.0;
         int x = center_x + (int)(void_radius * math_cos(a)) + (int)state->offset_x;
         int y = center_y + (int)(void_radius * math_sin(a)) + (int)state->offset_y;
         if (x >= 0 && x < RENDER_WIDTH && y >= 0 && y < WINDOW_HEIGHT) {
@@ -219,7 +219,7 @@ void draw_boundary_marker(
     SDL_SetRenderDrawColor(renderer, 255, 100, 100, 200);
     
     for (int i = 0; i < 360; i += 2) {  // Dashed effect
-        double a = i * PRIME_PI / 180.0;
+        double a = i * MATH_PI / 180.0;
         int x = center_x + (int)(boundary_radius * math_cos(a)) + (int)state->offset_x;
         int y = center_y + (int)(boundary_radius * math_sin(a)) + (int)state->offset_y;
         

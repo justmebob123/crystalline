@@ -47,7 +47,7 @@
 #include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
 #include "math/types.h"  // For dimensional frequencies
 #include "math/transcendental.h"
-#include "prime_types.h"                 // For PRIME_PI
+#include "prime_types.h"                 // For MATH_PI
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -781,7 +781,7 @@ static SphereTrainingContext* sphere_context_create(int sphere_id, int symmetry_
     // PHASE 3, Day 10: Calculate theta and set up cache optimization
     // For now, use symmetry group to calculate initial theta
     // In full implementation, this would use the complete L(n,d,k,lambda,omega,psi) formula
-    ctx->theta = (symmetry_group / 12.0) * 2.0 * PRIME_PI;
+    ctx->theta = (symmetry_group / 12.0) * 2.0 * MATH_PI;
     
     // Calculate cache placement based on theta
     ctx->cache_placement = calculate_cache_placement(ctx->theta, sphere_id);

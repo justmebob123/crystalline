@@ -28,7 +28,7 @@
 #include <string.h>
 
 // Use NEW math library constants
-// NOTE: PRIME_PI already defined in prime_types.h - no need to redefine
+// NOTE: MATH_PI already defined in prime_types.h - no need to redefine
 
 // ============================================================================
 // TETRATION ATTRACTORS
@@ -63,7 +63,7 @@ TetrationAttractor* create_tetration_towers(uint32_t* num_towers_out) {
             // Use prime-based positioning
             for (uint32_t d = 0; d < GEO_NUM_DIMENSIONS; d++) {
                 double phase = (double)(base * depth + d) / (double)GEO_NUM_DIMENSIONS;
-                tower->position[d] = math_sin(2.0 * PRIME_PI * phase);
+                tower->position[d] = math_sin(2.0 * MATH_PI * phase);
             }
             
             // Attractor strength increases with depth
@@ -155,7 +155,7 @@ void sample_torus_orbit(
     double* point_out
 ) {
     // Parametric equation for torus
-    double angle = 2.0 * PRIME_PI * t;
+    double angle = 2.0 * MATH_PI * t;
     
     for (uint32_t d = 0; d < GEO_NUM_DIMENSIONS; d++) {
         // Point on torus = center + radius * (math_cos(angle) * axis + math_sin(angle) * perpendicular)
@@ -203,7 +203,7 @@ TorusIntersectionCurve* find_torus_intersection_curve(
             point[d] = (torus1->center[d] * w1 + torus2->center[d] * w2) / (w1 + w2);
             
             // Add oscillation along curve
-            point[d] += 0.1 * math_sin(2.0 * PRIME_PI * t * torus1->frequency);
+            point[d] += 0.1 * math_sin(2.0 * MATH_PI * t * torus1->frequency);
         }
     }
     

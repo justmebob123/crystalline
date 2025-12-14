@@ -51,7 +51,7 @@ double lattice_get_clock_angle(int position, int ring) {
         angle_deg = (position - 25) * 3.6;
     }
     
-    return angle_deg * PRIME_PI / 180.0;
+    return angle_deg * MATH_PI / 180.0;
 }
 
 // Get radius for a ring (as fraction of base radius)
@@ -146,5 +146,5 @@ double lattice_get_distance_from_center(int prime, AppState* state) {
 double lattice_get_angle_degrees(int prime, AppState* state) {
     LatticePosition lp = lattice_calculate_position(prime, state);
     if (!lp.valid) return 0.0;
-    return lp.angle * 180.0 / PRIME_PI;
+    return lp.angle * 180.0 / MATH_PI;
 }

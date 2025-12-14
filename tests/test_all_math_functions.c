@@ -136,8 +136,8 @@ void test_prime_pow() {
 void test_prime_trig() {
     TEST_START("prime_sin/cos/tan - Trigonometric Functions");
     
-    double test_angles[] = {0.0, PRIME_PI/6, PRIME_PI/4, PRIME_PI/3, PRIME_PI/2, 
-                           PRIME_PI, 2*PRIME_PI, 10*PRIME_PI, 100*PRIME_PI};
+    double test_angles[] = {0.0, MATH_PI/6, MATH_PI/4, MATH_PI/3, MATH_PI/2, 
+                           MATH_PI, 2*MATH_PI, 10*MATH_PI, 100*MATH_PI};
     int num_tests = sizeof(test_angles) / sizeof(test_angles[0]);
     
     for (int i = 0; i < num_tests; i++) {
@@ -206,7 +206,7 @@ void test_clock_lattice_mapping() {
         assert(pos.ring >= 0 && pos.ring <= 7 && "Ring out of bounds");
         
         // Verify angle is bounded
-        assert(pos.angle >= -2*PRIME_PI && pos.angle <= 2*PRIME_PI && "Angle out of bounds");
+        assert(pos.angle >= -2*MATH_PI && pos.angle <= 2*MATH_PI && "Angle out of bounds");
         
         // Verify radius is bounded
         assert(pos.radius >= 0.0 && pos.radius <= 2.0 && "Radius out of bounds");
@@ -277,7 +277,7 @@ void test_L_formula() {
         double theta = pos.angle;
         double cos_term = math_cos(theta * (double)phi_i);
         
-        double gamma_k = math_cos(2.0 * PRIME_PI * (double)symmetry_group / 12.0);
+        double gamma_k = math_cos(2.0 * MATH_PI * (double)symmetry_group / 12.0);
         
         double entropy_factor = 1.0 + (double)pos.ring * 0.1 + 0.01;
         double gamma_nd = math_tanh(entropy_factor);

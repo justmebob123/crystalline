@@ -357,9 +357,9 @@ typedef struct {
 #define GOLDEN_RATIO 1.618033988749895
 #define PHI 1.618033988749895         // Golden ratio (alias)
 #define PI 3.14159265358979323846
-#define PRIME_PI 3.14159265358979323846  // Pi constant (alias)
-#define LATTICE_PI 3.14159265358979323846  // Lattice Pi constant
-#define LATTICE_PHI 1.618033988749895      // Lattice golden ratio
+#define MATH_PI 3.14159265358979323846  // Pi constant (alias)
+#define MATH_PI 3.14159265358979323846  // Lattice Pi constant
+#define MATH_PHI 1.618033988749895      // Lattice golden ratio
 #define LATTICE_SQRT5 2.23606797749979     // Square root of 5
 
 // Einstein's Λ (Lambda) correction - CRITICAL CONSTANT

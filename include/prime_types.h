@@ -356,9 +356,9 @@ typedef struct {
 // Symmetry and lattice constants
 #define SYMMETRY_ORDER 12             // 12-fold symmetry (clock structure)
 #define GOLDEN_RATIO 1.618033988749895
-#define PRIME_PI 3.14159265358979323846  // Pi constant (alias)
-#define LATTICE_PI 3.14159265358979323846  // Lattice Pi constant
-#define LATTICE_PHI 1.618033988749895      // Lattice golden ratio
+#define MATH_PI 3.14159265358979323846  // Pi constant (alias)
+#define MATH_PI 3.14159265358979323846  // Lattice Pi constant
+#define MATH_PHI 1.618033988749895      // Lattice golden ratio
 #define LATTICE_SQRT5 2.23606797749979     // Square root of 5
 
 // Einstein's Λ (Lambda) correction - CRITICAL CONSTANT
@@ -368,10 +368,7 @@ typedef struct {
 
 // Vector culmination and twin primes
 
-// π dust (Zu Chongzhi approximation)
-#define PI_DUST_NUMERATOR 355
-#define PI_DUST_DENOMINATOR 113
-#define PI_DUST (355.0 / 113.0)       // ≈ 3.14159292035398
+// π dust (Zu Chongzhi approximation) - Use MATH_PI_DUST_NUM/DEN from math/constants.h
 
 // Cymatic frequencies (Hz)
 #define CYMATIC_BASE_432 432          // 432 Hz triad chant

@@ -47,7 +47,7 @@ void draw_enhanced_factor_lines(SDL_Renderer* renderer, AppState* state,
         
         // Get number position using precise angle
         double num_angle_deg = get_precise_angle(num, state->clock_ctx);
-        double num_angle_rad = num_angle_deg * PRIME_PI / 180.0;
+        double num_angle_rad = num_angle_deg * MATH_PI / 180.0;
         double num_radius = get_radial_distance(num, state->zoom) * scale;
         int num_x = cx + (int)(num_radius * math_cos(num_angle_rad));
         int num_y = cy + (int)(num_radius * math_sin(num_angle_rad));
@@ -57,7 +57,7 @@ void draw_enhanced_factor_lines(SDL_Renderer* renderer, AppState* state,
             if (num % i == 0) {
                 // This is a factor - draw line to it with precise angle
                 double factor_angle_deg = get_precise_angle(i, state->clock_ctx);
-                double factor_angle_rad = factor_angle_deg * PRIME_PI / 180.0;
+                double factor_angle_rad = factor_angle_deg * MATH_PI / 180.0;
                 double factor_radius = get_radial_distance(i, state->zoom) * scale;
                 int factor_x = cx + (int)(factor_radius * math_cos(factor_angle_rad));
                 int factor_y = cy + (int)(factor_radius * math_sin(factor_angle_rad));
@@ -88,7 +88,7 @@ void draw_enhanced_factor_lines(SDL_Renderer* renderer, AppState* state,
             PreciseClockPosition pos;
             if (get_precise_clock_position(&vec, &pos, state->clock_ctx) == MATH_SUCCESS) {
                 // Draw small circle at base position
-                double base_angle_rad = pos.base_angle * PRIME_PI / 180.0;
+                double base_angle_rad = pos.base_angle * MATH_PI / 180.0;
                 int base_x = cx + (int)(num_radius * math_cos(base_angle_rad));
                 int base_y = cy + (int)(num_radius * math_sin(base_angle_rad));
                 
@@ -96,7 +96,7 @@ void draw_enhanced_factor_lines(SDL_Renderer* renderer, AppState* state,
                 SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 150);
                 for (double t = 0.0; t <= 1.0; t += 0.1) {
                     double interp_angle = pos.base_angle + t * pos.phase_offset;
-                    double interp_rad = interp_angle * PRIME_PI / 180.0;
+                    double interp_rad = interp_angle * MATH_PI / 180.0;
                     int arc_x = cx + (int)(num_radius * math_cos(interp_rad));
                     int arc_y = cy + (int)(num_radius * math_sin(interp_rad));
                     SDL_RenderDrawPoint(renderer, arc_x, arc_y);
@@ -135,7 +135,7 @@ void draw_platonic_solid_overlay(SDL_Renderer* renderer, AppState* state,
     
     // Get number position
     double num_angle_deg = get_precise_angle(number, state->clock_ctx);
-    double num_angle_rad = num_angle_deg * PRIME_PI / 180.0;
+    double num_angle_rad = num_angle_deg * MATH_PI / 180.0;
     double num_radius = get_radial_distance(number, state->zoom) * scale;
     int num_x = cx + (int)(num_radius * math_cos(num_angle_rad));
     int num_y = cy + (int)(num_radius * math_sin(num_angle_rad));
@@ -205,7 +205,7 @@ void draw_sphere_hierarchy(SDL_Renderer* renderer, AppState* state,
     
     // Get number position
     double num_angle_deg = get_precise_angle(number, state->clock_ctx);
-    double num_angle_rad = num_angle_deg * PRIME_PI / 180.0;
+    double num_angle_rad = num_angle_deg * MATH_PI / 180.0;
     double num_radius = get_radial_distance(number, state->zoom) * scale;
     int num_x = cx + (int)(num_radius * math_cos(num_angle_rad));
     int num_y = cy + (int)(num_radius * math_sin(num_angle_rad));
@@ -216,7 +216,7 @@ void draw_sphere_hierarchy(SDL_Renderer* renderer, AppState* state,
     
     // Draw circle for root
     for (int angle = 0; angle < 360; angle += 5) {
-        double rad = angle * PRIME_PI / 180.0;
+        double rad = angle * MATH_PI / 180.0;
         int x = num_x + (int)(root_radius * math_cos(rad));
         int y = num_y + (int)(root_radius * math_sin(rad));
         SDL_RenderDrawPoint(renderer, x, y);
@@ -229,13 +229,13 @@ void draw_sphere_hierarchy(SDL_Renderer* renderer, AppState* state,
         
         for (int i = 0; i < root->num_children && i < 12; i++) {
             // Position child at 30-degree intervals
-            double child_angle = (i * 30.0 + num_angle_deg) * PRIME_PI / 180.0;
+            double child_angle = (i * 30.0 + num_angle_deg) * MATH_PI / 180.0;
             int child_x = num_x + (int)(root_radius * 0.7 * math_cos(child_angle));
             int child_y = num_y + (int)(root_radius * 0.7 * math_sin(child_angle));
             
             // Draw child circle
             for (int angle = 0; angle < 360; angle += 10) {
-                double rad = angle * PRIME_PI / 180.0;
+                double rad = angle * MATH_PI / 180.0;
                 int x = child_x + (int)(child_radius * math_cos(rad));
                 int y = child_y + (int)(child_radius * math_sin(rad));
                 SDL_RenderDrawPoint(renderer, x, y);

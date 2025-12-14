@@ -253,7 +253,7 @@ int micro_model_recover(
     
     // STEP 9: Apply cymatic frequency resonance
     // Use Q's frequency to modulate amplitude
-    double freq_resonance = math_sin(q_frequency / 432.0 * 2.0 * PRIME_PI);
+    double freq_resonance = math_sin(q_frequency / 432.0 * 2.0 * MATH_PI);
     double resonance_factor = 1.0 + freq_resonance * 0.1;
     
     // STEP 10: Apply sacred position bonus

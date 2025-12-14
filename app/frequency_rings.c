@@ -35,7 +35,7 @@ void draw_harmonic_resonance(SDL_Renderer* renderer, AppState* state) {
             (int)(ring_colors[ring].b * pulse), 255);
         
         for (int i = 0; i < 360; i++) {
-            double angle = i * PRIME_PI / 180.0;
+            double angle = i * MATH_PI / 180.0;
             int x = cx + (int)(radius * math_cos(angle));
             int y = cy + (int)(radius * math_sin(angle));
             if (x >= 0 && x < RENDER_WIDTH && y >= 0 && y < WINDOW_HEIGHT) {

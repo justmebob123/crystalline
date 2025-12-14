@@ -51,7 +51,7 @@ double get_clock_angle(int position, int ring) {
         angle_deg = (position - 25) * 3.6;
     }
     
-    return angle_deg * PRIME_PI / 180.0;
+    return angle_deg * MATH_PI / 180.0;
 }
 
 // Get radius for a ring
@@ -69,7 +69,7 @@ void draw_circle_ring(SDL_Renderer* renderer, int cx, int cy, double radius, SDL
     
     // Draw circle with many points for smoothness
     for (int i = 0; i < 360; i++) {
-        double angle = i * PRIME_PI / 180.0;
+        double angle = i * MATH_PI / 180.0;
         int x = cx + (int)(radius * math_cos(angle));
         int y = cy + (int)(radius * math_sin(angle));
         SDL_RenderDrawPoint(renderer, x, y);
@@ -266,7 +266,7 @@ void draw_sacred_triangle(SDL_Renderer* renderer, AppState* state) {
     int p1_y = cy;
     
     // Point 2: 12 o'clock (Prime #12 = 37)
-    double angle_12 = -PRIME_PI / 2.0;  // -90° = top
+    double angle_12 = -MATH_PI / 2.0;  // -90° = top
     double radius_12 = get_ring_radius(0, base_radius);  // Ring 0 (hours)
     int p2_x = cx + (int)(radius_12 * math_cos(angle_12));
     int p2_y = cy + (int)(radius_12 * math_sin(angle_12));

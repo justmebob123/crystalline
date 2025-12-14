@@ -1463,13 +1463,13 @@ void handle_training_tab_keydown(AppState* state, int key) {
                 break;
             case SDLK_UP:
                 state->rotation_x -= rotation_speed;
-                if (state->rotation_x < -PRIME_PI / 2.0) 
-                    state->rotation_x = -PRIME_PI / 2.0;
+                if (state->rotation_x < -MATH_PI / 2.0) 
+                    state->rotation_x = -MATH_PI / 2.0;
                 break;
             case SDLK_DOWN:
                 state->rotation_x += rotation_speed;
-                if (state->rotation_x > PRIME_PI / 2.0) 
-                    state->rotation_x = PRIME_PI / 2.0;
+                if (state->rotation_x > MATH_PI / 2.0) 
+                    state->rotation_x = MATH_PI / 2.0;
                 break;
             case SDLK_r:
                 // Reset rotation

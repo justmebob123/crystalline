@@ -17,7 +17,7 @@ void draw_enhanced_ulam_spiral(SDL_Renderer* renderer, AppState* state) {
     // Draw subtle spiral guide (optional)
     SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
     for (int i = 0; i < 360; i++) {
-        double angle = i * PRIME_PI / 180.0;
+        double angle = i * MATH_PI / 180.0;
         double r = (i / 360.0) * base_radius;
         int x = cx + (int)(r * math_cos(angle));
         int y = cy + (int)(r * math_sin(angle));

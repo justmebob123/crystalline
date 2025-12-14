@@ -54,17 +54,17 @@ void map_prime_to_clock(uint64_t prime, LegacyClockPosition *pos) {
     pos->degree = map_to_361_circle(prime);
     
     // Convert to radians
-    pos->angle_radians = (double)pos->degree * LATTICE_PI / 180.0;
+    pos->angle_radians = (double)pos->degree * MATH_PI / 180.0;
     
     // Map to 12-hour clock position (0-11)
     pos->position = angle_to_clock_position(pos->angle_radians);
     
     // Determine quadrant (1-4)
-    if (pos->angle_radians >= 0 && pos->angle_radians < LATTICE_PI / 2.0) {
+    if (pos->angle_radians >= 0 && pos->angle_radians < MATH_PI / 2.0) {
         pos->quadrant = 1;
-    } else if (pos->angle_radians >= LATTICE_PI / 2.0 && pos->angle_radians < LATTICE_PI) {
+    } else if (pos->angle_radians >= MATH_PI / 2.0 && pos->angle_radians < MATH_PI) {
         pos->quadrant = 2;
-    } else if (pos->angle_radians >= LATTICE_PI && pos->angle_radians < 3.0 * LATTICE_PI / 2.0) {
+    } else if (pos->angle_radians >= MATH_PI && pos->angle_radians < 3.0 * MATH_PI / 2.0) {
         pos->quadrant = 3;
     } else {
         pos->quadrant = 4;
@@ -82,12 +82,12 @@ int map_to_361_circle(uint64_t value) {
 
 int angle_to_clock_position(double angle_radians) {
     // Normalize angle to [0, 2π)
-    while (angle_radians < 0) angle_radians += 2.0 * LATTICE_PI;
-    while (angle_radians >= 2.0 * LATTICE_PI) angle_radians -= 2.0 * LATTICE_PI;
+    while (angle_radians < 0) angle_radians += 2.0 * MATH_PI;
+    while (angle_radians >= 2.0 * MATH_PI) angle_radians -= 2.0 * MATH_PI;
     
     // Map to 12 positions (0-11)
     // 0 = 12 o'clock (top), 3 = 3 o'clock (right), etc.
-    int position = (int)(angle_radians * CLOCK_POSITIONS / (2.0 * LATTICE_PI));
+    int position = (int)(angle_radians * CLOCK_POSITIONS / (2.0 * MATH_PI));
     
     if (position >= CLOCK_POSITIONS) position = CLOCK_POSITIONS - 1;
     if (position < 0) position = 0;
@@ -109,35 +109,35 @@ void fold_to_q1(double angle, QuadrantFold *fold) {
     if (!fold) return;
     
     // Normalize angle to [0, 2π)
-    while (angle < 0) angle += 2.0 * LATTICE_PI;
-    while (angle >= 2.0 * LATTICE_PI) angle -= 2.0 * LATTICE_PI;
+    while (angle < 0) angle += 2.0 * MATH_PI;
+    while (angle >= 2.0 * MATH_PI) angle -= 2.0 * MATH_PI;
     
     // Determine quadrant and fold to Q1
-    if (angle >= 0 && angle < LATTICE_PI / 2.0) {
+    if (angle >= 0 && angle < MATH_PI / 2.0) {
         // Q1: no folding needed
         fold->quadrant = 1;
         fold->folded_angle = angle;
         fold->flip_x = false;
         fold->flip_y = false;
         fold->polarity = 1;
-    } else if (angle >= LATTICE_PI / 2.0 && angle < LATTICE_PI) {
+    } else if (angle >= MATH_PI / 2.0 && angle < MATH_PI) {
         // Q2: fold to Q1
         fold->quadrant = 2;
-        fold->folded_angle = LATTICE_PI - angle;
+        fold->folded_angle = MATH_PI - angle;
         fold->flip_x = true;
         fold->flip_y = false;
         fold->polarity = -1;
-    } else if (angle >= LATTICE_PI && angle < 3.0 * LATTICE_PI / 2.0) {
+    } else if (angle >= MATH_PI && angle < 3.0 * MATH_PI / 2.0) {
         // Q3: fold to Q1
         fold->quadrant = 3;
-        fold->folded_angle = angle - LATTICE_PI;
+        fold->folded_angle = angle - MATH_PI;
         fold->flip_x = true;
         fold->flip_y = true;
         fold->polarity = 1;
     } else {
         // Q4: fold to Q1
         fold->quadrant = 4;
-        fold->folded_angle = 2.0 * LATTICE_PI - angle;
+        fold->folded_angle = 2.0 * MATH_PI - angle;
         fold->flip_x = false;
         fold->flip_y = true;
         fold->polarity = -1;
@@ -151,11 +151,11 @@ double unfold_from_q1(double folded_angle, const QuadrantFold *fold) {
         case 1:
             return folded_angle;
         case 2:
-            return LATTICE_PI - folded_angle;
+            return MATH_PI - folded_angle;
         case 3:
-            return LATTICE_PI + folded_angle;
+            return MATH_PI + folded_angle;
         case 4:
-            return 2.0 * LATTICE_PI - folded_angle;
+            return 2.0 * MATH_PI - folded_angle;
         default:
             return folded_angle;
     }

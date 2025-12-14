@@ -281,8 +281,8 @@ static void draw_3d_circle(SDL_Renderer* renderer, Vec3 center, float radius,
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     
     for (int i = 0; i < num_segments; i++) {
-        float angle1 = (i * 2.0f * PRIME_PI) / num_segments;
-        float angle2 = ((i + 1) * 2.0f * PRIME_PI) / num_segments;
+        float angle1 = (i * 2.0f * MATH_PI) / num_segments;
+        float angle2 = ((i + 1) * 2.0f * MATH_PI) / num_segments;
         
         Vec3 p1 = vec3_add(center, vec3_add(
             vec3_scale(u, math_cos(angle1) * radius),
@@ -320,7 +320,7 @@ static void draw_clock_ticks(SDL_Renderer* renderer, Vec3 center, float radius,
     
     // Draw 12 tick marks
     for (int i = 0; i < 12; i++) {
-        float angle = (i * 2.0f * PRIME_PI) / 12.0f;
+        float angle = (i * 2.0f * MATH_PI) / 12.0f;
         
         Vec3 tick_pos = vec3_add(center, vec3_add(
             vec3_scale(u, math_cos(angle) * radius),
@@ -359,8 +359,8 @@ static void draw_3d_sphere_wireframe(SDL_Renderer* renderer, Vec3 center, float 
         
         const int num_points = 24 + density * 12;
         for (int i = 0; i < num_points; i++) {
-            float angle1 = (i * 2.0f * PRIME_PI) / num_points;
-            float angle2 = ((i + 1) * 2.0f * PRIME_PI) / num_points;
+            float angle1 = (i * 2.0f * MATH_PI) / num_points;
+            float angle2 = ((i + 1) * 2.0f * MATH_PI) / num_points;
             
             Vec3 p1 = vec3_add(center, (Vec3){
                 math_cos(angle1) * r, y, math_sin(angle1) * r
@@ -380,12 +380,12 @@ static void draw_3d_sphere_wireframe(SDL_Renderer* renderer, Vec3 center, float 
     
     // Draw longitude circles
     for (int lon = 0; lon < lon_lines; lon++) {
-        float angle_offset = (lon * PRIME_PI) / lon_lines;
+        float angle_offset = (lon * MATH_PI) / lon_lines;
         
         const int num_points = 24 + density * 12;
         for (int i = 0; i < num_points; i++) {
-            float angle1 = (i * 2.0f * PRIME_PI) / num_points;
-            float angle2 = ((i + 1) * 2.0f * PRIME_PI) / num_points;
+            float angle1 = (i * 2.0f * MATH_PI) / num_points;
+            float angle2 = ((i + 1) * 2.0f * MATH_PI) / num_points;
             
             Vec3 p1 = vec3_add(center, (Vec3){
                 math_cos(angle_offset) * math_sin(angle1) * radius,

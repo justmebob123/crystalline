@@ -17,7 +17,7 @@
 static double cllm_get_cymatic_modulation(uint32_t training_step) {
     double frequencies[] = {432.0, 528.0, 639.0, 741.0, 852.0, 963.0};
     int num_freqs = 6;
-    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
+    double global_phase = 2.0 * MATH_PI * (double)training_step / 1000.0;
     double resonance = 0.0;
     for (int f = 0; f < num_freqs; f++) {
         double freq_phase = global_phase * frequencies[f] / 432.0;
@@ -37,7 +37,7 @@ static void cllm_print_cymatic_stats(uint32_t training_step) {
         "Awakening (741 Hz)", "Intuition (852 Hz)", "Divine (963 Hz)"
     };
     
-    double global_phase = 2.0 * PRIME_PI * (double)training_step / 1000.0;
+    double global_phase = 2.0 * MATH_PI * (double)training_step / 1000.0;
     printf("\nIndividual frequency contributions:\n");
     for (int f = 0; f < 6; f++) {
         double freq_phase = global_phase * frequencies[f] / 432.0;
@@ -48,7 +48,7 @@ static void cllm_print_cymatic_stats(uint32_t training_step) {
 }
 
 static void cllm_compute_harmonics(double base_freq, uint32_t num_harmonics, double* harmonics) {
-    compute_cymatic_harmonics(base_freq, num_harmonics, harmonics, LATTICE_PHI);
+    compute_cymatic_harmonics(base_freq, num_harmonics, harmonics, MATH_PHI);
 }
 
 void print_usage(const char* program_name) {
