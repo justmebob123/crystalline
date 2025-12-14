@@ -20,15 +20,13 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_types.h"
 #include "../../../math/include/math/transcendental.h"  // NEW math library
 #include "../../../math/include/math/arithmetic.h"       // NEW math library
-#include "../../../math/include/math/types.h"            // NEW math library constants
+#include "../../../math/include/math/types.h"            // NEW math library constants (MATH_PI, MATH_PHI)
 #include <stdlib.h>
 #include <string.h>
 
-// Use NEW math library constants
-// NOTE: MATH_PI already defined in prime_types.h - no need to redefine
+// Use NEW math library constants (MATH_PI from math/types.h)
 
 // ============================================================================
 // TETRATION ATTRACTORS

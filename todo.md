@@ -318,8 +318,47 @@ libcrystallinemath.so (math library)
 libssl, libcrypto, libm
 ```
 
-**Minor Issue Found:**
-⚠️ MATH_PHI constant defined in two places:
-- prime_types.h: 1.618033988749895
-- math/types.h: 1.61803398874989484820
-Should consolidate to use math/types.h definition only.
+**Critical Issue Found:**
+⚠️ prime_types.h is LEGACY CODE that should be migrated or deleted
+- Defines old BigInt, BigFixed, CrystalAbacus types (replaced by NEW math library)
+- Has duplicate MATH_PI and MATH_PHI definitions
+- Still used by 30+ files in algorithms/, include/, cllm/, tests/
+
+**Action Required:**
+1. Migrate files to use NEW math library types (math/types.h, math/abacus.h)
+2. Remove prime_types.h includes
+3. Delete prime_types.h once migration complete
+
+## PHASE 7: MIGRATE FROM LEGACY prime_types.h
+
+### [x] Step 13: Analyze prime_types.h Usage
+- [x] Listed all files using prime_types.h (30+ files)
+- [x] Identified they only need MATH_PI and MATH_PHI constants
+- [x] Created migration plan
+
+**FINDINGS:**
+- prime_types.h defines legacy BigInt, BigFixed, CrystalAbacus types
+- These are replaced by NEW math library (CrystallineAbacus)
+- Files only need constants (MATH_PI, MATH_PHI) which are in math/types.h
+- 30+ files still include prime_types.h
+
+### [x] Step 14: Migrate Algorithms Library
+- [x] Replaced prime_types.h with math/types.h in geometric_recovery/
+- [x] Updated 3 files: geometric_recovery.c, iterative_recovery.c, quadrant_polarity.c
+- [x] Build successful - no errors or warnings ✅
+
+**CHANGES MADE:**
+- geometric_recovery.c: Removed prime_types.h, uses math/types.h for constants
+- iterative_recovery.c: Removed prime_types.h, uses math/types.h
+- quadrant_polarity.c: Removed prime_types.h, uses math/types.h
+- All builds clean with no warnings about MATH_PHI redefinition
+
+### [ ] Step 15: Migrate Include Headers
+- [ ] Update all headers in include/ directory
+- [ ] Replace legacy types with NEW math library types
+- [ ] Test build
+
+### [ ] Step 16: Delete Legacy Code
+- [ ] Remove prime_types.h
+- [ ] Verify all builds still work
+- [ ] Commit changes

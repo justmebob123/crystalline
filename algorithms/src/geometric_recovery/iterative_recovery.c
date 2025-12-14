@@ -14,7 +14,7 @@
 #define OPENSSL_SUPPRESS_DEPRECATED
 
 #include "geometric_recovery.h"
-#include "prime_types.h"
+#include "../../../math/include/math/types.h"  // NEW math library constants
 #include <openssl/sha.h>
 #include <stdlib.h>
 #include <string.h>

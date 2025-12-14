@@ -9,7 +9,7 @@
  */
 
 #include "geometric_recovery.h"
-#include "prime_types.h"
+#include "../../../math/include/math/types.h"            // NEW math library constants
 #include "../../../math/include/math/transcendental.h"  // NEW math library
 #include <string.h>
 
