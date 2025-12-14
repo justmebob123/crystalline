@@ -880,49 +880,17 @@ uint64_t prime_totient(uint64_t n) {
 uint64_t prime_index(uint64_t prime) {
     // Handle special cases
     if (prime < 2) return 0;
-    if (prime == 2) return 1;
-    if (prime == 3) return 2;
     
-    // Determine clock position
-    uint64_t mod12 = prime % 12;
-    uint32_t position;
-    uint64_t base;
-    
-    if (mod12 == 5) {
-        position = 3;
-        base = 5;
-    } else if (mod12 == 7) {
-        position = 6;
-        base = 7;
-    } else if (mod12 == 11) {
-        position = 9;
-        base = 11;
-    } else {
-        return 0; // Not a valid prime position
-    }
-    
-    // Calculate magnitude
-    uint64_t magnitude = (prime - base) / 12;
-    
-    // Verify it's actually prime using the clock lattice
-    if (!prime_is_prime_o1(position, magnitude)) {
+    // Verify it's actually prime first
+    if (!prime_is_prime(prime)) {
         return 0;
     }
     
-    // Count primes before this one
-    // Start with 2 and 3
-    uint64_t count = 2;
-    
-    // Count all primes in all three positions up to this magnitude
-    for (uint32_t pos = 3; pos <= 9; pos += 3) {
-        uint64_t pos_base = (pos == 3) ? 5 : (pos == 6) ? 7 : 11;
-        uint64_t max_mag = (pos == position) ? magnitude : magnitude + 1;
-        
-        for (uint64_t mag = 0; mag < max_mag; mag++) {
-            uint64_t candidate = pos_base + mag * 12;
-            if (candidate < prime && prime_is_prime_o1(pos, mag)) {
-                count++;
-            }
+    // Count all primes from 2 up to this prime
+    uint64_t count = 0;
+    for (uint64_t i = 2; i <= prime; i++) {
+        if (prime_is_prime(i)) {
+            count++;
         }
     }
     
