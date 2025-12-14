@@ -60,6 +60,10 @@ for (uint64_t i = 2; i <= prime; i++) {
 3. For primes with mod 12 = 1: Use abacus/rainbow table
 4. Must be O(log n) maximum, preferably O(1)
 
+### [x] 1.1 FIX prime_index() - RESTORE SOPHISTICATED DESIGN ✅
+
+### [x] 1.1 FIX prime_index() - RESTORE SOPHISTICATED DESIGN ✅
+
 ### [ ] 1.2 AUDIT ALL CONSTANT DEFINITIONS
 **Find and consolidate ALL instances of**:
 - π (PI, M_PI, MATH_PI, etc.)
