@@ -1219,23 +1219,14 @@ MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
     
     /*
      * Slow path: Numbers don't fit in uint64_t
-     * Fall back to iterative subtraction (Euclidean division)
-     * 
-     * This is still more efficient than the broken long division
-     * because it works with the abacus representation directly
-     * rather than trying to process individual digits.
+     * Use binary search to find quotient - O(log q) complexity
      * 
      * Algorithm:
-     *   quotient = 0
-     *   current = |a|
-     *   while current >= |b|:
-     *       current = current - |b|
-     *       quotient = quotient + 1
-     *   remainder = current
+     *   Use binary search to find largest q such that b * q <= a
+     *   Then remainder = a - (b * q)
      * 
-     * Note: This is O(q) where q is the quotient value.
-     * For arbitrary precision numbers that don't fit in uint64_t,
-     * this is still better than the broken O(n²) long division.
+     * Complexity: O(log q × log n) where q is quotient, n is number size
+     * This is MUCH better than O(q) iterative subtraction
      */
     
     /* Work with absolute values */
@@ -1249,110 +1240,251 @@ MathError abacus_div(CrystallineAbacus* quotient, CrystallineAbacus* remainder,
     abs_a->negative = false;
     abs_b->negative = false;
     
-    /* Initialize quotient to zero */
-    abacus_init_zero(quotient);
+    /*
+     * Binary search for quotient: find largest q such that b * q <= a
+     * 
+     * Start with bounds: low = 0, high = a (worst case q = a when b = 1)
+     * Each iteration: test mid = (low + high) / 2
+     * If b * mid <= a: quotient is at least mid, try higher
+     * If b * mid > a: quotient is less than mid, try lower
+     * 
+     * Complexity: O(log q) iterations, each with O(log n) multiplication
+     * Total: O(log q × log n) - much better than O(q)
+     */
     
-    /* Initialize current to |a| */
-    CrystallineAbacus* current = abacus_copy(abs_a);
-    if (!current) {
+    /* Initialize bounds */
+    CrystallineAbacus* low = abacus_from_uint64(0, a->base);
+    CrystallineAbacus* high = abacus_copy(abs_a);
+    CrystallineAbacus* mid = abacus_new(a->base);
+    CrystallineAbacus* product = abacus_new(a->base);
+    CrystallineAbacus* two = abacus_from_uint64(2, a->base);
+    
+    if (!low || !high || !mid || !product || !two) {
         abacus_free(abs_a);
         abacus_free(abs_b);
+        abacus_free(low);
+        abacus_free(high);
+        abacus_free(mid);
+        abacus_free(product);
+        abacus_free(two);
         return MATH_ERROR_OUT_OF_MEMORY;
     }
     
-    /* Create increment (value 1) */
-    CrystallineAbacus* one = abacus_from_uint64(1, a->base);
-    if (!one) {
-        abacus_free(abs_a);
-        abacus_free(abs_b);
-        abacus_free(current);
-        return MATH_ERROR_OUT_OF_MEMORY;
-    }
-    
-    /* Iterative subtraction */
-    while (abacus_compare(current, abs_b) >= 0) {
-        /* current = current - |b| */
+    /* Binary search */
+    while (abacus_compare(low, high) <= 0) {
+        /* mid = (low + high) / 2 */
+        MathError err = abacus_add(mid, low, high);
+        if (err != MATH_SUCCESS) {
+            abacus_free(abs_a);
+            abacus_free(abs_b);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
+            return err;
+        }
+        
         CrystallineAbacus* temp = abacus_new(a->base);
         if (!temp) {
             abacus_free(abs_a);
             abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
             return MATH_ERROR_OUT_OF_MEMORY;
         }
         
-        MathError err = abacus_sub(temp, current, abs_b);
+        err = abacus_div(temp, NULL, mid, two);
         if (err != MATH_SUCCESS) {
+            abacus_free(temp);
             abacus_free(abs_a);
             abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
-            abacus_free(temp);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
             return err;
         }
         
-        abacus_free(current);
-        current = temp;
+        memcpy(mid->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+        mid->num_beads = temp->num_beads;
+        mid->min_exponent = temp->min_exponent;
+        abacus_free(temp);
         
-        /* quotient = quotient + 1 */
-        temp = abacus_new(a->base);
+        /* product = b * mid */
+        err = abacus_mul(product, abs_b, mid);
+        if (err != MATH_SUCCESS) {
+            abacus_free(abs_a);
+            abacus_free(abs_b);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
+            return err;
+        }
+        
+        /* Compare product with a */
+        int cmp = abacus_compare(product, abs_a);
+        
+        if (cmp <= 0) {
+            /* product <= a: quotient is at least mid, try higher */
+            memcpy(quotient->beads, mid->beads, mid->num_beads * sizeof(AbacusBead));
+            quotient->num_beads = mid->num_beads;
+            quotient->min_exponent = mid->min_exponent;
+            
+            /* low = mid + 1 */
+            CrystallineAbacus* one = abacus_from_uint64(1, a->base);
+            if (!one) {
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            temp = abacus_new(a->base);
+            if (!temp) {
+                abacus_free(one);
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            err = abacus_add(temp, mid, one);
+            abacus_free(one);
+            if (err != MATH_SUCCESS) {
+                abacus_free(temp);
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return err;
+            }
+            
+            memcpy(low->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+            low->num_beads = temp->num_beads;
+            low->min_exponent = temp->min_exponent;
+            abacus_free(temp);
+            
+        } else {
+            /* product > a: quotient is less than mid, try lower */
+            /* high = mid - 1 */
+            CrystallineAbacus* one = abacus_from_uint64(1, a->base);
+            if (!one) {
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            temp = abacus_new(a->base);
+            if (!temp) {
+                abacus_free(one);
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            err = abacus_sub(temp, mid, one);
+            abacus_free(one);
+            if (err != MATH_SUCCESS) {
+                abacus_free(temp);
+                abacus_free(abs_a);
+                abacus_free(abs_b);
+                abacus_free(low);
+                abacus_free(high);
+                abacus_free(mid);
+                abacus_free(product);
+                abacus_free(two);
+                return err;
+            }
+            
+            memcpy(high->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
+            high->num_beads = temp->num_beads;
+            high->min_exponent = temp->min_exponent;
+            abacus_free(temp);
+        }
+    }
+    
+    /* Calculate remainder: r = a - (b * quotient) */
+    if (remainder) {
+        CrystallineAbacus* temp = abacus_new(a->base);
         if (!temp) {
             abacus_free(abs_a);
             abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
             return MATH_ERROR_OUT_OF_MEMORY;
         }
         
-        err = abacus_add(temp, quotient, one);
+        MathError err = abacus_mul(temp, abs_b, quotient);
         if (err != MATH_SUCCESS) {
+            abacus_free(temp);
             abacus_free(abs_a);
             abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
-            abacus_free(temp);
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
             return err;
         }
         
-        /* Copy temp to quotient */
-        if (abacus_ensure_capacity(quotient, temp->num_beads) != MATH_SUCCESS) {
+        err = abacus_sub(remainder, abs_a, temp);
+        abacus_free(temp);
+        if (err != MATH_SUCCESS) {
             abacus_free(abs_a);
             abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
-            abacus_free(temp);
-            return MATH_ERROR_OUT_OF_MEMORY;
+            abacus_free(low);
+            abacus_free(high);
+            abacus_free(mid);
+            abacus_free(product);
+            abacus_free(two);
+            return err;
         }
-        memcpy(quotient->beads, temp->beads, temp->num_beads * sizeof(AbacusBead));
-        quotient->num_beads = temp->num_beads;
-        quotient->min_exponent = temp->min_exponent;
         
-        abacus_free(temp);
+        remainder->negative = a->negative;  /* Remainder has same sign as dividend */
     }
     
     /* Handle polarity */
     quotient->negative = (a->negative != b->negative);
     
-    /* Set remainder */
-    if (remainder) {
-        if (abacus_ensure_capacity(remainder, current->num_beads) != MATH_SUCCESS) {
-            abacus_free(abs_a);
-            abacus_free(abs_b);
-            abacus_free(current);
-            abacus_free(one);
-            return MATH_ERROR_OUT_OF_MEMORY;
-        }
-        memcpy(remainder->beads, current->beads, current->num_beads * sizeof(AbacusBead));
-        remainder->num_beads = current->num_beads;
-        remainder->negative = a->negative;  /* Remainder has same sign as dividend */
-        remainder->min_exponent = current->min_exponent;
-    }
-    
     /* Cleanup */
     abacus_free(abs_a);
     abacus_free(abs_b);
-    abacus_free(current);
-    abacus_free(one);
+    abacus_free(low);
+    abacus_free(high);
+    abacus_free(mid);
+    abacus_free(product);
+    abacus_free(two);
     
     /* Normalize results */
     abacus_normalize(quotient);
