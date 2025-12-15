@@ -230,6 +230,9 @@ void test_triangulation() {
         abacus_to_double(result[1], &y);
         abacus_to_double(result[2], &z);
         
+        printf("  Triangulated position: (%.6f, %.6f, %.6f)\n", x, y, z);
+        printf("  Expected: (%.6f, %.6f, %.6f)\n", 1.0/3.0, 1.0/3.0, 0.0);
+        
         double expected = 1.0 / 3.0;
         double tolerance = 0.01;
         

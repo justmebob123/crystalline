@@ -343,28 +343,40 @@ CrystallineAbacus** triangulate_position_abacus(
         result[i] = abacus_new(base);
     }
     
-    // Weighted average
+    // Compute total confidence (should be 3.0 for equal weights)
     CrystallineAbacus* total = abacus_new(base);
     abacus_add(total, anchor1->confidence, anchor2->confidence);
     abacus_add(total, total, anchor3->confidence);
     
+    // For each dimension, compute weighted average
     for (uint32_t i = 0; i < 3; i++) {
         CrystallineAbacus* sum = abacus_new(base);
         CrystallineAbacus* temp = abacus_new(base);
-        CrystallineAbacus* remainder = abacus_new(base);
         
+        // Sum = pos1*conf1 + pos2*conf2 + pos3*conf3
         abacus_mul(temp, anchor1->position[i], anchor1->confidence);
         abacus_add(sum, sum, temp);
+        
         abacus_mul(temp, anchor2->position[i], anchor2->confidence);
         abacus_add(sum, sum, temp);
+        
         abacus_mul(temp, anchor3->position[i], anchor3->confidence);
         abacus_add(sum, sum, temp);
         
-        abacus_div(result[i], remainder, sum, total);
+        // For fractional division, convert to double, divide, convert back
+        // This is a temporary solution until we implement pure Abacus fractional division
+        double sum_val, total_val;
+        abacus_to_double(sum, &sum_val);
+        abacus_to_double(total, &total_val);
+        
+        double result_val = (total_val != 0.0) ? (sum_val / total_val) : 0.0;
+        
+        // Free old result and create new one with fractional value
+        abacus_free(result[i]);
+        result[i] = abacus_from_double(result_val, base, precision);
         
         abacus_free(sum);
         abacus_free(temp);
-        abacus_free(remainder);
     }
     
     abacus_free(total);
@@ -470,7 +482,9 @@ RecoveryMetricsAbacus* compute_recovery_metrics_abacus(
             abacus_free(diff_sq);
         }
         
-        if (abacus_compare(error, threshold) < 0) {
+        // Check if error is below threshold
+        // For exact copies, error should be 0
+        if (abacus_compare(error, threshold) <= 0) {
             metrics->recovered_vertices++;
         }
         
