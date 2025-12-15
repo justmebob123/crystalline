@@ -17,6 +17,8 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 
 /* ============================================================================
@@ -580,4 +582,195 @@ double math_remainder(double x, double y) {
     /* IEEE remainder: x - n*y where n = round(x/y) */
     double n = math_round(x / y);
     return x - n * y;
+}
+
+/* ============================================================================
+ * ABACUS TRANSCENDENTAL FUNCTIONS (ARBITRARY PRECISION)
+ * ============================================================================
+ */
+
+/**
+ * @brief Helper: Properly copy abacus including min_exponent
+ */
+static MathError copy_abacus_complete(CrystallineAbacus* dest, const CrystallineAbacus* src) {
+    if (!dest || !src) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Ensure capacity - use realloc if needed
+    if (dest->capacity < src->num_beads) {
+        AbacusBead* new_beads = (AbacusBead*)realloc(
+            dest->beads,
+            src->num_beads * sizeof(AbacusBead)
+        );
+        if (!new_beads) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        dest->beads = new_beads;
+        dest->capacity = src->num_beads;
+    }
+    
+    // Copy all fields
+    memcpy(dest->beads, src->beads, src->num_beads * sizeof(AbacusBead));
+    dest->num_beads = src->num_beads;
+    dest->negative = src->negative;
+    dest->min_exponent = src->min_exponent;
+    dest->base = src->base;
+    
+    return MATH_SUCCESS;
+}
+
+/**
+ * @brief Square root with Abacus input/output
+ * 
+ * Wrapper around existing abacus_sqrt with precision control.
+ */
+MathError math_sqrt_abacus(CrystallineAbacus* result,
+                           const CrystallineAbacus* x,
+                           uint32_t precision) {
+    if (!result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Use existing abacus_sqrt implementation
+    MathError err = abacus_sqrt(result, x);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    // Round to desired precision
+    return abacus_round(result, result, (int32_t)precision);
+}
+
+/**
+ * @brief Sine function with Abacus input/output
+ * 
+ * Currently uses double precision as intermediate step.
+ * TODO: Implement pure Abacus Taylor series for true arbitrary precision.
+ */
+MathError math_sin_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision) {
+    if (!result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Convert to double
+    double x_val;
+    MathError err = abacus_to_double(x, &x_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    // Compute sin
+    double sin_val = math_sin(x_val);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(sin_val, result->base, (int32_t)precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy completely
+    err = copy_abacus_complete(result, temp);
+    
+    abacus_free(temp);
+    return err;
+}
+
+/**
+ * @brief Cosine function with Abacus input/output
+ * 
+ * Currently uses double precision as intermediate step.
+ * TODO: Implement pure Abacus Taylor series for true arbitrary precision.
+ */
+MathError math_cos_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision) {
+    if (!result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Convert to double
+    double x_val;
+    MathError err = abacus_to_double(x, &x_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    // Compute cos
+    double cos_val = math_cos(x_val);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(cos_val, result->base, (int32_t)precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy completely
+    err = copy_abacus_complete(result, temp);
+    
+    abacus_free(temp);
+    return err;
+}
+
+/**
+ * @brief Compute sine and cosine simultaneously with Abacus
+ */
+MathError math_sincos_abacus(CrystallineAbacus* sin_result,
+                             CrystallineAbacus* cos_result,
+                             const CrystallineAbacus* x,
+                             uint32_t precision) {
+    if (!sin_result || !cos_result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    MathError err = math_sin_abacus(sin_result, x, precision);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    return math_cos_abacus(cos_result, x, precision);
+}
+
+/**
+ * @brief Two-argument arctangent with Abacus input/output
+ * 
+ * Currently uses double precision as intermediate step.
+ * TODO: Implement pure Abacus CORDIC algorithm for true arbitrary precision.
+ */
+MathError math_atan2_abacus(CrystallineAbacus* result,
+                            const CrystallineAbacus* y,
+                            const CrystallineAbacus* x,
+                            uint32_t precision) {
+    if (!result || !y || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Convert to double
+    double x_val, y_val;
+    MathError err = abacus_to_double(x, &x_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    err = abacus_to_double(y, &y_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    // Compute atan2
+    double atan2_val = math_atan2(y_val, x_val);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(atan2_val, result->base, (int32_t)precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy completely
+    err = copy_abacus_complete(result, temp);
+    
+    abacus_free(temp);
+    return err;
 }

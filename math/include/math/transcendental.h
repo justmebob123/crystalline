@@ -281,3 +281,96 @@ double math_remainder(double x, double y);
 #endif
 
 #endif /* MATH_TRANSCENDENTAL_H */
+/* ============================================================================
+ * ABACUS TRANSCENDENTAL FUNCTIONS (ARBITRARY PRECISION)
+ * ============================================================================
+ * 
+ * These functions provide arbitrary precision transcendental operations
+ * using CrystallineAbacus for both input and output.
+ * 
+ * All operations are pure Abacus arithmetic with no precision loss.
+ * Precision is controlled by the number of terms in series expansions.
+ */
+
+#include "abacus.h"
+
+/**
+ * @brief Square root with Abacus input/output
+ * @param result Output (√x)
+ * @param x Input value (must be >= 0)
+ * @param precision Number of decimal places of precision
+ * @return Error code
+ * 
+ * Implementation: Newton-Raphson iteration in pure Abacus arithmetic
+ * Complexity: O(log(precision) × log(magnitude))
+ */
+MathError math_sqrt_abacus(CrystallineAbacus* result,
+                           const CrystallineAbacus* x,
+                           uint32_t precision);
+
+/**
+ * @brief Sine function with Abacus input/output
+ * @param result Output (sin(x))
+ * @param x Input angle in radians (Abacus)
+ * @param precision Number of decimal places of precision
+ * @return Error code
+ * 
+ * Implementation: Taylor series in pure Abacus arithmetic
+ * sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ...
+ * 
+ * Complexity: O(precision × log(magnitude))
+ */
+MathError math_sin_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision);
+
+/**
+ * @brief Cosine function with Abacus input/output
+ * @param result Output (cos(x))
+ * @param x Input angle in radians (Abacus)
+ * @param precision Number of decimal places of precision
+ * @return Error code
+ * 
+ * Implementation: Taylor series in pure Abacus arithmetic
+ * cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ...
+ * 
+ * Complexity: O(precision × log(magnitude))
+ */
+MathError math_cos_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision);
+
+/**
+ * @brief Two-argument arctangent with Abacus input/output
+ * @param result Output (atan2(y, x)) in radians
+ * @param y Y coordinate (Abacus)
+ * @param x X coordinate (Abacus)
+ * @param precision Number of decimal places of precision
+ * @return Error code
+ * 
+ * Implementation: CORDIC algorithm in pure Abacus arithmetic
+ * Returns angle in range [-π, π]
+ * 
+ * Complexity: O(precision × log(magnitude))
+ */
+MathError math_atan2_abacus(CrystallineAbacus* result,
+                            const CrystallineAbacus* y,
+                            const CrystallineAbacus* x,
+                            uint32_t precision);
+
+/**
+ * @brief Compute sine and cosine simultaneously with Abacus
+ * @param sin_result Output for sin(x)
+ * @param cos_result Output for cos(x)
+ * @param x Input angle in radians (Abacus)
+ * @param precision Number of decimal places of precision
+ * @return Error code
+ * 
+ * More efficient than calling sin and cos separately.
+ * Uses combined Taylor series computation.
+ */
+MathError math_sincos_abacus(CrystallineAbacus* sin_result,
+                             CrystallineAbacus* cos_result,
+                             const CrystallineAbacus* x,
+                             uint32_t precision);
+
