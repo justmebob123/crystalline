@@ -13,7 +13,13 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include "math.h"
+#include "math/abacus.h"
+#include "math/transcendental.h"
+
+/* Ensure math.h functions are available */
+#ifndef fabs
+#define fabs(x) __builtin_fabs(x)
+#endif
 
 #define ITERATIONS 1000
 #define LARGE_ITERATIONS 100
