@@ -21,6 +21,7 @@ extern PlatonicSolid* platonic_generate_icosahedron(void);
 extern PlatonicSolid* platonic_generate_5cell(void);
 extern PlatonicSolid* platonic_generate_tesseract(void);
 extern PlatonicSolid* platonic_generate_16cell(void);
+extern PlatonicSolid* platonic_generate_24cell(void);
 
 // ============================================================================
 // MEMORY MANAGEMENT
@@ -464,8 +465,10 @@ PlatonicSolid* platonic_generate(uint32_t dimension,
             solid = platonic_generate_tesseract();
         } else if (p == 3 && q == 3 && r == 4) {
             solid = platonic_generate_16cell();
+        } else if (p == 3 && q == 4 && r == 3) {
+            solid = platonic_generate_24cell();
         }
-        // 24-cell, 120-cell, 600-cell not yet implemented
+        // 120-cell, 600-cell not yet implemented
     }
     // nD solids (simplex, hypercube, cross-polytope)
     else {
