@@ -18,16 +18,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "math/types.h"  // For ClockPosition
 
-/**
- * Clock position structure
- */
-typedef struct {
-    int ring;           // Ring number (0-3)
-    int position;       // Position on ring
-    double angle;       // Angle in radians
-    double radius;      // Normalized radius
-} ClockPosition;
+// ClockPosition is defined in math/types.h
+// We use the standard definition from the math library
 
 /**
  * Clock recovery context

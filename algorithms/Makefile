@@ -89,6 +89,8 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/fractal_bounds.c \
           src/geometric_recovery/multi_scale_search.c \
           src/geometric_recovery/clock_recovery.c \
+          src/geometric_recovery/convergence_detection.c \
+          src/geometric_recovery/oscillation_detection.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
