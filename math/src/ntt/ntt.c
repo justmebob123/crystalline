@@ -90,14 +90,20 @@ NTTContext* ntt_create(size_t n) {
     ctx->log_n = ntt_log2(n);
     ctx->initialized = false;
     
-    /* Find suitable prime */
+    /* Find suitable prime
+     * Use a reasonable bit size: at least 2*log2(n) to ensure sufficient size
+     * but not so large that primitive root finding becomes difficult
+     */
     ctx->prime = abacus_new(NTT_ABACUS_BASE);
     if (!ctx->prime) {
         ntt_free(ctx);
         return NULL;
     }
     
-    if (ntt_find_prime(ctx->prime, n, 64) != MATH_SUCCESS) {
+    uint32_t min_bits = 2 * ntt_log2(n);  /* Reasonable minimum */
+    if (min_bits < 16) min_bits = 16;      /* At least 16 bits */
+    
+    if (ntt_find_prime(ctx->prime, n, min_bits) != MATH_SUCCESS) {
         ntt_free(ctx);
         return NULL;
     }
@@ -356,15 +362,10 @@ MathError ntt_find_primitive_root(CrystallineAbacus* root, size_t n, const Cryst
         }
         
         if (abacus_compare(check, one) == 0) {
-            /* Found a valid root - copy to output */
-            CrystallineAbacus* temp_root = abacus_copy(candidate);
-            if (temp_root) {
-                abacus_free(root);
-                /* Note: Can't reassign root pointer, need to copy contents */
-                /* For now, this is a limitation - we'll mark as found */
-                abacus_free(temp_root);
-                found = true;
-            }
+            /* Found a valid root - copy value to output parameter */
+            abacus_sub(root, root, root);
+            abacus_add(root, root, candidate);
+            found = true;
             abacus_free(g);
             abacus_free(candidate);
             abacus_free(check);
@@ -412,7 +413,10 @@ MathError ntt_find_prime(CrystallineAbacus* prime, size_t n, uint32_t bits) {
         {2147483648ULL, 4261412865ULL},   /* 2^32 - 2^25 + 1 */
     };
     
-    /* Find suitable known prime */
+    /* Find suitable known prime
+     * Strategy: Find the smallest prime where n <= max_n AND prime_bits >= bits
+     * This ensures we get a prime that's large enough but not unnecessarily huge
+     */
     for (size_t i = 0; i < sizeof(known_primes)/sizeof(known_primes[0]); i++) {
         if (n <= known_primes[i].max_n) {
             /* Check if it meets bit size requirement */
@@ -427,16 +431,23 @@ MathError ntt_find_prime(CrystallineAbacus* prime, size_t n, uint32_t bits) {
                 CrystallineAbacus* temp = abacus_from_uint64(known_primes[i].prime_value, NTT_ABACUS_BASE);
                 if (!temp) return MATH_ERROR_OUT_OF_MEMORY;
                 
-                /* Copy to prime (limitation: can't reassign pointer) */
+                /* Copy value to output parameter */
+                abacus_sub(prime, prime, prime);  /* Clear prime to 0 */
+                abacus_add(prime, prime, temp);   /* Add temp value to prime */
                 abacus_free(temp);
                 return MATH_SUCCESS;
             }
+            /* If this prime is too small (bits-wise), continue to next one */
         }
     }
     
     /* If no known prime found, use largest one */
     CrystallineAbacus* temp = abacus_from_uint64(4261412865ULL, NTT_ABACUS_BASE);
     if (!temp) return MATH_ERROR_OUT_OF_MEMORY;
+    
+    /* Copy value to output parameter */
+    abacus_sub(prime, prime, prime);  /* Clear prime to 0 */
+    abacus_add(prime, prime, temp);   /* Add temp value to prime */
     abacus_free(temp);
     
     return MATH_SUCCESS;

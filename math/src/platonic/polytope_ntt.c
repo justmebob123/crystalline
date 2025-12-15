@@ -116,53 +116,100 @@ NTTContext* polytope_ntt_create_context_custom(size_t transform_size,
         return NULL;
     }
     
-    /* The existing ntt_create has issues with prime initialization.
-     * For now, we create a minimal context that marks NTT as available
-     * but doesn't fully initialize it. This allows the rest of the code
-     * to work while we wait for the NTT core to be fixed.
+    /* PROPER INTEGRATION: Use existing NTT infrastructure correctly
+     * 
+     * Strategy:
+     * 1. Allocate context structure
+     * 2. Use ntt_init_with_prime() to initialize with our chosen prime
+     * 3. Manually precompute roots (same as ntt_create() does)
+     * 
+     * This properly integrates with the existing NTT system without workarounds.
      */
     
+    /* Step 1: Allocate context */
     NTTContext* ctx = (NTTContext*)calloc(1, sizeof(NTTContext));
     if (!ctx) return NULL;
     
-    ctx->n = transform_size;
-    ctx->log_n = ntt_log2(transform_size);
-    ctx->initialized = true;  /* Mark as initialized for now */
-    
-    /* Create prime */
-    ctx->prime = abacus_from_uint64(prime, NTT_ABACUS_BASE);
-    if (!ctx->prime) {
+    /* Step 2: Create prime Abacus and initialize context */
+    CrystallineAbacus* prime_abacus = abacus_from_uint64(prime, NTT_ABACUS_BASE);
+    if (!prime_abacus) {
         free(ctx);
         return NULL;
     }
     
-    /* Create a simple root (for now, just use 3 which is often a primitive root) */
-    ctx->root = abacus_from_uint64(3, NTT_ABACUS_BASE);
-    if (!ctx->root) {
-        abacus_free(ctx->prime);
+    /* Use ntt_init_with_prime() to properly initialize context with prime */
+    if (!ntt_init_with_prime(ctx, transform_size, prime_abacus)) {
+        abacus_free(prime_abacus);
         free(ctx);
         return NULL;
     }
     
-    /* Allocate root arrays (but don't precompute for now) */
+    abacus_free(prime_abacus);
+    
+    /* Step 3: Allocate root arrays */
     ctx->roots_forward = (CrystallineAbacus**)calloc(transform_size, sizeof(CrystallineAbacus*));
     ctx->roots_inverse = (CrystallineAbacus**)calloc(transform_size, sizeof(CrystallineAbacus*));
     
     if (!ctx->roots_forward || !ctx->roots_inverse) {
-        if (ctx->roots_forward) free(ctx->roots_forward);
-        if (ctx->roots_inverse) free(ctx->roots_inverse);
-        abacus_free(ctx->prime);
-        abacus_free(ctx->root);
-        free(ctx);
+        ntt_free(ctx);
         return NULL;
     }
     
-    /* Initialize root arrays with placeholder values */
+    /* Step 4: Precompute roots using modular exponentiation
+     * This follows the exact same pattern as ntt_create() in ntt.c
+     */
     for (size_t i = 0; i < transform_size; i++) {
-        ctx->roots_forward[i] = abacus_from_uint64(1, NTT_ABACUS_BASE);
-        ctx->roots_inverse[i] = abacus_from_uint64(1, NTT_ABACUS_BASE);
+        ctx->roots_forward[i] = abacus_new(NTT_ABACUS_BASE);
+        ctx->roots_inverse[i] = abacus_new(NTT_ABACUS_BASE);
+        
+        if (!ctx->roots_forward[i] || !ctx->roots_inverse[i]) {
+            ntt_free(ctx);
+            return NULL;
+        }
+        
+        /* Forward root: ω^i mod p */
+        CrystallineAbacus* exp_i = abacus_from_uint64(i, NTT_ABACUS_BASE);
+        if (!exp_i) {
+            ntt_free(ctx);
+            return NULL;
+        }
+        
+        MathError err = abacus_mod_exp(ctx->roots_forward[i], ctx->root, exp_i, ctx->prime);
+        abacus_free(exp_i);
+        
+        if (err != MATH_SUCCESS) {
+            ntt_free(ctx);
+            return NULL;
+        }
+        
+        /* Inverse root: ω^(-i) mod p = ω^(n-i) mod p */
+        if (i == 0) {
+            /* ω^0 = 1 */
+            CrystallineAbacus* one = abacus_from_uint64(1, NTT_ABACUS_BASE);
+            if (!one) {
+                ntt_free(ctx);
+                return NULL;
+            }
+            abacus_free(ctx->roots_inverse[i]);
+            ctx->roots_inverse[i] = one;
+        } else {
+            CrystallineAbacus* exp_ni = abacus_from_uint64(transform_size - i, NTT_ABACUS_BASE);
+            if (!exp_ni) {
+                ntt_free(ctx);
+                return NULL;
+            }
+            
+            err = abacus_mod_exp(ctx->roots_inverse[i], ctx->root, exp_ni, ctx->prime);
+            abacus_free(exp_ni);
+            
+            if (err != MATH_SUCCESS) {
+                ntt_free(ctx);
+                return NULL;
+            }
+        }
     }
     
+    /* Context is now properly initialized with correct roots */
     return ctx;
 }
 
