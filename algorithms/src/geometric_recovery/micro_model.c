@@ -15,7 +15,7 @@
  * Thesis Reference: Chapter 16 - Geometric Recovery
  */
 
-#include "algorithms/geometric_recovery/micro_model.h"
+#include "geometric_recovery/micro_model.h"
 #include "math/types.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"

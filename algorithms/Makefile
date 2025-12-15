@@ -83,6 +83,7 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/harmonic_folding.c \
           src/geometric_recovery/kissing_spheres.c \
           src/geometric_recovery/micro_model.c \
+          src/geometric_recovery/g_triangulation_abstracted.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
