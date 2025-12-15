@@ -12,14 +12,17 @@
  * 
  * Key Principle: Works with SAMPLES, not specific crypto structures.
  * 
- * 7-Phase Pipeline:
- * 1. Triangulation - Geometric positioning
- * 2. Torus Analysis - Oscillation patterns
- * 3. Harmonic Folding - Frequency decomposition
- * 4. Kissing Spheres - Optimal packing
- * 5. Micro-Model Training - Learn from samples
- * 6. Confidence Scoring - Quality metrics
- * 7. Final Recovery - Bounded result
+ * 10-Phase Pipeline:
+ * 1. Initial Triangulation - Geometric positioning
+ * 2. Tetration Attractor Bias - 186 towers as attractors
+ * 3. Torus Intersection Refinement - Oscillation patterns
+ * 4. Fractal Partition Bounds - Multi-dimensional partitioning
+ * 5. Multi-Scale Search - Hierarchical refinement
+ * 6. Convergence Check - Verify convergence criteria
+ * 7. Harmonic Folding - Frequency decomposition (NEW)
+ * 8. Kissing Spheres Optimization - Optimal packing (NEW)
+ * 9. Recursive Recovery - Hierarchical refinement (NEW)
+ * 10. Micro-Model Training - Learn from samples (NEW)
  * 
  * Thesis Reference: Chapter 16 - Geometric Recovery
  */
@@ -101,18 +104,21 @@ int geometric_recovery_orchestrator_add_sample(
 // ============================================================================
 
 /**
- * Execute the complete 7-phase geometric recovery pipeline
+ * Execute the complete 10-phase geometric recovery pipeline
  * 
  * UNIVERSAL: Recovers bounds for ANY target value in ANY system.
  * 
  * Pipeline:
- * 1. Triangulation - Geometric positioning using tetration attractors
- * 2. Torus Analysis - Detect oscillation patterns in samples
- * 3. Harmonic Folding - Frequency decomposition (12 harmonics)
- * 4. Kissing Spheres - Optimal packing (12 neighbors)
- * 5. Micro-Model Training - Learn input→output mapping
- * 6. Confidence Scoring - Compute overall quality metrics
- * 7. Final Recovery - Predict bounds [min, max] for target
+ * 1. Initial Triangulation - Geometric positioning using tetration attractors
+ * 2. Tetration Attractor Bias - Apply 186 towers as attractors
+ * 3. Torus Intersection Refinement - Detect oscillation patterns in samples
+ * 4. Fractal Partition Bounds - Multi-dimensional space partitioning
+ * 5. Multi-Scale Search - Hierarchical multi-scale refinement
+ * 6. Convergence Check - Verify convergence criteria met
+ * 7. Harmonic Folding - Frequency decomposition (12 harmonics) [NEW]
+ * 8. Kissing Spheres Optimization - Optimal packing (12 neighbors) [NEW]
+ * 9. Recursive Recovery - Hierarchical recursive refinement [NEW]
+ * 10. Micro-Model Training - Learn input→output mapping [NEW]
  * 
  * @param orch Orchestrator (must have samples added)
  * @param target Target output value to recover input for
