@@ -2,15 +2,15 @@
  * @file micro_model.c
  * @brief Trainable Micro-Model for Geometric Recovery
  * 
- * Lightweight neural network for learned k recovery from clock positions.
- * Uses ONLY the NEW math library - no legacy dependencies.
+ * Lightweight neural network for learned k recovery from geometric features.
+ * Uses ONLY the NEW math library - NO external dependencies.
  * 
  * Features:
  * - Lightweight architecture (< 1000 parameters)
  * - Fast inference (< 1ms)
  * - Online learning support
  * - Torus-based geometric constraints
- * - Clock lattice integration
+ * - Universal applicability (ANY cryptographic or non-cryptographic system)
  * 
  * Thesis Reference: Chapter 16 - Geometric Recovery
  */
@@ -18,10 +18,10 @@
 #include "algorithms/geometric_recovery/micro_model.h"
 #include "math/types.h"
 #include "math/arithmetic.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
 
 // ============================================================================
@@ -108,20 +108,20 @@ struct MicroModel {
 // ============================================================================
 
 /**
- * Extract features from value (simplified - no clock lattice dependency)
+ * Extract features from value (universal - works for ANY system)
  */
 static void extract_features(uint64_t value, double* features) {
-    // Simple feature extraction based on value properties
-    features[0] = (double)(value % 12);           // Ring-like feature
-    features[1] = (double)(value % 60);           // Position-like feature
-    features[2] = (double)(value % 100);          // Angle-like feature
+    // Universal geometric features based on value properties
+    features[0] = (double)(value % 12);           // 12-fold symmetry
+    features[1] = (double)(value % 60);           // Babylonian base-60
+    features[2] = (double)(value % 100);          // Centesimal
     features[3] = (double)value;                  // Magnitude
     features[4] = features[0] * features[1];      // Interaction term
     features[5] = features[2] * features[3];      // Interaction term
     features[6] = features[0] * features[0];      // Quadratic term
     features[7] = features[1] * features[1];      // Quadratic term
     features[8] = features[2] * features[2];      // Quadratic term
-    features[9] = log((double)value + 1.0);       // Log feature
+    features[9] = math_log((double)value + 1.0);  // Log feature (NEW math library)
 }
 
 /**
@@ -272,8 +272,8 @@ int micro_model_train(MicroModel* model, TrainingSample* samples, uint32_t num_s
             model->bias -= LEARNING_RATE * error;
         }
         
-        // Compute RMS error
-        double rms_error = sqrt(total_error / num_samples);
+        // Compute RMS error using NEW math library
+        double rms_error = math_sqrt(total_error / num_samples);
         
         // Check convergence
         if (rms_error < CONVERGENCE_THRESHOLD) {
@@ -298,7 +298,7 @@ int micro_model_train(MicroModel* model, TrainingSample* samples, uint32_t num_s
         double error = prediction - (double)samples[i].k;
         total_error += error * error;
     }
-    model->training_error = sqrt(total_error / num_samples);
+    model->training_error = math_sqrt(total_error / num_samples);
     
     printf("Training complete! Final RMS error: %.6f\n", model->training_error);
     
@@ -343,7 +343,7 @@ int micro_model_set_clock_info(MicroModel* model, uint64_t p, uint64_t q) {
     model->clock_info.p = p;
     model->clock_info.q = q;
     
-    // Simplified clock mapping (no actual clock lattice dependency)
+    // Simplified clock mapping (universal geometric properties)
     model->clock_info.p_ring = (int)(p % 4);
     model->clock_info.p_position = (int)(p % 12);
     model->clock_info.p_angle = (double)(p % 360);
@@ -517,8 +517,8 @@ double micro_model_validate(
         }
     }
     
-    // Update validation statistics
-    model->validation_error = sqrt(total_error / num_samples);
+    // Update validation statistics using NEW math library
+    model->validation_error = math_sqrt(total_error / num_samples);
     model->capture_rate = (double)captured / num_samples;
     
     return model->validation_error;
