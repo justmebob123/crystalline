@@ -70,10 +70,6 @@ SOURCES = src/numerical.c \
           src/platonic_model/platonic_model_oscillations.c \
           src/platonic_model/platonic_model_recovery.c \
           src/platonic_model/platonic_model_persistence.c \
-          src/geometric_recovery/oscillation_vector.c \
-          src/geometric_recovery/quadrant_polarity.c \
-          src/geometric_recovery/shared_geometry.c \
-          src/geometric_recovery/geometric_utils.c \
           src/geometric_recovery/tetration_attractors.c \
           src/geometric_recovery/torus_analysis.c \
           src/geometric_recovery/harmonic_folding.c \
