@@ -482,37 +482,113 @@ MathError platonic_apply_12fold_rotation(CrystallineAbacus** coords,
         return MATH_ERROR_INVALID_ARG;
     }
     
+    // PURE ABACUS IMPLEMENTATION - NO DOUBLE CONVERSIONS
+    uint32_t base = coords[0]->base;
+    uint32_t precision = 15; // High precision
+    
     // Rotation angle: rotation * 30° = rotation * π/6
-    double angle = rotation * 3.14159265358979323846 / 6.0;
-    double cos_angle = math_cos(angle);
-    double sin_angle = math_sin(angle);
+    // Compute angle as Abacus: rotation * π / 6
+    CrystallineAbacus* pi = abacus_from_double(3.14159265358979323846, base, precision);
+    CrystallineAbacus* six = abacus_from_uint64(6, base);
+    CrystallineAbacus* rotation_num = abacus_from_uint64(rotation, base);
+    
+    if (!pi || !six || !rotation_num) {
+        if (pi) abacus_free(pi);
+        if (six) abacus_free(six);
+        if (rotation_num) abacus_free(rotation_num);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // angle = rotation * π / 6
+    CrystallineAbacus* pi_over_6 = abacus_new(base);
+    CrystallineAbacus* remainder = abacus_new(base);
+    abacus_div(pi_over_6, remainder, pi, six);
+    abacus_free(remainder);
+    
+    CrystallineAbacus* angle = abacus_new(base);
+    abacus_mul(angle, rotation_num, pi_over_6);
+    
+    abacus_free(pi);
+    abacus_free(six);
+    abacus_free(rotation_num);
+    abacus_free(pi_over_6);
+    
+    // Compute sin and cos using pure Abacus
+    CrystallineAbacus* cos_angle = abacus_new(base);
+    CrystallineAbacus* sin_angle = abacus_new(base);
+    
+    if (!cos_angle || !sin_angle) {
+        abacus_free(angle);
+        if (cos_angle) abacus_free(cos_angle);
+        if (sin_angle) abacus_free(sin_angle);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    MathError err = math_cos_abacus(cos_angle, angle, precision);
+    if (err != MATH_SUCCESS) {
+        abacus_free(angle);
+        abacus_free(cos_angle);
+        abacus_free(sin_angle);
+        return err;
+    }
+    
+    err = math_sin_abacus(sin_angle, angle, precision);
+    if (err != MATH_SUCCESS) {
+        abacus_free(angle);
+        abacus_free(cos_angle);
+        abacus_free(sin_angle);
+        return err;
+    }
+    
+    abacus_free(angle);
     
     // Apply rotation in the first 2 dimensions (x-y plane)
     // x' = x*cos(θ) - y*sin(θ)
     // y' = x*sin(θ) + y*cos(θ)
     
-    double x, y;
-    MathError err1 = abacus_to_double(coords[0], &x);
-    MathError err2 = abacus_to_double(coords[1], &y);
+    // Compute x*cos(θ)
+    CrystallineAbacus* x_cos = abacus_new(base);
+    abacus_mul(x_cos, coords[0], cos_angle);
     
-    if (err1 != MATH_SUCCESS || err2 != MATH_SUCCESS) {
-        return err1 != MATH_SUCCESS ? err1 : err2;
+    // Compute y*sin(θ)
+    CrystallineAbacus* y_sin = abacus_new(base);
+    abacus_mul(y_sin, coords[1], sin_angle);
+    
+    // Compute x*sin(θ)
+    CrystallineAbacus* x_sin = abacus_new(base);
+    abacus_mul(x_sin, coords[0], sin_angle);
+    
+    // Compute y*cos(θ)
+    CrystallineAbacus* y_cos = abacus_new(base);
+    abacus_mul(y_cos, coords[1], cos_angle);
+    
+    abacus_free(cos_angle);
+    abacus_free(sin_angle);
+    
+    if (!x_cos || !y_sin || !x_sin || !y_cos) {
+        if (x_cos) abacus_free(x_cos);
+        if (y_sin) abacus_free(y_sin);
+        if (x_sin) abacus_free(x_sin);
+        if (y_cos) abacus_free(y_cos);
+        return MATH_ERROR_OUT_OF_MEMORY;
     }
-    
-    double x_new = x * cos_angle - y * sin_angle;
-    double y_new = x * sin_angle + y * cos_angle;
-    
-    uint32_t base = coords[0]->base;
-    // Get precision from the Abacus structure
-    // Note: Abacus doesn't have a precision field, we'll use a default
-    uint32_t precision = 6; // Default precision
     
     // Free old values if they exist
     if (result[0]) abacus_free(result[0]);
     if (result[1]) abacus_free(result[1]);
     
-    result[0] = abacus_from_double(x_new, base, precision);
-    result[1] = abacus_from_double(y_new, base, precision);
+    // x' = x*cos(θ) - y*sin(θ)
+    result[0] = abacus_new(base);
+    abacus_sub(result[0], x_cos, y_sin);
+    
+    // y' = x*sin(θ) + y*cos(θ)
+    result[1] = abacus_new(base);
+    abacus_add(result[1], x_sin, y_cos);
+    
+    abacus_free(x_cos);
+    abacus_free(y_sin);
+    abacus_free(x_sin);
+    abacus_free(y_cos);
     
     if (!result[0] || !result[1]) {
         return MATH_ERROR_OUT_OF_MEMORY;
