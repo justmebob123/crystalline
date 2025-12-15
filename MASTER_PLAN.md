@@ -14,14 +14,15 @@
 4. Read TERTIARY_OBJECTIVES.md for implementation details
 5. Update todo.md with current progress
 
-### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES
-- ❌ **NEVER** use math.h, complex.h, or any standard math libraries
+### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES (EXCEPT IN TESTS)
+- ❌ **NEVER** use math.h, complex.h, or any standard math libraries **IN PRODUCTION CODE**
 - ❌ **NEVER** use floating-point arithmetic for core operations
 - ✅ **ALL** operations must use CrystallineAbacus (arbitrary precision)
 - ✅ **ALL** missing operations must be added as O(1) functions
 - ✅ **PURE** crystalline mathematics only
+- ✅ **EXCEPTION**: Test files (math/tests/*.c) MAY use math.h for validation and comparison
 
-**Rationale**: External libraries break the geometric structure and introduce floating-point errors that compound through recursive operations.
+**Rationale**: External libraries break the geometric structure and introduce floating-point errors that compound through recursive operations. Tests need math.h to validate our implementations against known-good reference values.
 
 ### 🔴 RULE 2: NO DUPLICATE CONSTANTS
 - ❌ **NO** multiple definitions of π, φ, infinity, etc.

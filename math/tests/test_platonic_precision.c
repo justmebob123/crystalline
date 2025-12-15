@@ -6,9 +6,9 @@
 #include "math/platonic_clock.h"
 #include "math/prime.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 // Helper to print Abacus value
 void print_abacus(const char* label, CrystallineAbacus* num) {
@@ -177,7 +177,7 @@ void test_distance_precision() {
         // Check if close to sqrt(2)
         double dist_val;
         abacus_to_double(dist, &dist_val);
-        double expected = 1.41421356237309504880;  // sqrt(2)
+        double expected = MATH_SQRT2;  // Use constant from constants.h
         double error = (dist_val > expected) ? (dist_val - expected) : (expected - dist_val);
         printf("Error: %.15e\n", error);
         

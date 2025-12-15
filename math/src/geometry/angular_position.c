@@ -10,6 +10,7 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "math/types.h"
+#include "math/constants.h"
 #include <string.h>
 #include <ctype.h>
 

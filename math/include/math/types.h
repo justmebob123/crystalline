@@ -158,10 +158,7 @@ typedef struct {
 /** Mathematical constant φ (golden ratio) */
 #define MATH_PHI 1.61803398874989484820
 
-/** Square roots */
-#define MATH_SQRT2 1.41421356237309504880
-#define MATH_SQRT3 1.73205080756887729352
-#define MATH_SQRT5 2.23606797749978969640
+/** Square roots - MOVED TO constants.h to avoid duplicates */
 
 /** Natural logarithm of 2 */
 #define MATH_LN2 0.69314718055994530942
@@ -212,8 +209,5 @@ typedef enum {
 /* NOTE: MATH_TWO_PI already defined above at line 136 - duplicate removed */
 
 
-/* Vector culmination point and twin primes */
-#define VECTOR_CULMINATION 144000ULL
-#define TWIN_PRIME_LOWER 143999ULL
-#define TWIN_PRIME_UPPER 144001ULL
+/* Vector culmination point and twin primes - MOVED TO constants.h to avoid duplicates */
 

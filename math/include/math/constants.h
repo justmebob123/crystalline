@@ -150,4 +150,11 @@
 // Dimensional frequencies: [3, 7, 31, 12, 19, 5, 11, 13, 17, 23, 29, ...]
 // These interact with angular position θ in the lattice formula
 
+/* ============================================================================
+ * TWIN PRIMES (Vector culmination already defined above)
+ * ============================================================================ */
+
+#define TWIN_PRIME_LOWER 143999ULL    // Lower twin prime
+#define TWIN_PRIME_UPPER 144001ULL    // Upper twin prime
+
 #endif // MATH_CONSTANTS_H

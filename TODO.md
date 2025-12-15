@@ -2,6 +2,46 @@
 
 ## 🔴 PERMANENT RULES (ALWAYS READ FIRST)
 
+### 🔴 RULE 0: MANDATORY READING SEQUENCE
+**BEFORE ANY ACTION, YOU MUST:**
+1. Read these PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Read TERTIARY_OBJECTIVES.md for implementation details
+5. Update this todo.md with current progress
+
+### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES (EXCEPT IN TESTS)
+- ❌ **NEVER** use math.h, complex.h, or any standard math libraries **IN PRODUCTION CODE**
+- ❌ **NEVER** use floating-point arithmetic for core operations
+- ✅ **ALL** operations must use CrystallineAbacus (arbitrary precision)
+- ✅ **ALL** missing operations must be added as O(1) functions
+- ✅ **PURE** crystalline mathematics only
+- ✅ **EXCEPTION**: Test files (math/tests/*.c) MAY use math.h for validation
+
+### 🔴 RULE 2: NO DUPLICATE CONSTANTS
+- ❌ **NO** multiple definitions of π, φ, infinity, etc.
+- ✅ **ALL** constants defined ONCE in math/include/math/constants.h
+
+### 🔴 RULE 3: PROPER NAMING CONVENTIONS
+- ❌ **NO** "bigfixed", "complete", "new", or temporal suffixes
+- ✅ **CLEAR** descriptive names reflecting Babylonian/clock lattice design
+
+### 🔴 RULE 4: BABYLONIAN MATHEMATICS FOUNDATION
+- ✅ **BASE-60** (sexagesimal) system
+- ✅ **12-FOLD** clock symmetry (zodiac structure)
+
+### 🔴 RULE 11: GIT OPERATIONS
+```bash
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+### 🔴 RULE 12: BUILD VERIFICATION
+```bash
+make clean &amp;&amp; make 2>&amp;1 | tee build.log
+```
+
+---
+
 ### RULE 0: MANDATORY READING SEQUENCE
 1. Read these PERMANENT RULES completely
 2. Read MASTER_PLAN.md for objectives
