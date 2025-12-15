@@ -1,5 +1,6 @@
 #include "math/platonic_clock.h"
 #include "math/abacus.h"
+#include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -91,7 +92,7 @@ int main() {
     abacus_free(sum);
     abacus_free(result);
     
-    for (int i = 0; i < dimension; i++) {
+    for (uint32_t i = 0; i < dimension; i++) {
         abacus_free(point1[i]);
         abacus_free(point2[i]);
     }

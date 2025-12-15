@@ -35,7 +35,7 @@ int main() {
     double val2;
     abacus_to_double(result2, &val2);
     printf("  Result: %f (expected 1.414...)\n", val2);
-    printf("  Expected: %f\n", sqrt(2.0));
+    printf("  Expected: %f\n", 1.41421356237309504880);  // sqrt(2)
     
     abacus_free(two);
     abacus_free(result2);

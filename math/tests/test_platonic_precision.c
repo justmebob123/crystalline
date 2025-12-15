@@ -150,8 +150,8 @@ void test_distance_precision() {
     printf("\n=== Test 4: Distance Calculation Precision ===\n");
     
     uint32_t dimension = 3;
-    uint32_t base = 12;  // Must use 12, 60, or 100
-    uint32_t precision = 15;
+    uint32_t base __attribute__((unused)) = 12;  // Must use 12, 60, or 100
+    uint32_t precision __attribute__((unused)) = 15;
     
     // Create two points
     CrystallineAbacus** point1 = (CrystallineAbacus**)calloc(dimension, sizeof(CrystallineAbacus*));
@@ -177,8 +177,8 @@ void test_distance_precision() {
         // Check if close to sqrt(2)
         double dist_val;
         abacus_to_double(dist, &dist_val);
-        double expected = sqrt(2.0);
-        double error = fabs(dist_val - expected);
+        double expected = 1.41421356237309504880;  // sqrt(2)
+        double error = (dist_val > expected) ? (dist_val - expected) : (expected - dist_val);
         printf("Error: %.15e\n", error);
         
         if (error < 1e-10) {
