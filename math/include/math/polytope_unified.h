@@ -62,6 +62,14 @@ typedef struct {
     bool use_ntt;                 /**< Use NTT for large polytopes (default: auto) */
     
     // ========================================================================
+    // NTT CONFIGURATION (Advanced)
+    // ========================================================================
+    uint32_t ntt_threshold;       /**< Vertex count threshold for NTT (default: 100) */
+    uint64_t ntt_prime;           /**< Specific NTT prime (0 = auto-select) */
+    bool ntt_force_enable;        /**< Force NTT even for small polytopes (default: false) */
+    bool ntt_force_disable;       /**< Force disable NTT (default: false) */
+    
+    // ========================================================================
     // NESTING CONFIGURATION (Optional)
     // ========================================================================
     bool enable_nesting;          /**< Enable hierarchical nesting (default: false) */
@@ -121,6 +129,13 @@ typedef struct {
     // NESTING (If applicable)
     // ========================================================================
     NestedPolytopeTree* nesting_tree; /**< Hierarchical nesting tree (NULL if not nested) */
+    
+    // ========================================================================
+    // NTT STATUS (Performance information)
+    // ========================================================================
+    bool ntt_enabled;             /**< Whether NTT is being used */
+    uint64_t ntt_prime;           /**< NTT prime in use (0 if not using NTT) */
+    size_t ntt_transform_size;    /**< NTT transform size (0 if not using NTT) */
     
     // ========================================================================
     // VALIDATION

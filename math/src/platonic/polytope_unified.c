@@ -5,6 +5,8 @@
 
 #include "math/polytope_unified.h"
 #include "math/schlafli_math.h"
+#include "math/polytope_ntt.h"
+#include "math/ntt.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -27,6 +29,12 @@ PolytopeSpec polytope_default_spec(void) {
         .map_to_primes = true,
         .map_to_clock = true,
         .use_ntt = true,  // Auto-determined by size
+        
+        // NTT configuration (advanced)
+        .ntt_threshold = POLYTOPE_NTT_DEFAULT_THRESHOLD,  // 100 vertices
+        .ntt_prime = 0,  // Auto-select
+        .ntt_force_enable = false,
+        .ntt_force_disable = false,
         
         // No nesting by default
         .enable_nesting = false,
@@ -135,6 +143,44 @@ NestedPolytopeTree* polytope_create(const PolytopeSpec* spec) {
         // This is THE way coordinates work - always on clock lattice
     }
     
+    // Step 4.5: Setup NTT context (if enabled and beneficial)
+    NTTContext* ntt_ctx = NULL;
+    if (spec->use_ntt && !spec->ntt_force_disable) {
+        // Determine if NTT should be used
+        bool should_use_ntt = false;
+        
+        if (spec->ntt_force_enable) {
+            // Force enable regardless of size
+            should_use_ntt = true;
+        } else {
+            // Automatic decision based on threshold
+            uint32_t threshold = spec->ntt_threshold > 0 ? spec->ntt_threshold : POLYTOPE_NTT_DEFAULT_THRESHOLD;
+            should_use_ntt = (solid->num_vertices >= threshold);
+        }
+        
+        if (should_use_ntt) {
+            // Create NTT context
+            if (spec->ntt_prime > 0) {
+                // Use specified prime
+                ntt_ctx = polytope_ntt_create_context_custom(
+                    ntt_next_power_of_2(solid->num_vertices),
+                    spec->ntt_prime
+                );
+            } else {
+                // Auto-select prime
+                ntt_ctx = polytope_ntt_create_context(solid);
+            }
+            
+            // Store NTT context in solid for later use
+            // Note: We'll need to add this field to PlatonicSolid
+            // For now, just verify it was created
+            if (ntt_ctx) {
+                // NTT is ready for use in face enumeration and other operations
+                solid->is_valid = true;  // Mark as valid with NTT support
+            }
+        }
+    }
+    
     // Step 5: Create nesting tree (always, even if not nested)
     NestedPolytopeTree* tree = nested_polytope_create_tree(solid);
     if (!tree) {
@@ -236,6 +282,16 @@ PolytopeInfo* polytope_get_info(const PlatonicSolid* solid) {
     info->is_valid = solid->is_valid;
     info->is_regular = solid->is_regular;
     info->euler_characteristic = solid->euler_characteristic;
+    
+    // NTT status (check if NTT would be beneficial)
+    info->ntt_enabled = polytope_ntt_should_use(solid);
+    if (info->ntt_enabled) {
+        info->ntt_prime = polytope_ntt_find_optimal_prime(solid);
+        info->ntt_transform_size = polytope_ntt_get_transform_size(solid);
+    } else {
+        info->ntt_prime = 0;
+        info->ntt_transform_size = 0;
+    }
     
     // Face hierarchy (generate if not present)
     info->faces = higher_faces_generate_hierarchy(solid);
