@@ -1,4 +1,4 @@
-# UNIFIED INTEGRATION: Week 1 Progress
+# UNIFIED INTEGRATION: O(1) Operations &amp; Week 2 Progress
 
 ## 🔴 PERMANENT RULES (ALWAYS READ FIRST)
 
@@ -11,14 +11,37 @@
 
 ### RULE 1: NO EXTERNAL MATH LIBRARIES
 - ❌ NEVER use math.h, complex.h, or any standard math libraries
+- ❌ NEVER use floating-point arithmetic for core operations
 - ✅ ALL operations must use CrystallineAbacus (arbitrary precision)
 - ✅ ALL missing operations must be added as O(1) functions
+- ✅ PURE crystalline mathematics only
+
+### RULE 2: NO DUPLICATE CONSTANTS
+- ❌ NO multiple definitions of π, φ, infinity, etc.
+- ✅ ALL constants defined ONCE in math/include/math/constants.h
+- ✅ AUDIT entire codebase for duplicate definitions
+
+### RULE 3: PROPER NAMING CONVENTIONS
+- ❌ NO "bigfixed", "complete", "new", or temporal suffixes
+- ❌ NO "old", "backup", "temp", "legacy" in names
+- ✅ CLEAR descriptive names reflecting Babylonian/clock lattice design
+- ✅ PREFIX based organization (math_, prime_, clock_, abacus_, platonic_)
+
+### RULE 4: BABYLONIAN MATHEMATICS FOUNDATION
+- ✅ BASE-60 (sexagesimal) system
+- ✅ 12-FOLD clock symmetry (zodiac structure)
+- ✅ O(1) DETERMINISTIC operations via clock lattice
 
 ### RULE 11: GIT OPERATIONS
 ```bash
 git add .
 git commit -m "descriptive message"
 git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+**If token expires:**
+```bash
+gh auth refresh -h github.com -s repo
+gh auth status
 ```
 
 ### RULE 12: BUILD VERIFICATION
