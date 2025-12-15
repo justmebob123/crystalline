@@ -232,8 +232,28 @@ CrystallineAbacus* compute_ring_distance_abacus(
 }
 
 // ============================================================================
-// PRIME FACTORIZATION (Placeholder - Full O(1) implementation in Phase 2)
+// PRIME FACTORIZATION (Clock Lattice Guided)
 // ============================================================================
+
+/**
+ * @brief Check if a number is prime using clock lattice validation
+ */
+static bool is_prime_clock_lattice(uint64_t n) {
+    if (n < 2) return false;
+    if (n == 2 || n == 3) return true;
+    if (n % 2 == 0 || n % 3 == 0) return false;
+    
+    // Use clock lattice: all primes > 3 are of form 6k±1
+    // This is equivalent to positions on clock lattice
+    if (n % 6 != 1 && n % 6 != 5) return false;
+    
+    // Check divisibility up to √n (optimized by clock lattice)
+    for (uint64_t i = 5; i * i <= n; i += 6) {
+        if (n % i == 0 || n % (i + 2) == 0) return false;
+    }
+    
+    return true;
+}
 
 PrimeFactorizationAbacus* clock_lattice_factorize_abacus(
     const CrystallineAbacus* n,
@@ -244,15 +264,82 @@ PrimeFactorizationAbacus* clock_lattice_factorize_abacus(
     
     if (!n) return NULL;
     
-    // Placeholder: Return empty factorization
-    // Full O(1) implementation will be added in Phase 2
+    // Convert to uint64 for factorization
+    uint64_t n_val;
+    if (abacus_to_uint64(n, &n_val) != MATH_SUCCESS) {
+        return NULL;
+    }
+    
+    // Allocate result
     PrimeFactorizationAbacus* result = (PrimeFactorizationAbacus*)malloc(sizeof(PrimeFactorizationAbacus));
     if (!result) return NULL;
     
-    result->num_factors = 0;
-    result->positions = NULL;
-    result->factors = NULL;
     result->base = base;
+    result->num_factors = 0;
+    
+    // Allocate arrays (max possible factors = log2(n))
+    uint32_t max_factors = 64; // Conservative estimate
+    result->positions = (ClockPositionAbacus**)malloc(max_factors * sizeof(ClockPositionAbacus*));
+    result->factors = (CrystallineAbacus**)malloc(max_factors * sizeof(CrystallineAbacus*));
+    
+    if (!result->positions || !result->factors) {
+        free_prime_factorization_abacus(result);
+        return NULL;
+    }
+    
+    // Factor using clock lattice guidance
+    uint64_t remaining = n_val;
+    
+    // Check small primes first (2, 3)
+    while (remaining % 2 == 0) {
+        result->factors[result->num_factors] = abacus_from_uint64(2, base);
+        result->positions[result->num_factors] = (ClockPositionAbacus*)malloc(sizeof(ClockPositionAbacus));
+        map_prime_to_clock_abacus(result->factors[result->num_factors], 
+                                   result->positions[result->num_factors], base, 20);
+        result->num_factors++;
+        remaining /= 2;
+    }
+    
+    while (remaining % 3 == 0) {
+        result->factors[result->num_factors] = abacus_from_uint64(3, base);
+        result->positions[result->num_factors] = (ClockPositionAbacus*)malloc(sizeof(ClockPositionAbacus));
+        map_prime_to_clock_abacus(result->factors[result->num_factors], 
+                                   result->positions[result->num_factors], base, 20);
+        result->num_factors++;
+        remaining /= 3;
+    }
+    
+    // Check primes of form 6k±1 (clock lattice optimization)
+    for (uint64_t i = 5; i * i <= remaining; i += 6) {
+        // Check 6k-1
+        while (remaining % i == 0) {
+            result->factors[result->num_factors] = abacus_from_uint64(i, base);
+            result->positions[result->num_factors] = (ClockPositionAbacus*)malloc(sizeof(ClockPositionAbacus));
+            map_prime_to_clock_abacus(result->factors[result->num_factors], 
+                                       result->positions[result->num_factors], base, 20);
+            result->num_factors++;
+            remaining /= i;
+        }
+        
+        // Check 6k+1
+        while (remaining % (i + 2) == 0) {
+            result->factors[result->num_factors] = abacus_from_uint64(i + 2, base);
+            result->positions[result->num_factors] = (ClockPositionAbacus*)malloc(sizeof(ClockPositionAbacus));
+            map_prime_to_clock_abacus(result->factors[result->num_factors], 
+                                       result->positions[result->num_factors], base, 20);
+            result->num_factors++;
+            remaining /= (i + 2);
+        }
+    }
+    
+    // If remaining > 1, it's a prime factor
+    if (remaining > 1) {
+        result->factors[result->num_factors] = abacus_from_uint64(remaining, base);
+        result->positions[result->num_factors] = (ClockPositionAbacus*)malloc(sizeof(ClockPositionAbacus));
+        map_prime_to_clock_abacus(result->factors[result->num_factors], 
+                                   result->positions[result->num_factors], base, 20);
+        result->num_factors++;
+    }
     
     return result;
 }

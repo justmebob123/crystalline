@@ -333,6 +333,96 @@ void test_utility_functions() {
 }
 
 // ============================================================================
+// TEST 9: Prime Factorization
+// ============================================================================
+
+void test_prime_factorization() {
+    TEST_START("Prime Factorization");
+    
+    uint32_t base = 12;
+    uint32_t precision = 20;
+    
+    // Test with n = 15 = 3 × 5
+    CrystallineAbacus* n = abacus_from_uint64(15, base);
+    
+    PrimeFactorizationAbacus* factorization = clock_lattice_factorize_abacus(
+        n, base, precision
+    );
+    
+    if (factorization) {
+        printf("  Number: 15\n");
+        printf("  Factors found: %u\n", factorization->num_factors);
+        
+        // Print factors
+        for (uint32_t i = 0; i < factorization->num_factors; i++) {
+            uint64_t factor_val;
+            abacus_to_uint64(factorization->factors[i], &factor_val);
+            printf("    Factor %u: %lu (Ring %u, Position %u)\n", 
+                   i + 1, factor_val,
+                   factorization->positions[i]->ring,
+                   factorization->positions[i]->position);
+        }
+        
+        // Validate
+        bool valid = validate_factorization_abacus(n, factorization, base);
+        printf("  Validation: %s\n", valid ? "PASS" : "FAIL");
+        
+        if (valid && factorization->num_factors == 2) {
+            TEST_PASS();
+        } else {
+            TEST_FAIL("Factorization incorrect");
+        }
+        
+        free_prime_factorization_abacus(factorization);
+    } else {
+        TEST_FAIL("Failed to factorize");
+    }
+    
+    abacus_free(n);
+}
+
+// ============================================================================
+// TEST 10: Factorization Validation
+// ============================================================================
+
+void test_factorization_validation() {
+    TEST_START("Factorization Validation");
+    
+    uint32_t base = 12;
+    uint32_t precision = 20;
+    
+    // Test several numbers
+    uint64_t test_numbers[] = {6, 15, 35, 77, 143};
+    
+    for (size_t i = 0; i < sizeof(test_numbers) / sizeof(test_numbers[0]); i++) {
+        CrystallineAbacus* n = abacus_from_uint64(test_numbers[i], base);
+        
+        PrimeFactorizationAbacus* factorization = clock_lattice_factorize_abacus(
+            n, base, precision
+        );
+        
+        if (factorization) {
+            bool valid = validate_factorization_abacus(n, factorization, base);
+            
+            if (!valid) {
+                printf("  Failed for n=%lu\n", test_numbers[i]);
+                TEST_FAIL("Validation failed");
+                abacus_free(n);
+                free_prime_factorization_abacus(factorization);
+                return;
+            }
+            
+            free_prime_factorization_abacus(factorization);
+        }
+        
+        abacus_free(n);
+    }
+    
+    printf("  Validated: 6, 15, 35, 77, 143\n");
+    TEST_PASS();
+}
+
+// ============================================================================
 // MAIN TEST RUNNER
 // ============================================================================
 
@@ -351,6 +441,8 @@ int main() {
     test_factor_visualization();
     test_clock_resolution();
     test_utility_functions();
+    test_prime_factorization();
+    test_factorization_validation();
     
     // Print summary
     printf("\n");
