@@ -86,6 +86,7 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/g_triangulation_abstracted.c \
           src/geometric_recovery/prime_factor_extraction.c \
           src/geometric_recovery/recursive_recovery.c \
+          src/geometric_recovery/clock_lattice_integration.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
