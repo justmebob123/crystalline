@@ -1772,7 +1772,7 @@ static double simple_pow(double base, int32_t exp) {
  * @brief Create abacus from double (with fractional part)
  */
 CrystallineAbacus* abacus_from_double(double value, uint32_t base, int32_t precision) {
-    if (base != 12 && base != 60 && base != 100) {
+    if (base < 2 || base > 256) {
         return NULL;
     }
     
