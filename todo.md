@@ -134,12 +134,15 @@
 - Fast performance (<1ms)
 
 ### Phase 4: Higher-Dimensional Faces 📐
+**Status:** 🟡 IN PROGRESS
+**Goal:** Generate k-faces for all dimensions
+
 **Current State:** Only 2-faces (polygons) are generated
 
 **Implementation Plan:**
 - [ ] Design n-face data structure
-- [ ] Implement 3-face (polyhedron) generation for 4D+ polytopes
-- [ ] Implement 4-face (polychoron) generation for 5D+ polytopes
+- [ ] Implement 3-face (cell) generation for 4D+ polytopes
+- [ ] Implement 4-face generation for 5D+ polytopes
 - [ ] Implement general k-face generation algorithm
 - [ ] Add face-to-face connectivity
 - [ ] Add face hierarchy (faces contain lower-dimensional faces)
@@ -147,6 +150,10 @@
 - [ ] Add face validation
 - [ ] Test with 4D polychora (should have 3-faces)
 - [ ] Test with 5D+ polytopes
+
+**Note:** The k-face calculation formulas are already implemented in
+schlafli_math_enhanced.c. This phase focuses on generating actual
+geometric face structures with vertices and connectivity.
 
 ### Phase 5: Hierarchical Nesting 🏗️
 **Goal:** Enable polytopes to contain other polytopes (fractal structure)
