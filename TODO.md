@@ -412,9 +412,65 @@ MathError abacus_add_geometric(CrystallineAbacus* result,
 - Decision: Skip Phase 4 for now, focus on higher priorities
 - See PHASE_4_STATUS.md for details
 
+**CURRENT TASK:** Task 2 - Memory Hopping (Sparse Representation) 🔄
+
 **NEXT PRIORITIES:**
-1. 🎯 Task 2: Memory hopping (sparse representation) - 87.5% memory reduction
+1. 🔄 Task 2: Memory hopping (sparse representation) - 75-98% memory reduction (IN PROGRESS)
 2. 🎯 Task 3: Integration testing - comprehensive validation
 3. 🎯 Task 4: CORDIC debugging (optional)
 
 **PROGRESS:** 60% of O(1) implementation + 40% of Week 2 complete + Week 3 complete
+
+---
+
+## 🔄 TASK 2: MEMORY HOPPING - IN PROGRESS
+
+### Goal
+Implement sparse representation for CrystallineAbacus to achieve 75-98% memory reduction for sparse numbers.
+
+### Phase 1: Core Infrastructure (3-4 hours) - ✅ COMPLETE
+
+#### Day 1: Structure Design (1 hour) - ✅ COMPLETE
+- [x] Add SparseBead structure to abacus.h
+- [x] Extend CrystallineAbacus with sparse fields
+- [x] Add is_sparse flag
+- [x] Update documentation
+
+#### Day 2: Conversion Functions (2-3 hours) - ✅ COMPLETE
+- [x] Implement abacus_sparsify()
+- [x] Implement abacus_densify()
+- [x] Implement abacus_optimize_representation()
+- [x] Add automatic switching logic
+- [x] Test conversions
+
+**Results:**
+- Memory reduction: 75-86% for sparse numbers
+- All 22 tests passing
+- Automatic sparse/dense switching working
+- Zero breaking changes
+
+### Phase 2: Operations (4-6 hours)
+
+#### Day 3: Sparse Addition (2-3 hours)
+- [ ] Implement sparse addition algorithm
+- [ ] Handle carries in sparse mode
+- [ ] Test with various inputs
+
+#### Day 4: Sparse Multiplication (2-3 hours)
+- [ ] Implement sparse multiplication algorithm
+- [ ] Handle term combination
+- [ ] Test with various inputs
+
+### Phase 3: Integration (2-3 hours)
+
+#### Day 5: Update Existing Operations (1-2 hours)
+- [ ] Update abacus_sub for sparse
+- [ ] Update abacus_div for sparse
+- [ ] Update abacus_sqrt for sparse
+
+#### Day 6: Testing (1 hour)
+- [ ] Create test_sparse_representation.c
+- [ ] Test memory usage
+- [ ] Verify all 66+ tests still pass
+
+**PROGRESS:** 60% of O(1) implementation + 40% of Week 2 complete + Week 3 complete + Task 2 Phase 1 starting

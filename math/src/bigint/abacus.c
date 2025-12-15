@@ -460,6 +460,7 @@ CrystallineAbacus* abacus_new(uint32_t base) {
         return NULL;
     }
     
+    /* Initialize dense representation */
     abacus->beads = (AbacusBead*)calloc(8, sizeof(AbacusBead));
     if (!abacus->beads) {
         free(abacus);
@@ -468,8 +469,19 @@ CrystallineAbacus* abacus_new(uint32_t base) {
     
     abacus->num_beads = 0;
     abacus->capacity = 8;
+    
+    /* Initialize sparse representation (NULL until needed) */
+    abacus->sparse_beads = NULL;
+    abacus->num_nonzero = 0;
+    abacus->sparse_capacity = 0;
+    
+    /* Start in dense mode */
+    abacus->is_sparse = false;
+    
+    /* Common fields */
     abacus->base = base;
     abacus->min_exponent = 0;
+    abacus->max_exponent = 0;
     abacus->negative = false;
     
     return abacus;
@@ -479,6 +491,9 @@ void abacus_free(CrystallineAbacus* abacus) {
     if (abacus) {
         if (abacus->beads) {
             free(abacus->beads);
+        }
+        if (abacus->sparse_beads) {
+            free(abacus->sparse_beads);
         }
         free(abacus);
     }

@@ -49,7 +49,7 @@ extern "C" {
  */
 
 /**
- * @brief A bead on the crystalline abacus
+ * @brief A bead on the crystalline abacus (Dense representation)
  * 
  * Each bead represents a digit in the number, positioned on the clock lattice.
  * Supports both integer and fractional positions through weight_exponent.
@@ -68,28 +68,63 @@ typedef struct {
 } AbacusBead;
 
 /**
- * @brief Crystalline Abacus structure
+ * @brief A sparse bead (Memory-optimized representation)
+ * 
+ * Stores only non-zero digits with their positions.
+ * Uses 8 bytes instead of 32 bytes per bead (75% memory reduction).
+ * 
+ * Ideal for sparse numbers (many zeros):
+ *   - Large numbers: 1,000,000,000 (only 1 non-zero digit)
+ *   - Scientific notation: 1.23 × 10^100 (only 3 non-zero digits)
+ *   - Small fractions: 0.000000001 (only 1 non-zero digit)
+ */
+typedef struct {
+    uint32_t value;          /**< Digit value (0 to base-1) */
+    int32_t weight_exponent; /**< Position in number */
+} SparseBead;
+
+/**
+ * @brief Crystalline Abacus structure (Hybrid Dense/Sparse representation)
  * 
  * Represents a number as a collection of beads on the clock lattice.
  * Supports both integer and fractional numbers through weight exponents.
  * 
- * Beads are stored in order from least significant to most significant.
- * The weight_exponent of each bead determines its position relative to
- * the decimal point.
+ * MEMORY OPTIMIZATION:
+ * - Dense mode: Stores all beads (including zeros) - 32 bytes per bead
+ * - Sparse mode: Stores only non-zero beads - 8 bytes per bead
+ * - Automatic switching based on sparsity (>50% zeros → sparse mode)
+ * - Memory savings: 75-98% for sparse numbers
  * 
- * Example: 157.25 in base 12
+ * Dense Example: 157.25 in base 12
  *   beads[0]: value=3, weight_exponent=-1  (3 * 12^-1 = 0.25)
  *   beads[1]: value=1, weight_exponent=0   (1 * 12^0 = 1)
  *   beads[2]: value=13, weight_exponent=1  (13 * 12^1 = 156)
  *   Total: 156 + 1 + 0.25 = 157.25
+ * 
+ * Sparse Example: 1,000,000,000 in base 10
+ *   sparse_beads[0]: value=1, weight_exponent=9  (1 * 10^9)
+ *   Total: 1,000,000,000
+ *   Memory: 8 bytes instead of 320 bytes (96% reduction)
  */
 typedef struct {
+    // Dense representation (used when most digits are non-zero)
     AbacusBead* beads;       /**< Array of beads (ordered by weight_exponent) */
     size_t num_beads;        /**< Number of beads */
     size_t capacity;         /**< Allocated capacity */
-    uint32_t base;           /**< Number base (12, 60, or 100) */
+    
+    // Sparse representation (used when many digits are zero)
+    SparseBead* sparse_beads; /**< Array of non-zero beads only */
+    size_t num_nonzero;       /**< Number of non-zero beads */
+    size_t sparse_capacity;   /**< Allocated sparse capacity */
+    
+    // Representation mode
+    bool is_sparse;          /**< true = sparse mode, false = dense mode */
+    
+    // Common fields
+    uint32_t base;           /**< Number base (any base >= 2) */
     bool negative;           /**< Sign of the number */
     int32_t min_exponent;    /**< Minimum weight exponent (for fractional precision) */
+    int32_t max_exponent;    /**< Maximum weight exponent (highest position) */
 } CrystallineAbacus;
 
 /* ============================================================================
@@ -553,6 +588,84 @@ MathError abacus_convert_base(CrystallineAbacus** result, const CrystallineAbacu
  * @return Base of the abacus, or 0 on error
  */
 uint32_t abacus_get_base(const CrystallineAbacus* abacus);
+
+/* ============================================================================
+ * SPARSE REPRESENTATION (Memory Optimization)
+ * ============================================================================
+ */
+
+/**
+ * @brief Convert dense representation to sparse representation
+ * 
+ * Stores only non-zero beads, reducing memory usage by 75-98%.
+ * Ideal for numbers with many zeros (sparse numbers).
+ * 
+ * Memory savings:
+ * - Dense: 32 bytes per bead (includes ClockPosition)
+ * - Sparse: 8 bytes per non-zero bead
+ * - Example: 1,000,000,000 → 320 bytes → 8 bytes (97.5% reduction)
+ * 
+ * @param abacus Abacus to convert (modified in place)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_sparsify(CrystallineAbacus* abacus);
+
+/**
+ * @brief Convert sparse representation to dense representation
+ * 
+ * Expands sparse beads to full dense representation.
+ * Used when dense operations are more efficient.
+ * 
+ * @param abacus Abacus to convert (modified in place)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_densify(CrystallineAbacus* abacus);
+
+/**
+ * @brief Automatically optimize representation based on sparsity
+ * 
+ * Switches between sparse and dense modes based on:
+ * - Sparsity threshold (>50% zeros → sparse)
+ * - Number size (>100 beads → sparse)
+ * - Operation efficiency
+ * 
+ * This is called automatically after operations to maintain
+ * optimal memory usage and performance.
+ * 
+ * @param abacus Abacus to optimize (modified in place)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_optimize_representation(CrystallineAbacus* abacus);
+
+/**
+ * @brief Get sparsity ratio (percentage of zero beads)
+ * 
+ * Returns value between 0.0 (all non-zero) and 1.0 (all zeros).
+ * Used to determine if sparse representation is beneficial.
+ * 
+ * @param abacus Input abacus
+ * @return Sparsity ratio (0.0 to 1.0), or -1.0 on error
+ */
+double abacus_get_sparsity(const CrystallineAbacus* abacus);
+
+/**
+ * @brief Check if abacus is in sparse mode
+ * 
+ * @param abacus Input abacus
+ * @return true if sparse, false if dense
+ */
+bool abacus_is_sparse(const CrystallineAbacus* abacus);
+
+/**
+ * @brief Get memory usage in bytes
+ * 
+ * Calculates total memory used by the abacus structure,
+ * including all allocated arrays.
+ * 
+ * @param abacus Input abacus
+ * @return Memory usage in bytes, or 0 on error
+ */
+size_t abacus_memory_usage(const CrystallineAbacus* abacus);
 
 #ifdef __cplusplus
 }
