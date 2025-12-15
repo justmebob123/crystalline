@@ -537,3 +537,211 @@ MathError abacus_root(CrystallineAbacus* result, const CrystallineAbacus* n, uin
     abacus_free(one);
     return MATH_ERROR_NOT_IMPLEMENTED;
 }
+
+/* ============================================================================
+ * EXPONENTIATION
+ * ============================================================================ */
+
+/**
+ * @brief Compute base^exponent using binary exponentiation
+ */
+MathError abacus_pow(CrystallineAbacus* result,
+                     const CrystallineAbacus* base,
+                     const CrystallineAbacus* exponent) {
+    if (!result || !base || !exponent) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (result->base != base->base || result->base != exponent->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Check for negative exponent */
+    if (exponent->negative) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Try to convert exponent to uint64_t for fast path */
+    uint64_t exp_val;
+    if (abacus_to_uint64(exponent, &exp_val) == MATH_SUCCESS) {
+        return abacus_pow_uint64(result, base, exp_val);
+    }
+    
+    return MATH_ERROR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Fast path for exponentiation with uint64_t exponent
+ */
+MathError abacus_pow_uint64(CrystallineAbacus* result,
+                            const CrystallineAbacus* base,
+                            uint64_t exponent) {
+    if (!result || !base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (result->base != base->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Special case: exponent = 0, result = 1 */
+    if (exponent == 0) {
+        CrystallineAbacus* one = abacus_from_uint64(1, base->base);
+        if (!one) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        result->num_beads = one->num_beads;
+        result->negative = false;
+        result->min_exponent = one->min_exponent;
+        for (size_t i = 0; i < one->num_beads; i++) {
+            result->beads[i] = one->beads[i];
+        }
+        
+        abacus_free(one);
+        return MATH_SUCCESS;
+    }
+    
+    /* Special case: exponent = 1, result = base */
+    if (exponent == 1) {
+        result->num_beads = base->num_beads;
+        result->negative = base->negative;
+        result->min_exponent = base->min_exponent;
+        for (size_t i = 0; i < base->num_beads; i++) {
+            result->beads[i] = base->beads[i];
+        }
+        return MATH_SUCCESS;
+    }
+    
+    /* Binary exponentiation */
+    CrystallineAbacus* power = abacus_copy(base);
+    CrystallineAbacus* temp_result = abacus_from_uint64(1, base->base);
+    CrystallineAbacus* temp_mul = abacus_new(base->base);
+    
+    if (!power || !temp_result || !temp_mul) {
+        if (power) abacus_free(power);
+        if (temp_result) abacus_free(temp_result);
+        if (temp_mul) abacus_free(temp_mul);
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    uint64_t exp = exponent;
+    
+    while (exp > 0) {
+        if (exp & 1) {
+            MathError err = abacus_mul(temp_mul, temp_result, power);
+            if (err != MATH_SUCCESS) {
+                abacus_free(power);
+                abacus_free(temp_result);
+                abacus_free(temp_mul);
+                return err;
+            }
+            
+            temp_result->num_beads = temp_mul->num_beads;
+            temp_result->negative = temp_mul->negative;
+            temp_result->min_exponent = temp_mul->min_exponent;
+            for (size_t i = 0; i < temp_mul->num_beads; i++) {
+                temp_result->beads[i] = temp_mul->beads[i];
+            }
+        }
+        
+        exp >>= 1;
+        if (exp > 0) {
+            MathError err = abacus_mul(temp_mul, power, power);
+            if (err != MATH_SUCCESS) {
+                abacus_free(power);
+                abacus_free(temp_result);
+                abacus_free(temp_mul);
+                return err;
+            }
+            
+            power->num_beads = temp_mul->num_beads;
+            power->negative = temp_mul->negative;
+            power->min_exponent = temp_mul->min_exponent;
+            for (size_t i = 0; i < temp_mul->num_beads; i++) {
+                power->beads[i] = temp_mul->beads[i];
+            }
+        }
+    }
+    
+    result->num_beads = temp_result->num_beads;
+    result->negative = temp_result->negative;
+    result->min_exponent = temp_result->min_exponent;
+    for (size_t i = 0; i < temp_result->num_beads; i++) {
+        result->beads[i] = temp_result->beads[i];
+    }
+    
+    abacus_free(power);
+    abacus_free(temp_result);
+    abacus_free(temp_mul);
+    
+    return MATH_SUCCESS;
+}
+
+/**
+ * @brief Compute (base^exponent) mod modulus
+ */
+MathError abacus_powmod(CrystallineAbacus* result,
+                       const CrystallineAbacus* base,
+                       const CrystallineAbacus* exponent,
+                       const CrystallineAbacus* modulus) {
+    if (!result || !base || !exponent || !modulus) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (result->base != base->base || result->base != exponent->base || 
+        result->base != modulus->base) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (exponent->negative) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (abacus_is_zero(modulus) || modulus->negative) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    /* Fast path: all values fit in uint64_t */
+    uint64_t base_val, exp_val, mod_val;
+    MathError err_base = abacus_to_uint64(base, &base_val);
+    MathError err_exp = abacus_to_uint64(exponent, &exp_val);
+    MathError err_mod = abacus_to_uint64(modulus, &mod_val);
+    
+    if (err_base == MATH_SUCCESS && err_exp == MATH_SUCCESS && 
+        err_mod == MATH_SUCCESS) {
+        /* Reduce base modulo modulus first */
+        base_val %= mod_val;
+        
+        uint64_t result_val = 1;
+        uint64_t power = base_val;
+        uint64_t exp = exp_val;
+        
+        /* Binary exponentiation with modulo at each step */
+        while (exp > 0) {
+            if (exp & 1) {
+                result_val = (result_val * power) % mod_val;
+            }
+            power = (power * power) % mod_val;
+            exp >>= 1;
+        }
+        
+        CrystallineAbacus* temp = abacus_from_uint64(result_val, base->base);
+        if (!temp) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
+        result->num_beads = temp->num_beads;
+        result->negative = false;
+        result->min_exponent = temp->min_exponent;
+        for (size_t i = 0; i < temp->num_beads; i++) {
+            result->beads[i] = temp->beads[i];
+        }
+        
+        abacus_free(temp);
+        return MATH_SUCCESS;
+    }
+    
+    /* Slow path: arbitrary precision not yet implemented */
+    return MATH_ERROR_NOT_IMPLEMENTED;
+}

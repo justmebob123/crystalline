@@ -464,6 +464,66 @@ MathError abacus_sqrt(CrystallineAbacus* result, const CrystallineAbacus* n);
  */
 MathError abacus_root(CrystallineAbacus* result, const CrystallineAbacus* n, uint32_t root);
 
+/**
+ * @brief Compute base^exponent using binary exponentiation
+ * 
+ * Uses exponentiation by squaring for O(log n) complexity.
+ * Each multiplication is O(1) for numbers <= 2^64.
+ * 
+ * Algorithm:
+ * - Convert exponent to binary representation
+ * - For each bit, square the current result
+ * - If bit is 1, multiply by base
+ * 
+ * Example: 3^13 = 3^8 × 3^4 × 3^1 (binary: 1101)
+ * 
+ * Complexity: O(log n) operations, each O(1) for small numbers
+ * 
+ * @param result Output: base^exponent
+ * @param base Base number
+ * @param exponent Exponent (must be non-negative)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_pow(CrystallineAbacus* result,
+                     const CrystallineAbacus* base,
+                     const CrystallineAbacus* exponent);
+
+/**
+ * @brief Fast path for small exponents (uint64_t)
+ * 
+ * More efficient when exponent fits in uint64_t.
+ * 
+ * @param result Output: base^exponent
+ * @param base Base number
+ * @param exponent Exponent as uint64_t
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_pow_uint64(CrystallineAbacus* result,
+                            const CrystallineAbacus* base,
+                            uint64_t exponent);
+
+/**
+ * @brief Compute (base^exponent) mod modulus
+ * 
+ * Uses binary exponentiation with modulo at each step.
+ * Critical for cryptography (RSA, Diffie-Hellman).
+ * 
+ * Key insight: (a × b) mod m = ((a mod m) × (b mod m)) mod m
+ * This keeps intermediate results small (always < modulus).
+ * 
+ * Complexity: O(log n) operations, each O(1) for small numbers
+ * 
+ * @param result Output: (base^exponent) mod modulus
+ * @param base Base number
+ * @param exponent Exponent (must be non-negative)
+ * @param modulus Modulus (must be > 0)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_powmod(CrystallineAbacus* result,
+                       const CrystallineAbacus* base,
+                       const CrystallineAbacus* exponent,
+                       const CrystallineAbacus* modulus);
+
 /* ============================================================================
  * BASE CONVERSION
  * ============================================================================ */
