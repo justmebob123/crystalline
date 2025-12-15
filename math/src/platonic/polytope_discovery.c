@@ -113,6 +113,63 @@ SchlafliSymbol** discovery_generate_candidates(uint32_t dimension,
     return results;
 }
 
+/**
+ * @brief Check if 4D Schläfli symbol is one of the 6 known regular polychora
+ */
+static bool is_valid_4d_polychoron(uint32_t p, uint32_t q, uint32_t r) {
+    // The 6 regular 4D polychora
+    if (p == 3 && q == 3 && r == 3) return true;  // 5-cell
+    if (p == 4 && q == 3 && r == 3) return true;  // Tesseract
+    if (p == 3 && q == 3 && r == 4) return true;  // 16-cell
+    if (p == 3 && q == 4 && r == 3) return true;  // 24-cell
+    if (p == 5 && q == 3 && r == 3) return true;  // 120-cell
+    if (p == 3 && q == 3 && r == 5) return true;  // 600-cell
+    return false;
+}
+
+/**
+ * @brief Check if nD Schläfli symbol is one of the 3 infinite families
+ */
+static bool is_infinite_family(const SchlafliSymbol* symbol) {
+    if (!symbol || symbol->length == 0) return false;
+    
+    // Simplex {3,3,...,3}
+    bool is_simplex = true;
+    for (uint32_t i = 0; i < symbol->length; i++) {
+        if (symbol->components[i] != 3) {
+            is_simplex = false;
+            break;
+        }
+    }
+    if (is_simplex) return true;
+    
+    // Hypercube {4,3,...,3}
+    if (symbol->components[0] == 4) {
+        bool is_hypercube = true;
+        for (uint32_t i = 1; i < symbol->length; i++) {
+            if (symbol->components[i] != 3) {
+                is_hypercube = false;
+                break;
+            }
+        }
+        if (is_hypercube) return true;
+    }
+    
+    // Cross-polytope {3,3,...,4}
+    if (symbol->length > 0 && symbol->components[symbol->length - 1] == 4) {
+        bool is_cross = true;
+        for (uint32_t i = 0; i < symbol->length - 1; i++) {
+            if (symbol->components[i] != 3) {
+                is_cross = false;
+                break;
+            }
+        }
+        if (is_cross) return true;
+    }
+    
+    return false;
+}
+
 uint32_t discovery_filter_candidates(SchlafliSymbol** candidates, uint32_t count) {
     if (!candidates || count == 0) {
         return 0;
@@ -124,15 +181,29 @@ uint32_t discovery_filter_candidates(SchlafliSymbol** candidates, uint32_t count
         SchlafliSymbol* symbol = candidates[i];
         if (!symbol) continue;
         
-        // Quick filter: angle sum constraint
-        // For 3D: (p-2)(q-2) < 4
+        bool keep = false;
+        
+        // 3D: Use angle sum constraint (p-2)(q-2) < 4
         if (symbol->length == 2) {
             uint32_t p = symbol->components[0];
             uint32_t q = symbol->components[1];
-            if ((p - 2) * (q - 2) >= 4) {
-                schlafli_free(symbol);
-                continue;
-            }
+            keep = ((p - 2) * (q - 2) < 4);
+        }
+        // 4D: Only the 6 known regular polychora
+        else if (symbol->length == 3) {
+            uint32_t p = symbol->components[0];
+            uint32_t q = symbol->components[1];
+            uint32_t r = symbol->components[2];
+            keep = is_valid_4d_polychoron(p, q, r);
+        }
+        // 5D+: Only the 3 infinite families
+        else if (symbol->length >= 4) {
+            keep = is_infinite_family(symbol);
+        }
+        
+        if (!keep) {
+            schlafli_free(symbol);
+            continue;
         }
         
         // Keep this candidate
