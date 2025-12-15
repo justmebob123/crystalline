@@ -7,10 +7,11 @@
 
 #include "geometric_recovery/anchor_grid_24.h"
 #include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /**
  * Generate 24-cell polytope vertices
@@ -61,7 +62,7 @@ static void generate_24cell_vertices(double positions[24][13]) {
         for (int j = 0; j < 13; j++) {
             norm += positions[i][j] * positions[i][j];
         }
-        norm = sqrt(norm);
+        norm = math_sqrt(norm);
         
         if (norm > 1e-10) {
             for (int j = 0; j < 13; j++) {
@@ -74,7 +75,7 @@ static void generate_24cell_vertices(double positions[24][13]) {
     for (int i = 0; i < 24; i++) {
         for (int j = 4; j < 13; j++) {
             double angle = 2.0 * MATH_PI * i / 24.0 + j * MATH_PHI;
-            positions[i][j] = 0.1 * cos(angle);  // Small contribution from higher dimensions
+            positions[i][j] = 0.1 * math_cos(angle);  // Small contribution from higher dimensions
         }
     }
 }
@@ -128,7 +129,7 @@ double compute_anchor_distance(
         double diff = point1[i] - point2[i];
         sum += diff * diff;
     }
-    return sqrt(sum);
+    return math_sqrt(sum);
 }
 
 /**

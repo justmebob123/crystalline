@@ -10,10 +10,10 @@
 #include "geometric_recovery/fractal_bounds.h"
 #include "math/types.h"
 #include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /**
  * Compute fractal partition bounds
@@ -45,7 +45,7 @@ FractalPartition compute_fractal_partition(
             dist_sq += diff * diff;
         }
         
-        double dist = sqrt(dist_sq);
+        double dist = math_sqrt(dist_sq);
         
         if (dist < threshold) {
             num_in_partition++;

@@ -14,7 +14,8 @@
  */
 
 #include "geometric_recovery/clock_recovery.h"
-#include <math.h>
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -376,7 +377,7 @@ bool clock_inverse_map(
  */
 double clock_position_distance(ClockPosition pos1, ClockPosition pos2) {
     // Distance in π×φ metric is based on angular separation
-    double angle_diff = fabs(pos1.angle - pos2.angle);
+    double angle_diff = math_abs(pos1.angle - pos2.angle);
     
     // Normalize to [0, π]
     if (angle_diff > PI) {
@@ -384,10 +385,10 @@ double clock_position_distance(ClockPosition pos1, ClockPosition pos2) {
     }
     
     // Include radius difference
-    double radius_diff = fabs(pos1.radius - pos2.radius);
+    double radius_diff = math_abs(pos1.radius - pos2.radius);
     
     // Combined distance
-    return sqrt(angle_diff * angle_diff + radius_diff * radius_diff);
+    return math_sqrt(angle_diff * angle_diff + radius_diff * radius_diff);
 }
 
 /**

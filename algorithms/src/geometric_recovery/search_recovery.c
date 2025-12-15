@@ -8,10 +8,11 @@
 #include "geometric_recovery/search_recovery.h"
 #include "geometric_recovery/tetration_attractors.h"
 #include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /**
  * Search recovery context
@@ -68,7 +69,7 @@ double search_score_candidate(
     
     // Score is inverse of distance (higher is better)
     // Use exponential decay for better discrimination
-    return exp(-10.0 * normalized_diff);
+    return math_exp(-10.0 * normalized_diff);
 }
 
 /**
@@ -106,7 +107,7 @@ bool search_generate_candidates(
     for (int i = 0; i < ctx->max_candidates && results->num_candidates < results->capacity; i++) {
         // Generate candidate using golden ratio spacing
         double offset = (double)i * MATH_PHI;
-        offset = fmod(offset, 1.0);
+        offset = math_fmod(offset, 1.0);
         
         // Map to range around target
         int64_t signed_offset = (int64_t)(offset * 2.0 * radius) - (int64_t)radius;

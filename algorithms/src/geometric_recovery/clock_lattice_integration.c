@@ -10,10 +10,11 @@
 
 #include "geometric_recovery/clock_lattice_integration.h"
 #include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 // Babylonian clock structure
 #define RING_0_SIZE 12    // Hours
@@ -96,7 +97,7 @@ double compute_angular_separation(
     double angle1,
     double angle2
 ) {
-    double diff = fabs(angle1 - angle2);
+    double diff = math_abs(angle1 - angle2);
     
     // Normalize to [0, π]
     if (diff > MATH_PI) {
@@ -139,12 +140,12 @@ double compute_geometric_distance(
     double angle1 = (2.0 * MATH_PI * position1) / size1;
     double angle2 = (2.0 * MATH_PI * position2) / size2;
     
-    double x1 = r1 * cos(angle1);
-    double y1 = r1 * sin(angle1);
-    double x2 = r2 * cos(angle2);
-    double y2 = r2 * sin(angle2);
+    double x1 = r1 * math_cos(angle1);
+    double y1 = r1 * math_sin(angle1);
+    double x2 = r2 * math_cos(angle2);
+    double y2 = r2 * math_sin(angle2);
     
-    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    return math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 /**

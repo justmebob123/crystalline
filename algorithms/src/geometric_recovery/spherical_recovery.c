@@ -7,10 +7,11 @@
 
 #include "geometric_recovery/spherical_recovery.h"
 #include "math/types.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /**
  * Spherical recovery context
@@ -53,7 +54,7 @@ SphericalRecoveryContext* spherical_recovery_create(
     
     // Initialize sphere radii (logarithmic spacing)
     for (int i = 0; i < num_spheres; i++) {
-        ctx->sphere_radii[i] = pow(2.0, (double)i);
+        ctx->sphere_radii[i] = math_pow(2.0, (double)i);
     }
     
     return ctx;
@@ -81,12 +82,12 @@ SphericalCoords value_to_spherical(uint64_t value, uint64_t n) {
     
     // phi: polar angle [0, π]
     // Use golden ratio for optimal distribution
-    double phi_normalized = fmod(normalized * MATH_PHI, 1.0);
+    double phi_normalized = math_fmod(normalized * MATH_PHI, 1.0);
     coords.phi = MATH_PI * phi_normalized;
     
     // radius: distance from origin
     // Use logarithmic mapping for better distribution
-    coords.radius = log(1.0 + normalized * (exp(1.0) - 1.0));
+    coords.radius = math_log(1.0 + normalized * (math_exp(1.0) - 1.0));
     
     return coords;
 }
@@ -105,7 +106,7 @@ uint64_t spherical_to_value(SphericalCoords coords, uint64_t n) {
     double normalized = coords.theta / (2.0 * MATH_PI);
     
     // Ensure in [0, 1)
-    normalized = fmod(normalized, 1.0);
+    normalized = math_fmod(normalized, 1.0);
     if (normalized < 0.0) {
         normalized += 1.0;
     }
@@ -133,11 +134,11 @@ double compute_great_circle_distance(
     double dtheta = coords2.theta - coords1.theta;
     double dphi = coords2.phi - coords1.phi;
     
-    double a = sin(dphi / 2.0) * sin(dphi / 2.0) +
-               cos(coords1.phi) * cos(coords2.phi) *
-               sin(dtheta / 2.0) * sin(dtheta / 2.0);
+    double a = math_sin(dphi / 2.0) * math_sin(dphi / 2.0) +
+               math_cos(coords1.phi) * math_cos(coords2.phi) *
+               math_sin(dtheta / 2.0) * math_sin(dtheta / 2.0);
     
-    double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+    double c = 2.0 * math_atan2(math_sqrt(a), math_sqrt(1.0 - a));
     
     // Use average radius
     double avg_radius = (coords1.radius + coords2.radius) / 2.0;
@@ -172,26 +173,26 @@ bool find_geodesic_path(
             path_out[i].radius = start.radius + t * (end.radius - start.radius);
         } else {
             // Use slerp
-            double a = sin((1.0 - t) * d) / sin(d);
-            double b = sin(t * d) / sin(d);
+            double a = math_sin((1.0 - t) * d) / math_sin(d);
+            double b = math_sin(t * d) / math_sin(d);
             
             // Convert to Cartesian for interpolation
-            double x1 = start.radius * sin(start.phi) * cos(start.theta);
-            double y1 = start.radius * sin(start.phi) * sin(start.theta);
-            double z1 = start.radius * cos(start.phi);
+            double x1 = start.radius * math_sin(start.phi) * math_cos(start.theta);
+            double y1 = start.radius * math_sin(start.phi) * math_sin(start.theta);
+            double z1 = start.radius * math_cos(start.phi);
             
-            double x2 = end.radius * sin(end.phi) * cos(end.theta);
-            double y2 = end.radius * sin(end.phi) * sin(end.theta);
-            double z2 = end.radius * cos(end.phi);
+            double x2 = end.radius * math_sin(end.phi) * math_cos(end.theta);
+            double y2 = end.radius * math_sin(end.phi) * math_sin(end.theta);
+            double z2 = end.radius * math_cos(end.phi);
             
             double x = a * x1 + b * x2;
             double y = a * y1 + b * y2;
             double z = a * z1 + b * z2;
             
             // Convert back to spherical
-            path_out[i].radius = sqrt(x * x + y * y + z * z);
-            path_out[i].theta = atan2(y, x);
-            path_out[i].phi = acos(z / path_out[i].radius);
+            path_out[i].radius = math_sqrt(x * x + y * y + z * z);
+            path_out[i].theta = math_atan2(y, x);
+            path_out[i].phi = math_acos(z / path_out[i].radius);
         }
     }
     
@@ -215,10 +216,10 @@ bool spherical_recover(
     
     // Find nearest sphere
     int nearest_sphere = 0;
-    double min_distance = fabs(target_coords.radius - ctx->sphere_radii[0]);
+    double min_distance = math_abs(target_coords.radius - ctx->sphere_radii[0]);
     
     for (int i = 1; i < ctx->num_spheres; i++) {
-        double distance = fabs(target_coords.radius - ctx->sphere_radii[i]);
+        double distance = math_abs(target_coords.radius - ctx->sphere_radii[i]);
         if (distance < min_distance) {
             min_distance = distance;
             nearest_sphere = i;
@@ -233,7 +234,7 @@ bool spherical_recover(
     *estimate_out = spherical_to_value(projected, ctx->n);
     
     // Compute confidence based on distance to sphere
-    ctx->confidence = exp(-min_distance);
+    ctx->confidence = math_exp(-min_distance);
     
     return true;
 }

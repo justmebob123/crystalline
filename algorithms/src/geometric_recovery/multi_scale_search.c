@@ -10,10 +10,10 @@
 #include "geometric_recovery/tetration_attractors.h"
 #include "math/types.h"
 #include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /**
  * Multi-scale search context
@@ -78,7 +78,7 @@ static double score_multi_scale_candidate(
     double normalized_diff = (double)diff / (double)n;
     
     // Exponential decay - higher score for closer candidates
-    return exp(-10.0 * normalized_diff);
+    return math_exp(-10.0 * normalized_diff);
 }
 
 /**
@@ -102,7 +102,7 @@ bool multi_scale_search(
     for (uint32_t scale = 0; scale < ctx->max_scales; scale++) {
         ScaleLevel* level = &ctx->levels[scale];
         level->scale_index = scale;
-        level->scale_factor = pow(0.5, (double)scale);  // 1.0, 0.5, 0.25, ...
+        level->scale_factor = math_pow(0.5, (double)scale);  // 1.0, 0.5, 0.25, ...
         
         // Number of candidates decreases with scale
         level->num_candidates = 100 / (scale + 1);
@@ -139,7 +139,7 @@ bool multi_scale_search(
             }
             
             // Normalize to [0, 1) and scale to [0, n)
-            double normalized = fmod(sum / MULTI_SCALE_MAX_DIMENSIONS + 0.5, 1.0);
+            double normalized = math_fmod(sum / MULTI_SCALE_MAX_DIMENSIONS + 0.5, 1.0);
             if (normalized < 0.0) normalized += 1.0;
             
             uint64_t candidate = (uint64_t)(normalized * ctx->n);

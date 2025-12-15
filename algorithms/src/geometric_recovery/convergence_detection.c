@@ -6,10 +6,11 @@
  */
 
 #include "geometric_recovery/convergence_detection.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 // ============================================================================
 // INTERNAL STRUCTURES
@@ -57,7 +58,7 @@ static bool check_absolute_convergence(ConvergenceDetector* detector) {
         return false;
     }
     
-    double abs_change = fabs(detector->current_error - detector->previous_error);
+    double abs_change = math_abs(detector->current_error - detector->previous_error);
     return abs_change < detector->criteria.abs_threshold;
 }
 
@@ -66,11 +67,11 @@ static bool check_relative_convergence(ConvergenceDetector* detector) {
         return false;
     }
     
-    if (fabs(detector->previous_error) < 1e-10) {
+    if (math_abs(detector->previous_error) < 1e-10) {
         return false;  // Avoid division by zero
     }
     
-    double rel_change = fabs(
+    double rel_change = math_abs(
         (detector->current_error - detector->previous_error) / 
         detector->previous_error
     );
@@ -110,7 +111,7 @@ static bool check_gradient_convergence(ConvergenceDetector* detector) {
     // Compute gradient (derivative)
     double gradient = detector->current_error - detector->previous_error;
     
-    return fabs(gradient) < detector->criteria.grad_threshold;
+    return math_abs(gradient) < detector->criteria.grad_threshold;
 }
 
 static bool check_stability_convergence(ConvergenceDetector* detector) {
@@ -456,7 +457,7 @@ ConvergenceDiagnostics convergence_detector_get_diagnostics(
     
     // Diverging check
     diag.is_diverging = (diag.trend < 0 && 
-                         fabs(diag.trend) > detector->criteria.abs_threshold);
+                         math_abs(diag.trend) > detector->criteria.abs_threshold);
     
     // Estimate iterations remaining
     if (diag.convergence_rate > 0 && detector->current_error > 0) {
