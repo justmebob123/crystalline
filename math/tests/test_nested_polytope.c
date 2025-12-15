@@ -9,7 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+
+// Use our own fabs implementation (no math.h)
+static inline double fabs(double x) {
+    return x < 0.0 ? -x : x;
+}
 
 // ============================================================================
 // TEST UTILITIES

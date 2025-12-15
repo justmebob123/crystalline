@@ -1,6 +1,45 @@
 # TODO - Mathematical Validation & Discovery System Implementation
 
-## PERMANENT RULES (From Master Plan)
+## 🔴 PERMANENT RULES - READ FIRST, ALWAYS
+
+### RULE 0: MANDATORY READING SEQUENCE
+**BEFORE ANY ACTION, YOU MUST:**
+1. Read these PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Read TERTIARY_OBJECTIVES.md for implementation details
+5. Update todo.md with current progress
+
+### RULE 1: NO EXTERNAL MATH LIBRARIES
+- ❌ **NEVER** use math.h, complex.h, or any standard math libraries
+- ❌ **NEVER** use floating-point arithmetic for core operations
+- ✅ **ALL** operations must use CrystallineAbacus (arbitrary precision)
+- ✅ **ALL** missing operations must be added as O(1) functions
+- ✅ **PURE** crystalline mathematics only
+
+### RULE 11: GIT OPERATIONS
+**ALWAYS use correct authentication:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+**If token expires, REFRESH it:**
+```bash
+gh auth refresh -h github.com -s repo
+gh auth status
+```
+
+### RULE 12: BUILD VERIFICATION
+**MANDATORY after every change:**
+```bash
+make clean && make 2>&1 | tee build.log
+grep -c "warning:" build.log
+# VERIFY: Zero warnings, zero errors
+```
+
+## PERMANENT RULES (From Master Plan - Full List)
 1. NEVER delete or modify existing theorems, proofs, or mathematical content
 2. ALWAYS create new sections for new discoveries
 3. ALWAYS maintain mathematical rigor and formal notation
@@ -32,10 +71,13 @@
 - PHASE_2_MATHEMATICAL_VALIDATION_PROGRESS.md
 - SESSION_SUMMARY_PHASE2_VALIDATION.md
 
-**Current Focus:** Completing Phases 3-6 Systematically
+**Current Focus:** Phase 6 - Math Library Deep Integration
 
 **Phase 2:** ✅ COMPLETE (100% test pass rate)
-**Phase 3:** 🟡 IN PROGRESS (fixing 4D+ filtering)
+**Phase 3:** ✅ COMPLETE (100% precision, 0 false positives)
+**Phase 4:** ✅ COMPLETE (16 tests, 137 assertions)
+**Phase 5:** ✅ COMPLETE (21 tests, 69 assertions)
+**Phase 6:** 🟡 NEXT - Math Library Integration
 
 **Bug Fixes Completed:**
 - [x] Bug #1: Fixed face calculation for simplices (C(n+1,3) formula)

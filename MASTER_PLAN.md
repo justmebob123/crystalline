@@ -120,7 +120,22 @@ git commit -m "descriptive message"
 git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
 ```
 
-**If token expires, REFRESH it before pushing.**
+**If token expires, REFRESH it using GitHub CLI:**
+```bash
+# Check if token is valid
+gh auth status
+
+# If expired, refresh the token
+gh auth refresh -h github.com -s repo
+
+# Verify new token works
+gh auth status
+
+# Then push
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+**NEVER proceed with push if token is expired - ALWAYS refresh first!**
 
 ### 🔴 RULE 12: BUILD VERIFICATION
 **MANDATORY after every change:**
