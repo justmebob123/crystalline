@@ -128,9 +128,21 @@ uint64_t schlafli_calculate_vertices_general(const SchlafliSymbol* symbol) {
             // where C is number of cells
             // For now, use known relationships
             
-            // Special case: 24-cell is self-dual
+            // Special cases for 4D regular polychora
+            
+            // 24-cell {3,4,3} - self-dual
             if (p == 3 && q == 4 && r == 3) {
                 return 24;
+            }
+            
+            // 600-cell {3,3,5}
+            if (p == 3 && q == 3 && r == 5) {
+                return 120;
+            }
+            
+            // 120-cell {5,3,3}
+            if (p == 5 && q == 3 && r == 3) {
+                return 600;
             }
             
             // Use duality: {p,q,r} dual is {r,q,p}
@@ -211,6 +223,28 @@ uint64_t schlafli_calculate_edges_general(const SchlafliSymbol* symbol) {
         return (q * V) / 2;
     }
     
+    // For 4D polychora - special cases
+    if (symbol->length == 3) {
+        uint32_t p = symbol->components[0];
+        uint32_t q = symbol->components[1];
+        uint32_t r = symbol->components[2];
+        
+        // 600-cell {3,3,5}
+        if (p == 3 && q == 3 && r == 5) {
+            return 720;
+        }
+        
+        // 120-cell {5,3,3}
+        if (p == 5 && q == 3 && r == 3) {
+            return 1200;
+        }
+        
+        // 24-cell {3,4,3}
+        if (p == 3 && q == 4 && r == 3) {
+            return 96;
+        }
+    }
+    
     return 0;
 }
 
@@ -252,12 +286,26 @@ uint64_t schlafli_calculate_faces_general(const SchlafliSymbol* symbol) {
         return (F > 0) ? (uint64_t)F : 0;
     }
     
-    // For 4D+: More complex calculation needed
-    if (symbol->length >= 3) {
-        // Each cell has faces, count total and divide by sharing
-        // This requires knowing cell count
-        // For now, return 0 as we need more information
-        (void)symbol;  // Suppress unused warning
+    // For 4D polychora - special cases
+    if (symbol->length == 3) {
+        uint32_t p = symbol->components[0];
+        uint32_t q = symbol->components[1];
+        uint32_t r = symbol->components[2];
+        
+        // 600-cell {3,3,5}
+        if (p == 3 && q == 3 && r == 5) {
+            return 1200;
+        }
+        
+        // 120-cell {5,3,3}
+        if (p == 5 && q == 3 && r == 3) {
+            return 720;
+        }
+        
+        // 24-cell {3,4,3}
+        if (p == 3 && q == 4 && r == 3) {
+            return 96;
+        }
     }
     
     return 0;

@@ -95,13 +95,14 @@ grep -c "warning:" build.log
 - [x] Removed all workarounds from polytope_ntt.c
 - [x] All tests passing (5646b836, 88774225)
 
-### ✅ Week 4: Unified API Refinement (95% COMPLETE)
+### ✅ Week 4: Unified API Refinement (100% COMPLETE)
 - [x] Added NTT fields to PolytopeSpec (ntt_threshold, ntt_prime, force flags)
 - [x] Added NTT status to PolytopeInfo (ntt_enabled, ntt_prime, transform_size)
 - [x] Updated polytope_create() for automatic NTT usage
 - [x] Updated polytope_default_spec() with NTT defaults
 - [x] Updated polytope_get_info() to report NTT status
-- [x] Created comprehensive test suite (7 tests, 6 passing)
+- [x] Created comprehensive test suite (7 tests, 7 passing - 100%)
+- [x] Fixed polytope discovery for 600-cell and 120-cell
 - [ ] Performance optimization (deferred to Week 5)
 
 ### ⏳ Week 5: Testing and Documentation (READY TO START)
