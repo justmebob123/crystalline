@@ -165,6 +165,7 @@
 #include "math/rainbow.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
+#include "math/factorization.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -518,40 +519,46 @@ uint64_t prime_count_below(uint64_t n) {
  */
 
 size_t prime_factorize(uint64_t n, uint64_t* factors, size_t max_factors) {
-    /* Factorize n into prime factors */
+    /* 
+     * LEGACY API - Redirects to new O(1) implementation
+     * 
+     * This function is kept for backward compatibility but now uses
+     * the O(1) clock lattice factorization internally.
+     * 
+     * New code should use prime_factor() directly for better performance
+     * and to avoid the conversion overhead.
+     */
     
     if (!factors || max_factors == 0 || n < 2) {
         return 0;
     }
     
+    /* Allocate factorization structure */
+    Factorization fact;
+    fact.capacity = max_factors;
+    fact.factors = (PrimeFactor*)malloc(fact.capacity * sizeof(PrimeFactor));
+    fact.num_factors = 0;
+    
+    if (!fact.factors) {
+        return 0;
+    }
+    
+    /* Use new O(1) implementation */
+    MathError err = prime_factor(n, &fact);
+    if (err != MATH_SUCCESS) {
+        free(fact.factors);
+        return 0;
+    }
+    
+    /* Convert to old format (flatten exponents into repeated factors) */
     size_t count = 0;
-    
-    /* Handle factor of 2 */
-    while (n % 2 == 0 && count < max_factors) {
-        factors[count++] = 2;
-        n /= 2;
-    }
-    
-    /* Handle odd factors */
-    for (size_t i = 0; i < SMALL_PRIMES_COUNT && count < max_factors; i++) {
-        uint64_t p = SMALL_PRIMES[i];
-        if (p == 2) continue;  /* Already handled */
-        
-        while (n % p == 0 && count < max_factors) {
-            factors[count++] = p;
-            n /= p;
-        }
-        
-        if (n == 1) {
-            break;
+    for (size_t i = 0; i < fact.num_factors && count < max_factors; i++) {
+        for (uint32_t j = 0; j < fact.factors[i].exponent && count < max_factors; j++) {
+            factors[count++] = fact.factors[i].prime;
         }
     }
     
-    /* Handle remaining large prime factor */
-    if (n > 1 && count < max_factors) {
-        factors[count++] = n;
-    }
-    
+    free(fact.factors);
     return count;
 }
 

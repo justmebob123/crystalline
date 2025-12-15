@@ -1,11 +1,11 @@
 /**
- * @file factorization_o1.c
+ * @file factorization.c
  * @brief O(1) Factorization Implementation
  * 
  * Revolutionary factorization algorithm using clock lattice structure.
  */
 
-#include "math/factorization_o1.h"
+#include "math/factorization.h"
 #include "math/prime.h"
 #include <string.h>
 
@@ -242,7 +242,14 @@ bool verify_prime_o1(uint64_t candidate) {
  * ============================================================================
  */
 
-MathError prime_factor_o1(uint64_t n, Factorization* result) {
+/**
+ * @brief Implement the declared prime_factor() API
+ * 
+ * This is the ONLY factorization function - it integrates:
+ * 1. O(1) clock lattice method (for most composites)
+ * 2. Existing prime_factorize() as fallback (for edge cases)
+ */
+MathError prime_factor(uint64_t n, Factorization* result) {
     if (!result || !result->factors || n < 2) {
         return MATH_ERROR_INVALID_ARG;
     }

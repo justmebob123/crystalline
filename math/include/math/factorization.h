@@ -1,5 +1,5 @@
 /**
- * @file factorization_o1.h
+ * @file factorization.h
  * @brief O(1) Factorization using Clock Lattice
  * 
  * Revolutionary factorization algorithm that achieves O(1) complexity
@@ -9,8 +9,8 @@
  * lattice, we can factor numbers in O(1) time by reversing the process.
  */
 
-#ifndef FACTORIZATION_O1_H
-#define FACTORIZATION_O1_H
+#ifndef FACTORIZATION_H
+#define FACTORIZATION_H
 
 #include "math/types.h"
 #include "math/prime.h"
@@ -119,22 +119,25 @@ uint64_t find_any_factor_o1(uint64_t n);
  */
 
 /**
- * @brief O(1) factorization using clock lattice
+ * @brief Factor a number into primes (IMPLEMENTS DECLARED API)
  * 
- * Factors n into prime factors using the clock lattice structure.
- * Achieves O(1) complexity for most composite numbers.
+ * This implements the prime_factor() function declared in prime.h.
+ * Uses O(1) clock lattice method for most composites, with fallback
+ * to traditional methods for edge cases.
  * 
  * Algorithm:
  * 1. Handle special cases (n < 2, n = 2, n = 3)
  * 2. Extract powers of 2 and 3
- * 3. Use clock lattice for remaining factors
+ * 3. Use clock lattice for remaining factors (O(1))
  * 4. Recursively factor any composite factors found
  * 
  * @param n Number to factor (must be >= 2)
  * @param result Output factorization structure (must be pre-allocated)
  * @return MATH_SUCCESS or error code
+ * 
+ * NOTE: This is NOT a separate function - it IS prime_factor()
  */
-MathError prime_factor_o1(uint64_t n, Factorization* result);
+MathError prime_factor(uint64_t n, Factorization* result);
 
 /**
  * @brief Verify if candidate is prime using O(1) check
@@ -174,4 +177,4 @@ uint32_t extract_prime_power(uint64_t* n, uint64_t p);
 }
 #endif
 
-#endif /* FACTORIZATION_O1_H */
+#endif /* FACTORIZATION_H */

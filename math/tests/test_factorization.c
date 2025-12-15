@@ -3,7 +3,7 @@
  * @brief Test suite for O(1) factorization
  */
 
-#include "math/factorization_o1.h"
+#include "math/factorization.h"
 #include "math/prime.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +60,7 @@ void test_factor(uint64_t n, const char* description) {
         return;
     }
     
-    MathError err = prime_factor_o1(n, &fact);
+    MathError err = prime_factor(n, &fact);
     
     if (err != MATH_SUCCESS) {
         printf("  ✗ FAIL: Error %d\n", err);
@@ -271,7 +271,7 @@ void benchmark_factorization() {
         }
         
         clock_t start = clock();
-        MathError err = prime_factor_o1(n, &fact);
+        MathError err = prime_factor(n, &fact);
         clock_t end = clock();
         
         double time_ms = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
