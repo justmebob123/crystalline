@@ -74,16 +74,13 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/quadrant_polarity.c \
           src/geometric_recovery/shared_geometry.c \
           src/geometric_recovery/geometric_utils.c \
-          src/geometric_recovery/q_validation.c \
           src/geometric_recovery/geometric_recovery.c \
-          src/geometric_recovery/iterative_recovery.c \
-          src/geometric_recovery/iterative_recovery_v2.c \
           src/geometric_recovery/tetration_attractors.c \
           src/geometric_recovery/torus_analysis.c \
           src/geometric_recovery/harmonic_folding.c \
           src/geometric_recovery/kissing_spheres.c \
           src/geometric_recovery/micro_model.c \
-          src/geometric_recovery/g_triangulation_abstracted.c \
+          src/geometric_recovery/g_triangulation.c \
           src/geometric_recovery/prime_factor_extraction.c \
           src/geometric_recovery/recursive_recovery.c \
           src/geometric_recovery/clock_lattice_integration.c \

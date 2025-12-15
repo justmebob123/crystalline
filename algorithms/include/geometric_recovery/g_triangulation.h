@@ -1,64 +1,123 @@
 /**
- * @file g_triangulation.h
+ * @file g_triangulation_abstracted.h
  * @brief G Triangulation - Abstracted for Universal Use
  * 
  * UNIVERSAL GEOMETRIC MATHEMATICS - Works with ANY system!
  * 
+ * This module implements geometric triangulation using:
+ * - 13D clock lattice mapping
+ * - 50 Platonic solid anchors
+ * - Iterative refinement
+ * - Oscillation tracking
+ * 
  * NO crypto-specific dependencies - works with raw uint64_t data.
+ * Can be used for:
+ * - ECDLP: (k, Q) where Q = k·G
+ * - RSA: (d, e) where e·d ≡ 1 (mod φ(n))
+ * - Embeddings: (index, embedding_value)
+ * - Any geometric mapping
  */
 
-#ifndef ALGORITHMS_G_TRIANGULATION_H
-#define ALGORITHMS_G_TRIANGULATION_H
+#ifndef G_TRIANGULATION_ABSTRACTED_H
+#define G_TRIANGULATION_ABSTRACTED_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+// Forward declaration
 typedef struct GTriangulationContext GTriangulationContext;
 
 /**
- * Create G triangulation context
+ * Create a new G triangulation context
  * 
- * @param n System size
- * @param num_training_pairs Number of training samples
- * @param training_inputs Input values (k, index, etc.)
- * @param training_outputs Output values (Q, embedding, etc.)
- * @param max_iterations Maximum refinement iterations
- * @return Context or NULL on error
+ * @param n System size (e.g., curve order for ECDLP, modulus for RSA)
+ * @param num_samples Number of training samples
+ * @param inputs Array of input values (e.g., k values)
+ * @param outputs Array of output values (e.g., Q values)
+ * @param max_iterations Maximum iterations for refinement
+ * @return New context or NULL on error
  */
 GTriangulationContext* g_triangulation_create(
     uint64_t n,
-    int num_training_pairs,
-    const uint64_t* training_inputs,
-    const uint64_t* training_outputs,
-    int max_iterations
+    uint32_t num_samples,
+    const uint64_t* inputs,
+    const uint64_t* outputs,
+    uint32_t max_iterations
 );
 
 /**
- * Free G triangulation context
+ * Train the triangulation system
+ * 
+ * Performs iterative refinement to find optimal G position
+ * and anchor positions in 13D clock lattice.
+ * 
+ * @param ctx Context
+ * @return true if training converged, false otherwise
  */
-void g_triangulation_free(GTriangulationContext* ctx);
+bool g_triangulation_train(GTriangulationContext* ctx);
 
 /**
- * Estimate input from output using geometric triangulation
+ * Estimate input value from output value
+ * 
+ * @param ctx Context
+ * @param output Output value to recover input for
+ * @param estimate_out Pointer to store estimated input
+ * @return true on success, false on error
  */
-uint64_t g_triangulation_estimate_k(GTriangulationContext* ctx, uint64_t output);
+bool g_triangulation_estimate(
+    GTriangulationContext* ctx,
+    uint64_t output,
+    uint64_t* estimate_out
+);
 
 /**
- * Perform one refinement iteration
+ * Get confidence score for current triangulation
+ * 
+ * @param ctx Context
+ * @return Confidence score [0.0, 1.0]
  */
-void g_triangulation_refine(GTriangulationContext* ctx);
+double g_triangulation_get_confidence(const GTriangulationContext* ctx);
 
 /**
- * Check for convergence
+ * Get G position in 13D clock lattice
+ * 
+ * @param ctx Context
+ * @param position_out Array of 13 doubles to store position
  */
-bool g_triangulation_check_convergence(GTriangulationContext* ctx, double threshold);
+void g_triangulation_get_g_position(
+    const GTriangulationContext* ctx,
+    double position_out[13]
+);
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ * Get number of anchors
+ * 
+ * @param ctx Context
+ * @return Number of anchors
+ */
+int g_triangulation_get_num_anchors(const GTriangulationContext* ctx);
 
-#endif /* ALGORITHMS_G_TRIANGULATION_H */
+/**
+ * Check if training has converged
+ * 
+ * @param ctx Context
+ * @return true if converged, false otherwise
+ */
+bool g_triangulation_has_converged(const GTriangulationContext* ctx);
+
+/**
+ * Get current iteration number
+ * 
+ * @param ctx Context
+ * @return Current iteration
+ */
+int g_triangulation_get_iteration(const GTriangulationContext* ctx);
+
+/**
+ * Destroy triangulation context
+ * 
+ * @param ctx Context to destroy
+ */
+void g_triangulation_destroy(GTriangulationContext* ctx);
+
+#endif // G_TRIANGULATION_ABSTRACTED_H
