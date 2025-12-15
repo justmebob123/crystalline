@@ -17,6 +17,7 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/cordic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
