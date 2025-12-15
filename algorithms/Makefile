@@ -89,6 +89,7 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/clock_lattice_integration.c \
           src/geometric_recovery/spherical_recovery.c \
           src/geometric_recovery/search_recovery.c \
+          src/geometric_recovery/anchor_grid_24.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)

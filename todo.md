@@ -107,18 +107,18 @@
 - [x] Add to Makefile
 - [x] Test compilation (successful, resolved naming conflicts)
 
-### [ ] Task 2.4: Implement anchor_grid_24.c
-- [ ] Create header: algorithms/include/geometric_recovery/anchor_grid_24.h
-- [ ] Define AnchorGrid24 structure
-- [ ] Implement functions:
+### [x] Task 2.4: Implement anchor_grid_24.c
+- [x] Create header: algorithms/include/geometric_recovery/anchor_grid_24.h
+- [x] Define AnchorGrid24 structure
+- [x] Implement functions:
   * generate_24cell_vertices() - Generate 24-cell polytope
   * map_to_13d() - Map vertices to 13D clock lattice
   * find_nearest_anchors() - Fast nearest-neighbor search
   * create_anchor_grid_24() - Main creation function
   * destroy_anchor_grid_24() - Cleanup function
-- [ ] Create source file with full implementation
-- [ ] Add to Makefile
-- [ ] Test compilation
+- [x] Create source file with full implementation
+- [x] Add to Makefile
+- [x] Test compilation (successful)
 
 ### [ ] Task 2.5: Migrate clock_recovery.c
 - [ ] Check reference_implementations/clock_inverse_mapping.c
