@@ -82,30 +82,30 @@
 - [x] Add to Makefile
 - [x] Test compilation (successful)
 
-### [ ] Task 2.2: Implement spherical_recovery.c
-- [ ] Create header: algorithms/include/geometric_recovery/spherical_recovery.h
-- [ ] Define SphericalCoords structure
-- [ ] Implement functions:
+### [x] Task 2.2: Implement spherical_recovery.c
+- [x] Create header: algorithms/include/geometric_recovery/spherical_recovery.h
+- [x] Define SphericalCoords structure
+- [x] Implement functions:
   * value_to_spherical() - Convert value to spherical coords
   * spherical_to_value() - Convert spherical coords to value
   * compute_great_circle_distance() - Distance on sphere
   * find_geodesic_path() - Shortest path on sphere
   * spherical_recover() - Main recovery function
-- [ ] Create source file with full implementation
-- [ ] Add to Makefile
-- [ ] Test compilation
+- [x] Create source file with full implementation
+- [x] Add to Makefile
+- [x] Test compilation (successful)
 
-### [ ] Task 2.3: Implement search_recovery.c
-- [ ] Create header: algorithms/include/geometric_recovery/search_recovery.h
-- [ ] Define SearchResults structure
-- [ ] Implement functions:
-  * generate_candidates() - Generate candidates near attractors
-  * score_candidate() - Score candidate by distance
+### [x] Task 2.3: Implement search_recovery.c
+- [x] Create header: algorithms/include/geometric_recovery/search_recovery.h
+- [x] Define SearchResults structure
+- [x] Implement functions:
+  * search_generate_candidates() - Generate candidates near attractors
+  * search_score_candidate() - Score candidate by distance
   * beam_search() - Beam search with pruning
   * search_with_attractors() - Main search function
-- [ ] Create source file with full implementation
-- [ ] Add to Makefile
-- [ ] Test compilation
+- [x] Create source file with full implementation
+- [x] Add to Makefile
+- [x] Test compilation (successful, resolved naming conflicts)
 
 ### [ ] Task 2.4: Implement anchor_grid_24.c
 - [ ] Create header: algorithms/include/geometric_recovery/anchor_grid_24.h
