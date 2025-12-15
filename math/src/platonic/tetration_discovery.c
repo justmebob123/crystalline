@@ -667,3 +667,51 @@ DiscoveryConfig tetration_discovery_config_7d(void) {
     };
     return config;
 }
+
+DiscoveryConfig tetration_discovery_config_8d(void) {
+    DiscoveryConfig config = {
+        .dimension = 8,
+        .num_sets = 25,
+        .min_depth = 29,
+        .max_depth = 59,
+        .cluster_threshold = 0.1,
+        .regularity_threshold = 0.95
+    };
+    return config;
+}
+
+DiscoveryConfig tetration_discovery_config_10d(void) {
+    DiscoveryConfig config = {
+        .dimension = 10,
+        .num_sets = 30,
+        .min_depth = 29,
+        .max_depth = 59,
+        .cluster_threshold = 0.1,
+        .regularity_threshold = 0.95
+    };
+    return config;
+}
+
+DiscoveryConfig tetration_discovery_config_20d(void) {
+    DiscoveryConfig config = {
+        .dimension = 20,
+        .num_sets = 60,
+        .min_depth = 29,
+        .max_depth = 59,
+        .cluster_threshold = 0.1,
+        .regularity_threshold = 0.95
+    };
+    return config;
+}
+
+DiscoveryConfig tetration_discovery_config_100d(void) {
+    DiscoveryConfig config = {
+        .dimension = 100,
+        .num_sets = 300,
+        .min_depth = 29,
+        .max_depth = 59,
+        .cluster_threshold = 0.1,
+        .regularity_threshold = 0.95
+    };
+    return config;
+}

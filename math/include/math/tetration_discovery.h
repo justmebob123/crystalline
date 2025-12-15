@@ -291,6 +291,34 @@ DiscoveryConfig tetration_discovery_config_6d(void);
  */
 DiscoveryConfig tetration_discovery_config_7d(void);
 
+/**
+ * @brief Create discovery config for 8D
+ * 
+ * @return Discovery config for 8D
+ */
+DiscoveryConfig tetration_discovery_config_8d(void);
+
+/**
+ * @brief Create discovery config for 10D
+ * 
+ * @return Discovery config for 10D
+ */
+DiscoveryConfig tetration_discovery_config_10d(void);
+
+/**
+ * @brief Create discovery config for 20D
+ * 
+ * @return Discovery config for 20D
+ */
+DiscoveryConfig tetration_discovery_config_20d(void);
+
+/**
+ * @brief Create discovery config for 100D
+ * 
+ * @return Discovery config for 100D
+ */
+DiscoveryConfig tetration_discovery_config_100d(void);
+
 #ifdef __cplusplus
 }
 #endif
