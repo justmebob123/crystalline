@@ -667,6 +667,50 @@ bool abacus_is_sparse(const CrystallineAbacus* abacus);
  */
 size_t abacus_memory_usage(const CrystallineAbacus* abacus);
 
+/**
+ * @brief Add two sparse numbers (internal function)
+ * 
+ * Optimized addition for sparse representations.
+ * Only processes non-zero beads, resulting in O(k) complexity
+ * where k = number of non-zero beads.
+ * 
+ * Algorithm:
+ * 1. Merge sparse beads by weight_exponent
+ * 2. Add values at same exponent
+ * 3. Handle carries
+ * 4. Remove zeros from result
+ * 
+ * @param result Output (will be in sparse mode)
+ * @param a First operand (must be sparse)
+ * @param b Second operand (must be sparse)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_add_sparse(CrystallineAbacus* result,
+                            const CrystallineAbacus* a,
+                            const CrystallineAbacus* b);
+
+/**
+ * @brief Multiply two sparse numbers (internal function)
+ * 
+ * Optimized multiplication for sparse representations.
+ * Only processes non-zero beads, resulting in O(k²) complexity
+ * where k = number of non-zero beads.
+ * 
+ * Algorithm:
+ * 1. For each pair of non-zero beads: multiply values, add exponents
+ * 2. Combine terms with same exponent
+ * 3. Handle carries
+ * 4. Remove zeros from result
+ * 
+ * @param result Output (will be in sparse mode)
+ * @param a First operand (must be sparse)
+ * @param b Second operand (must be sparse)
+ * @return MATH_SUCCESS or error code
+ */
+MathError abacus_mul_sparse(CrystallineAbacus* result,
+                            const CrystallineAbacus* a,
+                            const CrystallineAbacus* b);
+
 #ifdef __cplusplus
 }
 #endif

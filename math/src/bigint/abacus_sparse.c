@@ -284,3 +284,307 @@ size_t abacus_memory_usage(const CrystallineAbacus* abacus) {
     
     return total;
 }
+
+/* ============================================================================
+ * SPARSE ARITHMETIC OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Compare function for sorting sparse beads by exponent
+ */
+static int compare_sparse_beads(const void* a, const void* b) {
+    const SparseBead* bead_a = (const SparseBead*)a;
+    const SparseBead* bead_b = (const SparseBead*)b;
+    
+    if (bead_a->weight_exponent < bead_b->weight_exponent) {
+        return -1;
+    } else if (bead_a->weight_exponent > bead_b->weight_exponent) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+/**
+ * @brief Remove zero beads from sparse array
+ */
+static void remove_zeros_sparse(CrystallineAbacus* abacus) {
+    if (!abacus || !abacus->is_sparse || !abacus->sparse_beads) {
+        return;
+    }
+    
+    size_t write_idx = 0;
+    for (size_t read_idx = 0; read_idx < abacus->num_nonzero; read_idx++) {
+        if (abacus->sparse_beads[read_idx].value != 0) {
+            if (write_idx != read_idx) {
+                abacus->sparse_beads[write_idx] = abacus->sparse_beads[read_idx];
+            }
+            write_idx++;
+        }
+    }
+    
+    abacus->num_nonzero = write_idx;
+}
+
+MathError abacus_add_sparse(CrystallineAbacus* result,
+                            const CrystallineAbacus* a,
+                            const CrystallineAbacus* b) {
+    if (!result || !a || !b) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (!a->is_sparse || !b->is_sparse) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (a->base != b->base) {
+        return MATH_ERROR_INVALID_BASE;
+    }
+    
+    /* Handle signs */
+    if (a->negative != b->negative) {
+        /* Different signs - need subtraction (not implemented in sparse yet) */
+        /* Fall back to dense mode */
+        return MATH_ERROR_NOT_IMPLEMENTED;
+    }
+    
+    /* Allocate result array (worst case: all beads from both numbers) */
+    size_t max_beads = a->num_nonzero + b->num_nonzero;
+    SparseBead* temp = (SparseBead*)malloc(max_beads * sizeof(SparseBead));
+    if (!temp && max_beads > 0) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    /* Merge beads from both numbers */
+    size_t temp_count = 0;
+    size_t i = 0, j = 0;
+    
+    while (i < a->num_nonzero && j < b->num_nonzero) {
+        if (a->sparse_beads[i].weight_exponent < b->sparse_beads[j].weight_exponent) {
+            temp[temp_count++] = a->sparse_beads[i++];
+        } else if (a->sparse_beads[i].weight_exponent > b->sparse_beads[j].weight_exponent) {
+            temp[temp_count++] = b->sparse_beads[j++];
+        } else {
+            /* Same exponent - add values */
+            temp[temp_count].weight_exponent = a->sparse_beads[i].weight_exponent;
+            temp[temp_count].value = a->sparse_beads[i].value + b->sparse_beads[j].value;
+            temp_count++;
+            i++;
+            j++;
+        }
+    }
+    
+    /* Copy remaining beads from a */
+    while (i < a->num_nonzero) {
+        temp[temp_count++] = a->sparse_beads[i++];
+    }
+    
+    /* Copy remaining beads from b */
+    while (j < b->num_nonzero) {
+        temp[temp_count++] = b->sparse_beads[j++];
+    }
+    
+    /* Handle carries */
+    uint32_t carry = 0;
+    for (size_t k = 0; k < temp_count; k++) {
+        temp[k].value += carry;
+        carry = temp[k].value / a->base;
+        temp[k].value %= a->base;
+    }
+    
+    /* Add final carry if needed */
+    if (carry > 0) {
+        /* Need to add a new bead for the carry */
+        SparseBead* new_temp = (SparseBead*)realloc(temp, (temp_count + 1) * sizeof(SparseBead));
+        if (!new_temp) {
+            free(temp);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        temp = new_temp;
+        
+        /* Find the highest exponent and add 1 */
+        int32_t max_exp = temp[0].weight_exponent;
+        for (size_t k = 1; k < temp_count; k++) {
+            if (temp[k].weight_exponent > max_exp) {
+                max_exp = temp[k].weight_exponent;
+            }
+        }
+        
+        temp[temp_count].weight_exponent = max_exp + 1;
+        temp[temp_count].value = carry;
+        temp_count++;
+    }
+    
+    /* Sort by exponent (in case carries changed order) */
+    qsort(temp, temp_count, sizeof(SparseBead), compare_sparse_beads);
+    
+    /* Set up result */
+    if (result->sparse_beads) {
+        free(result->sparse_beads);
+    }
+    if (result->beads) {
+        free(result->beads);
+        result->beads = NULL;
+    }
+    
+    result->sparse_beads = temp;
+    result->num_nonzero = temp_count;
+    result->sparse_capacity = temp_count;
+    result->is_sparse = true;
+    result->base = a->base;
+    result->negative = a->negative;
+    
+    /* Update min/max exponents */
+    if (temp_count > 0) {
+        result->min_exponent = temp[0].weight_exponent;
+        result->max_exponent = temp[temp_count - 1].weight_exponent;
+    } else {
+        result->min_exponent = 0;
+        result->max_exponent = 0;
+    }
+    
+    /* Remove any zeros that might have been created */
+    remove_zeros_sparse(result);
+    
+    return MATH_SUCCESS;
+}
+
+MathError abacus_mul_sparse(CrystallineAbacus* result,
+                            const CrystallineAbacus* a,
+                            const CrystallineAbacus* b) {
+    if (!result || !a || !b) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (!a->is_sparse || !b->is_sparse) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    if (a->base != b->base) {
+        return MATH_ERROR_INVALID_BASE;
+    }
+    
+    /* Handle zero */
+    if (a->num_nonzero == 0 || b->num_nonzero == 0) {
+        /* Result is zero */
+        if (result->sparse_beads) {
+            free(result->sparse_beads);
+        }
+        if (result->beads) {
+            free(result->beads);
+            result->beads = NULL;
+        }
+        
+        result->sparse_beads = NULL;
+        result->num_nonzero = 0;
+        result->sparse_capacity = 0;
+        result->is_sparse = true;
+        result->base = a->base;
+        result->negative = false;
+        result->min_exponent = 0;
+        result->max_exponent = 0;
+        
+        return MATH_SUCCESS;
+    }
+    
+    /* Allocate result array (worst case: k_a × k_b terms) */
+    size_t max_terms = a->num_nonzero * b->num_nonzero;
+    SparseBead* temp = (SparseBead*)malloc(max_terms * sizeof(SparseBead));
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    /* Multiply each pair of non-zero beads */
+    size_t temp_count = 0;
+    for (size_t i = 0; i < a->num_nonzero; i++) {
+        for (size_t j = 0; j < b->num_nonzero; j++) {
+            temp[temp_count].value = a->sparse_beads[i].value * b->sparse_beads[j].value;
+            temp[temp_count].weight_exponent = a->sparse_beads[i].weight_exponent + 
+                                               b->sparse_beads[j].weight_exponent;
+            temp_count++;
+        }
+    }
+    
+    /* Sort by exponent to combine like terms */
+    qsort(temp, temp_count, sizeof(SparseBead), compare_sparse_beads);
+    
+    /* Combine terms with same exponent */
+    size_t write_idx = 0;
+    for (size_t read_idx = 0; read_idx < temp_count; read_idx++) {
+        if (write_idx > 0 && temp[write_idx - 1].weight_exponent == temp[read_idx].weight_exponent) {
+            /* Same exponent - add to previous term */
+            temp[write_idx - 1].value += temp[read_idx].value;
+        } else {
+            /* New exponent - copy term */
+            if (write_idx != read_idx) {
+                temp[write_idx] = temp[read_idx];
+            }
+            write_idx++;
+        }
+    }
+    temp_count = write_idx;
+    
+    /* Handle carries */
+    uint32_t carry = 0;
+    for (size_t k = 0; k < temp_count; k++) {
+        temp[k].value += carry;
+        carry = temp[k].value / a->base;
+        temp[k].value %= a->base;
+    }
+    
+    /* Add final carry if needed */
+    while (carry > 0) {
+        SparseBead* new_temp = (SparseBead*)realloc(temp, (temp_count + 1) * sizeof(SparseBead));
+        if (!new_temp) {
+            free(temp);
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        temp = new_temp;
+        
+        /* Find the highest exponent and add 1 */
+        int32_t max_exp = temp[0].weight_exponent;
+        for (size_t k = 1; k < temp_count; k++) {
+            if (temp[k].weight_exponent > max_exp) {
+                max_exp = temp[k].weight_exponent;
+            }
+        }
+        
+        temp[temp_count].weight_exponent = max_exp + 1;
+        temp[temp_count].value = carry % a->base;
+        carry /= a->base;
+        temp_count++;
+    }
+    
+    /* Sort again after adding carries */
+    qsort(temp, temp_count, sizeof(SparseBead), compare_sparse_beads);
+    
+    /* Set up result */
+    if (result->sparse_beads) {
+        free(result->sparse_beads);
+    }
+    if (result->beads) {
+        free(result->beads);
+        result->beads = NULL;
+    }
+    
+    result->sparse_beads = temp;
+    result->num_nonzero = temp_count;
+    result->sparse_capacity = temp_count;
+    result->is_sparse = true;
+    result->base = a->base;
+    result->negative = (a->negative != b->negative);
+    
+    /* Update min/max exponents */
+    if (temp_count > 0) {
+        result->min_exponent = temp[0].weight_exponent;
+        result->max_exponent = temp[temp_count - 1].weight_exponent;
+    } else {
+        result->min_exponent = 0;
+        result->max_exponent = 0;
+    }
+    
+    /* Remove any zeros */
+    remove_zeros_sparse(result);
+    
+    return MATH_SUCCESS;
+}
