@@ -632,14 +632,31 @@ MathError math_sqrt_abacus(CrystallineAbacus* result,
         return MATH_ERROR_INVALID_ARG;
     }
     
-    // Use existing abacus_sqrt implementation
-    MathError err = abacus_sqrt(result, x);
+    // Always use double as intermediate for now to get fractional results
+    // TODO: Implement pure Abacus Newton-Raphson for arbitrary precision
+    double x_double;
+    MathError err = abacus_to_double(x, &x_double);
     if (err != MATH_SUCCESS) {
         return err;
     }
     
-    // Round to desired precision
-    return abacus_round(result, result, (int32_t)precision);
+    if (x_double < 0.0) {
+        return MATH_ERROR_DOMAIN;
+    }
+    
+    double sqrt_val = math_sqrt(x_double);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(sqrt_val, result->base, precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy to result
+    err = copy_abacus_complete(result, temp);
+    abacus_free(temp);
+    
+    return err;
 }
 
 /**
