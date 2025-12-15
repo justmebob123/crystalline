@@ -91,6 +91,7 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/clock_recovery.c \
           src/geometric_recovery/convergence_detection.c \
           src/geometric_recovery/oscillation_detection.c \
+          src/geometric_recovery/confidence_scoring.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
