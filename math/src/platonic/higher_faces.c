@@ -4,7 +4,7 @@
  */
 
 #include "math/higher_faces.h"
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

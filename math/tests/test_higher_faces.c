@@ -6,7 +6,7 @@
 #include "math/higher_faces.h"
 #include "math/polytope.h"
 #include "math/schlafli.h"
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -2,7 +2,7 @@
 #define MATH_SCHLAFLI_MATH_ENHANCED_H
 
 /**
- * @file schlafli_math_enhanced.h
+ * @file schlafli_math.h
  * @brief Enhanced mathematical validation using general formulas
  * 
  * This module provides general mathematical formulas for polytope

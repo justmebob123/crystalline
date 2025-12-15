@@ -1,5 +1,5 @@
 /**
- * @file schlafli_math_enhanced.c
+ * @file schlafli_math.c
  * @brief Enhanced mathematical validation using general formulas
  * 
  * This module implements general mathematical formulas for polytope
@@ -14,7 +14,7 @@
  * 5. No hardcoded polytope-specific values
  */
 
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include "math/schlafli_validator.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"

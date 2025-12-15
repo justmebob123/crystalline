@@ -3,7 +3,7 @@
  * @brief Test suite for enhanced Schläfli validation
  */
 
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include "math/schlafli.h"
 #include <stdio.h>
 #include <stdlib.h>

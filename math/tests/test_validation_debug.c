@@ -3,7 +3,7 @@
  * @brief Debug validation to see why it's failing
  */
 
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include "math/schlafli_validator.h"
 #include "math/schlafli.h"
 #include <stdio.h>

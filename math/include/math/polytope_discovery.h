@@ -18,7 +18,7 @@
  */
 
 #include "math/schlafli.h"
-#include "math/schlafli_math_enhanced.h"
+#include "math/schlafli_math.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
