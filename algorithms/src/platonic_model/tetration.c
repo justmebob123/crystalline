@@ -1,22 +1,35 @@
 /**
- * @file tetration_real.c
- * @brief REAL Tetration Tower Computation - Not Approximations
+ * @file tetration.c
+ * @brief Tetration Tower Computation for Platonic Solid Discovery
  * 
- * This computes ACTUAL tetration towers using logarithmic representation.
- * No simplifications, no rounding, REAL computation.
+ * Computes proper tetration towers using logarithmic representation.
+ * Used for discovering new Platonic solids based on non-overlapping
+ * prime triadic sets, as discovered by Plato.
  * 
  * Tetration: base^base^base^...^base (depth times)
  * 
  * For depth 29-59, these values are ASTRONOMICAL.
  * We use logarithmic representation to handle them.
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_exp with math_exp (4 calls)
+ * - Replaced math_log with math_log (2 calls)
+ * - Replaced math_abs with math_abs (3 calls)
+ * Total: 9 function calls migrated to NEW math library
+ * 
+ * PHASE 2: Consolidated constants
+ * - Removed local INFINITY definition
+ * - Using MATH_INFINITY from math/types.h
  */
 
 #include "platonic_model.h"
+#include "../../../math/include/math/transcendental.h"  // NEW math library
+#include "../../../math/include/math/arithmetic.h"       // NEW math library
+#include "../../../math/include/math/types.h"            // PHASE 2: For MATH_INFINITY
+#include "../../../math/include/math/validation.h"       // For math_is_nan and math_is_inf
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "math/arithmetic.h"
-#include "math/transcendental.h"
 
 /**
  * Compute a single level of tetration in log space
@@ -125,7 +138,7 @@ static double find_1d_attractor(
     uint32_t num_towers
 ) {
     double nearest = value;
-    double min_distance = INFINITY;
+    double min_distance = MATH_INFINITY;
     
     for (uint32_t t = 0; t < num_towers; t++) {
         TetrationTower* tower = towers[t];

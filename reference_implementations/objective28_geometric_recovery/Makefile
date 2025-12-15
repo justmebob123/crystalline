@@ -30,7 +30,7 @@ SOURCES = \
 	$(SRC_DIR)/platonic_model_recovery.c \
 	$(SRC_DIR)/platonic_model_scaling.c \
 	$(SRC_DIR)/platonic_model_persistence.c \
-	$(SRC_DIR)/tetration_real.c \
+	$(SRC_DIR)/tetration.c \
 	$(SRC_DIR)/prime_float_math.c \
 	$(SRC_DIR)/iterative_recovery.c \
 	$(SRC_DIR)/iterative_recovery_v2.c \

@@ -1,5 +1,5 @@
 /**
- * @file tetration_real.c
+ * @file tetration.c
  * @brief REAL Tetration Tower Computation - Not Approximations
  * 
  * This computes ACTUAL tetration towers using logarithmic representation.
