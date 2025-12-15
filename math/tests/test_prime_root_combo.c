@@ -4,17 +4,8 @@
 #include <stdio.h>
 
 void print_abacus_value(const char* label, const CrystallineAbacus* a) {
-    printf("%s: ", label);
-    
-    /* Try to convert to uint64 if small enough */
-    CrystallineAbacus* temp = abacus_copy(a);
-    uint64_t val = 0;
-    bool fits = true;
-    
-    /* Simple extraction - just for debugging */
-    printf("[abacus value]\n");
-    
-    abacus_free(temp);
+    (void)a;  // Unused for now
+    printf("%s: [abacus value]\n", label);
 }
 
 int main() {
