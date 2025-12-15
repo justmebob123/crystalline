@@ -82,6 +82,7 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/spherical_recovery.c \
           src/geometric_recovery/search_recovery.c \
           src/geometric_recovery/anchor_grid_24.c \
+          src/geometric_recovery/anchor_grid.c \
           src/geometric_recovery/fractal_bounds.c \
           src/geometric_recovery/multi_scale_search.c \
           src/geometric_recovery/clock_recovery.c \
