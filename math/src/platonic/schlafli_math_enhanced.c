@@ -187,7 +187,9 @@ uint64_t schlafli_calculate_edges_general(const SchlafliSymbol* symbol) {
         }
     }
     
-    // For cross-polytope: E = n(n-1)
+    // For cross-polytope: E = 2n(n-1)
+    // Each of 2n vertices connects to 2(n-1) others (all except itself and opposite)
+    // Total edges = 2n * 2(n-1) / 2 = 2n(n-1)
     if (symbol->length > 0 && symbol->components[symbol->length - 1] == 4) {
         bool is_cross = true;
         for (uint32_t i = 0; i < symbol->length - 1; i++) {
@@ -197,7 +199,7 @@ uint64_t schlafli_calculate_edges_general(const SchlafliSymbol* symbol) {
             }
         }
         if (is_cross) {
-            return n * (n - 1);
+            return 2 * n * (n - 1);
         }
     }
     
@@ -230,7 +232,7 @@ uint64_t schlafli_calculate_faces_general(const SchlafliSymbol* symbol) {
     
     uint32_t n = symbol->dimension;
     
-    // For simplex: F = (n+1)n/2 (for 2-faces in 3D+)
+    // For simplex: F = C(n+1, 3) for 2-faces
     bool is_simplex = true;
     for (uint32_t i = 0; i < symbol->length; i++) {
         if (symbol->components[i] != 3) {
@@ -239,7 +241,9 @@ uint64_t schlafli_calculate_faces_general(const SchlafliSymbol* symbol) {
         }
     }
     if (is_simplex && n >= 3) {
-        return ((n + 1) * n) / 2;
+        // Calculate C(n+1, 3) = (n+1)! / (3! * (n-2)!)
+        // = (n+1) * n * (n-1) / 6
+        return ((n + 1) * n * (n - 1)) / 6;
     }
     
     // For 3D: Use Euler characteristic V - E + F = 2
@@ -428,8 +432,11 @@ bool schlafli_validate_euler_general(const SchlafliSymbol* symbol) {
         }
     }
     
-    // Expected value: 1 + (-1)^n
-    int64_t expected = 1 + ((n % 2 == 0) ? 1 : -1);
+    // Expected value: 1 + (-1)^(n-1)
+    // For 3D: χ = 1 + (-1)^2 = 1 + 1 = 2
+    // For 4D: χ = 1 + (-1)^3 = 1 - 1 = 0
+    // For 5D: χ = 1 + (-1)^4 = 1 + 1 = 2
+    int64_t expected = 1 + (((n - 1) % 2 == 0) ? 1 : -1);
     
     return chi == expected;
 }
