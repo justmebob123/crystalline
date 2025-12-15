@@ -74,7 +74,6 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/quadrant_polarity.c \
           src/geometric_recovery/shared_geometry.c \
           src/geometric_recovery/geometric_utils.c \
-          src/geometric_recovery/geometric_recovery.c \
           src/geometric_recovery/tetration_attractors.c \
           src/geometric_recovery/torus_analysis.c \
           src/geometric_recovery/harmonic_folding.c \
@@ -87,6 +86,8 @@ SOURCES = src/numerical.c \
           src/geometric_recovery/spherical_recovery.c \
           src/geometric_recovery/search_recovery.c \
           src/geometric_recovery/anchor_grid_24.c \
+          src/geometric_recovery/fractal_bounds.c \
+          src/geometric_recovery/multi_scale_search.c \
           src/geometric_recovery/geometric_recovery_orchestrator.c
 # Object files
 OBJECTS = $(SOURCES:.c=.o)

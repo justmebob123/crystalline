@@ -30,8 +30,8 @@
 
 ## PHASE 1: COMPLETE IN-PROGRESS COMPONENTS
 
-### [x] Task 1.1: Complete g_triangulation_abstracted.c
-- [x] Create header file: algorithms/include/geometric_recovery/g_triangulation_abstracted.h
+### [x] Task 1.1: Complete g_triangulation.c (renamed from _abstracted)
+- [x] Create header file: algorithms/include/geometric_recovery/g_triangulation.h
 - [x] Define GTriangulationContext structure
 - [x] Define API functions:
   * g_triangulation_create()
@@ -68,6 +68,27 @@
   * Early termination
 - [x] Add to Makefile
 - [x] Test compilation
+
+## PHASE 1.5: EXTRACT MISSING COMPONENTS FROM OLD CODE
+
+### [x] Task 1.5a: Extract fractal_bounds from geometric_recovery.c
+- [x] Created fractal_bounds.h with FractalPartition structure
+- [x] Created fractal_bounds.c with universal implementation
+- [x] Removed OpenSSL dependencies
+- [x] Added to Makefile
+- [x] Compiles successfully
+
+### [x] Task 1.5b: Extract multi_scale_search from geometric_recovery.c
+- [x] Created multi_scale_search.h with ScaleLevel structure
+- [x] Created multi_scale_search.c with universal implementation
+- [x] Removed OpenSSL dependencies
+- [x] Added to Makefile
+- [x] Compiles successfully
+
+### [x] Task 1.5c: Remove geometric_recovery.c from build
+- [x] Removed from Makefile (OLD monolithic implementation)
+- [x] Functionality extracted to new universal components
+- [x] File kept for reference but not compiled
 
 ## PHASE 2: IMPLEMENT MISSING COMPONENTS
 
