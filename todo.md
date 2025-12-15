@@ -1,417 +1,233 @@
-# FIX EXISTING CODE - NO NEW FILES
-
-## CRITICAL UNDERSTANDING - CORRECTED
-
-### What I Misunderstood:
-1. Multi-bead abacus is wrong → NO, multi-bead/sphere hopping IS the solution
-2. Need new geometric number system → NO, fix existing abacus operations
-3. O(1) means single value → NO, O(1) via sphere magnitude and hopping
-4. Create separate systems → NO, integrate what's already there
-
-### What Actually Needs to Happen:
-1. **Fix abacus division** - Use triangulation, not iterative subtraction
-2. **Default to double output** - Arbitrary precision underneath, reconstruct on demand
-3. **Integrate arithmetic.c with abacus** - Use abacus underneath, return double
-4. **Fix compact_arithmetic.c** - Ensure triangulation operations work
-5. **NO NEW FILES** - Work with existing code structure
-
-## PHASE 1: FIX ABACUS DIVISION
-
-### [x] Step 1: Analyze Current Division Implementation
-- [x] Read abacus.c division function (lines 1100-1350)
-- [x] Identified iterative subtraction code (slow path, line 1220+)
-- [x] Found compact_arithmetic.c already has triangulation division
-- [x] Thesis says: O(log n) using Newton's method for quotient
-
-**CURRENT STATE:**
-- Fast path (uint64_t): Works, uses direct division
-- Slow path (arbitrary): Uses iterative subtraction O(q) - WRONG
-- compact_arithmetic.c: Has geometric division (angle subtract, magnitude divide)
-
-**WHAT NEEDS TO HAPPEN:**
-The slow path should use Newton's method or binary search for quotient, not iterative subtraction.
-
-### [x] Step 2: Implement Better Division for Arbitrary Precision
-- [x] Replaced iterative subtraction with binary search
-- [x] Complexity now O(log q × log n) instead of O(q)
-- [x] Algorithm: Binary search for largest q where b×q ≤ a
-- [x] Test with existing tests - ALL 51 TESTS PASS ✅
-
-**CHANGES MADE:**
-- Replaced O(q) iterative subtraction loop in abacus.c
-- Implemented binary search: low=0, high=a, find mid where b×mid ≤ a
-- Each iteration: O(log n) multiplication + comparison
-- Total: O(log q) iterations × O(log n) per iteration = O(log q × log n)
-- Much better than O(q) for large quotients!
-- Build successful, all tests passing
-
-## PHASE 2: INTEGRATE ARITHMETIC.C WITH ABACUS
-
-### [x] Step 3: Analyze arithmetic.c Current Implementation
-- [x] Checked arithmetic.c - it's a simple double-precision wrapper
-- [x] Does NOT use abacus internally - just native C double operations
-- [x] Provides compatibility API for double-precision operations
-
-**FINDINGS:**
-- arithmetic.c is intentionally simple: just double operations (a + b, a - b, etc.)
-- Comment says: "For arbitrary precision, use CrystallineAbacus directly"
-- This is actually CORRECT design:
-  * arithmetic.c = fast double-precision API
-  * abacus.c = arbitrary precision API
-  * Users choose based on needs
-
-**DECISION:**
-This is already well-designed. No changes needed.
-- Fast path: Use arithmetic.c for double operations
-- Arbitrary precision: Use abacus.c directly
-- Both systems coexist, serving different purposes
-
-## PHASE 3: VERIFY COMPACT ARITHMETIC
-
-### [x] Step 4: Verify Compact Arithmetic Uses Triangulation
-- [x] Checked compact_arithmetic.c - already uses triangulation
-- [x] Division: angle subtraction + magnitude division (geometric)
-- [x] Multiplication: uses triangulate_multiplication from compact_vector.c
-- [x] Memory efficient: 16 bytes per vector (sphere_id, phase_angle, magnitude_offset, phase_offset)
-
-**FINDINGS:**
-- compact_arithmetic.c ALREADY implements geometric operations
-- Uses triangulation for multiplication
-- Division uses inverse rotation and magnitude division
-- This is the "memory hopping" architecture from the thesis
-- Already correct, no changes needed
-
-## PHASE 4: SUMMARY AND NEXT STEPS
-
-### [x] Step 5: Summary of Work Done
-
-**COMPLETED:**
-1. Fixed abacus division - replaced O(q) with O(log q × log n) binary search
-2. Verified arithmetic.c - correctly designed as fast double API
-3. Verified compact_arithmetic.c - already uses geometric triangulation
-4. All 51 tests passing
-5. Code committed and pushed to GitHub
-
-**KEY INSIGHTS:**
-- The existing code structure is actually well-designed
-- Three systems coexist for different purposes:
-  * arithmetic.c: Fast double-precision operations
-  * abacus.c: Arbitrary precision with geometric representation
-  * compact_arithmetic.c: Memory-efficient geometric operations (16 bytes/vector)
-- The main issue was the O(q) division in abacus.c - now fixed
-- Compact arithmetic already implements the thesis model correctly
-
-**WHAT'S ACTUALLY NEEDED:**
-The code is mostly correct. The real work is:
-1. Understanding how the systems integrate
-2. Ensuring all operations follow geometric principles
-3. Documenting the architecture clearly
-4. Performance testing and optimization
-
-**REMAINING WORK:**
-- Continue examining math library files
-- Check for any other O(n) algorithms that should be O(1) or O(log n)
-- Verify all operations follow geometric principles
-- Look for redundancies or inconsistencies
-
-## PHASE 5: CONTINUE EXAMINING MATH LIBRARY
-
-### [x] Step 6: Examine Remaining Core Files
-- [x] Checked abacus_gcd.c - uses Euclidean algorithm O(log n) ✅
-- [x] Checked abacus_modular.c - uses binary exponentiation O(log e) ✅
-- [x] All operations use proper complexity
-
-**FINDINGS:**
-- abacus_gcd.c: Euclidean algorithm, O(log n) - CORRECT
-- abacus_modular.c: Binary exponentiation for mod_exp, O(log e) - CORRECT
-- All modular operations properly implemented
-
-### [x] Step 7: Examine Geometry Files
-- [x] Checked clock_lattice.c - Babylonian ring structure (12, 60, 60, 100)
-- [x] Maps primes to clock positions
-- [x] Uses geometric transformations
-
-**FINDINGS:**
-- clock_lattice.c: Implements Babylonian clock structure correctly
-- Ring structure: 12 (hours), 60 (minutes), 60 (seconds), 100 (milliseconds)
-- Total resolution: 4,320,000 positions
-- Maps primes to positions on rings
-
-### [x] Step 8: Examine Prime Generation
-- [x] Checked prime_generation.c - extensive documentation
-- [x] Uses clock lattice for deterministic generation
-- [x] Rainbow table integration for validation
-
-**FINDINGS:**
-- Excellent documentation of the breakthrough
-- Formula: candidate = base + magnitude × 12
-- 100% accuracy validated (tested up to magnitude 1000)
-- Uses hybrid approach: rainbow table + clock lattice validation
-- Phase 1 complete, Phase 2 validated, Phase 3 in progress
-
-## COMPREHENSIVE EXAMINATION SUMMARY
-
-### ✅ What's Working Well:
-
-1. **Abacus Division** - Fixed to O(log q × log n) binary search
-2. **GCD/LCM** - Euclidean algorithm O(log n)
-3. **Modular Arithmetic** - Binary exponentiation O(log e)
-4. **Prime Generation** - Clock lattice based, deterministic
-5. **Compact Arithmetic** - Triangulation-based, memory efficient
-6. **Clock Lattice** - Babylonian structure (12, 60, 60, 100)
-
-### 🔍 Architecture Overview:
-
-**Three-Tier System:**
-1. **arithmetic.c** - Fast double-precision (native C operations)
-2. **abacus.c** - Arbitrary precision (multi-bead geometric representation)
-3. **compact_arithmetic.c** - Memory-efficient (16 bytes/vector, sphere hopping)
-
-**Key Insight:** These are NOT redundant - they serve different purposes:
-- arithmetic.c: Speed (double operations)
-- abacus.c: Precision (arbitrary size numbers)
-- compact_arithmetic.c: Memory efficiency (sphere hopping)
-
-### 📊 Complexity Analysis:
-
-| Operation | arithmetic.c | abacus.c (fast) | abacus.c (slow) | compact |
-|-----------|-------------|-----------------|-----------------|---------|
-| Add/Sub   | O(1)        | O(1)            | O(n)            | O(1)    |
-| Multiply  | O(1)        | O(1)            | O(n²)           | O(1)    |
-| Divide    | O(1)        | O(1)            | O(log q × log n)| O(1)    |
-| GCD       | N/A         | N/A             | O(log n)        | N/A     |
-| Mod Exp   | N/A         | N/A             | O(log e)        | N/A     |
-
-### 🎯 Potential Improvements:
-
-1. **Multiplication (abacus slow path):** Could use Karatsuba O(n^1.585) instead of O(n²)
-2. **Addition/Subtraction (abacus slow path):** Could potentially optimize further
-3. **Documentation:** Add architecture overview document
-4. **Testing:** More comprehensive benchmarks
-5. **Integration:** Ensure all platonic generators use the systems correctly
-
-### ✅ Conclusion:
-
-The math library is **well-designed and mostly correct**. The main fix needed was the division algorithm, which is now complete. The three-tier architecture is intentional and serves different use cases effectively.
-
-## PHASE 6: EXAMINE ALGORITHMS LIBRARY
-
-### [x] Step 9: Understand Algorithms Library Structure
-- [x] Read README.md to understand purpose
-- [x] Identify components and their roles
-- [x] Check dependencies on math library
-
-**FINDINGS:**
-
-**Purpose:** Domain-agnostic mathematical algorithms library
-- Optimization algorithms (SGD, Adam, AdamW, etc.)
-- Loss functions (cross-entropy, MSE, MAE, Huber, etc.)
-- Numerical analysis (softmax, log-sum-exp, safe math)
-- Backpropagation (gradient computation and accumulation)
-- Statistics (mean, variance, correlation, etc.)
-
-**Architecture:**
-```
-libcrystalline.so (Pure Mathematics)
-    ↓ depends on
-libalgorithms.so (Mathematical Algorithms)
-    ↓ depends on
-libcllm.so (Language Model Specific)
-```
-
-**Components:**
-1. loss_functions.c - Cross-entropy, MSE, MAE, Huber, KL divergence
-2. optimizers.c - SGD, Momentum, Adam, AdamW, NAdam, RMSprop
-3. numerical.c - Softmax, log-softmax, safe math operations
-4. backprop.c - Gradient buffers, accumulation, clipping
-5. statistics.c - Descriptive stats, correlation, normalization
-6. ntt_attention.c - NTT-based attention mechanism
-7. angular_attention.c - Angular/geometric attention
-8. sphere_threading.c - Kissing spheres threading
-9. geometric_recovery/ - Geometric recovery algorithms
-10. blind_recovery/ - Blind recovery implementation
-
-### [x] Step 10: Examine Core Algorithm Files
-- [x] Check loss_functions.c - Uses CrystallineAbacus ✅
-- [x] Check optimizers.c - Uses math library transcendental functions ✅
-- [x] Check ntt_attention.c - Uses math/ntt.h and math/abacus.h ✅
-- [x] Check geometric_recovery.c - Uses NEW math library ✅
-
-**FINDINGS:**
-
-**loss_functions.c:**
-- Migrated to use CrystallineAbacus (arbitrary precision)
-- Uses math/abacus.h and math/transcendental.h
-- Cross-entropy loss with numerical stability
-- Converts to/from double for exp/log operations
-
-**optimizers.c:**
-- Uses math library transcendental functions (math_sqrt, math_pow)
-- Implements SGD, Momentum, Adam, AdamW, NAdam, RMSprop, AdaGrad
-- Learning rate scheduling
-- Weight decay support
-
-**ntt_attention.c:**
-- Uses math/ntt.h for Number Theoretic Transform
-- Uses CrystallineAbacus for arbitrary precision
-- O(n log n) attention implementation
-- Migrated from OLD BigInt to NEW Abacus
-
-**geometric_recovery.c:**
-- Uses NEW math library (transcendental functions)
-- Implements tetration attractors
-- Torus intersection curves
-- Fractal partition bounds
-- Multi-scale fractal search
-- 10 function calls migrated to NEW math library
-
-**INTEGRATION STATUS:**
-✅ All examined files properly use the NEW math library
-✅ No dependencies on OLD crystalline library
-✅ Proper use of CrystallineAbacus for arbitrary precision
-✅ Proper use of math library transcendental functions
-
-### [x] Step 11: Examine Specialized Algorithms
-- [x] Checked ntt_attention.c - Uses math/ntt.h and CrystallineAbacus ✅
-- [x] Checked geometric_recovery/ - Uses NEW math library ✅
-- [x] Checked blind_recovery/ - Extensive triangulation implementation ✅
-- [x] Build successful with minor warnings ✅
-
-**FINDINGS:**
-
-**Specialized Algorithms:**
-- ntt_attention.c: O(n log n) attention using NTT
-- geometric_recovery/: Tetration attractors, torus intersections, fractal search
-- blind_recovery/: 24 files implementing comprehensive blind recovery system
-  * triangulation.c, anchor_selection.c, confidence_scoring.c
-  * iterative_refinement.c, convergence_detection.c
-  * multi_scale_analysis.c, recursive_stabilization.c
-  * universal_recovery.c, universal_recovery_v2.c
-  * And 15 more specialized components
-
-**Build Status:**
-✅ Builds successfully
-⚠️ Minor warning: MATH_PHI redefined (defined in both prime_types.h and math/types.h)
-✅ All object files compiled
-✅ Shared library created: libalgorithms.so
-
-### [x] Step 12: Verify Integration with Math Library
-- [x] All algorithms use math library correctly ✅
-- [x] No redundant implementations found ✅
-- [x] Proper use of CrystallineAbacus for arbitrary precision ✅
-- [x] Proper use of math library transcendental functions ✅
-
-**INTEGRATION VERIFICATION:**
-
-✅ **loss_functions.c**: Uses CrystallineAbacus + math/transcendental.h
-✅ **optimizers.c**: Uses math library functions (math_sqrt, math_pow)
-✅ **ntt_attention.c**: Uses math/ntt.h + CrystallineAbacus
-✅ **geometric_recovery.c**: Uses NEW math library (10 function calls migrated)
-✅ **blind_recovery/***: All files properly integrated
-
-**Dependencies:**
-```
-libalgorithms.so
-    ↓ depends on
-libcrystallinemath.so (math library)
-    ↓ depends on
-libssl, libcrypto, libm
-```
-
-**Critical Issue Found:**
-⚠️ prime_types.h is LEGACY CODE that should be migrated or deleted
-- Defines old BigInt, BigFixed, CrystalAbacus types (replaced by NEW math library)
-- Has duplicate MATH_PI and MATH_PHI definitions
-- Still used by 30+ files in algorithms/, include/, cllm/, tests/
-
-**Action Required:**
-1. Migrate files to use NEW math library types (math/types.h, math/abacus.h)
-2. Remove prime_types.h includes
-3. Delete prime_types.h once migration complete
-
-## PHASE 7: MIGRATE FROM LEGACY prime_types.h
-
-### [x] Step 13: Analyze prime_types.h Usage
-- [x] Listed all files using prime_types.h (30+ files)
-- [x] Identified they only need MATH_PI and MATH_PHI constants
-- [x] Created migration plan
-
-**FINDINGS:**
-- prime_types.h defines legacy BigInt, BigFixed, CrystalAbacus types
-- These are replaced by NEW math library (CrystallineAbacus)
-- Files only need constants (MATH_PI, MATH_PHI) which are in math/types.h
-- 30+ files still include prime_types.h
-
-### [x] Step 14: Migrate Algorithms Library
-- [x] Replaced prime_types.h with math/types.h in geometric_recovery/
-- [x] Updated 3 files: geometric_recovery.c, iterative_recovery.c, quadrant_polarity.c
-- [x] Build successful - no errors or warnings ✅
-
-**CHANGES MADE:**
-- geometric_recovery.c: Removed prime_types.h, uses math/types.h for constants
-- iterative_recovery.c: Removed prime_types.h, uses math/types.h
-- quadrant_polarity.c: Removed prime_types.h, uses math/types.h
-- All builds clean with no warnings about MATH_PHI redefinition
-
-### [x] Step 15: Migrate CLLM Source Files
-- [x] Migrated 4 CLLM files to use math/types.h
-- [x] cllm_training_threaded.c
-- [x] cllm_cache_optimization.c
-- [x] cllm_platonic_dodecahedron.c
-- [x] cllm_root_word_modeling.c
-- [x] Full build successful ✅
-
-**PROGRESS SUMMARY:**
-- Algorithms library: 3 files migrated ✅
-- CLLM library: 4 files migrated ✅
-- Total: 7 files migrated from prime_types.h
-
-**REMAINING:**
-- include/ headers: 17 files still use prime_types.h
-- Legacy source files: Not compiled (can be deleted)
-- cllm_lattice_conversion.c: Uses BigFixed but not compiled
-
-### [x] Step 16: Analyze Include Headers and Legacy Code
-- [x] Found 17 headers still include prime_types.h
-- [x] Verified legacy src/core/ files NOT compiled (CORE_SOURCES removed from Makefile)
-- [x] Checked cllm_lattice_conversion.c - already migrated to NEW math library
-- [x] Verified no source files use old BigFixed functions
-- [x] Legacy code status documented in LEGACY_CODE_ANALYSIS.md
-
-## PHASE 8: FINAL SUMMARY
-
-### [x] Step 17: Create Comprehensive Documentation
-- [x] Created LEGACY_CODE_ANALYSIS.md with complete status
-- [x] Documented all legacy code locations
-- [x] Verified build status (all tests passing)
-- [x] Provided recommendations for future cleanup
-
-### ✅ WORK COMPLETE
-
-**Summary of All Work Done:**
-
-1. **Fixed Abacus Division** - Replaced O(q) iterative subtraction with O(log q × log n) binary search
-2. **Verified Architecture** - Three-tier system (arithmetic.c, abacus.c, compact_arithmetic.c) is correct
-3. **Examined All Files** - 52 files in math library, all properly designed
-4. **Migrated 7 Files** - Removed prime_types.h from algorithms and cllm source files
-5. **Analyzed Legacy Code** - Documented status, verified not compiled
-6. **All Tests Passing** - 51/51 tests successful, zero errors
-
-**Current Status:**
-- ✅ Math library: Production ready
-- ✅ Algorithms library: Production ready
-- ✅ CLLM library: Production ready
-- ✅ All builds successful
-- ✅ Zero errors
-- ⚠️ Only harmless MATH_PHI redefinition warnings
-
-**Legacy Code:**
-- Legacy src/core/ files NOT compiled (excluded from Makefile)
-- Legacy headers remain but not used by compiled code
-- No action required - system working correctly
-
-**Recommendations:**
-- Keep current state (legacy code archived in place)
-- Optional: Move to legacy/ directory if warnings become problematic
-- Optional: Add more comprehensive benchmarks
-- Optional: Implement Karatsuba multiplication for abacus slow path
+# Geometric Recovery Orchestrator - Complete Implementation
+
+## CURRENT STATE ANALYSIS
+
+### ✅ COMPLETED COMPONENTS (Clean - No OpenSSL)
+1. ✅ tetration_attractors.c - Tetration attractor system
+2. ✅ torus_analysis.c - Torus identification and analysis
+3. ✅ harmonic_folding.c - Harmonic folding operations
+4. ✅ kissing_spheres.c - Kissing spheres threading
+5. ✅ micro_model.c - Micro-model training and inference
+6. ✅ multi_torus_tracker.c - 20-torus tracking system
+
+### 🔄 IN PROGRESS (Partially Implemented)
+7. 🔄 g_triangulation_abstracted.c - Started but incomplete (needs header)
+8. 🔄 prime_factor_extraction.c - Started but incomplete (needs full implementation)
+9. 🔄 recursive_recovery.c - Started but incomplete (needs header and full implementation)
+
+### ⚠️ HAS OpenSSL (Keep for Reference)
+10. ⚠️ g_triangulation.c - Original with EC_POINT (keep as reference)
+11. ⚠️ iterative_recovery.c - Uses EC_POINT (keep as reference)
+12. ⚠️ q_validation.c - Uses EC_POINT (keep as reference)
+13. ⚠️ ecdsa_test_generator.c - Test generator (keep as reference)
+
+### ❌ MISSING COMPONENTS
+14. ❌ clock_lattice_integration.c - Visualize factors on clock lattice
+15. ❌ anchor_grid_24.c - 24-cell polytope structure
+16. ❌ clock_recovery.c - Clock inverse mapping (exists in reference_implementations)
+17. ❌ spherical_recovery.c - Spherical coordinate recovery
+18. ❌ search_recovery.c - Attractor-guided search
+
+## PHASE 1: COMPLETE IN-PROGRESS COMPONENTS
+
+### [x] Task 1.1: Complete g_triangulation_abstracted.c
+- [x] Create header file: algorithms/include/geometric_recovery/g_triangulation_abstracted.h
+- [x] Define GTriangulationContext structure
+- [x] Define API functions:
+  * g_triangulation_create()
+  * g_triangulation_train()
+  * g_triangulation_estimate()
+  * g_triangulation_get_confidence()
+  * g_triangulation_destroy()
+- [x] Complete implementation in g_triangulation_abstracted.c
+- [x] Add to Makefile
+- [x] Test compilation
+
+### [x] Task 1.2: Complete prime_factor_extraction.c
+- [x] Review existing header: algorithms/include/geometric_recovery/prime_factor_extraction.h
+- [x] Complete implementation:
+  * extract_factor_from_torus() - Extract factor from single torus
+  * find_coprime_tori() - Find two tori with coprime periods
+  * verify_factorization() - Verify p × q = n
+  * compute_confidence() - Calculate extraction confidence
+- [x] Implement main function: extract_prime_factors_from_torus()
+- [x] Test with multi_torus_tracker output (compiles successfully)
+
+### [x] Task 1.3: Complete recursive_recovery.c
+- [x] Create header file: algorithms/include/geometric_recovery/recursive_recovery.h
+- [x] Define RecursiveRecoveryContext structure
+- [x] Define RecoveryBounds structure
+- [x] Define API functions:
+  * recursive_recovery_create()
+  * recursive_refine()
+  * recursive_recovery_destroy()
+- [x] Complete implementation:
+  * Recursive subdivision logic
+  * Adaptive depth control
+  * Confidence scoring
+  * Early termination
+- [x] Add to Makefile
+- [x] Test compilation
+
+## PHASE 2: IMPLEMENT MISSING COMPONENTS
+
+### [ ] Task 2.1: Implement clock_lattice_integration.c
+- [ ] Create header: algorithms/include/geometric_recovery/clock_lattice_integration.h
+- [ ] Define ClockFactorVisualization structure
+- [ ] Implement functions:
+  * map_prime_to_clock() - Map prime to clock position
+  * compute_geometric_distance() - Distance between factors
+  * visualize_factors_on_clock() - Main visualization function
+- [ ] Create source file with full implementation
+- [ ] Add to Makefile
+- [ ] Test with known p, q values
+
+### [ ] Task 2.2: Implement spherical_recovery.c
+- [ ] Create header: algorithms/include/geometric_recovery/spherical_recovery.h
+- [ ] Define SphericalCoords structure
+- [ ] Implement functions:
+  * value_to_spherical() - Convert value to spherical coords
+  * spherical_to_value() - Convert spherical coords to value
+  * compute_great_circle_distance() - Distance on sphere
+  * find_geodesic_path() - Shortest path on sphere
+  * spherical_recover() - Main recovery function
+- [ ] Create source file with full implementation
+- [ ] Add to Makefile
+- [ ] Test compilation
+
+### [ ] Task 2.3: Implement search_recovery.c
+- [ ] Create header: algorithms/include/geometric_recovery/search_recovery.h
+- [ ] Define SearchResults structure
+- [ ] Implement functions:
+  * generate_candidates() - Generate candidates near attractors
+  * score_candidate() - Score candidate by distance
+  * beam_search() - Beam search with pruning
+  * search_with_attractors() - Main search function
+- [ ] Create source file with full implementation
+- [ ] Add to Makefile
+- [ ] Test compilation
+
+### [ ] Task 2.4: Implement anchor_grid_24.c
+- [ ] Create header: algorithms/include/geometric_recovery/anchor_grid_24.h
+- [ ] Define AnchorGrid24 structure
+- [ ] Implement functions:
+  * generate_24cell_vertices() - Generate 24-cell polytope
+  * map_to_13d() - Map vertices to 13D clock lattice
+  * find_nearest_anchors() - Fast nearest-neighbor search
+  * create_anchor_grid_24() - Main creation function
+  * destroy_anchor_grid_24() - Cleanup function
+- [ ] Create source file with full implementation
+- [ ] Add to Makefile
+- [ ] Test compilation
+
+### [ ] Task 2.5: Migrate clock_recovery.c
+- [ ] Check reference_implementations/clock_inverse_mapping.c
+- [ ] Create header: algorithms/include/geometric_recovery/clock_recovery.h
+- [ ] Define ClockRecoveryContext structure
+- [ ] Migrate implementation:
+  * Base inverse from angle
+  * Ring correction
+  * Position correction
+  * Anchor refinement
+  * Weighted blend
+- [ ] Remove OpenSSL dependencies
+- [ ] Add to Makefile
+- [ ] Test compilation
+
+## PHASE 3: UPDATE ORCHESTRATOR
+
+### [ ] Task 3.1: Update geometric_recovery_orchestrator.h
+- [ ] Add includes for all new components
+- [ ] Define complete 7-phase pipeline structure
+- [ ] Define result structures for each phase
+- [ ] Define overall orchestrator context
+
+### [ ] Task 3.2: Implement Full 7-Phase Pipeline
+- [ ] Phase 1: G Triangulation (use g_triangulation_abstracted)
+- [ ] Phase 2: 20-Torus Analysis (use multi_torus_tracker)
+- [ ] Phase 3: Prime Factor Extraction (use prime_factor_extraction)
+- [ ] Phase 4: Clock Lattice Visualization (use clock_lattice_integration)
+- [ ] Phase 5: G Refinement (use g_triangulation_abstracted with p/q)
+- [ ] Phase 6: Micro-Model Training (use micro_model)
+- [ ] Phase 7: Final Recovery (combine all phases)
+
+### [ ] Task 3.3: Implement Orchestrator Functions
+- [ ] geometric_recovery_orchestrator_create()
+- [ ] geometric_recovery_orchestrator_train()
+- [ ] geometric_recovery_orchestrator_recover()
+- [ ] geometric_recovery_orchestrator_get_results()
+- [ ] geometric_recovery_orchestrator_destroy()
+
+## PHASE 4: TESTING AND VALIDATION
+
+### [ ] Task 4.1: Unit Tests
+- [ ] Test g_triangulation_abstracted with synthetic data
+- [ ] Test prime_factor_extraction with known factors
+- [ ] Test recursive_recovery with bounded ranges
+- [ ] Test clock_lattice_integration with known primes
+- [ ] Test spherical_recovery with known mappings
+- [ ] Test search_recovery with attractors
+- [ ] Test anchor_grid_24 with nearest-neighbor queries
+- [ ] Test clock_recovery with known clock positions
+
+### [ ] Task 4.2: Integration Tests
+- [ ] Test Phase 1-2 pipeline (triangulation → torus)
+- [ ] Test Phase 2-3 pipeline (torus → factors)
+- [ ] Test Phase 3-4 pipeline (factors → visualization)
+- [ ] Test Phase 5-6 pipeline (refinement → micro-model)
+- [ ] Test full 7-phase pipeline
+
+### [ ] Task 4.3: Performance Benchmarks
+- [ ] Measure time for each phase
+- [ ] Measure memory usage
+- [ ] Measure reduction factor achieved
+- [ ] Compare with reference implementations
+
+## PHASE 5: DOCUMENTATION
+
+### [ ] Task 5.1: API Documentation
+- [ ] Document all public functions
+- [ ] Document all structures
+- [ ] Document usage examples
+- [ ] Document performance characteristics
+
+### [ ] Task 5.2: Architecture Documentation
+- [ ] Document 7-phase pipeline
+- [ ] Document component interactions
+- [ ] Document data flow
+- [ ] Document design decisions
+
+### [ ] Task 5.3: Usage Examples
+- [ ] Example: ECDLP recovery
+- [ ] Example: Generic discrete log
+- [ ] Example: Embedding recovery
+- [ ] Example: Custom mapping recovery
+
+## SUCCESS CRITERIA
+
+### Technical Requirements
+- [ ] Zero OpenSSL dependencies in algorithms library
+- [ ] All components work with raw uint64_t data
+- [ ] Full 7-phase pipeline operational
+- [ ] All tests passing
+- [ ] Clean compilation (no errors, minimal warnings)
+
+### Functional Requirements
+- [ ] Works with ANY system (crypto, embeddings, etc.)
+- [ ] Accepts simple (input, output) pairs
+- [ ] Provides bounded results with confidence
+- [ ] Reduction factor > 1.0 (search space reduced)
+
+### Quality Requirements
+- [ ] Clean, maintainable code
+- [ ] Comprehensive documentation
+- [ ] Performance benchmarks
+- [ ] Example use cases
+
+## NOTES
+
+**Key Insight:** The geometric recovery orchestrator is UNIVERSAL mathematics, not crypto-specific. It works with any (input, output) pairs that have geometric structure.
+
+**Design Principle:** Abstract away all crypto-specific types (EC_POINT, EC_GROUP) and work with raw uint64_t values. The geometric mathematics remains the same.
+
+**Implementation Strategy:** Build incrementally, test continuously, and maintain backward compatibility with reference implementations.
