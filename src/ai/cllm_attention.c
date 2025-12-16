@@ -315,17 +315,18 @@ static void standard_attention_forward(
         
         // Multi-head attention
         for (uint32_t h = 0; h < num_heads; h++) {
-            // Extract head Q, K, V
-            double* Q_head = &Q[h * head_dim];
-            double* K_head = &K[h * head_dim];
-            double* V_head = &V[h * head_dim];
-            
             // Compute attention scores: Q * K^T / math_sqrt(d_k)
+            // Q, K, V are in interleaved format: [T0H0, T0H1, T1H0, T1H1, ...]
+            // To access Q[token=i, head=h, dim=d]: Q[i * embedding_dim + h * head_dim + d]
+            
             for (uint32_t i = 0; i < seq_len; i++) {
                 for (uint32_t j = 0; j < seq_len; j++) {
                     double score = 0.0;
                     for (uint32_t d = 0; d < head_dim; d++) {
-                        score += Q_head[i * embedding_dim + d] * K_head[j * embedding_dim + d];
+                        // Correct interleaved indexing
+                        uint32_t q_idx = i * embedding_dim + h * head_dim + d;
+                        uint32_t k_idx = j * embedding_dim + h * head_dim + d;
+                        score += Q[q_idx] * K[k_idx];
                     }
                     scores[i * seq_len + j] = score * scale;
                     
@@ -342,12 +343,22 @@ static void standard_attention_forward(
                 softmax(&scores[i * seq_len], seq_len);
             }
             
+            // Cache attention weights for this head immediately (if in training mode)
+            if (cllm_is_training(model)) {
+                size_t head_offset = (b * num_heads + h) * seq_len * seq_len;
+                memcpy(&model->training.layer_cache[layer_idx].attention_weights[head_offset],
+                       scores,
+                       seq_len * seq_len * sizeof(double));
+            }
+            
             // Compute attention output: scores * V
             for (uint32_t i = 0; i < seq_len; i++) {
                 for (uint32_t d = 0; d < head_dim; d++) {
                     double sum = 0.0;
                     for (uint32_t j = 0; j < seq_len; j++) {
-                        sum += scores[i * seq_len + j] * V_head[j * embedding_dim + d];
+                        // Correct interleaved indexing for V
+                        uint32_t v_idx = j * embedding_dim + h * head_dim + d;
+                        sum += scores[i * seq_len + j] * V[v_idx];
                     }
                     batch_output[i * embedding_dim + h * head_dim + d] = sum;
                 }
@@ -363,11 +374,7 @@ static void standard_attention_forward(
         memcpy(model->training.layer_cache[layer_idx].V, V, qkv_size);
         memcpy(model->training.layer_cache[layer_idx].attn_output, attn_output, qkv_size);
         
-        // Cache attention weights (scores after softmax)
-        // Note: This is simplified - in production we'd cache per-head weights
-        size_t attn_weights_size = batch_size * num_heads * seq_len * seq_len * sizeof(double);
-        memcpy(model->training.layer_cache[layer_idx].attention_weights, scores, 
-               scores_size < attn_weights_size ? scores_size : attn_weights_size);
+        // Note: Attention weights are now cached per-head inside the multi-head loop above
     }
     
     // Apply output projection
@@ -909,12 +916,24 @@ void cllm_attention_backward(
             // Continue with other batches
         }
         
+        // Debug: Check head-major gradients BEFORE transpose back
+        if (layer_idx == 0 && b == 0 && batch_size == 2) {
+            double gQ_sum = 0.0, gK_sum = 0.0, gV_sum = 0.0;
+            for (size_t i = 0; i < seq_len * embedding_dim; i++) {
+                gQ_sum += (grad_Q_head_major[i] > 0 ? grad_Q_head_major[i] : -grad_Q_head_major[i]);
+                gK_sum += (grad_K_head_major[i] > 0 ? grad_K_head_major[i] : -grad_K_head_major[i]);
+                gV_sum += (grad_V_head_major[i] > 0 ? grad_V_head_major[i] : -grad_V_head_major[i]);
+            }
+            printf("  [DEBUG] Head-major gradients: grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
+                   gQ_sum, gK_sum, gV_sum);
+        }
+        
         // Transpose gradients back from head-major to CLLM's interleaved layout
         transpose_head_major_to_interleaved(grad_Q_head_major, batch_grad_Q, seq_len, num_heads, head_dim);
         transpose_head_major_to_interleaved(grad_K_head_major, batch_grad_K, seq_len, num_heads, head_dim);
         transpose_head_major_to_interleaved(grad_V_head_major, batch_grad_V, seq_len, num_heads, head_dim);
         
-        // Debug: Check outputs after calling backward pass
+        // Debug: Check outputs after transpose back
         if (layer_idx == 0 && b == 0 && batch_size == 2) {
             double gQ_sum = 0.0, gK_sum = 0.0, gV_sum = 0.0;
             for (size_t i = 0; i < seq_len * embedding_dim; i++) {
@@ -922,7 +941,7 @@ void cllm_attention_backward(
                 gK_sum += (batch_grad_K[i] > 0 ? batch_grad_K[i] : -batch_grad_K[i]);
                 gV_sum += (batch_grad_V[i] > 0 ? batch_grad_V[i] : -batch_grad_V[i]);
             }
-            printf("  [DEBUG] After backward (interleaved): grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
+            printf("  [DEBUG] After transpose back (interleaved): grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
                    gQ_sum, gK_sum, gV_sum);
         }
     }

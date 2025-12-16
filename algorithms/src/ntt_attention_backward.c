@@ -192,16 +192,55 @@ static int compute_qk_gradients(
         scaled_grad[i] = grad_scores[i] * scale_factor;
     }
     
+    // Debug: Check scaled_grad
+    if (seq_len == 4 && head_dim == 4) {
+        double scaled_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+            scaled_sum += (scaled_grad[i] > 0 ? scaled_grad[i] : -scaled_grad[i]);
+        }
+        printf("  [ALGO DEBUG] scaled_grad sum: %.6f (scale_factor=%.6f)\n", scaled_sum, scale_factor);
+        
+        // Check Q and K inputs
+        double Q_sum = 0.0, K_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * head_dim; i++) {
+            Q_sum += (queries[i] > 0 ? queries[i] : -queries[i]);
+            K_sum += (keys[i] > 0 ? keys[i] : -keys[i]);
+        }
+        printf("  [ALGO DEBUG] Q sum: %.6f, K sum: %.6f\n", Q_sum, K_sum);
+    }
+    
     // Compute grad_Q = scaled_grad × K
     // scaled_grad is [seq_len x seq_len], K is [seq_len x head_dim]
     // Result is [seq_len x head_dim]
+    
+    // Debug: Print first few values
+    printf("  [ALGO DEBUG] seq_len=%u, head_dim=%u\n", seq_len, head_dim);
+    if (seq_len == 4 && head_dim == 4) {
+        printf("  [ALGO DEBUG] First scaled_grad values: %.10f, %.10f, %.10f, %.10f\n",
+               scaled_grad[0], scaled_grad[1], scaled_grad[2], scaled_grad[3]);
+        printf("  [ALGO DEBUG] First K values: %.10f, %.10f, %.10f, %.10f\n",
+               keys[0], keys[1], keys[2], keys[3]);
+    }
+    
     for (uint32_t i = 0; i < seq_len; i++) {
         for (uint32_t k = 0; k < head_dim; k++) {
             double sum = 0.0;
             for (uint32_t j = 0; j < seq_len; j++) {
-                sum += scaled_grad[i * seq_len + j] * keys[j * head_dim + k];
+                double contrib = scaled_grad[i * seq_len + j] * keys[j * head_dim + k];
+                sum += contrib;
+                
+                // Debug first iteration
+                if (seq_len == 4 && head_dim == 4 && i == 0 && k == 0 && j < 4) {
+                    printf("  [ALGO DEBUG] i=%u, k=%u, j=%u: scaled_grad=%.10f, key=%.10f, contrib=%.10f, sum=%.10f\n",
+                           i, k, j, scaled_grad[i * seq_len + j], keys[j * head_dim + k], contrib, sum);
+                }
             }
             grad_queries[i * head_dim + k] = sum;
+            
+            // Debug first result
+            if (seq_len == 4 && head_dim == 4 && i == 0 && k == 0) {
+                printf("  [ALGO DEBUG] grad_queries[0][0] = %.10f\n", sum);
+            }
         }
     }
     
@@ -217,6 +256,16 @@ static int compute_qk_gradients(
             }
             grad_keys[i * head_dim + k] = sum;
         }
+    }
+    
+    // Debug: Check results
+    if (seq_len == 4 && head_dim == 4) {
+        double gQ_sum = 0.0, gK_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * head_dim; i++) {
+            gQ_sum += (grad_queries[i] > 0 ? grad_queries[i] : -grad_queries[i]);
+            gK_sum += (grad_keys[i] > 0 ? grad_keys[i] : -grad_keys[i]);
+        }
+        printf("  [ALGO DEBUG] After matmul: grad_Q sum: %.6f, grad_K sum: %.6f\n", gQ_sum, gK_sum);
     }
     
     free(scaled_grad);
@@ -271,10 +320,28 @@ int ntt_attention_backward_single_head_double(
         goto cleanup_error;
     }
     
+    // Debug: Check grad_attention
+    if (seq_len == 4 && head_dim == 4) {
+        double grad_attn_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+            grad_attn_sum += (grad_attention[i] > 0 ? grad_attention[i] : -grad_attention[i]);
+        }
+        printf("  [ALGO DEBUG] grad_attention sum: %.6f\n", grad_attn_sum);
+    }
+    
     // Step 3: Compute ∂L/∂S (softmax backward)
     if (!softmax_backward(grad_scores, grad_attention, attention_weights, seq_len)) {
         fprintf(stderr, "Error: Failed to compute softmax backward\n");
         goto cleanup_error;
+    }
+    
+    // Debug: Check grad_scores after softmax backward
+    if (seq_len == 4 && head_dim == 4) {
+        double grad_scores_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+            grad_scores_sum += (grad_scores[i] > 0 ? grad_scores[i] : -grad_scores[i]);
+        }
+        printf("  [ALGO DEBUG] grad_scores sum after softmax_backward: %.6f\n", grad_scores_sum);
     }
     
     // Step 4: Compute ∂L/∂Q and ∂L/∂K
@@ -282,6 +349,23 @@ int ntt_attention_backward_single_head_double(
                               queries, keys, seq_len, head_dim, scale_factor)) {
         fprintf(stderr, "Error: Failed to compute Q/K gradients\n");
         goto cleanup_error;
+    }
+    
+    // Debug: Check grad_scores before computing Q/K gradients
+    if (seq_len == 4 && head_dim == 4) {
+        double grad_scores_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * seq_len; i++) {
+            grad_scores_sum += (grad_scores[i] > 0 ? grad_scores[i] : -grad_scores[i]);
+        }
+        printf("  [ALGO DEBUG] grad_scores sum: %.6f\n", grad_scores_sum);
+        
+        double gQ_sum = 0.0, gK_sum = 0.0;
+        for (uint32_t i = 0; i < seq_len * head_dim; i++) {
+            gQ_sum += (grad_queries[i] > 0 ? grad_queries[i] : -grad_queries[i]);
+            gK_sum += (grad_keys[i] > 0 ? grad_keys[i] : -grad_keys[i]);
+        }
+        printf("  [ALGO DEBUG] After compute_qk_gradients: grad_Q sum: %.6f, grad_K sum: %.6f\n",
+               gQ_sum, gK_sum);
     }
     
     // Cleanup
