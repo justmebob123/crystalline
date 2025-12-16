@@ -171,6 +171,7 @@ CLLMAlgorithmAdapter* cllm_adapter_create(
     adapter->cllm_hierarchy = cllm_hierarchy;
     adapter->thread_pool = pool->thread_pool;
     adapter->adapter_id = pool->num_adapters;
+    adapter->ntt_attention_context = NULL;  // Initialized on demand
     adapter->initialized = false;
     
     // Add to pool
