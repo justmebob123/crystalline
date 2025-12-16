@@ -267,29 +267,69 @@ We'll implement incrementally with testing at each step:
 
 ### Step 2: Convert Embeddings Layer to CrystallineAbacus [IN PROGRESS] 🚀
 
-**Goal**: Replace double-precision embeddings with AbacusMatrix for arbitrary precision
+**Goal**: Implement hierarchical memory-optimized embeddings with shared abacus structure
 
-**Current State Analysis**:
-- Embeddings stored as: double* embeddings [vocab_size × embedding_dim]
-- Positional encoding: double* positional_encoding [max_seq_len × embedding_dim]
-- Initialization: Uses clock lattice + Platonic geometry
-- Typical size: 50,000 vocab × 768 dim = 38.4M doubles = 307 MB
+**Architecture Insight** (from user):
+- Use hierarchical design with kissing spheres and 12-fold symmetry
+- Shared abacus with sphere packing for structured memory access
+- Each thread can operate on shared abacus OR make own copy OR create new abacus
+- Platonic solid design + deep relationship to abacus + clock = fundamental truths
+- Dynamic scaling of nested platonic solids allows infinitely scaling abacus and spheres
 
-**Implementation Plan**:
+**Current State**:
+- ✅ Basic AbacusMatrix infrastructure complete (Step 1)
+- ✅ Abacus embeddings allocated and synced in cllm_create()
+- ✅ Memory usage comparison working (Abacus: 3.61 MB, Double: 0.05 MB)
+- ✅ Values synced with negligible error (1.73e-18)
+
+**Implementation Plan** (Memory-Optimized):
 1. [x] Add AbacusMatrix fields to CLLMModel structure ✅
 2. [x] Update cllm_create() to initialize abacus embeddings ✅
 3. [x] Convert cllm_init_embeddings() to sync with abacus ✅
-4. [ ] Update embedding lookup to convert abacus to double for computation
-5. [ ] Update embedding gradients to convert double to abacus for storage
-6. [x] Test memory usage and correctness ✅
-7. [ ] Benchmark performance impact
+4. [x] Design hierarchical shared memory structure for embeddings ✅
+   - [x] Created PHASE3_HIERARCHICAL_MEMORY_DESIGN.md
+   - [x] Designed 3-tier memory architecture (READ_ONLY, COW, LOCKED_WRITE)
+   - [x] Mapped embeddings to sphere threading model
+   - [x] Implemented shared abacus access patterns
+   - [x] Used kissing sphere boundaries for memory sharing
+5. [x] Implement hierarchical embeddings infrastructure ✅
+   - [x] Created cllm_hierarchical_embeddings.h (500+ lines)
+   - [x] Implemented cllm_hierarchical_embeddings.c (900+ lines)
+   - [x] Token-to-sphere mapping using clock geometry
+   - [x] Sphere neighbor relationships (12-fold symmetry)
+   - [x] Boundary buffers for cross-sphere communication
+   - [x] Lock-free reads, minimal write contention
+   - [x] Successfully compiled and integrated
+6. [ ] Update embedding lookup for forward pass
+   - [ ] Integrate hemb_lookup_embedding() into cllm_embedding.c
+   - [ ] Convert abacus → double for computation
+   - [ ] Cache frequently accessed embeddings (already implemented in hemb)
+7. [ ] Update gradient storage for backward pass
+   - [ ] Integrate hemb_update_gradient() into backward pass
+   - [ ] Convert double gradients → abacus for storage
+   - [ ] Accumulate gradients in shared memory
+8. [ ] Test hierarchical embeddings
+   - [ ] Create unit tests
+   - [ ] Verify correctness vs baseline
+   - [ ] Test with different sphere counts (1, 12, 144)
+9. [ ] Benchmark performance impact
+   - [ ] Memory usage comparison
+   - [ ] Lookup performance
+   - [ ] Update performance
+   - [ ] Cache hit rates
+10. [ ] Optimize and tune
+    - [ ] Adjust cache sizes
+    - [ ] Tune synchronization frequency
+    - [ ] Optimize boundary buffer sizes
 
 **Expected Benefits**:
 - Arbitrary precision storage (no floating-point errors)
-- Potential memory savings with sparse representation
-- Foundation for full abacus-based training
+- Memory savings through shared abacus structure
+- Optimal cache locality via sphere packing
+- Thread-safe parallel access
+- Scalable to infinite dimensions via nested platonic solids
 
-**Next Step**: Add AbacusMatrix fields to CLLMModel structure
+**Next Step**: Design hierarchical shared memory structure for embeddings
 
 ### Documentation Created
 - ✅ PHASE3_ABACUS_ANALYSIS.md - Detailed analysis of current state

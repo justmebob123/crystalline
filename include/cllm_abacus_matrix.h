@@ -156,6 +156,38 @@ MathError abacus_matrix_from_doubles(AbacusMatrix* matrix, const double* data);
  */
 MathError abacus_matrix_to_doubles(const AbacusMatrix* matrix, double* data);
 
+/**
+ * @brief Get a single row as doubles
+ * 
+ * Converts one row of the matrix to double precision values.
+ * 
+ * @param matrix Matrix to read from
+ * @param row Row index
+ * @param output Output array [cols]
+ * @return MATH_SUCCESS on success, error code otherwise
+ */
+MathError abacus_matrix_get_row_as_doubles(
+    const AbacusMatrix* matrix,
+    uint32_t row,
+    double* output
+);
+
+/**
+ * @brief Set a single row from doubles
+ * 
+ * Sets one row of the matrix from double precision values.
+ * 
+ * @param matrix Matrix to write to
+ * @param row Row index
+ * @param input Input array [cols]
+ * @return MATH_SUCCESS on success, error code otherwise
+ */
+MathError abacus_matrix_set_row_from_doubles(
+    AbacusMatrix* matrix,
+    uint32_t row,
+    const double* input
+);
+
 /* ============================================================================
  * ELEMENT ACCESS
  * ============================================================================

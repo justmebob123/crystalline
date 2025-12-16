@@ -202,6 +202,60 @@ MathError abacus_matrix_to_doubles(const AbacusMatrix* matrix, double* data) {
     return MATH_SUCCESS;
 }
 
+/**
+ * Get a single row as doubles
+ */
+MathError abacus_matrix_get_row_as_doubles(
+    const AbacusMatrix* matrix,
+    uint32_t row,
+    double* output
+) {
+    if (!matrix || !output) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (row >= matrix->rows) {
+        return MATH_ERROR_INVALID_ARGUMENT;
+    }
+    
+    // Convert each element in the row
+    for (uint32_t col = 0; col < matrix->cols; col++) {
+        MathError err = abacus_matrix_get_double(matrix, row, col, &output[col]);
+        if (err != MATH_SUCCESS) {
+            return err;
+        }
+    }
+    
+    return MATH_SUCCESS;
+}
+
+/**
+ * Set a single row from doubles
+ */
+MathError abacus_matrix_set_row_from_doubles(
+    AbacusMatrix* matrix,
+    uint32_t row,
+    const double* input
+) {
+    if (!matrix || !input) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (row >= matrix->rows) {
+        return MATH_ERROR_INVALID_ARGUMENT;
+    }
+    
+    // Set each element in the row
+    for (uint32_t col = 0; col < matrix->cols; col++) {
+        MathError err = abacus_matrix_set_double(matrix, row, col, input[col]);
+        if (err != MATH_SUCCESS) {
+            return err;
+        }
+    }
+    
+    return MATH_SUCCESS;
+}
+
 /* ============================================================================
  * ELEMENT ACCESS
  * ============================================================================
