@@ -49,8 +49,12 @@ PHASE2_TESTS = \
         test_file_io \
         test_training_functions
 
+# Phase 3 tests (NEW - CrystallineAbacus integration)
+PHASE3_TESTS = \
+        test_abacus_matrix
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS) $(PHASE3_TESTS)
 
 .PHONY: all unit integration performance validation diagnostic kissing-spheres clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-all
 
@@ -278,3 +282,24 @@ run-phase2: $(PHASE2_TESTS)
 	@echo ""
 	@echo "✓ All Phase 2 tests completed"
 
+
+# ============================================================================
+# PHASE 3 TESTS (CrystallineAbacus Integration)
+# ============================================================================
+
+test_abacus_matrix: test_abacus_matrix.c
+	@echo "Building test_abacus_matrix..."
+	$(CC) $(CFLAGS) -I../math/include -o $@ $< -L.. -L../algorithms -L../math/lib -lcllm -lalgorithms -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ test_abacus_matrix built"
+
+run-phase3: $(PHASE3_TESTS)
+	@echo ""
+	@echo "══════════════════════════════════════════════════════════"
+	@echo "Running Phase 3 Tests (CrystallineAbacus Integration)"
+	@echo "══════════════════════════════════════════════════════════"
+	@for test in $(PHASE3_TESTS); do \
+		echo ""; \
+		LD_LIBRARY_PATH=../math/lib:$$LD_LIBRARY_PATH ./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All Phase 3 tests completed"

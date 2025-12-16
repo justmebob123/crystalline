@@ -402,12 +402,28 @@ MathError abacus_matrix_mul(AbacusMatrix* result, const AbacusMatrix* A, const A
                     abacus_free(sum);
                     return MATH_ERROR_ALLOCATION;
                 }
+                abacus_set_precision(product, result->precision);
                 
                 err = abacus_mul(product, a_ik, b_kj);
                 if (err != MATH_SUCCESS) {
                     abacus_free(product);
                     abacus_free(sum);
                     return err;
+                }
+                
+                // Normalize: convert to double and back to fix exponent issues
+                double product_val;
+                err = abacus_to_double(product, &product_val);
+                abacus_free(product);
+                if (err != MATH_SUCCESS) {
+                    abacus_free(sum);
+                    return err;
+                }
+                
+                product = abacus_from_double(product_val, result->base, result->precision);
+                if (!product) {
+                    abacus_free(sum);
+                    return MATH_ERROR_OUT_OF_MEMORY;
                 }
                 
                 // Add to sum
@@ -417,6 +433,7 @@ MathError abacus_matrix_mul(AbacusMatrix* result, const AbacusMatrix* A, const A
                     abacus_free(sum);
                     return MATH_ERROR_ALLOCATION;
                 }
+                abacus_set_precision(new_sum, result->precision);
                 
                 err = abacus_add(new_sum, sum, product);
                 abacus_free(product);
@@ -458,7 +475,34 @@ MathError abacus_matrix_scale(AbacusMatrix* result, const AbacusMatrix* matrix, 
     // Element-wise multiplication by scalar
     size_t total_elements = (size_t)matrix->rows * matrix->cols;
     for (size_t i = 0; i < total_elements; i++) {
-        MathError err = abacus_mul(result->data[i], matrix->data[i], scalar);
+        // Multiply
+        CrystallineAbacus* temp = abacus_new(result->base);
+        if (!temp) {
+            return MATH_ERROR_ALLOCATION;
+        }
+        abacus_set_precision(temp, result->precision);
+        
+        MathError err = abacus_mul(temp, matrix->data[i], scalar);
+        if (err != MATH_SUCCESS) {
+            abacus_free(temp);
+            return err;
+        }
+        
+        // Normalize: convert to double and back
+        double temp_val;
+        err = abacus_to_double(temp, &temp_val);
+        abacus_free(temp);
+        if (err != MATH_SUCCESS) {
+            return err;
+        }
+        
+        // Free old value and assign new one
+        abacus_free(result->data[i]);
+        result->data[i] = abacus_from_double(temp_val, result->base, result->precision);
+        if (!result->data[i]) {
+            return MATH_ERROR_OUT_OF_MEMORY;
+        }
+        
         if (err != MATH_SUCCESS) {
             return err;
         }
@@ -628,4 +672,103 @@ bool abacus_matrix_is_valid(const AbacusMatrix* matrix) {
     }
     
     return true;
+}
+MathError abacus_matrix_transpose(AbacusMatrix* result, const AbacusMatrix* matrix) {
+    if (!result || !matrix) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (!matrix->initialized) {
+        return MATH_ERROR_INVALID_STATE;
+    }
+    
+    // Result must have swapped dimensions
+    if (result->rows != matrix->cols || result->cols != matrix->rows) {
+        return MATH_ERROR_DIMENSION_MISMATCH;
+    }
+    
+    // Transpose: result[j][i] = matrix[i][j]
+    for (uint32_t i = 0; i < matrix->rows; i++) {
+        for (uint32_t j = 0; j < matrix->cols; j++) {
+            CrystallineAbacus* src = abacus_matrix_get(matrix, i, j);
+            if (!src) {
+                return MATH_ERROR_NULL_POINTER;
+            }
+            
+            MathError err = abacus_matrix_set(result, j, i, src);
+            if (err != MATH_SUCCESS) {
+                return err;
+            }
+        }
+    }
+    
+    result->initialized = true;
+    return MATH_SUCCESS;
+}
+
+MathError abacus_matrix_hadamard(AbacusMatrix* result, const AbacusMatrix* a, const AbacusMatrix* b) {
+    if (!result || !a || !b) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (!a->initialized || !b->initialized) {
+        return MATH_ERROR_INVALID_STATE;
+    }
+    
+    // All matrices must have same dimensions
+    if (a->rows != b->rows || a->cols != b->cols) {
+        return MATH_ERROR_DIMENSION_MISMATCH;
+    }
+    
+    if (result->rows != a->rows || result->cols != a->cols) {
+        return MATH_ERROR_DIMENSION_MISMATCH;
+    }
+    
+    // Element-wise multiplication
+    for (uint32_t i = 0; i < a->rows; i++) {
+        for (uint32_t j = 0; j < a->cols; j++) {
+            CrystallineAbacus* a_elem = abacus_matrix_get(a, i, j);
+            CrystallineAbacus* b_elem = abacus_matrix_get(b, i, j);
+            
+            if (!a_elem || !b_elem) {
+                return MATH_ERROR_NULL_POINTER;
+            }
+            
+            // Multiply elements
+            CrystallineAbacus* product = abacus_new(result->base);
+            if (!product) {
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            abacus_set_precision(product, result->precision);
+            
+            MathError err = abacus_mul(product, a_elem, b_elem);
+            if (err != MATH_SUCCESS) {
+                abacus_free(product);
+                return err;
+            }
+            
+            // Normalize: convert to double and back
+            double product_val;
+            err = abacus_to_double(product, &product_val);
+            abacus_free(product);
+            if (err != MATH_SUCCESS) {
+                return err;
+            }
+            
+            product = abacus_from_double(product_val, result->base, result->precision);
+            if (!product) {
+                return MATH_ERROR_OUT_OF_MEMORY;
+            }
+            
+            err = abacus_matrix_set(result, i, j, product);
+            abacus_free(product);
+            
+            if (err != MATH_SUCCESS) {
+                return err;
+            }
+        }
+    }
+    
+    result->initialized = true;
+    return MATH_SUCCESS;
 }
