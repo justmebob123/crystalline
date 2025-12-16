@@ -552,7 +552,7 @@
             
             // If it's a directory (chapter folder), append /content.md
             let actualPath = filePath;
-            if (!filePath.endsWith('.md') &amp;&amp; !filePath.endsWith('.html')) {
+            if (!filePath.endsWith('.md') && !filePath.endsWith('.html')) {
                 // It's a directory, load content.md from it
                 actualPath = filePath.replace(/\/$/, '') + '/content.md';
             }
