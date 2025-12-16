@@ -1,21 +1,26 @@
-# Chapter 20: Cryptography
+# Chapter 20: Cryptographic Applications
 
 ## Overview
 
-This chapter covers cryptography.
+This chapter explores potential cryptographic applications of the clock lattice and Babylonian mathematical principles.
 
-## Contents
+**Status**: Planned but not yet written. This chapter represents future research directions.
 
-- [Main Content](content.md)
+## Planned Topics
 
-## Related
+- Geometric encryption schemes
+- Digital signatures using clock lattice
+- Quantum-resistant cryptography
+- Lattice-based security
 
-- **Prototypes:** See `prototypes/chapter_20_*/`
-- **Tests:** See `tests/unit/chapter_20/`
+## Files
 
-## Navigation
+- `content.md` - Placeholder with planned sections and future work
 
-- [Previous Chapter](../chapter_19_*/) (if applicable)
-- [Next Chapter](../chapter_21_*/) (if applicable)
-- [Back to Part](../)
-- [Back to Thesis](../../)
+## Related Work
+
+See Chapter 17 (Novel Hashing) for related cryptographic primitives already developed.
+
+---
+
+[← Back to Part IV](../) | [View Content](content.md)

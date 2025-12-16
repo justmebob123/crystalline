@@ -1,9 +1,4 @@
 <?php
-/**
- * Thesis REST API
- * Scans thesis directory structure and serves content
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -11,170 +6,170 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+    http_response_code(200);
+    exit();
 }
 
-// Base directory (one level up from api/)
+// Base directory for thesis files
 $baseDir = dirname(__DIR__);
 
+// Get the action from query parameter
+$action = $_GET['action'] ?? 'structure';
+
 /**
- * Get directory structure
+ * Recursively scan directory and build file structure
  */
-function getStructure($dir, $basePath = '') {
-    $structure = [];
+function scanDirectory($dir, $relativePath = '') {
+    $result = [];
     
     if (!is_dir($dir)) {
-        return $structure;
+        return $result;
     }
     
     $items = scandir($dir);
     
     foreach ($items as $item) {
-        if ($item === '.' || $item === '..' || $item === 'api' || $item === 'archive') {
+        if ($item === '.' || $item === '..') {
             continue;
         }
         
         $fullPath = $dir . '/' . $item;
-        $relativePath = $basePath ? $basePath . '/' . $item : $item;
+        $itemRelativePath = $relativePath ? $relativePath . '/' . $item : $item;
         
         if (is_dir($fullPath)) {
-            // Check if it's a part or chapter directory
-            if (preg_match('/^part_\d+_/', $item) || preg_match('/^chapter_\d+_/', $item)) {
-                $structure[] = [
-                    'type' => 'directory',
-                    'name' => $item,
-                    'path' => $relativePath,
-                    'displayName' => formatName($item),
-                    'children' => getStructure($fullPath, $relativePath)
-                ];
+            // Skip certain directories
+            if (in_array($item, ['api', '.git', 'node_modules'])) {
+                continue;
             }
-        } elseif (pathinfo($item, PATHINFO_EXTENSION) === 'md') {
-            $structure[] = [
-                'type' => 'file',
+            
+            $result[] = [
                 'name' => $item,
-                'path' => $relativePath,
-                'displayName' => formatName($item),
+                'type' => 'directory',
+                'path' => $itemRelativePath,
+                'children' => scanDirectory($fullPath, $itemRelativePath)
+            ];
+        } elseif (pathinfo($item, PATHINFO_EXTENSION) === 'md') {
+            $result[] = [
+                'name' => $item,
+                'type' => 'file',
+                'path' => $itemRelativePath,
                 'size' => filesize($fullPath)
             ];
         }
     }
     
-    // Sort: directories first, then files
-    usort($structure, function($a, $b) {
-        if ($a['type'] === $b['type']) {
-            return strcmp($a['name'], $b['name']);
+    // Sort: directories first, then files, both alphabetically
+    usort($result, function($a, $b) {
+        if ($a['type'] !== $b['type']) {
+            return $a['type'] === 'directory' ? -1 : 1;
         }
-        return $a['type'] === 'directory' ? -1 : 1;
+        return strcasecmp($a['name'], $b['name']);
     });
     
-    return $structure;
-}
-
-/**
- * Format directory/file names for display
- */
-function formatName($name) {
-    // Remove .md extension
-    $name = preg_replace('/\.md$/', '', $name);
-    
-    // Replace underscores with spaces
-    $name = str_replace('_', ' ', $name);
-    
-    // Capitalize words
-    $name = ucwords($name);
-    
-    // Handle special cases
-    $name = str_replace('Qa', 'Q&A', $name);
-    $name = str_replace('Ntt', 'NTT', $name);
-    $name = str_replace('Ai', 'AI', $name);
-    $name = str_replace('88d', '88D', $name);
-    
-    return $name;
+    return $result;
 }
 
 /**
  * Get file content
  */
-function getContent($path) {
-    global $baseDir;
-    
-    $fullPath = $baseDir . '/' . $path;
+function getFileContent($filePath) {
+    $fullPath = $GLOBALS['baseDir'] . '/' . $filePath;
     
     // Security check: ensure path is within base directory
+    $realBase = realpath($GLOBALS['baseDir']);
     $realPath = realpath($fullPath);
-    $realBase = realpath($baseDir);
     
     if ($realPath === false || strpos($realPath, $realBase) !== 0) {
-        return ['error' => 'Invalid path'];
+        return [
+            'success' => false,
+            'error' => 'Invalid file path'
+        ];
     }
     
     if (!file_exists($fullPath)) {
-        return ['error' => 'File not found'];
+        return [
+            'success' => false,
+            'error' => 'File not found'
+        ];
+    }
+    
+    if (!is_file($fullPath)) {
+        return [
+            'success' => false,
+            'error' => 'Not a file'
+        ];
     }
     
     $content = file_get_contents($fullPath);
-    $stats = [
-        'size' => filesize($fullPath),
-        'modified' => filemtime($fullPath),
-        'lines' => substr_count($content, "\n") + 1
-    ];
+    
+    if ($content === false) {
+        return [
+            'success' => false,
+            'error' => 'Failed to read file'
+        ];
+    }
     
     return [
+        'success' => true,
         'content' => $content,
-        'stats' => $stats,
-        'path' => $path
+        'path' => $filePath,
+        'size' => strlen($content),
+        'modified' => filemtime($fullPath)
     ];
 }
 
 /**
- * Search content
+ * Search for files containing query
  */
-function searchContent($query) {
-    global $baseDir;
-    
+function searchFiles($query) {
     $results = [];
-    $query = strtolower($query);
+    $baseDir = $GLOBALS['baseDir'];
     
     $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($baseDir)
+        new RecursiveDirectoryIterator($baseDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
     );
     
     foreach ($iterator as $file) {
         if ($file->isFile() && $file->getExtension() === 'md') {
-            $relativePath = str_replace($baseDir . '/', '', $file->getPathname());
-            
-            // Skip archive directory
-            if (strpos($relativePath, 'archive/') === 0) {
-                continue;
-            }
-            
             $content = file_get_contents($file->getPathname());
-            $lowerContent = strtolower($content);
             
-            if (strpos($lowerContent, $query) !== false) {
-                // Find context around matches
+            if (stripos($content, $query) !== false) {
+                $relativePath = str_replace($baseDir . '/', '', $file->getPathname());
+                
+                // Find context around match
                 $lines = explode("\n", $content);
-                $matches = [];
+                $matchingLines = [];
                 
                 foreach ($lines as $lineNum => $line) {
                     if (stripos($line, $query) !== false) {
-                        $matches[] = [
-                            'line' => $lineNum + 1,
-                            'text' => trim($line),
-                            'context' => array_slice($lines, max(0, $lineNum - 1), 3)
-                        ];
+                        $start = max(0, $lineNum - 2);
+                        $end = min(count($lines) - 1, $lineNum + 2);
                         
-                        if (count($matches) >= 3) break; // Limit matches per file
+                        $context = [];
+                        for ($i = $start; $i <= $end; $i++) {
+                            $context[] = [
+                                'line' => $i + 1,
+                                'text' => $lines[$i],
+                                'match' => $i === $lineNum
+                            ];
+                        }
+                        
+                        $matchingLines[] = $context;
+                        
+                        // Limit to 3 matches per file
+                        if (count($matchingLines) >= 3) {
+                            break;
+                        }
                     }
                 }
                 
-                if (!empty($matches)) {
-                    $results[] = [
-                        'file' => $relativePath,
-                        'displayName' => formatName(basename($relativePath)),
-                        'matches' => $matches
-                    ];
-                }
+                $results[] = [
+                    'path' => $relativePath,
+                    'name' => $file->getFilename(),
+                    'matches' => $matchingLines,
+                    'size' => $file->getSize()
+                ];
             }
         }
     }
@@ -185,41 +180,37 @@ function searchContent($query) {
 /**
  * Get statistics
  */
-function getStats() {
-    global $baseDir;
-    
+function getStatistics() {
+    $baseDir = $GLOBALS['baseDir'];
     $stats = [
-        'totalFiles' => 0,
-        'totalLines' => 0,
-        'totalSize' => 0,
+        'total_files' => 0,
+        'total_lines' => 0,
+        'total_size' => 0,
         'chapters' => 0,
         'parts' => 0
     ];
     
     $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($baseDir)
+        new RecursiveDirectoryIterator($baseDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
     );
     
     foreach ($iterator as $file) {
         if ($file->isFile() && $file->getExtension() === 'md') {
-            $relativePath = str_replace($baseDir . '/', '', $file->getPathname());
-            
-            // Skip archive
-            if (strpos($relativePath, 'archive/') === 0) {
-                continue;
-            }
-            
-            $stats['totalFiles']++;
-            $stats['totalSize'] += $file->getSize();
+            $stats['total_files']++;
+            $stats['total_size'] += $file->getSize();
             
             $content = file_get_contents($file->getPathname());
-            $stats['totalLines'] += substr_count($content, "\n") + 1;
+            $stats['total_lines'] += substr_count($content, "\n");
+            
+            $relativePath = str_replace($baseDir . '/', '', $file->getPathname());
+            
+            if (strpos($relativePath, 'part_') === 0) {
+                $stats['parts']++;
+            }
             
             if (strpos($relativePath, 'chapter_') !== false) {
                 $stats['chapters']++;
-            }
-            if (strpos($relativePath, 'part_') !== false && basename($relativePath) === 'README.md') {
-                $stats['parts']++;
             }
         }
     }
@@ -227,55 +218,57 @@ function getStats() {
     return $stats;
 }
 
-// Route handling
-$action = $_GET['action'] ?? 'structure';
-
+// Handle different actions
 try {
     switch ($action) {
         case 'structure':
-            $response = [
+            $structure = scanDirectory($baseDir);
+            echo json_encode([
                 'success' => true,
-                'data' => getStructure($baseDir)
-            ];
+                'structure' => $structure
+            ], JSON_PRETTY_PRINT);
             break;
             
-        case 'content':
-            $path = $_GET['path'] ?? '';
-            if (empty($path)) {
-                throw new Exception('Path parameter required');
+        case 'file':
+            $filePath = $_GET['path'] ?? '';
+            if (empty($filePath)) {
+                throw new Exception('File path is required');
             }
-            $response = [
-                'success' => true,
-                'data' => getContent($path)
-            ];
+            
+            $result = getFileContent($filePath);
+            echo json_encode($result, JSON_PRETTY_PRINT);
             break;
             
         case 'search':
             $query = $_GET['query'] ?? '';
             if (empty($query)) {
-                throw new Exception('Query parameter required');
+                throw new Exception('Search query is required');
             }
-            $response = [
+            
+            $results = searchFiles($query);
+            echo json_encode([
                 'success' => true,
-                'data' => searchContent($query)
-            ];
+                'query' => $query,
+                'results' => $results,
+                'count' => count($results)
+            ], JSON_PRETTY_PRINT);
             break;
             
         case 'stats':
-            $response = [
+            $stats = getStatistics();
+            echo json_encode([
                 'success' => true,
-                'data' => getStats()
-            ];
+                'statistics' => $stats
+            ], JSON_PRETTY_PRINT);
             break;
             
         default:
             throw new Exception('Invalid action');
     }
 } catch (Exception $e) {
-    $response = [
+    http_response_code(400);
+    echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
-    ];
+    ], JSON_PRETTY_PRINT);
 }
-
-echo json_encode($response, JSON_PRETTY_PRINT);

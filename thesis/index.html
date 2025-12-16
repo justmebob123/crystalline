@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crystalline Mathematics - Interactive Thesis</title>
+    <title>Crystalline Mathematics Thesis - Interactive Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,814 +15,707 @@
         }
 
         :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --success: #27ae60;
-            --bg-dark: #1a1a1a;
-            --bg-light: #f8f9fa;
-            --text-dark: #2c3e50;
-            --text-light: #ecf0f1;
-            --border: #ddd;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --bg-color: #ecf0f1;
+            --text-color: #2c3e50;
+            --sidebar-bg: #34495e;
+            --sidebar-text: #ecf0f1;
+            --content-bg: #ffffff;
+            --border-color: #bdc3c7;
+            --hover-color: #2980b9;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.6;
-            color: var(--text-dark);
-            background: var(--bg-light);
         }
 
-        /* Header */
-        header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: var(--text-light);
-            padding: 2rem;
-            box-shadow: 0 2px 10px var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        /* Search Bar */
-        .search-container {
-            margin: 1rem 0;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .search-container input {
-            flex: 1;
-            padding: 0.75rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-        }
-
-        .search-container input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .search-container button {
-            padding: 0.75rem 1.5rem;
-            background: var(--success);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-
-        .search-container button:hover {
-            background: #229954;
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            display: flex;
-            gap: 2rem;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        /* Main Container */
         .container {
             display: flex;
-            max-width: 1400px;
-            margin: 0 auto;
-            min-height: calc(100vh - 200px);
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* Sidebar */
         .sidebar {
             width: 350px;
-            background: white;
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            max-height: calc(100vh - 200px);
-            position: sticky;
-            top: 200px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 100;
         }
 
         .sidebar-header {
-            padding: 1rem;
-            background: var(--primary);
-            color: white;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            padding: 20px;
+            background: var(--primary-color);
+            border-bottom: 2px solid var(--secondary-color);
         }
 
-        .tree {
-            padding: 1rem;
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
         }
 
         .tree-item {
-            padding: 0.5rem;
+            padding: 8px 10px;
             cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.2s;
-            user-select: none;
+            border-radius: 4px;
+            margin: 2px 0;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .tree-item:hover {
-            background: var(--bg-light);
+            background: rgba(255,255,255,0.1);
         }
 
         .tree-item.active {
-            background: var(--secondary);
-            color: white;
+            background: var(--secondary-color);
+            font-weight: bold;
         }
 
         .tree-item.directory {
             font-weight: 600;
-            color: var(--primary);
         }
 
         .tree-item.file {
-            padding-left: 2rem;
-            color: var(--text-dark);
+            padding-left: 30px;
         }
 
         .tree-children {
-            margin-left: 1rem;
-            border-left: 2px solid var(--border);
-            padding-left: 0.5rem;
+            margin-left: 15px;
+            border-left: 1px solid rgba(255,255,255,0.2);
+            padding-left: 5px;
         }
 
-        .expand-icon {
-            display: inline-block;
-            width: 20px;
-            transition: transform 0.2s;
+        .tree-toggle {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
         }
 
-        .expand-icon.expanded {
-            transform: rotate(90deg);
+        .icon {
+            font-size: 16px;
         }
 
-        /* Content Area */
-        .content {
+        /* Main Content */
+        .main-content {
             flex: 1;
-            padding: 2rem;
-            background: white;
-            margin: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px var(--shadow);
-            overflow-y: auto;
-        }
-
-        .content-header {
-            border-bottom: 3px solid var(--secondary);
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .content-header h2 {
-            color: var(--primary);
-            font-size: 2rem;
-        }
-
-        .content-meta {
             display: flex;
-            gap: 2rem;
-            margin-top: 0.5rem;
-            color: #666;
-            font-size: 0.9rem;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Markdown Styles */
-        .markdown-content {
-            font-size: 1.1rem;
-            line-height: 1.8;
+        .toolbar {
+            background: var(--content-bg);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        .markdown-content h1 {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin: 2rem 0 1rem;
-            border-bottom: 3px solid var(--secondary);
-            padding-bottom: 0.5rem;
+        .toolbar-left {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
 
-        .markdown-content h2 {
-            color: var(--primary);
-            font-size: 2rem;
-            margin: 1.5rem 0 1rem;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 0.5rem;
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
         }
 
-        .markdown-content h3 {
-            color: var(--secondary);
-            font-size: 1.5rem;
-            margin: 1.5rem 0 0.5rem;
-        }
-
-        .markdown-content h4 {
-            color: var(--secondary);
-            font-size: 1.2rem;
-            margin: 1rem 0 0.5rem;
-        }
-
-        .markdown-content p {
-            margin: 1rem 0;
-        }
-
-        .markdown-content ul, .markdown-content ol {
-            margin: 1rem 0 1rem 2rem;
-        }
-
-        .markdown-content li {
-            margin: 0.5rem 0;
-        }
-
-        .markdown-content code {
-            background: #f4f4f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        .markdown-content pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 1rem;
+        .btn {
+            padding: 8px 16px;
+            border: none;
             border-radius: 5px;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        .markdown-content pre code {
-            background: none;
-            padding: 0;
-            color: inherit;
-        }
-
-        .markdown-content blockquote {
-            border-left: 4px solid var(--secondary);
-            padding-left: 1rem;
-            margin: 1rem 0;
-            color: #666;
-            font-style: italic;
-        }
-
-        .markdown-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-
-        .markdown-content th, .markdown-content td {
-            border: 1px solid var(--border);
-            padding: 0.75rem;
-            text-align: left;
-        }
-
-        .markdown-content th {
-            background: var(--primary);
-            color: white;
-            font-weight: bold;
-        }
-
-        .markdown-content tr:nth-child(even) {
-            background: var(--bg-light);
-        }
-
-        .markdown-content a {
-            color: var(--secondary);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s;
-        }
-
-        .markdown-content a:hover {
-            border-bottom-color: var(--secondary);
-        }
-
-        /* Search Results */
-        .search-results {
-            margin-top: 2rem;
-        }
-
-        .search-result-item {
-            background: white;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 5px;
-            border-left: 4px solid var(--secondary);
-            box-shadow: 0 2px 5px var(--shadow);
             cursor: pointer;
-            transition: transform 0.2s;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .search-result-item:hover {
-            transform: translateX(5px);
+        .btn-primary {
+            background: var(--secondary-color);
+            color: white;
         }
 
-        .search-result-file {
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
+        .btn-primary:hover {
+            background: var(--hover-color);
         }
 
-        .search-result-match {
-            background: #fff3cd;
-            padding: 0.5rem;
-            margin: 0.5rem 0;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 0.9rem;
+        .btn-secondary {
+            background: var(--border-color);
+            color: var(--text-color);
         }
 
-        /* Loading Spinner */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 2rem;
+        .btn-secondary:hover {
+            background: #95a5a6;
         }
 
-        .loading.active {
-            display: block;
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: var(--content-bg);
         }
 
-        .spinner {
-            border: 4px solid var(--border);
-            border-top: 4px solid var(--secondary);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+        .markdown-body {
+            max-width: 900px;
             margin: 0 auto;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .markdown-body h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        /* Welcome Screen */
-        .welcome {
+        .markdown-body h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-body h3 {
+            color: var(--secondary-color);
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+
+        .markdown-body code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .markdown-body pre {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .markdown-body pre code {
+            background: none;
+            padding: 0;
+            color: #f8f8f2;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid var(--secondary-color);
+            padding-left: 20px;
+            margin: 15px 0;
+            color: #555;
+            font-style: italic;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .markdown-body th, .markdown-body td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .markdown-body a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .markdown-body a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 50px;
+            font-size: 18px;
+            color: #7f8c8d;
         }
 
-        .welcome h2 {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+        .error {
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            color: #c0392b;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px;
         }
 
-        .welcome p {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 2rem;
+        .stats-panel {
+            background: var(--content-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        .welcome-features {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
         }
 
-        .feature {
-            padding: 2rem;
-            background: var(--bg-light);
-            border-radius: 10px;
-            transition: transform 0.3s;
+        .stat-item {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
         }
 
-        .feature:hover {
-            transform: translateY(-5px);
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
         }
 
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
         }
 
-        .feature h3 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
+        .breadcrumb {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .breadcrumb a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
             .sidebar {
                 width: 100%;
-                max-height: 300px;
-                position: relative;
-                top: 0;
+                max-width: 300px;
+                position: absolute;
+                left: -300px;
+                transition: left 0.3s;
+                height: 100vh;
             }
 
-            .stats-bar {
-                flex-direction: column;
-                gap: 0.5rem;
+            .sidebar.open {
+                left: 0;
+            }
+
+            .content-area {
+                padding: 15px;
             }
         }
 
-        /* Scroll to top button */
-        .scroll-top {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--secondary);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 2px 10px var(--shadow);
-            transition: background 0.3s;
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
         }
 
-        .scroll-top:hover {
-            background: var(--primary);
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
         }
 
-        .scroll-top.visible {
-            display: flex;
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-    <header>
-        <h1>📚 Crystalline Mathematics</h1>
-        <p>A Comprehensive Treatise on Geometric Number Theory and Babylonian Computational Principles</p>
-        
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search thesis content...">
-            <button onclick="performSearch()">🔍 Search</button>
-        </div>
-
-        <div class="stats-bar" id="statsBar">
-            <div class="stat-item">
-                <span class="stat-value" id="statChapters">-</span>
-                <span class="stat-label">Chapters</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="statParts">-</span>
-                <span class="stat-label">Parts</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="statLines">-</span>
-                <span class="stat-label">Lines</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="statSize">-</span>
-                <span class="stat-label">Size</span>
-            </div>
-        </div>
-    </header>
-
     <div class="container">
-        <aside class="sidebar">
-            <div class="sidebar-header">📑 Table of Contents</div>
-            <div class="tree" id="treeView"></div>
-        </aside>
-
-        <main class="content">
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Loading...</p>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>📚 Thesis Navigator</h1>
+                <input type="text" class="search-box" id="searchBox" placeholder="Search thesis...">
             </div>
+            <div class="sidebar-content" id="fileTree">
+                <div class="loading">Loading file structure...</div>
+            </div>
+        </div>
 
-            <div id="contentArea">
-                <div class="welcome">
-                    <h2>Welcome to the Interactive Thesis Viewer</h2>
-                    <p>Explore the comprehensive treatise on Crystalline Mathematics</p>
-                    
-                    <div class="welcome-features">
-                        <div class="feature">
-                            <div class="feature-icon">📖</div>
-                            <h3>32 Chapters</h3>
-                            <p>Organized into 8 parts covering theoretical foundations to practical applications</p>
-                        </div>
-                        <div class="feature">
-                            <div class="feature-icon">🔍</div>
-                            <h3>Full-Text Search</h3>
-                            <p>Search across all chapters and sections instantly</p>
-                        </div>
-                        <div class="feature">
-                            <div class="feature-icon">📊</div>
-                            <h3>Interactive Navigation</h3>
-                            <p>Browse through the hierarchical structure with ease</p>
-                        </div>
-                        <div class="feature">
-                            <div class="feature-icon">✨</div>
-                            <h3>Beautiful Rendering</h3>
-                            <p>Markdown content rendered with syntax highlighting and formatting</p>
-                        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="breadcrumb" id="breadcrumb">
+                        <a href="#" onclick="loadFile('THESIS_MAIN.md'); return false;">📖 Table of Contents</a>
                     </div>
-
-                    <p style="margin-top: 3rem; font-size: 1.1rem;">
-                        👈 Select a chapter from the sidebar to begin reading
-                    </p>
+                </div>
+                <div class="toolbar-right">
+                    <a href="#" class="btn btn-secondary" id="downloadBtn" download>
+                        📥 Download
+                    </a>
+                    <a href="#" class="btn btn-secondary" id="rawBtn" target="_blank">
+                        📄 View Raw
+                    </a>
+                    <button class="btn btn-primary" onclick="showStats()">
+                        📊 Statistics
+                    </button>
                 </div>
             </div>
-        </main>
+            <div class="content-area" id="contentArea">
+                <div class="loading">Loading content...</div>
+            </div>
+        </div>
     </div>
 
-    <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">↑</button>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-        // Auto-detect API endpoint (PHP or Python)
-        const API_URL = 'api/thesis.php';
-        let currentStructure = null;
+        const API_BASE = '/api/thesis.php';
+        let currentFile = '';
+        let fileStructure = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            loadStructure();
-            loadStats();
-            setupScrollButton();
-            setupSearchEnter();
+            loadFileStructure();
+            loadFile('THESIS_MAIN.md'); // Load table of contents by default
+            
+            // Search functionality
+            let searchTimeout;
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (e.target.value.trim().length > 2) {
+                        searchFiles(e.target.value.trim());
+                    } else {
+                        loadFileStructure();
+                    }
+                }, 300);
+            });
         });
 
-        // Load thesis structure
-        async function loadStructure() {
+        // Load file structure
+        async function loadFileStructure() {
             try {
-                const response = await fetch(`${API_URL}?action=structure`);
+                const response = await fetch(`${API_BASE}?action=structure`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentStructure = data.data;
-                    renderTree(data.data, document.getElementById('treeView'));
+                    fileStructure = data.structure;
+                    renderFileTree(data.structure);
+                } else {
+                    showError('Failed to load file structure');
                 }
             } catch (error) {
-                console.error('Error loading structure:', error);
+                showError('Error loading file structure: ' + error.message);
             }
         }
 
-        // Load statistics
-        async function loadStats() {
-            try {
-                const response = await fetch(`${API_URL}?action=stats`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const stats = data.data;
-                    document.getElementById('statChapters').textContent = stats.chapters;
-                    document.getElementById('statParts').textContent = stats.parts;
-                    document.getElementById('statLines').textContent = stats.totalLines.toLocaleString();
-                    document.getElementById('statSize').textContent = formatBytes(stats.totalSize);
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
+        // Render file tree
+        function renderFileTree(structure, container = null) {
+            if (!container) {
+                container = document.getElementById('fileTree');
+                container.innerHTML = '';
             }
-        }
 
-        // Render tree structure
-        function renderTree(items, container, level = 0) {
-            items.forEach(item => {
-                const div = document.createElement('div');
+            structure.forEach(item => {
+                const itemDiv = document.createElement('div');
                 
                 if (item.type === 'directory') {
-                    div.className = 'tree-item directory';
-                    div.innerHTML = `<span class="expand-icon">▶</span> ${item.displayName}`;
+                    const dirDiv = document.createElement('div');
+                    dirDiv.className = 'tree-item directory';
+                    dirDiv.innerHTML = `
+                        <span class="tree-toggle">▶</span>
+                        <span class="icon">📁</span>
+                        <span>${item.name}</span>
+                    `;
                     
                     const childrenDiv = document.createElement('div');
                     childrenDiv.className = 'tree-children';
                     childrenDiv.style.display = 'none';
                     
-                    div.onclick = (e) => {
+                    dirDiv.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const icon = div.querySelector('.expand-icon');
-                        if (childrenDiv.style.display === 'none') {
-                            childrenDiv.style.display = 'block';
-                            icon.classList.add('expanded');
-                        } else {
-                            childrenDiv.style.display = 'none';
-                            icon.classList.remove('expanded');
-                        }
-                    };
+                        const isOpen = childrenDiv.style.display === 'block';
+                        childrenDiv.style.display = isOpen ? 'none' : 'block';
+                        dirDiv.querySelector('.tree-toggle').textContent = isOpen ? '▶' : '▼';
+                    });
                     
-                    container.appendChild(div);
-                    renderTree(item.children, childrenDiv, level + 1);
-                    container.appendChild(childrenDiv);
+                    itemDiv.appendChild(dirDiv);
+                    itemDiv.appendChild(childrenDiv);
+                    
+                    if (item.children && item.children.length > 0) {
+                        renderFileTree(item.children, childrenDiv);
+                    }
                 } else {
-                    div.className = 'tree-item file';
-                    div.innerHTML = `📄 ${item.displayName}`;
-                    div.onclick = () => loadContent(item.path);
-                    container.appendChild(div);
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'tree-item file';
+                    fileDiv.innerHTML = `
+                        <span class="icon">📄</span>
+                        <span>${item.name}</span>
+                    `;
+                    fileDiv.addEventListener('click', () => loadFile(item.path));
+                    itemDiv.appendChild(fileDiv);
+                }
+                
+                container.appendChild(itemDiv);
+            });
+        }
+
+        // Load file content
+        async function loadFile(filePath) {
+            currentFile = filePath;
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = '<div class="loading">Loading content...</div>';
+            
+            // Update breadcrumb
+            updateBreadcrumb(filePath);
+            
+            // Update download and raw links
+            document.getElementById('downloadBtn').href = filePath;
+            document.getElementById('rawBtn').href = filePath;
+            
+            try {
+                const response = await fetch(`${API_BASE}?action=file&path=${encodeURIComponent(filePath)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderMarkdown(data.content);
+                    highlightActiveFile(filePath);
+                } else {
+                    showError('Failed to load file: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error loading file: ' + error.message);
+            }
+        }
+
+        // Render markdown content
+        function renderMarkdown(content) {
+            const contentArea = document.getElementById('contentArea');
+            
+            // Configure marked to handle links
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                headerIds: true,
+                mangle: false
+            });
+            
+            const html = marked.parse(content);
+            contentArea.innerHTML = `<div class="markdown-body">${html}</div>`;
+            
+            // Make internal links work
+            contentArea.querySelectorAll('a').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href.endsWith('.md')) {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadFile(href);
+                    });
+                }
+            });
+            
+            // Highlight code blocks
+            contentArea.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Scroll to top
+            contentArea.scrollTop = 0;
+        }
+
+        // Update breadcrumb
+        function updateBreadcrumb(filePath) {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const parts = filePath.split('/');
+            let path = '';
+            let html = '<a href="#" onclick="loadFile(\'THESIS_MAIN.md\'); return false;">📖 Table of Contents</a>';
+            
+            parts.forEach((part, index) => {
+                path += (index > 0 ? '/' : '') + part;
+                if (index < parts.length - 1) {
+                    html += ` / <a href="#" onclick="loadFile('${path}'); return false;">${part}</a>`;
+                } else {
+                    html += ` / <strong>${part}</strong>`;
+                }
+            });
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        // Highlight active file in tree
+        function highlightActiveFile(filePath) {
+            document.querySelectorAll('.tree-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and highlight the active file
+            document.querySelectorAll('.tree-item.file').forEach(item => {
+                const span = item.querySelector('span:last-child');
+                if (span && item.onclick && item.onclick.toString().includes(filePath)) {
+                    item.classList.add('active');
+                    
+                    // Expand parent directories
+                    let parent = item.parentElement;
+                    while (parent) {
+                        if (parent.classList.contains('tree-children')) {
+                            parent.style.display = 'block';
+                            const toggle = parent.previousElementSibling?.querySelector('.tree-toggle');
+                            if (toggle) toggle.textContent = '▼';
+                        }
+                        parent = parent.parentElement;
+                    }
                 }
             });
         }
 
-        // Load content
-        async function loadContent(path) {
-            showLoading(true);
+        // Search files
+        async function searchFiles(query) {
+            const fileTree = document.getElementById('fileTree');
+            fileTree.innerHTML = '<div class="loading">Searching...</div>';
             
             try {
-                const response = await fetch(`${API_URL}?action=content&path=${encodeURIComponent(path)}`);
+                const response = await fetch(`${API_BASE}?action=search&query=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    displayContent(data.data);
-                    
-                    // Update active state
-                    document.querySelectorAll('.tree-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    event.target.classList.add('active');
+                    renderSearchResults(data.results, query);
                 } else {
-                    displayError(data.error);
+                    showError('Search failed: ' + data.error);
                 }
             } catch (error) {
-                console.error('Error loading content:', error);
-                displayError('Failed to load content');
-            } finally {
-                showLoading(false);
+                showError('Search error: ' + error.message);
             }
         }
 
-        // Display content
-        function displayContent(data) {
-            const contentArea = document.getElementById('contentArea');
-            const html = marked.parse(data.content);
-            
-            contentArea.innerHTML = `
-                <div class="content-header">
-                    <h2>${getFileName(data.path)}</h2>
-                    <div class="content-meta">
-                        <span>📄 ${data.stats.lines.toLocaleString()} lines</span>
-                        <span>💾 ${formatBytes(data.stats.size)}</span>
-                        <span>📅 ${new Date(data.stats.modified * 1000).toLocaleDateString()}</span>
-                    </div>
-                </div>
-                <div class="markdown-content">
-                    ${html}
-                </div>
-            `;
-            
-            // Scroll to top
-            contentArea.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Perform search
-        async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            
-            if (query.length < 3) {
-                alert('Please enter at least 3 characters to search');
-                return;
-            }
-            
-            showLoading(true);
-            
-            try {
-                const response = await fetch(`${API_URL}?action=search&query=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    displaySearchResults(data.data, query);
-                }
-            } catch (error) {
-                console.error('Error searching:', error);
-                displayError('Search failed');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Display search results
-        function displaySearchResults(results, query) {
-            const contentArea = document.getElementById('contentArea');
+        // Render search results
+        function renderSearchResults(results, query) {
+            const fileTree = document.getElementById('fileTree');
             
             if (results.length === 0) {
-                contentArea.innerHTML = `
-                    <div class="content-header">
-                        <h2>Search Results</h2>
-                    </div>
-                    <p>No results found for "${query}"</p>
-                `;
+                fileTree.innerHTML = '<div style="padding: 20px; text-align: center; color: #7f8c8d;">No results found</div>';
                 return;
             }
             
-            let html = `
-                <div class="content-header">
-                    <h2>Search Results</h2>
-                    <p>Found ${results.length} file(s) containing "${query}"</p>
-                </div>
-                <div class="search-results">
-            `;
+            let html = `<div style="padding: 10px; background: rgba(255,255,255,0.1); margin-bottom: 10px; border-radius: 5px;">
+                <strong>${results.length} result(s) found for "${query}"</strong>
+            </div>`;
             
             results.forEach(result => {
                 html += `
-                    <div class="search-result-item" onclick="loadContent('${result.file}')">
-                        <div class="search-result-file">📄 ${result.displayName}</div>
+                    <div class="tree-item file" onclick="loadFile('${result.path}')">
+                        <span class="icon">📄</span>
+                        <span>${result.name}</span>
+                    </div>
                 `;
-                
-                result.matches.forEach(match => {
-                    const highlightedText = match.text.replace(
-                        new RegExp(query, 'gi'),
-                        '<mark>$&</mark>'
-                    );
-                    html += `
-                        <div class="search-result-match">
-                            Line ${match.line}: ${highlightedText}
-                        </div>
-                    `;
-                });
-                
-                html += `</div>`;
             });
             
-            html += `</div>`;
-            contentArea.innerHTML = html;
+            fileTree.innerHTML = html;
         }
 
-        // Helper functions
-        function showLoading(show) {
-            document.getElementById('loading').classList.toggle('active', show);
-        }
-
-        function displayError(message) {
-            document.getElementById('contentArea').innerHTML = `
-                <div class="content-header">
-                    <h2>Error</h2>
-                </div>
-                <p style="color: var(--accent);">${message}</p>
-            `;
-        }
-
-        function getFileName(path) {
-            const parts = path.split('/');
-            return parts[parts.length - 1].replace('.md', '').replace(/_/g, ' ');
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-
-        function setupScrollButton() {
-            const scrollBtn = document.getElementById('scrollTop');
-            window.addEventListener('scroll', () => {
-                if (window.pageYOffset > 300) {
-                    scrollBtn.classList.add('visible');
+        // Show statistics
+        async function showStats() {
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = '<div class="loading">Loading statistics...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}?action=stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.statistics;
+                    contentArea.innerHTML = `
+                        <div class="markdown-body">
+                            <h1>📊 Thesis Statistics</h1>
+                            <div class="stats-panel">
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-value">${stats.total_files}</div>
+                                        <div class="stat-label">Total Files</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${stats.total_lines.toLocaleString()}</div>
+                                        <div class="stat-label">Total Lines</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${(stats.total_size / 1024 / 1024).toFixed(2)} MB</div>
+                                        <div class="stat-label">Total Size</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${stats.chapters}</div>
+                                        <div class="stat-label">Chapters</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${stats.parts}</div>
+                                        <div class="stat-label">Parts</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p style="margin-top: 20px; text-align: center; color: #7f8c8d;">
+                                <a href="#" onclick="loadFile('THESIS_MAIN.md'); return false;" style="color: var(--secondary-color);">
+                                    ← Back to Table of Contents
+                                </a>
+                            </p>
+                        </div>
+                    `;
                 } else {
-                    scrollBtn.classList.remove('visible');
+                    showError('Failed to load statistics');
                 }
-            });
+            } catch (error) {
+                showError('Error loading statistics: ' + error.message);
+            }
         }
 
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function setupSearchEnter() {
-            document.getElementById('searchInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch();
-                }
-            });
+        // Show error
+        function showError(message) {
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = `<div class="error"><strong>Error:</strong> ${message}</div>`;
         }
     </script>
 </body>
