@@ -268,8 +268,9 @@ void sphere_message_set_weight(
 void sphere_message_set_boundary(
     SphereMessage* message,
     uint64_t boundary_value,
-    int direction,
-    uint64_t timestamp
+    int symmetry_group,
+    double confidence,
+    int direction
 ) {
     if (!message) {
         return;
@@ -281,8 +282,9 @@ void sphere_message_set_boundary(
     }
     
     payload->boundary_value = boundary_value;
+    payload->symmetry_group = symmetry_group;
+    payload->confidence = confidence;
     payload->direction = direction;
-    payload->timestamp = timestamp;
     
     message->data = payload;
     message->data_size = sizeof(BoundaryPayload);

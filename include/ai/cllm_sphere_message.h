@@ -137,9 +137,10 @@ typedef struct {
  * Boundary Notification Payload
  */
 typedef struct {
-    uint64_t boundary_value;    // The boundary value crossed
-    int direction;              // Direction: 1 = up, -1 = down
-    uint64_t timestamp;         // When boundary was crossed
+    uint64_t boundary_value;    // The boundary value crossed (prime number)
+    int symmetry_group;         // Symmetry group of the sphere
+    double confidence;          // Confidence score (0.0-1.0)
+    int direction;              // Direction: 1 = up, -1 = down, 0 = at boundary
 } BoundaryPayload;
 
 /**
@@ -241,8 +242,9 @@ void sphere_message_set_weight(
 void sphere_message_set_boundary(
     SphereMessage* message,
     uint64_t boundary_value,
-    int direction,
-    uint64_t timestamp
+    int symmetry_group,
+    double confidence,
+    int direction
 );
 
 /**

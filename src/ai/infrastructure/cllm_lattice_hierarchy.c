@@ -83,8 +83,8 @@ CLLMLatticeHierarchy* lattice_hierarchy_create(
     pthread_cond_init(&sphere->work_available, NULL);
     
     // Create message queues
-    sphere->inbox = message_queue_create(10000, false);  // 10k message capacity
-    sphere->outbox = message_queue_create(10000, false);
+    sphere->inbox = message_queue_create(10000);  // 10k message capacity
+    sphere->outbox = message_queue_create(10000);
     
     if (!sphere->inbox || !sphere->outbox) {
         fprintf(stderr, "ERROR: Failed to create message queues\n");
