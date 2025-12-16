@@ -6,9 +6,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "math/math.h"
+#include <math.h>
 #include <string.h>
-#include "../../include/prime_float_math.h"
 
 // Forward declaration of softmax_backward (it's static in cllm_training.c)
 // We'll need to expose it or reimplement for testing
