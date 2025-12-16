@@ -15,6 +15,8 @@ SOURCES = src/numerical.c \
           src/statistics.c \
           src/threading.c \
           src/shared_memory.c \
+          src/shared_memory_rainbow.c \
+          src/shared_memory_enhanced.c \
           src/lock_free_queue.c \
           src/sphere_packing.c \
           src/sphere_threading.c \
