@@ -293,6 +293,21 @@ static void standard_attention_forward(
         }
     }
     
+    // Cache intermediate values if in training mode
+    if (cllm_is_training(model)) {
+        // Cache Q, K, V for backward pass
+        memcpy(model->training.layer_cache[layer_idx].Q, Q, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].K, K, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].V, V, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].attn_output, attn_output, qkv_size);
+        
+        // Cache attention weights (scores after softmax)
+        // Note: This is simplified - in production we'd cache per-head weights
+        size_t attn_weights_size = batch_size * num_heads * seq_len * seq_len * sizeof(double);
+        memcpy(model->training.layer_cache[layer_idx].attention_weights, scores, 
+               scores_size < attn_weights_size ? scores_size : attn_weights_size);
+    }
+    
     // Apply output projection
     for (uint32_t b = 0; b < batch_size; b++) {
         const double* batch_attn = &attn_output[b * seq_len * embedding_dim];
@@ -309,6 +324,9 @@ static void standard_attention_forward(
     
     // Update statistics
     model->ntt.standard_calls++;
+    if (cllm_is_training(model)) {
+        model->training.forward_passes++;
+    }
 }
 
 // ============================================================================
@@ -397,6 +415,19 @@ static void cllm_ntt_attention_forward(
         }
     }
     
+    // Cache intermediate values if in training mode
+    if (cllm_is_training(model)) {
+        // Cache Q, K, V for backward pass
+        memcpy(model->training.layer_cache[layer_idx].Q, Q, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].K, K, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].V, V, qkv_size);
+        memcpy(model->training.layer_cache[layer_idx].attn_output, attn_output, qkv_size);
+        
+        // Note: Attention weights caching will be added when we modify
+        // the algorithm library to return them
+        // For now, we'll compute them in backward pass if needed
+    }
+    
     // Apply output projection
     for (uint32_t b = 0; b < batch_size; b++) {
         const double* batch_attn = &attn_output[b * seq_len * embedding_dim];
@@ -412,6 +443,9 @@ static void cllm_ntt_attention_forward(
     
     // Update statistics
     model->ntt.ntt_calls++;
+    if (cllm_is_training(model)) {
+        model->training.forward_passes++;
+    }
 }
 
 // ============================================================================
