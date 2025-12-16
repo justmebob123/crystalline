@@ -18,6 +18,7 @@ SOURCES = src/numerical.c \
           src/lock_free_queue.c \
           src/sphere_packing.c \
           src/sphere_threading.c \
+          src/hierarchical_memory.c \
           src/memory_management.c \
           src/visualization.c \
           src/visualization_2d.c \

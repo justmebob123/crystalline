@@ -663,7 +663,8 @@ MathError abacus_add(CrystallineAbacus* result, const CrystallineAbacus* a, cons
     MathError err_b = abacus_to_uint64(b, &mag_b);
     
     if (err_a == MATH_SUCCESS && err_b == MATH_SUCCESS && 
-        a->negative == b->negative) {
+        a->negative == b->negative &&
+        a->min_exponent >= 0 && b->min_exponent >= 0) {
         
         /* Check for overflow */
         if (mag_a > UINT64_MAX - mag_b) {
@@ -813,7 +814,8 @@ MathError abacus_sub(CrystallineAbacus* result, const CrystallineAbacus* a, cons
     MathError err_b = abacus_to_uint64(b, &mag_b);
     
     if (err_a == MATH_SUCCESS && err_b == MATH_SUCCESS &&
-        a->negative == b->negative) {
+        a->negative == b->negative &&
+        a->min_exponent >= 0 && b->min_exponent >= 0) {
         
         /* Compute difference */
         uint64_t diff;
@@ -991,7 +993,8 @@ MathError abacus_mul(CrystallineAbacus* result, const CrystallineAbacus* a, cons
     MathError err_a = abacus_to_uint64(a, &mag_a);
     MathError err_b = abacus_to_uint64(b, &mag_b);
     
-    if (err_a == MATH_SUCCESS && err_b == MATH_SUCCESS) {
+    if (err_a == MATH_SUCCESS && err_b == MATH_SUCCESS &&
+        a->min_exponent >= 0 && b->min_exponent >= 0) {
         /* Check for overflow */
         if (mag_a != 0 && mag_b != 0) {
             /* Simple overflow check: if a * b would overflow, use slow path */

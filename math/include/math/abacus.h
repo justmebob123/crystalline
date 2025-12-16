@@ -83,6 +83,8 @@ typedef struct {
     int32_t weight_exponent; /**< Position in number */
 } SparseBead;
 
+
+
 /**
  * @brief Crystalline Abacus structure (Hybrid Dense/Sparse representation)
  * 
