@@ -175,6 +175,10 @@ MathError clock_map_prime_to_position(uint64_t prime, ClockPosition* pos) {
     pos->angle = calculate_angle(pos->position, ring_size);
     pos->radius = calculate_radius(pos->ring);
     
+    // Set quadrant and polarity (Week 1, Day 3-4)
+    pos->quadrant = clock_get_quadrant(pos);
+    pos->polarity = 1;  // Default to positive for primes
+    
     return MATH_SUCCESS;
 }
 
