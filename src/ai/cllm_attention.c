@@ -60,6 +60,68 @@ static void aligned_free_64(void* ptr) {
 // ============================================================================
 
 /**
+ * Transpose from CLLM's interleaved layout to algorithm library's head-major layout
+ * 
+ * CLLM Layout (interleaved):    [T0H0, T0H1, T1H0, T1H1, T2H0, T2H1, ...]
+ * Algorithm Layout (head-major): [H0T0, H0T1, H0T2, ..., H1T0, H1T1, H1T2, ...]
+ * 
+ * @param interleaved Input data in CLLM's interleaved format
+ * @param head_major Output data in algorithm library's head-major format
+ * @param seq_len Sequence length
+ * @param num_heads Number of attention heads
+ * @param head_dim Dimension of each head
+ */
+static void transpose_interleaved_to_head_major(
+    const double* interleaved,
+    double* head_major,
+    uint32_t seq_len,
+    uint32_t num_heads,
+    uint32_t head_dim
+) {
+    for (uint32_t t = 0; t < seq_len; t++) {
+        for (uint32_t h = 0; h < num_heads; h++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                // interleaved[t][h][d] -> head_major[h][t][d]
+                uint32_t src_idx = t * (num_heads * head_dim) + h * head_dim + d;
+                uint32_t dst_idx = h * (seq_len * head_dim) + t * head_dim + d;
+                head_major[dst_idx] = interleaved[src_idx];
+            }
+        }
+    }
+}
+
+/**
+ * Transpose from algorithm library's head-major layout to CLLM's interleaved layout
+ * 
+ * Algorithm Layout (head-major): [H0T0, H0T1, H0T2, ..., H1T0, H1T1, H1T2, ...]
+ * CLLM Layout (interleaved):    [T0H0, T0H1, T1H0, T1H1, T2H0, T2H1, ...]
+ * 
+ * @param head_major Input data in algorithm library's head-major format
+ * @param interleaved Output data in CLLM's interleaved format
+ * @param seq_len Sequence length
+ * @param num_heads Number of attention heads
+ * @param head_dim Dimension of each head
+ */
+static void transpose_head_major_to_interleaved(
+    const double* head_major,
+    double* interleaved,
+    uint32_t seq_len,
+    uint32_t num_heads,
+    uint32_t head_dim
+) {
+    for (uint32_t h = 0; h < num_heads; h++) {
+        for (uint32_t t = 0; t < seq_len; t++) {
+            for (uint32_t d = 0; d < head_dim; d++) {
+                // head_major[h][t][d] -> interleaved[t][h][d]
+                uint32_t src_idx = h * (seq_len * head_dim) + t * head_dim + d;
+                uint32_t dst_idx = t * (num_heads * head_dim) + h * head_dim + d;
+                interleaved[dst_idx] = head_major[src_idx];
+            }
+        }
+    }
+}
+
+/**
  * SIMD-optimized softmax with numerical stability
  * Uses AVX2 for vectorized exp and division
  */
@@ -769,6 +831,32 @@ void cllm_attention_backward(
     
     // Step 2: Call algorithm library backward pass for attention mechanism
     // This computes grad_Q, grad_K, grad_V from grad_attn_output
+    
+    // CRITICAL FIX: Data layout mismatch between CLLM and algorithm library
+    // CLLM uses interleaved head layout: [T0H0, T0H1, T1H0, T1H1, ...]
+    // Algorithm library expects head-major layout: [H0T0, H0T1, H1T0, H1T1, ...]
+    // Solution: Transpose data before and after calling backward pass
+    
+    // Allocate head-major buffers for algorithm library
+    size_t batch_qkv_size = seq_len * embedding_dim;
+    double* Q_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* K_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* V_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* grad_attn_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* grad_Q_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* grad_K_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    double* grad_V_head_major = (double*)calloc(batch_qkv_size, sizeof(double));
+    
+    if (!Q_head_major || !K_head_major || !V_head_major || !grad_attn_head_major ||
+        !grad_Q_head_major || !grad_K_head_major || !grad_V_head_major) {
+        fprintf(stderr, "Error: Failed to allocate head-major transpose buffers\n");
+        free(Q_head_major); free(K_head_major); free(V_head_major);
+        free(grad_attn_head_major); free(grad_Q_head_major); 
+        free(grad_K_head_major); free(grad_V_head_major);
+        free(grad_Q); free(grad_K); free(grad_V); free(grad_attn_output);
+        return;
+    }
+    
     for (uint32_t b = 0; b < batch_size; b++) {
         const double* batch_grad_attn = &grad_attn_output[b * seq_len * embedding_dim];
         const double* batch_Q = &Q[b * seq_len * embedding_dim];
@@ -781,30 +869,35 @@ void cllm_attention_backward(
         double* batch_grad_K = &grad_K[b * seq_len * embedding_dim];
         double* batch_grad_V = &grad_V[b * seq_len * embedding_dim];
         
-        // Call algorithm library backward pass
-        // Note: Function signature is (grad_Q, grad_K, grad_V, grad_output, Q, K, V, attn_weights, ...)
+        // Transpose from CLLM's interleaved layout to algorithm library's head-major layout
+        transpose_interleaved_to_head_major(batch_Q, Q_head_major, seq_len, num_heads, head_dim);
+        transpose_interleaved_to_head_major(batch_K, K_head_major, seq_len, num_heads, head_dim);
+        transpose_interleaved_to_head_major(batch_V, V_head_major, seq_len, num_heads, head_dim);
+        transpose_interleaved_to_head_major(batch_grad_attn, grad_attn_head_major, seq_len, num_heads, head_dim);
+        
+        // Call algorithm library backward pass with head-major layout
         double scale = 1.0 / math_sqrt((double)head_dim);
         
         // Debug: Check inputs before calling backward pass
         if (layer_idx == 0 && b == 0 && batch_size == 2) {
             double grad_attn_sum = 0.0;
             for (size_t i = 0; i < seq_len * embedding_dim; i++) {
-                grad_attn_sum += (batch_grad_attn[i] > 0 ? batch_grad_attn[i] : -batch_grad_attn[i]);
+                grad_attn_sum += (grad_attn_head_major[i] > 0 ? grad_attn_head_major[i] : -grad_attn_head_major[i]);
             }
-            printf("  [DEBUG] batch_grad_attn sum: %.6f\n", grad_attn_sum);
+            printf("  [DEBUG] batch_grad_attn sum (head-major): %.6f\n", grad_attn_sum);
             printf("  [DEBUG] Calling backward with seq_len=%u, head_dim=%u, num_heads=%u, scale=%.6f\n",
                    seq_len, head_dim, num_heads, scale);
         }
         
         int result = ntt_attention_backward_multi_head_double(
-            batch_grad_Q,        // Output: gradient w.r.t. queries
-            batch_grad_K,        // Output: gradient w.r.t. keys
-            batch_grad_V,        // Output: gradient w.r.t. values
-            batch_grad_attn,     // Input: gradient from next layer
-            batch_Q,             // Input: queries from forward pass
-            batch_K,             // Input: keys from forward pass
-            batch_V,             // Input: values from forward pass
-            batch_attn_weights,  // Input: attention weights from forward pass
+            grad_Q_head_major,   // Output: gradient w.r.t. queries (head-major)
+            grad_K_head_major,   // Output: gradient w.r.t. keys (head-major)
+            grad_V_head_major,   // Output: gradient w.r.t. values (head-major)
+            grad_attn_head_major,// Input: gradient from next layer (head-major)
+            Q_head_major,        // Input: queries from forward pass (head-major)
+            K_head_major,        // Input: keys from forward pass (head-major)
+            V_head_major,        // Input: values from forward pass (head-major)
+            batch_attn_weights,  // Input: attention weights (already head-major)
             seq_len,
             head_dim,
             num_heads,
@@ -816,6 +909,11 @@ void cllm_attention_backward(
             // Continue with other batches
         }
         
+        // Transpose gradients back from head-major to CLLM's interleaved layout
+        transpose_head_major_to_interleaved(grad_Q_head_major, batch_grad_Q, seq_len, num_heads, head_dim);
+        transpose_head_major_to_interleaved(grad_K_head_major, batch_grad_K, seq_len, num_heads, head_dim);
+        transpose_head_major_to_interleaved(grad_V_head_major, batch_grad_V, seq_len, num_heads, head_dim);
+        
         // Debug: Check outputs after calling backward pass
         if (layer_idx == 0 && b == 0 && batch_size == 2) {
             double gQ_sum = 0.0, gK_sum = 0.0, gV_sum = 0.0;
@@ -824,10 +922,19 @@ void cllm_attention_backward(
                 gK_sum += (batch_grad_K[i] > 0 ? batch_grad_K[i] : -batch_grad_K[i]);
                 gV_sum += (batch_grad_V[i] > 0 ? batch_grad_V[i] : -batch_grad_V[i]);
             }
-            printf("  [DEBUG] After backward: grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
+            printf("  [DEBUG] After backward (interleaved): grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
                    gQ_sum, gK_sum, gV_sum);
         }
     }
+    
+    // Free head-major transpose buffers
+    free(Q_head_major);
+    free(K_head_major);
+    free(V_head_major);
+    free(grad_attn_head_major);
+    free(grad_Q_head_major);
+    free(grad_K_head_major);
+    free(grad_V_head_major);
     
     // Debug: Check attention_weights
     if (layer_idx == 0 && batch_size == 2) {
