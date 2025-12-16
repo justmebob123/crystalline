@@ -248,6 +248,74 @@ int ntt_attention_multi_head_double(
     double scale_factor
 );
 
+// ============================================================================
+// BACKWARD PASS OPERATIONS
+// ============================================================================
+
+/**
+ * Single-head NTT Attention Backward Pass (Double Precision)
+ * 
+ * Computes gradients for Q, K, V given gradient from next layer.
+ * 
+ * @param grad_queries Output gradient for queries [seq_len x head_dim]
+ * @param grad_keys Output gradient for keys [seq_len x head_dim]
+ * @param grad_values Output gradient for values [seq_len x head_dim]
+ * @param grad_output Input gradient from next layer [seq_len x head_dim]
+ * @param queries Forward pass queries [seq_len x head_dim]
+ * @param keys Forward pass keys [seq_len x head_dim]
+ * @param values Forward pass values [seq_len x head_dim]
+ * @param attention_weights Forward pass attention weights [seq_len x seq_len]
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension
+ * @param scale_factor Scaling factor (1/sqrt(head_dim))
+ * @return 1 on success, 0 on failure
+ */
+int ntt_attention_backward_single_head_double(
+    double* grad_queries,
+    double* grad_keys,
+    double* grad_values,
+    const double* grad_output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    const double* attention_weights,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    double scale_factor
+);
+
+/**
+ * Multi-head NTT Attention Backward Pass (Double Precision)
+ * 
+ * @param grad_queries Output gradient [num_heads x seq_len x head_dim]
+ * @param grad_keys Output gradient [num_heads x seq_len x head_dim]
+ * @param grad_values Output gradient [num_heads x seq_len x head_dim]
+ * @param grad_output Input gradient [num_heads x seq_len x head_dim]
+ * @param queries Forward pass queries [num_heads x seq_len x head_dim]
+ * @param keys Forward pass keys [num_heads x seq_len x head_dim]
+ * @param values Forward pass values [num_heads x seq_len x head_dim]
+ * @param attention_weights Forward pass weights [num_heads x seq_len x seq_len]
+ * @param seq_len Sequence length
+ * @param head_dim Head dimension per head
+ * @param num_heads Number of attention heads
+ * @param scale_factor Scaling factor
+ * @return 1 on success, 0 on failure
+ */
+int ntt_attention_backward_multi_head_double(
+    double* grad_queries,
+    double* grad_keys,
+    double* grad_values,
+    const double* grad_output,
+    const double* queries,
+    const double* keys,
+    const double* values,
+    const double* attention_weights,
+    uint32_t seq_len,
+    uint32_t head_dim,
+    uint32_t num_heads,
+    double scale_factor
+);
+
 #ifdef __cplusplus
 }
 #endif
