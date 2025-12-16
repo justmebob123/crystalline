@@ -776,8 +776,8 @@ void cllm_attention_backward(
             scale
         );
         
-        if (result != 0) {
-            fprintf(stderr, "Warning: Backward pass failed for batch %u (error %d)\n", b, result);
+        if (result == 0) {
+            fprintf(stderr, "Warning: Backward pass failed for batch %u\n", b);
             // Continue with other batches
         }
     }
