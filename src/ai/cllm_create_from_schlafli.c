@@ -13,7 +13,7 @@
 #include <string.h>
 
 // External functions
-extern CLLMModel* cllm_create(const CLLMConfig* config);
+extern CLLMModel* cllm_create_model(const CLLMConfig* config);
 extern void cllm_update_geometry_from_solid(void* model, const void* solid);
 extern void cllm_print_platonic_solid(const void* solid);
 extern PlatonicSolid* cllm_generate_from_schlafli(const char* schlafli_str);
@@ -87,7 +87,7 @@ CLLMModel* cllm_create_from_schlafli(uint32_t vocab_size,
     }
     
     // Create model using standard creation function
-    CLLMModel* model = cllm_create(&config);
+    CLLMModel* model = cllm_create_model(&config);
     if (!model) {
         fprintf(stderr, "Error: Failed to create CLLM model\n");
         platonic_free(solid);

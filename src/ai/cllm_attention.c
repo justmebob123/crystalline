@@ -389,12 +389,14 @@ static void standard_attention_forward(
         matmul(batch_out, batch_attn, O_weight, seq_len, embedding_dim, embedding_dim);
     }
     
-    // Cleanup aligned memory
-    aligned_free_64(Q);
-    aligned_free_64(K);
-    aligned_free_64(V);
-    aligned_free_64(scores);
-    aligned_free_64(attn_output);
+    // Cleanup aligned memory (but NOT Q, K, V, attn_output if in training mode - they're cached)
+    if (!cllm_is_training(model)) {
+        aligned_free_64(Q);
+        aligned_free_64(K);
+        aligned_free_64(V);
+        aligned_free_64(attn_output);
+    }
+    aligned_free_64(scores);  // Always free scores (not cached)
     
     // Update statistics
     model->ntt.standard_calls++;
@@ -509,11 +511,13 @@ static void cllm_ntt_attention_forward(
         matmul(batch_out, batch_attn, O_weight, seq_len, embedding_dim, embedding_dim);
     }
     
-    // Cleanup aligned memory
-    aligned_free_64(Q);
-    aligned_free_64(K);
-    aligned_free_64(V);
-    aligned_free_64(attn_output);
+    // Cleanup aligned memory (but NOT Q, K, V, attn_output if in training mode - they're cached)
+    if (!cllm_is_training(model)) {
+        aligned_free_64(Q);
+        aligned_free_64(K);
+        aligned_free_64(V);
+        aligned_free_64(attn_output);
+    }
     
     // Update statistics
     model->ntt.ntt_calls++;

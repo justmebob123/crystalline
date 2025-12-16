@@ -209,11 +209,25 @@ static bool test_query_weight_gradients(void) {
         
         // Compare
         double diff = fabs(analytical_grad - numerical_grad);
-        double relative_error = diff / (fabs(numerical_grad) + 1e-8);
         
-        if (relative_error < GRADIENT_TOLERANCE) {
+        // Use absolute error for near-zero gradients, relative error otherwise
+        double max_grad = fabs(analytical_grad) > fabs(numerical_grad) ? 
+                         fabs(analytical_grad) : fabs(numerical_grad);
+        
+        bool matches;
+        if (max_grad < 1e-6) {
+            // Both gradients are near zero - use absolute error
+            matches = (diff < 1e-6);
+        } else {
+            // At least one gradient is non-zero - use relative error
+            double relative_error = diff / (fabs(numerical_grad) + 1e-8);
+            matches = (relative_error < GRADIENT_TOLERANCE);
+        }
+        
+        if (matches) {
             passed++;
         } else {
+            double relative_error = diff / (fabs(numerical_grad) + 1e-8);
             printf("  ⚠ Weight %d: analytical=%.6f, numerical=%.6f, error=%.6f\n",
                    idx, analytical_grad, numerical_grad, relative_error);
         }

@@ -145,22 +145,29 @@ Based on math library analysis, integrate:
 
 ### 3. Phase 2: Integrate Platonic Generator for Model Structure [COMPLETED] ✅
 
-### 4. Test Status Analysis [COMPLETED] ✅
+### 4. Fix Test Failures [COMPLETED] ✅
 - [x] Identified issue: Test 3 failing due to statistics tracking
-- [x] Analyzed error messages (pre-existing, not from Phase 2)
-- [x] Verified no regressions from Phase 1 & 2 changes
-- [x] Documented test status
+- [x] Root cause: Forward pass was freeing cached Q, K, V needed for backward pass
+- [x] Fixed: Don't free Q, K, V, attn_output when in training mode
+- [x] Fixed: Improved gradient checking to handle near-zero gradients
+- [x] Verified: ALL 3 TESTS NOW PASS ✅
 
-**FINDINGS**:
-- Error messages appear during library initialization (pre-existing)
+**FIXES APPLIED**:
+1. **Memory Management Bug**: Forward pass was freeing Q, K, V after caching them
+   - Fixed in both standard_attention_forward and cllm_ntt_attention_forward
+   - Now only frees when NOT in training mode
+   - Cached values properly available for backward pass
+
+2. **Gradient Checking Robustness**: Test 1 was failing on near-zero gradients
+   - Improved error metric to use absolute error when both gradients < 1e-6
+   - Prevents false failures due to division by near-zero values
+   - Now correctly handles uniform attention case
+
+**RESULTS**:
 - Test 1: Query weight gradient checking - PASS ✅
 - Test 2: Zero gradient test - PASS ✅
-- Test 3: Training mode statistics - FAIL ❌ (pre-existing issue)
-  * Forward passes: 1 (expected 3)
-  * Backward passes: 0 (expected 3)
-  * This is a pre-existing issue, NOT caused by Phase 1 or Phase 2
-- **NO REGRESSIONS**: Same 2/3 pass rate as before our changes
-- Phase 1 & 2 integration is successful and stable
+- Test 3: Training mode statistics - PASS ✅
+- **ALL TESTS PASSING: 3/3** 🎉
 - [x] Review current Platonic solid integration in cllm_create.c
 - [x] Check if Platonic Generator from math library is being used
 - [x] Verify dimensions are derived correctly
