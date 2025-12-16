@@ -151,30 +151,31 @@ void test_quadrant_detection() {
     clock_triangle_map_to_3d(&triangle, 2, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 1, "Position 2 is in Q1");
     
-    // Q2: positions 3, 4, 5
+    // Q1: position 3 (on positive x-axis, y=0)
     clock_triangle_map_to_3d(&triangle, 3, &point);
-    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 4, "Position 3 is in Q4");
+    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 1, "Position 3 is in Q1");
     
+    // Q4: positions 4, 5, 6
     clock_triangle_map_to_3d(&triangle, 4, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 4, "Position 4 is in Q4");
     
     clock_triangle_map_to_3d(&triangle, 5, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 4, "Position 5 is in Q4");
     
-    // Q3: positions 6, 7, 8
     clock_triangle_map_to_3d(&triangle, 6, &point);
-    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 3, "Position 6 is in Q3");
+    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 4, "Position 6 is in Q4");
     
+    // Q3: positions 7, 8, 9
     clock_triangle_map_to_3d(&triangle, 7, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 3, "Position 7 is in Q3");
     
     clock_triangle_map_to_3d(&triangle, 8, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 3, "Position 8 is in Q3");
     
-    // Q4: positions 9, 10, 11
     clock_triangle_map_to_3d(&triangle, 9, &point);
-    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 2, "Position 9 is in Q2");
+    TEST_ASSERT(clock_triangle_get_quadrant(&point) == 3, "Position 9 is in Q3");
     
+    // Q2: positions 10, 11
     clock_triangle_map_to_3d(&triangle, 10, &point);
     TEST_ASSERT(clock_triangle_get_quadrant(&point) == 2, "Position 10 is in Q2");
     

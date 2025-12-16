@@ -341,6 +341,69 @@ bool clock_is_prime_o1(uint64_t base, uint64_t magnitude, const ClockContext* ct
 MathError clock_reverse_lookup(uint64_t number, uint32_t* ring, 
                                uint32_t* position, uint64_t* magnitude);
 
+/* ============================================================================
+ * QUADRANT FOLDING AND UNFOLDING (Week 1, Day 3-4)
+ * ============================================================================
+ */
+
+/**
+ * @brief Get the quadrant of a clock position
+ * @param pos Clock position
+ * @return Quadrant number (1-4), or 0 if invalid
+ * 
+ * Quadrants are determined by the angle:
+ * - Q1: 0° to 90° (positions 0-2 on ring 0)
+ * - Q4: 90° to 180° (positions 3-5 on ring 0)
+ * - Q3: 180° to 270° (positions 6-8 on ring 0)
+ * - Q2: 270° to 360° (positions 9-11 on ring 0)
+ */
+uint8_t clock_get_quadrant(const ClockPosition* pos);
+
+/**
+ * @brief Fold a clock position to the first quadrant
+ * @param pos Input clock position (any quadrant)
+ * @param folded Output clock position (in Q1)
+ * @param polarity_change Output: +1 if no change, -1 if polarity flipped
+ * @return MATH_SUCCESS or error code
+ * 
+ * This is step 2 of the 6-step Babylonian pattern.
+ * Transforms any position to Q1 for geometric operations.
+ * Tracks polarity changes for sign handling.
+ */
+MathError clock_fold_to_q1(const ClockPosition* pos,
+                           ClockPosition* folded,
+                           int8_t* polarity_change);
+
+/**
+ * @brief Unfold a clock position from Q1 to target quadrant
+ * @param pos Input clock position (in Q1)
+ * @param target_quadrant Target quadrant (1-4)
+ * @param unfolded Output clock position (in target quadrant)
+ * @param polarity_change Input: polarity to apply
+ * @return MATH_SUCCESS or error code
+ * 
+ * This is step 5 of the 6-step Babylonian pattern.
+ * Transforms Q1 position back to original quadrant.
+ * Applies polarity changes from operations.
+ */
+MathError clock_unfold_from_q1(const ClockPosition* pos,
+                               uint8_t target_quadrant,
+                               ClockPosition* unfolded,
+                               int8_t polarity_change);
+
+/**
+ * @brief Track polarity oscillations during an operation
+ * @param start_pos Starting clock position
+ * @param end_pos Ending clock position
+ * @return Number of polarity oscillations (sign changes)
+ * 
+ * Counts how many times the operation crosses boundaries
+ * that cause sign changes. Used for tracking arithmetic
+ * operations across quadrants.
+ */
+int clock_track_polarity_oscillations(const ClockPosition* start_pos,
+                                      const ClockPosition* end_pos);
+
 #ifdef __cplusplus
 }
 #endif

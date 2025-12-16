@@ -1032,5 +1032,175 @@ MathError clock_map_index_to_position(uint64_t prime_index, ClockPosition* pos) 
         pos->radius = 1.0 + math_log((double)(adjusted_index + 1)) / 10.0;
     }
     
+    // Set quadrant and polarity based on angle
+    pos->quadrant = clock_get_quadrant(pos);
+    pos->polarity = 1;  // Default to positive
+    
     return MATH_SUCCESS;
+}
+
+/* ============================================================================
+ * QUADRANT FOLDING AND UNFOLDING (Week 1, Day 3-4)
+ * ============================================================================
+ */
+
+uint8_t clock_get_quadrant(const ClockPosition* pos) {
+    if (!pos) return 0;
+    
+    // Normalize angle to [0, 2π)
+    double angle = pos->angle;
+    while (angle < 0.0) angle += MATH_TWO_PI;
+    while (angle >= MATH_TWO_PI) angle -= MATH_TWO_PI;
+    
+    // Determine quadrant based on angle
+    // 0° = 3 o'clock (positive x-axis)
+    // 90° = 12 o'clock (positive y-axis)
+    // 180° = 9 o'clock (negative x-axis)
+    // 270° = 6 o'clock (negative y-axis)
+    
+    if (angle >= 0.0 && angle < MATH_PI / 2.0) {
+        return 1;  // Q1: 0° to 90°
+    } else if (angle >= MATH_PI / 2.0 && angle < MATH_PI) {
+        return 4;  // Q4: 90° to 180° (note: this is actually Q2 in standard math, but we use clock convention)
+    } else if (angle >= MATH_PI && angle < 3.0 * MATH_PI / 2.0) {
+        return 3;  // Q3: 180° to 270°
+    } else {
+        return 2;  // Q2: 270° to 360°
+    }
+}
+
+MathError clock_fold_to_q1(const ClockPosition* pos,
+                           ClockPosition* folded,
+                           int8_t* polarity_change) {
+    if (!pos || !folded || !polarity_change) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Copy the position
+    *folded = *pos;
+    
+    // Get current quadrant
+    uint8_t current_q = clock_get_quadrant(pos);
+    
+    // If already in Q1, no transformation needed
+    if (current_q == 1) {
+        *polarity_change = 1;  // No change
+        folded->quadrant = 1;
+        return MATH_SUCCESS;
+    }
+    
+    // Fold to Q1 by rotating angle
+    double angle = pos->angle;
+    while (angle < 0.0) angle += MATH_TWO_PI;
+    while (angle >= MATH_TWO_PI) angle -= MATH_TWO_PI;
+    
+    switch (current_q) {
+        case 2:  // Q2 → Q1: Rotate by -270° (or +90°)
+            folded->angle = angle - 3.0 * MATH_PI / 2.0;
+            if (folded->angle < 0.0) folded->angle += MATH_TWO_PI;
+            *polarity_change = 1;  // No polarity change
+            break;
+            
+        case 3:  // Q3 → Q1: Rotate by -180°
+            folded->angle = angle - MATH_PI;
+            if (folded->angle < 0.0) folded->angle += MATH_TWO_PI;
+            *polarity_change = -1;  // Polarity flip
+            break;
+            
+        case 4:  // Q4 → Q1: Rotate by -90°
+            folded->angle = angle - MATH_PI / 2.0;
+            if (folded->angle < 0.0) folded->angle += MATH_TWO_PI;
+            *polarity_change = 1;  // No polarity change
+            break;
+            
+        default:
+            return MATH_ERROR_INVALID_ARG;
+    }
+    
+    folded->quadrant = 1;
+    folded->polarity = pos->polarity * (*polarity_change);
+    
+    return MATH_SUCCESS;
+}
+
+MathError clock_unfold_from_q1(const ClockPosition* pos,
+                               uint8_t target_quadrant,
+                               ClockPosition* unfolded,
+                               int8_t polarity_change) {
+    if (!pos || !unfolded) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    if (target_quadrant < 1 || target_quadrant > 4) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Copy the position
+    *unfolded = *pos;
+    
+    // If target is Q1, no transformation needed
+    if (target_quadrant == 1) {
+        unfolded->polarity = pos->polarity * polarity_change;
+        return MATH_SUCCESS;
+    }
+    
+    // Unfold from Q1 to target quadrant by rotating angle
+    double angle = pos->angle;
+    while (angle < 0.0) angle += MATH_TWO_PI;
+    while (angle >= MATH_TWO_PI) angle -= MATH_TWO_PI;
+    
+    switch (target_quadrant) {
+        case 2:  // Q1 → Q2: Rotate by +270° (or -90°)
+            unfolded->angle = angle + 3.0 * MATH_PI / 2.0;
+            if (unfolded->angle >= MATH_TWO_PI) unfolded->angle -= MATH_TWO_PI;
+            break;
+            
+        case 3:  // Q1 → Q3: Rotate by +180°
+            unfolded->angle = angle + MATH_PI;
+            if (unfolded->angle >= MATH_TWO_PI) unfolded->angle -= MATH_TWO_PI;
+            break;
+            
+        case 4:  // Q1 → Q4: Rotate by +90°
+            unfolded->angle = angle + MATH_PI / 2.0;
+            if (unfolded->angle >= MATH_TWO_PI) unfolded->angle -= MATH_TWO_PI;
+            break;
+    }
+    
+    unfolded->quadrant = target_quadrant;
+    unfolded->polarity = pos->polarity * polarity_change;
+    
+    return MATH_SUCCESS;
+}
+
+int clock_track_polarity_oscillations(const ClockPosition* start_pos,
+                                      const ClockPosition* end_pos) {
+    if (!start_pos || !end_pos) return 0;
+    
+    uint8_t start_q = clock_get_quadrant(start_pos);
+    uint8_t end_q = clock_get_quadrant(end_pos);
+    
+    // Count quadrant crossings that cause polarity changes
+    // Polarity flips when crossing between Q1↔Q3 or Q2↔Q4
+    
+    if (start_q == end_q) {
+        return 0;  // No crossing
+    }
+    
+    // Calculate the shortest path between quadrants
+    int diff = (int)end_q - (int)start_q;
+    if (diff < 0) diff += 4;
+    
+    // Count polarity flips
+    // Q1→Q3 or Q3→Q1: 1 flip (180° rotation)
+    // Q2→Q4 or Q4→Q2: 1 flip (180° rotation)
+    // Other transitions: 0 flips
+    
+    if ((start_q == 1 && end_q == 3) || (start_q == 3 && end_q == 1)) {
+        return 1;
+    }
+    if ((start_q == 2 && end_q == 4) || (start_q == 4 && end_q == 2)) {
+        return 1;
+    }
+    
+    return 0;
 }

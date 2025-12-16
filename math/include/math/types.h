@@ -64,6 +64,8 @@ typedef struct {
     uint32_t position;        /**< Position within ring */
     double angle;             /**< Angle in radians (0 = 3 o'clock) */
     double radius;            /**< Radius from center (0.0 to 1.0+) */
+    uint8_t quadrant;         /**< Quadrant (1-4) for geometric operations */
+    int8_t polarity;          /**< Polarity (+1 or -1) for sign tracking */
 } ClockPosition;
 
 /**
