@@ -15,9 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/angular_attention.h"
+#include "math/constants.h"
 #include "math/transcendental.h"  // NEW math library
+#include "math/constants.h"
 #include "math/arithmetic.h"      // NEW math library
+#include "math/constants.h"
 #include "math/types.h"           // NEW math library (for MATH_PI)
+#include "math/constants.h"
 
 /**
  * Compute angular attention score between two positions

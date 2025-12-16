@@ -4,12 +4,19 @@
  */
 
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "math/angular_position.h"
+#include "math/constants.h"
 #include "ai/cllm_lattice_formula.h"
+#include "math/constants.h"
 #include "ai/cllm_lattice_entropy.h"
+#include "math/constants.h"
 #include "ai/cllm_cymatic_frequencies.h"
+#include "math/constants.h"
 #include "phonetic_values.h"
+#include "math/constants.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

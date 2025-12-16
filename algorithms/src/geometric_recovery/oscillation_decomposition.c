@@ -11,9 +11,13 @@
  */
 
 #include "../include/oscillation_decomposition.h"
+#include "math/constants.h"
 #include "math/complex.h"        // PHASE 2: NEW math library complex numbers
+#include "math/constants.h"
 #include "math/transcendental.h" // PHASE 2: For math_cos, math_sin, math_sqrt
+#include "math/constants.h"
 #include "math/types.h"          // PHASE 2: For MATH_PI
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -19,11 +19,17 @@
  */
 
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "ai/cllm_platonic.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/types.h"  // For MATH_PHI constant
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -12,11 +12,17 @@
  */
 
 #include "geometric_recovery/anchor_grid.h"
+#include "math/constants.h"
 #include "math/platonic_generator.h"
+#include "math/constants.h"
 #include "math/polytope.h"
+#include "math/constants.h"
 #include "math/prime.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

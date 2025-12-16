@@ -14,9 +14,13 @@
  */
 
 #include "mathematical_formulas.h"
+#include "math/constants.h"
 #include "math/types.h"
+#include "math/constants.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/constants.h"
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/constants.h"
 #include <stdlib.h>
 #include <stdint.h>
 

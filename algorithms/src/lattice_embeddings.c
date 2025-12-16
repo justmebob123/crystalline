@@ -9,7 +9,9 @@
  */
 
 #include "math/abacus.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

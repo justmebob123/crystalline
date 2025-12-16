@@ -16,9 +16,13 @@
  */
 
 #include "sphere_packing.h"
+#include "math/constants.h"
 #include "../../math/include/math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/constants.h"
 #include "../../math/include/math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/constants.h"
 #include "../../math/include/math/types.h"            // PHASE 2: For MATH_TWO_PI
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

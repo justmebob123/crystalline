@@ -4,8 +4,11 @@
  */
 
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "ai/cllm_cymatic_frequencies.h"
+#include "math/constants.h"
 #include <string.h>
 
 /**

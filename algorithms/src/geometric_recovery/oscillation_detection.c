@@ -17,10 +17,15 @@
  */
 
 #include "geometric_recovery/oscillation_detection.h"
+#include "math/constants.h"
 #include "math/complex.h"
+#include "math/constants.h"
 #include "math/types.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

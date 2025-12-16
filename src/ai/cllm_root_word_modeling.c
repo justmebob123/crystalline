@@ -1,4 +1,5 @@
 #include "math/types.h"
+#include "math/constants.h"
 /*
  * CLLM Root Word Modeling
  * 
@@ -22,10 +23,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "../include/cllm_attention.h"
+#include "math/constants.h"
 #include "math/clock.h"
+#include "math/constants.h"
 #include "math/prime.h"  // For prime_validate_by_clock()
+#include "math/constants.h"
 
 // Prime cache for fast lookup
 #define PRIME_CACHE_SIZE 1000

@@ -21,33 +21,61 @@
  */
 
 #include "cllm_training.h"
+#include "math/constants.h"
 #include "cllm_training_threaded.h"
+#include "math/constants.h"
 #include "cllm_threads.h"
+#include "math/constants.h"
 #include "cllm_batch.h"
+#include "math/constants.h"
 #include "cllm_simd_gradient_ops.h"
+#include "math/constants.h"
 #include "ai/cllm_lattice_hierarchy.h"
+#include "math/constants.h"
 #include "ai/cllm_shared_memory.h"
+#include "math/constants.h"
 #include "ai/cllm_control_process.h"
+#include "math/constants.h"
 #include "ai/cllm_loss.h"
+#include "math/constants.h"
 #include "ai/cllm_sphere_stats.h"        // PHASE 7: Sphere statistics
+#include "math/constants.h"
 #include "ai/cllm_sphere_message.h"      // PHASE 7: Sphere messaging
+#include "math/constants.h"
 #include "ai/cllm_workload_detector.h"   // PHASE 2: Dynamic spawning
+#include "math/constants.h"
 #include "ai/cllm_crystalline_memory.h"  // PHASE 3: Crystalline memory structure (includes KissingBoundary)
+#include "math/constants.h"
 #include "ai/cllm_cache_optimization.h"  // PHASE 3: Cache optimization
+#include "math/constants.h"
 #include "clock_lattice.h"               // PHASE 3: Clock-based memory mapping
+#include "math/constants.h"
 #include "cllm_metrics.h"                // UI Integration: Real-time metrics
+#include "math/constants.h"
 #include "ai/cllm_entropy_integration.h" // PHASE 6: Entropy integration
+#include "math/constants.h"
 #include "ai/cllm_adaptive_hierarchy.h"  // PHASE 6: Adaptive hierarchy
+#include "math/constants.h"
 #include "math/validation.h"             // For math_is_nan and math_is_inf
+#include "math/constants.h"
 #include "ai/cllm_cymatic_frequencies.h" // For cllm_get_dimensional_frequency
+#include "math/constants.h"
 #include "ai/cllm_entropy_allocation.h"  // PHASE 6: Entropy-based allocation
+#include "math/constants.h"
 #include "ai/cllm_entropy_work_distribution.h" // PHASE 6: Entropy work distribution
+#include "math/constants.h"
 #include "ai/cllm_plimpton_integration.h"  // PHASE 4: Plimpton work distribution
+#include "math/constants.h"
 #include "ai/cllm_cymatic_sync.h"           // PHASE 5: Cymatic timing synchronization
+#include "math/constants.h"
 #include "../../algorithms/include/cymatic_modulation.h"  // Cymatic gradient modulation
+#include "math/constants.h"
 #include "math/types.h"  // For dimensional frequencies
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "prime_types.h"                 // For MATH_PI
+#include "math/constants.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -56,6 +84,7 @@
 #include <unistd.h>
 #include <time.h>  // For timing metrics
 #include "math/transcendental.h"
+#include "math/constants.h"
 
 /**
  * Thread-local training context for each sphere

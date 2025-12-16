@@ -9,10 +9,15 @@
  */
 
 #include "iterative_search.h"
+#include "math/constants.h"
 #include "statistics.h"
+#include "math/constants.h"
 #include "math/types.h"
+#include "math/constants.h"
 #include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/constants.h"
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 

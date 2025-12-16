@@ -1,4 +1,5 @@
 #include "math/types.h"
+#include "math/constants.h"
 /**
  * Production Features for CLLM
  * 
@@ -11,10 +12,15 @@
  */
 
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "cllm_training.h"
+#include "math/constants.h"
 #include "ai/cllm_loss.h"
+#include "math/constants.h"
 #include "cllm_format.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

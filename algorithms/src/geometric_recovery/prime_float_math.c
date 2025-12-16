@@ -10,7 +10,9 @@
 
 #include <stdint.h>
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 
 /*
  * Square Root: sqrt(x)

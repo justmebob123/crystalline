@@ -16,10 +16,15 @@
  */
 
 #include "blind_recovery/blind_recovery.h"
+#include "math/constants.h"
 #include "math/complex.h"        // PHASE 2: NEW math library complex numbers
+#include "math/constants.h"
 #include "math/types.h"           // For MATH_PI
+#include "math/constants.h"
 #include "math/transcendental.h"  // For math_sqrt, math_exp, math_cos, math_sin
+#include "math/constants.h"
 #include "math/arithmetic.h"      // For math_abs
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

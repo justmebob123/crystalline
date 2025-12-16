@@ -130,8 +130,13 @@ typedef struct {
  */
 
 /** Mathematical constant π (pi) */
+#define MATH_PI 3.14159265358979323846
 
 /** Derived π constants */
+#define MATH_TWO_PI (2.0 * MATH_PI)
+#define MATH_PI_OVER_2 (MATH_PI / 2.0)
+#define MATH_PI_OVER_4 (MATH_PI / 4.0)
+#define MATH_PI_OVER_6 (MATH_PI / 6.0)
 
 /** Mathematical constant e (Euler's number) */
 #define MATH_E 2.71828182845904523536
@@ -151,6 +156,7 @@ typedef struct {
 #endif
 
 /** Mathematical constant φ (golden ratio) */
+#define MATH_PHI 1.61803398874989484820
 
 /** Square roots - MOVED TO constants.h to avoid duplicates */
 

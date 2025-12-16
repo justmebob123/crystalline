@@ -7,8 +7,11 @@
  */
 
 #include "blind_recovery.h"
+#include "math/constants.h"
 #include "math/types.h"           // For MATH_PI and MATH_INFINITY
+#include "math/constants.h"
 #include "math/transcendental.h"  // For math_sqrt
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 

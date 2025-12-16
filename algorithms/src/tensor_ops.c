@@ -8,9 +8,13 @@
  */
 
 #include "tensor_ops.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/constants.h"
 #include "math/transcendental.h"   // For math_pow
+#include "math/constants.h"
 #include "math/types.h"
+#include "math/constants.h"
 #include <stdlib.h>
 
 double tensor_distance(const double* t1, const double* t2,

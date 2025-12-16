@@ -356,6 +356,9 @@ typedef struct {
 // Symmetry and lattice constants
 #define SYMMETRY_ORDER 12             // 12-fold symmetry (clock structure)
 #define GOLDEN_RATIO 1.618033988749895
+#define MATH_PI 3.14159265358979323846  // Pi constant (alias)
+#define MATH_PI 3.14159265358979323846  // Lattice Pi constant
+#define MATH_PHI 1.618033988749895      // Lattice golden ratio
 #define LATTICE_SQRT5 2.23606797749979     // Square root of 5
 
 // Einstein's Λ (Lambda) correction - CRITICAL CONSTANT

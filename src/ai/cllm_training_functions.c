@@ -7,12 +7,16 @@
  */
 
 #include "cllm.h"
+#include "math/constants.h"
 #include "cllm_training.h"
+#include "math/constants.h"
 #include "cllm_inference_transformer.h"
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "math/transcendental.h"
+#include "math/constants.h"
 
 // ============================================================================
 // EMBEDDING PRECOMPUTATION
