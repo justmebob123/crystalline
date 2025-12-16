@@ -25,6 +25,7 @@ SOURCES = src/numerical.c \
           src/message_passing.c \
           src/state_management.c \
           src/work_distribution.c \
+          src/hierarchical_threading.c \
           src/memory_management.c \
           src/visualization.c \
           src/visualization_2d.c \
