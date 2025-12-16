@@ -11,17 +11,18 @@
  * - 10-100x speedup for sequences > 512 tokens
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include <immintrin.h>  // AVX2 intrinsics
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "../include/cllm.h"
 #include "../include/cllm_attention.h"
 #include "../include/cllm_simd_utils.h"
 #include "../algorithms/include/ntt_attention.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <immintrin.h>  // AVX2 intrinsics
 
 // ============================================================================
 // MEMORY ALIGNMENT HELPERS
@@ -499,6 +500,55 @@ void cllm_attention_forward(
 }
 
 // ============================================================================
+// HELPER FUNCTIONS FOR BACKWARD PASS
+// ============================================================================
+
+/**
+ * Matrix multiplication with first matrix transposed: C = A^T × B
+ * Used for computing weight gradients
+ */
+static void matmul_transpose_a(
+    double* C,
+    const double* A,
+    const double* B,
+    uint32_t m,  // rows of A (cols of A^T)
+    uint32_t n,  // cols of A (rows of A^T)
+    uint32_t k   // cols of B
+) {
+    // C[n × k] = A^T[n × m] × B[m × k]
+    memset(C, 0, n * k * sizeof(double));
+    
+    for (uint32_t i = 0; i < n; i++) {
+        for (uint32_t j = 0; j < k; j++) {
+            double sum = 0.0;
+            for (uint32_t l = 0; l < m; l++) {
+                // A^T[i,l] = A[l,i]
+                sum += A[l * n + i] * B[l * k + j];
+            }
+            C[i * k + j] = sum;
+        }
+    }
+}
+
+/**
+ * Scale gradients by a factor (for gradient accumulation)
+ */
+static void scale_gradients(double* gradients, size_t size, double scale) {
+    for (size_t i = 0; i < size; i++) {
+        gradients[i] *= scale;
+    }
+}
+
+/**
+ * Add gradients (for accumulation across batches)
+ */
+static void add_gradients(double* dest, const double* src, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        dest[i] += src[i];
+    }
+}
+
+// ============================================================================
 // TRAINING MODE FUNCTIONS
 // ============================================================================
 
@@ -528,8 +578,7 @@ int cllm_enable_training_mode(CLLMModel* model, uint32_t max_batch_size, uint32_
     model->training.backward_passes = 0;
     
     // Allocate layer caches
-    model->training.layer_cache = (typeof(model->training.layer_cache))
-        calloc(model->num_layers, sizeof(*model->training.layer_cache));
+    model->training.layer_cache = calloc(model->num_layers, sizeof(*model->training.layer_cache));
     
     if (!model->training.layer_cache) {
         fprintf(stderr, "Error: Failed to allocate layer cache array\n");
@@ -609,7 +658,7 @@ void cllm_disable_training_mode(CLLMModel* model) {
  * Check if in training mode
  */
 bool cllm_is_training(const CLLMModel* model) {
-    return model &amp;&amp; model->training.enabled;
+    return model && model->training.enabled;
 }
 
 // ============================================================================
@@ -646,13 +695,162 @@ void cllm_attention_backward(
         return;
     }
     
-    // TODO: Implement full backward pass in next phase
-    // For now, this is a placeholder that will be completed
+    uint32_t embedding_dim = model->embedding_dim;
+    uint32_t num_heads = model->num_heads;
+    uint32_t head_dim = embedding_dim / num_heads;
     
+    // Get cached intermediate values from forward pass
+    double* Q = model->training.layer_cache[layer_idx].Q;
+    double* K = model->training.layer_cache[layer_idx].K;
+    double* V = model->training.layer_cache[layer_idx].V;
+    double* attention_weights = model->training.layer_cache[layer_idx].attention_weights;
+    double* attn_output = model->training.layer_cache[layer_idx].attn_output;
+    
+    if (!Q || !K || !V || !attn_output) {
+        fprintf(stderr, "Error: Cached values not available for backward pass\n");
+        return;
+    }
+    
+    // Allocate gradient buffers
+    size_t qkv_size = batch_size * seq_len * embedding_dim;
+    double* grad_Q = (double*)calloc(qkv_size, sizeof(double));
+    double* grad_K = (double*)calloc(qkv_size, sizeof(double));
+    double* grad_V = (double*)calloc(qkv_size, sizeof(double));
+    double* grad_attn_output = (double*)calloc(qkv_size, sizeof(double));
+    
+    if (!grad_Q || !grad_K || !grad_V || !grad_attn_output) {
+        fprintf(stderr, "Error: Failed to allocate gradient buffers\n");
+        free(grad_Q); free(grad_K); free(grad_V); free(grad_attn_output);
+        return;
+    }
+    
+    // Step 1: Compute gradient w.r.t. attention output
+    // grad_attn_output = grad_output × O_weight^T
+    double* O_weight = model->layers[layer_idx].output_weights;
+    
+    for (uint32_t b = 0; b < batch_size; b++) {
+        const double* batch_grad_output = &grad_output[b * seq_len * embedding_dim];
+        double* batch_grad_attn = &grad_attn_output[b * seq_len * embedding_dim];
+        
+        // grad_attn = grad_output × O_weight^T
+        // This is a simplified version - in production we'd use optimized BLAS
+        for (uint32_t i = 0; i < seq_len; i++) {
+            for (uint32_t j = 0; j < embedding_dim; j++) {
+                double sum = 0.0;
+                for (uint32_t k = 0; k < embedding_dim; k++) {
+                    sum += batch_grad_output[i * embedding_dim + k] * O_weight[j * embedding_dim + k];
+                }
+                batch_grad_attn[i * embedding_dim + j] = sum;
+            }
+        }
+    }
+    
+    // Step 2: Call algorithm library backward pass for attention mechanism
+    // This computes grad_Q, grad_K, grad_V from grad_attn_output
+    for (uint32_t b = 0; b < batch_size; b++) {
+        const double* batch_grad_attn = &grad_attn_output[b * seq_len * embedding_dim];
+        const double* batch_Q = &Q[b * seq_len * embedding_dim];
+        const double* batch_K = &K[b * seq_len * embedding_dim];
+        const double* batch_V = &V[b * seq_len * embedding_dim];
+        const double* batch_attn_weights = attention_weights ? 
+            &attention_weights[b * num_heads * seq_len * seq_len] : NULL;
+        
+        double* batch_grad_Q = &grad_Q[b * seq_len * embedding_dim];
+        double* batch_grad_K = &grad_K[b * seq_len * embedding_dim];
+        double* batch_grad_V = &grad_V[b * seq_len * embedding_dim];
+        
+        // Call algorithm library backward pass
+        // Note: Function signature is (grad_Q, grad_K, grad_V, grad_output, Q, K, V, attn_weights, ...)
+        double scale = 1.0 / math_sqrt((double)head_dim);
+        int result = ntt_attention_backward_multi_head_double(
+            batch_grad_Q,        // Output: gradient w.r.t. queries
+            batch_grad_K,        // Output: gradient w.r.t. keys
+            batch_grad_V,        // Output: gradient w.r.t. values
+            batch_grad_attn,     // Input: gradient from next layer
+            batch_Q,             // Input: queries from forward pass
+            batch_K,             // Input: keys from forward pass
+            batch_V,             // Input: values from forward pass
+            batch_attn_weights,  // Input: attention weights from forward pass
+            seq_len,
+            head_dim,
+            num_heads,
+            scale
+        );
+        
+        if (result != 0) {
+            fprintf(stderr, "Warning: Backward pass failed for batch %u (error %d)\n", b, result);
+            // Continue with other batches
+        }
+    }
+    
+    // Step 3: Compute weight gradients
+    // grad_W_q = input^T × grad_Q
+    // grad_W_k = input^T × grad_K
+    // grad_W_v = input^T × grad_V
+    // grad_W_o = attn_output^T × grad_output
+    
+    double* query_grad = model->layers[layer_idx].query_grad;
+    double* key_grad = model->layers[layer_idx].key_grad;
+    double* value_grad = model->layers[layer_idx].value_grad;
+    double* output_grad = model->layers[layer_idx].output_grad;
+    
+    // Compute gradients for Q, K, V weights
+    matmul_transpose_a(
+        query_grad,
+        input,
+        grad_Q,
+        batch_size * seq_len,
+        embedding_dim,
+        embedding_dim
+    );
+    
+    matmul_transpose_a(
+        key_grad,
+        input,
+        grad_K,
+        batch_size * seq_len,
+        embedding_dim,
+        embedding_dim
+    );
+    
+    matmul_transpose_a(
+        value_grad,
+        input,
+        grad_V,
+        batch_size * seq_len,
+        embedding_dim,
+        embedding_dim
+    );
+    
+    // Compute gradient for output weight
+    matmul_transpose_a(
+        output_grad,
+        attn_output,
+        grad_output,
+        batch_size * seq_len,
+        embedding_dim,
+        embedding_dim
+    );
+    
+    // Step 4: Handle gradient accumulation if needed
+    if (model->training.gradient_accumulation_steps > 1) {
+        double scale = 1.0 / model->training.gradient_accumulation_steps;
+        
+        size_t weight_size = embedding_dim * embedding_dim;
+        scale_gradients(query_grad, weight_size, scale);
+        scale_gradients(key_grad, weight_size, scale);
+        scale_gradients(value_grad, weight_size, scale);
+        scale_gradients(output_grad, weight_size, scale);
+    }
+    
+    // Update statistics
     model->training.backward_passes++;
     
-    (void)batch_size;
-    (void)seq_len;
+    // Cleanup
+    free(grad_Q);
+    free(grad_K);
+    free(grad_V);
+    free(grad_attn_output);
 }
 
 /**
