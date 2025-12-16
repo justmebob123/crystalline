@@ -10,14 +10,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Base directory for thesis files
+// Base directory for thesis files (relative to this script)
 $baseDir = dirname(__DIR__);
 
 // Get the action from query parameter
 $action = $_GET['action'] ?? 'structure';
 
 /**
- * Recursively scan directory and build file structure
+ * Recursively scan directory and build file structure with relative paths
  */
 function scanDirectory($dir, $relativePath = '') {
     $result = [];
@@ -67,55 +67,6 @@ function scanDirectory($dir, $relativePath = '') {
     });
     
     return $result;
-}
-
-/**
- * Get file content
- */
-function getFileContent($filePath) {
-    $fullPath = $GLOBALS['baseDir'] . '/' . $filePath;
-    
-    // Security check: ensure path is within base directory
-    $realBase = realpath($GLOBALS['baseDir']);
-    $realPath = realpath($fullPath);
-    
-    if ($realPath === false || strpos($realPath, $realBase) !== 0) {
-        return [
-            'success' => false,
-            'error' => 'Invalid file path'
-        ];
-    }
-    
-    if (!file_exists($fullPath)) {
-        return [
-            'success' => false,
-            'error' => 'File not found'
-        ];
-    }
-    
-    if (!is_file($fullPath)) {
-        return [
-            'success' => false,
-            'error' => 'Not a file'
-        ];
-    }
-    
-    $content = file_get_contents($fullPath);
-    
-    if ($content === false) {
-        return [
-            'success' => false,
-            'error' => 'Failed to read file'
-        ];
-    }
-    
-    return [
-        'success' => true,
-        'content' => $content,
-        'path' => $filePath,
-        'size' => strlen($content),
-        'modified' => filemtime($fullPath)
-    ];
 }
 
 /**
@@ -227,16 +178,6 @@ try {
                 'success' => true,
                 'structure' => $structure
             ], JSON_PRETTY_PRINT);
-            break;
-            
-        case 'file':
-            $filePath = $_GET['path'] ?? '';
-            if (empty($filePath)) {
-                throw new Exception('File path is required');
-            }
-            
-            $result = getFileContent($filePath);
-            echo json_encode($result, JSON_PRETTY_PRINT);
             break;
             
         case 'search':

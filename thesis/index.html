@@ -398,10 +398,10 @@
                     </div>
                 </div>
                 <div class="toolbar-right">
-                    <a href="#" class="btn btn-secondary" id="downloadBtn" download>
+                    <a href="#" class="btn btn-secondary" id="downloadBtn" download style="display:none;">
                         📥 Download
                     </a>
-                    <a href="#" class="btn btn-secondary" id="rawBtn" target="_blank">
+                    <a href="#" class="btn btn-secondary" id="rawBtn" target="_blank" style="display:none;">
                         📄 View Raw
                     </a>
                     <button class="btn btn-primary" onclick="showStats()">
@@ -416,7 +416,7 @@
     </div>
 
     <script>
-        const API_BASE = '/api/thesis.php';
+        const API_BASE = 'api/thesis.php';
         let currentFile = '';
         let fileStructure = null;
 
@@ -507,7 +507,7 @@
             });
         }
 
-        // Load file content
+        // Load file content directly from filesystem
         async function loadFile(filePath) {
             currentFile = filePath;
             const contentArea = document.getElementById('contentArea');
@@ -518,18 +518,21 @@
             
             // Update download and raw links
             document.getElementById('downloadBtn').href = filePath;
+            document.getElementById('downloadBtn').style.display = 'inline-flex';
             document.getElementById('rawBtn').href = filePath;
+            document.getElementById('rawBtn').style.display = 'inline-flex';
             
             try {
-                const response = await fetch(`${API_BASE}?action=file&path=${encodeURIComponent(filePath)}`);
-                const data = await response.json();
+                // Fetch file directly from filesystem
+                const response = await fetch(filePath);
                 
-                if (data.success) {
-                    renderMarkdown(data.content);
-                    highlightActiveFile(filePath);
-                } else {
-                    showError('Failed to load file: ' + data.error);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const content = await response.text();
+                renderMarkdown(content);
+                highlightActiveFile(filePath);
             } catch (error) {
                 showError('Error loading file: ' + error.message);
             }
@@ -550,13 +553,24 @@
             const html = marked.parse(content);
             contentArea.innerHTML = `<div class="markdown-body">${html}</div>`;
             
-            // Make internal links work
+            // Intercept all links to handle them with JavaScript
             contentArea.querySelectorAll('a').forEach(link => {
                 const href = link.getAttribute('href');
                 if (href && href.endsWith('.md')) {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        loadFile(href);
+                        // Handle relative paths
+                        let targetPath = href;
+                        if (href.startsWith('../')) {
+                            // Calculate relative path from current file
+                            const currentDir = currentFile.substring(0, currentFile.lastIndexOf('/'));
+                            targetPath = resolvePath(currentDir, href);
+                        } else if (!href.startsWith('/')) {
+                            // Relative to current directory
+                            const currentDir = currentFile.substring(0, currentFile.lastIndexOf('/'));
+                            targetPath = currentDir ? currentDir + '/' + href : href;
+                        }
+                        loadFile(targetPath);
                     });
                 }
             });
@@ -570,6 +584,22 @@
             contentArea.scrollTop = 0;
         }
 
+        // Resolve relative paths
+        function resolvePath(base, relative) {
+            const parts = base.split('/').filter(p => p);
+            const relativeParts = relative.split('/');
+            
+            for (const part of relativeParts) {
+                if (part === '..') {
+                    parts.pop();
+                } else if (part !== '.') {
+                    parts.push(part);
+                }
+            }
+            
+            return parts.join('/');
+        }
+
         // Update breadcrumb
         function updateBreadcrumb(filePath) {
             const breadcrumb = document.getElementById('breadcrumb');
@@ -580,7 +610,8 @@
             parts.forEach((part, index) => {
                 path += (index > 0 ? '/' : '') + part;
                 if (index < parts.length - 1) {
-                    html += ` / <a href="#" onclick="loadFile('${path}'); return false;">${part}</a>`;
+                    const currentPath = path;
+                    html += ` / <a href="#" onclick="loadFile('${currentPath}'); return false;">${part}</a>`;
                 } else {
                     html += ` / <strong>${part}</strong>`;
                 }
@@ -598,7 +629,7 @@
             // Find and highlight the active file
             document.querySelectorAll('.tree-item.file').forEach(item => {
                 const span = item.querySelector('span:last-child');
-                if (span && item.onclick && item.onclick.toString().includes(filePath)) {
+                if (span && span.textContent === filePath.split('/').pop()) {
                     item.classList.add('active');
                     
                     // Expand parent directories
@@ -663,6 +694,10 @@
         async function showStats() {
             const contentArea = document.getElementById('contentArea');
             contentArea.innerHTML = '<div class="loading">Loading statistics...</div>';
+            
+            // Hide download/raw buttons
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('rawBtn').style.display = 'none';
             
             try {
                 const response = await fetch(`${API_BASE}?action=stats`);
