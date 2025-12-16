@@ -74,6 +74,28 @@ Based on your feedback, we've pivoted from simple adapter integration to **compr
 - [x] Validate gradients numerically
 - [ ] Benchmark performance (TODO)
 
+#### 1.5 Training Mode Infrastructure ✅ COMPLETE
+**Priority**: HIGH  
+**Duration**: 1 day
+
+**Tasks**:
+- [x] Add training context to CLLMModel
+- [x] Implement cllm_enable_training_mode()
+- [x] Implement cllm_disable_training_mode()
+- [x] Implement cllm_is_training()
+- [x] Allocate caches for Q, K, V, attention weights
+
+#### 1.6 Forward Pass Caching ✅ COMPLETE
+**Priority**: HIGH  
+**Duration**: 0.5 day
+
+**Tasks**:
+- [x] Modify NTT attention forward to cache values
+- [x] Modify standard attention forward to cache values
+- [x] Cache Q, K, V matrices
+- [x] Cache attention weights
+- [x] Update statistics tracking
+
 #### 2. Optimize with NTT ⏳
 **Priority**: MEDIUM  
 **Duration**: 2-3 days
