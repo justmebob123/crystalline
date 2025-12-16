@@ -27,6 +27,47 @@
             --hover-color: #2980b9;
         }
 
+        /* Dark mode */
+        body.dark-mode {
+            --primary-color: #1a1a2e;
+            --secondary-color: #16213e;
+            --accent-color: #e94560;
+            --bg-color: #0f0f1e;
+            --text-color: #eaeaea;
+            --sidebar-bg: #16213e;
+            --sidebar-text: #eaeaea;
+            --content-bg: #1a1a2e;
+            --border-color: #2d3748;
+            --hover-color: #e94560;
+        }
+
+        body.dark-mode .markdown-body {
+            color: #eaeaea;
+            background: var(--content-bg);
+        }
+
+        body.dark-mode .markdown-body code {
+            background: #2d3748;
+            color: #eaeaea;
+        }
+
+        body.dark-mode .markdown-body pre {
+            background: #2d3748;
+        }
+
+        body.dark-mode .markdown-body a {
+            color: #4fc3f7;
+        }
+
+        body.dark-mode .markdown-body table tr {
+            background: #1a1a2e;
+            border-color: #2d3748;
+        }
+
+        body.dark-mode .markdown-body table tr:nth-child(2n) {
+            background: #16213e;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-color);
@@ -393,6 +434,28 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+    /* Toast animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
@@ -418,6 +481,15 @@
                     </div>
                 </div>
                 <div class="toolbar-right">
+                    <button class="btn btn-secondary" onclick="toggleBookmark()" id="bookmarkBtn" title="Bookmark this page">
+                        ⭐ Bookmark
+                    </button>
+                    <button class="btn btn-secondary" onclick="showBookmarks()" title="View bookmarks">
+                        📑 Bookmarks
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleDarkMode()" id="darkModeBtn" title="Toggle Dark Mode">
+                        🌙 Dark Mode
+                    </button>
                     <a href="#" class="btn btn-secondary" id="downloadBtn" download style="display:none;">
                         📥 Download
                     </a>
@@ -440,8 +512,155 @@
         let currentFile = '';
         let fileStructure = null;
 
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            
+            // Update button text
+            const btn = document.getElementById('darkModeBtn');
+            btn.innerHTML = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+
+        // Bookmark functions
+        function getBookmarks() {
+            const bookmarks = localStorage.getItem('bookmarks');
+            return bookmarks ? JSON.parse(bookmarks) : [];
+        }
+
+        function saveBookmarks(bookmarks) {
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+        }
+
+        function toggleBookmark() {
+            if (!currentFile) return;
+            
+            const bookmarks = getBookmarks();
+            const index = bookmarks.findIndex(b => b.path === currentFile);
+            
+            if (index >= 0) {
+                // Remove bookmark
+                bookmarks.splice(index, 1);
+                document.getElementById('bookmarkBtn').innerHTML = '⭐ Bookmark';
+                showMessage('Bookmark removed');
+            } else {
+                // Add bookmark
+                const title = document.querySelector('.breadcrumb a:last-child')?.textContent || currentFile;
+                bookmarks.push({
+                    path: currentFile,
+                    title: title,
+                    timestamp: new Date().toISOString()
+                });
+                document.getElementById('bookmarkBtn').innerHTML = '★ Bookmarked';
+                showMessage('Bookmark added');
+            }
+            
+            saveBookmarks(bookmarks);
+        }
+
+        function updateBookmarkButton() {
+            if (!currentFile) return;
+            
+            const bookmarks = getBookmarks();
+            const isBookmarked = bookmarks.some(b => b.path === currentFile);
+            document.getElementById('bookmarkBtn').innerHTML = isBookmarked ? '★ Bookmarked' : '⭐ Bookmark';
+        }
+
+        function showBookmarks() {
+            const bookmarks = getBookmarks();
+            const contentArea = document.getElementById('contentArea');
+            
+            if (bookmarks.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="markdown-body">
+                        <h1>📑 Bookmarks</h1>
+                        <p>No bookmarks yet. Click the ⭐ Bookmark button to save pages.</p>
+                        <p style="margin-top: 20px;">
+                            <a href="#" onclick="loadFile('THESIS_MAIN.md'); return false;" style="color: var(--secondary-color);">
+                                ← Back to Table of Contents
+                            </a>
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="markdown-body">
+                    <h1>📑 Bookmarks</h1>
+                    <p>You have ${bookmarks.length} bookmark${bookmarks.length > 1 ? 's' : ''}:</p>
+                    <ul style="list-style: none; padding: 0;">
+            `;
+            
+            bookmarks.forEach((bookmark, index) => {
+                const date = new Date(bookmark.timestamp).toLocaleDateString();
+                html += `
+                    <li style="margin: 15px 0; padding: 10px; background: var(--bg-color); border-radius: 5px;">
+                        <a href="#" onclick="loadFile('${bookmark.path}'); return false;" style="color: var(--secondary-color); font-weight: bold;">
+                            ${bookmark.title}
+                        </a>
+                        <br>
+                        <small style="color: #7f8c8d;">Added: ${date}</small>
+                        <button onclick="removeBookmark(${index}); showBookmarks();" style="float: right; background: var(--accent-color); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                            Remove
+                        </button>
+                    </li>
+                `;
+            });
+            
+            html += `
+                    </ul>
+                    <p style="margin-top: 20px;">
+                        <a href="#" onclick="loadFile('THESIS_MAIN.md'); return false;" style="color: var(--secondary-color);">
+                            ← Back to Table of Contents
+                        </a>
+                    </p>
+                </div>
+            `;
+            
+            contentArea.innerHTML = html;
+        }
+
+        function removeBookmark(index) {
+            const bookmarks = getBookmarks();
+            bookmarks.splice(index, 1);
+            saveBookmarks(bookmarks);
+            updateBookmarkButton();
+        }
+
+        function showMessage(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--secondary-color);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            // Load dark mode preference
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeBtn').innerHTML = '☀️ Light Mode';
+            }
+            
             loadFileStructure();
             loadFile('THESIS_MAIN.md'); // Load table of contents by default
             
@@ -574,6 +793,7 @@
                 const content = await response.text();
                 renderMarkdown(content);
                 highlightActiveFile(filePath);
+                updateBookmarkButton();
             } catch (error) {
                 showError('Error loading file: ' + error.message + ' (tried to load: ' + actualPath + ')');
             }
