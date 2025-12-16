@@ -597,7 +597,8 @@
             // Intercept all links to handle them with JavaScript
             contentArea.querySelectorAll('a').forEach(link => {
                 const href = link.getAttribute('href');
-                if (href && href.endsWith('.md')) {
+                // Intercept internal links (relative paths, .md files, directories)
+                if (href && !href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('#')) {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
                         // Handle relative paths
@@ -611,6 +612,8 @@
                             const currentDir = currentFile.substring(0, currentFile.lastIndexOf('/'));
                             targetPath = currentDir ? currentDir + '/' + href : href;
                         }
+                        // Remove trailing slash if present
+                        targetPath = targetPath.replace(/\/$/, '');
                         loadFile(targetPath);
                     });
                 }
