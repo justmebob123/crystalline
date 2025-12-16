@@ -49,6 +49,9 @@ typedef struct {
     // Thread pool (shared across all adapters)
     HierarchicalThreadPool* thread_pool;
     
+    // NTT attention context (opaque pointer)
+    void* ntt_attention_context;
+    
     // Adapter metadata
     uint32_t adapter_id;
     bool initialized;
