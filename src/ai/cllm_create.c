@@ -131,16 +131,48 @@ static void initialize_geometric_weights(CLLMModel* model) {
  * Allocate all model parameters
  */
 static bool allocate_model_parameters(CLLMModel* model) {
-    // Embeddings
+    // Embeddings (legacy double arrays - kept for backward compatibility)
     model->embeddings = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
     if (!model->embeddings) return false;
     
     model->embeddings_grad = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
     if (!model->embeddings_grad) return false;
     
-    // Positional encoding
+    // Positional encoding (legacy)
     model->positional_encoding = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
     if (!model->positional_encoding) return false;
+    
+    // Abacus-based embeddings (NEW - arbitrary precision)
+    // Use base 60 (Babylonian) with precision 10 for high accuracy
+    model->abacus_embeddings = abacus_matrix_create(
+        model->vocab_size, 
+        model->embedding_dim, 
+        60,  // Base 60 (sexagesimal - Babylonian)
+        10   // Precision: 10 fractional digits
+    );
+    if (!model->abacus_embeddings) {
+        fprintf(stderr, "Failed to create abacus embeddings matrix\n");
+        return false;
+    }
+    
+    model->abacus_positional_encoding = abacus_matrix_create(
+        model->max_seq_len,
+        model->embedding_dim,
+        60,  // Base 60
+        10   // Precision: 10 fractional digits
+    );
+    if (!model->abacus_positional_encoding) {
+        fprintf(stderr, "Failed to create abacus positional encoding matrix\n");
+        return false;
+    }
+    
+    // Enable abacus embeddings by default
+    model->use_abacus_embeddings = true;
+    
+    printf("✓ Created abacus embeddings: %u × %u (base 60, precision 10)\n",
+           model->vocab_size, model->embedding_dim);
+    printf("✓ Created abacus positional encoding: %u × %u (base 60, precision 10)\n",
+           model->max_seq_len, model->embedding_dim);
     
     // Allocate layers
     model->layers = (typeof(model->layers[0])*)calloc(model->num_layers, sizeof(model->layers[0]));

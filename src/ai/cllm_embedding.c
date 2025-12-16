@@ -330,6 +330,27 @@ void cllm_init_embeddings(CLLMModel* model) {
         
         printf("✓ Embeddings initialized with clock lattice\n");
     }
+    
+    // Sync to abacus embeddings if enabled
+    if (model->use_abacus_embeddings && model->abacus_embeddings) {
+        printf("  Syncing to abacus embeddings (arbitrary precision)...\n");
+        
+        MathError err = abacus_matrix_from_doubles(model->abacus_embeddings, embeddings);
+        if (err != MATH_SUCCESS) {
+            fprintf(stderr, "ERROR: Failed to sync embeddings to abacus (error %d)\n", err);
+            return;
+        }
+        
+        printf("✓ Embeddings synced to abacus (base 60, precision 10)\n");
+        
+        // Calculate memory usage
+        size_t abacus_memory = abacus_matrix_memory_usage(model->abacus_embeddings);
+        size_t double_memory = vocab_size * embedding_dim * sizeof(double);
+        
+        printf("  Memory: Abacus = %.2f MB, Double = %.2f MB\n",
+               abacus_memory / (1024.0 * 1024.0),
+               double_memory / (1024.0 * 1024.0));
+    }
 }
 
 // ============================================================================

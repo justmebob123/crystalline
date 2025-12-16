@@ -26,6 +26,9 @@
 // (Will use NEW types if MATH_TYPES_H is defined)
 #include "clock_lattice.h"
 
+// Include CrystallineAbacus matrix utilities
+#include "cllm_abacus_matrix.h"
+
 // Include optimizer types from algorithms layer
 #include "../algorithms/include/optimizers.h"
 
@@ -235,8 +238,13 @@ typedef struct {
     CLLMVocabulary* vocabulary;      // Token vocabulary with save/load support
     
     // Embeddings (clock lattice-based)
-    double* embeddings;              // [vocab_size × embedding_dim]
+    double* embeddings;              // [vocab_size × embedding_dim] - LEGACY: will be replaced by abacus_embeddings
     double* positional_encoding;     // [max_seq_len × embedding_dim]
+    
+    // Abacus-based embeddings (arbitrary precision)
+    AbacusMatrix* abacus_embeddings;        // [vocab_size × embedding_dim] - NEW: arbitrary precision storage
+    AbacusMatrix* abacus_positional_encoding; // [max_seq_len × embedding_dim] - NEW: arbitrary precision storage
+    bool use_abacus_embeddings;             // Flag to enable abacus-based embeddings
     
     // Transformer Layers (geometric structure)
     struct {

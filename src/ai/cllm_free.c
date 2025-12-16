@@ -58,7 +58,7 @@ void cllm_free_model(CLLMModel* model) {
     // FREE MODEL PARAMETERS
     // ========================================================================
     
-    // Embeddings
+    // Embeddings (legacy double arrays)
     if (model->embeddings) {
         free(model->embeddings);
         model->embeddings = NULL;
@@ -72,6 +72,17 @@ void cllm_free_model(CLLMModel* model) {
     if (model->positional_encoding) {
         free(model->positional_encoding);
         model->positional_encoding = NULL;
+    }
+    
+    // Abacus embeddings (NEW - arbitrary precision)
+    if (model->abacus_embeddings) {
+        abacus_matrix_free(model->abacus_embeddings);
+        model->abacus_embeddings = NULL;
+    }
+    
+    if (model->abacus_positional_encoding) {
+        abacus_matrix_free(model->abacus_positional_encoding);
+        model->abacus_positional_encoding = NULL;
     }
     
     // Layers

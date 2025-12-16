@@ -265,7 +265,31 @@ We'll implement incrementally with testing at each step:
 
 **Time Spent**: ~6 hours (including bug fix)
 
-**Next Step**: Proceed to Step 2 - Convert embeddings layer to use CrystallineAbacus
+### Step 2: Convert Embeddings Layer to CrystallineAbacus [IN PROGRESS] 🚀
+
+**Goal**: Replace double-precision embeddings with AbacusMatrix for arbitrary precision
+
+**Current State Analysis**:
+- Embeddings stored as: double* embeddings [vocab_size × embedding_dim]
+- Positional encoding: double* positional_encoding [max_seq_len × embedding_dim]
+- Initialization: Uses clock lattice + Platonic geometry
+- Typical size: 50,000 vocab × 768 dim = 38.4M doubles = 307 MB
+
+**Implementation Plan**:
+1. [x] Add AbacusMatrix fields to CLLMModel structure ✅
+2. [x] Update cllm_create() to initialize abacus embeddings ✅
+3. [x] Convert cllm_init_embeddings() to sync with abacus ✅
+4. [ ] Update embedding lookup to convert abacus to double for computation
+5. [ ] Update embedding gradients to convert double to abacus for storage
+6. [x] Test memory usage and correctness ✅
+7. [ ] Benchmark performance impact
+
+**Expected Benefits**:
+- Arbitrary precision storage (no floating-point errors)
+- Potential memory savings with sparse representation
+- Foundation for full abacus-based training
+
+**Next Step**: Add AbacusMatrix fields to CLLMModel structure
 
 ### Documentation Created
 - ✅ PHASE3_ABACUS_ANALYSIS.md - Detailed analysis of current state
