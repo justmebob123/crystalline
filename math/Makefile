@@ -27,7 +27,6 @@ VISUALIZATION_SRCS = $(wildcard $(SRC_DIR)/visualization/*.c)
 COMPACT_SRCS = $(filter-out %_legacy.c, $(wildcard $(SRC_DIR)/compact/*.c))
 PLATONIC_SRCS = $(filter-out %_legacy.c, $(wildcard $(SRC_DIR)/platonic/*.c))
 BABYLONIAN_SRCS = $(wildcard $(SRC_DIR)/babylonian/*.c))
-THREADING_SRCS = $(SRC_DIR)/threading_integration.c
 
 ALL_SRCS = $(CORE_SRCS) $(ABACUS_SRCS) $(NTT_SRCS) $(GEOMETRY_SRCS) $(PRIME_SRCS) $(CRYPTO_SRCS) $(VISUALIZATION_SRCS) $(COMPACT_SRCS) $(PLATONIC_SRCS) $(BABYLONIAN_SRCS) $(THREADING_SRCS)
 
