@@ -1068,15 +1068,21 @@ slow_path:
             return err;
         }
         
-        /* Shift temp left by i positions (multiply by base^i) */
-        if (i > 0) {
+        /* Shift temp by the exponent of b[i] (multiply by base^exponent) */
+        int32_t shift_amount = b->beads[i].weight_exponent;
+        if (shift_amount != 0) {
             CrystallineAbacus* shifted = abacus_new(result->base);
             if (!shifted) {
                 abacus_free(temp);
                 return MATH_ERROR_OUT_OF_MEMORY;
             }
             
-            err = abacus_shift_left(shifted, temp, i);
+            if (shift_amount > 0) {
+                err = abacus_shift_left(shifted, temp, (size_t)shift_amount);
+            } else {
+                err = abacus_shift_right(shifted, temp, (size_t)(-shift_amount));
+            }
+            
             if (err != MATH_SUCCESS) {
                 abacus_free(temp);
                 abacus_free(shifted);
@@ -1119,8 +1125,17 @@ slow_path:
     /* Handle sign: negative if signs differ */
     result->negative = (a->negative != b->negative);
     
-    /* Update min_exponent: sum of operand min_exponents */
-    result->min_exponent = a->min_exponent + b->min_exponent;
+    /* Update min_exponent: find actual minimum exponent in result beads */
+    if (result->num_beads > 0) {
+        result->min_exponent = result->beads[0].weight_exponent;
+        for (size_t i = 1; i < result->num_beads; i++) {
+            if (result->beads[i].weight_exponent < result->min_exponent) {
+                result->min_exponent = result->beads[i].weight_exponent;
+            }
+        }
+    } else {
+        result->min_exponent = 0;
+    }
     
     return abacus_normalize(result);
 }
