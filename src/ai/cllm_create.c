@@ -29,6 +29,11 @@ extern uint64_t crystalline_get_nth_prime(uint32_t n);
 extern PlatonicGeometry platonic_get_geometry(PlatonicSolidType solid_type);
 extern bool platonic_verify_euler(const PlatonicGeometry* geometry);
 
+// Phase 2: Math library Platonic generator integration
+extern void* cllm_generate_platonic_solid(PlatonicSolidType solid_type);
+extern void cllm_update_geometry_from_solid(void* model, const void* solid);
+extern void cllm_print_platonic_solid(const void* solid);
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -247,14 +252,29 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->solid_type = config->solid_type;
     }
     
-    // Get geometry for this solid
-    model->geometry = platonic_get_geometry(model->solid_type);
-    
-    // Verify Euler's formula: V - E + F = 2
-    if (!platonic_verify_euler(&model->geometry)) {
-        fprintf(stderr, "Error: Euler's formula verification failed!\n");
-        free(model);
-        return NULL;
+    // PHASE 2: Generate full Platonic solid from math library
+    printf("  → Generating Platonic solid from math library...\n");
+    model->platonic_solid = cllm_generate_platonic_solid(model->solid_type);
+    if (!model->platonic_solid) {
+        fprintf(stderr, "Error: Failed to generate Platonic solid from math library\n");
+        fprintf(stderr, "Falling back to legacy geometry lookup...\n");
+        
+        // Fallback to legacy method
+        model->geometry = platonic_get_geometry(model->solid_type);
+        
+        // Verify Euler's formula: V - E + F = 2
+        if (!platonic_verify_euler(&model->geometry)) {
+            fprintf(stderr, "Error: Euler's formula verification failed!\n");
+            free(model);
+            return NULL;
+        }
+    } else {
+        // Update legacy geometry structure from math library solid
+        cllm_update_geometry_from_solid(model, model->platonic_solid);
+        
+        // Print detailed solid information
+        printf("  ✓ Generated Platonic solid from math library:\n");
+        cllm_print_platonic_solid(model->platonic_solid);
     }
     
     printf("  ✓ Platonic solid: ");

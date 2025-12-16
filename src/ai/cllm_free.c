@@ -241,6 +241,14 @@ void cllm_free_model(CLLMModel* model) {
     // (vertices, edges, faces, symmetries, edge_length, has_golden_ratio)
     // No need to free anything here
     
+    // PHASE 2: Free Platonic solid from math library
+    if (model->platonic_solid) {
+        // Forward declare platonic_free to avoid including math library headers
+        void platonic_free(void* solid);
+        platonic_free(model->platonic_solid);
+        model->platonic_solid = NULL;
+    }
+    
     // ========================================================================
     // FREE MODEL STRUCTURE
     // ========================================================================

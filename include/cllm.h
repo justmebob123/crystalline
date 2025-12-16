@@ -200,7 +200,11 @@ typedef struct {
     // ========================================================================
     
     PlatonicSolidType solid_type;    // Which Platonic solid (CUBE default)
-    PlatonicGeometry geometry;       // Complete geometric properties
+    PlatonicGeometry geometry;       // Complete geometric properties (legacy)
+    
+    // NEW: Full Platonic solid from math library (Phase 2)
+    void* platonic_solid;            // PlatonicSolid* from math/platonic_generator.h
+                                     // (void* to avoid circular dependency)
     
     // Dimensions DERIVED from geometry (automatic calculation)
     uint32_t embedding_dim;          // vertices × 12 (12-fold symmetry)
