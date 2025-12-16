@@ -15,7 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 #include <immintrin.h>  // AVX2 intrinsics
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
