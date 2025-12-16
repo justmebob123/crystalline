@@ -75,10 +75,8 @@ RecursiveRecoveryContext* recursive_recovery_create(
         ctx->attractors = attractors;
     } else {
         // Create tetration attractors for guidance
-        ctx->attractors = tetration_system_create(6, 31);  // 6 bases, 31 depths
-        if (ctx->attractors) {
-            tetration_system_compute(ctx->attractors);
-        }
+        ctx->attractors = tetration_create_system();  // Create system
+        // Note: tetration_create_system() already computes attractors
     }
     
     ctx->total_subdivisions = 0;
@@ -94,7 +92,7 @@ void recursive_recovery_free(RecursiveRecoveryContext* ctx) {
     }
     
     if (ctx->attractors) {
-        tetration_system_free(ctx->attractors);
+        tetration_free_system(ctx->attractors);
     }
     
     free(ctx);

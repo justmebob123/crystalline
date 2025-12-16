@@ -710,6 +710,29 @@ void cllm_attention_backward(
         return;
     }
     
+    // Debug: Check cached values
+    if (layer_idx == 0 && batch_size == 2) {
+        double Q_sum = 0.0, K_sum = 0.0, V_sum = 0.0;
+        size_t qkv_size = batch_size * seq_len * embedding_dim;
+        for (size_t i = 0; i < qkv_size; i++) {
+            Q_sum += (Q[i] > 0 ? Q[i] : -Q[i]);
+            K_sum += (K[i] > 0 ? K[i] : -K[i]);
+            V_sum += (V[i] > 0 ? V[i] : -V[i]);
+        }
+        printf("  [DEBUG] Cached Q sum: %.6f, K sum: %.6f, V sum: %.6f\n", Q_sum, K_sum, V_sum);
+        
+        if (attention_weights) {
+            double attn_sum = 0.0;
+            size_t attn_size = batch_size * num_heads * seq_len * seq_len;
+            for (size_t i = 0; i < attn_size; i++) {
+                attn_sum += (attention_weights[i] > 0 ? attention_weights[i] : -attention_weights[i]);
+            }
+            printf("  [DEBUG] Cached attention_weights sum: %.6f\n", attn_sum);
+        } else {
+            printf("  [DEBUG] attention_weights is NULL!\n");
+        }
+    }
+    
     // Allocate gradient buffers
     size_t qkv_size = batch_size * seq_len * embedding_dim;
     double* grad_Q = (double*)calloc(qkv_size, sizeof(double));
@@ -761,6 +784,18 @@ void cllm_attention_backward(
         // Call algorithm library backward pass
         // Note: Function signature is (grad_Q, grad_K, grad_V, grad_output, Q, K, V, attn_weights, ...)
         double scale = 1.0 / math_sqrt((double)head_dim);
+        
+        // Debug: Check inputs before calling backward pass
+        if (layer_idx == 0 && b == 0 && batch_size == 2) {
+            double grad_attn_sum = 0.0;
+            for (size_t i = 0; i < seq_len * embedding_dim; i++) {
+                grad_attn_sum += (batch_grad_attn[i] > 0 ? batch_grad_attn[i] : -batch_grad_attn[i]);
+            }
+            printf("  [DEBUG] batch_grad_attn sum: %.6f\n", grad_attn_sum);
+            printf("  [DEBUG] Calling backward with seq_len=%u, head_dim=%u, num_heads=%u, scale=%.6f\n",
+                   seq_len, head_dim, num_heads, scale);
+        }
+        
         int result = ntt_attention_backward_multi_head_double(
             batch_grad_Q,        // Output: gradient w.r.t. queries
             batch_grad_K,        // Output: gradient w.r.t. keys
@@ -780,6 +815,43 @@ void cllm_attention_backward(
             fprintf(stderr, "Warning: Backward pass failed for batch %u\n", b);
             // Continue with other batches
         }
+        
+        // Debug: Check outputs after calling backward pass
+        if (layer_idx == 0 && b == 0 && batch_size == 2) {
+            double gQ_sum = 0.0, gK_sum = 0.0, gV_sum = 0.0;
+            for (size_t i = 0; i < seq_len * embedding_dim; i++) {
+                gQ_sum += (batch_grad_Q[i] > 0 ? batch_grad_Q[i] : -batch_grad_Q[i]);
+                gK_sum += (batch_grad_K[i] > 0 ? batch_grad_K[i] : -batch_grad_K[i]);
+                gV_sum += (batch_grad_V[i] > 0 ? batch_grad_V[i] : -batch_grad_V[i]);
+            }
+            printf("  [DEBUG] After backward: grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n",
+                   gQ_sum, gK_sum, gV_sum);
+        }
+    }
+    
+    // Debug: Check attention_weights
+    if (layer_idx == 0 && batch_size == 2) {
+        if (attention_weights) {
+            double attn_sum = 0.0;
+            for (size_t i = 0; i < 100; i++) {  // Check first 100 values
+                attn_sum += (attention_weights[i] > 0 ? attention_weights[i] : -attention_weights[i]);
+            }
+            printf("  [DEBUG] attention_weights sum (first 100): %.6f\n", attn_sum);
+        } else {
+            printf("  [DEBUG] attention_weights is NULL!\n");
+        }
+    }
+    
+    // Debug: Check if grad_Q, grad_K, grad_V are non-zero
+    double grad_Q_sum = 0.0, grad_K_sum = 0.0, grad_V_sum = 0.0;
+    for (size_t i = 0; i < qkv_size; i++) {
+        grad_Q_sum += (grad_Q[i] > 0 ? grad_Q[i] : -grad_Q[i]);
+        grad_K_sum += (grad_K[i] > 0 ? grad_K[i] : -grad_K[i]);
+        grad_V_sum += (grad_V[i] > 0 ? grad_V[i] : -grad_V[i]);
+    }
+    if (layer_idx == 0 && batch_size == 2) {  // Only print for test
+        printf("  [DEBUG] grad_Q sum: %.6f, grad_K sum: %.6f, grad_V sum: %.6f\n", 
+               grad_Q_sum, grad_K_sum, grad_V_sum);
     }
     
     // Step 3: Compute weight gradients

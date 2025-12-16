@@ -61,10 +61,10 @@ static CLLMModel* create_test_model(void) {
         model->layers[0].output_weights[i] = ((double)rand() / RAND_MAX - 0.5) * 0.1;
     }
     
-    // Enable NTT (but won't be used for small sequences)
-    model->ntt.enabled = true;
+    // Disable NTT for testing (use standard attention which caches attention_weights)
+    model->ntt.enabled = false;
     model->ntt.threshold_seq_len = 512;
-    model->ntt.auto_select = true;
+    model->ntt.auto_select = false;
     
     return model;
 }
@@ -146,12 +146,35 @@ static bool test_query_weight_gradients(void) {
     // Forward pass
     cllm_attention_forward(model, 0, input, output, SMALL_BATCH_SIZE, SMALL_SEQ_LEN);
     
+    // Debug: Check if output is non-zero
+    double output_sum = 0.0;
+    for (size_t i = 0; i < input_size; i++) {
+        output_sum += fabs(output[i]);
+    }
+    printf("  Debug: Output sum = %.6f\n", output_sum);
+    
     // Compute loss and gradient
     double loss = compute_loss(output, target, input_size);
+    printf("  Debug: Loss = %.6f\n", loss);
     compute_loss_gradient(grad_output, output, target, input_size);
+    
+    // Debug: Check grad_output
+    double grad_sum = 0.0;
+    for (size_t i = 0; i < input_size; i++) {
+        grad_sum += fabs(grad_output[i]);
+    }
+    printf("  Debug: Grad output sum = %.6f\n", grad_sum);
     
     // Backward pass (computes analytical gradients)
     cllm_attention_backward(model, 0, grad_output, input, SMALL_BATCH_SIZE, SMALL_SEQ_LEN);
+    
+    // Debug: Check if gradients were computed
+    double query_grad_sum = 0.0;
+    size_t weight_size = SMALL_EMBEDDING_DIM * SMALL_EMBEDDING_DIM;
+    for (size_t i = 0; i < weight_size; i++) {
+        query_grad_sum += fabs(model->layers[0].query_grad[i]);
+    }
+    printf("  Debug: Query grad sum = %.6f\n", query_grad_sum);
     
     // Check a few query weight gradients numerically
     int num_checks = 5;

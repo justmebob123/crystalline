@@ -103,7 +103,7 @@ GTriangulationContext* g_triangulation_create(
     return ctx;
 }
 
-void g_triangulation_free(GTriangulationContext* ctx) {
+void g_triangulation_destroy(GTriangulationContext* ctx) {
     if (!ctx) return;
     if (ctx->training_inputs) free(ctx->training_inputs);
     if (ctx->training_outputs) free(ctx->training_outputs);
@@ -160,4 +160,44 @@ bool g_triangulation_check_convergence(GTriangulationContext* ctx, double thresh
     if (ctx->current_iteration < 2) return false;
     ctx->converged = (ctx->k_oscillation < threshold);
     return ctx->converged;
+}
+
+// Training function - iteratively refines estimates
+bool g_triangulation_train(GTriangulationContext* ctx) {
+    if (!ctx || ctx->num_training_pairs == 0) return false;
+    
+    const int MAX_ITERATIONS = 100;
+    const double CONVERGENCE_THRESHOLD = 1e-6;
+    
+    for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
+        g_triangulation_refine(ctx);
+        
+        if (g_triangulation_check_convergence(ctx, CONVERGENCE_THRESHOLD)) {
+            return true;  // Converged
+        }
+    }
+    
+    return false;  // Did not converge
+}
+
+// Estimate k from output using trained model
+bool g_triangulation_estimate(
+    GTriangulationContext* ctx,
+    uint64_t output,
+    uint64_t* k_estimate
+) {
+    if (!ctx || !k_estimate) return false;
+    
+    *k_estimate = g_triangulation_estimate_k(ctx, output);
+    return true;
+}
+
+// Get confidence of current estimates
+double g_triangulation_get_confidence(const GTriangulationContext* ctx) {
+    if (!ctx || ctx->current_iteration < 2) return 0.0;
+    
+    // Confidence based on convergence (lower oscillation = higher confidence)
+    // Map oscillation to confidence: 0 oscillation = 1.0 confidence
+    double confidence = 1.0 / (1.0 + ctx->k_oscillation * 100.0);
+    return confidence;
 }

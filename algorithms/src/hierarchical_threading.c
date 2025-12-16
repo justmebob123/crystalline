@@ -93,7 +93,7 @@ HierarchicalThreadPool* hierarchical_thread_pool_create(
     // Create work distributor
     pool->work_distributor = work_distributor_create(num_threads, 1000);  // 1000 work items in pool
     if (!pool->work_distributor) {
-        hierarchical_memory_free(pool->global_memory);
+        hierarchical_memory_destroy(pool->global_memory);
         free(pool->threads);
         free(pool);
         return NULL;
@@ -102,8 +102,8 @@ HierarchicalThreadPool* hierarchical_thread_pool_create(
     // Create state manager
     pool->state_manager = state_manager_create(num_threads, 100);  // 100 max states
     if (!pool->state_manager) {
-        work_distributor_free(pool->work_distributor);
-        hierarchical_memory_free(pool->global_memory);
+        work_distributor_destroy(pool->work_distributor);
+        hierarchical_memory_destroy(pool->global_memory);
         free(pool->threads);
         free(pool);
         return NULL;
@@ -111,9 +111,9 @@ HierarchicalThreadPool* hierarchical_thread_pool_create(
     
     // Initialize mutex
     if (pthread_mutex_init(&pool->pool_mutex, NULL) != 0) {
-        state_manager_free(pool->state_manager);
-        work_distributor_free(pool->work_distributor);
-        hierarchical_memory_free(pool->global_memory);
+        state_manager_destroy(pool->state_manager);
+        work_distributor_destroy(pool->work_distributor);
+        hierarchical_memory_destroy(pool->global_memory);
         free(pool->threads);
         free(pool);
         return NULL;

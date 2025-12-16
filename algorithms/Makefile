@@ -81,6 +81,8 @@ SOURCES = src/numerical.c \
           src/platonic_model/platonic_model_persistence.c \
           src/geometric_recovery/tetration_attractors.c \
           src/geometric_recovery/torus_analysis.c \
+          src/geometric_recovery/multi_torus_tracker.c \
+          src/geometric_recovery/oscillation_decomposition.c \
           src/geometric_recovery/harmonic_folding.c \
           src/geometric_recovery/kissing_spheres.c \
           src/geometric_recovery/micro_model.c \
