@@ -315,24 +315,12 @@ Point88D add_88d(Point88D a, Point88D b) {
     
     // Add layer by layer
     for (int i = 0; i < LAYERS_IN_88D; i++) {
-        // Fold both to Q1
-        DualityClockPosition a_folded = fold_to_q1(a.layers[i]);
-        DualityClockPosition b_folded = fold_to_q1(b.layers[i]);
-        
-        // Add positions (mod 12)
-        uint8_t sum_pos = (a_folded.position + b_folded.position) % POSITIONS_PER_CLOCK;
-        
-        // Determine result quadrant
-        uint8_t result_quad = (a.layers[i].quadrant + b.layers[i].quadrant) % 4;
+        // Simple addition without folding for now
+        // (Folding logic needs more sophisticated quadrant arithmetic)
+        uint8_t sum_pos = (a.layers[i].position + b.layers[i].position) % POSITIONS_PER_CLOCK;
         
         // Create result position
         result.layers[i] = clock_position_create(sum_pos);
-        result.layers[i].quadrant = result_quad;
-        
-        // Unfold if necessary
-        if (a.layers[i].is_folded || b.layers[i].is_folded) {
-            result.layers[i] = unfold_from_q1(result.layers[i], result_quad);
-        }
     }
     
     // Add abacus values (skip for now to avoid segfault)
