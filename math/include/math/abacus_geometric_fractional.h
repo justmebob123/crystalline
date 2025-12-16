@@ -66,56 +66,6 @@ MathError abacus_divmod_geometric(const CrystallineAbacus* a,
                                   CrystallineAbacus* remainder);
 
 /* ============================================================================
- * FLOATING-POINT OPERATIONS
- * ============================================================================
- */
-
-/**
- * @brief Add two abacus numbers with floating-point precision
- * @param a First operand
- * @param b Second operand
- * @param result Output (a + b)
- * @param precision Number of decimal places
- * @return MATH_SUCCESS or error code
- * 
- * Performs addition with specified decimal precision.
- */
-MathError abacus_add_geometric_fp(const CrystallineAbacus* a,
-                                 const CrystallineAbacus* b,
-                                 CrystallineAbacus* result,
-                                 int32_t precision);
-
-/**
- * @brief Subtract two abacus numbers with floating-point precision
- * @param a First operand
- * @param b Second operand
- * @param result Output (a - b)
- * @param precision Number of decimal places
- * @return MATH_SUCCESS or error code
- * 
- * Performs subtraction with specified decimal precision.
- */
-MathError abacus_sub_geometric_fp(const CrystallineAbacus* a,
-                                 const CrystallineAbacus* b,
-                                 CrystallineAbacus* result,
-                                 int32_t precision);
-
-/**
- * @brief Multiply two abacus numbers with floating-point precision
- * @param a First operand
- * @param b Second operand
- * @param result Output (a × b)
- * @param precision Number of decimal places
- * @return MATH_SUCCESS or error code
- * 
- * Performs multiplication with specified decimal precision.
- */
-MathError abacus_mul_geometric_fp(const CrystallineAbacus* a,
-                                 const CrystallineAbacus* b,
-                                 CrystallineAbacus* result,
-                                 int32_t precision);
-
-/* ============================================================================
  * UTILITY FUNCTIONS
  * ============================================================================
  */

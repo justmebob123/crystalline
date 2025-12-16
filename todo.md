@@ -1,217 +1,126 @@
-# Week 2: Advanced Geometric Operations & Optimizations
+# Crystalline CLLM - Architecture Cleanup & Enhancement
 
-## Overview
-Building on Week 1's foundation (299/299 tests passing), Week 2 focuses on advanced mathematical operations, performance optimizations, and extended functionality.
+## Critical Understanding
 
-## Week 2 Goals
-1. Implement advanced mathematical operations (modular arithmetic, exponentiation, roots)
-2. Add fractional/floating-point support for division
-3. Optimize performance with benchmarking
-4. Extend test coverage for new features
-5. Maintain 100% test success rate
+### The Abacus IS the Calculator
+- CrystallineAbacus already has `abacus_add`, `abacus_sub`, `abacus_mul`, `abacus_div`
+- These work with arbitrary precision including fractional parts
+- The abacus represents a **memory structure** that can be used for calculations
+- It stores values with beads at different weight exponents (including negative for fractions)
 
----
+### The Problem with Current "Geometric" Functions
+The `abacus_geometric.c` functions are:
+1. Converting abacus → ClockPosition (loses precision, uses uint32_t)
+2. Doing integer arithmetic on ClockPosition
+3. Converting back to abacus
 
-## Phase 1: Fractional Division & Floating-Point Support ⚠️ In Progress
+This is WRONG because:
+- ClockPosition is for **prime mapping**, not arbitrary precision arithmetic
+- The conversion loses fractional parts
+- It's redundant - the abacus already does arithmetic
 
-### Objectives
-- [x] Implement fractional division (non-integer results)
-- [x] Add floating-point geometric operations
-- [x] Support decimal precision in results
-- [x] Create comprehensive tests for fractional operations
+### The Real Architecture
 
-### Tasks
-- [x] Design fractional result representation in clock positions
-- [x] Implement `abacus_div_geometric_fractional` function
-- [x] Add precision parameter for fractional results
-- [x] Create test suite for fractional division (49 tests)
-- [x] Verify O(1) complexity maintained
+```
+┌─────────────────────────────────────────────────────────┐
+│ CrystallineAbacus (Memory Structure & Calculator)      │
+│ - Stores arbitrary precision numbers                    │
+│ - Has arithmetic operations (add, sub, mul, div)        │
+│ - Can represent fractional values                       │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           │ Used by
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│ Clock Lattice (Prime Mapping)                           │
+│ - Maps primes to clock positions                        │
+│ - ClockPosition: ring, position, angle, radius          │
+│ - Used for O(1) prime generation                        │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           │ Embedded in
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│ Platonic Solids / Polytopes (88D Structure)             │
+│ - Kissing spheres at vertices                           │
+│ - Each sphere contains clock lattice                    │
+│ - Fractal recursion at every layer                      │
+│ - 12-fold symmetry maps to 88D structure                │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           │ Used by
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│ CLLM (Threading & Memory Architecture)                  │
+│ - Each thread maps to sphere vertex                     │
+│ - Shared memory along sphere edges                      │
+│ - Uses abacus for multi-value calculations              │
+│ - 12n or 12n+1 threads for symmetry                     │
+└─────────────────────────────────────────────────────────┘
+```
 
-### Current Status
-- **Tests:** 45/49 passing (91% success rate)
-- **Failing Tests:**
-  1. 22 ÷ 7 ≈ 3.1429 (precision issue)
-  2. 1.5 + 2.3 = 3.8 (FP addition rounding)
-  3. 5.7 - 2.3 = 3.4 (FP subtraction rounding)
-  4. 2.5 × 3.2 = 8.0 (FP multiplication rounding)
+## Immediate Actions
 
-### Next Steps
-- [ ] Fix precision issues in fractional division
-- [ ] Fix floating-point rounding in FP operations
-- [ ] Achieve 100% test success rate
-- [ ] Commit Phase 1 completion
+### 1. Remove Broken Functions ✓ DO THIS NOW
+- [ ] Remove `abacus_add_geometric_fp` (broken, redundant)
+- [ ] Remove `abacus_sub_geometric_fp` (broken, redundant)
+- [ ] Remove `abacus_mul_geometric_fp` (broken, redundant)
+- [ ] Remove tests that use these functions
+- [ ] Keep `abacus_div_geometric_fractional` (useful for fractional division)
+- [ ] Keep utility functions (round, get_fractional_part, etc.)
 
-### Deliverables
-- [x] `abacus_geometric_fractional.h` header
-- [x] `abacus_geometric_fractional.c` implementation
-- [x] `test_abacus_geometric_fractional.c` test suite (49 tests)
-- [ ] Documentation for fractional operations
+### 2. Verify Core Abacus Operations
+- [ ] Test that `abacus_add` handles fractional values correctly
+- [ ] Test that `abacus_sub` handles fractional values correctly
+- [ ] Test that `abacus_mul` handles fractional values correctly
+- [ ] Test that `abacus_div` handles fractional values correctly
+- [ ] If they don't, fix THEM, not create wrappers
 
----
+### 3. Understand 88D → 12D Mapping
+The key question: How does 12-fold clock symmetry map to 88D structure?
 
-## Phase 2: Modular Arithmetic Operations
+Possibilities:
+- 88D space contains multiple 12D subspaces
+- Clock structure is a projection/slice of 88D
+- 12-fold symmetry repeats at different scales in 88D
+- Need to study the thesis on 88D relationships
 
-### Objectives
-- [ ] Implement geometric modulo operation
-- [ ] Support modular addition and multiplication
-- [ ] Add modular exponentiation
-- [ ] Create comprehensive test suite
+### 4. Platonic Solid Integration
+- [ ] Review existing platonic solid generator
+- [ ] Understand how clock lattices embed in polytope vertices
+- [ ] Map kissing sphere boundaries (they should overlap per thesis)
+- [ ] Implement fractal recursion at each layer
 
-### Tasks
-- [ ] Design modular arithmetic using clock positions
-- [ ] Implement `abacus_mod_geometric` function
-- [ ] Implement `abacus_addmod_geometric` function
-- [ ] Implement `abacus_mulmod_geometric` function
-- [ ] Implement `abacus_powmod_geometric` function
-- [ ] Create test suite (30+ tests)
-- [ ] Verify O(1) complexity for geometric part
+### 5. CLLM Threading Architecture
+- [ ] Map threads to polytope vertices
+- [ ] Use abacus for calculations in each thread
+- [ ] Implement shared memory along edges
+- [ ] Ensure 12n or 12n+1 thread count
 
-### Deliverables
-- [ ] `abacus_geometric_modular.c` implementation
-- [ ] `test_abacus_geometric_modular.c` test suite
-- [ ] Documentation for modular operations
+## Questions to Research
 
----
+1. **88D Structure**: What are the 88 dimensions? How do they relate to:
+   - 12-fold clock symmetry
+   - Platonic solids
+   - Prime number relationships
 
-## Phase 3: Exponentiation & Root Extraction
+2. **Clock in Polytopes**: How exactly do clock lattices fit inside polytope vertices?
+   - One clock per vertex?
+   - Clocks at different scales?
+   - How do boundaries overlap?
 
-### Objectives
-- [ ] Implement geometric exponentiation
-- [ ] Add square root extraction
-- [ ] Add cube root extraction
-- [ ] Support nth root extraction
-- [ ] Create comprehensive test suite
+3. **Abacus in Threading**: How should multiple threads use abacus structures?
+   - One abacus per thread?
+   - Shared abacus with locking?
+   - Abacus arrays for parallel calculations?
 
-### Tasks
-- [ ] Design exponentiation using clock positions
-- [ ] Implement `abacus_pow_geometric` function
-- [ ] Implement `abacus_sqrt_geometric` function
-- [ ] Implement `abacus_cbrt_geometric` function
-- [ ] Implement `abacus_nthroot_geometric` function
-- [ ] Create test suite (25+ tests)
-- [ ] Verify O(1) complexity where applicable
+## Next Steps
 
-### Deliverables
-- [ ] `abacus_geometric_power.c` implementation
-- [ ] `test_abacus_geometric_power.c` test suite
-- [ ] Documentation for power operations
-
----
-
-## Phase 4: Performance Benchmarking & Optimization
-
-### Objectives
-- [ ] Create comprehensive benchmark suite
-- [ ] Compare geometric vs standard operations
-- [ ] Identify performance bottlenecks
-- [ ] Optimize critical paths
-- [ ] Document performance characteristics
-
-### Tasks
-- [ ] Create benchmark framework
-- [ ] Benchmark all geometric operations
-- [ ] Benchmark with various input sizes
-- [ ] Profile memory usage
-- [ ] Create performance comparison charts
-- [ ] Optimize identified bottlenecks
-- [ ] Document optimization results
-
-### Deliverables
-- [ ] `benchmark_geometric.c` benchmark suite
-- [ ] Performance analysis report
-- [ ] Optimization documentation
-
----
-
-## Phase 5: Extended Test Coverage & Quality Assurance
-
-### Objectives
-- [ ] Expand test coverage for all new features
-- [ ] Add stress tests for edge cases
-- [ ] Verify memory safety
-- [ ] Maintain 100% test success rate
-- [ ] Create integration tests
-
-### Tasks
-- [ ] Add edge case tests for all new operations
-- [ ] Create stress tests with large numbers
-- [ ] Add memory leak detection tests
-- [ ] Create integration tests combining operations
-- [ ] Verify all tests pass
-- [ ] Update documentation
-
-### Deliverables
-- [ ] Extended test suites for all new features
-- [ ] Integration test suite
-- [ ] Test coverage report
+**IMMEDIATE**: Remove the broken FP functions and their tests
+**THEN**: Study the 88D structure in the thesis
+**THEN**: Design proper polytope-clock-abacus integration
+**FINALLY**: Implement CLLM threading with this architecture
 
 ---
-
-## Phase 6: Documentation & Examples
-
-### Objectives
-- [ ] Update all documentation for Week 2 features
-- [ ] Create usage examples for new operations
-- [ ] Add performance guidelines
-- [ ] Create Week 2 summary report
-
-### Tasks
-- [ ] Update GEOMETRIC_OPERATIONS_GUIDE.md
-- [ ] Update QUICK_REFERENCE.md
-- [ ] Create WEEK2_SUMMARY.md
-- [ ] Add code examples for all new operations
-- [ ] Document performance characteristics
-- [ ] Create migration guide from Week 1
-
-### Deliverables
-- [ ] Updated documentation files
-- [ ] WEEK2_SUMMARY.md
-- [ ] Code examples and tutorials
-
----
-
-## Success Criteria
-
-### Must Have
-- [ ] All new operations implemented and tested
-- [ ] 100% test success rate maintained
-- [ ] O(1) complexity verified for geometric operations
-- [ ] Comprehensive documentation
-- [ ] Performance benchmarks completed
-
-### Nice to Have
-- [ ] Visualization tools for operations
-- [ ] Interactive examples
-- [ ] Performance optimizations applied
-- [ ] Extended precision support
-
----
-
-## Timeline
-
-### Week 2 Schedule
-- **Days 1-2:** Fractional Division & Floating-Point Support
-- **Days 3-4:** Modular Arithmetic Operations
-- **Days 5-6:** Exponentiation & Root Extraction
-- **Day 7:** Performance Benchmarking & Optimization
-- **Day 8:** Documentation & Final Testing
-
----
-
-## Current Status
-- **Week 1:** Complete ✅ (299/299 tests passing)
-- **Week 2:** Starting Phase 1
-
----
-
-## Notes
-- Maintain backward compatibility with Week 1 implementation
-- Keep 6-step Babylonian pattern consistent
-- Ensure all new operations follow O(1) complexity for geometric part
-- Document any deviations from Week 1 patterns
-- Prioritize test coverage and code quality
-
----
-
-**Last Updated:** 2024  
-**Status:** Week 2 Planning Complete - Ready to Start Implementation
+**Status**: Ready to remove broken functions and study proper architecture
+**Priority**: Clean up mistakes, then build correctly

@@ -178,79 +178,23 @@ void test_divmod() {
  * TEST 4: Floating-Point Addition
  * ============================================================================
  */
-void test_fp_addition() {
-    printf("\n=== Test 4: Floating-Point Addition ===\n");
-    
-    // Test: 1.5 + 2.3 = 3.8
-    CrystallineAbacus* a = abacus_from_double(1.5, 10, 5);
-    CrystallineAbacus* b = abacus_from_double(2.3, 10, 5);
-    CrystallineAbacus* result = abacus_new(10);
-    
-    TEST_ASSERT(a && b && result, "Abacus creation succeeds");
-    
-    MathError err = abacus_add_geometric_fp(a, b, result, 2);
-    TEST_ASSERT(err == MATH_SUCCESS, "FP addition succeeds");
-    
-    double result_val;
-    abacus_to_double(result, &result_val);
-    TEST_ASSERT(fabs(result_val - 3.8) < TEST_EPSILON, "1.5 + 2.3 = 3.8");
-    
-    abacus_free(a);
-    abacus_free(b);
-    abacus_free(result);
-}
+// REMOVED: test_fp_addition() - used broken abacus_add_geometric_fp
+// The FP wrapper functions were calling integer geometric operations incorrectly
+// Use abacus_add() directly for fractional addition
 
 /* ============================================================================
  * TEST 5: Floating-Point Subtraction
  * ============================================================================
  */
-void test_fp_subtraction() {
-    printf("\n=== Test 5: Floating-Point Subtraction ===\n");
-    
-    // Test: 5.7 - 2.3 = 3.4
-    CrystallineAbacus* a = abacus_from_double(5.7, 10, 5);
-    CrystallineAbacus* b = abacus_from_double(2.3, 10, 5);
-    CrystallineAbacus* result = abacus_new(10);
-    
-    TEST_ASSERT(a && b && result, "Abacus creation succeeds");
-    
-    MathError err = abacus_sub_geometric_fp(a, b, result, 2);
-    TEST_ASSERT(err == MATH_SUCCESS, "FP subtraction succeeds");
-    
-    double result_val;
-    abacus_to_double(result, &result_val);
-    TEST_ASSERT(fabs(result_val - 3.4) < TEST_EPSILON, "5.7 - 2.3 = 3.4");
-    
-    abacus_free(a);
-    abacus_free(b);
-    abacus_free(result);
-}
+// REMOVED: test_fp_subtraction() - used broken abacus_sub_geometric_fp
+// Use abacus_sub() directly for fractional subtraction
 
 /* ============================================================================
  * TEST 6: Floating-Point Multiplication
  * ============================================================================
  */
-void test_fp_multiplication() {
-    printf("\n=== Test 6: Floating-Point Multiplication ===\n");
-    
-    // Test: 2.5 × 3.2 = 8.0
-    CrystallineAbacus* a = abacus_from_double(2.5, 10, 5);
-    CrystallineAbacus* b = abacus_from_double(3.2, 10, 5);
-    CrystallineAbacus* result = abacus_new(10);
-    
-    TEST_ASSERT(a && b && result, "Abacus creation succeeds");
-    
-    MathError err = abacus_mul_geometric_fp(a, b, result, 2);
-    TEST_ASSERT(err == MATH_SUCCESS, "FP multiplication succeeds");
-    
-    double result_val;
-    abacus_to_double(result, &result_val);
-    TEST_ASSERT(fabs(result_val - 8.0) < TEST_EPSILON, "2.5 × 3.2 = 8.0");
-    
-    abacus_free(a);
-    abacus_free(b);
-    abacus_free(result);
-}
+// REMOVED: test_fp_multiplication() - used broken abacus_mul_geometric_fp
+// Use abacus_mul() directly for fractional multiplication
 
 /* ============================================================================
  * TEST 7: Rounding Operations
@@ -426,9 +370,10 @@ int main() {
     test_fractional_division_basic();
     test_fractional_division_precision();
     test_divmod();
-    test_fp_addition();
-    test_fp_subtraction();
-    test_fp_multiplication();
+    // FP functions removed - they were calling integer geometric operations incorrectly
+    // test_fp_addition();
+    // test_fp_subtraction();
+    // test_fp_multiplication();
     test_rounding();
     test_fractional_integer_parts();
     test_negative_fractional();
