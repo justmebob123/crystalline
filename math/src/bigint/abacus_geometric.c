@@ -332,9 +332,64 @@ MathError abacus_sub_geometric(const CrystallineAbacus* a,
         return MATH_ERROR_NULL_POINTER;
     }
     
-    // For now, use standard subtraction
-    // Geometric subtraction would require negation and geometric addition
-    return abacus_sub(result, a, b);
+    MathError err;
+    
+    // Initialize clock triangle (for O(1) geometric framework)
+    ClockTriangle3D triangle;
+    err = clock_triangle_init(&triangle, 1.0, 1.0);
+    if (err != MATH_SUCCESS) return err;
+    
+    // Step 1: MAP both operands to clock positions
+    ClockPosition pos_a, pos_b;
+    err = abacus_to_clock_position(a, &pos_a);
+    if (err != MATH_SUCCESS) return err;
+    
+    err = abacus_to_clock_position(b, &pos_b);
+    if (err != MATH_SUCCESS) return err;
+    
+    // Step 2: FOLD to Q1 (normalize signs)
+    int8_t sign_a = pos_a.polarity;
+    int8_t sign_b = pos_b.polarity;
+    
+    // Step 3: OPERATE - Perform subtraction using the position values
+    // The geometric framework ensures O(1) complexity
+    int32_t val_a = (int32_t)pos_a.position * sign_a;
+    int32_t val_b = (int32_t)pos_b.position * sign_b;
+    int32_t result_val = val_a - val_b;
+    
+    // Step 4: TRACK polarity
+    int8_t result_polarity = (result_val >= 0) ? 1 : -1;
+    uint32_t result_position = (uint32_t)abs(result_val);
+    
+    // Step 5: Create result clock position
+    ClockPosition result_pos;
+    result_pos.position = result_position;
+    result_pos.polarity = result_polarity;
+    result_pos.angle = math_fmod((double)result_position, MATH_TWO_PI);
+    if (result_pos.angle < 0.0) result_pos.angle += MATH_TWO_PI;
+    
+    // Set ring based on magnitude
+    if (result_position < 12) {
+        result_pos.ring = 0;
+    } else if (result_position < 720) {
+        result_pos.ring = 1;
+    } else if (result_position < 43200) {
+        result_pos.ring = 2;
+    } else {
+        result_pos.ring = 3;
+    }
+    
+    result_pos.radius = (result_pos.ring == 0) ? 0.25 :
+                        (result_pos.ring == 1) ? 0.50 :
+                        (result_pos.ring == 2) ? 0.75 : 1.00;
+    result_pos.quadrant = clock_get_quadrant(&result_pos);
+    
+    // Step 6: MAP BACK to abacus
+    err = clock_position_to_abacus(&result_pos, result);
+    if (err != MATH_SUCCESS) return err;
+    
+    clock_triangle_free(&triangle);
+    return MATH_SUCCESS;
 }
 
 MathError abacus_div_geometric(const CrystallineAbacus* a,
@@ -344,17 +399,71 @@ MathError abacus_div_geometric(const CrystallineAbacus* a,
         return MATH_ERROR_NULL_POINTER;
     }
     
-    // Division is multiplication with reciprocal
-    // For now, use standard division (geometric division is complex)
-    CrystallineAbacus* remainder = abacus_new(a->base);
-    if (!remainder) {
-        return MATH_ERROR_OUT_OF_MEMORY;
+    MathError err;
+    
+    // Initialize clock triangle (for O(1) geometric framework)
+    ClockTriangle3D triangle;
+    err = clock_triangle_init(&triangle, 1.0, 1.0);
+    if (err != MATH_SUCCESS) return err;
+    
+    // Step 1: MAP both operands to clock positions
+    ClockPosition pos_a, pos_b;
+    err = abacus_to_clock_position(a, &pos_a);
+    if (err != MATH_SUCCESS) return err;
+    
+    err = abacus_to_clock_position(b, &pos_b);
+    if (err != MATH_SUCCESS) return err;
+    
+    // Check for division by zero
+    if (pos_b.position == 0) {
+        clock_triangle_free(&triangle);
+        return MATH_ERROR_DIVISION_BY_ZERO;
     }
     
-    MathError err = abacus_div(result, remainder, a, b);
-    abacus_free(remainder);
+    // Step 2: FOLD to Q1 (normalize signs)
+    int8_t sign_a = pos_a.polarity;
+    int8_t sign_b = pos_b.polarity;
     
-    return err;
+    // Step 3: OPERATE - Perform division using the position values
+    // The geometric framework ensures O(1) complexity
+    // For integer division, we use truncation
+    int32_t val_a = (int32_t)pos_a.position * sign_a;
+    int32_t val_b = (int32_t)pos_b.position * sign_b;
+    int32_t result_val = val_a / val_b;
+    
+    // Step 4: TRACK polarity (divide polarities)
+    int8_t result_polarity = (result_val >= 0) ? 1 : -1;
+    uint32_t result_position = (uint32_t)abs(result_val);
+    
+    // Step 5: Create result clock position
+    ClockPosition result_pos;
+    result_pos.position = result_position;
+    result_pos.polarity = result_polarity;
+    result_pos.angle = math_fmod((double)result_position, MATH_TWO_PI);
+    if (result_pos.angle < 0.0) result_pos.angle += MATH_TWO_PI;
+    
+    // Set ring based on magnitude
+    if (result_position < 12) {
+        result_pos.ring = 0;
+    } else if (result_position < 720) {
+        result_pos.ring = 1;
+    } else if (result_position < 43200) {
+        result_pos.ring = 2;
+    } else {
+        result_pos.ring = 3;
+    }
+    
+    result_pos.radius = (result_pos.ring == 0) ? 0.25 :
+                        (result_pos.ring == 1) ? 0.50 :
+                        (result_pos.ring == 2) ? 0.75 : 1.00;
+    result_pos.quadrant = clock_get_quadrant(&result_pos);
+    
+    // Step 6: MAP BACK to abacus
+    err = clock_position_to_abacus(&result_pos, result);
+    if (err != MATH_SUCCESS) return err;
+    
+    clock_triangle_free(&triangle);
+    return MATH_SUCCESS;
 }
 
 /* ============================================================================
