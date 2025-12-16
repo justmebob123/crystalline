@@ -357,6 +357,37 @@ typedef struct {
     } ntt;
     
     // ========================================================================
+    // TRAINING CONTEXT (for backward pass)
+    // ========================================================================
+    
+    struct {
+        bool enabled;                    // Training mode flag
+        uint32_t max_batch_size;        // Maximum batch size
+        uint32_t max_seq_len;           // Maximum sequence length
+        
+        // Intermediate activations (per layer) - needed for backward pass
+        struct {
+            double* Q;                   // Queries [batch × seq_len × embedding_dim]
+            double* K;                   // Keys [batch × seq_len × embedding_dim]
+            double* V;                   // Values [batch × seq_len × embedding_dim]
+            double* attention_weights;   // Attention weights [batch × num_heads × seq_len × seq_len]
+            double* attn_output;         // Attention output [batch × seq_len × embedding_dim]
+            
+            // Allocation flags
+            bool allocated;
+        } *layer_cache;                  // [num_layers]
+        
+        // Gradient accumulation
+        uint32_t gradient_accumulation_steps;
+        uint32_t current_accumulation_step;
+        
+        // Statistics
+        uint64_t forward_passes;
+        uint64_t backward_passes;
+        
+    } training;
+    
+    // ========================================================================
     // KISSING SPHERES THREADING
     // ========================================================================
     

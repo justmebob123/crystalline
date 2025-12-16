@@ -14,11 +14,13 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "../include/cllm.h"
+#include "../include/cllm_attention.h"
 #include "../include/cllm_simd_utils.h"
 #include "../algorithms/include/ntt_attention.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <immintrin.h>  // AVX2 intrinsics
 
 // ============================================================================
@@ -462,6 +464,124 @@ void cllm_attention_forward(
     }
 }
 
+// ============================================================================
+// TRAINING MODE FUNCTIONS
+// ============================================================================
+
+/**
+ * Enable training mode and allocate caches
+ */
+int cllm_enable_training_mode(CLLMModel* model, uint32_t max_batch_size, uint32_t max_seq_len) {
+    if (!model) {
+        fprintf(stderr, "Error: NULL model in cllm_enable_training_mode\n");
+        return -1;
+    }
+    
+    if (model->training.enabled) {
+        fprintf(stderr, "Warning: Training mode already enabled\n");
+        return 0;
+    }
+    
+    printf("🎓 Enabling training mode (batch=%u, seq_len=%u)\n", max_batch_size, max_seq_len);
+    
+    // Set training parameters
+    model->training.enabled = true;
+    model->training.max_batch_size = max_batch_size;
+    model->training.max_seq_len = max_seq_len;
+    model->training.gradient_accumulation_steps = 1;
+    model->training.current_accumulation_step = 0;
+    model->training.forward_passes = 0;
+    model->training.backward_passes = 0;
+    
+    // Allocate layer caches
+    model->training.layer_cache = (typeof(model->training.layer_cache))
+        calloc(model->num_layers, sizeof(*model->training.layer_cache));
+    
+    if (!model->training.layer_cache) {
+        fprintf(stderr, "Error: Failed to allocate layer cache array\n");
+        model->training.enabled = false;
+        return -1;
+    }
+    
+    // Allocate cache for each layer
+    uint32_t embedding_dim = model->embedding_dim;
+    uint32_t num_heads = model->num_heads;
+    
+    for (uint32_t i = 0; i < model->num_layers; i++) {
+        size_t qkv_size = max_batch_size * max_seq_len * embedding_dim * sizeof(double);
+        size_t attn_weights_size = max_batch_size * num_heads * max_seq_len * max_seq_len * sizeof(double);
+        
+        model->training.layer_cache[i].Q = (double*)aligned_alloc_64(qkv_size);
+        model->training.layer_cache[i].K = (double*)aligned_alloc_64(qkv_size);
+        model->training.layer_cache[i].V = (double*)aligned_alloc_64(qkv_size);
+        model->training.layer_cache[i].attention_weights = (double*)aligned_alloc_64(attn_weights_size);
+        model->training.layer_cache[i].attn_output = (double*)aligned_alloc_64(qkv_size);
+        
+        if (!model->training.layer_cache[i].Q || 
+            !model->training.layer_cache[i].K ||
+            !model->training.layer_cache[i].V ||
+            !model->training.layer_cache[i].attention_weights ||
+            !model->training.layer_cache[i].attn_output) {
+            
+            fprintf(stderr, "Error: Failed to allocate cache for layer %u\n", i);
+            cllm_disable_training_mode(model);
+            return -1;
+        }
+        
+        model->training.layer_cache[i].allocated = true;
+        
+        printf("  Layer %u cache: %.1f MB\n", i, 
+               (qkv_size * 4 + attn_weights_size) / (1024.0 * 1024.0));
+    }
+    
+    printf("✅ Training mode enabled\n");
+    return 0;
+}
+
+/**
+ * Disable training mode and free caches
+ */
+void cllm_disable_training_mode(CLLMModel* model) {
+    if (!model || !model->training.enabled) {
+        return;
+    }
+    
+    printf("🎓 Disabling training mode\n");
+    
+    // Free layer caches
+    if (model->training.layer_cache) {
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            if (model->training.layer_cache[i].allocated) {
+                aligned_free_64(model->training.layer_cache[i].Q);
+                aligned_free_64(model->training.layer_cache[i].K);
+                aligned_free_64(model->training.layer_cache[i].V);
+                aligned_free_64(model->training.layer_cache[i].attention_weights);
+                aligned_free_64(model->training.layer_cache[i].attn_output);
+                model->training.layer_cache[i].allocated = false;
+            }
+        }
+        free(model->training.layer_cache);
+        model->training.layer_cache = NULL;
+    }
+    
+    model->training.enabled = false;
+    
+    printf("  Forward passes: %lu\n", model->training.forward_passes);
+    printf("  Backward passes: %lu\n", model->training.backward_passes);
+    printf("✅ Training mode disabled\n");
+}
+
+/**
+ * Check if in training mode
+ */
+bool cllm_is_training(const CLLMModel* model) {
+    return model &amp;&amp; model->training.enabled;
+}
+
+// ============================================================================
+// BACKWARD PASS
+// ============================================================================
+
 /**
  * Attention backward pass
  * 
@@ -487,9 +607,15 @@ void cllm_attention_backward(
         return;
     }
     
-    // TODO: Implement backward pass
-    // For now, this is a placeholder
-    // Full implementation will compute gradients for Q, K, V, O weights
+    if (!cllm_is_training(model)) {
+        fprintf(stderr, "Error: Backward pass called but not in training mode\n");
+        return;
+    }
+    
+    // TODO: Implement full backward pass in next phase
+    // For now, this is a placeholder that will be completed
+    
+    model->training.backward_passes++;
     
     (void)batch_size;
     (void)seq_len;

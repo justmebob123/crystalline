@@ -211,6 +211,91 @@ uint32_t cllm_extract_root_word(uint32_t token_id, uint64_t prime);
 int cllm_compute_morphological_relationship(uint64_t token1_prime,
                                            uint64_t token2_prime);
 
+// ============================================================================
+// TRAINING MODE FUNCTIONS (Week 7 Integration)
+// ============================================================================
+
+/**
+ * Enable training mode and allocate caches for backward pass
+ * 
+ * Allocates memory to store intermediate activations (Q, K, V, attention weights)
+ * needed for computing gradients during backward pass.
+ * 
+ * @param model CLLM model
+ * @param max_batch_size Maximum batch size to support
+ * @param max_seq_len Maximum sequence length to support
+ * @return 0 on success, -1 on failure
+ */
+int cllm_enable_training_mode(CLLMModel* model, uint32_t max_batch_size, uint32_t max_seq_len);
+
+/**
+ * Disable training mode and free caches
+ * 
+ * Frees all memory allocated for training mode.
+ * 
+ * @param model CLLM model
+ */
+void cllm_disable_training_mode(CLLMModel* model);
+
+/**
+ * Check if model is in training mode
+ * 
+ * @param model CLLM model
+ * @return true if in training mode, false otherwise
+ */
+bool cllm_is_training(const CLLMModel* model);
+
+/**
+ * Attention forward pass (with optional caching for training)
+ * 
+ * Performs multi-head attention with automatic NTT switching.
+ * If in training mode, caches intermediate values for backward pass.
+ * 
+ * @param model CLLM model
+ * @param layer_idx Layer index
+ * @param input Input sequence [batch_size × seq_len × embedding_dim]
+ * @param output Output sequence [batch_size × seq_len × embedding_dim]
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ */
+void cllm_attention_forward(
+    CLLMModel* model,
+    uint32_t layer_idx,
+    const double* input,
+    double* output,
+    uint32_t batch_size,
+    uint32_t seq_len
+);
+
+/**
+ * Attention backward pass
+ * 
+ * Computes gradients for attention layer using cached intermediate values.
+ * Must be called in training mode after forward pass.
+ * 
+ * @param model CLLM model
+ * @param layer_idx Layer index
+ * @param grad_output Gradient from next layer [batch_size × seq_len × embedding_dim]
+ * @param input Original input [batch_size × seq_len × embedding_dim]
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ */
+void cllm_attention_backward(
+    CLLMModel* model,
+    uint32_t layer_idx,
+    const double* grad_output,
+    const double* input,
+    uint32_t batch_size,
+    uint32_t seq_len
+);
+
+/**
+ * Print attention statistics
+ * 
+ * @param model CLLM model
+ */
+void cllm_attention_print_stats(const CLLMModel* model);
+
 #ifdef __cplusplus
 }
 #endif
