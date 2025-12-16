@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystalline Mathematics - Interactive Thesis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --bg-dark: #1a1a1a;
+            --bg-light: #f8f9fa;
+            --text-dark: #2c3e50;
+            --text-light: #ecf0f1;
+            --border: #ddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: var(--bg-light);
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--text-light);
+            padding: 2rem;
+            box-shadow: 0 2px 10px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* Search Bar */
+        .search-container {
+            margin: 1rem 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-container input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .search-container input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-container button {
+            padding: 0.75rem 1.5rem;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .search-container button:hover {
+            background: #229954;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+            position: sticky;
+            top: 200px;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .tree {
+            padding: 1rem;
+        }
+
+        .tree-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .tree-item:hover {
+            background: var(--bg-light);
+        }
+
+        .tree-item.active {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .tree-item.directory {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .tree-item.file {
+            padding-left: 2rem;
+            color: var(--text-dark);
+        }
+
+        .tree-children {
+            margin-left: 1rem;
+            border-left: 2px solid var(--border);
+            padding-left: 0.5rem;
+        }
+
+        .expand-icon {
+            display: inline-block;
+            width: 20px;
+            transition: transform 0.2s;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 2rem;
+            background: white;
+            margin: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px var(--shadow);
+            overflow-y: auto;
+        }
+
+        .content-header {
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .content-header h2 {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+
+        .content-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Markdown Styles */
+        .markdown-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .markdown-content h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin: 2rem 0 1rem;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-content h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-content h3 {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .markdown-content h4 {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .markdown-content p {
+            margin: 1rem 0;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        .markdown-content li {
+            margin: 0.5rem 0;
+        }
+
+        .markdown-content code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .markdown-content pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .markdown-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid var(--secondary);
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .markdown-content th, .markdown-content td {
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .markdown-content tr:nth-child(even) {
+            background: var(--bg-light);
+        }
+
+        .markdown-content a {
+            color: var(--secondary);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .markdown-content a:hover {
+            border-bottom-color: var(--secondary);
+        }
+
+        /* Search Results */
+        .search-results {
+            margin-top: 2rem;
+        }
+
+        .search-result-item {
+            background: white;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+            border-left: 4px solid var(--secondary);
+            box-shadow: 0 2px 5px var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-result-item:hover {
+            transform: translateX(5px);
+        }
+
+        .search-result-file {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-match {
+            background: #fff3cd;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--secondary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Welcome Screen */
+        .welcome {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .welcome h2 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .welcome p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature {
+            padding: 2rem;
+            background: var(--bg-light);
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+                position: relative;
+                top: 0;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Scroll to top button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--secondary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 10px var(--shadow);
+            transition: background 0.3s;
+        }
+
+        .scroll-top:hover {
+            background: var(--primary);
+        }
+
+        .scroll-top.visible {
+            display: flex;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <header>
+        <h1>📚 Crystalline Mathematics</h1>
+        <p>A Comprehensive Treatise on Geometric Number Theory and Babylonian Computational Principles</p>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search thesis content...">
+            <button onclick="performSearch()">🔍 Search</button>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <span class="stat-value" id="statChapters">-</span>
+                <span class="stat-label">Chapters</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statParts">-</span>
+                <span class="stat-label">Parts</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statLines">-</span>
+                <span class="stat-label">Lines</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statSize">-</span>
+                <span class="stat-label">Size</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">📑 Table of Contents</div>
+            <div class="tree" id="treeView"></div>
+        </aside>
+
+        <main class="content">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading...</p>
+            </div>
+
+            <div id="contentArea">
+                <div class="welcome">
+                    <h2>Welcome to the Interactive Thesis Viewer</h2>
+                    <p>Explore the comprehensive treatise on Crystalline Mathematics</p>
+                    
+                    <div class="welcome-features">
+                        <div class="feature">
+                            <div class="feature-icon">📖</div>
+                            <h3>32 Chapters</h3>
+                            <p>Organized into 8 parts covering theoretical foundations to practical applications</p>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">🔍</div>
+                            <h3>Full-Text Search</h3>
+                            <p>Search across all chapters and sections instantly</p>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">📊</div>
+                            <h3>Interactive Navigation</h3>
+                            <p>Browse through the hierarchical structure with ease</p>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">✨</div>
+                            <h3>Beautiful Rendering</h3>
+                            <p>Markdown content rendered with syntax highlighting and formatting</p>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 3rem; font-size: 1.1rem;">
+                        👈 Select a chapter from the sidebar to begin reading
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">↑</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Auto-detect API endpoint (PHP or Python)
+        const API_URL = 'api/thesis.php';
+        let currentStructure = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStructure();
+            loadStats();
+            setupScrollButton();
+            setupSearchEnter();
+        });
+
+        // Load thesis structure
+        async function loadStructure() {
+            try {
+                const response = await fetch(`${API_URL}?action=structure`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentStructure = data.data;
+                    renderTree(data.data, document.getElementById('treeView'));
+                }
+            } catch (error) {
+                console.error('Error loading structure:', error);
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}?action=stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    document.getElementById('statChapters').textContent = stats.chapters;
+                    document.getElementById('statParts').textContent = stats.parts;
+                    document.getElementById('statLines').textContent = stats.totalLines.toLocaleString();
+                    document.getElementById('statSize').textContent = formatBytes(stats.totalSize);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Render tree structure
+        function renderTree(items, container, level = 0) {
+            items.forEach(item => {
+                const div = document.createElement('div');
+                
+                if (item.type === 'directory') {
+                    div.className = 'tree-item directory';
+                    div.innerHTML = `<span class="expand-icon">▶</span> ${item.displayName}`;
+                    
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'tree-children';
+                    childrenDiv.style.display = 'none';
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        const icon = div.querySelector('.expand-icon');
+                        if (childrenDiv.style.display === 'none') {
+                            childrenDiv.style.display = 'block';
+                            icon.classList.add('expanded');
+                        } else {
+                            childrenDiv.style.display = 'none';
+                            icon.classList.remove('expanded');
+                        }
+                    };
+                    
+                    container.appendChild(div);
+                    renderTree(item.children, childrenDiv, level + 1);
+                    container.appendChild(childrenDiv);
+                } else {
+                    div.className = 'tree-item file';
+                    div.innerHTML = `📄 ${item.displayName}`;
+                    div.onclick = () => loadContent(item.path);
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        // Load content
+        async function loadContent(path) {
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`${API_URL}?action=content&path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayContent(data.data);
+                    
+                    // Update active state
+                    document.querySelectorAll('.tree-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    event.target.classList.add('active');
+                } else {
+                    displayError(data.error);
+                }
+            } catch (error) {
+                console.error('Error loading content:', error);
+                displayError('Failed to load content');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display content
+        function displayContent(data) {
+            const contentArea = document.getElementById('contentArea');
+            const html = marked.parse(data.content);
+            
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <h2>${getFileName(data.path)}</h2>
+                    <div class="content-meta">
+                        <span>📄 ${data.stats.lines.toLocaleString()} lines</span>
+                        <span>💾 ${formatBytes(data.stats.size)}</span>
+                        <span>📅 ${new Date(data.stats.modified * 1000).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <div class="markdown-content">
+                    ${html}
+                </div>
+            `;
+            
+            // Scroll to top
+            contentArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Perform search
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (query.length < 3) {
+                alert('Please enter at least 3 characters to search');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`${API_URL}?action=search&query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySearchResults(data.data, query);
+                }
+            } catch (error) {
+                console.error('Error searching:', error);
+                displayError('Search failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display search results
+        function displaySearchResults(results, query) {
+            const contentArea = document.getElementById('contentArea');
+            
+            if (results.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="content-header">
+                        <h2>Search Results</h2>
+                    </div>
+                    <p>No results found for "${query}"</p>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="content-header">
+                    <h2>Search Results</h2>
+                    <p>Found ${results.length} file(s) containing "${query}"</p>
+                </div>
+                <div class="search-results">
+            `;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="search-result-item" onclick="loadContent('${result.file}')">
+                        <div class="search-result-file">📄 ${result.displayName}</div>
+                `;
+                
+                result.matches.forEach(match => {
+                    const highlightedText = match.text.replace(
+                        new RegExp(query, 'gi'),
+                        '<mark>$&</mark>'
+                    );
+                    html += `
+                        <div class="search-result-match">
+                            Line ${match.line}: ${highlightedText}
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            });
+            
+            html += `</div>`;
+            contentArea.innerHTML = html;
+        }
+
+        // Helper functions
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        function displayError(message) {
+            document.getElementById('contentArea').innerHTML = `
+                <div class="content-header">
+                    <h2>Error</h2>
+                </div>
+                <p style="color: var(--accent);">${message}</p>
+            `;
+        }
+
+        function getFileName(path) {
+            const parts = path.split('/');
+            return parts[parts.length - 1].replace('.md', '').replace(/_/g, ' ');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function setupScrollButton() {
+            const scrollBtn = document.getElementById('scrollTop');
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    scrollBtn.classList.add('visible');
+                } else {
+                    scrollBtn.classList.remove('visible');
+                }
+            });
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function setupSearchEnter() {
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
