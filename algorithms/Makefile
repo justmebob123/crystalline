@@ -22,6 +22,7 @@ SOURCES = src/numerical.c \
           src/sphere_threading.c \
           src/hierarchical_memory.c \
           src/threading_integration.c \
+          src/message_passing.c \
           src/memory_management.c \
           src/visualization.c \
           src/visualization_2d.c \
