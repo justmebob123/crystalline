@@ -18,6 +18,7 @@
 #include <immintrin.h>  // AVX2 intrinsics
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
+#include "math/clock_lattice_13d.h"
 #include "../include/cllm.h"
 #include "../include/cllm_attention.h"
 #include "../include/cllm_simd_utils.h"
@@ -330,7 +331,11 @@ static void standard_attention_forward(
                     }
                     scores[i * seq_len + j] = score * scale;
                     
-                    // Add angular position bias if available
+                    // TODO: Add 13D position bias (currently disabled for testing)
+                    // The 13D positions are initialized but not yet used in attention
+                    // This will be enabled after verifying correct initialization
+                    
+                    // Fallback to angular position bias if available
                     if (model->token_angular_positions && i < model->vocab_size && j < model->vocab_size) {
                         double angle_i = model->token_angular_positions[i];
                         double angle_j = model->token_angular_positions[j];

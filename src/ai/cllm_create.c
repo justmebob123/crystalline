@@ -16,6 +16,7 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "math/clock.h"
+#include "math/clock_lattice_13d.h"
 #include "../include/cllm.h"
 #include "../include/ai/cllm_platonic.h"
 #include <stdlib.h>
@@ -300,8 +301,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->vertex_positions = (ClockPosition*)calloc(model->geometry.vertices, sizeof(ClockPosition));
     model->token_positions = (ClockPosition*)calloc(model->vocab_size, sizeof(ClockPosition));
     model->token_angular_positions = (double*)calloc(model->vocab_size, sizeof(double));
+    model->token_positions_13d = (double (*)[13])calloc(model->vocab_size, 13 * sizeof(double));
     
-    if (!model->vertex_positions || !model->token_positions || !model->token_angular_positions) {
+    if (!model->vertex_positions || !model->token_positions || !model->token_angular_positions || !model->token_positions_13d) {
         fprintf(stderr, "Error: Failed to allocate clock positions\n");
         cllm_free_model(model);
         return NULL;
@@ -316,9 +318,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     for (uint32_t t = 0; t < model->vocab_size; t++) {
         clock_map_index_to_position(t, &model->token_positions[t]);
         model->token_angular_positions[t] = compute_angular_position(t, model);
+        
+        // Map to 13D clock lattice for geometric position encoding
+        clock_map_value_to_lattice_13d(t, model->token_positions_13d[t]);
     }
     
-    printf("  ✓ Mapped %u vertices and %u tokens to clock lattice\n",
+    printf("  ✓ Mapped %u vertices and %u tokens to clock lattice (including 13D)\n",
            model->geometry.vertices, model->vocab_size);
     
     // ========================================================================

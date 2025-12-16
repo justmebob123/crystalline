@@ -218,6 +218,7 @@ typedef struct {
     // Map tokens to clock lattice
     ClockPosition* token_positions;  // [vocab_size] - clock positions for tokens
     double* token_angular_positions; // [vocab_size] - θ(n,k,λ,ω,ψ) angular positions
+    double (*token_positions_13d)[13]; // [vocab_size][13] - 13D clock lattice positions
     
     // ========================================================================
     // MODEL PARAMETERS

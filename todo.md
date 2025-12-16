@@ -116,20 +116,47 @@ Attention is perfectly uniform (sum = 16.0 for 16 rows, each = 1.0)
 
 **DECISION**: The gradient computation is now CORRECT. The zero gradients are a consequence of uniform attention, which is expected with small random initialization. During actual training with proper initialization and data, gradients will be non-zero.
 
-## Phase 3: Integration Planning [PENDING]
+## Phase 3: Architecture Redesign [IN PROGRESS]
 
-### 1. Create Detailed Integration Plan
-- [ ] Map existing math library functions to CLLM needs
-- [ ] Identify missing functionality
-- [ ] Plan integration order
-- [ ] Document dependencies
+### Goal: Integrate Geometric Foundation into CLLM
 
-### 2. Design CLLM Architecture Redesign
-- [ ] How to integrate CrystallineAbacus for weights/gradients
-- [ ] How to integrate Clock Lattice for positions
-- [ ] How to integrate Platonic Generator for model structure
-- [ ] How to integrate Sphere Threading for training
-- [ ] Create migration strategy
+Based on math library analysis, integrate:
+1. CrystallineAbacus for arbitrary precision arithmetic
+2. 13D Clock Lattice for position mapping
+3. Platonic Generator for model structure
+4. Sphere Threading for parallel training
+
+### 1. Create Integration Plan
+- [x] Math library analysis complete
+- [x] Identified all available primitives
+- [x] Mapped reference implementations to math library
+- [ ] Create step-by-step integration plan
+- [ ] Define success criteria
+
+### 2. Phase 1: Use 13D Clock Lattice for Token Positions [IN PROGRESS]
+- [ ] Add 13D position storage to CLLMModel structure
+- [ ] Initialize token positions in cllm_create()
+- [ ] Use positions in attention computation for position bias
+- [ ] Test and verify
+- [ ] Commit changes
+
+### 3. Phase 2: Integrate Platonic Generator for Model Structure
+- [ ] Generate model dimensions from Schläfli symbols
+- [ ] Use embedding_dim = vertices × 12
+- [ ] Use hidden_dim = edges × 12
+- [ ] Use num_layers = faces
+- [ ] Test with different Platonic solids
+
+### 4. Phase 3: Replace Doubles with CrystallineAbacus
+- [ ] Create abacus-based weight storage
+- [ ] Implement abacus-based forward pass
+- [ ] Implement abacus-based backward pass
+- [ ] Test precision and performance
+
+### 5. Phase 4: Integrate Sphere Threading
+- [ ] Use sphere threading for batch processing
+- [ ] Implement 12-fold symmetric work distribution
+- [ ] Test scalability and performance
 
 ## Summary of Analysis
 

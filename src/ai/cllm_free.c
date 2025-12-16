@@ -49,6 +49,11 @@ void cllm_free_model(CLLMModel* model) {
         model->token_angular_positions = NULL;
     }
     
+    if (model->token_positions_13d) {
+        free(model->token_positions_13d);
+        model->token_positions_13d = NULL;
+    }
+    
     // ========================================================================
     // FREE MODEL PARAMETERS
     // ========================================================================
