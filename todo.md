@@ -370,12 +370,18 @@ Based on the detailed action plan, completing the integration by:
 - [x] Add work distribution functions to header
 - [x] Fix HTML entities in code
 - [x] Fix work_submit function signature
-- [ ] **TYPE REFACTORING: Use algorithm library types everywhere**
-  * [ ] Remove CLLM's SharedMemoryAccessMode (use algorithm library version)
-  * [ ] Remove CLLM's MessageType (use algorithm library version)
-  * [ ] Remove CLLM's MessagePriority (use algorithm library version)
-  * [ ] Update all CLLM files to use algorithm library types
-  * [ ] Fix all type conflicts
+- [x] **TYPE REFACTORING: Use algorithm library types everywhere**
+  * [x] Remove CLLM's SharedMemoryAccessMode (use algorithm library version)
+  * [x] Remove CLLM's MessageType (use algorithm library version)
+  * [x] Remove CLLM's MessagePriority (use algorithm library version)
+  * [x] Update header files to use algorithm library types
+  * [x] Fix type conflicts in headers
+  * [ ] **SOURCE FILE UPDATES:**
+    * [ ] Update cllm_sphere_message.c to use Message instead of SphereMessage
+    * [ ] Update cllm_control_process.c message creation calls
+    * [ ] Update cllm_lattice_hierarchy.c message creation calls
+    * [ ] Update all other files that create/send messages
+    * [ ] Fix message_queue_create calls (different signature)
 - [ ] Update Makefile if needed
 - [ ] Build and verify compilation
 

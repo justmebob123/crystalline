@@ -7,6 +7,7 @@
  */
 
 #include "math/types.h"
+#include "math/constants.h"
 #include <stdint.h>
 #include <stdio.h>
 

@@ -69,59 +69,10 @@ static inline void message_queue_free(LockFreeMessageQueue* queue) {
     (void)queue;
 }
 
-/**
- * Enqueue message (compatibility wrapper)
- * 
- * @param queue Queue to enqueue to
- * @param msg Message to enqueue
- * @return true on success, false on failure
- */
-static inline bool message_queue_enqueue(LockFreeMessageQueue* queue, SphereMessage* msg) {
-    if (!queue || !msg) {
-        return false;
-    }
-    return message_queue_push(queue, msg);
-}
-
-/**
- * Dequeue message (compatibility wrapper)
- * 
- * @param queue Queue to dequeue from
- * @return Dequeued message, or NULL if queue is empty
- */
-static inline SphereMessage* message_queue_dequeue(LockFreeMessageQueue* queue) {
-    if (!queue) {
-        return NULL;
-    }
-    return message_queue_pop(queue);
-}
-
-/**
- * Check if queue is empty (compatibility wrapper)
- * 
- * @param queue Queue to check
- * @return true if empty, false otherwise
- */
-static inline bool message_queue_is_empty(const LockFreeMessageQueue* queue) {
-    if (!queue) {
-        return true;
-    }
-    return message_queue_size((LockFreeMessageQueue*)queue) == 0;
-}
-
-/**
- * Get queue size (compatibility wrapper)
- * 
- * @param queue Queue to query
- * @return Number of messages in queue
- */
-static inline uint64_t message_queue_size(const LockFreeMessageQueue* queue) {
-    if (!queue) {
-        return 0;
-    }
-    // The algorithm library's message_queue_size is not const-correct
-    return message_queue_size((LockFreeMessageQueue*)queue);
-}
+// Note: message_queue_enqueue, message_queue_dequeue, message_queue_is_empty,
+// and message_queue_size are provided directly by the algorithm library.
+// No wrappers needed - they work with both MessageQueue and LockFreeMessageQueue
+// since they are the same type.
 
 #ifdef __cplusplus
 }
