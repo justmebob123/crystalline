@@ -4,6 +4,7 @@
  */
 
 #include "math/platonic_generator.h"
+#include "math/constants.h"
 #include "math/polytope.h"
 #include "math/schlafli.h"
 #include "math/transcendental.h"

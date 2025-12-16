@@ -10,6 +10,7 @@
 #include "math/compact_vector.h"
 #include "math/prime.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 

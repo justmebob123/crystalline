@@ -11,6 +11,7 @@
 #include "math/abacus.h"
 #include "math/prime.h"
 #include "math/arithmetic.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

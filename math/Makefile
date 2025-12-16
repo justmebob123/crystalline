@@ -7,6 +7,7 @@ AR = ar
 CFLAGS = -Wall -Wextra -Werror -O2 -fPIC -std=c11
 CFLAGS += -I./include
 CFLAGS += -D_POSIX_C_SOURCE=200809L
+CFLAGS += -D_GNU_SOURCE
 
 # Directories
 SRC_DIR = src

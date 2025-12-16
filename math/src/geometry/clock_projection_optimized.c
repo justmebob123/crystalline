@@ -20,6 +20,7 @@
  */
 
 #include "math/clock.h"
+#include "math/constants.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdlib.h>

@@ -5,6 +5,7 @@
 
 #include "math/polytope_vertex.h"
 #include "math/platonic_clock.h"
+#include "math/constants.h"
 #include "math/prime.h"
 #include "math/transcendental.h"
 #include <stdlib.h>

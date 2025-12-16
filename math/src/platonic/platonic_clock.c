@@ -4,6 +4,7 @@
  */
 
 #include "math/platonic_clock.h"
+#include "math/constants.h"
 #include "math/prime.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
