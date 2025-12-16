@@ -376,12 +376,13 @@ Based on the detailed action plan, completing the integration by:
   * [x] Remove CLLM's MessagePriority (use algorithm library version)
   * [x] Update header files to use algorithm library types
   * [x] Fix type conflicts in headers
-  * [ ] **SOURCE FILE UPDATES:**
-    * [ ] Update cllm_sphere_message.c to use Message instead of SphereMessage
-    * [ ] Update cllm_control_process.c message creation calls
-    * [ ] Update cllm_lattice_hierarchy.c message creation calls
-    * [ ] Update all other files that create/send messages
-    * [ ] Fix message_queue_create calls (different signature)
+  * [x] Rewrite cllm_sphere_message.c as wrapper
+  * [x] Rewrite cllm_message_queue.c as wrapper
+  * [ ] **REMAINING COMPILATION FIXES:**
+    * [ ] Fix sphere_message_set_boundary signature (5 args vs 4 args)
+    * [ ] Fix message_queue_create calls in cllm_lattice_hierarchy.c
+    * [ ] Test compilation
+    * [ ] Fix any remaining errors
 - [ ] Update Makefile if needed
 - [ ] Build and verify compilation
 

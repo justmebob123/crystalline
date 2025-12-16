@@ -158,32 +158,105 @@ typedef struct {
 // HELPER FUNCTIONS
 // ============================================================================
 
+// sphere_message_create is now implemented in cllm_sphere_message.c
+// See function declarations below
+
 /**
- * Create a CLLM sphere message
+ * Create sphere message (compatibility wrapper)
  * 
- * This is a wrapper around message_create from the algorithm library.
+ * Creates a message with no payload data.
+ * For messages with payloads, allocate the payload separately and set it.
  * 
  * @param type CLLM message type
  * @param priority Message priority
  * @param sender_id Sender sphere ID
  * @param receiver_id Receiver sphere ID
- * @param data Message payload data
- * @param data_size Size of payload in bytes
  * @return Created message, or NULL on error
  */
-static inline SphereMessage* sphere_message_create(
+SphereMessage* sphere_message_create(
     CLLMMessageType type,
     MessagePriority priority,
-    uint32_t sender_id,
-    uint32_t receiver_id,
-    void* data,
-    size_t data_size
-) {
-    // Note: message_create is provided by the algorithm library
-    // We need to get the MessageSystem from somewhere - this will be handled
-    // by the adapter layer
-    return NULL; // Placeholder - actual implementation in adapter
-}
+    int sender_id,
+    int receiver_id
+);
+
+/**
+ * Free sphere message
+ * 
+ * @param message Message to free
+ */
+void sphere_message_free(SphereMessage* message);
+
+/**
+ * Clone sphere message
+ * 
+ * @param message Message to clone
+ * @return Cloned message, or NULL on error
+ */
+SphereMessage* sphere_message_clone(const SphereMessage* message);
+
+/**
+ * Set work request payload
+ */
+void sphere_message_set_work_request(
+    SphereMessage* message,
+    uint64_t requested_items,
+    int symmetry_group,
+    uint64_t current_load
+);
+
+/**
+ * Set work offer payload
+ */
+void sphere_message_set_work_offer(
+    SphereMessage* message,
+    uint64_t offered_items,
+    int symmetry_group,
+    uint64_t estimated_cost
+);
+
+/**
+ * Set gradient payload
+ */
+void sphere_message_set_gradient(
+    SphereMessage* message,
+    uint64_t gradient_size,
+    uint64_t layer_id,
+    double* gradient_data
+);
+
+/**
+ * Set weight payload
+ */
+void sphere_message_set_weight(
+    SphereMessage* message,
+    uint64_t weight_size,
+    uint64_t layer_id,
+    double* weight_data
+);
+
+/**
+ * Set boundary payload
+ */
+void sphere_message_set_boundary(
+    SphereMessage* message,
+    uint64_t boundary_value,
+    int direction,
+    uint64_t timestamp
+);
+
+/**
+ * Set statistics payload
+ */
+void sphere_message_set_stats(
+    SphereMessage* message,
+    uint64_t messages_sent,
+    uint64_t messages_received,
+    uint64_t work_completed,
+    uint64_t work_stolen,
+    uint64_t gradients_computed,
+    uint64_t weights_updated
+);
 
 /**
  * Get message type name
