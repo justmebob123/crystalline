@@ -73,6 +73,9 @@ typedef struct {
     // Shared thread pool
     HierarchicalThreadPool* thread_pool;
     
+    // Shared message system
+    MessageSystem* message_system;
+    
     // Configuration
     uint32_t symmetry_fold;      // 12 for dodecahedron
     uint32_t num_dimensions;     // 13 for CLLM
@@ -525,6 +528,51 @@ StateType cllm_state_to_generic(HierarchyState cllm_state);
  * @return CLLM-specific state
  */
 HierarchyState generic_state_to_cllm(StateType generic_state);
+
+// ============================================================================
+// WORK DISTRIBUTION OPERATIONS
+// ============================================================================
+
+/**
+ * Submit work to sphere's work pool
+ * 
+ * @param adapter Adapter instance
+ * @param work_fn Work function to execute
+ * @param data Data to pass to work function
+ * @param data_size Size of data in bytes
+ * @param priority Work priority level
+ * @return 1 if successful, 0 otherwise
+ */
+uint64_t cllm_adapter_submit_work(
+    CLLMAlgorithmAdapter* adapter,
+    void (*work_fn)(void*),
+    void* data,
+    size_t data_size,
+    WorkPriority priority
+);
+
+/**
+ * Get work from sphere's work pool
+ * 
+ * Tries to get work from local queue first, then steals from neighbors if needed.
+ * 
+ * @param adapter Adapter instance
+ * @return Work item or NULL if no work available
+ */
+WorkItem* cllm_adapter_get_work(CLLMAlgorithmAdapter* adapter);
+
+/**
+ * Complete work item
+ * 
+ * @param adapter Adapter instance
+ * @param item Work item to complete
+ * @param success Whether work completed successfully
+ */
+void cllm_adapter_complete_work(
+    CLLMAlgorithmAdapter* adapter,
+    WorkItem* item,
+    bool success
+);
 
 #ifdef __cplusplus
 }

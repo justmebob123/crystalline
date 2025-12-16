@@ -108,6 +108,19 @@ CLLMAdapterPool* cllm_adapter_pool_create(
         return NULL;
     }
     
+    // Create message system
+    pool->message_system = message_system_create(
+        num_spheres * num_spheres,  // max channels (all-to-all communication)
+        1000                         // pool size for message allocation
+    );
+    
+    if (!pool->message_system) {
+        hierarchical_thread_pool_free(pool->thread_pool);
+        free(pool->adapters);
+        free(pool);
+        return NULL;
+    }
+    
     pool->initialized = true;
     return pool;
 }
@@ -127,6 +140,11 @@ void cllm_adapter_pool_free(CLLMAdapterPool* pool) {
     // Free thread pool
     if (pool->thread_pool) {
         hierarchical_thread_pool_free(pool->thread_pool);
+    }
+    
+    // Free message system
+    if (pool->message_system) {
+        message_system_destroy(pool->message_system);
     }
     
     // Free adapters array
@@ -703,4 +721,88 @@ CLLMAlgorithmAdapter* cllm_adapter_pool_get_adapter(
     }
     
     return NULL;
+}
+
+// ============================================================================
+// WORK DISTRIBUTION OPERATIONS
+// ============================================================================
+
+/**
+ * Submit work to sphere's work pool
+ */
+uint64_t cllm_adapter_submit_work(
+    CLLMAlgorithmAdapter* adapter,
+    void (*work_fn)(void*),
+    void* data,
+    size_t data_size,
+    WorkPriority priority
+) {
+    if (!adapter || !adapter->thread_pool || !adapter->thread_pool->work_distributor) {
+        return 0;
+    }
+    
+    bool success = work_submit(
+        adapter->thread_pool->work_distributor,
+        adapter->cllm_hierarchy->sphere_id,
+        work_fn,
+        data,
+        data_size,
+        priority
+    );
+    
+    if (success) {
+        atomic_fetch_add(&amp;adapter->cllm_hierarchy->work_submitted, 1);
+    }
+    
+    return success ? 1 : 0;
+}
+
+/**
+ * Get work from sphere's work pool
+ */
+WorkItem* cllm_adapter_get_work(CLLMAlgorithmAdapter* adapter) {
+    if (!adapter || !adapter->thread_pool || !adapter->thread_pool->work_distributor) {
+        return NULL;
+    }
+    
+    // Try to get work from local queue
+    WorkItem* item = work_get(
+        adapter->thread_pool->work_distributor,
+        adapter->cllm_hierarchy->sphere_id
+    );
+    
+    // If no work, try stealing from neighbors
+    if (!item) {
+        item = work_steal(
+            adapter->thread_pool->work_distributor,
+            adapter->cllm_hierarchy->sphere_id
+        );
+        
+        if (item) {
+            atomic_fetch_add(&amp;adapter->cllm_hierarchy->work_stolen_to, 1);
+        }
+    }
+    
+    return item;
+}
+
+/**
+ * Complete work item
+ */
+void cllm_adapter_complete_work(
+    CLLMAlgorithmAdapter* adapter,
+    WorkItem* item,
+    bool success
+) {
+    if (!adapter || !item || !adapter->thread_pool || !adapter->thread_pool->work_distributor) {
+        return;
+    }
+    
+    if (success) {
+        work_complete(adapter->thread_pool->work_distributor, item);
+        atomic_fetch_add(&amp;adapter->cllm_hierarchy->work_completed, 1);
+    } else {
+        work_fail(adapter->thread_pool->work_distributor, item);
+        atomic_fetch_add(&amp;adapter->cllm_hierarchy->work_failed, 1);
+    }
 }
