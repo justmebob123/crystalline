@@ -16,18 +16,15 @@
 #include "math/transcendental.h"
 #include "math/constants.h"
 #include "math/arithmetic.h"
-#include "math/constants.h"
 #include "math/clock.h"
-#include "math/constants.h"
 #include "math/clock_lattice_13d.h"
-#include "math/constants.h"
 #include "ai/cllm.h"
-#include "math/constants.h"
 #include "ai/cllm_platonic.h"
-#include "math/constants.h"
+#include "hierarchical_threading.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <time.h>
 
 // External functions
@@ -137,113 +134,168 @@ static void initialize_geometric_weights(CLLMModel* model) {
  * Allocate all model parameters
  */
 static bool allocate_model_parameters(CLLMModel* model) {
-    // Embeddings (legacy double arrays - kept for backward compatibility)
-    model->embeddings = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
-    if (!model->embeddings) return false;
+    // ========================================================================
+    // STEP 1: CREATE 88D THREAD POOL (MANDATORY)
+    // ========================================================================
     
-    model->embeddings_grad = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
-    if (!model->embeddings_grad) return false;
-    
-    // Positional encoding (legacy)
-    model->positional_encoding = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
-    if (!model->positional_encoding) return false;
-    
-    // Abacus-based embeddings (NEW - arbitrary precision)
-    // Use base 60 (base-60) with precision 10 for high accuracy
-    model->abacus_embeddings = abacus_matrix_create(
-        model->vocab_size, 
-        model->embedding_dim, 
-        60,  // Base 60 (sexagesimal - base-60)
-        10   // Precision: 10 fractional digits
-    );
-    if (!model->abacus_embeddings) {
-        fprintf(stderr, "Failed to create abacus embeddings matrix\n");
+    printf("  → Creating 88D thread pool (MANDATORY)...\n");
+    model->pool_88d = hierarchical_thread_pool_create_88d(60);  // Base 60 for CrystallineAbacus
+    if (!model->pool_88d) {
+        fprintf(stderr, "FATAL: Failed to create 88D thread pool\n");
+        fprintf(stderr, "Threading is MANDATORY in the new architecture\n");
         return false;
     }
     
-    model->abacus_positional_encoding = abacus_matrix_create(
-        model->max_seq_len,
-        model->embedding_dim,
-        60,  // Base 60
-        10   // Precision: 10 fractional digits
-    );
-    if (!model->abacus_positional_encoding) {
-        fprintf(stderr, "Failed to create abacus positional encoding matrix\n");
+    printf("  ✓ Created 88D thread pool: 96 threads (8 layers × 12 threads per layer)\n");
+    
+    // ========================================================================
+    // STEP 2: ALLOCATE TOKEN ASSIGNMENTS (PERMANENT)
+    // ========================================================================
+    
+    printf("  → Allocating token → thread assignments...\n");
+    model->token_assignments = calloc(model->vocab_size, sizeof(*model->token_assignments));
+    if (!model->token_assignments) {
+        fprintf(stderr, "Failed to allocate token assignments\n");
         return false;
     }
     
-    // Enable abacus embeddings by default
-    model->use_abacus_embeddings = true;
-    
-    printf("✓ Created abacus embeddings: %u × %u (base 60, precision 10)\n",
-           model->vocab_size, model->embedding_dim);
-    printf("✓ Created abacus positional encoding: %u × %u (base 60, precision 10)\n",
-           model->max_seq_len, model->embedding_dim);
-    
-    // Allocate layers
-    model->layers = calloc(model->num_layers, sizeof(model->layers[0]));
-    if (!model->layers) return false;
-    
-    // Allocate each layer's parameters
-    for (uint32_t i = 0; i < model->num_layers; i++) {
-        size_t attn_size = model->embedding_dim * model->embedding_dim;
-        size_t ffn_size1 = model->embedding_dim * model->hidden_dim;
-        size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
+    // Assign each token to a thread permanently
+    for (uint32_t token_id = 0; token_id < model->vocab_size; token_id++) {
+        // Deterministic assignment based on token ID
+        uint8_t layer = token_id % 8;
+        uint8_t dimension = (token_id / 8) % 11 + 1;  // 1-11 (skip 0 which is control)
         
-        // Attention weights
-        model->layers[i].query_weights = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].key_weights = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].value_weights = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].output_weights = (double*)calloc(attn_size, sizeof(double));
+        model->token_assignments[token_id].layer = layer;
+        model->token_assignments[token_id].dimension = dimension;
+        model->token_assignments[token_id].thread_id = layer * 12 + dimension;
         
-        // Attention gradients
-        model->layers[i].query_grad = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].key_grad = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].value_grad = (double*)calloc(attn_size, sizeof(double));
-        model->layers[i].output_grad = (double*)calloc(attn_size, sizeof(double));
+        // Get direct pointer to thread
+        model->token_assignments[token_id].thread = 
+            hierarchical_thread_get_88d(model->pool_88d, layer, dimension);
         
-        // Feed-forward weights
-        model->layers[i].ffn_w1 = (double*)calloc(ffn_size1, sizeof(double));
-        model->layers[i].ffn_w2 = (double*)calloc(ffn_size2, sizeof(double));
-        model->layers[i].ffn_b1 = (double*)calloc(model->hidden_dim, sizeof(double));
-        model->layers[i].ffn_b2 = (double*)calloc(model->embedding_dim, sizeof(double));
-        
-        // Feed-forward gradients
-        model->layers[i].ffn_w1_grad = (double*)calloc(ffn_size1, sizeof(double));
-        model->layers[i].ffn_w2_grad = (double*)calloc(ffn_size2, sizeof(double));
-        model->layers[i].ffn_b1_grad = (double*)calloc(model->hidden_dim, sizeof(double));
-        model->layers[i].ffn_b2_grad = (double*)calloc(model->embedding_dim, sizeof(double));
-        
-        // Layer norm parameters
-        model->layers[i].ln1_gamma = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln1_beta = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln2_gamma = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln2_beta = (double*)calloc(model->embedding_dim, sizeof(double));
-        
-        // Layer norm gradients
-        model->layers[i].ln1_gamma_grad = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln1_beta_grad = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln2_gamma_grad = (double*)calloc(model->embedding_dim, sizeof(double));
-        model->layers[i].ln2_beta_grad = (double*)calloc(model->embedding_dim, sizeof(double));
-        
-        // Check allocations
-        if (!model->layers[i].query_weights || !model->layers[i].key_weights ||
-            !model->layers[i].value_weights || !model->layers[i].output_weights ||
-            !model->layers[i].ffn_w1 || !model->layers[i].ffn_w2 ||
-            !model->layers[i].ffn_b1 || !model->layers[i].ffn_b2 ||
-            !model->layers[i].ln1_gamma || !model->layers[i].ln1_beta ||
-            !model->layers[i].ln2_gamma || !model->layers[i].ln2_beta) {
+        if (!model->token_assignments[token_id].thread) {
+            fprintf(stderr, "Failed to get thread [%d][%d] for token %u\n", 
+                    layer, dimension, token_id);
             return false;
         }
     }
     
-    // Output layer
-    model->output_weights = (double*)calloc(model->embedding_dim * model->vocab_size, sizeof(double));
-    model->output_bias = (double*)calloc(model->vocab_size, sizeof(double));
-    model->output_weights_grad = (double*)calloc(model->embedding_dim * model->vocab_size, sizeof(double));
-    model->output_bias_grad = (double*)calloc(model->vocab_size, sizeof(double));
+    printf("  ✓ Assigned %u tokens to threads (deterministic mapping)\n", model->vocab_size);
     
-    if (!model->output_weights || !model->output_bias) return false;
+    // ========================================================================
+    // STEP 3: ALLOCATE THREAD PARAMETERS
+    // ========================================================================
+    
+    printf("  → Allocating thread parameters...\n");
+    model->thread_params = calloc(96, sizeof(*model->thread_params));
+    if (!model->thread_params) {
+        fprintf(stderr, "Failed to allocate thread parameters\n");
+        return false;
+    }
+    
+    // Initialize thread parameters
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 0; dim <= 11; dim++) {
+            uint32_t thread_idx = layer * 12 + dim;
+            
+            model->thread_params[thread_idx].layer_id = layer;
+            model->thread_params[thread_idx].is_control_thread = (dim == 0);
+            model->thread_params[thread_idx].is_worker_thread = (dim >= 1 &amp;&amp; dim <= 11);
+            model->thread_params[thread_idx].num_tokens_assigned = 0;
+            model->thread_params[thread_idx].token_ids = NULL;
+        }
+    }
+    
+    // Count tokens per thread and allocate token ID arrays
+    for (uint32_t token_id = 0; token_id < model->vocab_size; token_id++) {
+        uint32_t thread_idx = model->token_assignments[token_id].thread_id;
+        model->thread_params[thread_idx].num_tokens_assigned++;
+    }
+    
+    // Allocate token ID arrays
+    for (uint32_t thread_idx = 0; thread_idx < 96; thread_idx++) {
+        if (model->thread_params[thread_idx].num_tokens_assigned > 0) {
+            model->thread_params[thread_idx].token_ids = 
+                calloc(model->thread_params[thread_idx].num_tokens_assigned, sizeof(uint32_t));
+            if (!model->thread_params[thread_idx].token_ids) {
+                fprintf(stderr, "Failed to allocate token IDs for thread %u\n", thread_idx);
+                return false;
+            }
+        }
+    }
+    
+    // Fill token ID arrays
+    uint32_t* token_counts = calloc(96, sizeof(uint32_t));
+    for (uint32_t token_id = 0; token_id < model->vocab_size; token_id++) {
+        uint32_t thread_idx = model->token_assignments[token_id].thread_id;
+        uint32_t idx = token_counts[thread_idx]++;
+        model->thread_params[thread_idx].token_ids[idx] = token_id;
+    }
+    free(token_counts);
+    
+    printf("  ✓ Allocated thread parameters for 96 threads\n");
+    
+    // ========================================================================
+    // STEP 4: ALLOCATE LAYER INFO
+    // ========================================================================
+    
+    printf("  → Allocating layer info...\n");
+    model->layer_info = calloc(model->num_layers, sizeof(*model->layer_info));
+    if (!model->layer_info) {
+        fprintf(stderr, "Failed to allocate layer info\n");
+        return false;
+    }
+    
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        // Get control thread for this layer
+        model->layer_info[layer].control_thread = 
+            hierarchical_thread_get_88d(model->pool_88d, layer, 0);
+        
+        // Allocate worker thread array
+        model->layer_info[layer].worker_threads = calloc(11, sizeof(HierarchicalThread*));
+        if (!model->layer_info[layer].worker_threads) {
+            fprintf(stderr, "Failed to allocate worker threads for layer %u\n", layer);
+            return false;
+        }
+        
+        // Get worker threads
+        for (uint8_t dim = 1; dim <= 11; dim++) {
+            model->layer_info[layer].worker_threads[dim - 1] = 
+                hierarchical_thread_get_88d(model->pool_88d, layer, dim);
+        }
+    }
+    
+    printf("  ✓ Allocated layer info for %u layers\n", model->num_layers);
+    
+    // ========================================================================
+    // STEP 5: INITIALIZE THREADING BARRIERS
+    // ========================================================================
+    
+    printf("  → Initializing threading barriers...\n");
+    
+    model->threading.forward_barrier = malloc(sizeof(pthread_barrier_t));
+    model->threading.backward_barrier = malloc(sizeof(pthread_barrier_t));
+    model->threading.optimizer_barrier = malloc(sizeof(pthread_barrier_t));
+    
+    if (!model->threading.forward_barrier || !model->threading.backward_barrier || 
+        !model->threading.optimizer_barrier) {
+        fprintf(stderr, "Failed to allocate threading barriers\n");
+        return false;
+    }
+    
+    // Initialize barriers for 96 threads (88 workers + 8 control)
+    pthread_barrier_init(model->threading.forward_barrier, NULL, 96);
+    pthread_barrier_init(model->threading.backward_barrier, NULL, 96);
+    pthread_barrier_init(model->threading.optimizer_barrier, NULL, 96);
+    
+    printf("  ✓ Initialized threading barriers\n");
+    
+    // ========================================================================
+    // LEGACY REMOVED: No flat arrays allocated
+    // ========================================================================
+    
+    printf("  ✓ Thread-centric architecture initialized\n");
+    printf("  ✓ All parameters will be stored in thread CrystallineAbacus\n");
     
     return true;
 }
