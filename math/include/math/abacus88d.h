@@ -33,7 +33,8 @@
 #include "platonic_generator.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include <pthread.h>
+// Threading removed - math library is pure mathematics
+// Threading support should be in algorithms library
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,7 +110,8 @@ typedef struct {
     size_t num_shared_vertices;
     
     // Thread safety
-    pthread_mutex_t layer_lock;
+    // Threading removed - pure mathematical structure
+    // Thread safety should be handled by wrapper in algorithms library
     
 } Layer88D;
 
@@ -179,7 +181,7 @@ typedef struct {
     
     // Shared memory for cross-layer operations
     CrystallineAbacus* shared_value;
-    pthread_mutex_t boundary_lock;
+    // Threading removed - pure mathematical structure
     
 } GeometricBoundary88D;
 
@@ -221,7 +223,7 @@ typedef struct {
     uint32_t base;
     
     // Thread safety for global operations
-    pthread_mutex_t global_lock;
+    // Threading removed - pure mathematical structure
     
 } Abacus88D;
 

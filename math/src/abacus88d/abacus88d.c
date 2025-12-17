@@ -97,8 +97,8 @@ static MathError init_layer(Layer88D* layer, uint8_t layer_index, uint32_t base)
     layer->shared_vertices = NULL;
     layer->num_shared_vertices = 0;
     
-    // Initialize mutex
-    pthread_mutex_init(&layer->layer_lock, NULL);
+    // Threading removed - pure mathematical structure
+    // Mutex initialization should be in algorithms library wrapper
     
     return MATH_SUCCESS;
 }
@@ -129,8 +129,7 @@ static void free_layer(Layer88D* layer) {
         layer->shared_vertices = NULL;
     }
     
-    // Destroy mutex
-    pthread_mutex_destroy(&layer->layer_lock);
+    // Threading removed - pure mathematical structure
 }
 
 /**
@@ -270,8 +269,7 @@ Abacus88D* abacus88d_create(uint32_t base) {
     abacus88d->boundaries = NULL;
     abacus88d->num_boundaries = 0;
     
-    // Initialize global mutex
-    pthread_mutex_init(&abacus88d->global_lock, NULL);
+    // Threading removed - pure mathematical structure
     
     return abacus88d;
 }
@@ -301,13 +299,12 @@ void abacus88d_free(Abacus88D* abacus88d) {
             if (abacus88d->boundaries[i].shared_value) {
                 abacus_free(abacus88d->boundaries[i].shared_value);
             }
-            pthread_mutex_destroy(&abacus88d->boundaries[i].boundary_lock);
+            // Threading removed - pure mathematical structure
         }
         free(abacus88d->boundaries);
     }
     
-    // Destroy global mutex
-    pthread_mutex_destroy(&abacus88d->global_lock);
+    // Threading removed - pure mathematical structure
     
     free(abacus88d);
 }
@@ -412,9 +409,9 @@ MathError abacus88d_set(Abacus88D* abacus88d,
     if (layer >= ABACUS88D_NUM_LAYERS) return MATH_ERROR_INVALID_ARG;
     if (dimension >= ABACUS88D_DIMS_PER_LAYER) return MATH_ERROR_INVALID_ARG;
     
-    pthread_mutex_lock(&abacus88d->layers[layer].layer_lock);
+    // Threading removed - pure mathematical operation
+    // Thread safety should be handled by wrapper in algorithms library
     MathError err = abacus_copy_to(abacus88d->layers[layer].dimensions[dimension], value);
-    pthread_mutex_unlock(&abacus88d->layers[layer].layer_lock);
     
     return err;
 }

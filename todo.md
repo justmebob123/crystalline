@@ -63,25 +63,45 @@ CrystallineAbacus (Working)
 - [x] Fix layer names (remove "(2nd)" suffix)
 - [x] All 131 tests passing (100%)
 
-### Phase 2: Active Boundary Calculations ✓ START HERE
+### Phase 2: Refactor Architecture - Proper Separation of Concerns ✓ START HERE
 
-#### Task 2.1: Implement Boundary Detection
-- [ ] Add boundary detection logic (near_boundary check)
-- [ ] Identify which neighbor sphere is closest
-- [ ] Calculate boundary position using Abacus88D
-- [ ] Test boundary detection
+**CRITICAL ISSUE IDENTIFIED**: Threading primitives (pthread_mutex_t) are in the math library (abacus88d.h), violating separation of concerns.
 
-#### Task 2.2: Implement Handoff Logic
-- [ ] Coordinate transformation between spheres using geometric operations
-- [ ] Transfer ownership of values crossing boundaries
-- [ ] Update caching across boundaries using Abacus88D
-- [ ] Test handoff logic
+**CORRECT ARCHITECTURE**:
+```
+libcrystallinemath.so (Pure Mathematics - NO THREADING)
+    ↓ depends on
+libalgorithms.so (Mathematical Algorithms - NO THREADING)
+    ↓ depends on
+libcllm.so (Application Specific - THREADING HERE)
+```
 
-#### Task 2.3: Active Calculation Interface
-- [ ] Shared x coordinate from control thread (stored in Abacus88D)
-- [ ] Each sphere computes y = f(x) independently using its 88D space
-- [ ] Boundary calculations use both spheres' Abacus88D results
-- [ ] Test active boundaries with exact arithmetic
+#### Task 2.1: Remove Threading from Math Library
+- [ ] Remove pthread_mutex_t from Abacus88D structure
+- [ ] Remove all threading primitives from math library
+- [ ] Keep Abacus88D as pure mathematical structure
+- [ ] Ensure math library has ZERO threading dependencies
+- [ ] Update tests to verify no threading in math library
+
+#### Task 2.2: Create Geometric Algorithms (algorithms library)
+- [ ] Create algorithms/include/geometric_space.h
+- [ ] Implement boundary detection algorithms (pure math, no threads)
+- [ ] Implement coordinate transformation algorithms
+- [ ] Implement handoff algorithms (mathematical operations only)
+- [ ] These are ALGORITHMS that can be used by ANY system
+
+#### Task 2.3: Create Threading Wrapper (algorithms library)
+- [ ] Create algorithms/include/hierarchical_threading.h (already exists, enhance it)
+- [ ] Add thread-safe wrapper around Abacus88D operations
+- [ ] Implement work distribution algorithms
+- [ ] Implement synchronization strategies
+- [ ] Keep threading SEPARATE from pure math
+
+#### Task 2.4: Integrate with CLLM (application layer)
+- [ ] Use geometric algorithms from algorithms library
+- [ ] Use threading wrapper from algorithms library
+- [ ] CLLM-specific integration in src/ai/
+- [ ] Keep CLLM concerns separate from general algorithms
 
 ### Phase 3: Threading Integration
 
