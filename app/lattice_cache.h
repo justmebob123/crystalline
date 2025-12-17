@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/crystal_abacus.h"
+#include "crystal_abacus.h"
 
 // Single prime entry with all pre-calculated lattice values
 typedef struct {

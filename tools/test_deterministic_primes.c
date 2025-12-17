@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/clock_lattice.h"
+#include "clock_lattice.h"
 
 int main(void) {
     printf("Testing Deterministic Prime Generation\n");

@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
-#include "../include/ai/cllm_clock_embeddings.h"
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "ai/cllm_lattice_embeddings.h"
+#include "ai/cllm_clock_embeddings.h"
 
 double get_time_ms() {
     struct timespec ts;

@@ -4,9 +4,9 @@
  * Command-line interface for managing CLLM models
  */
 
-#include "../include/cllm.h"
-#include "../include/cllm_model_manager.h"
-#include "../include/cllm_utils.h"
+#include "cllm.h"
+#include "cllm_model_manager.h"
+#include "cllm_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

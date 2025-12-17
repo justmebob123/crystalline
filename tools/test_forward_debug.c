@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_utils.h"
+#include "cllm.h"
+#include "cllm_training.h"
+#include "cllm_utils.h"
 
 int main() {
     printf("=== Forward Pass Debug Test ===\n\n");

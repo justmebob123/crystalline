@@ -12,12 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
-#include "../include/ai/cllm_angular_attention.h"
-#include "../include/ai/cllm_ntt_attention.h"
-#include "../include/ai/cllm_cymatic_training.h"
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "ai/cllm_lattice_embeddings.h"
+#include "ai/cllm_angular_attention.h"
+#include "ai/cllm_ntt_attention.h"
+#include "ai/cllm_cymatic_training.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 

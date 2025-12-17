@@ -3,11 +3,11 @@
  * @brief Implementation of matrix operations using CrystallineAbacus
  */
 
-#include "../../include/cllm_abacus_matrix.h"
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <stdio.h>
+#include "../../include/cllm_abacus_matrix.h"
 
 // Error code mappings
 #define MATH_ERROR_ALLOCATION MATH_ERROR_OUT_OF_MEMORY

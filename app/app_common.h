@@ -9,17 +9,17 @@
 #include <string.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include "../include/prime_math_custom.h"
+#include "prime_math_custom.h"
 
 // Include the prime math library - CORRECTED INCLUDES
-#include "../include/prime_math.h"
-#include "../include/crystal_abacus.h"
-#include "../include/prime_hyperdim.h"
-#include "../include/prime_matrix.h"
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_metrics.h"
+#include "prime_math.h"
+#include "crystal_abacus.h"
+#include "prime_hyperdim.h"
+#include "prime_matrix.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "cllm_training.h"
+#include "cllm_metrics.h"
 #include "lattice_cache.h"
 #include "terminal_output.h"
 #include "../math/include/math/types.h"

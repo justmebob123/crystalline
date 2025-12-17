@@ -5,7 +5,7 @@
  * cache coherency, and performance characteristics.
  */
 
-#include "../include/ai/cllm_kissing_boundaries.h"
+#include "ai/cllm_kissing_boundaries.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

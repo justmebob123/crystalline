@@ -10,8 +10,8 @@
 #include <string.h>
 #include "math/math.h"
 #include <assert.h>
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
+#include "cllm.h"
+#include "cllm_training.h"
 
 #define MATH_EPSILON 1e-6
 

@@ -16,7 +16,7 @@
 #include <time.h>
 #include <math.h>
 #include "../math/include/math.h"
-#include "../include/cllm_abacus_matrix.h"
+#include "cllm_abacus_matrix.h"
 
 #define TOLERANCE 1e-6
 #define TEST_ROWS 3

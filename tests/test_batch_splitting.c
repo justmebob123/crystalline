@@ -4,7 +4,7 @@
  * Tests batch splitting based on work distribution ratios.
  */
 
-#include "../include/ai/cllm_batch_splitting.h"
+#include "ai/cllm_batch_splitting.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

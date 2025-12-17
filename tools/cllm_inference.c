@@ -4,10 +4,10 @@
  * Uses the actual model forward pass instead of random logits
  */
 
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_model_manager.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "cllm_format.h"
+#include "cllm_model_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

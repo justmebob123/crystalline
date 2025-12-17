@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 void draw_enhanced_ulam_spiral(SDL_Renderer* renderer, AppState* state) {
     // Mode 0: Clock Spiral - Primes spiral outward from center in clock positions

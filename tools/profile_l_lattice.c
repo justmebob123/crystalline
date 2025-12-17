@@ -4,8 +4,8 @@
  * This tool measures the performance of L_lattice() to identify bottlenecks
  */
 
-#include "../include/prime_lattice_core.h"
-#include "../include/prime_math_custom.h"
+#include "prime_lattice_core.h"
+#include "prime_math_custom.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>

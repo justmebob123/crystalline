@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
-#include "../include/crystal_abacus.h"
+#include "crystal_abacus.h"
 
 // Platonic target definitions
 typedef struct {

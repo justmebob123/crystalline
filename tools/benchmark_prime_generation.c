@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdbool.h>
-#include "../include/clock_lattice.h"
+#include "clock_lattice.h"
 
 // Simple primality test for comparison
 static bool is_prime_trial_division(uint64_t n) {

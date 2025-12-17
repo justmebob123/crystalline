@@ -4,7 +4,7 @@
 #include "app_common.h"
 #include "math/compact_vector.h"
 #include "math/prime.h"
-#include "../include/prime_math_custom.h"  // For prime_cos, prime_sin, etc.
+#include "prime_math_custom.h"  // For prime_cos, prime_sin, etc.
 
 // Get precise 360-degree angle for a number using compact vectors
 double get_precise_angle(int number, ClockContext* clock_ctx) {

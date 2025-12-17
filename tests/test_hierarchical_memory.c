@@ -5,7 +5,7 @@
  * and memory coherency.
  */
 
-#include "../include/ai/cllm_hierarchical_memory.h"
+#include "ai/cllm_hierarchical_memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

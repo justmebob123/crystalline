@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "../include/crystal_abacus.h"
+#include "crystal_abacus.h"
 
 // Extended Platonic solid structure
 typedef struct {

@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/cllm_model_registry.h"
+#include "cllm_model_registry.h"
 
 int main(int argc, char** argv) {
     printf("\n=== Model Registry Test ===\n\n");

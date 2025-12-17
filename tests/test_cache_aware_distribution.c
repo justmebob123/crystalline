@@ -4,7 +4,7 @@
  * Tests NUMA-aware and cache-optimized work distribution.
  */
 
-#include "../include/ai/cllm_cache_aware_distribution.h"
+#include "ai/cllm_cache_aware_distribution.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

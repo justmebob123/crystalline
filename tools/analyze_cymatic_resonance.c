@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
+#include "cllm.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "../include/cllm_mathematical_constants.h"
+#include "cllm_mathematical_constants.h"
 #include "../../algorithms/include/cymatic_modulation.h"
 
 // Helper functions (previously in cllm_cymatic_training.c)

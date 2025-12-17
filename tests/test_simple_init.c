@@ -2,8 +2,8 @@
  * test_simple_init.c - Simple test to find where initialization hangs
  */
 
-#include "../include/prime_rainbow.h"
-#include "../include/cllm_utils.h"
+#include "prime_rainbow.h"
+#include "cllm_utils.h"
 #include <stdio.h>
 #include <time.h>
 

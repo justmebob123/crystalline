@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_model_manager.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "cllm_model_manager.h"
 
 void check_model_weights(CLLMModel* model) {
     printf("\n=== Checking Model Weights ===\n");

@@ -5,9 +5,9 @@
  * where the actual slowness occurs.
  */
 
-#include "../include/cllm_inference.h"
-#include "../include/cllm_pure_crystalline.h"
-#include "../include/prime_rainbow.h"
+#include "cllm_inference.h"
+#include "cllm_pure_crystalline.h"
+#include "prime_rainbow.h"
 #include <stdio.h>
 #include <time.h>
 

@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../include/cllm.h"
-#include "../include/ai/cllm_lattice.h"
-#include "../include/cllm_lattice_visualization.h"
-#include "../include/cllm_neighbor_ops.h"
+#include "cllm.h"
+#include "ai/cllm_lattice.h"
+#include "cllm_lattice_visualization.h"
+#include "cllm_neighbor_ops.h"
 
 // Test 1: Initialize kissing spheres
 static int test_initialize_kissing_spheres(void) {

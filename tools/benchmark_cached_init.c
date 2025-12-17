@@ -2,8 +2,8 @@
  * benchmark_cached_init.c - Benchmark cached vs uncached initialization
  */
 
-#include "../include/cllm_inference.h"
-#include "../include/cllm_lattice_cache.h"
+#include "cllm_inference.h"
+#include "cllm_lattice_cache.h"
 #include <stdio.h>
 #include <time.h>
 

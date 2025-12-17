@@ -2,9 +2,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "app_common.h"
 #include "cllm_integration.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_model_registry.h"
-#include "../include/cllm_model_registry.h"
+#include "cllm_format.h"
+#include "cllm_model_registry.h"
+#include "cllm_model_registry.h"
 #include "input_manager.h"
 #include "ui/tabs/tab_video.h"
 #include "ui/tabs/tab_crawler.h"

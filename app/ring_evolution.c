@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 void draw_self_similar_layers(SDL_Renderer* renderer, AppState* state) {
     // Mode 4: Ring Evolution - Animate how primes fill each ring

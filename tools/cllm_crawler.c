@@ -11,7 +11,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include "../include/crawler.h"
+#include "crawler.h"
 
 static CrawlerState* g_crawler_state = NULL;
 static volatile int g_running = 1;

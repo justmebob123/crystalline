@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 void draw_harmonic_resonance(SDL_Renderer* renderer, AppState* state) {
     // Mode 2: Frequency Rings - Each ring vibrates at its frequency

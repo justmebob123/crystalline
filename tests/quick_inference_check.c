@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
+#include "cllm.h"
+#include "cllm_inference.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) {

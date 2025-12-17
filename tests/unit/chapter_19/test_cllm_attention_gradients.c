@@ -10,8 +10,8 @@
 #include <string.h>
 #include <math.h>  // ALLOWED in test files per MASTER_PLAN RULE 1
 #include <stdbool.h>
-#include "../include/cllm.h"
-#include "../include/cllm_attention.h"
+#include "cllm.h"
+#include "cllm_attention.h"
 
 // Test configuration
 #define EPSILON 1e-4

@@ -2,7 +2,7 @@
 // CORRECT BABYLONIAN CLOCK STRUCTURE - Maps primes to clock ticks
 
 #include "app_common.h"
-#include "../include/clock_lattice.h"
+#include "clock_lattice.h"
 
 // Get Babylonian clock position for visualization
 // This uses the CORRECT clock tick mapping (not spiral)

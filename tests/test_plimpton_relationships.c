@@ -5,7 +5,7 @@
  * relationships based on Plimpton 322 constraints.
  */
 
-#include "../include/ai/cllm_plimpton_relationships.h"
+#include "ai/cllm_plimpton_relationships.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

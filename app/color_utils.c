@@ -1,6 +1,6 @@
 // color_utils.c - Color utility functions
 #include "app_common.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 SDL_Color get_vibrational_color(double value, double prime) {
     double freq = vibrational_transducer(value, prime);

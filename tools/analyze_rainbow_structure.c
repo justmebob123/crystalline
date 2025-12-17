@@ -5,10 +5,10 @@
  * if pre-generation affects the crystalline lattice properties.
  */
 
-#include "../include/prime_rainbow.h"
-#include "../include/bigint_core.h"
-#include "../include/prime_lattice_core.h"
-#include "../include/cllm_mathematical_constants.h"
+#include "prime_rainbow.h"
+#include "bigint_core.h"
+#include "prime_lattice_core.h"
+#include "cllm_mathematical_constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

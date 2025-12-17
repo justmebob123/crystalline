@@ -1,6 +1,6 @@
 # Tools Makefile
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -I../include
+CFLAGS = -Wall -Wextra -O2 -I../cllm/include/ai -I../algorithms/include -I../math/include
 LDFLAGS = -L.. -L../algorithms -lcrystalline -lcllm -lalgorithms -lm -Wl,-rpath,'$$ORIGIN/..'
 
 TOOLS = web_scraper train_model cllm_crawler

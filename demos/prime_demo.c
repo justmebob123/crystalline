@@ -1,5 +1,5 @@
 // prime_demo.c - Demonstration of Prime Math Library capabilities
-#include "../include/prime_math.h"
+#include "prime_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 

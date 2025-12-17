@@ -5,7 +5,7 @@
 #include <string.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 // Helper to find prime index
 int find_prime_index(int prime, AppState* state) {

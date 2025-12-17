@@ -11,8 +11,8 @@
 #include <string.h>
 #include "math/math.h"
 #include <assert.h>
-#include "../include/cllm.h"
-#include "../include/cllm_format.h"
+#include "cllm.h"
+#include "cllm_format.h"
 
 #define TEST_MODEL_FILE "test_model.cllm"
 #define MATH_EPSILON 1e-6

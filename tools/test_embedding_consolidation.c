@@ -14,10 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "math/math.h"
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/ai/cllm_platonic.h"
-#include "../include/clock_lattice.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "ai/cllm_platonic.h"
+#include "clock_lattice.h"
 
 // Forward declarations for functions in cllm_embedding.c
 double cllm_embedding_similarity(const double* emb1, const double* emb2, uint32_t dim);

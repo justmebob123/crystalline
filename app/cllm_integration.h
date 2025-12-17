@@ -8,12 +8,12 @@
 #define CLLM_INTEGRATION_H
 
 #include "app_common.h"
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_format.h"
-#include "../include/prime_math.h"
-#include "../include/prime_rainbow.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "cllm_training.h"
+#include "cllm_format.h"
+#include "prime_math.h"
+#include "prime_rainbow.h"
 
 // Global abacus (rainbow table) management
 int app_initialize_global_abacus(void);

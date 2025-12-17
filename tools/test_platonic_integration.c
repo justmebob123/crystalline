@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/ai/cllm_platonic.h"
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "ai/cllm_platonic.h"
 
 int main() {
     printf("\n");

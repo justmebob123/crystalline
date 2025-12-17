@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "app_common.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 // Get ring number for a prime index (1-based, Babylonian)
 int get_prime_ring(int prime_index) {

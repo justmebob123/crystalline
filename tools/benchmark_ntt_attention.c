@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/cllm_inference.h"
+#include "cllm_inference.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include "../../algorithms/include/ntt_attention.h"

@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "cllm_format.h"
+#include "cllm_inference.h"
+#include "cllm_training.h"
 
 // Create a simple demo model
 CLLMModel* create_demo_model(void) {

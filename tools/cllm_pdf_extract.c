@@ -4,7 +4,7 @@
  * Extracts text from PDF files, with optional OCR support for scanned documents.
  */
 
-#include "../include/cllm_pdf.h"
+#include "cllm_pdf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

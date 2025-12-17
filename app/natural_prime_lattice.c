@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 // Draw natural prime lattice - ONLY primes, NO circles
 void draw_natural_prime_lattice(SDL_Renderer* renderer, AppState* state) {

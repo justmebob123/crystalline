@@ -16,7 +16,7 @@
 #include "math/math.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "../include/crystal_abacus.h"
+#include "crystal_abacus.h"
 
 // Maximum safe tetration value (to avoid overflow)
 #define MAX_TETRATION_VALUE 1000000000000ULL

@@ -4,8 +4,8 @@
  * Intelligently extracts text from PDFs, automatically applying OCR when needed.
  */
 
-#include "../include/cllm_pdf.h"
-#include "../include/cllm_ocr.h"
+#include "cllm_pdf.h"
+#include "cllm_ocr.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

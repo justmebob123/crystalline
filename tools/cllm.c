@@ -19,16 +19,16 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_training_threaded.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm_vocab_builder.h"
-#include "../include/cllm_batch.h"
-#include "../include/cllm_data_loader.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_utils.h"
+#include "cllm.h"
+#include "cllm_training.h"
+#include "cllm_training_threaded.h"
+#include "cllm_inference.h"
+#include "cllm_tokenizer.h"
+#include "cllm_vocab_builder.h"
+#include "cllm_batch.h"
+#include "cllm_data_loader.h"
+#include "cllm_format.h"
+#include "cllm_utils.h"
 
 // ============================================================================
 // BANNER & VERSION

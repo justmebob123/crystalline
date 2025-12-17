@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../include/cllm.h"
-#include "../include/cllm_lattice_visualization.h"
-#include "../include/ai/cllm_lattice.h"
+#include "cllm.h"
+#include "cllm_lattice_visualization.h"
+#include "ai/cllm_lattice.h"
 
 // Test helper: Create a minimal test model
 static CLLMModel* create_test_model(size_t num_points) {

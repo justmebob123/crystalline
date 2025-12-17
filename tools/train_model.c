@@ -15,18 +15,18 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
-// Removed: #include "../include/cllm_training_mt.h" - using kissing spheres only
-// Removed: #include "../include/cllm_training_threaded.h" - replaced with hierarchical
-#include "../include/ai/cllm_hierarchical_training.h"
-// Removed: #include "../include/cllm_recursive_spheres.h" - RecursiveSphere was duplicate code, deleted
-#include "../include/cllm_batch.h"
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm_data_loader.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_format.h"
+#include "cllm.h"
+#include "cllm_training.h"
+// Removed: #include "cllm_training_mt.h" - using kissing spheres only
+// Removed: #include "cllm_training_threaded.h" - replaced with hierarchical
+#include "ai/cllm_hierarchical_training.h"
+// Removed: #include "cllm_recursive_spheres.h" - RecursiveSphere was duplicate code, deleted
+#include "cllm_batch.h"
+#include "cllm_tokenizer.h"
+#include "cllm_data_loader.h"
+#include "cllm_inference.h"
+#include "cllm_utils.h"
+#include "cllm_format.h"
 
 void print_banner() {
     printf("\n");

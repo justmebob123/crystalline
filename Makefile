@@ -56,7 +56,7 @@ UTILS_OBJECTS = $(UTILS_SOURCES:.c=.o)
 ALL_OBJECTS = $(ALL_SOURCES:.c=.o)
 
 # Header files
-HEADERS = $(wildcard include/*.h)
+# HEADERS = $(wildcard include/*.h)  # Legacy - no longer used
 
 # ============================================================================
 # Main Targets
@@ -186,7 +186,7 @@ install: all install-php
 	install -m 644 math/lib/libcrystallinemath.a $(DESTDIR)$(LIBDIR)
 	install -m 644 libcrawler.a $(DESTDIR)$(LIBDIR)
 	install -d $(DESTDIR)$(INCLUDEDIR)/crystalline
-	cp -r include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/
+	# cp -r include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/  # Legacy - no longer used
 	ldconfig
 	cp -r math/include/* $(DESTDIR)$(INCLUDEDIR)/crystalline/
 	@echo "✓ Installation complete"

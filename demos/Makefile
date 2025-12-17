@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c11
 LDFLAGS = -L.. -L../math/lib -lcllm -lalgorithms -lcrystallinemath -lpthread -lm
-INCLUDES = -I../include -I../algorithms/include -I../math/include
+INCLUDES = -I../cllm/include/ai -I../algorithms/include -I../math/include
 
 # All demo source files
 DEMO_SOURCES = $(wildcard *.c)

@@ -5,7 +5,7 @@
  * based on Plimpton 322 ratios.
  */
 
-#include "../include/ai/cllm_work_distribution.h"
+#include "ai/cllm_work_distribution.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

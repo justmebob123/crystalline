@@ -9,7 +9,7 @@
 #include "visualization.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"  // PHASE 2: Include math types first
-#include "../../include/clock_lattice.h"
+// #include "../../include/clock_lattice.h"  // Legacy - not needed
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,12 +28,14 @@ int viz_project_crystalline(VisualizationData* data) {
     for (uint32_t i = 0; i < data->num_points; i++) {
         VisualizationPoint* point = &data->points[i];
         
-        // Map to clock position
-        BabylonianClockPosition clock_pos = map_prime_index_to_clock(i);
+        // TODO: Implement clock position mapping without legacy clock_lattice.h
+        // For now, use simple circular mapping
+        double angle = (2.0 * M_PI * i) / data->num_points;
+        double radius = 1.0 + (i / 12.0);  // Ring number
         
         // Store clock coordinates
-        point->position[0] = (double)clock_pos.ring;
-        point->position[1] = (double)clock_pos.position;
+        point->position[0] = radius;
+        point->position[1] = angle;
         point->position[2] = (double)point->symmetry_group;
     }
     

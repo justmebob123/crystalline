@@ -17,17 +17,17 @@
 #include <time.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include "../include/cllm.h"
-#include "../include/cllm_batch.h"
-#include "../include/cllm_training.h"
-#include "../include/ai/cllm_training_system.h"
-#include "../include/ai/cllm_hierarchical_training.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm_data_loader.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_global_progress.h"
+#include "cllm.h"
+#include "cllm_batch.h"
+#include "cllm_training.h"
+#include "ai/cllm_training_system.h"
+#include "ai/cllm_hierarchical_training.h"
+#include "cllm_inference.h"
+#include "cllm_tokenizer.h"
+#include "cllm_data_loader.h"
+#include "cllm_format.h"
+#include "cllm_utils.h"
+#include "cllm_global_progress.h"
 
 // ============================================================================
 // BANNER & VERSION

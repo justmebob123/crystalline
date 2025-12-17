@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
+#include "cllm.h"
+#include "cllm_inference.h"
+#include "cllm_training.h"
 
 // Create a pretrained model
 CLLMModel* create_pretrained_model(void) {

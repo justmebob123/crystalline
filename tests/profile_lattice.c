@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
+#include "cllm.h"
+#include "cllm_utils.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) {

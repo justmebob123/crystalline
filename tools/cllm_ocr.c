@@ -4,7 +4,7 @@
  * Extracts text from images using Optical Character Recognition.
  */
 
-#include "../include/cllm_ocr.h"
+#include "cllm_ocr.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

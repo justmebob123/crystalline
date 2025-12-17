@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
-#include "../include/cllm_model_registry.h"
+#include "cllm_model_registry.h"
 
 // Control thread handle
 static pthread_t g_control_thread = 0;

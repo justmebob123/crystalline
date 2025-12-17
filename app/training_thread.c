@@ -14,11 +14,11 @@
 #include "app_common.h"
 #include <time.h>  // for nanosleep
 #include "cllm_integration.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_training_threaded.h"
-#include "../include/cllm_batch.h"
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm_metrics.h"  // UI Integration: Real-time metrics
+#include "cllm_training.h"
+#include "cllm_training_threaded.h"
+#include "cllm_batch.h"
+#include "cllm_tokenizer.h"
+#include "cllm_metrics.h"  // UI Integration: Real-time metrics
 // Model management now handled by individual tabs via model_registry
 #include <pthread.h>
 #include <stdio.h>

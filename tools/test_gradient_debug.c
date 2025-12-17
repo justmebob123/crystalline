@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "math/math.h"
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_data_loader.h"
-#include "../include/cllm_tokenizer.h"
+#include "cllm.h"
+#include "cllm_training.h"
+#include "cllm_utils.h"
+#include "cllm_data_loader.h"
+#include "cllm_tokenizer.h"
 
 // Helper to print gradient statistics
 void print_gradient_stats(const char* name, double* grads, size_t size) {

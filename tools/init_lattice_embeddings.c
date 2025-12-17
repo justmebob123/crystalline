@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_inference.h"
+#include "cllm.h"
+#include "cllm_format.h"
+#include "cllm_training.h"
+#include "cllm_inference.h"
 
 void print_usage(const char* program_name) {
     printf("Usage: %s <input_model.cllm> <output_model.cllm>\n", program_name);

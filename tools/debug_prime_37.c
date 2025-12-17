@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "../include/clock_lattice.h"
+#include "clock_lattice.h"
 
 int main(void) {
     uint64_t prime = 37;

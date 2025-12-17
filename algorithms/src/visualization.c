@@ -6,7 +6,7 @@
 
 #include "visualization.h"
 #include "math/transcendental.h"
-#include "../../include/clock_lattice.h"
+// #include "../../include/clock_lattice.h"  // Legacy - not needed
 #include <stdlib.h>
 #include <string.h>
 

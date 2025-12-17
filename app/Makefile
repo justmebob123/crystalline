@@ -4,7 +4,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 LDFLAGS = -L.. -L../math/lib -lcrystalline -lcllm -lcrawler -lcrystallinemath -lSDL2 -lSDL2_ttf -lm -lpthread -lsqlite3 -lcurl -fsanitize=address -fsanitize=undefined
-INCLUDES = -I../include -I. -I../math/include
+INCLUDES = -I../cllm/include/ai -I. -I../math/include -I../algorithms/include
 
 # Source files in flat app/ directory (excluding ui/tabs and test files)
 APP_SOURCES = $(filter-out ui/tabs/%.c test_%.c, $(wildcard *.c))

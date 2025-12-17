@@ -65,6 +65,21 @@ typedef struct Batch {
 typedef Batch CLLMBatch;
 
 /**
+ * Batch Iterator Structure (Legacy)
+ * 
+ * Used for iterating over token sequences to create batches.
+ */
+typedef struct {
+    uint32_t* tokens;           // Source tokens
+    size_t num_tokens;          // Total number of tokens
+    size_t current_pos;         // Current position in tokens
+    uint32_t batch_size;
+    uint32_t seq_len;
+    int shuffle;                // Whether to shuffle batches
+    int drop_last;              // Whether to drop incomplete last batch
+} CLLMBatchIterator;
+
+/**
  * Batch Queue Node
  */
 typedef struct BatchQueueNode {
@@ -438,6 +453,59 @@ void batch_pool_get_stats(const BatchPool* pool, uint64_t* allocations,
  * @param pool Batch pool
  */
 void batch_pool_print_stats(const BatchPool* pool);
+
+// ============================================================================
+// BATCH DISTRIBUTION FUNCTIONS
+// ============================================================================
+
+// ============================================================================
+// LEGACY BATCH ITERATOR FUNCTIONS
+// ============================================================================
+
+/**
+ * Create a batch iterator (Legacy)
+ * 
+ * @param tokens Array of tokens
+ * @param num_tokens Number of tokens
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ * @param shuffle Whether to shuffle batches
+ * @param drop_last Whether to drop incomplete last batch
+ * @return Pointer to created iterator, or NULL on failure
+ */
+CLLMBatchIterator* cllm_batch_iterator_create(uint32_t* tokens, size_t num_tokens,
+                                               uint32_t batch_size, uint32_t seq_len,
+                                               int shuffle, int drop_last);
+
+/**
+ * Free a batch iterator (Legacy)
+ * 
+ * @param iter Iterator to free
+ */
+void cllm_batch_iterator_free(CLLMBatchIterator* iter);
+
+/**
+ * Reset batch iterator to beginning (Legacy)
+ * 
+ * @param iter Iterator to reset
+ */
+void cllm_batch_iterator_reset(CLLMBatchIterator* iter);
+
+/**
+ * Get next batch from iterator (Legacy)
+ * 
+ * @param iter Batch iterator
+ * @return Pointer to next batch, or NULL if no more batches
+ */
+CLLMBatch* cllm_batch_iterator_next(CLLMBatchIterator* iter);
+
+/**
+ * Get number of batches in iterator (Legacy)
+ * 
+ * @param iter Batch iterator
+ * @return Number of batches
+ */
+size_t cllm_batch_iterator_num_batches(CLLMBatchIterator* iter);
 
 // ============================================================================
 // BATCH DISTRIBUTION FUNCTIONS

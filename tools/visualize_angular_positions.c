@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
+#include "cllm.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_training.h"
-#include "../include/cllm_angular_position.h"
+#include "cllm_format.h"
+#include "cllm_training.h"
+#include "cllm_angular_position.h"
 
 void print_usage(const char* program_name) {
     printf("Usage: %s <model.cllm> [options]\n", program_name);

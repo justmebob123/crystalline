@@ -7,7 +7,7 @@
  */
 
 #include "crawler_thread.h"
-#include "../include/crawler.h"
+#include "crawler.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

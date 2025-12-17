@@ -2,7 +2,7 @@
 // Uses geometric prime generation and pre-calculates all lattice values
 
 #include "lattice_cache.h"
-#include "../include/prime_math_custom.h"
+#include "prime_math_custom.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

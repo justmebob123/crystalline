@@ -6,19 +6,17 @@
  * Includes: precomputation, initialization, loss computation, optimizer steps
  */
 
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "cllm.h"
 #include "math/constants.h"
 #include "cllm_training.h"
 #include "cllm_batch.h"
 #include "ai/cllm_training_system.h"
-#include "math/constants.h"
 #include "cllm_inference_transformer.h"
-#include "math/constants.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "math/transcendental.h"
-#include "math/constants.h"
 
 // ============================================================================
 // EMBEDDING PRECOMPUTATION

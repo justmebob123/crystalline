@@ -2,7 +2,7 @@
  * test_token_init.c - Test token initialization specifically
  */
 
-#include "../include/cllm_pure_crystalline.h"
+#include "cllm_pure_crystalline.h"
 #include <stdio.h>
 #include <time.h>
 

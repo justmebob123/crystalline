@@ -11,11 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_training.h"
-#include "../include/ai/cllm_lattice_embeddings.h"
-#include "../include/ai/cllm_lattice.h"
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "cllm_training.h"
+#include "ai/cllm_lattice_embeddings.h"
+#include "ai/cllm_lattice.h"
 
 int main(void) {
     printf("\n╔══════════════════════════════════════════════════════════╗\n");

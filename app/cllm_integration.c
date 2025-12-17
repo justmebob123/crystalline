@@ -10,12 +10,12 @@
  */
 
 #include "app_common.h"
-#include "../include/cllm.h"
-#include "../include/cllm_utils.h"
-#include "../include/cllm_format.h"
-#include "../include/cllm_inference.h"
-#include "../include/cllm_training.h"
-// #include "../include/cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
+#include "cllm.h"
+#include "cllm_utils.h"
+#include "cllm_format.h"
+#include "cllm_inference.h"
+#include "cllm_training.h"
+// #include "cllm_crystalline_training.h"  // CONSOLIDATED: Functions moved to cllm_training.c
 // MIGRATED: Using NEW math library prime generation
 #include "math/prime.h"  // NEW math library prime operations
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 // app/spheres.c - 3D sphere visualization implementation
-#include "../include/prime_hyperdim.h"
+#include "prime_hyperdim.h"
 // CORRECTED to work with actual prime_math library
 
 #include "app_common.h"

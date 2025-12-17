@@ -5,7 +5,7 @@
  * Updated to use current API.
  */
 
-#include "../include/cllm_tokenizer.h"
+#include "cllm_tokenizer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

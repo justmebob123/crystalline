@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "app_common.h"
 #include "clock_abacus.h"
-#include "../include/prime_math.h"
+#include "prime_math.h"
 
 void draw_recursive_pattern(SDL_Renderer* renderer, double cx, double cy, double size, int depth, int prime_idx, AppState* state) {
     double radius = size;
