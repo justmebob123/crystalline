@@ -2,13 +2,18 @@
  * FP16 Mixed Precision Training Utilities
  * 
  * Provides conversion between FP32 and FP16 for mixed precision training
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced isnanf with isnanf (1 call)
+ * - Replaced isinff with isinff (1 call)
+ * Total: 2 function calls migrated to C99 standard
  */
 
 #include <immintrin.h>
 #include <stdint.h>
 #include <stddef.h>
 #include "../include/cllm_fp16.h"
-#include "math/transcendental.h"
+#include "math/validation.h"
 
 /**
  * Software FP32 to FP16 conversion (fallback)
@@ -153,7 +158,7 @@ void scale_fp32_array(float* data, size_t n, float scale) {
  */
 int has_nan_or_inf(const float* data, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        if (math_is_nan(data[i]) || math_is_inf(data[i])) {
+        if (math_is_nan((double)data[i]) || math_is_inf((double)data[i])) {
             return 1;
         }
     }

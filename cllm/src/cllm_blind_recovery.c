@@ -18,12 +18,15 @@
  *   - Tetration Convergence: Attractors for optimization
  */
 
+#include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
+#include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "cllm.h"
 #include "cllm_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/transcendental.h"
 
 // Recovery method enumeration
 typedef enum {
@@ -217,7 +220,7 @@ int cllm_recover_prime(CLLMModel* model) {
             
             // Validate position is on clock lattice
             // ClockPosition has: ring (0-3), position (1-based), angle, radius
-            if (pos->ring >= 0 && pos->ring < 4 && pos->position > 0) {
+            if (pos->ring < 4 && pos->position > 0) {
                 validated++;
             } else {
                 printf("  ⚠️  Token %u has invalid clock position\n", token);
@@ -236,7 +239,7 @@ int cllm_recover_prime(CLLMModel* model) {
             ClockPosition* pos = &model->vertex_positions[v];
             
             // Ensure vertex positions are valid
-            if (pos->ring < 0 || pos->ring >= 4 || pos->position <= 0) {
+            if (pos->ring >= 4 || pos->position <= 0) {
                 printf("  ⚠️  Vertex %u has invalid position, resetting\n", v);
                 pos->ring = v % 4;
                 pos->position = (v / 4) + 1;
@@ -428,7 +431,7 @@ int cllm_simulate_corruption(CLLMModel* model, double corruption_rate) {
     // Corrupt random embeddings
     for (int i = 0; i < to_corrupt && i < (int)total_params; i++) {
         int idx = rand() % total_params;
-        model->embeddings[idx] = NAN; // Set to NaN
+        model->embeddings[idx] = 0.0 / 0.0; // Set to NaN using NEW math library approach
         corrupted++;
     }
     

@@ -18,19 +18,27 @@
  * Dual: Dodecahedron
  */
 
-#include "ai/cllm_platonic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"  // For MATH_PHI constant
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "ai/cllm_platonic.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/types.h"  // For MATH_PHI constant
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // ICOSAHEDRON GEOMETRY
 // ============================================================================
 
-// Golden ratio is already defined in prime_types.h as MATH_PHI
+// Golden ratio is already defined in math/types.h as MATH_PHI
 // φ = (1 + √5) / 2 ≈ 1.618033988749895
 
 /**
@@ -52,7 +60,7 @@ static bool vertices_initialized = false;
 static void init_icosahedron_vertices(void) {
     if (vertices_initialized) return;
     
-    double phi = MATH_PHI;  // Golden ratio from prime_types.h
+    double phi = MATH_PHI;  // Golden ratio from math/types.h
     
     int idx = 0;
     

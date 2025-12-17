@@ -28,13 +28,13 @@ ARFLAGS = rcs
 # Library names - Shared (.so)
 MATH_LIB = math/lib/libcrystallinemath.so
 ALGORITHMS_LIB = libalgorithms.so
-CLLM_LIB = libcllm.so
+CLLM_LIB = cllm/libcllm.so
 CRAWLER_LIB = libcrawler.so
 
 # Library names - Static (.a)
 MATH_STATIC = math/lib/libcrystallinemath.a
 ALGORITHMS_STATIC = libalgorithms.a
-CLLM_STATIC = libcllm.a
+CLLM_STATIC = cllm/libcllm.a
 CRAWLER_STATIC = libcrawler.a
 
 # Installation directories
@@ -42,28 +42,17 @@ PREFIX = /usr/local
 LIBDIR = $(PREFIX)/lib
 INCLUDEDIR = $(PREFIX)/include
 
-# Source directories (OLD directories removed - using NEW math library only)
-SRC_AI = src/ai
-SRC_UTILS = src/utils
-
-# Source files organized by category
-AI_SOURCES = $(wildcard $(SRC_AI)/*.c)
-# CORE_SOURCES removed - contains OLD BigInt/BigFixed library (migrated to NEW math library)
-# Functions moved to src/ai/cllm_lattice_helpers.c
-INFRASTRUCTURE_SOURCES = $(wildcard src/ai/infrastructure/*.c)
-PLATONIC_SOURCES = $(wildcard src/ai/platonic/*.c)
+# Source directories - Using NEW organized structure
+# CLLM library now in cllm/ directory (like math/ and algorithms/)
 GEOMETRY_SOURCES = src/geometry/phonetic_values.c
-AI_SOURCES += $(INFRASTRUCTURE_SOURCES)
-AI_SOURCES += $(PLATONIC_SOURCES)
-AI_SOURCES += $(GEOMETRY_SOURCES)
 TOOLS_DIR = tools
 UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
 
 # All sources (OLD sources removed)
-ALL_SOURCES = $(AI_SOURCES) $(UTILS_SOURCES) $(CRAWLER_SOURCES) $(DOCPROC_SOURCES)
+# Note: CLLM sources now built in cllm/ directory
+ALL_SOURCES = $(UTILS_SOURCES) $(CRAWLER_SOURCES) $(DOCPROC_SOURCES)
 
 # Object files (OLD objects removed)
-AI_OBJECTS = $(AI_SOURCES:.c=.o)
 UTILS_OBJECTS = $(UTILS_SOURCES:.c=.o)
 ALL_OBJECTS = $(ALL_SOURCES:.c=.o)
 
@@ -131,14 +120,14 @@ $(ALGORITHMS_STATIC): $(MATH_STATIC)
 	@cp algorithms/$(ALGORITHMS_STATIC) .
 	@echo "✓ Algorithms static library created"
 
-$(CLLM_LIB): $(AI_OBJECTS) $(MATH_LIB) $(ALGORITHMS_LIB)
-	@echo "Creating CLLM shared library: $@"
-	$(CC) -shared -o $@ $(AI_OBJECTS) -L. -Lmath/lib -lcrystallinemath -lalgorithms -lm
+$(CLLM_LIB): $(MATH_LIB) $(ALGORITHMS_LIB)
+	@echo "Building CLLM shared library..."
+	@$(MAKE) -C cllm
 	@echo "✓ CLLM shared library created"
 
-$(CLLM_STATIC): $(AI_OBJECTS) $(MATH_STATIC) $(ALGORITHMS_STATIC)
-	@echo "Creating CLLM static library: $@"
-	$(AR) $(ARFLAGS) $@ $(AI_OBJECTS)
+$(CLLM_STATIC): $(MATH_STATIC) $(ALGORITHMS_STATIC)
+	@echo "Building CLLM static library..."
+	@$(MAKE) -C cllm static
 	@echo "✓ CLLM static library created"
 
 # Removed legacy monolithic libraries
@@ -244,8 +233,8 @@ info:
 	@echo "║ LDFLAGS:         $(LDFLAGS)"
 	@echo "╠════════════════════════════════════════════════════════════════╣"
 	@echo "║ Source Files:                                                  ║"
-	@echo "║   AI/CLLM:       $(words $(AI_SOURCES)) files                  "
-	@echo "║   Total:         $(words $(ALL_SOURCES)) files                 "
+	@echo "║   CLLM:          Built in cllm/ directory                      ║"
+	@echo "║   Total:         $(words $(ALL_SOURCES)) files                 ║"
 	@echo "╠════════════════════════════════════════════════════════════════╣"
 	@echo "║ Output:                                                        ║"
 	@echo "║   Static:        $(STATIC_LIB)                                 "
@@ -289,6 +278,7 @@ clean:
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/fix_html_entities # tools/validate_lattice
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
 	@if [ -d algorithms ]; then $(MAKE) -C algorithms clean 2>/dev/null || true; fi
+	@if [ -d cllm ]; then $(MAKE) -C cllm clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
 	@echo "✓ Clean complete"

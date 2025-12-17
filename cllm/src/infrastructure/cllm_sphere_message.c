@@ -214,34 +214,34 @@ void sphere_message_set_statistics(SphereMessage* message,
 
 const char* sphere_message_type_name(MessageType type) {
     switch (type) {
-        case MSG_WORK_REQUEST: return "WORK_REQUEST";
-        case MSG_WORK_OFFER: return "WORK_OFFER";
-        case MSG_WORK_ACCEPT: return "WORK_ACCEPT";
-        case MSG_WORK_REJECT: return "WORK_REJECT";
-        case MSG_GRADIENT_READY: return "GRADIENT_READY";
-        case MSG_GRADIENT_ACCUMULATE: return "GRADIENT_ACCUMULATE";
-        case MSG_GRADIENT_COMPLETE: return "GRADIENT_COMPLETE";
-        case MSG_WEIGHTS_UPDATED: return "WEIGHTS_UPDATED";
-        case MSG_WEIGHTS_REQUEST: return "WEIGHTS_REQUEST";
-        case MSG_WEIGHTS_BROADCAST: return "WEIGHTS_BROADCAST";
-        case MSG_BOUNDARY_CROSSING: return "BOUNDARY_CROSSING";
-        case MSG_TWIN_PRIME_HIT: return "TWIN_PRIME_HIT";
-        case MSG_BOUNDARY_REGION_ENTER: return "BOUNDARY_REGION_ENTER";
-        case MSG_BOUNDARY_REGION_EXIT: return "BOUNDARY_REGION_EXIT";
-        case MSG_EPOCH_START: return "EPOCH_START";
-        case MSG_EPOCH_COMPLETE: return "EPOCH_COMPLETE";
-        case MSG_BATCH_START: return "BATCH_START";
-        case MSG_BATCH_COMPLETE: return "BATCH_COMPLETE";
-        case MSG_CHILD_SPAWN: return "CHILD_SPAWN";
-        case MSG_CHILD_TERMINATE: return "CHILD_TERMINATE";
-        case MSG_PARENT_SYNC: return "PARENT_SYNC";
-        case MSG_SIBLING_DISCOVER: return "SIBLING_DISCOVER";
-        case MSG_ERROR_REPORT: return "ERROR_REPORT";
-        case MSG_ERROR_RECOVERY: return "ERROR_RECOVERY";
-        case MSG_STATS_REQUEST: return "STATS_REQUEST";
-        case MSG_STATS_REPORT: return "STATS_REPORT";
-        case MSG_SHUTDOWN_REQUEST: return "SHUTDOWN_REQUEST";
-        case MSG_SHUTDOWN_ACK: return "SHUTDOWN_ACK";
+        case MSG_TYPE_WORK_REQUEST: return "WORK_REQUEST";
+        case MSG_TYPE_WORK_ASSIGN: return "WORK_ASSIGN";
+        case MSG_TYPE_WORK_COMPLETE: return "WORK_COMPLETE";
+        case MSG_TYPE_WORK_REJECT: return "WORK_REJECT";
+        case MSG_CLLM_GRADIENT_READY: return "GRADIENT_READY";
+        case MSG_CLLM_GRADIENT_ACCUMULATE: return "GRADIENT_ACCUMULATE";
+        case MSG_CLLM_GRADIENT_COMPLETE: return "GRADIENT_COMPLETE";
+        case MSG_CLLM_WEIGHTS_UPDATED: return "WEIGHTS_UPDATED";
+        case MSG_CLLM_WEIGHTS_REQUEST: return "WEIGHTS_REQUEST";
+        case MSG_CLLM_WEIGHTS_BROADCAST: return "WEIGHTS_BROADCAST";
+        case MSG_CLLM_BOUNDARY_CROSSING: return "BOUNDARY_CROSSING";
+        case MSG_CLLM_TWIN_PRIME_HIT: return "TWIN_PRIME_HIT";
+        case MSG_CLLM_BOUNDARY_REGION_ENTER: return "BOUNDARY_REGION_ENTER";
+        case MSG_CLLM_BOUNDARY_REGION_EXIT: return "BOUNDARY_REGION_EXIT";
+        case MSG_CLLM_EPOCH_START: return "EPOCH_START";
+        case MSG_CLLM_EPOCH_COMPLETE: return "EPOCH_COMPLETE";
+        case MSG_CLLM_BATCH_START: return "BATCH_START";
+        case MSG_CLLM_BATCH_COMPLETE: return "BATCH_COMPLETE";
+        case MSG_CLLM_CHILD_SPAWN: return "CHILD_SPAWN";
+        case MSG_CLLM_CHILD_TERMINATE: return "CHILD_TERMINATE";
+        case MSG_CLLM_PARENT_SYNC: return "PARENT_SYNC";
+        case MSG_CLLM_SIBLING_DISCOVER: return "SIBLING_DISCOVER";
+        case MSG_CLLM_ERROR_REPORT: return "ERROR_REPORT";
+        case MSG_CLLM_ERROR_RECOVERY: return "ERROR_RECOVERY";
+        case MSG_CLLM_STATS_REQUEST: return "STATS_REQUEST";
+        case MSG_CLLM_STATS_REPORT: return "STATS_REPORT";
+        case MSG_CLLM_SHUTDOWN_REQUEST: return "SHUTDOWN_REQUEST";
+        case MSG_CLLM_SHUTDOWN_ACK: return "SHUTDOWN_ACK";
         default: return "UNKNOWN";
     }
 }
@@ -294,40 +294,40 @@ void sphere_message_print(const SphereMessage* message) {
     
     // Print payload based on type
     switch (message->type) {
-        case MSG_WORK_REQUEST:
+        case MSG_TYPE_WORK_REQUEST:
             printf("Payload: requested_items=%lu, symmetry_group=%d, current_load=%lu\n",
                    (unsigned long)message->payload.work_request.requested_items,
                    message->payload.work_request.symmetry_group,
                    (unsigned long)message->payload.work_request.current_load);
             break;
-        case MSG_WORK_OFFER:
+        case MSG_TYPE_WORK_ASSIGN:
             printf("Payload: offered_items=%lu, batch_start=%lu, batch_end=%lu\n",
                    (unsigned long)message->payload.work_offer.offered_items,
                    (unsigned long)message->payload.work_offer.batch_start,
                    (unsigned long)message->payload.work_offer.batch_end);
             break;
-        case MSG_BOUNDARY_CROSSING:
-        case MSG_TWIN_PRIME_HIT:
+        case MSG_CLLM_BOUNDARY_CROSSING:
+        case MSG_CLLM_TWIN_PRIME_HIT:
             printf("Payload: prime=%lu, symmetry_group=%d, distance=%.2f, is_twin=%d\n",
                    (unsigned long)message->payload.boundary.prime,
                    message->payload.boundary.symmetry_group,
                    message->payload.boundary.distance_to_144000,
                    message->payload.boundary.is_twin_prime);
             break;
-        case MSG_EPOCH_START:
-        case MSG_EPOCH_COMPLETE:
+        case MSG_CLLM_EPOCH_START:
+        case MSG_CLLM_EPOCH_COMPLETE:
             printf("Payload: epoch=%lu, total_batches=%lu, learning_rate=%.6f\n",
                    (unsigned long)message->payload.epoch.epoch_number,
                    (unsigned long)message->payload.epoch.total_batches,
                    message->payload.epoch.learning_rate);
             break;
-        case MSG_ERROR_REPORT:
+        case MSG_CLLM_ERROR_REPORT:
             printf("Payload: error_code=%d, severity=%d, message='%s'\n",
                    message->payload.error.error_code,
                    message->payload.error.severity,
                    message->payload.error.error_message);
             break;
-        case MSG_STATS_REPORT:
+        case MSG_CLLM_STATS_REPORT:
             printf("Payload: primes=%lu, batches=%lu, avg_time=%.2f, cache_hit=%.2f%%, util=%.2f%%\n",
                    (unsigned long)message->payload.statistics.primes_processed,
                    (unsigned long)message->payload.statistics.batches_completed,

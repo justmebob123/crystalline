@@ -3,9 +3,13 @@
  * @brief Implementation of cymatic frequency integration
  */
 
-#include "ai/cllm_cymatic_frequencies.h"
-#include <string.h>
 #include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "ai/cllm_cymatic_frequencies.h"
+#include "math/constants.h"
+#include <string.h>
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -23,8 +27,8 @@ double cymatic_correction(double omega, double amplitude, double phase) {
     // Calculate normalized frequency ratio
     double freq_ratio = omega / FREQ_REFERENCE;
     
-    // Calculate angular correction: amplitude * sin(2π * ratio + phase)
-    double angle = 2.0 * M_PI * freq_ratio + phase;
+    // Calculate angular correction: amplitude * math_sin(2π * ratio + phase)
+    double angle = 2.0 * MATH_PI * freq_ratio + phase;
     double correction = amplitude * math_sin(angle);
     
     return correction;

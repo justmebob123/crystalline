@@ -13,7 +13,7 @@
 
 #include "ai/cllm_entropy_integration.h"
 #include "ai/cllm_entropy_allocation.h"
-#include "ai/cllm_lattice_hierarchy.h"
+#include "../../algorithms/include/hierarchical_threading.h"
 #include <stdint.h>
 #include <stdbool.h>
 

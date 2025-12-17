@@ -3,13 +3,14 @@
  * @brief Implementation of lattice entropy calculation Γ(n,d)
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
+#include "math/prime.h"  // For prime_validate_by_clock()
 #include "ai/cllm_lattice_entropy.h"
-#include "prime_lattice.h"
-#include "crystal_abacus.h"
-#include "clock_lattice.h"  // For validate_prime_by_clock_position()
 #include <string.h>
 #include <stdio.h>
-#include "math/transcendental.h"
+
+// Forward declaration for clock lattice function
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -75,7 +76,7 @@ uint64_t count_primes_in_dimension(uint64_t n, uint32_t d) {
         if (n < 100) {
             for (uint64_t i = 2; i <= n; i++) {
                 // Internal: Trust deterministic clock lattice
-                if (validate_prime_by_clock_position(i)) {
+                if (prime_validate_by_clock(i)) {
                     count++;
                 }
             }

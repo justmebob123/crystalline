@@ -13,21 +13,32 @@
  * - Geometric weight initialization
  */
 
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "math/clock.h"
+#include "math/constants.h"
+#include "math/clock_lattice_13d.h"
+#include "math/constants.h"
 #include "../include/cllm.h"
-#include "../include/ai/cllm_platonic.h"
-#include "../include/ai/cllm_88d_integration.h"
-#include "../include/clock_lattice.h"
+#include "math/constants.h"
+#include "ai/cllm_platonic.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "math/transcendental.h"
 
 // External functions
 extern uint64_t crystalline_get_nth_prime(uint32_t n);
 extern PlatonicGeometry platonic_get_geometry(PlatonicSolidType solid_type);
 extern bool platonic_verify_euler(const PlatonicGeometry* geometry);
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+
+// Phase 2: Math library Platonic generator integration
+extern void* cllm_generate_platonic_solid(PlatonicSolidType solid_type);
+extern void cllm_update_geometry_from_solid(void* model, const void* solid);
+extern void cllm_print_platonic_solid(const void* solid);
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -45,11 +56,11 @@ static double compute_angular_position(uint32_t token_id, const CLLMModel* model
     double n = (double)token_id;
     double k = (double)model->geometry.vertices;  // Use vertices as k
     double lambda = (double)model->geometry.edges; // Use edges as λ
-    double omega = 2.0 * M_PI / 12.0;  // 12-fold symmetry
-    double psi = (double)(prime % 360) * M_PI / 180.0;  // Prime-based phase
+    double omega = 2.0 * MATH_PI / 12.0;  // 12-fold symmetry
+    double psi = (double)(prime % 360) * MATH_PI / 180.0;  // Prime-based phase
     
     // θ(n,k,λ,ω,ψ) = (2πn/k) + (λ/k)·math_sin(ωn + ψ)
-    double theta = (2.0 * M_PI * n / k) + (lambda / k) * math_sin(omega * n + psi);
+    double theta = (2.0 * MATH_PI * n / k) + (lambda / k) * math_sin(omega * n + psi);
     
     return theta;
 }
@@ -71,7 +82,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
         // Use prime-based initialization for better distribution
         double r1 = (double)(rand() % 10000) / 10000.0;
         double r2 = (double)(rand() % 10000) / 10000.0;
-        model->embeddings[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * M_PI * r2);
+        model->embeddings[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
     }
     
     // Initialize layer weights
@@ -81,7 +92,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
         for (size_t i = 0; i < attn_size; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            double val = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * M_PI * r2);
+            double val = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
             
             model->layers[layer].query_weights[i] = val;
             model->layers[layer].key_weights[i] = val;
@@ -94,14 +105,14 @@ static void initialize_geometric_weights(CLLMModel* model) {
         for (size_t i = 0; i < ffn_size1; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w1[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * M_PI * r2);
+            model->layers[layer].ffn_w1[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
         }
         
         size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
         for (size_t i = 0; i < ffn_size2; i++) {
             double r1 = (double)(rand() % 10000) / 10000.0;
             double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w2[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * M_PI * r2);
+            model->layers[layer].ffn_w2[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
         }
         
         // Layer norm parameters (initialize to 1 and 0)
@@ -118,7 +129,7 @@ static void initialize_geometric_weights(CLLMModel* model) {
     for (size_t i = 0; i < output_size; i++) {
         double r1 = (double)(rand() % 10000) / 10000.0;
         double r2 = (double)(rand() % 10000) / 10000.0;
-        model->output_weights[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * M_PI * r2);
+        model->output_weights[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
     }
 }
 
@@ -126,19 +137,51 @@ static void initialize_geometric_weights(CLLMModel* model) {
  * Allocate all model parameters
  */
 static bool allocate_model_parameters(CLLMModel* model) {
-    // Embeddings
+    // Embeddings (legacy double arrays - kept for backward compatibility)
     model->embeddings = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
     if (!model->embeddings) return false;
     
     model->embeddings_grad = (double*)calloc(model->vocab_size * model->embedding_dim, sizeof(double));
     if (!model->embeddings_grad) return false;
     
-    // Positional encoding
+    // Positional encoding (legacy)
     model->positional_encoding = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
     if (!model->positional_encoding) return false;
     
+    // Abacus-based embeddings (NEW - arbitrary precision)
+    // Use base 60 (Babylonian) with precision 10 for high accuracy
+    model->abacus_embeddings = abacus_matrix_create(
+        model->vocab_size, 
+        model->embedding_dim, 
+        60,  // Base 60 (sexagesimal - Babylonian)
+        10   // Precision: 10 fractional digits
+    );
+    if (!model->abacus_embeddings) {
+        fprintf(stderr, "Failed to create abacus embeddings matrix\n");
+        return false;
+    }
+    
+    model->abacus_positional_encoding = abacus_matrix_create(
+        model->max_seq_len,
+        model->embedding_dim,
+        60,  // Base 60
+        10   // Precision: 10 fractional digits
+    );
+    if (!model->abacus_positional_encoding) {
+        fprintf(stderr, "Failed to create abacus positional encoding matrix\n");
+        return false;
+    }
+    
+    // Enable abacus embeddings by default
+    model->use_abacus_embeddings = true;
+    
+    printf("✓ Created abacus embeddings: %u × %u (base 60, precision 10)\n",
+           model->vocab_size, model->embedding_dim);
+    printf("✓ Created abacus positional encoding: %u × %u (base 60, precision 10)\n",
+           model->max_seq_len, model->embedding_dim);
+    
     // Allocate layers
-    model->layers = (typeof(model->layers[0])*)calloc(model->num_layers, sizeof(model->layers[0]));
+    model->layers = calloc(model->num_layers, sizeof(model->layers[0]));
     if (!model->layers) return false;
     
     // Allocate each layer's parameters
@@ -247,14 +290,29 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->solid_type = config->solid_type;
     }
     
-    // Get geometry for this solid
-    model->geometry = platonic_get_geometry(model->solid_type);
-    
-    // Verify Euler's formula: V - E + F = 2
-    if (!platonic_verify_euler(&model->geometry)) {
-        fprintf(stderr, "Error: Euler's formula verification failed!\n");
-        free(model);
-        return NULL;
+    // PHASE 2: Generate full Platonic solid from math library
+    printf("  → Generating Platonic solid from math library...\n");
+    model->platonic_solid = cllm_generate_platonic_solid(model->solid_type);
+    if (!model->platonic_solid) {
+        fprintf(stderr, "Error: Failed to generate Platonic solid from math library\n");
+        fprintf(stderr, "Falling back to legacy geometry lookup...\n");
+        
+        // Fallback to legacy method
+        model->geometry = platonic_get_geometry(model->solid_type);
+        
+        // Verify Euler's formula: V - E + F = 2
+        if (!platonic_verify_euler(&model->geometry)) {
+            fprintf(stderr, "Error: Euler's formula verification failed!\n");
+            free(model);
+            return NULL;
+        }
+    } else {
+        // Update legacy geometry structure from math library solid
+        cllm_update_geometry_from_solid(model, model->platonic_solid);
+        
+        // Print detailed solid information
+        printf("  ✓ Generated Platonic solid from math library:\n");
+        cllm_print_platonic_solid(model->platonic_solid);
     }
     
     printf("  ✓ Platonic solid: ");
@@ -301,8 +359,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->vertex_positions = (ClockPosition*)calloc(model->geometry.vertices, sizeof(ClockPosition));
     model->token_positions = (ClockPosition*)calloc(model->vocab_size, sizeof(ClockPosition));
     model->token_angular_positions = (double*)calloc(model->vocab_size, sizeof(double));
+    model->token_positions_13d = (double (*)[13])calloc(model->vocab_size, 13 * sizeof(double));
     
-    if (!model->vertex_positions || !model->token_positions || !model->token_angular_positions) {
+    if (!model->vertex_positions || !model->token_positions || !model->token_angular_positions || !model->token_positions_13d) {
         fprintf(stderr, "Error: Failed to allocate clock positions\n");
         cllm_free_model(model);
         return NULL;
@@ -310,16 +369,19 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     
     // Map vertices to clock lattice
     for (uint32_t v = 0; v < model->geometry.vertices; v++) {
-        model->vertex_positions[v] = map_prime_index_to_clock(v);
+        clock_map_index_to_position(v, &model->vertex_positions[v]);
     }
     
     // Map tokens to clock lattice
     for (uint32_t t = 0; t < model->vocab_size; t++) {
-        model->token_positions[t] = map_prime_index_to_clock(t);
+        clock_map_index_to_position(t, &model->token_positions[t]);
         model->token_angular_positions[t] = compute_angular_position(t, model);
+        
+        // Map to 13D clock lattice for geometric position encoding
+        clock_map_value_to_lattice_13d(t, model->token_positions_13d[t]);
     }
     
-    printf("  ✓ Mapped %u vertices and %u tokens to clock lattice\n",
+    printf("  ✓ Mapped %u vertices and %u tokens to clock lattice (including 13D)\n",
            model->geometry.vertices, model->vocab_size);
     
     // ========================================================================
@@ -427,16 +489,15 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         printf("🔮 Initializing kissing spheres threading...\n");
         
         model->threading.enabled = true;
-        model->threading.num_spheres = (config->num_threads > 0) ? config->num_threads : 13;
         
         // Allocate work distribution maps
-        model->threading.vertex_to_sphere = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
+        model->threading.vertex_to_thread = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
         model->threading.edge_to_boundary = (uint32_t*)calloc(model->geometry.edges, sizeof(uint32_t));
-        model->threading.token_to_sphere = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
+        model->threading.token_to_thread = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
         
-        // Distribute vertices across spheres (geometric distribution)
+        // Distribute vertices across threads (geometric distribution)
         for (uint32_t v = 0; v < model->geometry.vertices; v++) {
-            model->threading.vertex_to_sphere[v] = (v % 12) + 1;  // Workers 1-12
+            model->threading.vertex_to_thread[v] = (v % 12) + 1;  // Workers 1-12
         }
         
         // Distribute edges across boundaries
@@ -444,13 +505,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
             model->threading.edge_to_boundary[e] = e % model->geometry.edges;
         }
         
-        // Distribute tokens across spheres
+        // Distribute tokens across threads
         for (uint32_t t = 0; t < model->vocab_size; t++) {
-            model->threading.token_to_sphere[t] = (t % 12) + 1;  // Workers 1-12
+            model->threading.token_to_thread[t] = (t % 12) + 1;  // Workers 1-12
         }
         
-        printf("  ✓ Kissing spheres threading enabled (%d spheres)\n",
-               model->threading.num_spheres);
+        printf("  ✓ Threading enabled (96 threads: 8 layers × 12 threads)\n");
     }
     
     // ========================================================================
@@ -530,24 +590,6 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.kissing_spheres_enabled = model->threading.enabled;
     model->header.created_timestamp = time(NULL);
     model->header.modified_timestamp = time(NULL);
-    
-    // ========================================================================
-    // 88D UNIFIED THREADING SYSTEM INITIALIZATION
-    // ========================================================================
-    
-    if (config->enable_kissing_spheres) {
-        printf("🔮 Initializing 88D unified threading system...\n");
-        
-        if (!cllm_initialize_88d_threading(model)) {
-            fprintf(stderr, "Error: Failed to initialize 88D threading system\n");
-            cllm_free_model(model);
-            return NULL;
-        }
-        
-        printf("  ✓ 88D threading system initialized successfully\n");
-        printf("  ✓ Thread pool: 96 threads (8 layers × 12 threads)\n");
-        printf("  ✓ Geometry mapped to thread topology\n");
-    }
     
     // ========================================================================
     // FINAL VALIDATION

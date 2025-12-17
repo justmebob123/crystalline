@@ -1,12 +1,17 @@
+#include "math/types.h"
 /**
  * @file cllm_entropy_allocation.c
  * @brief Implementation of entropy-based thread allocation
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_entropy_allocation.h"
 #include <string.h>
 #include <stdio.h>
-#include "math/transcendental.h"
+
+#ifndef MATH_INFINITY
+#endif
 
 /**
  * @brief Small epsilon for floating point comparisons
@@ -402,7 +407,7 @@ double compare_allocation_plans(
     const ThreadAllocationPlan* plan2
 ) {
     if (!plan1 || !plan2) {
-        return INFINITY;
+        return MATH_INFINITY;
     }
     
     double diff = 0.0;

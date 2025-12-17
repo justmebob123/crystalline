@@ -1,8 +1,8 @@
 #ifndef CLLM_HIERARCHICAL_TRAINING_H
 #define CLLM_HIERARCHICAL_TRAINING_H
 
-#include "../cllm_training.h"
-#include "../cllm_batch.h"
+#include "cllm_training.h"
+#include "cllm_batch.h"
 
 /**
  * CLLM Hierarchical Training System

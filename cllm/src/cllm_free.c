@@ -13,7 +13,6 @@
  */
 
 #include "../include/cllm.h"
-#include "../include/ai/cllm_88d_integration.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -22,6 +21,12 @@
  */
 void cllm_free_model(CLLMModel* model) {
     if (!model) return;
+    
+    // Free vocabulary
+    if (model->vocabulary) {
+        cllm_vocab_destroy(model->vocabulary);
+        model->vocabulary = NULL;
+    }
     
     printf("🗑️  Freeing CLLM model...\n");
     
@@ -44,11 +49,16 @@ void cllm_free_model(CLLMModel* model) {
         model->token_angular_positions = NULL;
     }
     
+    if (model->token_positions_13d) {
+        free(model->token_positions_13d);
+        model->token_positions_13d = NULL;
+    }
+    
     // ========================================================================
     // FREE MODEL PARAMETERS
     // ========================================================================
     
-    // Embeddings
+    // Embeddings (legacy double arrays)
     if (model->embeddings) {
         free(model->embeddings);
         model->embeddings = NULL;
@@ -62,6 +72,17 @@ void cllm_free_model(CLLMModel* model) {
     if (model->positional_encoding) {
         free(model->positional_encoding);
         model->positional_encoding = NULL;
+    }
+    
+    // Abacus embeddings (NEW - arbitrary precision)
+    if (model->abacus_embeddings) {
+        abacus_matrix_free(model->abacus_embeddings);
+        model->abacus_embeddings = NULL;
+    }
+    
+    if (model->abacus_positional_encoding) {
+        abacus_matrix_free(model->abacus_positional_encoding);
+        model->abacus_positional_encoding = NULL;
     }
     
     // Layers
@@ -177,13 +198,27 @@ void cllm_free_model(CLLMModel* model) {
     }
     
     // ========================================================================
-    // FREE 88D UNIFIED THREADING SYSTEM
+    // FREE KISSING SPHERES THREADING STATE
     // ========================================================================
     
     if (model->threading.enabled) {
-        printf("  🔮 Cleaning up 88D threading system...\n");
-        cllm_cleanup_88d_threading(model);
-        printf("  ✓ 88D threading system cleaned up\n");
+        if (model->threading.vertex_to_thread) {
+            free(model->threading.vertex_to_thread);
+            model->threading.vertex_to_thread = NULL;
+        }
+        
+        if (model->threading.edge_to_boundary) {
+            free(model->threading.edge_to_boundary);
+            model->threading.edge_to_boundary = NULL;
+        }
+        
+        if (model->threading.token_to_thread) {
+            free(model->threading.token_to_thread);
+            model->threading.token_to_thread = NULL;
+        }
+        
+        // Note: threading.model (SphereThreadingModel*) should be freed by threading system
+        // Note: sync_barriers and shared_memory should be freed by threading system
     }
     
     // ========================================================================
@@ -216,6 +251,14 @@ void cllm_free_model(CLLMModel* model) {
     // Note: PlatonicGeometry is a simple struct with no dynamic allocations
     // (vertices, edges, faces, symmetries, edge_length, has_golden_ratio)
     // No need to free anything here
+    
+    // PHASE 2: Free Platonic solid from math library
+    if (model->platonic_solid) {
+        // Forward declare platonic_free to avoid including math library headers
+        void platonic_free(void* solid);
+        platonic_free(model->platonic_solid);
+        model->platonic_solid = NULL;
+    }
     
     // ========================================================================
     // FREE MODEL STRUCTURE

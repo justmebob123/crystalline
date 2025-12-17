@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdatomic.h>
-#include "ai/cllm_shared_memory.h"
+#include "../../algorithms/include/shared_memory_enhanced.h"
 
 #ifdef __cplusplus
 extern "C" {

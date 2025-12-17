@@ -3,11 +3,12 @@
  * @brief Implementation of entropy-based work distribution
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_entropy_work_distribution.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "math/transcendental.h"
 
 /**
  * @brief Small epsilon for floating point comparisons

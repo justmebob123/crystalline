@@ -1,3 +1,5 @@
+#include "math/types.h"
+#include "math/constants.h"
 /**
  * @file cllm_embedding.c
  * @brief CONSOLIDATED Embedding Implementation
@@ -23,13 +25,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cllm.h"
+#include "math/constants.h"
 #include "../include/cllm_inference.h"
+#include "math/constants.h"
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "math/angular_position.h"
+#include "math/constants.h"
+#include "math/prime.h"  // For prime_validate_by_clock(), prime_nth()
+#include "math/constants.h"
+#include "math/clock.h"  // For clock_map_prime_to_position()
+#include "math/constants.h"
 #include "../include/clock_lattice.h"
-#include "../include/ai/cllm_platonic.h"
-#include "../include/prime_lattice_core.h"
-#include "../include/cllm_angular_position.h"
-#include "math/transcendental.h"
-#include "math/transcendental.h"
+#include "math/constants.h"
+#include "ai/cllm_platonic.h"
+#include "math/constants.h"
 
 #define SYMMETRY_ORDER 12
 
@@ -60,7 +72,7 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
     uint32_t prime_index = 0;
     uint64_t p = 2;
     while (p < prime) {
-        if (validate_prime_by_clock_position(p)) prime_index++;
+        if (prime_validate_by_clock(p)) prime_index++;
         p++;
     }
     
@@ -79,12 +91,40 @@ void cllm_compute_spiral_position(uint64_t prime, double* angle, double* radius)
 
 /**
  * Map token to 3D lattice coordinates
+ * Uses NEW math library: clock position → stereographic projection → 3D coordinates
  */
 void cllm_map_token_to_lattice(uint32_t token_id, uint64_t prime, double* coords) {
     if (!coords) return;
     
-    // Use clock-based mapping
-    map_token_to_clock_lattice(token_id, prime, token_id + 1, coords);
+    // Get clock position using NEW math library
+    ClockPosition pos;
+    clock_map_index_to_position(token_id + 1, &pos);
+    
+    // Convert to 3D sphere coordinates using stereographic projection
+    double theta = pos.angle;
+    double phi = pos.radius * MATH_PI;
+    
+    // Spherical to Cartesian conversion
+    coords[0] = math_sin(phi) * math_cos(theta);
+    coords[1] = math_sin(phi) * math_sin(theta);
+    coords[2] = math_cos(phi);
+    
+    // Add small perturbation based on prime modular relationships
+    uint32_t mod_12 = prime % 12;
+    uint32_t mod_60 = prime % 60;
+    uint32_t mod_100 = prime % 100;
+    
+    coords[0] += 0.01 * (mod_12 / 12.0);
+    coords[1] += 0.01 * (mod_60 / 60.0);
+    coords[2] += 0.01 * (mod_100 / 100.0);
+    
+    // Normalize to unit sphere
+    double norm = math_sqrt(coords[0]*coords[0] + coords[1]*coords[1] + coords[2]*coords[2]);
+    if (norm > 1e-8) {
+        coords[0] /= norm;
+        coords[1] /= norm;
+        coords[2] /= norm;
+    }
 }
 
 /**
@@ -262,7 +302,7 @@ void cllm_init_embeddings(CLLMModel* model) {
             
             for (uint32_t dim = 0; dim < embedding_dim; dim++) {
                 // Combine clock position with dimensional frequency
-                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * M_PI;
+                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * MATH_PI;
                 double radius_factor = pos.radius / 100.0;  // Normalize radius
                 
                 // Use prime-based sinusoidal initialization
@@ -283,11 +323,15 @@ void cllm_init_embeddings(CLLMModel* model) {
         // Standard initialization with clock lattice structure
         for (uint32_t token = 0; token < vocab_size; token++) {
             // Map token to clock position
-            BabylonianClockPosition pos = map_prime_index_to_clock(token + 1);
+            uint64_t prime_pos = prime_nth(token + 1);
+
+            ClockPosition pos;
+
+            clock_map_prime_to_position(prime_pos, &pos);
             
             for (uint32_t dim = 0; dim < embedding_dim; dim++) {
                 // Use clock-based sinusoidal initialization
-                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * M_PI;
+                double angle = pos.angle + (double)dim / embedding_dim * 2.0 * MATH_PI;
                 double value = math_sin(angle) / math_sqrt((double)embedding_dim);
                 
                 embeddings[token * embedding_dim + dim] = value;
@@ -295,6 +339,27 @@ void cllm_init_embeddings(CLLMModel* model) {
         }
         
         printf("✓ Embeddings initialized with clock lattice\n");
+    }
+    
+    // Sync to abacus embeddings if enabled
+    if (model->use_abacus_embeddings && model->abacus_embeddings) {
+        printf("  Syncing to abacus embeddings (arbitrary precision)...\n");
+        
+        MathError err = abacus_matrix_from_doubles(model->abacus_embeddings, embeddings);
+        if (err != MATH_SUCCESS) {
+            fprintf(stderr, "ERROR: Failed to sync embeddings to abacus (error %d)\n", err);
+            return;
+        }
+        
+        printf("✓ Embeddings synced to abacus (base 60, precision 10)\n");
+        
+        // Calculate memory usage
+        size_t abacus_memory = abacus_matrix_memory_usage(model->abacus_embeddings);
+        size_t double_memory = vocab_size * embedding_dim * sizeof(double);
+        
+        printf("  Memory: Abacus = %.2f MB, Double = %.2f MB\n",
+               abacus_memory / (1024.0 * 1024.0),
+               double_memory / (1024.0 * 1024.0));
     }
 }
 
@@ -973,11 +1038,15 @@ void cllm_add_positional_encoding(CLLMModel* model, uint32_t position, double* e
     uint32_t embedding_dim = model->embedding_dim;
     
     // Map position to clock lattice
-    BabylonianClockPosition pos = map_prime_index_to_clock(position + 1);
+    uint64_t prime_pos = prime_nth(position + 1);
+
+    ClockPosition pos;
+
+    clock_map_prime_to_position(prime_pos, &pos);
     
     // Add sinusoidal positional encoding based on clock position
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        double angle = pos.angle + (double)i / embedding_dim * 2.0 * M_PI;
+        double angle = pos.angle + (double)i / embedding_dim * 2.0 * MATH_PI;
         double pos_encoding = math_sin(angle);
         
         embedding[i] += pos_encoding * 0.1;  // Scale factor

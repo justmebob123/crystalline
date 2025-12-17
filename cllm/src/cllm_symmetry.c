@@ -1,3 +1,5 @@
+#include "math/types.h"
+#include "math/constants.h"
 /*
  * CLLM Symmetry Operations
  * Implements symmetry group transformations for lattice embeddings
@@ -7,7 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/cllm.h"
+#include "math/constants.h"
 #include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
 
 #define SYMMETRY_ORDER 12
 

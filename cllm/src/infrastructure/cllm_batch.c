@@ -25,12 +25,15 @@
  *          src/ai/cllm_batch.c is like fopen() - simple and easy to use.
  */
 
+#include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
+#include "math/arithmetic.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include "ai/cllm_batch.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdatomic.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -406,13 +409,13 @@ bool batch_validate(const Batch* batch) {
     
     // Check for NaN or Inf
     for (size_t i = 0; i < batch->input.total_size; i++) {
-        if (math_is_nan(batch->input.data[i]) || math_is_inf(batch->input.data[i])) {
+        if (math_is_nan((double)batch->input.data[i]) || math_is_inf((double)batch->input.data[i])) {
             return false;
         }
     }
     
     for (size_t i = 0; i < batch->target.total_size; i++) {
-        if (math_is_nan(batch->target.data[i]) || math_is_inf(batch->target.data[i])) {
+        if (math_is_nan((double)batch->target.data[i]) || math_is_inf((double)batch->target.data[i])) {
             return false;
         }
     }

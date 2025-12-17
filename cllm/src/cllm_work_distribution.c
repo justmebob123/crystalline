@@ -6,11 +6,12 @@
 
 #include "ai/cllm_work_distribution.h"
 #include "ai/cllm_plimpton_relationships.h"
-#include "plimpton_322.h"
+#include "math/angular_position.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 // Default epsilon for ratio validation
 #define DEFAULT_EPSILON 0.0001

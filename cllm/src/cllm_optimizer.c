@@ -28,6 +28,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_training.h"
 #include "math/transcendental.h"
+#include "math/arithmetic.h"
 
 /**
  * Apply gradient clipping by global norm

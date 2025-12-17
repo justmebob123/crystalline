@@ -10,12 +10,13 @@
  * - 2-4x speedup over scalar implementation
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>  // AVX2
 #include "../include/cllm.h"
-#include "math/transcendental.h"
 
 // ============================================================================
 // SIMD-OPTIMIZED LAYER NORMALIZATION

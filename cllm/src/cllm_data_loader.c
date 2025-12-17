@@ -24,8 +24,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <pthread.h>
-#include <unistd.h>
 
 #define MAX_LINE_LENGTH 65536
 #define MAX_DOCUMENT_SIZE (100 * 1024 * 1024)  // 100MB max per document

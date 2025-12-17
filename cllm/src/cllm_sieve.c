@@ -18,12 +18,13 @@
  * large numbers of primes, especially for model initialization.
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "../../include/cllm_pure_crystalline.h"
-#include "../../include/clock_lattice.h"
+// Forward declarations for clock lattice types
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "math/transcendental.h"
 
 #define SEGMENT_SIZE 32768  // 32KB segments for L1 cache efficiency
 
@@ -46,7 +47,7 @@ typedef struct {
 } PrimeSieve;
 
 /*
- * Simple sieve for small primes (up to sqrt(limit))
+ * Simple sieve for small primes (up to math_sqrt(limit))
  * Used to generate base primes for segmented sieve
  */
 static uint32_t simple_sieve(uint64_t limit, uint64_t** out_primes) {
@@ -127,7 +128,7 @@ static uint32_t crystalline_segmented_sieve(uint64_t limit, uint64_t** out_prime
         return simple_sieve(limit, out_primes);
     }
     
-    // Generate base primes up to sqrt(limit)
+    // Generate base primes up to math_sqrt(limit)
     uint64_t sqrt_limit = 1;
     while (sqrt_limit * sqrt_limit <= limit) sqrt_limit++;
     
@@ -282,7 +283,7 @@ uint64_t crystalline_get_nth_prime_fast(uint32_t n) {
     // Using: p_n ≈ n * ln(n) for n > 5
     uint64_t limit = n * 15;
     if (n > 100) {
-        limit = (uint64_t)(n * (math_log((double)n) + math_log(math_log((double)n)))) + 100;
+        limit = (uint64_t)(n * (math_log((double)(double)n) + math_log((double)math_log((double)(double)n)))) + 100;
     }
     
     uint64_t* primes = NULL;

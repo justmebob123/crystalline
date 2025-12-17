@@ -4,11 +4,11 @@
  */
 
 #include "ai/cllm_workload_detector.h"
+// Migrated to NEW math library - no prime_float_math needed
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#include "math/transcendental.h"
 
 /**
  * @brief Small epsilon for floating point comparisons

@@ -7,17 +7,21 @@
  * - AVX2 vectorized GELU activation (approximation)
  * - AVX2 vectorized matrix multiplication
  * - 2-4x speedup over scalar implementation
+ * 
+ * MIGRATED: Uses NEW math library
+ * - Replaced math_exp with math_exp (1 call)
+ * Total: 1 function call migrated to NEW math library
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>  // AVX2
 #include "../include/cllm.h"
+#include "math/transcendental.h"  // NEW math library
 #include "../include/cllm_simd_utils.h"
-#include "bigfixed_core.h"
-#include "bigfixed_array_utils.h"
-#include "math/transcendental.h"
 
 // FeedForwardLayer structure definition (local to this file)
 typedef struct FeedForwardLayer {
@@ -36,13 +40,13 @@ void cllm_feedforward_free(FeedForwardLayer* layer);
 /**
  * GELU activation function
  * GELU(x) = x * Phi(x) where Phi is the cumulative distribution function of the standard normal
- * Approximation: GELU(x) ≈ 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
+ * Approximation: GELU(x) ≈ 0.5 * x * (1 + math_tanh(math_sqrt(2/π) * (x + 0.044715 * x^3)))
  * 
  * @param x Input value
  * @return GELU(x)
  */
 static double gelu(double x) {
-    const double sqrt_2_over_pi = 0.7978845608; // sqrt(2/π)
+    const double sqrt_2_over_pi = 0.7978845608; // math_sqrt(2/π)
     const double coeff = 0.044715;
     
     double x_cubed = x * x * x;
@@ -65,7 +69,7 @@ static double gelu(double x) {
 /**
  * Apply GELU activation to array with AVX2 SIMD
  * 
- * Uses fast approximation: GELU(x) ≈ 0.5 * x * (1 + tanh(√(2/π) * (x + 0.044715 * x³)))
+ * Uses fast approximation: GELU(x) ≈ 0.5 * x * (1 + math_tanh(√(2/π) * (x + 0.044715 * x³)))
  * 
  * @param x Input/output array
  * @param size Array size
@@ -92,13 +96,13 @@ void cllm_activation_gelu(double* x, int size) {
         __m256d term = _mm256_fmadd_pd(coeff, x_cubed, x_vec);
         __m256d inner = _mm256_mul_pd(sqrt_2_over_pi, term);
         
-        // Fast tanh approximation: tanh(x) ≈ x / (1 + |x|) for small x
-        // For better accuracy, we use: tanh(x) ≈ (exp(2x) - 1) / (exp(2x) + 1)
+        // Fast tanh approximation: math_tanh(x) ≈ x / (1 + |x|) for small x
+        // For better accuracy, we use: math_tanh(x) ≈ (math_exp(2x) - 1) / (math_exp(2x) + 1)
         // But for SIMD, we use simpler approximation
         __m256d abs_inner = _mm256_andnot_pd(_mm256_set1_pd(-0.0), inner);
         __m256d tanh_approx = _mm256_div_pd(inner, _mm256_add_pd(one, abs_inner));
         
-        // GELU(x) = 0.5 * x * (1 + tanh(...))
+        // GELU(x) = 0.5 * x * (1 + math_tanh(...))
         __m256d result = _mm256_mul_pd(half, x_vec);
         result = _mm256_mul_pd(result, _mm256_add_pd(one, tanh_approx));
         

@@ -61,6 +61,9 @@ typedef struct Batch {
     
 } Batch;
 
+// Alias for backward compatibility
+typedef Batch CLLMBatch;
+
 /**
  * Batch Queue Node
  */

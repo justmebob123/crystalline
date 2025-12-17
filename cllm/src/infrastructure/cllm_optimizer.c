@@ -24,6 +24,7 @@
  */
 
 #include "ai/cllm_optimizer.h"
+#include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -389,7 +390,7 @@ int optimizer_adam_step(OptimizerState* state, const float* gradients) {
             v_hat = state->max_variance_buffer[i];
         }
         
-        // Update parameter: w = w - lr * m_hat / (sqrt(v_hat) + epsilon)
+        // Update parameter: w = w - lr * m_hat / (math_sqrt(v_hat) + epsilon)
         state->parameters[i] -= lr * m_hat / (safe_sqrt(v_hat) + epsilon);
     }
     
@@ -436,7 +437,7 @@ int optimizer_adamw_step(OptimizerState* state, const float* gradients) {
         }
         
         // AdamW: Decoupled weight decay
-        // w = w - lr * (m_hat / (sqrt(v_hat) + epsilon) + wd * w)
+        // w = w - lr * (m_hat / (math_sqrt(v_hat) + epsilon) + wd * w)
         float update = m_hat / (safe_sqrt(v_hat) + epsilon);
         if (wd > 0.0f) {
             update += wd * state->parameters[i];
@@ -468,7 +469,7 @@ int optimizer_rmsprop_step(OptimizerState* state, const float* gradients) {
         state->variance_buffer[i] = beta2 * state->variance_buffer[i] + 
                                    (1.0f - beta2) * grad * grad;
         
-        // Update parameter: w = w - lr * g / (sqrt(v) + epsilon)
+        // Update parameter: w = w - lr * g / (math_sqrt(v) + epsilon)
         state->parameters[i] -= lr * grad / (safe_sqrt(state->variance_buffer[i]) + epsilon);
     }
     
@@ -493,7 +494,7 @@ int optimizer_adagrad_step(OptimizerState* state, const float* gradients) {
         // Accumulate squared gradients: v = v + g^2
         state->variance_buffer[i] += grad * grad;
         
-        // Update parameter: w = w - lr * g / (sqrt(v) + epsilon)
+        // Update parameter: w = w - lr * g / (math_sqrt(v) + epsilon)
         state->parameters[i] -= lr * grad / (safe_sqrt(state->variance_buffer[i]) + epsilon);
     }
     

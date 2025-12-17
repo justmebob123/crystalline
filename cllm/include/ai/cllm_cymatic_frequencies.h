@@ -222,6 +222,17 @@ double cymatic_ns_to_frequency(uint64_t period_ns);
  */
 uint64_t cymatic_get_period_ns(CymaticFrequencyType type);
 
+/**
+ * @brief Get dimensional frequency for a given dimension
+ * 
+ * Returns the frequency associated with a specific dimension in the
+ * Babylonian mathematical system.
+ * 
+ * @param dimension Dimension index
+ * @return Frequency value
+ */
+uint64_t cllm_get_dimensional_frequency(size_t dimension);
+
 #ifdef __cplusplus
 }
 #endif

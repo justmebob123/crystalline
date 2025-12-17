@@ -14,13 +14,21 @@
  * - Natural alignment with signal processing
  */
 
-#include "ai/cllm_platonic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "ai/cllm_platonic.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/types.h"  // For MATH_PHI and other constants
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // CYMATIC FREQUENCIES (Hz)
@@ -94,7 +102,7 @@ void platonic_fourier_transform(
         double imag_part = 0.0;
         
         for (size_t n = 0; n < signal_size; n++) {
-            double angle = 2.0 * M_PI * k * n / signal_size;
+            double angle = 2.0 * MATH_PI * k * n / signal_size;
             real_part += signal[n] * math_cos(angle);
             imag_part += signal[n] * math_sin(angle);
         }
@@ -147,7 +155,7 @@ void platonic_cymatic_modulate(
     // Apply harmonic modulation
     for (size_t i = 0; i < gradient_size; i++) {
         // Calculate phase based on position
-        double phase = 2.0 * M_PI * i / gradient_size;
+        double phase = 2.0 * MATH_PI * i / gradient_size;
         
         // Apply frequency modulation
         double modulation = math_cos(phase * closest_freq / 100.0);
@@ -193,7 +201,7 @@ void platonic_align_attention_resonance(
     // Apply prime-based modulation to attention weights
     for (size_t i = 0; i < attention_size; i++) {
         // Calculate prime-based phase
-        double phase = 2.0 * M_PI * (i % solid_prime) / solid_prime;
+        double phase = 2.0 * MATH_PI * (i % solid_prime) / solid_prime;
         
         // Apply resonance modulation
         double resonance = math_cos(phase);

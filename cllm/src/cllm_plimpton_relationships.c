@@ -2,13 +2,32 @@
  * Plimpton 322 Parent-Child Relationships Implementation
  * 
  * Phase 4, Day 13
+ * 
+ * REDESIGNED: Independent implementation, NO OLD library dependencies
  */
 
 #include "ai/cllm_plimpton_relationships.h"
-#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+// ============================================================================
+// INDEPENDENT MATHEMATICAL FUNCTIONS
+// ============================================================================
+
+/**
+ * @brief Compute GCD using Euclidean algorithm
+ * 
+ * Independent implementation - NO dependencies on OLD library
+ */
+static uint64_t compute_gcd(uint64_t a, uint64_t b) {
+    while (b != 0) {
+        uint64_t temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
 
 // ============================================================================
 // VALIDATION FUNCTIONS
@@ -16,7 +35,7 @@
 
 bool is_coprime(uint64_t a, uint64_t b) {
     if (a == 0 || b == 0) return false;
-    return prime_gcd(a, b) == 1;
+    return compute_gcd(a, b) == 1;
 }
 
 bool both_odd(uint64_t a, uint64_t b) {
@@ -58,7 +77,7 @@ bool validate_relation_detailed(
     
     relation->parent_id = parent_id;
     relation->child_id = child_id;
-    relation->gcd_value = prime_gcd(parent_id, child_id);
+    relation->gcd_value = compute_gcd(parent_id, child_id);
     relation->is_coprime = (relation->gcd_value == 1);
     
     // Check all constraints

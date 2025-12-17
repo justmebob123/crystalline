@@ -9,8 +9,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+// Migrated to NEW math library - no prime_float_math needed
 #include <stdatomic.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // TOPOLOGY DETECTION

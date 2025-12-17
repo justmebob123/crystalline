@@ -15,7 +15,7 @@
 #include <stddef.h>
 
 // Include batch and work distribution headers
-#include "../cllm_batch.h"
+#include "cllm_batch.h"
 #include "cllm_work_distribution.h"
 
 #ifdef __cplusplus

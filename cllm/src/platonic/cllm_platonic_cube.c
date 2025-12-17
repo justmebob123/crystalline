@@ -17,12 +17,14 @@
  * Dual: Octahedron
  */
 
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include "ai/cllm_platonic.h"
+#include "math/arithmetic.h"
 #include "math/transcendental.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // CUBE GEOMETRY

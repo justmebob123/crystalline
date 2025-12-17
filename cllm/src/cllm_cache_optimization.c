@@ -6,12 +6,17 @@
 
 #define _GNU_SOURCE  // For CPU_SET macros
 #include "ai/cllm_cache_optimization.h"
-#include "math/types.h"  // For MATH_PI (NEW math library)
+#include "math/constants.h"
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
+#include "math/types.h"  // For mathematical constants
+#include "math/constants.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sched.h>
-#include "math/transcendental.h"
 
 // ============================================================================
 // CACHE MAPPING

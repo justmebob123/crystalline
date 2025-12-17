@@ -12,14 +12,17 @@
  * using inherent geometric structure.
  */
 
-#include "ai/cllm_platonic.h"
 #include "math/transcendental.h"
-#include "clock_lattice.h"
+#include "math/arithmetic.h"
+#include "math/prime.h"
+#include "math/clock.h"
+#include "ai/cllm_platonic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "math/transcendental.h"
+
+// Forward declarations for clock lattice and prime math functions
 
 // ============================================================================
 // CORRUPTION UTILITIES
@@ -271,9 +274,13 @@ RecoveryResult platonic_recover_prime(PlatonicModel* model) {
     bool all_valid = true;
     for (uint32_t i = 0; i < model->geometry.vertices; i++) {
         // Map vertex index to clock position
-        BabylonianClockPosition pos = map_prime_index_to_clock(i + 1);
+        uint64_t prime_pos = prime_nth(i + 1);
+
+        ClockPosition pos;
+
+        clock_map_prime_to_position(prime_pos, &pos);
         
-        if (!is_valid_clock_position(pos)) {
+        if (!clock_is_valid_position(&pos)) {
             printf("  ✗ Vertex %u: invalid clock position\n", i);
             all_valid = false;
         }

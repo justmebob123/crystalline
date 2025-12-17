@@ -1,3 +1,5 @@
+#include "math/types.h"
+#include "math/constants.h"
 /**
  * Production Features for CLLM
  * 
@@ -9,14 +11,23 @@
  * 6. Training metrics logging
  */
 
+#include "math/transcendental.h"
+#include "math/constants.h"
+#include "math/arithmetic.h"
+#include "math/constants.h"
 #include "cllm_training.h"
+#include "math/constants.h"
 #include "ai/cllm_loss.h"
+#include "math/constants.h"
 #include "cllm_format.h"
+#include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include "math/transcendental.h"
+
+#ifndef MATH_INFINITY
+#endif
 
 // Training checkpoint
 typedef struct {
@@ -131,7 +142,7 @@ void free_validation_set(ValidationSet* val_set) {
  * Evaluate on validation set
  */
 float evaluate_validation(CLLMTraining* training, ValidationSet* val_set) {
-    if (!training || !val_set) return INFINITY;
+    if (!training || !val_set) return MATH_INFINITY;
     
     float total_loss = 0.0;
     int num_batches = 0;
@@ -161,7 +172,7 @@ float evaluate_validation(CLLMTraining* training, ValidationSet* val_set) {
     free(input_tokens);
     free(target_tokens);
     
-    return num_batches > 0 ? total_loss / num_batches : INFINITY;
+    return num_batches > 0 ? total_loss / num_batches : MATH_INFINITY;
 }
 
 /**
@@ -325,7 +336,7 @@ float get_learning_rate(LRScheduler* scheduler) {
         return scheduler->min_lr;
     }
     
-    float cosine_decay = 0.5 * (1.0 + math_cos(M_PI * decay_step / decay_steps));
+    float cosine_decay = 0.5 * (1.0 + math_cos((double)MATH_PI * decay_step / decay_steps));
     return scheduler->min_lr + (scheduler->initial_lr - scheduler->min_lr) * cosine_decay;
 }
 
@@ -374,7 +385,7 @@ void clip_gradients(CLLMTraining* training, float max_norm) {
         // Now handled by BigFixed version
     }
     
-    grad_norm = math_sqrt(grad_norm);
+    grad_norm = math_sqrt((double)grad_norm);
     
     // Clip if necessary
     if (grad_norm > max_norm) {

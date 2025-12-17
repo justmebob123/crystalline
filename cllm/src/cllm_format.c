@@ -98,7 +98,7 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
     header.blind_recovery_enabled = model->recovery.enabled ? 1 : 0;
     header.harmonic_enabled = model->harmonic.enabled ? 1 : 0;
     header.ntt_attention_enabled = model->ntt.enabled ? 1 : 0;
-    header.kissing_spheres_enabled = (model->threading.num_spheres > 0) ? 1 : 0;
+    header.kissing_spheres_enabled = (model->threading.enabled) ? 1 : 0;
     header.created_timestamp = time(NULL);
     header.modified_timestamp = time(NULL);
     header.best_loss = model->metrics.best_loss;
@@ -219,7 +219,7 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
     if (model->recovery.enabled) flags |= 0x01;
     if (model->harmonic.enabled) flags |= 0x02;
     if (model->ntt.enabled) flags |= 0x04;
-    if (model->threading.num_spheres > 0) flags |= 0x08;
+    if (model->threading.enabled) flags |= 0x08;
     fwrite(&flags, sizeof(uint8_t), 1, f);
     
     // ========== 6. WRITE OPTIMIZER STATE ==========
@@ -232,6 +232,46 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
     
     // ========== 7. WRITE METRICS ==========
     fwrite(&model->metrics, sizeof(model->metrics), 1, f);
+    
+    // ========== 8. WRITE VOCABULARY (NEW) ==========
+    // Write vocabulary presence flag
+    uint8_t has_vocab = (model->vocabulary != NULL) ? 1 : 0;
+    fwrite(&has_vocab, sizeof(uint8_t), 1, f);
+    
+    if (model->vocabulary) {
+        // Write vocabulary size
+        fwrite(&model->vocabulary->size, sizeof(uint32_t), 1, f);
+        fwrite(&model->vocabulary->capacity, sizeof(uint32_t), 1, f);
+        
+        // Write special token IDs
+        fwrite(&model->vocabulary->pad_token_id, sizeof(uint32_t), 1, f);
+        fwrite(&model->vocabulary->unk_token_id, sizeof(uint32_t), 1, f);
+        fwrite(&model->vocabulary->bos_token_id, sizeof(uint32_t), 1, f);
+        fwrite(&model->vocabulary->eos_token_id, sizeof(uint32_t), 1, f);
+        
+        // Write total tokens processed
+        fwrite(&model->vocabulary->total_tokens, sizeof(uint64_t), 1, f);
+        
+        // Write vocabulary name length and name
+        uint32_t name_len = model->vocabulary->name ? strlen(model->vocabulary->name) : 0;
+        fwrite(&name_len, sizeof(uint32_t), 1, f);
+        if (name_len > 0) {
+            fwrite(model->vocabulary->name, 1, name_len, f);
+        }
+        
+        // Write each token
+        for (uint32_t i = 0; i < model->vocabulary->size; i++) {
+            // Write token string length and string
+            uint32_t token_len = strlen(model->vocabulary->tokens[i]);
+            fwrite(&token_len, sizeof(uint32_t), 1, f);
+            fwrite(model->vocabulary->tokens[i], 1, token_len, f);
+            
+            // Write token frequency
+            fwrite(&model->vocabulary->frequencies[i], sizeof(uint32_t), 1, f);
+        }
+        
+        printf("  ✓ Vocabulary saved: %u tokens\n", model->vocabulary->size);
+    }
     
     fclose(f);
     printf("✓ Model written to %s\n", filename);
@@ -388,6 +428,65 @@ CLLMModel* cllm_read_model(const char* filename) {
     
     // ========== 8. READ METRICS ==========
     fread(&model->metrics, sizeof(model->metrics), 1, f);
+    
+    // ========== 9. READ VOCABULARY (NEW) ==========
+    uint8_t has_vocab = 0;
+    if (fread(&has_vocab, sizeof(uint8_t), 1, f) == 1 && has_vocab) {
+        // Read vocabulary metadata
+        uint32_t vocab_size, vocab_capacity;
+        fread(&vocab_size, sizeof(uint32_t), 1, f);
+        fread(&vocab_capacity, sizeof(uint32_t), 1, f);
+        
+        // Create vocabulary
+        model->vocabulary = cllm_vocab_create(vocab_capacity);
+        if (!model->vocabulary) {
+            fprintf(stderr, "Error: Failed to create vocabulary\n");
+            cllm_free_model(model);
+            fclose(f);
+            return NULL;
+        }
+        
+        // Read special token IDs
+        fread(&model->vocabulary->pad_token_id, sizeof(uint32_t), 1, f);
+        fread(&model->vocabulary->unk_token_id, sizeof(uint32_t), 1, f);
+        fread(&model->vocabulary->bos_token_id, sizeof(uint32_t), 1, f);
+        fread(&model->vocabulary->eos_token_id, sizeof(uint32_t), 1, f);
+        
+        // Read total tokens processed
+        fread(&model->vocabulary->total_tokens, sizeof(uint64_t), 1, f);
+        
+        // Read vocabulary name
+        uint32_t name_len;
+        fread(&name_len, sizeof(uint32_t), 1, f);
+        if (name_len > 0) {
+            model->vocabulary->name = (char*)malloc(name_len + 1);
+            fread(model->vocabulary->name, 1, name_len, f);
+            model->vocabulary->name[name_len] = '\0';
+        }
+        
+        // Read each token
+        for (uint32_t i = 0; i < vocab_size; i++) {
+            // Read token string
+            uint32_t token_len;
+            fread(&token_len, sizeof(uint32_t), 1, f);
+            
+            char* token = (char*)malloc(token_len + 1);
+            fread(token, 1, token_len, f);
+            token[token_len] = '\0';
+            
+            // Add token to vocabulary
+            cllm_vocab_add_token(model->vocabulary, token);
+            
+            // Read token frequency
+            fread(&model->vocabulary->frequencies[i], sizeof(uint32_t), 1, f);
+            
+            free(token);
+        }
+        
+        printf("  ✓ Vocabulary loaded: %u tokens\n", model->vocabulary->size);
+    } else {
+        printf("  ⚠ No vocabulary in model file (will use fallback tokenization)\n");
+    }
     
     fclose(f);
     printf("✓ Model loaded from %s\n", filename);

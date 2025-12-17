@@ -7,7 +7,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/transcendental.h"
+// Migrated to NEW math library - no prime_float_math needed
+
+// Stub implementations for missing functions
+// TODO: Move these to a proper location or link with cllm_threads.c
+
+int get_num_cpu_cores(void) {
+    return 8; // Default stub value
+}
+
+int calculate_max_depth(int available_cores) {
+    if (available_cores <= 1) return 1;
+    if (available_cores <= 13) return 2;
+    if (available_cores <= 157) return 3;
+    return 4;
+}
+
+int can_spawn_at_depth(int current_depth, int available_cores, int current_thread_count) {
+    (void)current_depth;
+    (void)available_cores;
+    (void)current_thread_count;
+    return 0; // Stub: don't allow spawning
+}
+
+int get_recommended_children_count(int current_depth, int available_cores, int pending_batches) {
+    (void)current_depth;
+    (void)available_cores;
+    (void)pending_batches;
+    return 0; // Stub: no children
+}
 
 // Helper function to clamp values
 static inline double clamp(double value, double min, double max) {
