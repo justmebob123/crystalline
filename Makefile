@@ -273,6 +273,7 @@ clean:
 	@if [ -d cllm ]; then $(MAKE) -C cllm clean 2>/dev/null || true; fi
 	@if [ -d demos ]; then $(MAKE) -C demos clean 2>/dev/null || true; fi
 	@if [ -d app ]; then $(MAKE) -C app clean 2>/dev/null || true; fi
+	@$(MAKE) php-clean 2>/dev/null || true
 	@echo "✓ Clean complete"
 
 # ============================================================================
@@ -593,13 +594,15 @@ php-clean:
 	@echo "Cleaning PHP extensions..."
 	@if [ -d $(PHP_MATH_DIR) ]; then \
 		cd $(PHP_MATH_DIR) && \
-		if [ -f Makefile ]; then $(MAKE) clean; fi && \
+		if [ -f Makefile ]; then $(MAKE) clean 2>/dev/null || true; fi && \
 		phpize --clean 2>/dev/null || true; \
+		rm -rf .libs *.lo *.la modules/ autom4te.cache/ 2>/dev/null || true; \
 	fi
 	@if [ -d $(PHP_ALGO_DIR) ]; then \
 		cd $(PHP_ALGO_DIR) && \
-		if [ -f Makefile ]; then $(MAKE) clean; fi && \
+		if [ -f Makefile ]; then $(MAKE) clean 2>/dev/null || true; fi && \
 		phpize --clean 2>/dev/null || true; \
+		rm -rf .libs *.lo *.la modules/ autom4te.cache/ 2>/dev/null || true; \
 	fi
 	@echo "✓ PHP extensions cleaned"
 
