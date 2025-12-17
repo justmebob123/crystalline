@@ -153,12 +153,13 @@ CURRENT STATUS: Working system with 88d suffix. Suffix removal blocked by pre-ex
 - [ ] Performance profiling and optimization
 
 ## Phase 6: Inference Pipeline
-- [ ] Review current inference implementation
+- [ ] Review current inference implementation (src/ai/cllm_inference.c)
 - [ ] Optimize inference for production use
 - [ ] Add batched inference support
 - [ ] Implement beam search/sampling strategies
 - [ ] Add temperature and top-k/top-p sampling
-- [ ] Create inference demo and benchmarks
+- [ ] Create comprehensive inference demo
+- [ ] Add inference benchmarking
 - [ ] Test inference with trained models
 
 ## Phase 7: Production Readiness
