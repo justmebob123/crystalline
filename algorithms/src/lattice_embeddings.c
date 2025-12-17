@@ -26,7 +26,9 @@ typedef struct {
 
 // External functions from OLD library (will be migrated)
 extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
-extern uint64_t cllm_get_dimensional_frequency(int dim_mod_12);
+
+// Use algorithms library version (general-purpose, not CLLM-specific)
+#include "dimensional_frequencies.h"
 
 // Constants
 #define MATH_PI 3.14159265358979323846
@@ -110,7 +112,7 @@ void lattice_embeddings_init_geometric_abacus(
         int symmetry_group = token_id % 12;
         
         for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-            uint64_t phi_i = cllm_get_dimensional_frequency(dim % 12);
+            uint64_t phi_i = get_dimensional_frequency_mod12(dim);
             
             // Compute L using Abacus
             double L = compute_L_abacus(pos, dim, phi_i, symmetry_group);
@@ -149,7 +151,7 @@ void lattice_get_token_embedding_geometric_abacus(
     int symmetry_group = token_id % 12;
     
     for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-        uint64_t phi_i = cllm_get_dimensional_frequency(dim % 12);
+        uint64_t phi_i = get_dimensional_frequency_mod12(dim);
         
         // Compute L using Abacus
         double L = compute_L_abacus(pos, dim, phi_i, symmetry_group);

@@ -9,6 +9,7 @@ INCLUDES = -I./include -I./include/blind_recovery -I../include -I../math/include
 
 # Source files
 SOURCES = src/abacus88d/abacus88d.c \
+          src/dimensional_frequencies.c \
           src/numerical.c \
           src/loss_functions.c \
           src/optimizers.c \
@@ -116,7 +117,7 @@ all: $(SHARED_LIB)
 
 $(SHARED_LIB): $(OBJECTS) $(MATH_LIB)
 	@echo "Creating shared algorithms library: $@"
-	$(CC) $(LDFLAGS) -Wl,--unresolved-symbols=ignore-all -o $@ $(OBJECTS) -L.. -L../math/lib -lcllmmath -lssl -lcrypto -lm -lpthread
+	$(CC) $(LDFLAGS) -Wl,--unresolved-symbols=ignore-all -o $@ $(OBJECTS) -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm -lpthread
 	@echo "✓ Shared algorithms library created"
 
 static: $(STATIC_LIB)
@@ -214,7 +215,7 @@ test_candidate_analysis: tests/test_candidate_analysis.c $(SHARED_LIB)
 # Phase 1 Integration Test
 test_phase1: tests/test_phase1_integration.c $(SHARED_LIB)
 	@echo "Building Phase 1 Integration test..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1_integration tests/test_phase1_integration.c -L. -lalgorithms -L../math/lib -lcllmmath
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_phase1_integration tests/test_phase1_integration.c -L. -lalgorithms -L../math/lib -lcrystallinemath
 	@echo "Running Phase 1 Integration test..."
 	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_phase1_integration
 
@@ -231,7 +232,7 @@ test_phase1_integration: tests/test_phase1_integration.c $(SHARED_LIB)
 # Phase 1 Benchmarking
 benchmark_phase1: tests/benchmark_phase1.c $(SHARED_LIB)
 	@echo "Building Phase 1 Benchmark..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o tests/benchmark_phase1 tests/benchmark_phase1.c -L. -lalgorithms -L../math/lib -lcllmmath
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/benchmark_phase1 tests/benchmark_phase1.c -L. -lalgorithms -L../math/lib -lcrystallinemath
 	@echo "Running Phase 1 Benchmark..."
 	LD_LIBRARY_PATH=.:..:../math/lib ./tests/benchmark_phase1
 
