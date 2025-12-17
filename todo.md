@@ -1,5 +1,38 @@
 # Crystalline CLLM - 88D Integration Implementation Plan
 
+## 🔴 PERMANENT RULES (FROM MASTER_PLAN.md)
+
+### RULE 0: MANDATORY READING
+1. Read PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for tasks
+4. Read TERTIARY_OBJECTIVES.md for details
+5. Update todo.md with progress
+
+### RULE 11: GIT OPERATIONS
+**ALWAYS commit directly to main - NO BRANCHES:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+**If token expires, refresh:**
+```bash
+gh auth status
+gh auth refresh -h github.com -s repo
+```
+
+### RULE 12: BUILD VERIFICATION
+**MANDATORY after every change:**
+```bash
+make clean && make 2>&1 | tee build.log
+grep -c "warning:" build.log
+# VERIFY: Zero warnings, zero errors
+```
+
+---
+
 ## ✅ Complete Understanding Achieved
 
 ### Current Architecture
