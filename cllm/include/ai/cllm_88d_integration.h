@@ -28,6 +28,7 @@
 
 #include "cllm.h"
 #include "hierarchical_threading.h"
+#include "adaptive_threading.h"
 #include <stdint.h>
 #include <stdbool.h>
 
