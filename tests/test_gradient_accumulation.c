@@ -12,7 +12,7 @@
 #include "math/transcendental.h"
 #include "cllm_batch.h"
 #include "cllm_training.h"
-#include "ai/cllm_training_88d.h"
+#include "ai/cllm_training_system.h"
 
 #define TEST_GRADIENT_SIZE 1000
 #define TEST_NUM_THREADS 12
@@ -79,7 +79,7 @@ int test_basic_accumulation(void) {
     }
     
     // Create 88D training system
-    CLLMTraining88D* training_88d = cllm_training_88d_create(
+    CLLMTrainingSystem* training_88d = cllm_training_system_create(
         model,
         training,
         batch_iter,
@@ -112,7 +112,7 @@ int test_basic_accumulation(void) {
     
     // Synchronize gradients (should sum all thread contributions)
     printf("\nSynchronizing gradients...\n");
-    cllm_sync_gradients_88d(training_88d);
+    cllm_system_sync_gradients(training_88d);
     printf("✓ Gradients synchronized\n");
     
     // Verify accumulated gradients
@@ -141,7 +141,7 @@ int test_basic_accumulation(void) {
     
     if (errors > 0) {
         fprintf(stderr, "✗ FAILED: %d gradient values incorrect\n", errors);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         cllm_training_free(training);
         cllm_free_model(model);
@@ -151,7 +151,7 @@ int test_basic_accumulation(void) {
     printf("✓ All gradient values correct!\n");
     
     // Cleanup
-    cllm_training_88d_free(training_88d);
+    cllm_training_system_free(training_88d);
     cllm_batch_iterator_free(batch_iter);
     cllm_training_free(training);
     cllm_free_model(model);
@@ -211,7 +211,7 @@ int test_varied_accumulation(void) {
         return -1;
     }
     
-    CLLMTraining88D* training_88d = cllm_training_88d_create(
+    CLLMTrainingSystem* training_88d = cllm_training_system_create(
         model, training, batch_iter, TEST_NUM_THREADS
     );
     
@@ -239,7 +239,7 @@ int test_varied_accumulation(void) {
     
     // Synchronize
     printf("\nSynchronizing gradients...\n");
-    cllm_sync_gradients_88d(training_88d);
+    cllm_system_sync_gradients(training_88d);
     printf("✓ Synchronized\n");
     
     // Verify
@@ -267,7 +267,7 @@ int test_varied_accumulation(void) {
     
     if (errors > 0) {
         fprintf(stderr, "✗ FAILED: %d gradient values incorrect\n", errors);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         cllm_training_free(training);
         cllm_free_model(model);
@@ -277,7 +277,7 @@ int test_varied_accumulation(void) {
     printf("✓ All gradient values correct!\n");
     
     // Cleanup
-    cllm_training_88d_free(training_88d);
+    cllm_training_system_free(training_88d);
     cllm_batch_iterator_free(batch_iter);
     cllm_training_free(training);
     cllm_free_model(model);

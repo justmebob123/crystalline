@@ -1,8 +1,8 @@
-#ifndef CLLM_TRAINING_88D_H
-#define CLLM_TRAINING_88D_H
+#ifndef CLLM_TRAINING_SYSTEM_H
+#define CLLM_TRAINING_SYSTEM_H
 
 /**
- * @file cllm_training_88d.h
+ * @file cllm_training_system.h
  * @brief CLLM Training System using 88D Hierarchical Threading
  * 
  * This is the NEW training system that fully integrates with the 88D
@@ -88,7 +88,7 @@ typedef struct {
     uint64_t batch_id;
     double loss;
     int valid_sequences;
-    struct CLLMTraining88D* training_ctx;  // Reference to training context
+    struct CLLMTrainingSystem* training_ctx;  // Reference to training context
     int thread_id;  // ID of thread that will process this work
 } BatchWorkItem;
 
@@ -98,10 +98,12 @@ typedef struct {
  * This structure manages the entire training process using the 88D
  * hierarchical threading infrastructure.
  */
-typedef struct CLLMTraining88D {
+// The 88D Training System - manages threading and parallel execution
+// This wraps the basic CLLMTraining with 88D threading infrastructure
+typedef struct CLLMTrainingSystem {
     // Core components
     CLLMModel* model;
-    CLLMTraining* training;
+    CLLMTraining* training;  // Basic training state (loss, epochs, etc.)
     CLLMBatchIterator* batch_iterator;
     
     // 88D Infrastructure
@@ -140,7 +142,7 @@ typedef struct CLLMTraining88D {
     volatile bool training_active;
     volatile bool epoch_complete;
     
-} CLLMTraining88D;
+} CLLMTrainingSystem;
 
 // ============================================================================
 // API FUNCTIONS
@@ -155,7 +157,7 @@ typedef struct CLLMTraining88D {
  * @param num_threads Number of worker threads (will be adjusted for 12-fold symmetry)
  * @return Training context, or NULL on error
  */
-CLLMTraining88D* cllm_training_88d_create(
+CLLMTrainingSystem* cllm_training_system_create(
     CLLMModel* model,
     CLLMTraining* training,
     CLLMBatchIterator* batch_iterator,
@@ -167,7 +169,7 @@ CLLMTraining88D* cllm_training_88d_create(
  * 
  * @param ctx Training context to free
  */
-void cllm_training_88d_free(CLLMTraining88D* ctx);
+void cllm_training_system_free(CLLMTrainingSystem* ctx);
 
 /**
  * Create thread-local training context
@@ -214,8 +216,8 @@ void thread_local_training_free_88d(ThreadLocalTrainingContext* ctx);
  * @param epoch_num Current epoch number (for logging)
  * @return Average loss for the epoch
  */
-double cllm_train_epoch_88d(
-    CLLMTraining88D* ctx,
+double cllm_system_train_epoch(
+    CLLMTrainingSystem* ctx,
     int epoch_num
 );
 
@@ -227,7 +229,7 @@ double cllm_train_epoch_88d(
  * @return Final epoch loss
  */
 double cllm_train_88d(
-    CLLMTraining88D* ctx,
+    CLLMTrainingSystem* ctx,
     int num_epochs
 );
 
@@ -247,7 +249,7 @@ double cllm_train_88d(
  * 5. Completion notification
  * 
  * @param item Work item containing batch
- * @param user_data Training context (CLLMTraining88D*)
+ * @param user_data Training context (CLLMTrainingSystem*)
  */
 void cllm_process_batch_88d(
     WorkItem* item,
@@ -263,8 +265,8 @@ void cllm_process_batch_88d(
  * @param thread_id Thread ID for gradient buffer
  * @return Loss for this sequence
  */
-double cllm_process_sequence_88d(
-    CLLMTraining88D* ctx,
+double cllm_system_process_sequence(
+    CLLMTrainingSystem* ctx,
     CLLMBatch* batch,
     uint32_t seq_idx,
     int thread_id
@@ -289,14 +291,14 @@ void cllm_process_batch_work_wrapper(void* data);
  * 
  * @param ctx Training context
  */
-void cllm_sync_gradients_88d(CLLMTraining88D* ctx);
+void cllm_system_sync_gradients(CLLMTrainingSystem* ctx);
 
 /**
  * Zero all gradient buffers
  * 
  * @param ctx Training context
  */
-void cllm_zero_gradients_88d(CLLMTraining88D* ctx);
+void cllm_system_zero_gradients(CLLMTrainingSystem* ctx);
 
 // ============================================================================
 // STATISTICS & MONITORING
@@ -307,7 +309,7 @@ void cllm_zero_gradients_88d(CLLMTraining88D* ctx);
  * 
  * @param ctx Training context
  */
-void cllm_print_training_stats_88d(const CLLMTraining88D* ctx);
+void cllm_system_print_training_stats(const CLLMTrainingSystem* ctx);
 
 /**
  * Get thread pool statistics
@@ -316,7 +318,7 @@ void cllm_print_training_stats_88d(const CLLMTraining88D* ctx);
  * @param stats Output statistics structure
  */
 void cllm_get_thread_pool_stats_88d(
-    const CLLMTraining88D* ctx,
+    const CLLMTrainingSystem* ctx,
     HierarchicalThreadPoolStats* stats
 );
 
@@ -325,7 +327,7 @@ void cllm_get_thread_pool_stats_88d(
  * 
  * @param ctx Training context
  */
-void cllm_print_thread_stats_88d(const CLLMTraining88D* ctx);
+void cllm_system_print_thread_stats(const CLLMTrainingSystem* ctx);
 
 // ============================================================================
 // CONFIGURATION
@@ -337,7 +339,7 @@ void cllm_print_thread_stats_88d(const CLLMTraining88D* ctx);
  * @param ctx Training context
  * @param enable true to enable, false to disable
  */
-void cllm_set_work_stealing_88d(CLLMTraining88D* ctx, bool enable);
+void cllm_system_set_work_stealing(CLLMTrainingSystem* ctx, bool enable);
 
 /**
  * Enable/disable NTT attention
@@ -345,7 +347,7 @@ void cllm_set_work_stealing_88d(CLLMTraining88D* ctx, bool enable);
  * @param ctx Training context
  * @param enable true to enable, false to disable
  */
-void cllm_set_ntt_attention_88d(CLLMTraining88D* ctx, bool enable);
+void cllm_system_set_ntt_attention(CLLMTrainingSystem* ctx, bool enable);
 
 /**
  * Set batch size
@@ -353,7 +355,7 @@ void cllm_set_ntt_attention_88d(CLLMTraining88D* ctx, bool enable);
  * @param ctx Training context
  * @param batch_size New batch size
  */
-void cllm_set_batch_size_88d(CLLMTraining88D* ctx, uint32_t batch_size);
+void cllm_system_set_batch_size(CLLMTrainingSystem* ctx, uint32_t batch_size);
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -383,4 +385,4 @@ size_t cllm_calculate_gradient_size_88d(const CLLMModel* model);
  */
 uint32_t cllm_adjust_thread_count_88d(uint32_t requested);
 
-#endif // CLLM_TRAINING_88D_H
+#endif // CLLM_TRAINING_SYSTEM_H

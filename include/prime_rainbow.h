@@ -44,7 +44,7 @@ int rainbow_table_add_prime_index(uint32_t prime_index);
 int rainbow_table_add_prime_value(uint64_t prime_value);
 uint64_t rainbow_table_get_prime_by_index(uint32_t table_index);
 uint32_t rainbow_table_get_prime_index(uint32_t table_index);
-const RainbowEntry* rainbow_table_get_entry(uint32_t table_index);
+const ClockLatticeEntry* rainbow_table_get_entry(uint32_t table_index);
 
 // LEGACY: BigInt-based operations (deprecated, for backward compatibility)
 int rainbow_table_add_prime(BigInt* prime);

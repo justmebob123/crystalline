@@ -20,7 +20,7 @@
 #include "../include/cllm.h"
 #include "../include/cllm_batch.h"
 #include "../include/cllm_training.h"
-#include "../include/ai/cllm_training_88d.h"
+#include "../include/ai/cllm_training_system.h"
 #include "../include/ai/cllm_hierarchical_training.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_tokenizer.h"
@@ -427,7 +427,7 @@ int cmd_train(int argc, char** argv) {
         }
         
         // Create 88D training system
-        CLLMTraining88D* threaded_system = cllm_training_88d_create(
+        CLLMTrainingSystem* threaded_system = cllm_training_system_create(
             model,
             training,
             batch_iter,
@@ -456,7 +456,7 @@ int cmd_train(int argc, char** argv) {
         
         // Training loop with threading
         for (int epoch = 0; epoch < config.num_epochs; epoch++) {
-            float epoch_loss = (float)cllm_train_epoch_88d(threaded_system, epoch);
+            float epoch_loss = (float)cllm_system_train_epoch(threaded_system, epoch);
             
             // Update training progress
             cllm_global_progress_update_training(epoch + 1, config.num_epochs, epoch_loss);
@@ -476,7 +476,7 @@ int cmd_train(int argc, char** argv) {
         cllm_global_progress_complete_phase();
         
         // Cleanup threaded system
-        cllm_training_88d_free(threaded_system);
+        cllm_training_system_free(threaded_system);
         cllm_batch_iterator_free(batch_iter);
         
     } else {

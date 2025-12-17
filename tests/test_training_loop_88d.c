@@ -21,7 +21,7 @@
 #include "cllm.h"
 #include "cllm_batch.h"
 #include "cllm_training.h"
-#include "ai/cllm_training_88d.h"
+#include "ai/cllm_training.h"
 // All types are now defined by the included headers
 
 // Model dimensions are determined by Platonic solid geometry
@@ -154,7 +154,7 @@ int test_single_training_step(void) {
     
     // Create 88D training system
     printf("\nCreating 88D training system with %d threads...\n", NUM_THREADS);
-    CLLMTraining88D* training_88d = cllm_training_88d_create(
+    CLLMTraining* training_88d = cllm_training_system_create(
         model, training, batch_iter, NUM_THREADS
     );
     
@@ -175,7 +175,7 @@ int test_single_training_step(void) {
     CLLMBatch* batch = cllm_batch_iterator_next(batch_iter);
     if (!batch) {
         fprintf(stderr, "Failed to get first batch\n");
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -193,7 +193,7 @@ int test_single_training_step(void) {
     if (loss_result < 0) {
         fprintf(stderr, "Forward pass failed\n");
         cllm_batch_free(batch);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -207,7 +207,7 @@ int test_single_training_step(void) {
     if (!training->logits) {
         fprintf(stderr, "No logits after forward pass\n");
         cllm_batch_free(batch);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -237,7 +237,7 @@ int test_single_training_step(void) {
     
     // Cleanup
     cllm_batch_free(batch);
-    cllm_training_88d_free(training_88d);
+    cllm_training_system_free(training_88d);
     cllm_batch_iterator_free(batch_iter);
     free(tokens);
     cllm_training_free(training);
@@ -298,7 +298,7 @@ int test_multiple_training_steps(void) {
         return -1;
     }
     
-    CLLMTraining88D* training_88d = cllm_training_88d_create(
+    CLLMTraining* training_88d = cllm_training_system_create(
         model, training, batch_iter, NUM_THREADS
     );
     
@@ -322,7 +322,7 @@ int test_multiple_training_steps(void) {
         CLLMBatch* batch = cllm_batch_iterator_next(batch_iter);
         if (!batch) {
             fprintf(stderr, "Failed to get batch at step %d\n", step);
-            cllm_training_88d_free(training_88d);
+            cllm_training_system_free(training_88d);
             cllm_batch_iterator_free(batch_iter);
             free(tokens);
             cllm_training_free(training);
@@ -335,7 +335,7 @@ int test_multiple_training_steps(void) {
         if (loss_result < 0) {
             fprintf(stderr, "Forward pass failed at step %d\n", step);
             cllm_batch_free(batch);
-            cllm_training_88d_free(training_88d);
+            cllm_training_system_free(training_88d);
             cllm_batch_iterator_free(batch_iter);
             free(tokens);
             cllm_training_free(training);
@@ -382,7 +382,7 @@ int test_multiple_training_steps(void) {
     if (valid_losses != NUM_TRAINING_STEPS) {
         fprintf(stderr, "✗ FAILED: Only %d/%d losses were valid\n", 
                 valid_losses, NUM_TRAINING_STEPS);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -394,7 +394,7 @@ int test_multiple_training_steps(void) {
     printf("✓ All losses were finite and reasonable\n");
     
     // Cleanup
-    cllm_training_88d_free(training_88d);
+    cllm_training_system_free(training_88d);
     cllm_batch_iterator_free(batch_iter);
     free(tokens);
     cllm_training_free(training);
@@ -454,7 +454,7 @@ int test_gradient_flow(void) {
         return -1;
     }
     
-    CLLMTraining88D* training_88d = cllm_training_88d_create(
+    CLLMTraining* training_88d = cllm_training_system_create(
         model, training, batch_iter, NUM_THREADS
     );
     
@@ -471,7 +471,7 @@ int test_gradient_flow(void) {
     // Get batch and do forward pass
     CLLMBatch* batch = cllm_batch_iterator_next(batch_iter);
     if (!batch) {
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -483,7 +483,7 @@ int test_gradient_flow(void) {
     double loss_result = cllm_process_sequence_88d(training_88d, batch, 0, 0);
     if (loss_result < 0) {
         cllm_batch_free(batch);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -536,7 +536,7 @@ int test_gradient_flow(void) {
     if (finite_gradients < num_gradients * 0.95) {
         fprintf(stderr, "✗ FAILED: Too many non-finite gradients\n");
         cllm_batch_free(batch);
-        cllm_training_88d_free(training_88d);
+        cllm_training_system_free(training_88d);
         cllm_batch_iterator_free(batch_iter);
         free(tokens);
         cllm_training_free(training);
@@ -549,7 +549,7 @@ int test_gradient_flow(void) {
     
     // Cleanup
     cllm_batch_free(batch);
-    cllm_training_88d_free(training_88d);
+    cllm_training_system_free(training_88d);
     cllm_batch_iterator_free(batch_iter);
     free(tokens);
     cllm_training_free(training);

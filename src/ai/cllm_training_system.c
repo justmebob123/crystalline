@@ -15,8 +15,8 @@
  * This replaces ALL legacy threading code.
  */
 
-#include "cllm_batch.h"  // Must come before cllm_training_88d.h to define CLLMBatch
-#include "ai/cllm_training_88d.h"
+#include "cllm_batch.h"  // Must come before cllm_training_system.h to define CLLMBatch
+#include "ai/cllm_training_system.h"
 #include "cllm_training.h"
 #include "ai/cllm_loss.h"
 #include "math/constants.h"
@@ -244,21 +244,21 @@ void thread_local_training_free_88d(ThreadLocalTrainingContext* ctx) {
 // CREATION & DESTRUCTION
 // ============================================================================
 
-CLLMTraining88D* cllm_training_88d_create(
+CLLMTrainingSystem* cllm_training_system_create(
     CLLMModel* model,
     CLLMTraining* training,
     CLLMBatchIterator* batch_iterator,
     uint32_t num_threads
 ) {
     if (!model || !training || !batch_iterator) {
-        fprintf(stderr, "ERROR: NULL parameters to cllm_training_88d_create\n");
+        fprintf(stderr, "ERROR: NULL parameters to cllm_training_system_create\n");
         return NULL;
     }
     
     printf("\n=== Creating 88D Training System ===\n");
     
     // Allocate context
-    CLLMTraining88D* ctx = calloc(1, sizeof(CLLMTraining88D));
+    CLLMTrainingSystem* ctx = calloc(1, sizeof(CLLMTrainingSystem));
     if (!ctx) {
         fprintf(stderr, "ERROR: Failed to allocate training context\n");
         return NULL;
@@ -400,7 +400,7 @@ CLLMTraining88D* cllm_training_88d_create(
     return ctx;
 }
 
-void cllm_training_88d_free(CLLMTraining88D* ctx) {
+void cllm_training_system_free(CLLMTrainingSystem* ctx) {
     if (!ctx) return;
     
     printf("\n=== Freeing 88D Training System ===\n");
@@ -447,8 +447,8 @@ void cllm_training_88d_free(CLLMTraining88D* ctx) {
 /**
  * Process a single sequence within a batch
  */
-double cllm_process_sequence_88d(
-    CLLMTraining88D* ctx,
+double cllm_system_process_sequence(
+    CLLMTrainingSystem* ctx,
     CLLMBatch* batch,
     uint32_t seq_idx,
     int thread_id
@@ -511,7 +511,7 @@ void cllm_process_batch_work_wrapper(void* data) {
     
     BatchWorkItem* work = (BatchWorkItem*)data;
     CLLMBatch* batch = work->batch;
-    CLLMTraining88D* ctx = work->training_ctx;
+    CLLMTrainingSystem* ctx = work->training_ctx;
     
     if (!batch || !ctx) {
         fprintf(stderr, "ERROR: NULL batch or context in work wrapper\n");
@@ -528,7 +528,7 @@ void cllm_process_batch_work_wrapper(void* data) {
     int thread_id = work->thread_id;
     
     for (uint32_t seq = 0; seq < batch->batch_size; seq++) {
-        double seq_loss = cllm_process_sequence_88d(ctx, batch, seq, thread_id);
+        double seq_loss = cllm_system_process_sequence(ctx, batch, seq, thread_id);
         if (seq_loss > 0.0) {
             batch_loss += seq_loss;
             valid_sequences++;
@@ -555,7 +555,7 @@ void cllm_process_batch_work_wrapper(void* data) {
 void cllm_process_batch_88d(WorkItem* item, void* user_data) {
     if (!item || !user_data) return;
     
-    CLLMTraining88D* ctx = (CLLMTraining88D*)user_data;
+    CLLMTrainingSystem* ctx = (CLLMTrainingSystem*)user_data;
     BatchWorkItem* work = (BatchWorkItem*)item->data;
     CLLMBatch* batch = work->batch;
     
@@ -573,7 +573,7 @@ void cllm_process_batch_88d(WorkItem* item, void* user_data) {
     int valid_sequences = 0;
     
     for (uint32_t seq = 0; seq < batch->batch_size; seq++) {
-        double seq_loss = cllm_process_sequence_88d(ctx, batch, seq, thread_id);
+        double seq_loss = cllm_system_process_sequence(ctx, batch, seq, thread_id);
         if (seq_loss > 0.0) {
             batch_loss += seq_loss;
             valid_sequences++;
@@ -598,7 +598,7 @@ void cllm_process_batch_88d(WorkItem* item, void* user_data) {
 // GRADIENT SYNCHRONIZATION
 // ============================================================================
 
-void cllm_zero_gradients_88d(CLLMTraining88D* ctx) {
+void cllm_system_zero_gradients(CLLMTrainingSystem* ctx) {
     if (!ctx || !ctx->accumulated_gradients) return;
     
     memset(ctx->accumulated_gradients, 0, ctx->gradient_size * sizeof(double));
@@ -611,7 +611,7 @@ void cllm_zero_gradients_88d(CLLMTraining88D* ctx) {
     }
 }
 
-void cllm_sync_gradients_88d(CLLMTraining88D* ctx) {
+void cllm_system_sync_gradients(CLLMTrainingSystem* ctx) {
     if (!ctx || !ctx->accumulated_gradients) return;
     
     // Zero accumulated gradients
@@ -639,7 +639,7 @@ void cllm_sync_gradients_88d(CLLMTraining88D* ctx) {
 // TRAINING
 // ============================================================================
 
-double cllm_train_epoch_88d(CLLMTraining88D* ctx, int epoch_num) {
+double cllm_system_train_epoch(CLLMTrainingSystem* ctx, int epoch_num) {
     if (!ctx) return 0.0;
     
     printf("\n=== Training Epoch %d (88D System) ===\n", epoch_num + 1);
@@ -661,7 +661,7 @@ double cllm_train_epoch_88d(CLLMTraining88D* ctx, int epoch_num) {
     cllm_batch_iterator_reset(ctx->batch_iterator);
     
     // Zero gradients
-    cllm_zero_gradients_88d(ctx);
+    cllm_system_zero_gradients(ctx);
     
     // Start timing
     ctx->epoch_start_time = get_time_seconds();
@@ -743,7 +743,7 @@ double cllm_train_epoch_88d(CLLMTraining88D* ctx, int epoch_num) {
     printf("  All work completed, synchronizing gradients...\n");
     
     // Synchronize gradients from shared memory
-    cllm_sync_gradients_88d(ctx);
+    cllm_system_sync_gradients(ctx);
     
     printf("  Gradients synchronized, applying optimizer step...\n");
     
@@ -773,7 +773,7 @@ double cllm_train_epoch_88d(CLLMTraining88D* ctx, int epoch_num) {
     return avg_loss;
 }
 
-double cllm_train_88d(CLLMTraining88D* ctx, int num_epochs) {
+double cllm_train_88d(CLLMTrainingSystem* ctx, int num_epochs) {
     if (!ctx) return 0.0;
     
     printf("\n=== Starting 88D Training ===\n");
@@ -785,10 +785,10 @@ double cllm_train_88d(CLLMTraining88D* ctx, int num_epochs) {
     double final_loss = 0.0;
     
     for (int epoch = 0; epoch < num_epochs; epoch++) {
-        final_loss = cllm_train_epoch_88d(ctx, epoch);
+        final_loss = cllm_system_train_epoch(ctx, epoch);
         
         // Print statistics
-        cllm_print_training_stats_88d(ctx);
+        cllm_system_print_training_stats(ctx);
     }
     
     printf("\n=== Training Complete ===\n");
@@ -803,7 +803,7 @@ double cllm_train_88d(CLLMTraining88D* ctx, int num_epochs) {
 // STATISTICS & MONITORING
 // ============================================================================
 
-void cllm_print_training_stats_88d(const CLLMTraining88D* ctx) {
+void cllm_system_print_training_stats(const CLLMTrainingSystem* ctx) {
     if (!ctx) return;
     
     printf("\n=== 88D Training Statistics ===\n");
@@ -815,7 +815,7 @@ void cllm_print_training_stats_88d(const CLLMTraining88D* ctx) {
 }
 
 void cllm_get_thread_pool_stats_88d(
-    const CLLMTraining88D* ctx,
+    const CLLMTrainingSystem* ctx,
     HierarchicalThreadPoolStats* stats
 ) {
     if (!ctx || !stats || !ctx->thread_pool) return;
@@ -823,7 +823,7 @@ void cllm_get_thread_pool_stats_88d(
     hierarchical_thread_pool_get_stats(ctx->thread_pool, stats);
 }
 
-void cllm_print_thread_stats_88d(const CLLMTraining88D* ctx) {
+void cllm_system_print_thread_stats(const CLLMTrainingSystem* ctx) {
     if (!ctx || !ctx->thread_pool) return;
     
     hierarchical_thread_pool_print_stats(ctx->thread_pool);
@@ -833,17 +833,17 @@ void cllm_print_thread_stats_88d(const CLLMTraining88D* ctx) {
 // CONFIGURATION
 // ============================================================================
 
-void cllm_set_work_stealing_88d(CLLMTraining88D* ctx, bool enable) {
+void cllm_system_set_work_stealing(CLLMTrainingSystem* ctx, bool enable) {
     if (!ctx) return;
     ctx->use_work_stealing = enable;
 }
 
-void cllm_set_ntt_attention_88d(CLLMTraining88D* ctx, bool enable) {
+void cllm_system_set_ntt_attention(CLLMTrainingSystem* ctx, bool enable) {
     if (!ctx) return;
     ctx->use_ntt_attention = enable;
 }
 
-void cllm_set_batch_size_88d(CLLMTraining88D* ctx, uint32_t batch_size) {
+void cllm_system_set_batch_size(CLLMTrainingSystem* ctx, uint32_t batch_size) {
     if (!ctx) return;
     ctx->batch_size = batch_size;
 }

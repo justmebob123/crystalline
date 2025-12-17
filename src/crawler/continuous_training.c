@@ -15,7 +15,7 @@
 #include "cllm.h"
 #include "cllm_batch.h"
 #include "cllm_training.h"
-#include "ai/cllm_training_88d.h"
+#include "ai/cllm_training_system.h"
 #include "cllm_format.h"
 #include "cllm_utils.h"
 #include "cllm_model_manager.h"
@@ -186,7 +186,7 @@ static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t
 /**
  * Update sphere stats for visualization (if AppState is available)
  */
-static void update_crawler_sphere_stats(ContinuousTrainingState* state, CLLMTraining88D* system) {
+static void update_crawler_sphere_stats(ContinuousTrainingState* state, CLLMTrainingSystem* system) {
     if (!state->app_state) return;  // No AppState available
     
     // Cast void* to AppState* (avoiding circular dependency)
@@ -245,7 +245,7 @@ static void* crawler_stats_update_thread_func(void* arg) {
    printf("✓ Crawler real-time stats update thread started\n");
    
    // Get the threaded system from the training context
-   CLLMTraining88D* system = NULL;
+   CLLMTrainingSystem* system = NULL;
    
    while (crawler_stats_thread_running && state->running) {
        // Get current threaded system (it's created per training session)
@@ -314,7 +314,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     }
     
     // Create parallel training system
-    CLLMTraining88D* threaded_system = cllm_training_88d_create(
+    CLLMTrainingSystem* threaded_system = cllm_training_system_create(
         state->model,
         state->training,
         batch_iterator,
@@ -340,7 +340,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     }
     
     // Cleanup parallel system
-    cllm_training_88d_free(threaded_system);
+    cllm_training_system_free(threaded_system);
     cllm_batch_iterator_free(batch_iterator);
     
     float avg_loss = total_loss / epochs;

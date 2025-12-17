@@ -294,7 +294,7 @@ typedef struct {
     uint8_t symmetry_group;   // 0-11 (12-fold symmetry: prime % 12)
     uint8_t ring;             // Clock ring (0-7 for Babylonian structure)
     uint16_t position;        // Position in ring
-} RainbowEntry;
+} ClockLatticeEntry;  // Renamed from ClockLatticeEntry to avoid conflict with math/rainbow.h
 
 // Legacy tree node structure - DEPRECATED, kept for compatibility
 // TODO: Remove after migration to array-based structure
@@ -304,7 +304,7 @@ typedef struct PrimeRainbowNode {
     int child_count;                       // Number of children (legacy)
     int capacity;                          // Allocated capacity (legacy)
     // Note: This structure is deprecated and will be removed in future versions
-    // Use the optimized array-based RainbowEntry structure instead
+    // Use the optimized array-based ClockLatticeEntry structure instead
 } PrimeRainbowNode;
 
 // Rainbow table structure - OPTIMIZED VERSION
@@ -312,7 +312,7 @@ typedef struct PrimeRainbowNode {
 // O(1) access time vs O(log n) tree traversal
 typedef struct {
     // NEW: Optimized array-based storage
-    RainbowEntry* entries;    // Simple array of entries (O(1) access)
+    ClockLatticeEntry* entries;    // Simple array of entries (O(1) access)
     uint32_t count;           // Number of entries
     uint32_t capacity;        // Allocated capacity
     

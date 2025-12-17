@@ -26,7 +26,7 @@ void rainbow_table_init(void) {
     if (g_rainbow_initialized) return;
     
     // NEW: Initialize optimized array-based storage
-    g_rainbow_table.entries = calloc(RAINBOW_INITIAL_CAPACITY, sizeof(RainbowEntry));
+    g_rainbow_table.entries = calloc(RAINBOW_INITIAL_CAPACITY, sizeof(ClockLatticeEntry));
     if (!g_rainbow_table.entries) {
         fprintf(stderr, "Failed to allocate rainbow table entries\n");
         return;
@@ -548,8 +548,8 @@ int rainbow_table_add_prime_index(uint32_t prime_index) {
     // Expand capacity if needed
     if (g_rainbow_table.count >= g_rainbow_table.capacity) {
         uint32_t new_capacity = g_rainbow_table.capacity * 2;
-        RainbowEntry* new_entries = realloc(g_rainbow_table.entries, 
-                                            new_capacity * sizeof(RainbowEntry));
+        ClockLatticeEntry* new_entries = realloc(g_rainbow_table.entries, 
+                                            new_capacity * sizeof(ClockLatticeEntry));
         if (!new_entries) {
             fprintf(stderr, "Failed to expand rainbow table capacity\n");
             return -1;
@@ -569,7 +569,7 @@ int rainbow_table_add_prime_index(uint32_t prime_index) {
     clock_map_prime_to_position(prime_pos, &pos);
     
     // Create entry
-    RainbowEntry entry = {
+    ClockLatticeEntry entry = {
         .prime_index = prime_index,
         .symmetry_group = (uint8_t)(prime_value % 12),
         .ring = (uint8_t)pos.ring,
@@ -635,7 +635,7 @@ uint32_t rainbow_table_get_prime_index(uint32_t table_index) {
  * @param table_index Index in rainbow table (0-based)
  * @return Pointer to entry, or NULL on error
  */
-const RainbowEntry* rainbow_table_get_entry(uint32_t table_index) {
+const ClockLatticeEntry* rainbow_table_get_entry(uint32_t table_index) {
     if (!g_rainbow_initialized || !g_rainbow_table.entries || table_index >= g_rainbow_table.count) {
         return NULL;
     }
@@ -692,7 +692,7 @@ void rainbow_table_get_stats(uint32_t* count, uint32_t* capacity, size_t* memory
     if (capacity) *capacity = g_rainbow_table.capacity;
     if (memory_bytes) {
         // Calculate memory usage
-        size_t entry_memory = g_rainbow_table.capacity * sizeof(RainbowEntry);
+        size_t entry_memory = g_rainbow_table.capacity * sizeof(ClockLatticeEntry);
         size_t struct_memory = sizeof(PrimeRainbowTable);
         *memory_bytes = entry_memory + struct_memory;
     }

@@ -10,7 +10,7 @@
 #include "math/constants.h"
 #include "cllm_training.h"
 #include "cllm_batch.h"
-#include "ai/cllm_training_88d.h"
+#include "ai/cllm_training_system.h"
 #include "math/constants.h"
 #include "cllm_inference_transformer.h"
 #include "math/constants.h"
