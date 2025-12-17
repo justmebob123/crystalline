@@ -401,28 +401,33 @@ typedef struct {
     } training;
     
     // ========================================================================
-    // KISSING SPHERES THREADING
+    // 88D UNIFIED THREADING SYSTEM
     // ========================================================================
     
     struct {
         bool enabled;
-        int num_spheres;              // 1 control + 12 workers (or more)
         
-        // Threading model (from algorithms layer)
-        SphereThreadingModel* model;  // Complete threading infrastructure
+        // 88D Thread Pool (THE unified threading system)
+        // 96 threads organized as 8 layers × 12 threads per layer
+        // Direct integration with algorithms library - no wrappers, no adapters
+        void* pool_88d;               // HierarchicalThreadPool* (void* to avoid circular dependency)
         
-        // Geometric work distribution
-        uint32_t* vertex_to_sphere;   // Map vertices to spheres [vertices]
-        uint32_t* edge_to_boundary;   // Map edges to boundaries [edges]
-        uint32_t* token_to_sphere;    // Map tokens to spheres [vocab_size]
+        // Geometric mapping (automatic from Platonic solid)
+        // These mappings are computed during initialization based on the model's geometry
+        uint32_t* vertex_to_thread;   // Map vertices to threads [vertices]
+        uint32_t* edge_to_boundary;   // Map edges to shared boundaries [edges]
+        uint32_t* face_to_layer;      // Map faces to layers [faces]
+        uint32_t* token_to_thread;    // Map tokens to threads [vocab_size]
         
-        // Synchronization
-        void* sync_barriers;          // Barrier synchronization objects
-        void* shared_memory;          // Shared memory regions
+        // Work distribution (from algorithms library)
+        void* work_queue;             // WorkQueue* - Global work queue
+        void* steal_pool;             // WorkStealingPool* - Work stealing pool
         
-        // Statistics
-        uint64_t total_work_units;
+        // Statistics (comprehensive tracking)
+        uint64_t total_work_units;    // Total work units processed
+        uint64_t work_stolen;         // Work units stolen by other threads
         double parallel_efficiency;   // Actual speedup / ideal speedup
+        double load_balance_score;    // Load balance quality (0-1)
         
     } threading;
     
