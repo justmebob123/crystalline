@@ -1,0 +1,1398 @@
+/**
+ * @file hierarchical_threading.c
+ * @brief Unified Hierarchical Threading System Implementation
+ */
+
+#define _USE_MATH_DEFINES
+#include "hierarchical_threading.h"
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <errno.h>
+#include <stdio.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// ============================================================================
+// INTERNAL HELPERS
+// ============================================================================
+
+/**
+ * Get current time in nanoseconds
+ */
+static uint64_t get_time_ns(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+}
+
+/**
+ * Calculate Euclidean distance between two positions
+ */
+static double calculate_distance(const double* pos1, const double* pos2, uint32_t dims) {
+    double sum = 0.0;
+    for (uint32_t i = 0; i < dims; i++) {
+        double diff = pos1[i] - pos2[i];
+        sum += diff * diff;
+    }
+    return sqrt(sum);
+}
+
+// ============================================================================
+// THREAD POOL OPERATIONS
+// ============================================================================
+
+HierarchicalThreadPool* hierarchical_thread_pool_create(
+    uint32_t num_threads,
+    uint32_t symmetry_fold,
+    uint32_t num_dimensions,
+    bool numa_aware
+) {
+    if (num_threads == 0 || symmetry_fold == 0 || num_dimensions == 0) {
+        return NULL;
+    }
+    
+    HierarchicalThreadPool* pool = calloc(1, sizeof(HierarchicalThreadPool));
+    if (!pool) {
+        return NULL;
+    }
+    
+    // Initialize basic fields
+    pool->num_threads = 0;
+    pool->max_threads = num_threads;
+    pool->symmetry_fold = symmetry_fold;
+    pool->num_dimensions = num_dimensions;
+    pool->numa_aware = numa_aware;
+    pool->initialized = false;
+    pool->running = false;
+    
+    // Allocate thread array
+    pool->threads = calloc(num_threads, sizeof(HierarchicalThread*));
+    if (!pool->threads) {
+        free(pool);
+        return NULL;
+    }
+    
+    // Create global hierarchical memory
+    pool->global_memory = hierarchical_memory_create(
+        num_threads * 1024 * 1024,  // 1MB per thread
+        symmetry_fold,              // initial segments
+        num_dimensions,             // initial dimensions
+        0,                          // owner_id (root)
+        0                           // hierarchy_level (root)
+    );
+    if (!pool->global_memory) {
+        free(pool->threads);
+        free(pool);
+        return NULL;
+    }
+    
+    // Create work distributor
+    pool->work_distributor = work_distributor_create(num_threads, 1000);  // 1000 work items in pool
+    if (!pool->work_distributor) {
+        hierarchical_memory_destroy(pool->global_memory);
+        free(pool->threads);
+        free(pool);
+        return NULL;
+    }
+    
+    // Create state manager
+    pool->state_manager = state_manager_create(num_threads, 100);  // 100 max states
+    if (!pool->state_manager) {
+        work_distributor_destroy(pool->work_distributor);
+        hierarchical_memory_destroy(pool->global_memory);
+        free(pool->threads);
+        free(pool);
+        return NULL;
+    }
+    
+    // Initialize mutex
+    if (pthread_mutex_init(&pool->pool_mutex, NULL) != 0) {
+        state_manager_destroy(pool->state_manager);
+        work_distributor_destroy(pool->work_distributor);
+        hierarchical_memory_destroy(pool->global_memory);
+        free(pool->threads);
+        free(pool);
+        return NULL;
+    }
+    
+    pool->initialized = true;
+    return pool;
+}
+
+void hierarchical_thread_pool_free(HierarchicalThreadPool* pool) {
+    if (!pool) {
+        return;
+    }
+    
+    // Stop pool if running
+    if (pool->running) {
+        hierarchical_thread_pool_stop(pool);
+    }
+    
+    // Free all threads
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        if (pool->threads[i]) {
+            hierarchical_thread_free(pool->threads[i]);
+        }
+    }
+    
+    // Free shared components
+    if (pool->state_manager) {
+        state_manager_destroy(pool->state_manager);
+    }
+    if (pool->work_distributor) {
+        work_distributor_destroy(pool->work_distributor);
+    }
+    if (pool->global_memory) {
+        hierarchical_memory_destroy(pool->global_memory);
+    }
+    
+    // Free thread array
+    free(pool->threads);
+    
+    // Destroy mutex
+    pthread_mutex_destroy(&pool->pool_mutex);
+    
+    free(pool);
+}
+
+int hierarchical_thread_pool_start(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->initialized) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&pool->pool_mutex);
+    
+    if (pool->running) {
+        pthread_mutex_unlock(&pool->pool_mutex);
+        return 0;  // Already running
+    }
+    
+    // Start all threads
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread && !thread->running) {
+            // Change state to READY
+            hierarchical_thread_change_state(thread, STATE_READY);
+            thread->running = true;
+        }
+    }
+    
+    pool->running = true;
+    pthread_mutex_unlock(&pool->pool_mutex);
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_stop(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->initialized) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&pool->pool_mutex);
+    
+    if (!pool->running) {
+        pthread_mutex_unlock(&pool->pool_mutex);
+        return 0;  // Already stopped
+    }
+    
+    // Signal all threads to stop
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread && thread->running) {
+            thread->should_stop = true;
+            hierarchical_thread_change_state(thread, STATE_STOPPING);
+        }
+    }
+    
+    pthread_mutex_unlock(&pool->pool_mutex);
+    
+    // Wait for all threads to stop
+    return hierarchical_thread_pool_wait(pool);
+}
+
+int hierarchical_thread_pool_wait(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->initialized) {
+        return -1;
+    }
+    
+    // Join all threads
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread && thread->running) {
+            hierarchical_thread_join(thread);
+        }
+    }
+    
+    pthread_mutex_lock(&pool->pool_mutex);
+    pool->running = false;
+    pthread_mutex_unlock(&pool->pool_mutex);
+    
+    return 0;
+}
+
+// ============================================================================
+// THREAD OPERATIONS
+// ============================================================================
+
+HierarchicalThread* hierarchical_thread_create(
+    uint32_t thread_id,
+    ThreadRole role,
+    HierarchicalThread* parent,
+    HierarchicalThreadPool* pool
+) {
+    if (!pool) {
+        return NULL;
+    }
+    
+    HierarchicalThread* thread = calloc(1, sizeof(HierarchicalThread));
+    if (!thread) {
+        return NULL;
+    }
+    
+    // Initialize identity
+    thread->thread_id = thread_id;
+    thread->role = role;
+    thread->parent = parent;
+    thread->running = false;
+    thread->should_stop = false;
+    
+    // Allocate children array
+    thread->max_children = HIERARCHICAL_THREAD_MAX_CHILDREN;
+    thread->children = calloc(thread->max_children, sizeof(HierarchicalThread*));
+    if (!thread->children) {
+        free(thread);
+        return NULL;
+    }
+    thread->num_children = 0;
+    
+    // Initialize neighbors
+    thread->num_neighbors = 0;
+    memset(thread->neighbors, 0, sizeof(thread->neighbors));
+    
+    // Allocate geometric position
+    thread->num_dimensions = pool->num_dimensions;
+    thread->position = calloc(thread->num_dimensions, sizeof(double));
+    if (!thread->position) {
+        free(thread->children);
+        free(thread);
+        return NULL;
+    }
+    
+    // Calculate position based on thread ID and symmetry
+    thread->symmetry_group = thread_id % pool->symmetry_fold;
+    for (uint32_t i = 0; i < thread->num_dimensions; i++) {
+        // Simple geometric distribution
+        double angle = 2.0 * M_PI * thread->symmetry_group / pool->symmetry_fold;
+        thread->position[i] = cos(angle + i * M_PI / thread->num_dimensions);
+    }
+    
+    // Create hierarchical memory segment
+    thread->memory_segment_id = thread_id;
+    thread->memory = pool->global_memory;  // Share global memory
+    
+    // Initialize message queues (simplified - would use MessageSystem in real version)
+    thread->inbox = NULL;
+    thread->outbox = NULL;
+    
+    // Create state machine
+    thread->state_machine = state_machine_create(
+        pool->state_manager,
+        thread_id,
+        STATE_UNINITIALIZED,
+        100,  // max transitions
+        10    // max callbacks
+    );
+    if (!thread->state_machine) {
+        free(thread->position);
+        free(thread->children);
+        free(thread);
+        return NULL;
+    }
+    thread->current_state = STATE_UNINITIALIZED;
+    
+    // Create work pool (simplified - would access from WorkDistributor in real version)
+    thread->work_pool = NULL;
+    
+    // Create local shared memory
+    thread->local_shared = shared_memory_enhanced_create(
+        4096,  // 4KB initial size
+        SHARED_LOCKED_WRITE,
+        thread_id
+    );
+    
+    // Initialize mutexes
+    pthread_mutex_init(&thread->control_mutex, NULL);
+    pthread_cond_init(&thread->control_cond, NULL);
+    
+    // Initialize statistics
+    thread->start_time = get_time_ns();
+    thread->messages_sent = 0;
+    thread->messages_received = 0;
+    thread->work_completed = 0;
+    thread->work_stolen = 0;
+    thread->context_switches = 0;
+    
+    // Add to parent's children if parent exists
+    if (parent) {
+        if (parent->num_children < parent->max_children) {
+            parent->children[parent->num_children++] = thread;
+            
+            // Create shared memory with parent
+            thread->parent_shared = shared_memory_enhanced_create(
+                4096,
+                SHARED_COPY_ON_WRITE,
+                thread_id * 1000 + parent->thread_id
+            );
+        }
+    }
+    
+    // Change state to INITIALIZED
+    hierarchical_thread_change_state(thread, STATE_INITIALIZED);
+    
+    return thread;
+}
+
+void hierarchical_thread_free(HierarchicalThread* thread) {
+    if (!thread) {
+        return;
+    }
+    
+    // Stop thread if running
+    if (thread->running) {
+        hierarchical_thread_stop(thread);
+        hierarchical_thread_join(thread);
+    }
+    
+    // Free message queues (simplified - would use MessageSystem in real version)
+    // Nothing to free in simplified version
+    
+    // Free shared memory
+    if (thread->local_shared) {
+        shared_memory_enhanced_free(thread->local_shared);
+    }
+    if (thread->parent_shared) {
+        shared_memory_enhanced_free(thread->parent_shared);
+    }
+    if (thread->child_shared) {
+        for (uint32_t i = 0; i < thread->num_children; i++) {
+            if (thread->child_shared[i]) {
+                shared_memory_enhanced_free(thread->child_shared[i]);
+            }
+        }
+        free(thread->child_shared);
+    }
+    
+    // Free neighbor boundaries
+    for (uint32_t i = 0; i < thread->num_neighbors; i++) {
+        if (thread->neighbors[i].boundary) {
+            shared_memory_enhanced_free(thread->neighbors[i].boundary);
+        }
+    }
+    
+    // Free position
+    free(thread->position);
+    
+    // Free children array
+    free(thread->children);
+    
+    // Destroy mutexes
+    pthread_mutex_destroy(&thread->control_mutex);
+    pthread_cond_destroy(&thread->control_cond);
+    
+    free(thread);
+}
+
+/**
+ * Thread work function wrapper
+ */
+typedef struct {
+    HierarchicalThread* thread;
+    void* (*work_fn)(void*);
+    void* work_data;
+} ThreadWorkContext;
+
+static void* thread_work_wrapper(void* arg) {
+    ThreadWorkContext* ctx = (ThreadWorkContext*)arg;
+    HierarchicalThread* thread = ctx->thread;
+    void* (*work_fn)(void*) = ctx->work_fn;
+    void* work_data = ctx->work_data;
+    
+    free(ctx);
+    
+    // Change state to RUNNING
+    hierarchical_thread_change_state(thread, STATE_RUNNING);
+    
+    // Execute work function
+    void* result = NULL;
+    if (work_fn) {
+        result = work_fn(work_data);
+    }
+    
+    // Change state to STOPPED
+    hierarchical_thread_change_state(thread, STATE_STOPPED);
+    
+    return result;
+}
+
+int hierarchical_thread_start(
+    HierarchicalThread* thread,
+    void* (*work_fn)(void*),
+    void* work_data
+) {
+    if (!thread || thread->running) {
+        return -1;
+    }
+    
+    // Create work context
+    ThreadWorkContext* ctx = malloc(sizeof(ThreadWorkContext));
+    if (!ctx) {
+        return -1;
+    }
+    ctx->thread = thread;
+    ctx->work_fn = work_fn;
+    ctx->work_data = work_data;
+    
+    // Create pthread
+    int result = pthread_create(&thread->pthread, NULL, thread_work_wrapper, ctx);
+    if (result != 0) {
+        free(ctx);
+        return -1;
+    }
+    
+    thread->running = true;
+    thread->start_time = get_time_ns();
+    
+    return 0;
+}
+
+int hierarchical_thread_stop(HierarchicalThread* thread) {
+    if (!thread || !thread->running) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&thread->control_mutex);
+    thread->should_stop = true;
+    pthread_cond_signal(&thread->control_cond);
+    pthread_mutex_unlock(&thread->control_mutex);
+    
+    return 0;
+}
+
+int hierarchical_thread_join(HierarchicalThread* thread) {
+    if (!thread || !thread->running) {
+        return -1;
+    }
+    
+    void* result;
+    int ret = pthread_join(thread->pthread, &result);
+    if (ret == 0) {
+        thread->running = false;
+        thread->total_runtime = get_time_ns() - thread->start_time;
+    }
+    
+    return ret;
+}
+
+// ============================================================================
+// NEIGHBOR OPERATIONS
+// ============================================================================
+
+int hierarchical_thread_add_neighbor(
+    HierarchicalThread* thread,
+    uint32_t neighbor_id,
+    ThreadRelationType relationship,
+    double distance,
+    HierarchicalThreadPool* pool
+) {
+    if (!thread || !pool || thread->num_neighbors >= HIERARCHICAL_THREAD_MAX_NEIGHBORS) {
+        return -1;
+    }
+    
+    // Check if neighbor already exists
+    for (uint32_t i = 0; i < thread->num_neighbors; i++) {
+        if (thread->neighbors[i].thread_id == neighbor_id) {
+            return 0;  // Already exists
+        }
+    }
+    
+    // Create shared boundary memory
+    SharedMemoryEnhanced* boundary = shared_memory_enhanced_create(
+        4096,  // 4KB boundary
+        SHARED_COPY_ON_WRITE,
+        thread->thread_id * 10000 + neighbor_id
+    );
+    if (!boundary) {
+        return -1;
+    }
+    
+    // Add neighbor
+    ThreadNeighbor* neighbor = &thread->neighbors[thread->num_neighbors++];
+    neighbor->thread_id = neighbor_id;
+    neighbor->relationship = relationship;
+    neighbor->distance = distance;
+    neighbor->boundary = boundary;
+    
+    return 0;
+}
+
+ThreadNeighbor* hierarchical_thread_get_neighbor(
+    HierarchicalThread* thread,
+    uint32_t neighbor_id
+) {
+    if (!thread) {
+        return NULL;
+    }
+    
+    for (uint32_t i = 0; i < thread->num_neighbors; i++) {
+        if (thread->neighbors[i].thread_id == neighbor_id) {
+            return &thread->neighbors[i];
+        }
+    }
+    
+    return NULL;
+}
+
+uint32_t hierarchical_thread_get_neighbors_by_type(
+    HierarchicalThread* thread,
+    ThreadRelationType relationship,
+    ThreadNeighbor* out_neighbors,
+    uint32_t max_neighbors
+) {
+    if (!thread || !out_neighbors) {
+        return 0;
+    }
+    
+    uint32_t count = 0;
+    for (uint32_t i = 0; i < thread->num_neighbors && count < max_neighbors; i++) {
+        if (thread->neighbors[i].relationship == relationship) {
+            out_neighbors[count++] = thread->neighbors[i];
+        }
+    }
+    
+    return count;
+}
+
+SharedMemoryEnhanced* hierarchical_thread_get_boundary(
+    HierarchicalThread* thread,
+    uint32_t neighbor_id
+) {
+    ThreadNeighbor* neighbor = hierarchical_thread_get_neighbor(thread, neighbor_id);
+    return neighbor ? neighbor->boundary : NULL;
+}
+
+// ============================================================================
+// MESSAGE OPERATIONS
+// ============================================================================
+
+int hierarchical_thread_send_message(
+    HierarchicalThread* sender,
+    uint32_t receiver_id,
+    MessageType type,
+    MessagePriority priority,
+    void* data,
+    size_t data_size,
+    HierarchicalThreadPool* pool
+) {
+    if (!sender || !pool) {
+        return -1;
+    }
+    
+    // Simplified implementation - would need MessageSystem in real version
+    (void)receiver_id;
+    (void)type;
+    (void)priority;
+    (void)data;
+    (void)data_size;
+    
+    sender->messages_sent++;
+    pool->total_messages++;
+    
+    return 0;
+}
+
+Message* hierarchical_thread_receive_message(
+    HierarchicalThread* thread,
+    int timeout_ms
+) {
+    if (!thread) {
+        return NULL;
+    }
+    
+    // Simplified implementation - would need MessageSystem in real version
+    (void)timeout_ms;
+    
+    return NULL;
+}
+
+int hierarchical_thread_broadcast_message(
+    HierarchicalThread* sender,
+    MessageType type,
+    MessagePriority priority,
+    void* data,
+    size_t data_size,
+    HierarchicalThreadPool* pool
+) {
+    if (!sender || !pool) {
+        return -1;
+    }
+    
+    // Simplified implementation - would need MessageSystem in real version
+    (void)type;
+    (void)priority;
+    (void)data;
+    (void)data_size;
+    
+    int sent = pool->num_threads - 1;  // All except sender
+    sender->messages_sent += sent;
+    pool->total_messages += sent;
+    
+    return sent;
+}
+
+// ============================================================================
+// STATE OPERATIONS
+// ============================================================================
+
+TransitionResult hierarchical_thread_change_state(
+    HierarchicalThread* thread,
+    StateType new_state
+) {
+    if (!thread || !thread->state_machine) {
+        return TRANSITION_ERROR;
+    }
+    
+    TransitionResult result = state_machine_transition(thread->state_machine, new_state);
+    if (result == TRANSITION_SUCCESS) {
+        thread->current_state = new_state;
+    }
+    
+    return result;
+}
+
+StateType hierarchical_thread_get_state(HierarchicalThread* thread) {
+    if (!thread) {
+        return STATE_ERROR;
+    }
+    return thread->current_state;
+}
+
+int hierarchical_thread_register_state_callback(
+    HierarchicalThread* thread,
+    StateChangeCallback callback,
+    void* user_data
+) {
+    if (!thread || !thread->state_machine || !callback) {
+        return -1;
+    }
+    
+    return state_machine_register_callback(thread->state_machine, callback, user_data) ? 0 : -1;
+}
+
+// ============================================================================
+// WORK OPERATIONS
+// ============================================================================
+
+uint64_t hierarchical_thread_submit_work(
+    HierarchicalThread* thread,
+    void (*work_fn)(void*),
+    void* data,
+    size_t data_size,
+    WorkPriority priority
+) {
+    if (!thread || !thread->work_pool || !work_fn) {
+        return 0;
+    }
+    
+    // Use the work distributor API
+    // Note: We need to get the distributor from somewhere
+    // For now, return a placeholder
+    (void)data_size;  // Unused
+    (void)priority;   // Unused for now
+    
+    // This is a simplified version - in a real implementation,
+    // we'd need access to the WorkDistributor
+    return 0;
+}
+
+WorkItem* hierarchical_thread_get_work(HierarchicalThread* thread) {
+    if (!thread || !thread->work_pool) {
+        return NULL;
+    }
+    
+    // This is a simplified version - in a real implementation,
+    // we'd need access to the WorkDistributor
+    // For now, return NULL
+    return NULL;
+}
+
+int hierarchical_thread_complete_work(
+    HierarchicalThread* thread,
+    WorkItem* item,
+    bool success
+) {
+    if (!thread || !item) {
+        return -1;
+    }
+    
+    item->end_time = get_time_ns();
+    item->status = success ? WORK_STATUS_COMPLETED : WORK_STATUS_FAILED;
+    
+    thread->work_completed++;
+    
+    // Note: In a real implementation, we'd call work_complete or work_fail
+    // from the WorkDistributor API
+    
+    return 0;
+}
+
+// ============================================================================
+// MEMORY OPERATIONS
+// ============================================================================
+
+void* hierarchical_thread_alloc_local(HierarchicalThread* thread, size_t size) {
+    if (!thread || !thread->memory) {
+        return NULL;
+    }
+    
+    // Get the segment and allocate from it
+    HierarchicalSegment* seg = hierarchical_memory_get_segment(thread->memory, thread->memory_segment_id);
+    if (!seg || !seg->data) {
+        return NULL;
+    }
+    
+    // Simple allocation - just return the segment data
+    // In a real implementation, we'd need proper memory management
+    (void)size;  // Unused for now
+    return seg->data;
+}
+
+SharedMemoryEnhanced* hierarchical_thread_alloc_parent_shared(
+    HierarchicalThread* thread,
+    size_t size,
+    SharedMemoryAccessMode mode
+) {
+    if (!thread || !thread->parent) {
+        return NULL;
+    }
+    
+    if (!thread->parent_shared) {
+        thread->parent_shared = shared_memory_enhanced_create(
+            size,
+            mode,
+            thread->thread_id * 1000 + thread->parent->thread_id
+        );
+    }
+    
+    return thread->parent_shared;
+}
+
+SharedMemoryEnhanced* hierarchical_thread_alloc_child_shared(
+    HierarchicalThread* thread,
+    uint32_t child_id,
+    size_t size,
+    SharedMemoryAccessMode mode
+) {
+    if (!thread) {
+        return NULL;
+    }
+    
+    // Find child
+    HierarchicalThread* child = NULL;
+    for (uint32_t i = 0; i < thread->num_children; i++) {
+        if (thread->children[i]->thread_id == child_id) {
+            child = thread->children[i];
+            break;
+        }
+    }
+    
+    if (!child) {
+        return NULL;
+    }
+    
+    // Allocate child shared array if needed
+    if (!thread->child_shared) {
+        thread->child_shared = calloc(thread->max_children, sizeof(SharedMemoryEnhanced*));
+        if (!thread->child_shared) {
+            return NULL;
+        }
+    }
+    
+    // Find child index
+    uint32_t child_idx = 0;
+    for (uint32_t i = 0; i < thread->num_children; i++) {
+        if (thread->children[i] == child) {
+            child_idx = i;
+            break;
+        }
+    }
+    
+    if (!thread->child_shared[child_idx]) {
+        thread->child_shared[child_idx] = shared_memory_enhanced_create(
+            size,
+            mode,
+            thread->thread_id * 1000 + child_id
+        );
+    }
+    
+    return thread->child_shared[child_idx];
+}
+
+void* hierarchical_thread_access_boundary(
+    HierarchicalThread* thread,
+    uint32_t neighbor_id,
+    SharedMemoryAccessMode mode
+) {
+    if (!thread) {
+        return NULL;
+    }
+    
+    SharedMemoryEnhanced* boundary = hierarchical_thread_get_boundary(thread, neighbor_id);
+    if (!boundary) {
+        return NULL;
+    }
+    
+    // Use appropriate access method based on mode
+    if (mode == SHARED_READ_ONLY) {
+        return (void*)shared_memory_read(&boundary->base);
+    } else {
+        return shared_memory_write(&boundary->base);
+    }
+}
+
+// ============================================================================
+// STATISTICS & MONITORING
+// ============================================================================
+
+int hierarchical_thread_get_stats(
+    HierarchicalThread* thread,
+    HierarchicalThreadStats* stats
+) {
+    if (!thread || !stats) {
+        return -1;
+    }
+    
+    memset(stats, 0, sizeof(HierarchicalThreadStats));
+    
+    stats->thread_id = thread->thread_id;
+    stats->role = thread->role;
+    stats->current_state = thread->current_state;
+    stats->num_children = thread->num_children;
+    stats->num_neighbors = thread->num_neighbors;
+    stats->messages_sent = thread->messages_sent;
+    stats->messages_received = thread->messages_received;
+    stats->messages_pending = 0;  // Simplified - would use MessageSystem in real version
+    stats->work_completed = thread->work_completed;
+    stats->work_stolen = thread->work_stolen;
+    stats->work_pending = 0;  // Simplified - would need WorkDistributor access
+    stats->total_runtime = thread->running ? 
+        (get_time_ns() - thread->start_time) : thread->total_runtime;
+    
+    // Calculate memory usage
+    if (thread->local_shared) {
+        stats->local_memory_used = thread->local_shared->base.size;
+    }
+    if (thread->parent_shared) {
+        stats->shared_memory_used += thread->parent_shared->base.size;
+    }
+    for (uint32_t i = 0; i < thread->num_neighbors; i++) {
+        if (thread->neighbors[i].boundary) {
+            stats->boundary_memory_used += thread->neighbors[i].boundary->base.size;
+        }
+    }
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_get_stats(
+    HierarchicalThreadPool* pool,
+    HierarchicalThreadPoolStats* stats
+) {
+    if (!pool || !stats) {
+        return -1;
+    }
+    
+    memset(stats, 0, sizeof(HierarchicalThreadPoolStats));
+    
+    stats->num_threads = pool->num_threads;
+    stats->num_levels = pool->num_levels;
+    stats->symmetry_fold = pool->symmetry_fold;
+    stats->total_messages = pool->total_messages;
+    stats->total_work_items = pool->total_work_items;
+    stats->total_state_changes = pool->total_state_changes;
+    
+    // Aggregate thread statistics
+    uint64_t total_work = 0;
+    uint64_t min_work = UINT64_MAX;
+    uint64_t max_work = 0;
+    
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread) {
+            HierarchicalThreadStats thread_stats;
+            hierarchical_thread_get_stats(thread, &thread_stats);
+            
+            stats->total_memory_used += thread_stats.local_memory_used;
+            stats->total_shared_memory += thread_stats.shared_memory_used;
+            stats->total_boundary_memory += thread_stats.boundary_memory_used;
+            
+            total_work += thread_stats.work_completed;
+            if (thread_stats.work_completed < min_work) min_work = thread_stats.work_completed;
+            if (thread_stats.work_completed > max_work) max_work = thread_stats.work_completed;
+        }
+    }
+    
+    // Calculate load balance factor (1.0 = perfect balance)
+    if (max_work > 0) {
+        stats->load_balance_factor = (double)min_work / (double)max_work;
+    } else {
+        stats->load_balance_factor = 1.0;
+    }
+    
+    return 0;
+}
+
+void hierarchical_thread_print_stats(HierarchicalThread* thread) {
+    if (!thread) {
+        return;
+    }
+    
+    HierarchicalThreadStats stats;
+    if (hierarchical_thread_get_stats(thread, &stats) != 0) {
+        return;
+    }
+    
+    printf("Thread %u Statistics:\n", stats.thread_id);
+    printf("  Role: %d\n", stats.role);
+    printf("  State: %d\n", stats.current_state);
+    printf("  Children: %u\n", stats.num_children);
+    printf("  Neighbors: %u\n", stats.num_neighbors);
+    printf("  Messages: sent=%lu, received=%lu, pending=%lu\n",
+           stats.messages_sent, stats.messages_received, stats.messages_pending);
+    printf("  Work: completed=%lu, stolen=%lu, pending=%lu\n",
+           stats.work_completed, stats.work_stolen, stats.work_pending);
+    printf("  Memory: local=%zu, shared=%zu, boundary=%zu\n",
+           stats.local_memory_used, stats.shared_memory_used, stats.boundary_memory_used);
+    printf("  Runtime: %lu ns\n", stats.total_runtime);
+}
+
+void hierarchical_thread_pool_print_stats(HierarchicalThreadPool* pool) {
+    if (!pool) {
+        return;
+    }
+    
+    HierarchicalThreadPoolStats stats;
+    if (hierarchical_thread_pool_get_stats(pool, &stats) != 0) {
+        return;
+    }
+    
+    printf("Thread Pool Statistics:\n");
+    printf("  Threads: %u\n", stats.num_threads);
+    printf("  Levels: %u\n", stats.num_levels);
+    printf("  Symmetry: %u-fold\n", stats.symmetry_fold);
+    printf("  Messages: %lu\n", stats.total_messages);
+    printf("  Work Items: %lu\n", stats.total_work_items);
+    printf("  State Changes: %lu\n", stats.total_state_changes);
+    printf("  Memory: total=%zu, shared=%zu, boundary=%zu\n",
+           stats.total_memory_used, stats.total_shared_memory, stats.total_boundary_memory);
+    printf("  Load Balance: %.2f\n", stats.load_balance_factor);
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+HierarchicalThread* hierarchical_thread_pool_get_thread(
+    HierarchicalThreadPool* pool,
+    uint32_t thread_id
+) {
+    if (!pool) {
+        return NULL;
+    }
+    
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        if (pool->threads[i] && pool->threads[i]->thread_id == thread_id) {
+            return pool->threads[i];
+        }
+    }
+    
+    return NULL;
+}
+
+double hierarchical_thread_distance(
+    HierarchicalThread* thread1,
+    HierarchicalThread* thread2
+) {
+    if (!thread1 || !thread2 || thread1->num_dimensions != thread2->num_dimensions) {
+        return -1.0;
+    }
+    
+    return calculate_distance(thread1->position, thread2->position, thread1->num_dimensions);
+}
+
+uint32_t hierarchical_thread_find_nearest_neighbors(
+    HierarchicalThread* thread,
+    HierarchicalThreadPool* pool,
+    uint32_t k,
+    uint32_t* out_neighbors
+) {
+    if (!thread || !pool || !out_neighbors || k == 0) {
+        return 0;
+    }
+    
+    // Simple implementation: calculate distances to all threads and sort
+    typedef struct {
+        uint32_t thread_id;
+        double distance;
+    } DistanceEntry;
+    
+    DistanceEntry* distances = malloc(pool->num_threads * sizeof(DistanceEntry));
+    if (!distances) {
+        return 0;
+    }
+    
+    uint32_t count = 0;
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* other = pool->threads[i];
+        if (other && other->thread_id != thread->thread_id) {
+            distances[count].thread_id = other->thread_id;
+            distances[count].distance = hierarchical_thread_distance(thread, other);
+            count++;
+        }
+    }
+    
+    // Simple bubble sort (good enough for small k)
+    for (uint32_t i = 0; i < count - 1; i++) {
+        for (uint32_t j = 0; j < count - i - 1; j++) {
+            if (distances[j].distance > distances[j + 1].distance) {
+                DistanceEntry temp = distances[j];
+                distances[j] = distances[j + 1];
+                distances[j + 1] = temp;
+            }
+        }
+    }
+    
+    // Copy k nearest neighbors
+    uint32_t result = (k < count) ? k : count;
+    for (uint32_t i = 0; i < result; i++) {
+        out_neighbors[i] = distances[i].thread_id;
+    }
+    
+    free(distances);
+    return result;
+}
+
+// ============================================================================
+// 88D-SPECIFIC FUNCTIONS
+// ============================================================================
+
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
+    // Create pool with 88D configuration
+    HierarchicalThreadPool* pool = hierarchical_thread_pool_create(
+        HIERARCHICAL_88D_TOTAL_THREADS,   // 96 threads
+        HIERARCHICAL_88D_CLOCK_POSITIONS, // 12-fold symmetry
+        HIERARCHICAL_88D_TOTAL_DIMENSIONS, // 88 dimensions
+        true  // NUMA-aware
+    );
+    
+    if (!pool) {
+        return NULL;
+    }
+    
+    // Enable 88D structure
+    pool->use_88d_structure = true;
+    
+    // Create clock lattice
+    pool->clock_lattice = clock_context_create();
+    if (!pool->clock_lattice) {
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    // Create Platonic solid frames for each layer
+    Layer88DType solid_types[HIERARCHICAL_88D_NUM_LAYERS] = {
+        LAYER_TETRAHEDRON,   // Layer 0
+        LAYER_CUBE,          // Layer 1
+        LAYER_OCTAHEDRON,    // Layer 2
+        LAYER_DODECAHEDRON,  // Layer 3
+        LAYER_ICOSAHEDRON,   // Layer 4
+        LAYER_TETRAHEDRON,   // Layer 5 (repeat)
+        LAYER_CUBE,          // Layer 6 (repeat)
+        LAYER_OCTAHEDRON     // Layer 7 (repeat)
+    };
+    
+    for (int i = 0; i < HIERARCHICAL_88D_NUM_LAYERS; i++) {
+        // Get frame from abacus88d layer (they're already created)
+        // For now, set to NULL - will be populated when integrated with Abacus88D
+        pool->layer_frames[i] = NULL;
+        
+        // Initialize layer barrier
+        pthread_barrier_init(&pool->layer_barriers[i], NULL, HIERARCHICAL_88D_THREADS_PER_LAYER);
+    }
+    
+    // Initialize global barrier
+    pthread_barrier_init(&pool->global_barrier, NULL, HIERARCHICAL_88D_TOTAL_THREADS);
+    
+    // Organize threads into 88D structure
+    uint32_t thread_idx = 0;
+    for (uint8_t layer = 0; layer < HIERARCHICAL_88D_NUM_LAYERS; layer++) {
+        for (uint8_t dim = 0; dim < HIERARCHICAL_88D_THREADS_PER_LAYER; dim++) {
+            if (thread_idx < pool->num_threads) {
+                HierarchicalThread* thread = pool->threads[thread_idx];
+                
+                // Set 88D position
+                thread->layer = layer;
+                thread->dimension = (dim == 0) ? 0 : (dim - 1);  // Control at 0, workers 0-10
+                thread->clock_position = dim + 1;  // 1-12
+                
+                // Set role
+                thread->role = (dim == 0) ? THREAD_ROLE_CONTROL : THREAD_ROLE_WORKER;
+                
+                // Set geometric frame
+                thread->platonic_frame = pool->layer_frames[layer];
+                
+                // Create abacus values
+                thread->value = abacus_new(base);
+                thread->accumulator = abacus_new(base);
+                thread->temp = abacus_new(base);
+                
+                // Initialize gradient lock
+                pthread_mutex_init(&thread->gradient_lock, NULL);
+                
+                // Store in layer array
+                pool->layers[layer][dim] = thread;
+                if (dim == 0) {
+                    pool->control_threads[layer] = thread;
+                }
+                
+                thread_idx++;
+            }
+        }
+    }
+    
+    // Initialize 88D statistics
+    atomic_init(&pool->total_boundary_crossings, 0);
+    atomic_init(&pool->total_twin_primes, 0);
+    atomic_init(&pool->total_operations, 0);
+    
+    // Initialize group nesting
+    pool->parent_group = NULL;
+    pool->child_groups = NULL;
+    pool->num_child_groups = 0;
+    pool->max_child_groups = 0;
+    
+    return pool;
+}
+
+HierarchicalThread* hierarchical_thread_get_88d(
+    HierarchicalThreadPool* pool,
+    uint8_t layer,
+    uint8_t dimension
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return NULL;
+    }
+    
+    if (layer >= HIERARCHICAL_88D_NUM_LAYERS) {
+        return NULL;
+    }
+    
+    if (dimension >= HIERARCHICAL_88D_THREADS_PER_LAYER) {
+        return NULL;
+    }
+    
+    return pool->layers[layer][dimension];
+}
+
+int hierarchical_thread_sync_layer(
+    HierarchicalThreadPool* pool,
+    uint8_t layer
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    if (layer >= HIERARCHICAL_88D_NUM_LAYERS) {
+        return -1;
+    }
+    
+    // Wait at layer barrier
+    int result = pthread_barrier_wait(&pool->layer_barriers[layer]);
+    
+    // pthread_barrier_wait returns PTHREAD_BARRIER_SERIAL_THREAD for one thread
+    // and 0 for all others, both are success
+    return (result == 0 || result == PTHREAD_BARRIER_SERIAL_THREAD) ? 0 : -1;
+}
+
+int hierarchical_thread_sync_all(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    // Wait at global barrier
+    int result = pthread_barrier_wait(&pool->global_barrier);
+    
+    return (result == 0 || result == PTHREAD_BARRIER_SERIAL_THREAD) ? 0 : -1;
+}
+
+int hierarchical_thread_notify_boundary_crossing(
+    HierarchicalThread* thread,
+    uint8_t from_layer,
+    uint8_t to_layer
+) {
+    if (!thread) {
+        return -1;
+    }
+    
+    thread->boundary_crossed = true;
+    thread->boundary_crossings++;
+    
+    // Update pool statistics if available
+    // (Would need pool reference - can be added later)
+    
+    return 0;
+}
+
+int hierarchical_thread_notify_twin_prime(
+    HierarchicalThread* thread,
+    uint64_t prime1,
+    uint64_t prime2
+) {
+    if (!thread) {
+        return -1;
+    }
+    
+    thread->twin_prime_detected = true;
+    thread->twin_primes_found++;
+    
+    // Update pool statistics if available
+    // (Would need pool reference - can be added later)
+    
+    return 0;
+}
+
+uint32_t hierarchical_thread_get_siblings(
+    HierarchicalThread* thread,
+    HierarchicalThread** out_siblings,
+    uint32_t max_siblings
+) {
+    if (!thread || !out_siblings) {
+        return 0;
+    }
+    
+    // If siblings array is populated, use it
+    if (thread->siblings && thread->num_siblings > 0) {
+        uint32_t count = (thread->num_siblings < max_siblings) ? 
+                         thread->num_siblings : max_siblings;
+        
+        for (uint32_t i = 0; i < count; i++) {
+            out_siblings[i] = thread->siblings[i];
+        }
+        
+        return count;
+    }
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_attach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+) {
+    if (!parent || !child) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&parent->pool_mutex);
+    
+    // Allocate child groups array if needed
+    if (!parent->child_groups) {
+        parent->max_child_groups = 8;  // Start with 8
+        parent->child_groups = calloc(parent->max_child_groups, 
+                                     sizeof(HierarchicalThreadPool*));
+        if (!parent->child_groups) {
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return -1;
+        }
+    }
+    
+    // Expand if needed
+    if (parent->num_child_groups >= parent->max_child_groups) {
+        uint32_t new_max = parent->max_child_groups * 2;
+        HierarchicalThreadPool** new_array = realloc(parent->child_groups,
+                                                     new_max * sizeof(HierarchicalThreadPool*));
+        if (!new_array) {
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return -1;
+        }
+        parent->child_groups = new_array;
+        parent->max_child_groups = new_max;
+    }
+    
+    // Add child
+    parent->child_groups[parent->num_child_groups] = child;
+    parent->num_child_groups++;
+    child->parent_group = parent;
+    
+    pthread_mutex_unlock(&parent->pool_mutex);
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_detach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+) {
+    if (!parent || !child || !parent->child_groups) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&parent->pool_mutex);
+    
+    // Find and remove child
+    for (uint32_t i = 0; i < parent->num_child_groups; i++) {
+        if (parent->child_groups[i] == child) {
+            // Shift remaining children
+            for (uint32_t j = i; j < parent->num_child_groups - 1; j++) {
+                parent->child_groups[j] = parent->child_groups[j + 1];
+            }
+            parent->num_child_groups--;
+            child->parent_group = NULL;
+            
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return 0;
+        }
+    }
+    
+    pthread_mutex_unlock(&parent->pool_mutex);
+    return -1;  // Child not found
+}
+
+int hierarchical_thread_pool_get_88d_stats(
+    HierarchicalThreadPool* pool,
+    uint64_t* out_boundary_crossings,
+    uint64_t* out_twin_primes,
+    uint64_t* out_operations
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    if (out_boundary_crossings) {
+        *out_boundary_crossings = atomic_load(&pool->total_boundary_crossings);
+    }
+    
+    if (out_twin_primes) {
+        *out_twin_primes = atomic_load(&pool->total_twin_primes);
+    }
+    
+    if (out_operations) {
+        *out_operations = atomic_load(&pool->total_operations);
+    }
+    
+    return 0;
+}

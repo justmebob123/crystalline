@@ -1,29 +1,33 @@
 /**
  * @file cllm_88d_integration.h
- * @brief Integration layer between CLLM and 88D threading system
+ * @brief CLLM Integration with 88D Unified Threading System
  * 
- * This file provides the bridge between CLLM's training/inference systems
- * and the algorithms library's 88D threading infrastructure.
+ * CLEAN INTEGRATION - NO LEGACY SUPPORT
  * 
- * Key Features:
- * - Thread pool management (1-96 cores adaptive)
- * - Work distribution across 88 logical threads
- * - Gradient accumulation primitives
- * - Statistics collection
+ * This file provides CLLM-specific helpers for integrating with the
+ * algorithms library's unified 88D threading system. It does NOT wrap
+ * or adapt the threading system - it provides convenience functions
+ * for CLLM to use the threading system directly.
  * 
- * Architecture:
- * - 88 logical threads (8 layers × 11 threads per layer)
- * - N physical threads (N = available cores, 1-96)
- * - Work stealing for load balancing
- * - Barrier synchronization
+ * Design Philosophy:
+ * - Direct use of HierarchicalThreadPool from algorithms library
+ * - Automatic geometry-to-thread mapping based on Platonic solids
+ * - Work distribution helpers for ML operations
+ * - No adapters, no wrappers, no legacy support
+ * 
+ * Key Functions:
+ * - Initialize 88D threading for a CLLM model
+ * - Map Platonic solid geometry to thread topology
+ * - Distribute ML workloads across 88D threads
+ * - Synchronize threads for training/inference
+ * - Cleanup threading resources
  */
 
 #ifndef CLLM_88D_INTEGRATION_H
 #define CLLM_88D_INTEGRATION_H
 
-#include "../../algorithms/include/hierarchical_threading.h"
-#include "../../algorithms/include/adaptive_threading.h"
 #include "cllm.h"
+#include "hierarchical_threading.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -32,294 +36,285 @@ extern "C" {
 #endif
 
 // ============================================================================
-// TYPES AND STRUCTURES
+// WORK TYPES FOR ML OPERATIONS
 // ============================================================================
 
 /**
- * @brief 88D Thread Pool for CLLM
- * 
- * Manages the 88D threading system for CLLM operations.
- * Wraps the algorithms library's HierarchicalThreadPool.
- */
-typedef struct {
-    HierarchicalThreadPool* pool;      ///< Underlying 88D thread pool
-    CLLMModel* model;                  ///< Associated CLLM model
-    int num_physical_threads;          ///< Number of physical OS threads
-    int num_logical_threads;           ///< Number of logical threads (88)
-    bool adaptive_mode;                ///< Adaptive threading enabled
-    bool initialized;                  ///< Initialization status
-} CLLM88DThreadPool;
-
-/**
- * @brief Operation types for 88D work distribution
+ * Types of work that can be distributed across 88D threads
  */
 typedef enum {
-    CLLM_88D_OP_EMBEDDINGS_LOOKUP,     ///< Parallel embeddings lookup
-    CLLM_88D_OP_POSITIONAL_ENCODING,   ///< Parallel positional encoding
-    CLLM_88D_OP_LAYER_NORM_FORWARD,    ///< Parallel layer norm forward
-    CLLM_88D_OP_LAYER_NORM_BACKWARD,   ///< Parallel layer norm backward
-    CLLM_88D_OP_ATTENTION_FORWARD,     ///< Parallel attention forward
-    CLLM_88D_OP_ATTENTION_BACKWARD,    ///< Parallel attention backward
-    CLLM_88D_OP_FEEDFORWARD_FORWARD,   ///< Parallel feedforward forward
-    CLLM_88D_OP_FEEDFORWARD_BACKWARD,  ///< Parallel feedforward backward
-    CLLM_88D_OP_GRADIENT_ACCUMULATE,   ///< Parallel gradient accumulation
-    CLLM_88D_OP_CUSTOM                 ///< Custom operation
-} CLLM88DOperationType;
+    CLLM_WORK_EMBEDDING_LOOKUP,      // Parallel embedding lookup
+    CLLM_WORK_ATTENTION_QKV,         // Compute Q, K, V matrices
+    CLLM_WORK_ATTENTION_SCORES,      // Compute attention scores
+    CLLM_WORK_ATTENTION_OUTPUT,      // Apply attention and output projection
+    CLLM_WORK_FFN_FORWARD,           // Feed-forward network forward pass
+    CLLM_WORK_FFN_BACKWARD,          // Feed-forward network backward pass
+    CLLM_WORK_LAYER_NORM,            // Layer normalization
+    CLLM_WORK_GRADIENT_ACCUMULATION, // Accumulate gradients across threads
+    CLLM_WORK_WEIGHT_UPDATE,         // Update weights with optimizer
+    CLLM_WORK_LOSS_COMPUTATION,      // Compute loss
+    CLLM_WORK_CUSTOM                 // Custom work type
+} CLLMWorkType;
 
 /**
- * @brief Work item for 88D thread distribution
- * 
- * Represents a unit of work to be distributed across 88D threads.
+ * Work item for ML operations
  */
 typedef struct {
-    CLLM88DOperationType operation_type; ///< Type of operation
-    void* input_data;                    ///< Input data pointer
-    void* output_data;                   ///< Output data pointer
-    void* aux_data;                      ///< Auxiliary data (e.g., weights)
-    size_t start_idx;                    ///< Start index for this work item
-    size_t end_idx;                      ///< End index for this work item
-    size_t total_size;                   ///< Total size of work
-    int thread_id;                       ///< Assigned thread ID (0-87)
-    void* user_data;                     ///< User-defined data
-} CLLM88DWorkItem;
-
-/**
- * @brief Work function signature
- * 
- * User-defined function to execute on each thread.
- * 
- * @param work_item Work item to process
- * @return 0 on success, non-zero on error
- */
-typedef int (*CLLM88DWorkFunction)(CLLM88DWorkItem* work_item);
-
-/**
- * @brief Statistics for 88D thread pool
- */
-typedef struct {
-    uint64_t total_operations;         ///< Total operations executed
-    uint64_t total_work_items;         ///< Total work items processed
-    double avg_execution_time_ms;      ///< Average execution time (ms)
-    double total_execution_time_ms;    ///< Total execution time (ms)
-    int active_threads;                ///< Currently active threads
-    int idle_threads;                  ///< Currently idle threads
-    double load_balance_efficiency;    ///< Load balance efficiency (0-1)
-} CLLM88DStatistics;
+    CLLMWorkType type;               // Type of work
+    void* data;                      // Work-specific data
+    uint32_t start_idx;              // Start index (e.g., token, head, layer)
+    uint32_t end_idx;                // End index
+    uint32_t batch_idx;              // Batch index (if applicable)
+    uint32_t layer_idx;              // Layer index (if applicable)
+} CLLMWorkItem;
 
 // ============================================================================
-// INITIALIZATION AND CLEANUP
+// INITIALIZATION & CLEANUP
 // ============================================================================
 
 /**
- * @brief Initialize 88D threading for CLLM
+ * Initialize 88D threading for a CLLM model
  * 
- * Creates a 88D thread pool with adaptive threading.
+ * This function:
+ * 1. Creates a HierarchicalThreadPool with 96 threads (8 layers × 12 threads)
+ * 2. Maps the model's Platonic solid geometry to thread topology
+ * 3. Sets up work queues and work stealing pools
+ * 4. Initializes shared memory regions for thread communication
  * 
- * @param model CLLM model to associate with thread pool
- * @param num_threads Number of physical threads (0 = auto-detect)
- * @return Pointer to initialized thread pool, NULL on error
- * 
- * @note If num_threads is 0, the system will auto-detect available cores
- * @note The pool creates 88 logical threads regardless of physical threads
+ * @param model CLLM model to initialize threading for
+ * @return true on success, false on failure
  */
-CLLM88DThreadPool* cllm_88d_init(CLLMModel* model, int num_threads);
+bool cllm_initialize_88d_threading(CLLMModel* model);
 
 /**
- * @brief Cleanup 88D threading
+ * Cleanup 88D threading for a CLLM model
  * 
- * Destroys the thread pool and frees all resources.
+ * This function:
+ * 1. Stops all threads gracefully
+ * 2. Frees work queues and work stealing pools
+ * 3. Releases shared memory regions
+ * 4. Destroys the thread pool
+ * 5. Frees geometry mappings
  * 
- * @param pool Thread pool to cleanup
+ * @param model CLLM model to cleanup threading for
  */
-void cllm_88d_cleanup(CLLM88DThreadPool* pool);
+void cllm_cleanup_88d_threading(CLLMModel* model);
+
+// ============================================================================
+// GEOMETRY MAPPING
+// ============================================================================
+
+/**
+ * Map Platonic solid geometry to 88D thread topology
+ * 
+ * This function creates mappings between the model's geometric structure
+ * and the 88D thread pool:
+ * - Vertices → Threads (for embedding operations)
+ * - Edges → Shared boundaries (for communication)
+ * - Faces → Layers (for hierarchical operations)
+ * - Tokens → Threads (for parallel processing)
+ * 
+ * The mapping is deterministic and based on the Platonic solid's symmetry.
+ * 
+ * @param model CLLM model with initialized geometry
+ * @return true on success, false on failure
+ */
+bool cllm_map_geometry_to_threads(CLLMModel* model);
+
+/**
+ * Get thread ID for a specific vertex
+ * 
+ * @param model CLLM model
+ * @param vertex_idx Vertex index
+ * @return Thread ID (0-95) or UINT32_MAX on error
+ */
+uint32_t cllm_get_thread_for_vertex(const CLLMModel* model, uint32_t vertex_idx);
+
+/**
+ * Get thread ID for a specific token
+ * 
+ * @param model CLLM model
+ * @param token_id Token ID
+ * @return Thread ID (0-95) or UINT32_MAX on error
+ */
+uint32_t cllm_get_thread_for_token(const CLLMModel* model, uint32_t token_id);
+
+/**
+ * Get layer ID for a specific face
+ * 
+ * @param model CLLM model
+ * @param face_idx Face index
+ * @return Layer ID (0-7) or UINT32_MAX on error
+ */
+uint32_t cllm_get_layer_for_face(const CLLMModel* model, uint32_t face_idx);
 
 // ============================================================================
 // WORK DISTRIBUTION
 // ============================================================================
 
 /**
- * @brief Distribute work across 88D threads
+ * Distribute work across 88D threads
  * 
- * Distributes work items across 88 logical threads.
- * Each thread processes its assigned work items in parallel.
+ * This function takes a work type and distributes it across the thread pool.
+ * Work is automatically balanced based on thread load and geometry.
  * 
- * @param pool Thread pool
- * @param items Array of work items
+ * @param model CLLM model
+ * @param work_type Type of work to distribute
+ * @param work_data Work-specific data
  * @param num_items Number of work items
- * @return 0 on success, non-zero on error
- * 
- * @note This function blocks until all work items are completed
- * @note Work items are automatically partitioned across threads
+ * @return true on success, false on failure
  */
-int cllm_88d_distribute_work(CLLM88DThreadPool* pool, 
-                             CLLM88DWorkItem* items,
-                             int num_items);
+bool cllm_distribute_work_88d(CLLMModel* model, CLLMWorkType work_type, 
+                              void* work_data, uint32_t num_items);
 
 /**
- * @brief Execute custom work function across 88D threads
+ * Submit a single work item to the thread pool
  * 
- * Executes a user-defined function on each of the 88 threads.
- * 
- * @param pool Thread pool
- * @param work_func Work function to execute
- * @param user_data User data passed to work function
- * @param partition_size Size of data partition per thread
- * @return 0 on success, non-zero on error
- * 
- * @note This is a lower-level API for custom operations
+ * @param model CLLM model
+ * @param work_item Work item to submit
+ * @return true on success, false on failure
  */
-int cllm_88d_execute_parallel(CLLM88DThreadPool* pool,
-                              CLLM88DWorkFunction work_func,
-                              void* user_data,
-                              size_t partition_size);
+bool cllm_submit_work_item(CLLMModel* model, const CLLMWorkItem* work_item);
 
 /**
- * @brief Wait for all work to complete
+ * Wait for all work to complete
  * 
- * Blocks until all pending work items are completed.
+ * This function blocks until all submitted work items have been processed.
  * 
- * @param pool Thread pool
- * @return 0 on success, non-zero on error
+ * @param model CLLM model
  */
-int cllm_88d_wait_completion(CLLM88DThreadPool* pool);
+void cllm_wait_for_work_completion(CLLMModel* model);
 
 // ============================================================================
 // SYNCHRONIZATION
 // ============================================================================
 
 /**
- * @brief Barrier synchronization across all threads
+ * Synchronize all threads at a barrier
  * 
- * Blocks until all 88 threads reach the barrier.
+ * This function ensures all threads reach a synchronization point before
+ * any thread proceeds. Useful for coordinating between training steps.
  * 
- * @param pool Thread pool
- * @return 0 on success, non-zero on error
+ * @param model CLLM model
  */
-int cllm_88d_barrier(CLLM88DThreadPool* pool);
+void cllm_synchronize_threads(CLLMModel* model);
 
 /**
- * @brief Layer barrier synchronization
+ * Synchronize threads within a specific layer
  * 
- * Blocks until all threads in a specific layer reach the barrier.
- * 
- * @param pool Thread pool
- * @param layer Layer index (0-7)
- * @return 0 on success, non-zero on error
+ * @param model CLLM model
+ * @param layer_idx Layer index (0-7)
  */
-int cllm_88d_layer_barrier(CLLM88DThreadPool* pool, int layer);
-
-// ============================================================================
-// GRADIENT OPERATIONS
-// ============================================================================
+void cllm_synchronize_layer(CLLMModel* model, uint32_t layer_idx);
 
 /**
- * @brief Accumulate gradients across threads
+ * Broadcast a message to all threads
  * 
- * Accumulates gradients from all threads into a single buffer.
- * Uses reduction operation (sum) across threads.
- * 
- * @param pool Thread pool
- * @param local_gradients Array of per-thread gradient buffers
- * @param gradient_size Size of each gradient buffer
- * @param output_gradients Output buffer for accumulated gradients
- * @return 0 on success, non-zero on error
- * 
- * @note This is a collective operation - all threads must participate
+ * @param model CLLM model
+ * @param message_type Message type
+ * @param data Message data
+ * @param data_size Size of message data
  */
-int cllm_88d_accumulate_gradients(CLLM88DThreadPool* pool,
-                                  double** local_gradients,
-                                  size_t gradient_size,
-                                  double* output_gradients);
-
-/**
- * @brief Reduce operation across threads
- * 
- * Generic reduction operation (sum, max, min, etc.) across threads.
- * 
- * @param pool Thread pool
- * @param local_values Array of per-thread values
- * @param num_values Number of values per thread
- * @param output_values Output buffer for reduced values
- * @param reduce_op Reduction operation (0=sum, 1=max, 2=min)
- * @return 0 on success, non-zero on error
- */
-int cllm_88d_reduce(CLLM88DThreadPool* pool,
-                   double** local_values,
-                   size_t num_values,
-                   double* output_values,
-                   int reduce_op);
+void cllm_broadcast_message(CLLMModel* model, uint32_t message_type, 
+                            const void* data, size_t data_size);
 
 // ============================================================================
-// STATISTICS AND MONITORING
+// STATISTICS & MONITORING
 // ============================================================================
 
 /**
- * @brief Get thread pool statistics
+ * Get threading statistics
  * 
- * Retrieves current statistics for the thread pool.
- * 
- * @param pool Thread pool
+ * @param model CLLM model
  * @param stats Output statistics structure
- * @return 0 on success, non-zero on error
  */
-int cllm_88d_get_stats(CLLM88DThreadPool* pool, 
-                       CLLM88DStatistics* stats);
+void cllm_get_threading_stats(const CLLMModel* model, HierarchicalThreadPoolStats* stats);
 
 /**
- * @brief Reset thread pool statistics
+ * Print threading statistics to stdout
  * 
- * Resets all statistics counters to zero.
- * 
- * @param pool Thread pool
+ * @param model CLLM model
  */
-void cllm_88d_reset_stats(CLLM88DThreadPool* pool);
+void cllm_print_threading_stats(const CLLMModel* model);
 
 /**
- * @brief Print thread pool statistics
+ * Reset threading statistics
  * 
- * Prints detailed statistics to stdout.
- * 
- * @param pool Thread pool
+ * @param model CLLM model
  */
-void cllm_88d_print_stats(CLLM88DThreadPool* pool);
+void cllm_reset_threading_stats(CLLMModel* model);
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// PARALLEL ML OPERATIONS (HIGH-LEVEL HELPERS)
 // ============================================================================
 
 /**
- * @brief Get number of physical threads
+ * Parallel embedding lookup
  * 
- * @param pool Thread pool
- * @return Number of physical threads
+ * Distributes embedding lookups across threads based on token-to-thread mapping.
+ * 
+ * @param model CLLM model
+ * @param token_ids Token IDs to lookup [batch_size × seq_len]
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ * @param output Output embeddings [batch_size × seq_len × embedding_dim]
  */
-int cllm_88d_get_num_physical_threads(CLLM88DThreadPool* pool);
+void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
+                                   uint32_t batch_size, uint32_t seq_len,
+                                   double* output);
 
 /**
- * @brief Get number of logical threads
+ * Parallel multi-head attention
  * 
- * @param pool Thread pool
- * @return Number of logical threads (always 88)
+ * Distributes attention heads across threads (12 heads → 12 threads per layer).
+ * 
+ * @param model CLLM model
+ * @param layer_idx Layer index
+ * @param input Input tensor [batch_size × seq_len × embedding_dim]
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ * @param output Output tensor [batch_size × seq_len × embedding_dim]
  */
-int cllm_88d_get_num_logical_threads(CLLM88DThreadPool* pool);
+void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
+                            const double* input, uint32_t batch_size,
+                            uint32_t seq_len, double* output);
 
 /**
- * @brief Check if adaptive threading is enabled
+ * Parallel feed-forward network
  * 
- * @param pool Thread pool
- * @return true if adaptive threading is enabled
+ * Distributes FFN computation across threads.
+ * 
+ * @param model CLLM model
+ * @param layer_idx Layer index
+ * @param input Input tensor [batch_size × seq_len × embedding_dim]
+ * @param batch_size Batch size
+ * @param seq_len Sequence length
+ * @param output Output tensor [batch_size × seq_len × embedding_dim]
  */
-bool cllm_88d_is_adaptive(CLLM88DThreadPool* pool);
+void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
+                      const double* input, uint32_t batch_size,
+                      uint32_t seq_len, double* output);
 
 /**
- * @brief Get thread ID for current thread
+ * Parallel gradient accumulation
  * 
- * @return Thread ID (0-87), or -1 if not in thread pool
+ * Accumulates gradients from all threads into a single gradient buffer.
+ * 
+ * @param model CLLM model
  */
-int cllm_88d_get_thread_id(void);
+void cllm_parallel_gradient_accumulation(CLLMModel* model);
+
+/**
+ * Parallel weight update
+ * 
+ * Updates model weights in parallel using the optimizer.
+ * 
+ * @param model CLLM model
+ */
+void cllm_parallel_weight_update(CLLMModel* model);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // CLLM_88D_INTEGRATION_H
+#endif /* CLLM_88D_INTEGRATION_H */
