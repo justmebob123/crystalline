@@ -113,15 +113,18 @@ This is THE ONLY training system. There is no "legacy" vs "new" - only incomplet
 - [x] Renamed cllm_training_88d.c → cllm_training_system.c
 - [x] Removed _88d suffix from ALL function names (using cllm_system_ prefix)
 - [x] Updated all references throughout codebase
+- [x] Migrated prime_types.h to math library (math/include/math/prime_types.h)
+- [x] Updated all includes to use math/types.h
 - [x] Build verified - successful
 - [x] test_gradient_accumulation: 2/2 tests PASSING ✓
 
 **Naming Convention (FINAL):**
 - `CLLMTraining` = Basic training state (loss, epochs, optimizer)
 - `CLLMTrainingSystem` = 88D threading infrastructure wrapper
-- Functions use `cllm_system_` prefix to avoid conflicts with basic training functions
+- Functions use `cllm_system_` prefix to avoid conflicts
 
 **NO MORE _88d SUFFIX IN THE CODEBASE**
+**ALL TYPES NOW IN MATH LIBRARY WHERE THEY BELONG**
 
 ## SUFFIX REMOVAL PLAN
 To properly remove "88d" suffixes and make this THE ONLY training system:
