@@ -63,45 +63,60 @@ CrystallineAbacus (Working)
 - [x] Fix layer names (remove "(2nd)" suffix)
 - [x] All 131 tests passing (100%)
 
-### Phase 2: Refactor Architecture - Proper Separation of Concerns ✓ START HERE
+### Phase 2: Move Abacus88D to Algorithms Library ✓ START HERE
 
-**CRITICAL ISSUE IDENTIFIED**: Threading primitives (pthread_mutex_t) are in the math library (abacus88d.h), violating separation of concerns.
+**CORRECT UNDERSTANDING**: The Abacus88D system is a COMPUTATIONAL ALGORITHM, not pure mathematics. It requires threading for proper operation (boundary detection, handoff, work distribution). Therefore, the ENTIRE system belongs in the algorithms library.
 
 **CORRECT ARCHITECTURE**:
 ```
 libcrystallinemath.so (Pure Mathematics - NO THREADING)
-    ↓ depends on
-libalgorithms.so (Mathematical Algorithms - NO THREADING)
-    ↓ depends on
-libcllm.so (Application Specific - THREADING HERE)
+    ↓ CrystallineAbacus (single-value arbitrary precision)
+    ↓ Clock Lattice (geometric structure)
+    ↓ Platonic Generators (geometric solids)
+    ↓ Prime Generation (deterministic formulas)
+    
+libalgorithms.so (Mathematical Algorithms - THREADING ALLOWED)
+    ↓ Abacus88D (multi-dimensional geometric computation)
+    ↓ Boundary detection and handoff
+    ↓ Work distribution across dimensions
+    ↓ Thread-safe operations
+    ↓ Hierarchical threading
+    
+libcllm.so (Application Specific)
+    ↓ Uses Abacus88D from algorithms library
+    ↓ CLLM-specific integration
 ```
 
-#### Task 2.1: Remove Threading from Math Library
-- [ ] Remove pthread_mutex_t from Abacus88D structure
-- [ ] Remove all threading primitives from math library
-- [ ] Keep Abacus88D as pure mathematical structure
-- [ ] Ensure math library has ZERO threading dependencies
-- [ ] Update tests to verify no threading in math library
+#### Task 2.1: Move Abacus88D to Algorithms Library ✅ COMPLETE
+- [x] Move math/include/math/abacus88d.h → algorithms/include/abacus88d.h
+- [x] Move math/src/abacus88d/ → algorithms/src/abacus88d/
+- [x] Move math/tests/test_abacus88d.c → algorithms/tests/test_abacus88d.c
+- [x] Update all includes and dependencies
+- [x] Restore threading primitives (they belong here!)
+- [x] Update Makefiles for both libraries
+- [x] All 131 tests passing in algorithms library
 
-#### Task 2.2: Create Geometric Algorithms (algorithms library)
-- [ ] Create algorithms/include/geometric_space.h
-- [ ] Implement boundary detection algorithms (pure math, no threads)
-- [ ] Implement coordinate transformation algorithms
-- [ ] Implement handoff algorithms (mathematical operations only)
-- [ ] These are ALGORITHMS that can be used by ANY system
+#### Task 2.2: Enhance Abacus88D with Full Threading Support
+- [ ] Add back pthread_mutex_t (correct location now)
+- [ ] Implement boundary detection with thread safety
+- [ ] Implement coordinate transformation with thread safety
+- [ ] Implement handoff algorithms with synchronization
+- [ ] Implement work distribution across dimensions
+- [ ] Create comprehensive threading tests
 
-#### Task 2.3: Create Threading Wrapper (algorithms library)
-- [ ] Create algorithms/include/hierarchical_threading.h (already exists, enhance it)
-- [ ] Add thread-safe wrapper around Abacus88D operations
-- [ ] Implement work distribution algorithms
-- [ ] Implement synchronization strategies
-- [ ] Keep threading SEPARATE from pure math
+#### Task 2.3: Integrate with Hierarchical Threading
+- [ ] Connect Abacus88D with existing hierarchical_threading.h
+- [ ] Implement work stealing across dimensions
+- [ ] Implement load balancing
+- [ ] Add performance monitoring
+- [ ] Create integration tests
 
-#### Task 2.4: Integrate with CLLM (application layer)
-- [ ] Use geometric algorithms from algorithms library
-- [ ] Use threading wrapper from algorithms library
-- [ ] CLLM-specific integration in src/ai/
-- [ ] Keep CLLM concerns separate from general algorithms
+#### Task 2.4: Update CLLM Integration
+- [ ] Update CLLM to use Abacus88D from algorithms library
+- [ ] Remove Space88D from src/ai/ (use algorithms version)
+- [ ] Update all includes
+- [ ] Update CLLM tests
+- [ ] Verify full integration
 
 ### Phase 3: Threading Integration
 
