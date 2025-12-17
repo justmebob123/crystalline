@@ -213,6 +213,9 @@ void sphere_message_set_statistics(SphereMessage* message,
 // ============================================================================
 
 const char* sphere_message_type_name(MessageType type) {
+    // Suppress warnings for CLLM-specific message types (extensions of base MessageType)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wswitch"
     switch (type) {
         case MSG_TYPE_WORK_REQUEST: return "WORK_REQUEST";
         case MSG_TYPE_WORK_ASSIGN: return "WORK_ASSIGN";
@@ -244,6 +247,7 @@ const char* sphere_message_type_name(MessageType type) {
         case MSG_CLLM_SHUTDOWN_ACK: return "SHUTDOWN_ACK";
         default: return "UNKNOWN";
     }
+    #pragma GCC diagnostic pop
 }
 
 const char* sphere_message_priority_name(MessagePriority priority) {
@@ -293,6 +297,8 @@ void sphere_message_print(const SphereMessage* message) {
     printf("Acknowledged: %s\n", sphere_message_is_acknowledged(message) ? "Yes" : "No");
     
     // Print payload based on type
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wswitch"
     switch (message->type) {
         case MSG_TYPE_WORK_REQUEST:
             printf("Payload: requested_items=%lu, symmetry_group=%d, current_load=%lu\n",
@@ -339,6 +345,7 @@ void sphere_message_print(const SphereMessage* message) {
             printf("Payload: (type-specific)\n");
             break;
     }
+    #pragma GCC diagnostic pop
     
     printf("=====================\n");
 }

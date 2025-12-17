@@ -751,3 +751,4 @@ void nested_polytope_print_statistics(const NestedPolytopeTree* tree) {
     nested_polytope_print_hierarchy(tree->root, 0);
     printf("\n");
 }
+

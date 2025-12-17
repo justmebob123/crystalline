@@ -201,6 +201,7 @@ uint32_t cllm_get_layer_for_face(const CLLMModel* model, uint32_t face_idx) {
 
 bool cllm_distribute_work_88d(CLLMModel* model, CLLMWorkType work_type,
                               void* work_data, uint32_t num_items) {
+    (void)work_type; (void)work_data; // Reserved for future work distribution
     if (!model || !model->threading.enabled) return false;
     if (!model->threading.pool_88d) return false;
     
@@ -259,6 +260,7 @@ void cllm_synchronize_layer(CLLMModel* model, uint32_t layer_idx) {
 
 void cllm_broadcast_message(CLLMModel* model, uint32_t message_type,
                            const void* data, size_t data_size) {
+    (void)data; (void)data_size; // Reserved for future message payload
     if (!model || !model->threading.enabled) return;
     if (!model->threading.pool_88d) return;
     
@@ -320,6 +322,7 @@ void cllm_reset_threading_stats(CLLMModel* model) {
 void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
                                    uint32_t batch_size, uint32_t seq_len,
                                    double* output) {
+    (void)model; (void)token_ids; (void)batch_size; (void)seq_len; (void)output;
     // TODO: Implement parallel embedding lookup
     fprintf(stderr, "cllm_parallel_embedding_lookup: Not yet implemented\n");
 }
@@ -327,6 +330,7 @@ void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
 void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
                             const double* input, uint32_t batch_size,
                             uint32_t seq_len, double* output) {
+    (void)model; (void)layer_idx; (void)input; (void)batch_size; (void)seq_len; (void)output;
     // TODO: Implement parallel attention
     fprintf(stderr, "cllm_parallel_attention: Not yet implemented\n");
 }
@@ -334,16 +338,19 @@ void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
 void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
                       const double* input, uint32_t batch_size,
                       uint32_t seq_len, double* output) {
+    (void)model; (void)layer_idx; (void)input; (void)batch_size; (void)seq_len; (void)output;
     // TODO: Implement parallel FFN
     fprintf(stderr, "cllm_parallel_ffn: Not yet implemented\n");
 }
 
 void cllm_parallel_gradient_accumulation(CLLMModel* model) {
+    (void)model;
     // TODO: Implement parallel gradient accumulation
     fprintf(stderr, "cllm_parallel_gradient_accumulation: Not yet implemented\n");
 }
 
 void cllm_parallel_weight_update(CLLMModel* model) {
+    (void)model;
     // TODO: Implement parallel weight update
     fprintf(stderr, "cllm_parallel_weight_update: Not yet implemented\n");
 }

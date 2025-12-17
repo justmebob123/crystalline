@@ -27,7 +27,9 @@
 
 /**
  * Get current time in nanoseconds
+ * Reserved for future performance monitoring
  */
+__attribute__((unused))
 static uint64_t get_time_ns(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);

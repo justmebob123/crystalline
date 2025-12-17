@@ -618,7 +618,9 @@ static void scale_gradients(double* gradients, size_t size, double scale) {
 
 /**
  * Add gradients (for accumulation across batches)
+ * Reserved for future gradient accumulation implementation
  */
+__attribute__((unused))
 static void add_gradients(double* dest, const double* src, size_t size) {
     for (size_t i = 0; i < size; i++) {
         dest[i] += src[i];

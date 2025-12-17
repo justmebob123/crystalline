@@ -89,7 +89,7 @@ $(STATIC_LIB): $(ALL_OBJS)
 # Build shared library
 $(SHARED_LIB): $(ALL_OBJS)
 	@echo "Creating shared library $@..."
-	@$(CC) -shared -o $@ $^ -lm
+	@$(CC) -shared -Wl,-z,noexecstack -o $@ $^ -lm
 	@echo "Shared library created: $@"
 
 # Build tests

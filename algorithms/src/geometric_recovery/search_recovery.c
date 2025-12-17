@@ -140,7 +140,9 @@ bool search_generate_candidates(
 
 /**
  * Compare function for sorting candidates by score (descending)
+ * Reserved for future beam search implementation
  */
+__attribute__((unused))
 static int compare_candidates(const void* a, const void* b) {
     double score_a = *((double*)a + 1);
     double score_b = *((double*)b + 1);
