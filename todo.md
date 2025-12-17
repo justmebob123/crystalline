@@ -105,21 +105,14 @@ This is a complete architectural redesign where:
 - [ ] Verify no collisions
 - [ ] Commit: "Implement permanent token → thread assignment"
 
-### [ ] Day 5: Initialize Thread Pool
-- [ ] Modify `cllm_create_model()` to create pool FIRST:
-  ```c
-  // Create 88D thread pool (MANDATORY)
-  model->pool_88d = hierarchical_thread_pool_create_88d(60);
-  if (!model->pool_88d) {
-      fprintf(stderr, "FATAL: Failed to create 88D thread pool\n");
-      free(model);
-      return NULL;
-  }
-  ```
-- [ ] Remove old `cllm_initialize_88d_threading()` calls
-- [ ] Make threading mandatory (no optional flag)
-- [ ] Test pool creation
-- [ ] Commit: "Make 88D threading mandatory in model creation"
+### [x] Day 5: Update cllm_free.c ✅
+- [x] Rewrite `cllm_free_model()` for thread-centric architecture
+- [x] Free token_assignments, thread_params, layer_info
+- [x] Free threading barriers
+- [x] Free 88D thread pool (frees all thread-local storage)
+- [x] Remove all flat array cleanup code
+- [x] Update validation to check thread-centric structures
+- [x] Commit: "Week 1 Day 5: Rewrite cllm_free.c for thread-centric architecture"
 
 ### [ ] Day 6: Initialize Thread Embeddings
 - [ ] For each token, initialize its embedding in the assigned thread:
