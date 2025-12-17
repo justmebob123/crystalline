@@ -1,31 +1,42 @@
 /**
  * @file hierarchical_threading.h
- * @brief Unified Hierarchical Threading System
+ * @brief Unified Hierarchical Threading System with 88D Integration
  * 
- * This is the complete integration of all Week 1-4 components:
- * - Week 1: Hierarchical Memory + Abacus Integration
- * - Week 2: Shared Memory + Rainbow Table
- * - Week 3: Message Passing System
- * - Week 4: State Management + Work Distribution
+ * THE UNIFIED THREADING SOLUTION
+ * 
+ * This is the complete integration of:
+ * - Week 1-4 components (hierarchical memory, shared memory, messages, state, work)
+ * - 88D Geometric Structure (8 layers × 11 dimensions = 88 dimensions)
+ * - Kissing Spheres Topology (12-fold symmetry)
+ * - Abacus Computation (CrystallineAbacus integration)
+ * - Self-Similar Nesting (sphere groups can attach to other groups)
  * 
  * Design Philosophy:
+ * - 88 dimensions = 88 threads (natural parallelism)
+ * - 8 layers = 8 hierarchy levels (natural hierarchy)
+ * - Geometric boundaries = shared memory (natural communication)
+ * - Clock positions = thread IDs (deterministic)
  * - Sphere threading with neighbor operations
- * - Geometric memory organization (12-fold symmetry)
  * - Lock-free communication
- * - Hierarchical state management
  * - Work stealing for load balancing
- * - Zero external dependencies
  * 
  * Key Features:
- * - N-fold geometric organization (configurable)
- * - Parent-child-sibling relationships
- * - Kissing boundaries between neighbors
- * - 3-tier shared memory (READ_ONLY, COW, LOCKED_WRITE)
+ * - 88D geometric organization (8 layers × 11 dimensions)
+ * - 12-fold symmetry (kissing spheres)
+ * - Parent-child-sibling-neighbor relationships
+ * - Hierarchical + shared memory
  * - Lock-free message passing
- * - State machines for thread lifecycle
+ * - State machines with full tracking
  * - Work distribution with stealing
- * - Thread pool management
+ * - Complete statistics and monitoring
+ * - Self-similar nesting (attach to other sphere groups)
  * - NUMA-aware allocation
+ * 
+ * This replaces:
+ * - sphere_threading.h (absorbed)
+ * - threading.h (absorbed)
+ * - CLLMLatticeHierarchy (replaced)
+ * - cllm_thread_pool.h (replaced)
  */
 
 #ifndef HIERARCHICAL_THREADING_H
@@ -37,10 +48,14 @@
 #include "message_passing.h"
 #include "state_management.h"
 #include "work_distribution.h"
+#include <math/abacus.h>
+#include <math/clock_lattice.h>
+#include <math/platonic_solids.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,9 +65,36 @@ extern "C" {
 // CONSTANTS
 // ============================================================================
 
+// Original constants
 #define HIERARCHICAL_THREAD_MAX_NEIGHBORS 12
 #define HIERARCHICAL_THREAD_MAX_CHILDREN 12
 #define HIERARCHICAL_THREAD_BROADCAST_ID 0xFFFFFFFF
+
+// 88D Integration constants
+#define HIERARCHICAL_88D_NUM_LAYERS 8
+#define HIERARCHICAL_88D_DIMS_PER_LAYER 11
+#define HIERARCHICAL_88D_TOTAL_DIMENSIONS 88  // 8 × 11
+#define HIERARCHICAL_88D_THREADS_PER_LAYER 12  // 11 workers + 1 control
+#define HIERARCHICAL_88D_TOTAL_THREADS 96      // 88 workers + 8 control
+#define HIERARCHICAL_88D_CLOCK_POSITIONS 12    // 12-fold symmetry
+
+// ============================================================================
+// 88D TYPES
+// ============================================================================
+
+/**
+ * @brief Layer type in 88D space (Platonic solid)
+ */
+typedef enum {
+    LAYER_88D_TETRAHEDRON = 0,   // Layer 0: 4 vertices
+    LAYER_88D_CUBE = 1,          // Layer 1: 8 vertices
+    LAYER_88D_OCTAHEDRON = 2,    // Layer 2: 6 vertices
+    LAYER_88D_DODECAHEDRON = 3,  // Layer 3: 20 vertices
+    LAYER_88D_ICOSAHEDRON = 4,   // Layer 4: 12 vertices
+    LAYER_88D_TETRAHEDRON_2 = 5, // Layer 5: 4 vertices (repeat)
+    LAYER_88D_CUBE_2 = 6,        // Layer 6: 8 vertices (repeat)
+    LAYER_88D_OCTAHEDRON_2 = 7   // Layer 7: 6 vertices (repeat)
+} Layer88DType;
 
 // ============================================================================
 // THREAD TYPES
@@ -162,6 +204,47 @@ typedef struct HierarchicalThread {
     // NUMA
     int numa_node;                      // NUMA node this thread is on
     
+    // ========================================================================
+    // 88D INTEGRATION
+    // ========================================================================
+    
+    // 88D Position
+    uint8_t layer;                      // Layer (0-7) = hierarchy level
+    uint8_t dimension;                  // Dimension (0-10) = position in layer
+    uint8_t clock_position;             // Clock position (1-12)
+    
+    // Geometric Frame
+    PlatonicSolid* platonic_frame;      // Layer's Platonic solid frame
+    uint32_t vertex_id;                 // Vertex ID on solid
+    
+    // Abacus Computation
+    CrystallineAbacus* value;           // Current computational value
+    CrystallineAbacus* accumulator;     // Gradient/result accumulator
+    CrystallineAbacus* temp;            // Temporary computation space
+    
+    // Sibling Relationships (same layer)
+    struct HierarchicalThread** siblings;  // Sibling threads
+    uint32_t num_siblings;              // Number of siblings
+    
+    // Boundary Notifications
+    bool near_boundary;                 // Near geometric boundary
+    bool boundary_crossed;              // Crossed boundary
+    uint64_t boundary_crossings;        // Total boundary crossings
+    
+    // Twin Prime Notifications
+    bool twin_prime_detected;           // Twin prime detected
+    uint64_t twin_primes_found;         // Total twin primes found
+    
+    // Gradient Accumulation (for CLLM)
+    void* gradient_buffer;              // Gradient buffer
+    size_t gradient_buffer_size;        // Buffer size
+    pthread_mutex_t gradient_lock;      // Gradient lock
+    
+    // Batch Processing
+    void** batch_queue;                 // Batch queue
+    uint32_t batch_capacity;            // Batch capacity
+    atomic_uint batch_count;            // Current batch count
+    
 } HierarchicalThread;
 
 // ============================================================================
@@ -203,6 +286,42 @@ typedef struct {
     pthread_mutex_t pool_mutex;         // Pool-wide mutex
     volatile bool initialized;          // Pool is initialized
     volatile bool running;              // Pool is running
+    
+    // ========================================================================
+    // 88D INTEGRATION
+    // ========================================================================
+    
+    // 88D Organization
+    bool use_88d_structure;             // Use 88D organization
+    HierarchicalThread* layers[HIERARCHICAL_88D_NUM_LAYERS][HIERARCHICAL_88D_THREADS_PER_LAYER];
+    HierarchicalThread* control_threads[HIERARCHICAL_88D_NUM_LAYERS];  // One per layer
+    
+    // Geometric Boundaries (shared memory between layers/dimensions)
+    SharedMemoryEnhanced** geometric_boundaries;
+    uint32_t num_boundaries;
+    
+    // Clock Lattice (for prime generation and thread IDs)
+    ClockContext* clock_lattice;
+    
+    // Platonic Solid Frames (one per layer)
+    PlatonicSolid* layer_frames[HIERARCHICAL_88D_NUM_LAYERS];
+    
+    // Layer Barriers (synchronize all threads in a layer)
+    pthread_barrier_t layer_barriers[HIERARCHICAL_88D_NUM_LAYERS];
+    
+    // Global Barrier (synchronize all threads)
+    pthread_barrier_t global_barrier;
+    
+    // 88D Statistics
+    atomic_uint64_t total_boundary_crossings;
+    atomic_uint64_t total_twin_primes;
+    atomic_uint64_t total_operations;
+    
+    // Self-Similar Nesting (attach to other sphere groups)
+    struct HierarchicalThreadPool* parent_group;  // Parent sphere group
+    struct HierarchicalThreadPool** child_groups; // Child sphere groups
+    uint32_t num_child_groups;
+    uint32_t max_child_groups;
     
 } HierarchicalThreadPool;
 
@@ -736,6 +855,152 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
     HierarchicalThreadPool* pool,
     uint32_t k,
     uint32_t* out_neighbors
+);
+
+// ============================================================================
+// 88D-SPECIFIC FUNCTIONS
+// ============================================================================
+
+/**
+ * Create 88D thread pool
+ * 
+ * Creates a thread pool with 88D organization (8 layers × 11 dimensions).
+ * 
+ * @param base Abacus base (typically 60 for Babylonian)
+ * @return Thread pool or NULL on error
+ */
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base);
+
+/**
+ * Get thread by 88D position
+ * 
+ * @param pool Thread pool
+ * @param layer Layer (0-7)
+ * @param dimension Dimension (0-10)
+ * @return Thread or NULL if not found
+ */
+HierarchicalThread* hierarchical_thread_get_88d(
+    HierarchicalThreadPool* pool,
+    uint8_t layer,
+    uint8_t dimension
+);
+
+/**
+ * Synchronize layer
+ * 
+ * All threads in the layer wait at barrier.
+ * 
+ * @param pool Thread pool
+ * @param layer Layer to synchronize
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_sync_layer(
+    HierarchicalThreadPool* pool,
+    uint8_t layer
+);
+
+/**
+ * Synchronize all threads
+ * 
+ * All threads in the pool wait at global barrier.
+ * 
+ * @param pool Thread pool
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_sync_all(HierarchicalThreadPool* pool);
+
+/**
+ * Notify boundary crossing
+ * 
+ * Called when a thread crosses a geometric boundary.
+ * 
+ * @param thread Thread that crossed
+ * @param from_layer Source layer
+ * @param to_layer Target layer
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_notify_boundary_crossing(
+    HierarchicalThread* thread,
+    uint8_t from_layer,
+    uint8_t to_layer
+);
+
+/**
+ * Notify twin prime detection
+ * 
+ * Called when a thread detects a twin prime.
+ * 
+ * @param thread Thread that detected
+ * @param prime1 First prime
+ * @param prime2 Second prime
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_notify_twin_prime(
+    HierarchicalThread* thread,
+    uint64_t prime1,
+    uint64_t prime2
+);
+
+/**
+ * Get sibling threads
+ * 
+ * Returns all threads in the same layer.
+ * 
+ * @param thread Thread
+ * @param out_siblings Output buffer for sibling pointers
+ * @param max_siblings Maximum siblings to return
+ * @return Number of siblings found
+ */
+uint32_t hierarchical_thread_get_siblings(
+    HierarchicalThread* thread,
+    HierarchicalThread** out_siblings,
+    uint32_t max_siblings
+);
+
+/**
+ * Attach sphere group
+ * 
+ * Attaches another sphere group as a child (self-similar nesting).
+ * 
+ * @param parent Parent sphere group
+ * @param child Child sphere group to attach
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_pool_attach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+);
+
+/**
+ * Detach sphere group
+ * 
+ * Detaches a child sphere group.
+ * 
+ * @param parent Parent sphere group
+ * @param child Child sphere group to detach
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_pool_detach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+);
+
+/**
+ * Get 88D statistics
+ * 
+ * Returns statistics specific to 88D organization.
+ * 
+ * @param pool Thread pool
+ * @param out_boundary_crossings Output: total boundary crossings
+ * @param out_twin_primes Output: total twin primes found
+ * @param out_operations Output: total operations
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_pool_get_88d_stats(
+    HierarchicalThreadPool* pool,
+    uint64_t* out_boundary_crossings,
+    uint64_t* out_twin_primes,
+    uint64_t* out_operations
 );
 
 #ifdef __cplusplus
