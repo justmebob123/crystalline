@@ -1085,3 +1085,314 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
     free(distances);
     return result;
 }
+
+// ============================================================================
+// 88D-SPECIFIC FUNCTIONS
+// ============================================================================
+
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
+    // Create pool with 88D configuration
+    HierarchicalThreadPool* pool = hierarchical_thread_pool_create(
+        HIERARCHICAL_88D_TOTAL_THREADS,   // 96 threads
+        HIERARCHICAL_88D_CLOCK_POSITIONS, // 12-fold symmetry
+        HIERARCHICAL_88D_TOTAL_DIMENSIONS, // 88 dimensions
+        true  // NUMA-aware
+    );
+    
+    if (!pool) {
+        return NULL;
+    }
+    
+    // Enable 88D structure
+    pool->use_88d_structure = true;
+    
+    // Create clock lattice
+    pool->clock_lattice = clock_context_create();
+    if (!pool->clock_lattice) {
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    // Create Platonic solid frames for each layer
+    Layer88DType solid_types[HIERARCHICAL_88D_NUM_LAYERS] = {
+        LAYER_TETRAHEDRON,   // Layer 0
+        LAYER_CUBE,          // Layer 1
+        LAYER_OCTAHEDRON,    // Layer 2
+        LAYER_DODECAHEDRON,  // Layer 3
+        LAYER_ICOSAHEDRON,   // Layer 4
+        LAYER_TETRAHEDRON,   // Layer 5 (repeat)
+        LAYER_CUBE,          // Layer 6 (repeat)
+        LAYER_OCTAHEDRON     // Layer 7 (repeat)
+    };
+    
+    for (int i = 0; i < HIERARCHICAL_88D_NUM_LAYERS; i++) {
+        // Get frame from abacus88d layer (they're already created)
+        // For now, set to NULL - will be populated when integrated with Abacus88D
+        pool->layer_frames[i] = NULL;
+        
+        // Initialize layer barrier
+        pthread_barrier_init(&pool->layer_barriers[i], NULL, HIERARCHICAL_88D_THREADS_PER_LAYER);
+    }
+    
+    // Initialize global barrier
+    pthread_barrier_init(&pool->global_barrier, NULL, HIERARCHICAL_88D_TOTAL_THREADS);
+    
+    // Organize threads into 88D structure
+    uint32_t thread_idx = 0;
+    for (uint8_t layer = 0; layer < HIERARCHICAL_88D_NUM_LAYERS; layer++) {
+        for (uint8_t dim = 0; dim < HIERARCHICAL_88D_THREADS_PER_LAYER; dim++) {
+            if (thread_idx < pool->num_threads) {
+                HierarchicalThread* thread = pool->threads[thread_idx];
+                
+                // Set 88D position
+                thread->layer = layer;
+                thread->dimension = (dim == 0) ? 0 : (dim - 1);  // Control at 0, workers 0-10
+                thread->clock_position = dim + 1;  // 1-12
+                
+                // Set role
+                thread->role = (dim == 0) ? THREAD_ROLE_CONTROL : THREAD_ROLE_WORKER;
+                
+                // Set geometric frame
+                thread->platonic_frame = pool->layer_frames[layer];
+                
+                // Create abacus values
+                thread->value = abacus_new(base);
+                thread->accumulator = abacus_new(base);
+                thread->temp = abacus_new(base);
+                
+                // Initialize gradient lock
+                pthread_mutex_init(&thread->gradient_lock, NULL);
+                
+                // Store in layer array
+                pool->layers[layer][dim] = thread;
+                if (dim == 0) {
+                    pool->control_threads[layer] = thread;
+                }
+                
+                thread_idx++;
+            }
+        }
+    }
+    
+    // Initialize 88D statistics
+    atomic_init(&pool->total_boundary_crossings, 0);
+    atomic_init(&pool->total_twin_primes, 0);
+    atomic_init(&pool->total_operations, 0);
+    
+    // Initialize group nesting
+    pool->parent_group = NULL;
+    pool->child_groups = NULL;
+    pool->num_child_groups = 0;
+    pool->max_child_groups = 0;
+    
+    return pool;
+}
+
+HierarchicalThread* hierarchical_thread_get_88d(
+    HierarchicalThreadPool* pool,
+    uint8_t layer,
+    uint8_t dimension
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return NULL;
+    }
+    
+    if (layer >= HIERARCHICAL_88D_NUM_LAYERS) {
+        return NULL;
+    }
+    
+    if (dimension >= HIERARCHICAL_88D_THREADS_PER_LAYER) {
+        return NULL;
+    }
+    
+    return pool->layers[layer][dimension];
+}
+
+int hierarchical_thread_sync_layer(
+    HierarchicalThreadPool* pool,
+    uint8_t layer
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    if (layer >= HIERARCHICAL_88D_NUM_LAYERS) {
+        return -1;
+    }
+    
+    // Wait at layer barrier
+    int result = pthread_barrier_wait(&pool->layer_barriers[layer]);
+    
+    // pthread_barrier_wait returns PTHREAD_BARRIER_SERIAL_THREAD for one thread
+    // and 0 for all others, both are success
+    return (result == 0 || result == PTHREAD_BARRIER_SERIAL_THREAD) ? 0 : -1;
+}
+
+int hierarchical_thread_sync_all(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    // Wait at global barrier
+    int result = pthread_barrier_wait(&pool->global_barrier);
+    
+    return (result == 0 || result == PTHREAD_BARRIER_SERIAL_THREAD) ? 0 : -1;
+}
+
+int hierarchical_thread_notify_boundary_crossing(
+    HierarchicalThread* thread,
+    uint8_t from_layer,
+    uint8_t to_layer
+) {
+    if (!thread) {
+        return -1;
+    }
+    
+    thread->boundary_crossed = true;
+    thread->boundary_crossings++;
+    
+    // Update pool statistics if available
+    // (Would need pool reference - can be added later)
+    
+    return 0;
+}
+
+int hierarchical_thread_notify_twin_prime(
+    HierarchicalThread* thread,
+    uint64_t prime1,
+    uint64_t prime2
+) {
+    if (!thread) {
+        return -1;
+    }
+    
+    thread->twin_prime_detected = true;
+    thread->twin_primes_found++;
+    
+    // Update pool statistics if available
+    // (Would need pool reference - can be added later)
+    
+    return 0;
+}
+
+uint32_t hierarchical_thread_get_siblings(
+    HierarchicalThread* thread,
+    HierarchicalThread** out_siblings,
+    uint32_t max_siblings
+) {
+    if (!thread || !out_siblings) {
+        return 0;
+    }
+    
+    // If siblings array is populated, use it
+    if (thread->siblings && thread->num_siblings > 0) {
+        uint32_t count = (thread->num_siblings < max_siblings) ? 
+                         thread->num_siblings : max_siblings;
+        
+        for (uint32_t i = 0; i < count; i++) {
+            out_siblings[i] = thread->siblings[i];
+        }
+        
+        return count;
+    }
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_attach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+) {
+    if (!parent || !child) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&parent->pool_mutex);
+    
+    // Allocate child groups array if needed
+    if (!parent->child_groups) {
+        parent->max_child_groups = 8;  // Start with 8
+        parent->child_groups = calloc(parent->max_child_groups, 
+                                     sizeof(HierarchicalThreadPool*));
+        if (!parent->child_groups) {
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return -1;
+        }
+    }
+    
+    // Expand if needed
+    if (parent->num_child_groups >= parent->max_child_groups) {
+        uint32_t new_max = parent->max_child_groups * 2;
+        HierarchicalThreadPool** new_array = realloc(parent->child_groups,
+                                                     new_max * sizeof(HierarchicalThreadPool*));
+        if (!new_array) {
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return -1;
+        }
+        parent->child_groups = new_array;
+        parent->max_child_groups = new_max;
+    }
+    
+    // Add child
+    parent->child_groups[parent->num_child_groups] = child;
+    parent->num_child_groups++;
+    child->parent_group = parent;
+    
+    pthread_mutex_unlock(&parent->pool_mutex);
+    
+    return 0;
+}
+
+int hierarchical_thread_pool_detach_group(
+    HierarchicalThreadPool* parent,
+    HierarchicalThreadPool* child
+) {
+    if (!parent || !child || !parent->child_groups) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&parent->pool_mutex);
+    
+    // Find and remove child
+    for (uint32_t i = 0; i < parent->num_child_groups; i++) {
+        if (parent->child_groups[i] == child) {
+            // Shift remaining children
+            for (uint32_t j = i; j < parent->num_child_groups - 1; j++) {
+                parent->child_groups[j] = parent->child_groups[j + 1];
+            }
+            parent->num_child_groups--;
+            child->parent_group = NULL;
+            
+            pthread_mutex_unlock(&parent->pool_mutex);
+            return 0;
+        }
+    }
+    
+    pthread_mutex_unlock(&parent->pool_mutex);
+    return -1;  // Child not found
+}
+
+int hierarchical_thread_pool_get_88d_stats(
+    HierarchicalThreadPool* pool,
+    uint64_t* out_boundary_crossings,
+    uint64_t* out_twin_primes,
+    uint64_t* out_operations
+) {
+    if (!pool || !pool->use_88d_structure) {
+        return -1;
+    }
+    
+    if (out_boundary_crossings) {
+        *out_boundary_crossings = atomic_load(&pool->total_boundary_crossings);
+    }
+    
+    if (out_twin_primes) {
+        *out_twin_primes = atomic_load(&pool->total_twin_primes);
+    }
+    
+    if (out_operations) {
+        *out_operations = atomic_load(&pool->total_operations);
+    }
+    
+    return 0;
+}

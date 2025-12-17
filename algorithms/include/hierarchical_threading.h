@@ -48,9 +48,7 @@
 #include "message_passing.h"
 #include "state_management.h"
 #include "work_distribution.h"
-#include <math/abacus.h>
-#include <math/clock_lattice.h>
-#include <math/platonic_solids.h>
+#include "abacus88d.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -78,23 +76,7 @@ extern "C" {
 #define HIERARCHICAL_88D_TOTAL_THREADS 96      // 88 workers + 8 control
 #define HIERARCHICAL_88D_CLOCK_POSITIONS 12    // 12-fold symmetry
 
-// ============================================================================
-// 88D TYPES
-// ============================================================================
-
-/**
- * @brief Layer type in 88D space (Platonic solid)
- */
-typedef enum {
-    LAYER_88D_TETRAHEDRON = 0,   // Layer 0: 4 vertices
-    LAYER_88D_CUBE = 1,          // Layer 1: 8 vertices
-    LAYER_88D_OCTAHEDRON = 2,    // Layer 2: 6 vertices
-    LAYER_88D_DODECAHEDRON = 3,  // Layer 3: 20 vertices
-    LAYER_88D_ICOSAHEDRON = 4,   // Layer 4: 12 vertices
-    LAYER_88D_TETRAHEDRON_2 = 5, // Layer 5: 4 vertices (repeat)
-    LAYER_88D_CUBE_2 = 6,        // Layer 6: 8 vertices (repeat)
-    LAYER_88D_OCTAHEDRON_2 = 7   // Layer 7: 6 vertices (repeat)
-} Layer88DType;
+// Note: Layer88DType is defined in abacus88d.h, we use it here
 
 // ============================================================================
 // THREAD TYPES
@@ -313,9 +295,9 @@ typedef struct {
     pthread_barrier_t global_barrier;
     
     // 88D Statistics
-    atomic_uint64_t total_boundary_crossings;
-    atomic_uint64_t total_twin_primes;
-    atomic_uint64_t total_operations;
+    _Atomic uint64_t total_boundary_crossings;
+    _Atomic uint64_t total_twin_primes;
+    _Atomic uint64_t total_operations;
     
     // Self-Similar Nesting (attach to other sphere groups)
     struct HierarchicalThreadPool* parent_group;  // Parent sphere group
