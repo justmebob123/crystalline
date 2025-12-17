@@ -17,7 +17,8 @@
 - [x] Build system migration to new directory structure
 - [x] Remove all "Babylonian" references from codebase
 - [x] Direct math library integration (removed wrappers)
-- [x] Fix all include paths
+- [x] Fix all include paths in source files
+- [x] Fix all include paths in Makefiles (CRITICAL - removed -I../include)
 - [x] All libraries building successfully
 - [x] Changes committed and pushed to GitHub
 
