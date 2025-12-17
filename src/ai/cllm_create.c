@@ -489,16 +489,15 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         printf("🔮 Initializing kissing spheres threading...\n");
         
         model->threading.enabled = true;
-        model->threading.num_spheres = (config->num_threads > 0) ? config->num_threads : 13;
         
         // Allocate work distribution maps
-        model->threading.vertex_to_sphere = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
+        model->threading.vertex_to_thread = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
         model->threading.edge_to_boundary = (uint32_t*)calloc(model->geometry.edges, sizeof(uint32_t));
-        model->threading.token_to_sphere = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
+        model->threading.token_to_thread = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
         
-        // Distribute vertices across spheres (geometric distribution)
+        // Distribute vertices across threads (geometric distribution)
         for (uint32_t v = 0; v < model->geometry.vertices; v++) {
-            model->threading.vertex_to_sphere[v] = (v % 12) + 1;  // Workers 1-12
+            model->threading.vertex_to_thread[v] = (v % 12) + 1;  // Workers 1-12
         }
         
         // Distribute edges across boundaries
@@ -506,13 +505,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
             model->threading.edge_to_boundary[e] = e % model->geometry.edges;
         }
         
-        // Distribute tokens across spheres
+        // Distribute tokens across threads
         for (uint32_t t = 0; t < model->vocab_size; t++) {
-            model->threading.token_to_sphere[t] = (t % 12) + 1;  // Workers 1-12
+            model->threading.token_to_thread[t] = (t % 12) + 1;  // Workers 1-12
         }
         
-        printf("  ✓ Kissing spheres threading enabled (%d spheres)\n",
-               model->threading.num_spheres);
+        printf("  ✓ Threading enabled (96 threads: 8 layers × 12 threads)\n");
     }
     
     // ========================================================================

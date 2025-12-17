@@ -188,7 +188,7 @@ bool control_process_stop(ControlProcess* cp) {
     // Send termination messages to all spheres
     pthread_mutex_lock(&cp->hierarchy_mutex);
     if (cp->root_sphere) {
-        SphereMessage* msg = sphere_message_create(MSG_CHILD_TERMINATE, 
+        SphereMessage* msg = sphere_message_create(MSG_CLLM_CHILD_TERMINATE, 
                                                    MSG_PRIORITY_CRITICAL, 0, 0);
         if (msg) {
             lattice_hierarchy_send_message(cp->root_sphere, cp->root_sphere, msg);
@@ -279,7 +279,7 @@ bool control_process_start_epoch(ControlProcess* cp, uint32_t total_batches) {
     // Broadcast epoch start to all spheres
     pthread_mutex_lock(&cp->hierarchy_mutex);
     if (cp->root_sphere) {
-        SphereMessage* msg = sphere_message_create(MSG_EPOCH_START, 
+        SphereMessage* msg = sphere_message_create(MSG_CLLM_EPOCH_START, 
                                                    MSG_PRIORITY_HIGH, 0, 0);
         if (msg) {
             sphere_message_set_epoch(msg, cp->epoch_state.current_epoch, total_batches, 
@@ -315,7 +315,7 @@ bool control_process_end_epoch(ControlProcess* cp) {
     // Broadcast epoch complete to all spheres
     pthread_mutex_lock(&cp->hierarchy_mutex);
     if (cp->root_sphere) {
-        SphereMessage* msg = sphere_message_create(MSG_EPOCH_COMPLETE, 
+        SphereMessage* msg = sphere_message_create(MSG_CLLM_EPOCH_COMPLETE, 
                                                    MSG_PRIORITY_HIGH, 0, 0);
         if (msg) {
             sphere_message_set_epoch(msg, cp->epoch_state.current_epoch, 
@@ -450,7 +450,7 @@ bool control_process_terminate_sphere(ControlProcess* cp, uint32_t sphere_id) {
     }
     
     // Send termination message
-    SphereMessage* msg = sphere_message_create(MSG_CHILD_TERMINATE, 
+    SphereMessage* msg = sphere_message_create(MSG_CLLM_CHILD_TERMINATE, 
                                                MSG_PRIORITY_CRITICAL, 0, sphere_id);
     if (msg) {
         lattice_hierarchy_send_message(sphere, sphere, msg);
@@ -558,7 +558,7 @@ bool control_process_broadcast_weights(ControlProcess* cp, const double* weights
     }
     
     // Create weight update message
-    SphereMessage* msg = sphere_message_create(MSG_WEIGHTS_BROADCAST, 
+    SphereMessage* msg = sphere_message_create(MSG_CLLM_WEIGHTS_BROADCAST, 
                                                MSG_PRIORITY_HIGH, 0, 0);
     if (msg) {
         // Broadcast to all spheres

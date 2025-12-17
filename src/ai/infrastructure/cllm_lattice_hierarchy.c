@@ -616,47 +616,47 @@ int lattice_hierarchy_process_messages(CLLMLatticeHierarchy* sphere) {
         
         // Process message based on type
         switch (message->type) {
-            case MSG_WORK_REQUEST:
+            case MSG_TYPE_WORK_REQUEST:
                 // Handle work request
                 // TODO: Implement work stealing response
                 break;
                 
-            case MSG_WORK_OFFER:
+            case MSG_TYPE_WORK_OFFER:
                 // Handle work offer
                 // TODO: Implement work acceptance
                 break;
                 
-            case MSG_GRADIENT_READY:
+            case MSG_CLLM_GRADIENT_READY:
                 // Child has gradients ready
                 atomic_fetch_add(&sphere->children_gradients_ready, 1);
                 break;
                 
-            case MSG_WEIGHTS_UPDATED:
+            case MSG_CLLM_WEIGHTS_UPDATED:
                 // Parent has updated weights
                 // TODO: Implement weight synchronization
                 break;
                 
-            case MSG_BOUNDARY_CROSSING:
+            case MSG_CLLM_BOUNDARY_CROSSING:
                 // Boundary crossing notification
                 atomic_fetch_add(&sphere->boundary_crossings, 1);
                 break;
                 
-            case MSG_TWIN_PRIME_HIT:
+            case MSG_CLLM_TWIN_PRIME_HIT:
                 // Twin prime hit notification
                 atomic_fetch_add(&sphere->twin_prime_hits, 1);
                 break;
                 
-            case MSG_EPOCH_START:
+            case MSG_CLLM_EPOCH_START:
                 // Start new epoch
                 lattice_hierarchy_set_state(sphere, HIERARCHY_STATE_PROCESSING);
                 break;
                 
-            case MSG_EPOCH_COMPLETE:
+            case MSG_CLLM_EPOCH_COMPLETE:
                 // Epoch complete
                 lattice_hierarchy_set_state(sphere, HIERARCHY_STATE_WAITING);
                 break;
                 
-            case MSG_SHUTDOWN_REQUEST:
+            case MSG_CLLM_SHUTDOWN_REQUEST:
                 // Shutdown request
                 lattice_hierarchy_set_state(sphere, HIERARCHY_STATE_TERMINATING);
                 break;
@@ -784,7 +784,7 @@ void lattice_hierarchy_notify_boundary_crossing(CLLMLatticeHierarchy* sphere,
     // Notify parent
     if (sphere->parent) {
         SphereMessage* message = sphere_message_create(
-            MSG_BOUNDARY_CROSSING,
+            MSG_CLLM_BOUNDARY_CROSSING,
             MSG_PRIORITY_HIGH,
             sphere->sphere_id,
             sphere->parent->sphere_id
@@ -800,7 +800,7 @@ void lattice_hierarchy_notify_boundary_crossing(CLLMLatticeHierarchy* sphere,
     
     // Notify siblings
     SphereMessage* broadcast = sphere_message_create(
-        MSG_BOUNDARY_CROSSING,
+        MSG_CLLM_BOUNDARY_CROSSING,
         MSG_PRIORITY_HIGH,
         sphere->sphere_id,
         -1  // Broadcast
@@ -825,7 +825,7 @@ void lattice_hierarchy_notify_twin_prime(CLLMLatticeHierarchy* sphere,
     // Notify parent
     if (sphere->parent) {
         SphereMessage* message = sphere_message_create(
-            MSG_TWIN_PRIME_HIT,
+            MSG_CLLM_TWIN_PRIME_HIT,
             MSG_PRIORITY_CRITICAL,
             sphere->sphere_id,
             sphere->parent->sphere_id
@@ -841,7 +841,7 @@ void lattice_hierarchy_notify_twin_prime(CLLMLatticeHierarchy* sphere,
     
     // Notify siblings
     SphereMessage* broadcast = sphere_message_create(
-        MSG_TWIN_PRIME_HIT,
+        MSG_CLLM_TWIN_PRIME_HIT,
         MSG_PRIORITY_CRITICAL,
         sphere->sphere_id,
         -1  // Broadcast

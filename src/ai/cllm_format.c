@@ -98,7 +98,7 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
     header.blind_recovery_enabled = model->recovery.enabled ? 1 : 0;
     header.harmonic_enabled = model->harmonic.enabled ? 1 : 0;
     header.ntt_attention_enabled = model->ntt.enabled ? 1 : 0;
-    header.kissing_spheres_enabled = (model->threading.num_spheres > 0) ? 1 : 0;
+    header.kissing_spheres_enabled = (model->threading.enabled) ? 1 : 0;
     header.created_timestamp = time(NULL);
     header.modified_timestamp = time(NULL);
     header.best_loss = model->metrics.best_loss;
@@ -219,7 +219,7 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
     if (model->recovery.enabled) flags |= 0x01;
     if (model->harmonic.enabled) flags |= 0x02;
     if (model->ntt.enabled) flags |= 0x04;
-    if (model->threading.num_spheres > 0) flags |= 0x08;
+    if (model->threading.enabled) flags |= 0x08;
     fwrite(&flags, sizeof(uint8_t), 1, f);
     
     // ========== 6. WRITE OPTIMIZER STATE ==========

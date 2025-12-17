@@ -202,9 +202,9 @@ void cllm_free_model(CLLMModel* model) {
     // ========================================================================
     
     if (model->threading.enabled) {
-        if (model->threading.vertex_to_sphere) {
-            free(model->threading.vertex_to_sphere);
-            model->threading.vertex_to_sphere = NULL;
+        if (model->threading.vertex_to_thread) {
+            free(model->threading.vertex_to_thread);
+            model->threading.vertex_to_thread = NULL;
         }
         
         if (model->threading.edge_to_boundary) {
@@ -212,9 +212,9 @@ void cllm_free_model(CLLMModel* model) {
             model->threading.edge_to_boundary = NULL;
         }
         
-        if (model->threading.token_to_sphere) {
-            free(model->threading.token_to_sphere);
-            model->threading.token_to_sphere = NULL;
+        if (model->threading.token_to_thread) {
+            free(model->threading.token_to_thread);
+            model->threading.token_to_thread = NULL;
         }
         
         // Note: threading.model (SphereThreadingModel*) should be freed by threading system
