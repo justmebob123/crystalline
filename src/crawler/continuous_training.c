@@ -12,12 +12,12 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "cllm_training.h"
 #include "cllm.h"
+#include "cllm_batch.h"
+#include "cllm_training.h"
+#include "ai/cllm_training_88d.h"
 #include "cllm_format.h"
 #include "cllm_utils.h"
-#include "ai/cllm_training_88d.h"
-#include "cllm_batch.h"
 #include "cllm_model_manager.h"
 
 #define MAX_TOKENS_PER_FILE 100000

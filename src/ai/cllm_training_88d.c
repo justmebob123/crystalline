@@ -296,9 +296,9 @@ CLLMTraining88D* cllm_training_88d_create(
     // Create shared memory for gradients
     printf("  Creating shared memory for gradients...\n");
     ctx->gradient_memory = shared_memory_enhanced_create(
-        ctx->gradient_size * sizeof(double),  // total size
-        ctx->num_threads,                      // num segments
-        12                                     // symmetry fold
+        ctx->gradient_size * ctx->num_threads * sizeof(double),  // total size for all threads
+        SHARED_LOCKED_WRITE,                   // access mode
+        0                                      // region ID
     );
     if (!ctx->gradient_memory) {
         fprintf(stderr, "ERROR: Failed to create gradient memory\n");

@@ -58,9 +58,17 @@ typedef enum {
     MSG_CLLM_PARENT_SYNC,                              // Synchronize with parent
     MSG_CLLM_SIBLING_DISCOVER,                         // Discover sibling sphere
     
-    // Statistics (1500-1599)
-    MSG_CLLM_STATS_REQUEST = 1500,                     // Request statistics
+    // Error Handling (1500-1599)
+    MSG_CLLM_ERROR_REPORT = 1500,                      // Report error
+    MSG_CLLM_ERROR_RECOVERY,                           // Error recovery
+    
+    // Statistics (1600-1699)
+    MSG_CLLM_STATS_REQUEST = 1600,                     // Request statistics
     MSG_CLLM_STATS_REPORT,                             // Report statistics
+    
+    // Shutdown (1700-1799)
+    MSG_CLLM_SHUTDOWN_REQUEST = 1700,                  // Request shutdown
+    MSG_CLLM_SHUTDOWN_ACK,                             // Acknowledge shutdown
     
 } CLLMMessageType;
 

@@ -2,7 +2,7 @@
 #define CLLM_SPACE88D_OPS_H
 
 #include "ai/space_88d.h"
-#include "ai/cllm_lattice_hierarchy.h"
+#include "../../algorithms/include/hierarchical_threading.h"
 
 /**
  * @file cllm_space88d_ops.h

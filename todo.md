@@ -53,27 +53,49 @@ This is THE ONLY training system. There is no "legacy" vs "new" - only incomplet
 - [x] Validated cross-layer operations
 - [x] ALL TESTS PASSED - Design is correct!
 
-## Phase A: Realistic Implementation (Building on Legacy)
+## Phase A: Realistic Implementation (Building on Legacy) - IN PROGRESS
 - [x] Step 1: Extend HierarchicalThread with training buffers (30 min)
 - [x] Step 2: Create ThreadLocalTrainingContext for each thread in cllm_training_88d_create() (30 min)
 - [x] Step 3: Implement proper thread-local forward/backward using ThreadLocalTrainingContext (1 hour)
 - [x] Step 4: Fix cllm_process_batch_88d to use proper thread IDs from thread pool (30 min)
 - [x] Step 5: Implement proper work submission using hierarchical_thread_submit_work (1 hour)
-- [ ] Step 6: Test gradient accumulation across threads (30 min)
-- [ ] Step 7: Test complete training loop with small model (1 hour)
-- [ ] Step 8: Verify 88D structure is being used correctly (30 min)
+- [x] Build verified - all compilation successful
+- [x] Step 6: Test gradient accumulation across threads (30 min) PASSED
+- [x] Step 7: Test complete training loop with small model (1 hour) PARTIAL SUCCESS
+- [ ] Step 8: Debug and verify 88D structure usage (1-2 hours) - NEXT
 
-## Phase 4: Integration and Testing
-- [ ] Create new cllm_training.h with 88D structure (replace old)
-- [ ] Create new cllm_training.c with 88D implementation (replace old)
-- [ ] Remove "88d" suffixes - this IS the training system
-- [ ] Update all includes throughout codebase
-- [ ] Fix continuous_training.c to use 88D API (currently using old ThreadedTrainingSystem)
-- [ ] Build and verify no compilation errors
-- [ ] Test with small model (verify correctness)
+## Phase 4: Integration and Testing - IN PROGRESS
+- [x] Build working with 88d suffix
+- [x] Updated continuous_training.c to use 88D API
+- [x] Updated tools/cllm_unified.c to use 88D API
+- [x] Fixed include order issues
+- [x] Build verified - no compilation errors
+- [x] Created comprehensive test suite (test_gradient_accumulation.c, test_training_loop_88d.c)
+- [x] Test gradient accumulation - PASSED
+- [x] Test training loop - PARTIAL (segfault in message system)
+- [ ] Debug segmentation fault in training loop test
+- [ ] Fix model configuration compatibility issues
+- [ ] Verify 88D structure is being used correctly throughout
+- [ ] Remove "88d" suffixes - requires fixing pre-existing type conflicts
 - [ ] Test gradient flow through boundaries
 - [ ] Verify 12-fold symmetry is maintained
 - [ ] Benchmark performance vs old system
+
+## SUFFIX REMOVAL PLAN
+To properly remove "88d" suffixes and make this THE ONLY training system:
+1. Fix pre-existing type conflicts in codebase:
+   * struct CLLMModel vs CLLMModel inconsistency
+   * CLLMBatch/CLLMBatchIterator circular dependencies
+   * Update all files that access old CLLMTraining fields (logits, gradients, etc.)
+2. Then rename:
+   * cllm_training_88d.h → cllm_training.h (replace old)
+   * cllm_training_88d.c → cllm_training.c (replace old)
+   * CLLMTraining88D → CLLMTraining (replace old structure)
+   * All function names remove _88d suffix
+3. Archive old training code
+4. Update all references throughout codebase
+
+CURRENT STATUS: Working system with 88d suffix. Suffix removal blocked by pre-existing type issues.
 
 ## Phase 5: Documentation
 - [ ] Document the unified architecture

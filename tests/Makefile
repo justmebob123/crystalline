@@ -1,8 +1,8 @@
 # Test Suite Makefile for Crystalline CLLM
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O0 -I../include -mavx2 -mfma
-LDFLAGS = -L.. -L../algorithms -lcrystalline -lcllm -lalgorithms -lm -Wl,-rpath,'$$ORIGIN/..'
+CFLAGS = -Wall -Wextra -g -O0 -I../include -I../math/include -mavx2 -mfma
+LDFLAGS = -L.. -L../algorithms -L../math/lib -lcllm -lalgorithms -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..':'$$ORIGIN/../math/lib'
 
 # Test directories
 UNIT_DIR = unit
@@ -53,12 +53,17 @@ PHASE2_TESTS = \
 PHASE3_TESTS = \
         test_abacus_matrix
 
+# 88D Training tests
+TRAINING_88D_TESTS = \
+        test_gradient_accumulation \
+        test_training_loop_88d
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS) $(PHASE3_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS) $(PHASE3_TESTS) $(TRAINING_88D_TESTS)
 
-.PHONY: all unit integration performance validation diagnostic kissing-spheres clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-all
+.PHONY: all unit integration performance validation diagnostic kissing-spheres training-88d clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-training-88d run-all
 
-all: unit integration diagnostic kissing-spheres
+all: unit integration diagnostic kissing-spheres training-88d
 
 unit: $(UNIT_TESTS)
 
@@ -71,6 +76,8 @@ validation: $(VALIDATION_TESTS)
 diagnostic: $(DIAGNOSTIC_TESTS)
 
 kissing-spheres: $(KISSING_SPHERES_TESTS)
+
+training-88d: $(TRAINING_88D_TESTS)
 
 # Unit test compilation
 $(UNIT_DIR)/test_softmax_backward: $(UNIT_DIR)/test_softmax_backward.c
@@ -303,3 +310,29 @@ run-phase3: $(PHASE3_TESTS)
 	done
 	@echo ""
 	@echo "✓ All Phase 3 tests completed"
+
+# ============================================================================
+# 88D TRAINING TESTS
+# ============================================================================
+
+test_gradient_accumulation: test_gradient_accumulation.c
+	@echo "Building test_gradient_accumulation..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_gradient_accumulation built"
+
+test_training_loop_88d: test_training_loop_88d.c
+	@echo "Building test_training_loop_88d..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_training_loop_88d built"
+
+run-training-88d: $(TRAINING_88D_TESTS)
+	@echo ""
+	@echo "══════════════════════════════════════════════════════════"
+	@echo "Running 88D Training Tests"
+	@echo "══════════════════════════════════════════════════════════"
+	@for test in $(TRAINING_88D_TESTS); do \
+		echo ""; \
+		./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All 88D training tests completed"
