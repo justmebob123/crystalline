@@ -3,7 +3,6 @@
  * @brief Implementation of Generic Lock-Free Message Passing System
  */
 
-#define _GNU_SOURCE
 #include "message_passing.h"
 #include <stdlib.h>
 #include <string.h>

@@ -4,7 +4,6 @@
  * Uses angular position θ to optimize cache placement and CPU affinity.
  */
 
-#define _GNU_SOURCE  // For CPU_SET macros
 #include "ai/cllm_cache_optimization.h"
 #include "math/constants.h"
 #include "math/transcendental.h"

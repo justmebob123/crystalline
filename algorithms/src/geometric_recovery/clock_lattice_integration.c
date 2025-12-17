@@ -56,6 +56,7 @@ bool map_prime_to_clock(
     int* position_out,
     double* angle_out
 ) {
+    (void)prime; // Reserved for future use in prime-based positioning
     if (!ring_out || !position_out || !angle_out) {
         return false;
     }
@@ -69,16 +70,13 @@ bool map_prime_to_clock(
     // Decompose into ring positions
     int pos = clock_position;
     
-    // Ring 3 (milliseconds)
-    int r3 = pos % RING_3_SIZE;
+    // Ring 3 (milliseconds) - decompose position into ring coordinates
     pos /= RING_3_SIZE;
     
     // Ring 2 (seconds)
-    int r2 = pos % RING_2_SIZE;
     pos /= RING_2_SIZE;
     
     // Ring 1 (minutes)
-    int r1 = pos % RING_1_SIZE;
     pos /= RING_1_SIZE;
     
     // Ring 0 (hours)

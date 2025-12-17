@@ -3,7 +3,6 @@
  * @brief Implementation of Generic Lock-Free Work Distribution System
  */
 
-#define _GNU_SOURCE
 #include "work_distribution.h"
 #include <stdlib.h>
 #include <string.h>

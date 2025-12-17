@@ -410,7 +410,7 @@ static int initialize_phase_components(
 ) {
     // Create convergence detector for this phase
     ConvergenceCriteria criteria = convergence_criteria_default();
-    orch->phase_convergence[phase_index] = convergence_detector_create(&criteria);
+    orch->phase_convergence[phase_index] = convergence_detector_create_custom(&criteria);
     if (!orch->phase_convergence[phase_index]) {
         return -1;
     }

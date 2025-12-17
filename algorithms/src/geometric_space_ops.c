@@ -257,7 +257,8 @@ MathError geometric_transform_dimension(
     }
     
     // Calculate angular difference on clock
-    int angular_diff = (int)target_dim - (int)source_dim;
+    // TODO: Apply angular transformation based on dimension difference
+    (void)source_dim; (void)target_dim; // Suppress unused warning until transformation is implemented
     
     // For now, just copy the value
     // Full implementation would apply angular transformation

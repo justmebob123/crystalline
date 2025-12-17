@@ -402,8 +402,6 @@ double confidence_combine(
 double confidence_from_error(double error, double max_error) {
     if (max_error <= 0.0) return 0.0;
     
-    double normalized_error = error / max_error;
-    
     // Exponential decay: conf = exp(-k * error)
     // where k is chosen so that conf = 0.1 at max_error
     double k = 2.3 / max_error;  // ln(10) ≈ 2.3

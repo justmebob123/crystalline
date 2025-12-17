@@ -533,8 +533,8 @@ void anchor_grid_print_stats(const AnchorGrid* grid) {
     
     if (grid->solid) {
         printf("\nPlatonic Solid:\n");
-        printf("  Edges: %u\n", grid->solid->num_edges);
-        printf("  Faces: %u\n", grid->solid->num_faces);
+        printf("  Edges: %lu\n", (unsigned long)grid->solid->num_edges);
+        printf("  Faces: %lu\n", (unsigned long)grid->solid->num_faces);
     }
     
     printf("\n12-Fold Symmetry: %s\n", 

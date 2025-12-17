@@ -704,6 +704,7 @@ uint64_t hierarchical_thread_submit_work(
     size_t data_size,
     WorkPriority priority
 ) {
+    (void)data; // Reserved for future use
     if (!thread || !thread->work_pool || !work_fn) {
         return 0;
     }
@@ -1124,17 +1125,7 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     }
     
     // Create Platonic solid frames for each layer
-    Layer88DType solid_types[HIERARCHICAL_88D_NUM_LAYERS] = {
-        LAYER_TETRAHEDRON,   // Layer 0
-        LAYER_CUBE,          // Layer 1
-        LAYER_OCTAHEDRON,    // Layer 2
-        LAYER_DODECAHEDRON,  // Layer 3
-        LAYER_ICOSAHEDRON,   // Layer 4
-        LAYER_TETRAHEDRON,   // Layer 5 (repeat)
-        LAYER_CUBE,          // Layer 6 (repeat)
-        LAYER_OCTAHEDRON     // Layer 7 (repeat)
-    };
-    
+    // TODO: Use solid_types to initialize layer frames when integrated with Abacus88D
     for (int i = 0; i < HIERARCHICAL_88D_NUM_LAYERS; i++) {
         // Get frame from abacus88d layer (they're already created)
         // For now, set to NULL - will be populated when integrated with Abacus88D
@@ -1268,6 +1259,7 @@ int hierarchical_thread_notify_boundary_crossing(
     uint8_t from_layer,
     uint8_t to_layer
 ) {
+    (void)from_layer; (void)to_layer; // Reserved for future layer-specific handling
     if (!thread) {
         return -1;
     }
@@ -1286,6 +1278,7 @@ int hierarchical_thread_notify_twin_prime(
     uint64_t prime1,
     uint64_t prime2
 ) {
+    (void)prime1; (void)prime2; // Reserved for future prime-specific handling
     if (!thread) {
         return -1;
     }
@@ -1347,8 +1340,8 @@ int hierarchical_thread_pool_attach_group(
     // Expand if needed
     if (parent->num_child_groups >= parent->max_child_groups) {
         uint32_t new_max = parent->max_child_groups * 2;
-        HierarchicalThreadPool** new_array = realloc(parent->child_groups,
-                                                     new_max * sizeof(HierarchicalThreadPool*));
+        struct HierarchicalThreadPool** new_array = realloc(parent->child_groups,
+                                                     new_max * sizeof(struct HierarchicalThreadPool*));
         if (!new_array) {
             pthread_mutex_unlock(&parent->pool_mutex);
             return -1;
@@ -1358,7 +1351,7 @@ int hierarchical_thread_pool_attach_group(
     }
     
     // Add child
-    parent->child_groups[parent->num_child_groups] = child;
+    parent->child_groups[parent->num_child_groups] = (struct HierarchicalThreadPool*)child;
     parent->num_child_groups++;
     child->parent_group = (struct HierarchicalThreadPool *)parent;
     

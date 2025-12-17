@@ -3,7 +3,6 @@
  * @brief Implementation of Generic Hierarchical State Management System
  */
 
-#define _GNU_SOURCE
 #include "state_management.h"
 #include <stdlib.h>
 #include <string.h>
