@@ -15,6 +15,7 @@
 
 #include "../include/cllm.h"
 #include "../include/ai/cllm_platonic.h"
+#include "../include/ai/cllm_88d_integration.h"
 #include "../include/clock_lattice.h"
 #include <stdlib.h>
 #include <string.h>
@@ -529,6 +530,24 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.kissing_spheres_enabled = model->threading.enabled;
     model->header.created_timestamp = time(NULL);
     model->header.modified_timestamp = time(NULL);
+    
+    // ========================================================================
+    // 88D UNIFIED THREADING SYSTEM INITIALIZATION
+    // ========================================================================
+    
+    if (config->enable_kissing_spheres) {
+        printf("🔮 Initializing 88D unified threading system...\n");
+        
+        if (!cllm_initialize_88d_threading(model)) {
+            fprintf(stderr, "Error: Failed to initialize 88D threading system\n");
+            cllm_free_model(model);
+            return NULL;
+        }
+        
+        printf("  ✓ 88D threading system initialized successfully\n");
+        printf("  ✓ Thread pool: 96 threads (8 layers × 12 threads)\n");
+        printf("  ✓ Geometry mapped to thread topology\n");
+    }
     
     // ========================================================================
     // FINAL VALIDATION

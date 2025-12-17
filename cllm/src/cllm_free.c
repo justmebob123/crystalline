@@ -13,6 +13,7 @@
  */
 
 #include "../include/cllm.h"
+#include "../include/ai/cllm_88d_integration.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -176,27 +177,13 @@ void cllm_free_model(CLLMModel* model) {
     }
     
     // ========================================================================
-    // FREE KISSING SPHERES THREADING STATE
+    // FREE 88D UNIFIED THREADING SYSTEM
     // ========================================================================
     
     if (model->threading.enabled) {
-        if (model->threading.vertex_to_sphere) {
-            free(model->threading.vertex_to_sphere);
-            model->threading.vertex_to_sphere = NULL;
-        }
-        
-        if (model->threading.edge_to_boundary) {
-            free(model->threading.edge_to_boundary);
-            model->threading.edge_to_boundary = NULL;
-        }
-        
-        if (model->threading.token_to_sphere) {
-            free(model->threading.token_to_sphere);
-            model->threading.token_to_sphere = NULL;
-        }
-        
-        // Note: threading.model (SphereThreadingModel*) should be freed by threading system
-        // Note: sync_barriers and shared_memory should be freed by threading system
+        printf("  🔮 Cleaning up 88D threading system...\n");
+        cllm_cleanup_88d_threading(model);
+        printf("  ✓ 88D threading system cleaned up\n");
     }
     
     // ========================================================================
