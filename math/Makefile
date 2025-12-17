@@ -71,6 +71,7 @@ directories:
 	@mkdir -p $(BUILD_DIR)/prime
 	@mkdir -p $(BUILD_DIR)/platonic
 	@mkdir -p $(BUILD_DIR)/crypto
+	@mkdir -p $(BUILD_DIR)/abacus88d
 	@mkdir -p $(BUILD_DIR)/compact
 	@mkdir -p $(BUILD_DIR)/tests
 	@mkdir -p $(LIB_DIR)
