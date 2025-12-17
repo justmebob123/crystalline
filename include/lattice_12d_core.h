@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "bigint_core.h"
-#include "prime_types.h"
+#include "math/types.h"
 
 #ifdef __cplusplus
 extern "C" {

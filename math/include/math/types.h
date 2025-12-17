@@ -207,3 +207,10 @@ typedef enum {
 
 /* Vector culmination point and twin primes - MOVED TO constants.h to avoid duplicates */
 
+
+/* ============================================================================
+ * PRIME TYPES - Include all prime-related type definitions
+ * ============================================================================
+ */
+#include "prime_types.h"
+

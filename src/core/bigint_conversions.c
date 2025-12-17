@@ -7,7 +7,7 @@
  * NO math.h dependency - uses custom implementations.
  */
 
-#include "prime_types.h"
+#include "math/types.h"
 #include "bigint_core.h"
 #include <limits.h>
 

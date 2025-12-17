@@ -10,7 +10,7 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "../include/prime_types.h"
+#include "math/types.h"
 #include "../include/crystal_abacus.h"
 #include "math/clock.h"
 #include "math/prime.h"  // For prime_validate_by_clock()

@@ -23,7 +23,7 @@
 #include "clock_lattice.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
-#include "prime_types.h"
+#include "math/types.h"
 #include "prime_lookup_table.h"
 #include <stdio.h>
 #include <stdlib.h>

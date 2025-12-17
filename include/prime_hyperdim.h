@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "prime_types.h"
+#include "math/types.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
 

@@ -13,7 +13,7 @@
 #include <stddef.h>
 
 /* Core type definitions */
-#include "prime_types.h"
+#include "math/types.h"
 
 /* Function declarations */
 void big_init(BigInt *n);

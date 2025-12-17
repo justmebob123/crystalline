@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "../math/include/math/types.h"  // PHASE 2: For MATH_PI
+#include "types.h"  // PHASE 2: For MATH_PI
 
 #ifdef __cplusplus
 extern "C" {

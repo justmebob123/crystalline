@@ -14,7 +14,7 @@
 // Forward declarations
 void big_pi(BigFixed *result, int precision_bits);
 #include <stddef.h>
-#include "prime_types.h"
+#include "math/types.h"
 
 /* Local includes */
 #include "prime_bigint_transcendental.h"

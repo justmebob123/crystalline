@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "bigint_core.h"
 #include <stddef.h>
-#include "prime_types.h"
+#include "math/types.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
    #include "clock_lattice.h"
