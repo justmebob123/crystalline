@@ -204,10 +204,27 @@ libcllm.so (Application Specific)
 - [x] Test layer synchronization ✅
 - [x] Test sphere group attachment ✅
 - [x] All 421 tests passing (100%) ✅
-- [ ] Replace CLLMLatticeHierarchy with HierarchicalThread
+- [ ] Create migration plan for CLLMLatticeHierarchy → HierarchicalThread
+- [ ] Implement compatibility layer (gradual migration)
 - [ ] Update CLLM to use unified system
 - [ ] Archive old CLLM threading files
 - [ ] Full integration testing
+
+**Migration Analysis**:
+- CLLMLatticeHierarchy used in 598 locations across codebase
+- Direct replacement would be too disruptive
+- Better approach: Create compatibility/adapter layer
+- Gradual migration: New code uses HierarchicalThread, old code continues working
+
+**Type Conflicts Discovered**:
+- MessageType, MessagePriority: Defined in both CLLM and algorithms
+- SharedMemoryRegion, SharedMemoryAccessMode: Defined in both
+- message_queue_* functions: Conflicting signatures
+- Need to resolve type conflicts before adapter can work
+- Options:
+  1. Rename CLLM types (e.g., CLLMMessageType)
+  2. Use algorithms types exclusively
+  3. Create type mapping layer
 
 **Completed**:
 - ✅ Created comprehensive test suite (test_88d_thread_pool.c)
