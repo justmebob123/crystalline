@@ -16,7 +16,10 @@ CFLAGS += $(SIMD_FLAGS)
 # Source files
 SOURCES = $(wildcard src/*.c) \
           $(wildcard src/infrastructure/*.c) \
-          $(wildcard src/platonic/*.c)
+          $(wildcard src/platonic/*.c) \
+          $(wildcard src/crawler/*.c) \
+          $(wildcard src/crawler/handlers/*.c) \
+          $(wildcard src/document_processing/*.c)
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
@@ -44,7 +47,7 @@ $(STATIC_LIB): $(OBJECTS)
 $(SHARED_LIB): $(OBJECTS)
 	@echo "Creating shared CLLM library: $@"
 	@$(CC) $(LDFLAGS) -o $@ $^ -L.. -L../algorithms -L../math/lib \
-		-lalgorithms -lcrystallinemath -lm -lpthread
+		-lalgorithms -lcrystallinemath -lm -lpthread -lcurl -lsqlite3
 	@echo "✓ CLLM shared library created"
 
 # Clean build artifacts

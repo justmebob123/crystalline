@@ -123,11 +123,13 @@ $(ALGORITHMS_STATIC): $(MATH_STATIC)
 $(CLLM_LIB): $(MATH_LIB) $(ALGORITHMS_LIB)
 	@echo "Building CLLM shared library..."
 	@$(MAKE) -C cllm
+	@cp cllm/libcllm.so .
 	@echo "✓ CLLM shared library created"
 
 $(CLLM_STATIC): $(MATH_STATIC) $(ALGORITHMS_STATIC)
 	@echo "Building CLLM static library..."
-	@$(MAKE) -C cllm static
+	@$(MAKE) -C cllm
+	@cp cllm/libcllm.a .
 	@echo "✓ CLLM static library created"
 
 # Removed legacy monolithic libraries
@@ -274,6 +276,7 @@ clean:
 	rm -f $(MATH_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
 	rm -f $(MATH_STATIC) $(ALGORITHMS_STATIC) $(CLLM_STATIC) $(CRAWLER_STATIC)
 	rm -f libcrystalline.a libcrystalline.so  # Remove OLD library
+	rm -f libcllm.so libcllm.a libalgorithms.so libalgorithms.a  # Remove copied libraries
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
                 tools/init_lattice_embeddings tools/benchmark_ntt_attention tools/fix_html_entities # tools/validate_lattice
 	@if [ -d tests ]; then $(MAKE) -C tests clean 2>/dev/null || true; fi
