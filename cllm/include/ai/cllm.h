@@ -32,6 +32,9 @@
 // Include optimizer types from algorithms layer
 #include "optimizers.h"
 
+// Include hierarchical threading for 88D integration
+#include "hierarchical_threading.h"
+
 // Include vocabulary
 #include "cllm_vocabulary.h"
 
@@ -237,59 +240,71 @@ typedef struct {
     // Vocabulary (integrated)
     CLLMVocabulary* vocabulary;      // Token vocabulary with save/load support
     
-    // Embeddings (clock lattice-based)
-    double* embeddings;              // [vocab_size × embedding_dim] - LEGACY: will be replaced by abacus_embeddings
-    double* positional_encoding;     // [max_seq_len × embedding_dim]
+    // ========================================================================
+    // 88D THREAD-CENTRIC ARCHITECTURE (MANDATORY)
+    // ========================================================================
     
-    // Abacus-based embeddings (arbitrary precision)
-    AbacusMatrix* abacus_embeddings;        // [vocab_size × embedding_dim] - NEW: arbitrary precision storage
-    AbacusMatrix* abacus_positional_encoding; // [max_seq_len × embedding_dim] - NEW: arbitrary precision storage
-    bool use_abacus_embeddings;             // Flag to enable abacus-based embeddings
+    // 88D Thread Pool (MANDATORY - not optional)
+    // This is THE core of the model - everything else is organized around it
+    HierarchicalThreadPool* pool_88d;  // 96 threads (8 layers × 12 threads per layer)
     
-    // Transformer Layers (geometric structure)
+    // Token → Thread Assignment (PERMANENT)
+    // Every token is permanently assigned to a specific thread
+    // The thread owns the token's embedding in its CrystallineAbacus
     struct {
-        // Attention (12 heads, NTT-optimized)
-        double* query_weights;       // [embedding_dim × embedding_dim]
-        double* key_weights;         // [embedding_dim × embedding_dim]
-        double* value_weights;       // [embedding_dim × embedding_dim]
-        double* output_weights;      // [embedding_dim × embedding_dim]
-        
-        // Feed-forward (edges × 12 hidden units)
-        double* ffn_w1;              // [embedding_dim × hidden_dim]
-        double* ffn_w2;              // [hidden_dim × embedding_dim]
-        double* ffn_b1;              // [hidden_dim]
-        double* ffn_b2;              // [embedding_dim]
-        
-        // Layer normalization
-        double* ln1_gamma;           // [embedding_dim]
-        double* ln1_beta;            // [embedding_dim]
-        double* ln2_gamma;           // [embedding_dim]
-        double* ln2_beta;            // [embedding_dim]
-        
-        // Gradients (for training)
-        double* query_grad;
-        double* key_grad;
-        double* value_grad;
-        double* output_grad;
-        double* ffn_w1_grad;
-        double* ffn_w2_grad;
-        double* ffn_b1_grad;
-        double* ffn_b2_grad;
-        double* ln1_gamma_grad;
-        double* ln1_beta_grad;
-        double* ln2_gamma_grad;
-        double* ln2_beta_grad;
-        
-    } *layers;                       // [num_layers]
+        uint8_t layer;               // Layer (0-7)
+        uint8_t dimension;           // Dimension (1-11, 0 is control)
+        uint32_t thread_id;          // Absolute thread ID (0-95)
+        HierarchicalThread* thread;  // Direct pointer to thread
+    } *token_assignments;            // [vocab_size]
     
-    // Output projection
-    double* output_weights;          // [embedding_dim × vocab_size]
-    double* output_bias;             // [vocab_size]
-    double* output_weights_grad;
-    double* output_bias_grad;
+    // Thread Parameters (REPLACES flat arrays)
+    // Each thread owns its parameters in CrystallineAbacus
+    struct {
+        // Token ownership
+        uint32_t num_tokens_assigned;  // How many tokens this thread owns
+        uint32_t* token_ids;           // Which tokens this thread owns [num_tokens_assigned]
+        
+        // Layer information
+        uint8_t layer_id;              // Which transformer layer (0-7, 255 if not in layer)
+        bool is_control_thread;        // Control thread (dimension 0)
+        bool is_worker_thread;         // Worker thread (dimension 1-11)
+        
+    } *thread_params;                // [96 threads]
     
-    // Embedding gradients
-    double* embeddings_grad;         // [vocab_size × embedding_dim]
+    // LEGACY REMOVED: All embeddings now stored in thread CrystallineAbacus
+    // DELETED: double* embeddings;
+    // DELETED: double* positional_encoding;
+    // DELETED: AbacusMatrix* abacus_embeddings;
+    // DELETED: AbacusMatrix* abacus_positional_encoding;
+    // DELETED: bool use_abacus_embeddings;
+    
+    // ========================================================================
+    // LAYER PARAMETERS (THREAD-ORGANIZED)
+    // ========================================================================
+    
+    // Layer Control Threads
+    // Each layer has a control thread (dimension 0) that coordinates the layer
+    // Layer parameters are distributed across the layer's worker threads
+    struct {
+        HierarchicalThread* control_thread;  // Control thread for this layer
+        HierarchicalThread** worker_threads; // Worker threads [11] (dimensions 1-11)
+        
+        // Layer-wide parameters (stored in control thread)
+        // These are accessed via the control thread's CrystallineAbacus
+        // - Query/Key/Value projection matrices distributed across workers
+        // - FFN weights distributed across workers
+        // - Layer norm parameters in control thread
+        
+    } *layer_info;                   // [num_layers]
+    
+    // LEGACY REMOVED: All layer parameters now in threads
+    // DELETED: struct { double* query_weights; ... } *layers;
+    // DELETED: double* output_weights;
+    // DELETED: double* output_bias;
+    // DELETED: double* embeddings_grad;
+    // All parameters now stored in thread CrystallineAbacus
+    // All gradients now stored in thread accumulators
     
     // ========================================================================
     // BLIND RECOVERY (OBJECTIVE 26)
@@ -401,33 +416,28 @@ typedef struct {
     } training;
     
     // ========================================================================
-    // 88D UNIFIED THREADING SYSTEM
+    // 88D THREADING STATISTICS & CONFIGURATION
     // ========================================================================
     
     struct {
-        bool enabled;
-        
-        // 88D Thread Pool (THE unified threading system)
-        // 96 threads organized as 8 layers × 12 threads per layer
-        // Direct integration with algorithms library - no wrappers, no adapters
-        void* pool_88d;               // HierarchicalThreadPool* (void* to avoid circular dependency)
+        // Threading is ALWAYS enabled (not optional)
+        // pool_88d is now a direct field above, not in this struct
         
         // Geometric mapping (automatic from Platonic solid)
-        // These mappings are computed during initialization based on the model's geometry
         uint32_t* vertex_to_thread;   // Map vertices to threads [vertices]
         uint32_t* edge_to_boundary;   // Map edges to shared boundaries [edges]
         uint32_t* face_to_layer;      // Map faces to layers [faces]
-        uint32_t* token_to_thread;    // Map tokens to threads [vocab_size]
         
-        // Work distribution (from algorithms library)
-        void* work_queue;             // WorkQueue* - Global work queue
-        void* steal_pool;             // WorkStealingPool* - Work stealing pool
-        
-        // Statistics (comprehensive tracking)
+        // Work distribution statistics
         uint64_t total_work_units;    // Total work units processed
         uint64_t work_stolen;         // Work units stolen by other threads
         double parallel_efficiency;   // Actual speedup / ideal speedup
         double load_balance_score;    // Load balance quality (0-1)
+        
+        // Thread synchronization barriers
+        pthread_barrier_t* forward_barrier;   // Forward pass synchronization
+        pthread_barrier_t* backward_barrier;  // Backward pass synchronization
+        pthread_barrier_t* optimizer_barrier; // Optimizer synchronization
         
     } threading;
     
@@ -443,9 +453,11 @@ typedef struct {
         double weight_decay;
         
         // Momentum/velocity buffers (for Adam/RMSProp)
-        double* m;                    // First moment
-        double* v;                    // Second moment
-        uint64_t t;                   // Time step
+        // LEGACY REMOVED: Now stored in thread CrystallineAbacus
+        // Each thread maintains its own momentum/velocity in temp storage
+        // DELETED: double* m;
+        // DELETED: double* v;
+        uint64_t t;                   // Time step (global)
         
         // Tetration-based learning rate schedule (if harmonic enabled)
         bool use_tetration_schedule;
