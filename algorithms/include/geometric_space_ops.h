@@ -20,6 +20,7 @@
 #include "abacus88d.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -325,6 +326,111 @@ MathError geometric_distribute_work(
  * @param distribution Distribution to free
  */
 void geometric_free_distribution(WorkDistribution* distribution);
+
+/* ============================================================================
+ * THREAD-SAFE OPERATIONS
+ * ============================================================================
+ */
+
+/**
+ * @brief Thread-safe boundary detection
+ * 
+ * Same as geometric_detect_boundary but with proper locking for
+ * concurrent access to the 88D space.
+ * 
+ * @param abacus88d The 88D space
+ * @param layer Current layer
+ * @param dimension Current dimension
+ * @param value The value to analyze
+ * @param boundary Output boundary information
+ * @return MATH_SUCCESS or error code
+ */
+MathError geometric_detect_boundary_threadsafe(
+    Abacus88D* abacus88d,
+    uint8_t layer,
+    uint8_t dimension,
+    const CrystallineAbacus* value,
+    BoundaryInfo* boundary
+);
+
+/**
+ * @brief Thread-safe coordinate transformation
+ * 
+ * Same as geometric_apply_transform but with proper locking.
+ * 
+ * @param abacus88d The 88D space
+ * @param transform Transformation to apply
+ * @param input Input value
+ * @param output Output transformed value
+ * @return MATH_SUCCESS or error code
+ */
+MathError geometric_apply_transform_threadsafe(
+    Abacus88D* abacus88d,
+    const TransformMatrix* transform,
+    const CrystallineAbacus* input,
+    CrystallineAbacus* output
+);
+
+/**
+ * @brief Thread-safe handoff execution
+ * 
+ * Same as geometric_execute_handoff but with proper synchronization
+ * to ensure atomic transfer between layers/dimensions.
+ * 
+ * @param source Source 88D space
+ * @param target Target 88D space (can be same as source)
+ * @param context Handoff context
+ * @param value Value to transfer
+ * @return MATH_SUCCESS or error code
+ */
+MathError geometric_execute_handoff_threadsafe(
+    Abacus88D* source,
+    Abacus88D* target,
+    const HandoffContext* context,
+    const CrystallineAbacus* value
+);
+
+/**
+ * @brief Thread-safe batch boundary detection
+ * 
+ * Detects boundaries for multiple values concurrently with proper locking.
+ * 
+ * @param abacus88d The 88D space
+ * @param layers Array of layers
+ * @param dimensions Array of dimensions
+ * @param values Array of values
+ * @param boundaries Output array of boundary information
+ * @param count Number of items
+ * @return MATH_SUCCESS or error code
+ */
+MathError geometric_detect_boundaries_batch_threadsafe(
+    Abacus88D* abacus88d,
+    const uint8_t* layers,
+    const uint8_t* dimensions,
+    const CrystallineAbacus** values,
+    BoundaryInfo* boundaries,
+    uint32_t count
+);
+
+/**
+ * @brief Thread-safe batch handoff execution
+ * 
+ * Executes multiple handoffs atomically with proper synchronization.
+ * 
+ * @param source Source 88D space
+ * @param target Target 88D space
+ * @param contexts Array of handoff contexts
+ * @param values Array of values
+ * @param count Number of handoffs
+ * @return MATH_SUCCESS or error code
+ */
+MathError geometric_execute_handoffs_batch_threadsafe(
+    Abacus88D* source,
+    Abacus88D* target,
+    const HandoffContext* contexts,
+    const CrystallineAbacus** values,
+    uint32_t count
+);
 
 #ifdef __cplusplus
 }

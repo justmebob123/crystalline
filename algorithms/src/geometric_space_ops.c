@@ -130,9 +130,8 @@ bool geometric_should_transition_layer(
     else if (magnitude >= 1e12) suggested_layer = 5;
     else if (magnitude >= 1e9) suggested_layer = 4;
     else if (magnitude >= 1e6) suggested_layer = 3;
-    else if (magnitude >= 1e3) suggested_layer = 2;
-    else if (magnitude >= 1e2) suggested_layer = 1;  // Changed from 1e0 to 1e2
-    else suggested_layer = 0;
+    else if (magnitude >= 1e3) suggested_layer = 1;  // Layer 1 starts at 1000
+    else suggested_layer = 0;  // Layer 0 is < 1000
     
     *target_layer = suggested_layer;
     return (suggested_layer != current_layer);
@@ -457,4 +456,196 @@ void geometric_free_distribution(WorkDistribution* distribution) {
     free(distribution->items_per_worker);
     
     memset(distribution, 0, sizeof(WorkDistribution));
+}
+
+/* ============================================================================
+ * THREAD-SAFE OPERATIONS
+ * ============================================================================
+ */
+
+MathError geometric_detect_boundary_threadsafe(
+    Abacus88D* abacus88d,
+    uint8_t layer,
+    uint8_t dimension,
+    const CrystallineAbacus* value,
+    BoundaryInfo* boundary
+) {
+    if (!abacus88d || !value || !boundary) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Lock the layer for thread-safe access
+    pthread_mutex_lock(&abacus88d->layers[layer].layer_lock);
+    
+    // Perform boundary detection
+    MathError err = geometric_detect_boundary(abacus88d, layer, dimension, value, boundary);
+    
+    // Unlock
+    pthread_mutex_unlock(&abacus88d->layers[layer].layer_lock);
+    
+    return err;
+}
+
+MathError geometric_apply_transform_threadsafe(
+    Abacus88D* abacus88d,
+    const TransformMatrix* transform,
+    const CrystallineAbacus* input,
+    CrystallineAbacus* output
+) {
+    if (!abacus88d || !transform || !input || !output) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Lock both source and target layers
+    uint8_t source_layer = transform->source_layer;
+    uint8_t target_layer = transform->target_layer;
+    
+    // Lock in consistent order to avoid deadlock
+    if (source_layer < target_layer) {
+        pthread_mutex_lock(&abacus88d->layers[source_layer].layer_lock);
+        pthread_mutex_lock(&abacus88d->layers[target_layer].layer_lock);
+    } else if (source_layer > target_layer) {
+        pthread_mutex_lock(&abacus88d->layers[target_layer].layer_lock);
+        pthread_mutex_lock(&abacus88d->layers[source_layer].layer_lock);
+    } else {
+        // Same layer, only lock once
+        pthread_mutex_lock(&abacus88d->layers[source_layer].layer_lock);
+    }
+    
+    // Perform transformation
+    MathError err = geometric_apply_transform(input, transform, output);
+    
+    // Unlock in reverse order
+    if (source_layer < target_layer) {
+        pthread_mutex_unlock(&abacus88d->layers[target_layer].layer_lock);
+        pthread_mutex_unlock(&abacus88d->layers[source_layer].layer_lock);
+    } else if (source_layer > target_layer) {
+        pthread_mutex_unlock(&abacus88d->layers[source_layer].layer_lock);
+        pthread_mutex_unlock(&abacus88d->layers[target_layer].layer_lock);
+    } else {
+        pthread_mutex_unlock(&abacus88d->layers[source_layer].layer_lock);
+    }
+    
+    return err;
+}
+
+MathError geometric_execute_handoff_threadsafe(
+    Abacus88D* source,
+    Abacus88D* target,
+    const HandoffContext* context,
+    const CrystallineAbacus* value
+) {
+    if (!source || !target || !context || !value) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Use global lock for cross-space handoffs
+    if (source != target) {
+        // Lock both spaces in consistent order (by pointer address)
+        if (source < target) {
+            pthread_mutex_lock(&source->global_lock);
+            pthread_mutex_lock(&target->global_lock);
+        } else {
+            pthread_mutex_lock(&target->global_lock);
+            pthread_mutex_lock(&source->global_lock);
+        }
+    } else {
+        // Same space, use global lock
+        pthread_mutex_lock(&source->global_lock);
+    }
+    
+    // Perform handoff
+    MathError err = geometric_execute_handoff(source, target, context, value);
+    
+    // Unlock
+    if (source != target) {
+        if (source < target) {
+            pthread_mutex_unlock(&target->global_lock);
+            pthread_mutex_unlock(&source->global_lock);
+        } else {
+            pthread_mutex_unlock(&source->global_lock);
+            pthread_mutex_unlock(&target->global_lock);
+        }
+    } else {
+        pthread_mutex_unlock(&source->global_lock);
+    }
+    
+    return err;
+}
+
+MathError geometric_detect_boundaries_batch_threadsafe(
+    Abacus88D* abacus88d,
+    const uint8_t* layers,
+    const uint8_t* dimensions,
+    const CrystallineAbacus** values,
+    BoundaryInfo* boundaries,
+    uint32_t count
+) {
+    if (!abacus88d || !layers || !dimensions || !values || !boundaries) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Use global lock for batch operations to ensure consistency
+    pthread_mutex_lock(&abacus88d->global_lock);
+    
+    MathError err = MATH_SUCCESS;
+    for (uint32_t i = 0; i < count; i++) {
+        err = geometric_detect_boundary(abacus88d, layers[i], dimensions[i], 
+                                       values[i], &boundaries[i]);
+        if (err != MATH_SUCCESS) {
+            break;
+        }
+    }
+    
+    pthread_mutex_unlock(&abacus88d->global_lock);
+    
+    return err;
+}
+
+MathError geometric_execute_handoffs_batch_threadsafe(
+    Abacus88D* source,
+    Abacus88D* target,
+    const HandoffContext* contexts,
+    const CrystallineAbacus** values,
+    uint32_t count
+) {
+    if (!source || !target || !contexts || !values) {
+        return MATH_ERROR_NULL_POINTER;
+    }
+    
+    // Use global locks for batch handoffs
+    if (source != target) {
+        if (source < target) {
+            pthread_mutex_lock(&source->global_lock);
+            pthread_mutex_lock(&target->global_lock);
+        } else {
+            pthread_mutex_lock(&target->global_lock);
+            pthread_mutex_lock(&source->global_lock);
+        }
+    } else {
+        pthread_mutex_lock(&source->global_lock);
+    }
+    
+    MathError err = MATH_SUCCESS;
+    for (uint32_t i = 0; i < count; i++) {
+        err = geometric_execute_handoff(source, target, &contexts[i], values[i]);
+        if (err != MATH_SUCCESS) {
+            break;
+        }
+    }
+    
+    // Unlock
+    if (source != target) {
+        if (source < target) {
+            pthread_mutex_unlock(&target->global_lock);
+            pthread_mutex_unlock(&source->global_lock);
+        } else {
+            pthread_mutex_unlock(&source->global_lock);
+            pthread_mutex_unlock(&target->global_lock);
+        }
+    } else {
+        pthread_mutex_unlock(&source->global_lock);
+    }
+    
+    return err;
 }

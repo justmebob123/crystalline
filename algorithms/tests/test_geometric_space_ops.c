@@ -64,7 +64,7 @@ void test_boundary_detection() {
     CrystallineAbacus* huge_value = abacus_from_uint64(1500, 60);
     should_transition = geometric_should_transition_layer(huge_value, 0, &target_layer);
     ASSERT_TRUE(should_transition == true, "Value 1500 should transition");
-    ASSERT_TRUE(target_layer == 2, "Should transition to layer 2");
+    ASSERT_TRUE(target_layer == 1, "Should transition to layer 1");
     
     // Test shared vertex detection
     uint8_t shared_dims[12];
