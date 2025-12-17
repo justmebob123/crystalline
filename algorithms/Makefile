@@ -10,6 +10,7 @@ INCLUDES = -I./include -I./include/blind_recovery -I../include -I../math/include
 # Source files
 SOURCES = src/abacus88d/abacus88d.c \
           src/dimensional_frequencies.c \
+          src/geometric_space_ops.c \
           src/numerical.c \
           src/loss_functions.c \
           src/optimizers.c \
@@ -246,3 +247,12 @@ test_abacus88d: tests/test_abacus88d.c $(SHARED_LIB)
 	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_abacus88d
 
 .PHONY: test_abacus88d
+
+# Geometric Space Operations Test
+test_geometric_space_ops: tests/test_geometric_space_ops.c $(SHARED_LIB)
+	@echo "Building Geometric Space Operations test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_geometric_space_ops tests/test_geometric_space_ops.c -L. -lalgorithms -L.. -lcllm -L../math/lib -lcrystallinemath -lpthread
+	@echo "Running Geometric Space Operations test..."
+	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_geometric_space_ops
+
+.PHONY: test_geometric_space_ops
