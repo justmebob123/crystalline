@@ -9,7 +9,7 @@
 #include "math/prime.h"  // For prime_validate_by_clock()
 #include <stdlib.h>
 #include <time.h>
-// #include "../../include/prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only  // REMOVED: Not using any math.h functions
+// #include "ai/prime_float_math.h"  // OBJECTIVE 3A: Using crystalline math only  // REMOVED: Not using any math.h functions
 
 // REMOVED: Local is_prime() implementation
 // Internal code trusts the deterministic clock lattice structure

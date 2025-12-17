@@ -8,7 +8,7 @@
 #include <immintrin.h>
 #include <stdint.h>
 #include <string.h>
-#include "../include/cllm_cache.h"
+#include "ai/cllm_cache.h"
 
 /**
  * AVX2 dot product for doubles (4 doubles at a time)

@@ -103,5 +103,4 @@ algorithms_extension.lo: /workspace/php/algorithms/algorithms_extension.c \
  /workspace/php/algorithms/../../algorithms/include/numerical.h \
  /workspace/php/algorithms/../../algorithms/include/statistics.h \
  /workspace/php/algorithms/../../algorithms/include/loss_functions.h \
- /workspace/php/algorithms/../../algorithms/include/../../math/include/math/abacus.h \
  /workspace/php/algorithms/../../algorithms/include/sphere_packing.h

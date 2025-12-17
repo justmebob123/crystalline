@@ -21,7 +21,7 @@
 #include "math/constants.h"
 #include "math/clock_lattice_13d.h"
 #include "math/constants.h"
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/constants.h"
 #include "ai/cllm_platonic.h"
 #include "math/constants.h"
@@ -149,11 +149,11 @@ static bool allocate_model_parameters(CLLMModel* model) {
     if (!model->positional_encoding) return false;
     
     // Abacus-based embeddings (NEW - arbitrary precision)
-    // Use base 60 (Babylonian) with precision 10 for high accuracy
+    // Use base 60 (base-60) with precision 10 for high accuracy
     model->abacus_embeddings = abacus_matrix_create(
         model->vocab_size, 
         model->embedding_dim, 
-        60,  // Base 60 (sexagesimal - Babylonian)
+        60,  // Base 60 (sexagesimal - base-60)
         10   // Precision: 10 fractional digits
     );
     if (!model->abacus_embeddings) {

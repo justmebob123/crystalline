@@ -26,7 +26,7 @@
 #include "math/constants.h"
 #include "math/arithmetic.h"
 #include "math/constants.h"
-#include "../include/cllm_attention.h"
+#include "ai/cllm_attention.h"
 #include "math/constants.h"
 #include "math/clock.h"
 #include "math/constants.h"

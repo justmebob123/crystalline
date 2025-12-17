@@ -5,7 +5,7 @@
  * Phase 2: Replace simple lookup table with comprehensive math library generator
  */
 
-#include "../../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/platonic_generator.h"
 #include "math/polytope.h"
 #include <stdio.h>

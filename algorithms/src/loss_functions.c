@@ -4,7 +4,7 @@
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * - Replaced BigFixed with CrystallineAbacus
  * - Uses NEW math library transcendental functions
- * - Supports ALL bases >= 2 (Babylonian mathematics)
+ * - Supports ALL bases >= 2 (base-60 mathematics)
  * - No dependencies on OLD crystalline library
  */
 

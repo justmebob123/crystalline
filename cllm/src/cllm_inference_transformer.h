@@ -6,7 +6,7 @@
 #ifndef CLLM_INFERENCE_TRANSFORMER_H
 #define CLLM_INFERENCE_TRANSFORMER_H
 
-#include "../../include/cllm.h"
+#include "ai/cllm.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus

@@ -878,7 +878,7 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
  * 
  * Creates a thread pool with 88D organization (8 layers × 11 dimensions).
  * 
- * @param base Abacus base (typically 60 for Babylonian)
+ * @param base Abacus base (typically 60 for base-60)
  * @return Thread pool or NULL on error
  */
 HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base);

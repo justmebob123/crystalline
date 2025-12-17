@@ -6,7 +6,7 @@
 #include <time.h>
 
 // Use algorithms library types
-#include "../../algorithms/include/message_passing.h"
+#include "message_passing.h"
 
 /**
  * Sphere Message System

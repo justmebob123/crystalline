@@ -11,19 +11,12 @@
 
 #include "visualization.h"
 #include "sphere_packing.h"
-#include "../../math/include/math/transcendental.h"  // NEW math library
+#include "math/transcendental.h"  // NEW math library
 #include <stdlib.h>
 #include <string.h>
 
 // Forward declarations to avoid type conflicts
-typedef struct {
-    int ring;
-    int position;
-    double angle;
-    double radius;
-} BabylonianClockPosition;
-
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+#include "math/clock.h"
 
 /**
  * Project to 3D using spherical layout
@@ -39,7 +32,8 @@ int viz_project_3d(VisualizationData* data) {
         VisualizationPoint* point = &data->points[i];
         
         // Map to clock position
-        BabylonianClockPosition clock_pos = map_prime_index_to_clock(i);
+        ClockPosition clock_pos;
+    clock_map_index_to_position((uint64_t)i, &clock_pos);
         
         // Calculate spherical coordinates
         // Radius based on ring

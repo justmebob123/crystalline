@@ -3,7 +3,7 @@
  * @brief Pure Abacus Blind Recovery Algorithm
  * 
  * Integration of blind recovery with CrystallineAbacus for arbitrary precision
- * and geometric operations based on Babylonian mathematics.
+ * and geometric operations based on base-60 mathematics.
  * 
  * KEY INNOVATIONS:
  * - Pure Abacus arithmetic (no floating-point errors)
@@ -15,7 +15,7 @@
  * 
  * MASTER_PLAN COMPLIANCE:
  * - RULE 1: No external math libraries (pure Abacus)
- * - RULE 4: Babylonian mathematics foundation (base-60 support)
+ * - RULE 4: base-60 mathematics foundation (base-60 support)
  * - RULE 5: O(1) deterministic operations where possible
  * - RULE 6: 12-fold symmetry preserved
  */

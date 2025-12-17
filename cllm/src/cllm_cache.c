@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
-#include "../include/cllm_cache.h"
+#include "ai/cllm_cache.h"
 
 #ifdef _WIN32
 #include <malloc.h>

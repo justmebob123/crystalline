@@ -299,7 +299,7 @@ void platonic_align_attention_resonance(
 );
 
 /**
- * Map Babylonian clock rings to frequency bands
+ * Map clock lattice rings to frequency bands
  */
 void platonic_map_clock_to_frequencies(
     PlatonicModel* model,

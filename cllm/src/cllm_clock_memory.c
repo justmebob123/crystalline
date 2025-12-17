@@ -2,19 +2,28 @@
  * @file cllm_clock_memory.c
  * @brief Clock-based memory mapping for CLLM threading
  * 
- * Maps threads to memory positions using Babylonian clock structure.
+ * Maps threads to memory positions using clock lattice structure.
  * Uses NEW math library exclusively.
  */
 
 #include "math/types.h"
 #include "math/clock.h"
-#include "clock_lattice.h"
 #include <string.h>
+
+/**
+ * @brief Memory position mapped from clock structure
+ */
+typedef struct {
+    uint32_t ring;           /**< Ring number from clock */
+    uint32_t position;       /**< Position within ring */
+    size_t segment_size;     /**< Size of memory segment */
+    size_t memory_offset;    /**< Offset in memory */
+} ClockMemoryPosition;
 
 /**
  * @brief Map thread to memory position using clock structure
  * 
- * Uses Babylonian clock structure to determine memory layout:
+ * Uses clock lattice structure to determine memory layout:
  * - Ring 0: 12 positions (hours)
  * - Ring 1: 60 positions (minutes)
  * - Ring 2: 60 positions (seconds)

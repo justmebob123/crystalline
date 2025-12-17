@@ -3,11 +3,11 @@
  * @brief Implementation of Hierarchical Memory Structure for Embeddings
  */
 
-#include "../../include/cllm_hierarchical_embeddings.h"
+#include "ai/cllm_hierarchical_embeddings.h"
 #include "math/constants.h"
-#include "../../include/cllm_abacus_matrix.h"
+#include "ai/cllm_abacus_matrix.h"
 #include "math/constants.h"
-#include "../../include/clock_lattice.h"
+#include "math/clock.h"
 #include "math/constants.h"
 #include "math/arithmetic.h"
 #include "math/constants.h"

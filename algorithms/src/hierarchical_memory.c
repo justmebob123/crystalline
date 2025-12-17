@@ -8,15 +8,14 @@
 
 #include "../include/hierarchical_memory.h"
 #include "../../math/include/math.h"
-#include "../../math/include/math/abacus.h"
-#include "../../math/include/math/rainbow.h"
-#include "../../math/include/math/clock.h"
+#include "math/abacus.h"
+#include "math/rainbow.h"
+#include "math/clock.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -507,7 +506,7 @@ bool hierarchical_memory_scale_segments(
         // Copy position with small perturbation (self-similar replication)
         for (uint32_t d = 0; d < dst->num_dimensions; d++) {
             double base_value = src->position[d];
-            double perturbation = 0.01 * sin(2.0 * M_PI * i / new_num_segments + d);
+            double perturbation = 0.01 * math_sin(2.0 * M_PI * i / new_num_segments + d);
             dst->position[d] = base_value + perturbation;
         }
         
@@ -576,9 +575,9 @@ bool hierarchical_memory_scale_dimensions(
             double sum = 0.0;
             for (uint32_t j = 0; j < block->num_dimensions; j++) {
                 uint32_t prime = get_prime(d);
-                sum += seg->position[j] * cos(2.0 * M_PI * prime * (d - block->num_dimensions) / new_num_dimensions);
+                sum += seg->position[j] * math_cos(2.0 * M_PI * prime * (d - block->num_dimensions) / new_num_dimensions);
             }
-            new_position[d] = sum / sqrt((double)new_num_dimensions);
+            new_position[d] = sum / math_sqrt((double)new_num_dimensions);
         }
         
         // Replace old position
@@ -695,8 +694,8 @@ int hierarchical_memory_compute_position(
     double radius = 1.0 + (segment_id / 12.0);
     
     // First 3 dimensions: standard 3D position
-    out_position[0] = radius * cos(base_angle);
-    out_position[1] = radius * sin(base_angle);
+    out_position[0] = radius * math_cos(base_angle);
+    out_position[1] = radius * math_sin(base_angle);
     out_position[2] = (double)segment_id / 100.0;
     
     // Higher dimensions: prime-based projection
@@ -704,11 +703,11 @@ int hierarchical_memory_compute_position(
         uint32_t prime = get_prime(d);
         double sum = 0.0;
         
-        sum += out_position[0] * cos(2.0 * M_PI * prime * d / num_dimensions);
-        sum += out_position[1] * sin(2.0 * M_PI * prime * d / num_dimensions);
-        sum += out_position[2] * cos(M_PI * prime * d / num_dimensions);
+        sum += out_position[0] * math_cos(2.0 * M_PI * prime * d / num_dimensions);
+        sum += out_position[1] * math_sin(2.0 * M_PI * prime * d / num_dimensions);
+        sum += out_position[2] * math_cos(M_PI * prime * d / num_dimensions);
         
-        out_position[d] = sum / sqrt((double)num_dimensions);
+        out_position[d] = sum / math_sqrt((double)num_dimensions);
     }
     
     return 0;

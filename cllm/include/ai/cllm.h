@@ -4,7 +4,7 @@
  * 
  * COMPLETE GEOMETRIC TRANSFORMATION
  * - Platonic solid foundation (all 5 solids)
- * - Clock lattice mapping (Babylonian clock)
+ * - Clock lattice mapping (clock lattice)
  * - Blind recovery (25% corruption tolerance)
  * - Harmonic integration (cymatic frequencies)
  * - NTT attention (O(n log n))
@@ -20,17 +20,17 @@
 #include <stdbool.h>
 
 // Include NEW math library types FIRST to prevent conflicts
-#include "../math/include/math/types.h"
+#include "math/types.h"
 
 // Include clock lattice for complete type definition
 // (Will use NEW types if MATH_TYPES_H is defined)
-#include "clock_lattice.h"
+#include "math/clock.h"
 
 // Include CrystallineAbacus matrix utilities
 #include "cllm_abacus_matrix.h"
 
 // Include optimizer types from algorithms layer
-#include "../algorithms/include/optimizers.h"
+#include "optimizers.h"
 
 // Include vocabulary
 #include "cllm_vocabulary.h"
@@ -44,8 +44,8 @@ extern "C" {
 // ============================================================================
 
 // Convenient aliases for commonly used types
-// Note: BabylonianClockPosition is defined in clock_lattice.h
-typedef BabylonianClockPosition ClockPosition;
+// Note: ClockPosition is defined in math/clock.h
+// ClockPosition is now defined in math/clock.h
 typedef struct SphereThreadingModel SphereThreadingModel;
 typedef struct Sphere SphereThread;
 

@@ -5,13 +5,13 @@
  * Double precision for 3D lattice coordinates (sufficient for geometric operations).
  */
 
-#include "../../include/cllm_pure_crystalline.h"
+#include "ai/cllm_pure_crystalline.h"
 #include "math/constants.h"
-#include "../../math/include/math/transcendental.h"  // NEW math library
+#include "math/transcendental.h"  // NEW math library
 #include "math/constants.h"
-#include "../../math/include/math/types.h"           // MATH_PI constant
+#include "math/types.h"           // MATH_PI constant
 #include "math/constants.h"
-#include "../../math/include/math/rainbow.h"         // NEW rainbow table
+#include "math/rainbow.h"         // NEW rainbow table
 #include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>

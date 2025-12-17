@@ -12,7 +12,7 @@
  * - All model parameters and gradients
  */
 
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 #include <stdlib.h>
 #include <stdio.h>
 

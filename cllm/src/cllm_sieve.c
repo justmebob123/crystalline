@@ -9,7 +9,7 @@
  * - Clock lattice mapping for each generated prime
  * 
  * Integration with Crystalline Mathematics:
- * - Each prime is mapped to Babylonian clock position (12, 60, 60, 100)
+ * - Each prime is mapped to clock lattice position (12, 60, 60, 100)
  * - Smaller primes on OUTER rings (counting inward from ∞/0)
  * - Larger primes on INNER rings (approaching unity at center)
  * - Stereographic projection to fold clock → sphere
@@ -20,7 +20,7 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
-#include "../../include/cllm_pure_crystalline.h"
+#include "ai/cllm_pure_crystalline.h"
 // Forward declarations for clock lattice types
 #include <stdlib.h>
 #include <string.h>

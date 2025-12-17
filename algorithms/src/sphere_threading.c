@@ -2,7 +2,7 @@
  * Sphere Threading Model Implementation
  * 
  * Generic threading model based on kissing spheres geometry.
- * Uses Babylonian clock structure for deterministic neighbor assignment.
+ * Uses clock lattice structure for deterministic neighbor assignment.
  * 
  * PHASE 1 WEEK 2: Migrated to NEW math library
  * - Replaced math_sqrt with math_sqrt (1 call)
@@ -10,22 +10,15 @@
  */
 
 #include "sphere_threading.h"
-#include "../../math/include/math/transcendental.h"  // PHASE 1: NEW math library
-#include "../../math/include/math/arithmetic.h"       // PHASE 1: NEW math library
+#include "math/transcendental.h"  // PHASE 1: NEW math library
+#include "math/arithmetic.h"       // PHASE 1: NEW math library
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 // Forward declarations to avoid type conflicts with OLD library
 // We only need the function, not the full header
-typedef struct {
-    int ring;
-    int position;
-    double angle;
-    double radius;
-} BabylonianClockPosition;
-
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+#include "math/clock.h"
 
 // ============================================================================
 // INITIALIZATION
@@ -122,7 +115,8 @@ uint32_t sphere_find_neighbor_by_geometry(
     uint32_t target_group
 ) {
     // Map sphere to clock position
-    BabylonianClockPosition pos = map_prime_index_to_clock((int)sphere_id);
+    ClockPosition pos;
+    clock_map_index_to_position((uint64_t)sphere_id, &pos);
     
     // Calculate positions per ring
     uint32_t positions_in_ring;

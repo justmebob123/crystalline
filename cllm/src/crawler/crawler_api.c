@@ -5,8 +5,8 @@
  * This is the ONLY interface applications should use.
  */
 
-#include "../../include/crawler.h"
-#include "../../include/cllm_model_manager.h"
+#include "ai/crawler.h"
+#include "ai/cllm_model_manager.h"
 #include "content_filter.h"
 #include "preprocessor.h"
 #include "crawler_url_manager.h"

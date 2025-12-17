@@ -22,16 +22,16 @@
 
 #include "cllm.h"
 #include "cllm_training.h"
-#include "../../algorithms/include/hierarchical_threading.h"
-#include "../../algorithms/include/shared_memory_enhanced.h"
-#include "../../algorithms/include/message_passing.h"
-#include "../../algorithms/include/work_distribution.h"
+#include "hierarchical_threading.h"
+#include "shared_memory_enhanced.h"
+#include "message_passing.h"
+#include "work_distribution.h"
 #include <stdint.h>
 #include <stdbool.h>
 
 // Forward declarations
 typedef struct ThreadLocalTrainingContext ThreadLocalTrainingContext;
-typedef struct CLLMBatchIterator CLLMBatchIterator;  // Legacy - not implemented yet
+// CLLMBatchIterator is defined in cllm_batch.h
 
 // Include cllm_batch.h to get CLLMBatch definition
 #include "cllm_batch.h"

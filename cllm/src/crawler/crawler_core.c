@@ -21,7 +21,7 @@
 #include "crawler_url_manager.h"
 #include "url_database.h"
 #include <stdbool.h>
-#include "../../include/crawler.h"
+#include "ai/crawler.h"
 
 #define MAX_URL_LENGTH 2048
 #define MAX_PAGE_SIZE (10 * 1024 * 1024)  // 10MB max page size

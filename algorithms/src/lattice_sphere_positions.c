@@ -37,7 +37,7 @@ uint64_t get_next_sphere_id(void) {
 /**
  * Calculate clock position from symmetry group
  * 
- * Maps symmetry group (0-11) to position on Babylonian clock.
+ * Maps symmetry group (0-11) to position on clock lattice.
  */
 LatticeClockPosition calculate_clock_position(int symmetry_group) {
     LatticeClockPosition pos;
@@ -47,7 +47,7 @@ LatticeClockPosition calculate_clock_position(int symmetry_group) {
         return pos;
     }
     
-    // Map symmetry group to Babylonian clock position
+    // Map symmetry group to clock lattice position
     pos.ring = 0;  // Hours ring (0-11)
     pos.position = symmetry_group + 1;  // 1-based position (1-12)
     

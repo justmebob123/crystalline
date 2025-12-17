@@ -226,7 +226,7 @@ uint64_t cymatic_get_period_ns(CymaticFrequencyType type);
  * @brief Get dimensional frequency for a given dimension
  * 
  * Returns the frequency associated with a specific dimension in the
- * Babylonian mathematical system.
+ * base-60 mathematical system.
  * 
  * @param dimension Dimension index
  * @return Frequency value

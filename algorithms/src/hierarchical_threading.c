@@ -5,9 +5,9 @@
 
 #define _USE_MATH_DEFINES
 #include "hierarchical_threading.h"
+#include "math/transcendental.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
@@ -38,7 +38,7 @@ static double calculate_distance(const double* pos1, const double* pos2, uint32_
         double diff = pos1[i] - pos2[i];
         sum += diff * diff;
     }
-    return sqrt(sum);
+    return math_sqrt(sum);
 }
 
 // ============================================================================
@@ -288,7 +288,7 @@ HierarchicalThread* hierarchical_thread_create(
     for (uint32_t i = 0; i < thread->num_dimensions; i++) {
         // Simple geometric distribution
         double angle = 2.0 * M_PI * thread->symmetry_group / pool->symmetry_fold;
-        thread->position[i] = cos(angle + i * M_PI / thread->num_dimensions);
+        thread->position[i] = math_cos(angle + i * M_PI / thread->num_dimensions);
     }
     
     // Create hierarchical memory segment
@@ -1360,7 +1360,7 @@ int hierarchical_thread_pool_attach_group(
     // Add child
     parent->child_groups[parent->num_child_groups] = child;
     parent->num_child_groups++;
-    child->parent_group = parent;
+    child->parent_group = (struct HierarchicalThreadPool *)parent;
     
     pthread_mutex_unlock(&parent->pool_mutex);
     
@@ -1379,7 +1379,7 @@ int hierarchical_thread_pool_detach_group(
     
     // Find and remove child
     for (uint32_t i = 0; i < parent->num_child_groups; i++) {
-        if (parent->child_groups[i] == child) {
+        if (parent->child_groups[i] == (struct HierarchicalThreadPool *)child) {
             // Shift remaining children
             for (uint32_t j = i; j < parent->num_child_groups - 1; j++) {
                 parent->child_groups[j] = parent->child_groups[j + 1];

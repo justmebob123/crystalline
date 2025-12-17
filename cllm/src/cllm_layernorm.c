@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>  // AVX2
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 
 // ============================================================================
 // SIMD-OPTIMIZED LAYER NORMALIZATION

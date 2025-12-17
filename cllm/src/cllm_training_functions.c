@@ -6,17 +6,16 @@
  * Includes: precomputation, initialization, loss computation, optimizer steps
  */
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "math/transcendental.h"
 #include "cllm.h"
 #include "math/constants.h"
 #include "cllm_training.h"
 #include "cllm_batch.h"
 #include "ai/cllm_training_system.h"
 #include "cllm_inference_transformer.h"
-#include "math/transcendental.h"
 
 // ============================================================================
 // EMBEDDING PRECOMPUTATION
@@ -497,14 +496,14 @@ void cllm_backward_training_threaded(
                 double x = logits[v] - max_logit;
                 if (x > 50.0) x = 50.0;
                 if (x < -50.0) x = -50.0;
-                sum_exp += exp(x);
+                sum_exp += math_exp(x);
             }
             
             for (uint32_t v = 0; v < vocab_size; v++) {
                 double x = logits[v] - max_logit;
                 if (x > 50.0) x = 50.0;
                 if (x < -50.0) x = -50.0;
-                double prob = exp(x) / sum_exp;
+                double prob = math_exp(x) / sum_exp;
                 grad[v] = prob - (v == target ? 1.0 : 0.0);
             }
         }

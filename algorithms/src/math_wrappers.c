@@ -6,7 +6,7 @@
  * PURPOSE: Provides standard calculator-style API around arbitrary precision math
  * - Users can work with traditional function expectations
  * - Integrates Crystalline Abacus (arbitrary precision)
- * - Supports Babylonian mathematics framework
+ * - Supports base-60 mathematics framework
  * - No dependencies on OLD library
  * 
  * CHANGES:

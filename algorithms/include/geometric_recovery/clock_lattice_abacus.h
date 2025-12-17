@@ -9,12 +9,12 @@
  * - O(1) prime factorization via clock position
  * - Pure Abacus arithmetic (no floating-point errors)
  * - Deterministic geometric validation
- * - Babylonian mathematics foundation (12, 60, 60, 100)
+ * - base-60 mathematics foundation (12, 60, 60, 100)
  * - Natural phase relationships
  * 
  * MASTER_PLAN COMPLIANCE:
  * - RULE 1: No external math libraries (pure Abacus)
- * - RULE 4: Babylonian mathematics foundation
+ * - RULE 4: base-60 mathematics foundation
  * - RULE 5: O(1) deterministic operations
  * - RULE 8: Clock lattice validation (position IS the prime)
  */
@@ -38,7 +38,7 @@ extern "C" {
 /**
  * @brief Clock position using Pure Abacus
  * 
- * Represents a position on the Babylonian clock lattice with arbitrary precision.
+ * Represents a position on the clock lattice lattice with arbitrary precision.
  */
 typedef struct {
     uint32_t ring;                    // Ring number (0-3)
@@ -70,7 +70,7 @@ typedef struct {
     CrystallineAbacus* angular_separation;  // Angular separation
     CrystallineAbacus* ring_distance;       // Distance between rings
     
-    // Babylonian structure
+    // base-60 structure
     uint32_t total_positions;         // Total positions (4,320,000)
     CrystallineAbacus* resolution;    // Angular resolution
     
@@ -329,7 +329,7 @@ void free_tetration_attractor_abacus(TetrationAttractorAbacus* attractor);
 /**
  * @brief Get total clock positions
  * 
- * Returns the total number of positions on the Babylonian clock lattice.
+ * Returns the total number of positions on the clock lattice lattice.
  * 
  * @return Total positions (4,320,000 = 12 × 60 × 60 × 100)
  */

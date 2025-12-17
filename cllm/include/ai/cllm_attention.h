@@ -20,7 +20,7 @@ extern "C" {
  * 3. Lattice-Based Attention: Use crystalline coordinates for attention weights
  * 4. Symmetry Operations: Apply rotations, reflections, and Möbius transforms
  * 5. Fourier Dampening: Signal processing for smooth attention
- * 6. Plimpton Ratios: Babylonian Pythagorean triple corrections
+ * 6. Plimpton Ratios: base-60 Pythagorean triple corrections
  * 7. Einstein Lambda: Cosmological constant for gradient stability
  * 8. Cymatic Resonance: Harmonic frequency modulation
  * 9. Schumann Resonance: Earth frequency dampening

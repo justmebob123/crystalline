@@ -10,19 +10,12 @@
  */
 
 #include "visualization.h"
-#include "../../math/include/math/transcendental.h"  // NEW math library
+#include "math/transcendental.h"  // NEW math library
 #include <stdlib.h>
 #include <string.h>
 
 // Forward declarations to avoid type conflicts
-typedef struct {
-    int ring;
-    int position;
-    double angle;
-    double radius;
-} BabylonianClockPosition;
-
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+#include "math/clock.h"
 
 /**
  * Project to 2D using circular layout
@@ -38,7 +31,8 @@ int viz_project_2d(VisualizationData* data) {
         VisualizationPoint* point = &data->points[i];
         
         // Map to clock position
-        BabylonianClockPosition clock_pos = map_prime_index_to_clock(i);
+        ClockPosition clock_pos;
+    clock_map_index_to_position((uint64_t)i, &clock_pos);
         
         // Calculate angle based on symmetry group and position in ring
         double base_angle = (point->symmetry_group * 2.0 * 3.14159265358979323846) / 12.0;

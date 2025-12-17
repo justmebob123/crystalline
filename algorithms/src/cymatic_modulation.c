@@ -25,11 +25,11 @@
 #include <string.h>
 #include "../include/cymatic_modulation.h"
 #include "math/constants.h"
-#include "../../math/include/math/transcendental.h"  // NEW math library
+#include "math/transcendental.h"  // NEW math library
 #include "math/constants.h"
-#include "../../math/include/math/arithmetic.h"       // NEW math library
+#include "math/arithmetic.h"       // NEW math library
 #include "math/constants.h"
-#include "../../math/include/math/types.h"            // NEW math library constants
+#include "math/types.h"            // NEW math library constants
 #include "math/constants.h"
 
 // MATH_PI is already defined in math/types.h - no need to redefine

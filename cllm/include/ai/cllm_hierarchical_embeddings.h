@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "cllm_abacus_matrix.h"
-#include "clock_lattice.h"
+#include "math/clock.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,7 +176,7 @@ typedef struct {
  * @param vocab_size Vocabulary size
  * @param embedding_dim Embedding dimension
  * @param num_spheres Number of spheres (threads)
- * @param base Abacus base (e.g., 60 for Babylonian)
+ * @param base Abacus base (e.g., 60 for base-60)
  * @param precision Abacus precision
  * @return Initialized structure, or NULL on error
  */
@@ -202,7 +202,7 @@ void hemb_free(HierarchicalEmbeddings* hemb);
 /**
  * Map token to sphere using clock lattice geometry
  * 
- * Uses Babylonian clock structure to deterministically assign
+ * Uses clock lattice structure to deterministically assign
  * tokens to spheres with 12-fold symmetry.
  * 
  * @param token_id Token ID

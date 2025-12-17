@@ -14,7 +14,7 @@
  * - Lattice utilities (spiral mapping, distance, neighbors)
  * 
  * OBJECTIVES IMPLEMENTED:
- * - OBJECTIVE 21: Babylonian Clock Lattice
+ * - OBJECTIVE 21: Clock Lattice Lattice
  * - OBJECTIVE 25: Platonic Solid Model Architecture
  * - OBJECTIVE 13A: Integrate L(n,d,k,λ) Lattice Formula
  * - Neighbor influence from kissing sphere geometry
@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/constants.h"
-#include "../include/cllm_inference.h"
+#include "ai/cllm_inference.h"
 #include "math/constants.h"
 #include "math/transcendental.h"
 #include "math/constants.h"
@@ -38,7 +38,7 @@
 #include "math/constants.h"
 #include "math/clock.h"  // For clock_map_prime_to_position()
 #include "math/constants.h"
-#include "../include/clock_lattice.h"
+#include "math/clock.h"
 #include "math/constants.h"
 #include "ai/cllm_platonic.h"
 #include "math/constants.h"

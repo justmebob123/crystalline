@@ -1,7 +1,7 @@
 /*
  * Pure Crystalline CLLM - Core Types and Structures
  * 
- * PURE implementation using Babylonian arbitrary precision mathematics.
+ * PURE implementation using base-60 arbitrary precision mathematics.
  * ALL internal calculations use NEW Crystalline Math Library (double precision for 3D coordinates).
  * Floats ONLY for input/output conversion.
  */

@@ -5,7 +5,7 @@
  * Phase 2: Enable dynamic model creation from geometric notation
  */
 
-#include "../../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/platonic_generator.h"
 #include "math/polytope.h"
 #include <stdio.h>

@@ -12,7 +12,7 @@
 #include <immintrin.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/cllm_fp16.h"
+#include "ai/cllm_fp16.h"
 #include "math/validation.h"
 
 /**

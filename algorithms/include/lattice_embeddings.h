@@ -79,7 +79,7 @@ bool lattice_verify_geometric_embeddings(
  * 
  * This is INSTANT with ARBITRARY PRECISION - no overflow, no precision loss.
  * Works for ANY vocabulary size with O(vocab_size * embedding_dim) complexity.
- * Supports ALL bases >= 2 (Babylonian mathematics).
+ * Supports ALL bases >= 2 (base-60 mathematics).
  * 
  * @param embeddings Output embedding matrix [vocab_size * embedding_dim] (float)
  * @param vocab_size Number of tokens (can be ANY size)

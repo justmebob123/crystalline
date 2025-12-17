@@ -113,7 +113,7 @@ struct MicroModel {
 static void extract_features(uint64_t value, double* features) {
     // Universal geometric features based on value properties
     features[0] = (double)(value % 12);           // 12-fold symmetry
-    features[1] = (double)(value % 60);           // Babylonian base-60
+    features[1] = (double)(value % 60);           // base-60 base-60
     features[2] = (double)(value % 100);          // Centesimal
     features[3] = (double)value;                  // Magnitude
     features[4] = features[0] * features[1];      // Interaction term

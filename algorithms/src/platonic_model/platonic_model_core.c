@@ -18,9 +18,9 @@
 
 #include "platonic_model.h"
 #include "math/constants.h"
-#include "../../../math/include/math/transcendental.h"  // NEW math library
+#include "math/transcendental.h"  // NEW math library
 #include "math/constants.h"
-#include "../../../math/include/math/types.h"            // NEW math library constants
+#include "math/types.h"            // NEW math library constants
 #include "math/constants.h"
 #include <stdlib.h>
 #include <string.h>

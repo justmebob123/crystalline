@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 /* ============================================================================
  * HELPER: Copy abacus value to existing abacus

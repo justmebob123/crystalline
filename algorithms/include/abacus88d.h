@@ -217,7 +217,7 @@ typedef struct {
     uint8_t active_layer;
     uint8_t active_dimension;
     
-    // Base for all abacus (typically 60 for Babylonian)
+    // Base for all abacus (typically 60 for base-60)
     uint32_t base;
     
     // Thread safety for global operations

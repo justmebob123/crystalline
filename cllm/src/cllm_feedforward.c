@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>  // AVX2
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/transcendental.h"  // NEW math library
-#include "../include/cllm_simd_utils.h"
+#include "ai/cllm_simd_utils.h"
 
 // FeedForwardLayer structure definition (local to this file)
 typedef struct FeedForwardLayer {

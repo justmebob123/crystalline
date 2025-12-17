@@ -2,7 +2,7 @@
  * cllm_lattice_lookup.c - Direct Lookup Table for Lattice Embeddings
  * 
  * CRITICAL INSIGHT: The lattice values are COMPLETELY DETERMINISTIC
- * based on the Babylonian clock structure and 12-fold symmetry.
+ * based on the clock lattice structure and 12-fold symmetry.
  * 
  * Instead of computing L_lattice() millions of times, we use the
  * geometric pattern directly:
@@ -22,7 +22,7 @@
 
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
-#include "../../include/cllm_inference.h"
+#include "ai/cllm_inference.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +42,7 @@ void cllm_init_ring_patterns(uint32_t max_dim) {
     if (g_patterns_initialized) return;
     
     printf("\n=== Initializing Deterministic Ring Patterns ===\n");
-    printf("Using Babylonian clock structure (12, 60, 60, 100)\n");
+    printf("Using clock lattice structure (12, 60, 60, 100)\n");
     printf("Computing patterns for 4 rings × 12 symmetry groups\n\n");
     
     // Allocate: 4 rings × 12 groups × max_dim
@@ -91,7 +91,7 @@ float cllm_get_embedding_from_pattern(uint32_t token_id, uint32_t dim,
     if (!g_patterns_initialized) return 0.0;
     
     // Determine which ring this token belongs to
-    // Based on Babylonian clock structure
+    // Based on clock lattice structure
     int ring;
     if (token_id < 12) {
         ring = 0;  // Hours

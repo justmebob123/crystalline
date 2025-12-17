@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-// Dimensional frequencies (from Babylonian mathematics)
+// Dimensional frequencies (from base-60 mathematics)
 // These match the extern declarations in cllm_mathematical_constants.h
 const uint64_t DIMENSIONAL_FREQUENCIES[] = {
     3, 7, 31, 12, 19, 5, 11, 13, 17, 23, 29, 37,
@@ -24,7 +24,7 @@ const size_t DIMENSIONAL_FREQUENCIES_COUNT =
 /**
  * @brief Get dimensional frequency for a given dimension
  * 
- * Based on Babylonian mathematics and 12-fold symmetry.
+ * Based on base-60 mathematics and 12-fold symmetry.
  * 
  * @param dimension Dimension index (0-based)
  * @return Frequency value
@@ -40,7 +40,7 @@ uint64_t cllm_get_dimensional_frequency(size_t dimension) {
 /**
  * @brief Check if prime is near 144000 boundary
  * 
- * The 144000 boundary is significant in Babylonian mathematics
+ * The 144000 boundary is significant in base-60 mathematics
  * and represents a vector culmination point.
  * 
  * @param prime Prime value to check

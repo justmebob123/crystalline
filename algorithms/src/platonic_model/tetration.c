@@ -23,10 +23,10 @@
  */
 
 #include "platonic_model.h"
-#include "../../../math/include/math/transcendental.h"  // NEW math library
-#include "../../../math/include/math/arithmetic.h"       // NEW math library
-#include "../../../math/include/math/types.h"            // PHASE 2: For MATH_INFINITY
-#include "../../../math/include/math/validation.h"       // For math_is_nan and math_is_inf
+#include "math/transcendental.h"  // NEW math library
+#include "math/arithmetic.h"       // NEW math library
+#include "math/types.h"            // PHASE 2: For MATH_INFINITY
+#include "math/validation.h"       // For math_is_nan and math_is_inf
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

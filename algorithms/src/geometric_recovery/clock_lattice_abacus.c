@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Babylonian clock structure
+// clock lattice structure
 #define RING_0_SIZE 12    // Hours
 #define RING_1_SIZE 60    // Minutes
 #define RING_2_SIZE 60    // Seconds

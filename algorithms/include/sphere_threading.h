@@ -9,7 +9,7 @@
  * 
  * Key Principles:
  * - Each sphere (thread/work unit) has exactly 12 neighbors
- * - Neighbors are determined by Babylonian clock geometry (12, 60, 60, 100 rings)
+ * - Neighbors are determined by clock lattice geometry (12, 60, 60, 100 rings)
  * - O(n) initialization using deterministic geometric pattern
  * - Cache-optimized neighbor ordering for 20-30% performance improvement
  * - 12-fold symmetry enforced throughout
@@ -125,7 +125,7 @@ void sphere_threading_free(SphereThreadingModel* model);
 /**
  * Find neighbor using clock geometry
  * 
- * Uses Babylonian clock structure to deterministically find a neighbor
+ * Uses clock lattice structure to deterministically find a neighbor
  * in the specified symmetry group. This is O(1) and requires no distance
  * calculations.
  * 

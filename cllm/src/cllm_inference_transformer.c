@@ -6,9 +6,11 @@
  * It integrates with the new CLLMModel structure and enables actual text generation.
  */
 
-#include "../../include/cllm.h"
-#include "../../math/include/math.h"
-#include "../../math/include/math/validation.h"  // For math_is_nan, math_is_inf
+#include "ai/cllm.h"
+#include "math/types.h"
+#include "math/arithmetic.h"
+#include "math/transcendental.h"
+#include "math/validation.h"  // For math_is_nan, math_is_inf
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -219,7 +219,7 @@ void platonic_align_attention_resonance(
 // ============================================================================
 
 /**
- * Map Babylonian clock to frequency bands
+ * Map clock lattice to frequency bands
  * 
  * Maps the 4-ring clock structure (12, 60, 60, 100) to frequency bands.
  */
@@ -233,7 +233,7 @@ void platonic_map_clock_to_frequencies(
     }
     
     printf("\n=== Concentric Ring Mapping ===\n");
-    printf("Babylonian clock rings: ");
+    printf("clock lattice rings: ");
     for (int i = 0; i < NUM_CLOCK_RINGS; i++) {
         printf("%u ", CLOCK_RINGS[i]);
     }

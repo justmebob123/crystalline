@@ -19,8 +19,8 @@
 #ifndef CLLM_ABACUS_MATRIX_H
 #define CLLM_ABACUS_MATRIX_H
 
-#include "../math/include/math/abacus.h"
-#include "../math/include/math/types.h"
+#include "math/abacus.h"
+#include "math/types.h"
 #include <stdint.h>
 #include <stdbool.h>
 

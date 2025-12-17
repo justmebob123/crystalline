@@ -4,7 +4,7 @@
  * MIGRATED: Now uses NEW math library (Crystalline Abacus)
  * - Replaced BigFixed with CrystallineAbacus
  * - Uses pure geometric clock lattice operations
- * - Supports ALL bases >= 2 (Babylonian mathematics)
+ * - Supports ALL bases >= 2 (base-60 mathematics)
  * - No dependencies on OLD crystalline library types
  */
 
@@ -18,14 +18,7 @@
 
 // Temporary: Use OLD library functions but avoid type conflicts
 // These will be migrated to NEW library later
-typedef struct {
-    int ring;
-    int position;
-    double angle;
-} BabylonianClockPosition;
-
-// External functions from OLD library (will be migrated)
-extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
+#include "math/clock.h"
 
 // Use algorithms library version (general-purpose, not CLLM-specific)
 #include "dimensional_frequencies.h"
@@ -38,7 +31,7 @@ extern BabylonianClockPosition map_prime_index_to_clock(int prime_index);
  * Formula: L = 3^O(n,k,λ) · ∏cos(θ·φᵢ) · Γ(k) · ν(λ) · Γ(n,d)
  */
 static double compute_L_abacus(
-    BabylonianClockPosition pos,
+    ClockPosition pos,
     uint32_t dimension,
     uint64_t phi_i,
     int symmetry_group
@@ -108,7 +101,8 @@ void lattice_embeddings_init_geometric_abacus(
     printf("Initializing embeddings with Crystalline Abacus...\n");
     
     for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-        BabylonianClockPosition pos = map_prime_index_to_clock((int)token_id);
+        ClockPosition pos;
+        clock_map_index_to_position((uint64_t)token_id, &pos);
         int symmetry_group = token_id % 12;
         
         for (uint32_t dim = 0; dim < embedding_dim; dim++) {
@@ -147,7 +141,8 @@ void lattice_get_token_embedding_geometric_abacus(
     
     (void)lattice; // Unused for now
     
-    BabylonianClockPosition pos = map_prime_index_to_clock((int)token_id);
+    ClockPosition pos;
+    clock_map_index_to_position((uint64_t)token_id, &pos);
     int symmetry_group = token_id % 12;
     
     for (uint32_t dim = 0; dim < embedding_dim; dim++) {

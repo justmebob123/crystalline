@@ -8,8 +8,8 @@
  * - Kissing spheres architecture for parallel vocabulary building
  */
 
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm.h"
+#include "ai/cllm_tokenizer.h"
+#include "ai/cllm.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

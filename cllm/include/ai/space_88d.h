@@ -88,7 +88,7 @@ typedef struct {
     // Thread safety (per-layer locks)
     pthread_mutex_t layer_locks[SPACE88D_NUM_LAYERS];
     
-    // Base for all abacus values (typically 60 for Babylonian)
+    // Base for all abacus values (typically 60 for base-60)
     uint32_t base;
     
     // Precision for fractional values

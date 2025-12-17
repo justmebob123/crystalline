@@ -25,7 +25,7 @@
 #define PHI 1.618033988749895  // Golden ratio: (1+√5)/2
 #define PI_PHI (PI * PHI)      // π×φ metric
 
-// Babylonian clock structure
+// clock lattice structure
 #define RING_0_POSITIONS 12    // Hours
 #define RING_1_POSITIONS 60    // Minutes
 #define RING_2_POSITIONS 60    // Seconds
@@ -82,7 +82,7 @@ static double compute_pi_phi_angle(uint64_t value) {
 }
 
 /**
- * Map angle to Babylonian ring structure
+ * Map angle to base-60 ring structure
  */
 static ClockPosition map_angle_to_ring(double angle) {
     ClockPosition pos;
@@ -159,7 +159,7 @@ static uint64_t base_inverse_from_angle(double angle) {
  * Adjust based on which ring the position is on
  */
 static uint64_t apply_ring_correction(uint64_t base_value, ClockPosition pos, uint64_t n) {
-    // Ring-specific corrections based on Babylonian structure
+    // Ring-specific corrections based on base-60 structure
     uint64_t correction = 0;
     
     switch (pos.ring) {

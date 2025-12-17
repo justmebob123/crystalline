@@ -5,9 +5,9 @@
 
 #include "geometric_space_ops.h"
 #include "math/abacus.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 /* ============================================================================
  * BOUNDARY DETECTION IMPLEMENTATION
@@ -27,7 +27,7 @@ static double get_magnitude_double(const CrystallineAbacus* value) {
     if (abacus_to_double(value, &result) != MATH_SUCCESS) {
         return 0.0;
     }
-    return fabs(result);
+    return math_abs(result);
 }
 
 MathError geometric_detect_boundary(

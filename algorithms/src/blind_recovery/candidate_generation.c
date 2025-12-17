@@ -101,7 +101,7 @@ static uint64_t generate_nonce_candidate(
  * Compute clock lattice position for candidate
  */
 static uint32_t compute_clock_position(uint64_t candidate) {
-    // Map to Babylonian clock (12, 60, 60, 100)
+    // Map to clock lattice (12, 60, 60, 100)
     uint32_t ring1 = candidate % 12;
     uint32_t ring2 = (candidate / 12) % 60;
     uint32_t ring3 = (candidate / 720) % 60;

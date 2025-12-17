@@ -7,11 +7,11 @@
 
 #include "threading_integration.h"
 #include "hierarchical_memory.h"
+#include "math/transcendental.h"
+#include "math/arithmetic.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -109,10 +109,10 @@ MathError thread_compute_nd_position(uint64_t thread_id, uint32_t num_dimensions
 
     // First 2 dimensions: Use clock position directly
     if (num_dimensions >= 1) {
-        out_position[0] = pos.radius * cos(pos.angle);
+        out_position[0] = pos.radius * math_cos(pos.angle);
     }
     if (num_dimensions >= 2) {
-        out_position[1] = pos.radius * sin(pos.angle);
+        out_position[1] = pos.radius * math_sin(pos.angle);
     }
     if (num_dimensions >= 3) {
         out_position[2] = (double)pos.ring / 4.0;
@@ -124,10 +124,10 @@ MathError thread_compute_nd_position(uint64_t thread_id, uint32_t num_dimensions
         uint32_t prime = 2 + d;  // Simple prime sequence
         
         for (uint32_t j = 0; j < 3 && j < num_dimensions; j++) {
-            sum += out_position[j] * cos(2.0 * M_PI * prime * d / num_dimensions);
+            sum += out_position[j] * math_cos(2.0 * M_PI * prime * d / num_dimensions);
         }
         
-        out_position[d] = sum / sqrt((double)num_dimensions);
+        out_position[d] = sum / math_sqrt((double)num_dimensions);
     }
 
     return MATH_SUCCESS;
@@ -329,7 +329,7 @@ MathError balance_load_geometrically(uint32_t num_threads, const double* thread_
     // Redistribute work to balance load
     for (uint32_t i = 0; i < num_threads; i++) {
         double imbalance = thread_loads[i] - avg_load;
-        out_work_redistribution[i] = (uint64_t)(fabs(imbalance) * 1000.0);  // Scale for precision
+        out_work_redistribution[i] = (uint64_t)(math_abs(imbalance) * 1000.0);  // Scale for precision
     }
 
     return MATH_SUCCESS;

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
+#include "ai/cllm.h"
 #include "math/constants.h"
 #include "math/transcendental.h"
 #include "math/constants.h"

@@ -15,7 +15,7 @@
 #include "math/constants.h"
 #include "ai/cllm_cymatic_frequencies.h"
 #include "math/constants.h"
-#include "phonetic_values.h"
+#include "ai/phonetic_values.h"
 #include "math/constants.h"
 #include <string.h>
 #include <stdio.h>

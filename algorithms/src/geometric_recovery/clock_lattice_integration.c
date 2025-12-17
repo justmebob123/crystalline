@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// Babylonian clock structure
+// clock lattice structure
 #define RING_0_SIZE 12    // Hours
 #define RING_1_SIZE 60    // Minutes
 #define RING_2_SIZE 60    // Seconds
@@ -208,7 +208,7 @@ ClockFactorVisualization* visualize_factors_on_clock(
     
     viz->ring_distance = abs(viz->p_ring - viz->q_ring);
     
-    // Babylonian structure
+    // base-60 structure
     viz->total_positions = get_total_clock_positions();
     viz->resolution = 2.0 * MATH_PI / viz->total_positions;
     
@@ -261,7 +261,7 @@ void print_clock_factor_visualization(const ClockFactorVisualization* viz) {
            viz->angular_separation, viz->angular_separation * 180.0 / MATH_PI);
     printf("    Ring Distance: %.0f\n\n", viz->ring_distance);
     
-    printf("  Babylonian Structure:\n");
+    printf("  base-60 Structure:\n");
     printf("    Total Positions: %d\n", viz->total_positions);
     printf("    Resolution: %.10f rad\n", viz->resolution);
     printf("    Confidence: %.2f%%\n", viz->confidence * 100.0);
@@ -312,7 +312,7 @@ void export_clock_factor_visualization(
     fprintf(f, "ring_distance,%.0f\n", viz->ring_distance);
     fprintf(f, "\n");
     
-    fprintf(f, "# Babylonian Structure\n");
+    fprintf(f, "# base-60 Structure\n");
     fprintf(f, "total_positions,%d\n", viz->total_positions);
     fprintf(f, "resolution,%.15f\n", viz->resolution);
     fprintf(f, "confidence,%.10f\n", viz->confidence);

@@ -25,8 +25,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/cllm.h"
-#include "../include/cllm_training.h"
+#include "ai/cllm.h"
+#include "ai/cllm_training.h"
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 

@@ -3,11 +3,11 @@
  * @brief Implementation of matrix operations using CrystallineAbacus
  */
 
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../../include/cllm_abacus_matrix.h"
+#include "math/transcendental.h"
+#include "ai/cllm_abacus_matrix.h"
 
 // Error code mappings
 #define MATH_ERROR_ALLOCATION MATH_ERROR_OUT_OF_MEMORY
@@ -139,7 +139,7 @@ MathError abacus_matrix_init_xavier(AbacusMatrix* matrix, uint32_t fan_in, uint3
     }
     
     // Xavier initialization: scale = sqrt(6 / (fan_in + fan_out))
-    double scale = sqrt(6.0 / (fan_in + fan_out));
+    double scale = math_sqrt(6.0 / (fan_in + fan_out));
     
     return abacus_matrix_init_random(matrix, scale);
 }
@@ -150,7 +150,7 @@ MathError abacus_matrix_init_he(AbacusMatrix* matrix, uint32_t fan_in) {
     }
     
     // He initialization: scale = sqrt(2 / fan_in)
-    double scale = sqrt(2.0 / fan_in);
+    double scale = math_sqrt(2.0 / fan_in);
     
     return abacus_matrix_init_random(matrix, scale);
 }

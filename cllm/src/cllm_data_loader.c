@@ -11,10 +11,10 @@
  * - Data augmentation
  */
 
-#include "../include/cllm.h"
-#include "../include/cllm_tokenizer.h"
-#include "../include/cllm_progress.h"
-#include "../include/cllm_global_progress.h"
+#include "ai/cllm.h"
+#include "ai/cllm_tokenizer.h"
+#include "ai/cllm_progress.h"
+#include "ai/cllm_global_progress.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

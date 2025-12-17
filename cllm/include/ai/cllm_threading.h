@@ -23,7 +23,7 @@
 
 #include "cllm.h"
 #include "cllm_metrics.h"
-#include "../algorithms/include/sphere_threading.h"
+#include "sphere_threading.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -19,10 +19,10 @@
 #include "math/transcendental.h"
 #include "math/arithmetic.h"
 #include "math/clock_lattice_13d.h"
-#include "../include/cllm.h"
-#include "../include/cllm_attention.h"
-#include "../include/cllm_simd_utils.h"
-#include "../algorithms/include/ntt_attention.h"
+#include "ai/cllm.h"
+#include "ai/cllm_attention.h"
+#include "ai/cllm_simd_utils.h"
+#include "ntt_attention.h"
 
 // ============================================================================
 // MEMORY ALIGNMENT HELPERS

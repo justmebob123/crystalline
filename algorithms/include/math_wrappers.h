@@ -8,7 +8,7 @@
  * - Provides standard API for arbitrary precision math
  * - Uses CrystallineAbacus from NEW math library
  * - Supports traditional calculator-style functions
- * - Integrates with Babylonian mathematics framework
+ * - Integrates with base-60 mathematics framework
  */
 
 #include "math/abacus.h"

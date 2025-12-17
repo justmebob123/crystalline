@@ -1,7 +1,7 @@
 /**
  * cllm_lattice_lookup.h - Direct Lookup Table for Lattice Embeddings
  * 
- * Uses deterministic geometric patterns from Babylonian clock structure
+ * Uses deterministic geometric patterns from clock lattice structure
  * instead of computing L_lattice() for every token.
  */
 

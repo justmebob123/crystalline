@@ -12,8 +12,8 @@
  * consider more sophisticated tokenizers like BPE or WordPiece.
  */
 
-#include "../include/cllm.h"
-#include "../include/cllm_tokenizer.h"
+#include "ai/cllm.h"
+#include "ai/cllm_tokenizer.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

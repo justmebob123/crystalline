@@ -6,7 +6,7 @@
  * 
  * Maps prime factors to positions on the 13D clock lattice
  * and visualizes their geometric relationships using the
- * Babylonian structure (12, 60, 60, 100).
+ * base-60 structure (12, 60, 60, 100).
  * 
  * NO crypto-specific dependencies - works with raw uint64_t data.
  */
@@ -45,7 +45,7 @@ typedef struct {
     double angular_separation;     // Angular separation
     double ring_distance;          // Distance between rings
     
-    // Babylonian structure
+    // base-60 structure
     int total_positions;           // Total positions (4,320,000)
     double resolution;             // Angular resolution
     

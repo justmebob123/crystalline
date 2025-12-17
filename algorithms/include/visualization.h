@@ -232,7 +232,7 @@ int viz_project_3d(VisualizationData* data);
  * Project to Crystalline structure
  * 
  * Projects data to crystalline lattice structure using clock geometry.
- * Updates point positions based on Babylonian clock (12, 60, 60, 100).
+ * Updates point positions based on clock lattice (12, 60, 60, 100).
  * 
  * @param data Visualization data
  * @return 0 on success, -1 on error

@@ -1,6 +1,6 @@
 /**
  * @file dimensional_frequencies.h
- * @brief Dimensional frequency mapping based on Babylonian mathematics
+ * @brief Dimensional frequency mapping based on base-60 mathematics
  * 
  * Provides general-purpose dimensional frequency mapping using prime
  * number sequences from the clock lattice. This is a domain-agnostic
@@ -21,7 +21,7 @@ extern "C" {
 /**
  * @brief Dimensional frequencies array
  * 
- * These frequencies are based on Babylonian mathematics and correspond
+ * These frequencies are based on base-60 mathematics and correspond
  * to prime positions on the clock lattice. They are used for dimensional
  * modulation in multi-dimensional computational systems.
  */
@@ -35,7 +35,7 @@ extern const size_t DIMENSIONAL_FREQUENCIES_COUNT;
 /**
  * @brief Get dimensional frequency for a given dimension
  * 
- * Maps dimension indices to frequency values based on Babylonian
+ * Maps dimension indices to frequency values based on base-60
  * mathematical principles. The frequencies are derived from prime
  * positions on the clock lattice.
  * 

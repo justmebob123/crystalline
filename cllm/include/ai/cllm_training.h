@@ -16,9 +16,9 @@
 #include "cllm.h"
 
 /* Algorithm layer includes (WIRED) */
-#include "../algorithms/include/loss_functions.h"
-#include "../algorithms/include/optimizers.h"
-#include "../algorithms/include/backprop.h"
+#include "loss_functions.h"
+#include "optimizers.h"
+#include "backprop.h"
 
 /* Type definitions */
 

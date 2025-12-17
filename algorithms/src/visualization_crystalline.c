@@ -1,14 +1,15 @@
 /**
  * Crystalline Visualization Projection
  * 
- * Implements crystalline structure projection using Babylonian clock lattice.
+ * Implements crystalline structure projection using clock lattice lattice.
  * 
  * PHASE 2: Fixed include order to prevent type conflicts
  */
 
 #include "visualization.h"
 #include "math/arithmetic.h"
-#include "math/transcendental.h"  // PHASE 2: Include math types first
+#include "math/transcendental.h"
+#include "math/constants.h"
 // #include "../../include/clock_lattice.h"  // Legacy - not needed
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +17,7 @@
 /**
  * Project to Crystalline structure
  * 
- * Projects points to crystalline lattice structure using Babylonian clock.
+ * Projects points to crystalline lattice structure using clock lattice.
  * Position[0] = ring (0-N)
  * Position[1] = position within ring (0-positions_in_ring)
  * Position[2] = symmetry group (0-11)
@@ -30,7 +31,7 @@ int viz_project_crystalline(VisualizationData* data) {
         
         // TODO: Implement clock position mapping without legacy clock_lattice.h
         // For now, use simple circular mapping
-        double angle = (2.0 * M_PI * i) / data->num_points;
+        double angle = (2.0 * MATH_PI * i) / data->num_points;
         double radius = 1.0 + (i / 12.0);  // Ring number
         
         // Store clock coordinates

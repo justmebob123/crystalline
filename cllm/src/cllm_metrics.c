@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../../include/cllm_training.h"
-#include "../../include/cllm_metrics.h"
+#include "ai/cllm_training.h"
+#include "ai/cllm_metrics.h"
 
 // Global callback
 static CLLMMetricsCallback g_metrics_callback = NULL;
