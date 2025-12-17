@@ -113,6 +113,25 @@ int adaptive_get_statistics(
  */
 void adaptive_print_statistics(HierarchicalThreadPool* pool);
 
+/**
+ * Start physical threads for adaptive pool
+ * 
+ * This function starts the physical OS threads that will steal work
+ * from the logical thread queues. Should be called after pool creation.
+ * 
+ * @param pool Thread pool
+ * @return 0 on success, -1 on error
+ */
+int adaptive_start_physical_threads(HierarchicalThreadPool* pool);
+
+/**
+ * Stop physical threads for adaptive pool
+ * 
+ * @param pool Thread pool
+ * @return 0 on success, -1 on error
+ */
+int adaptive_stop_physical_threads(HierarchicalThreadPool* pool);
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================

@@ -307,6 +307,27 @@ typedef struct {
     uint32_t num_child_groups;
     uint32_t max_child_groups;
     
+    // ========================================================================
+    // ADAPTIVE THREADING (for limited cores)
+    // ========================================================================
+    
+    // Adaptive Configuration
+    bool use_adaptive_threading;        // Use adaptive threading
+    uint32_t max_physical_threads;      // Maximum physical OS threads
+    uint32_t num_logical_threads;       // Number of logical threads (always 96)
+    
+    // Physical Thread Pool
+    pthread_t* physical_threads;        // Physical OS threads
+    uint32_t num_physical_threads;      // Number of physical threads created
+    
+    // Work Stealing
+    bool work_stealing_enabled;         // Enable work stealing
+    _Atomic uint64_t total_work_stolen; // Total work items stolen
+    
+    // Shared Memory Pools (one per physical thread)
+    void** shared_memory_pools;         // Shared memory pools
+    size_t memory_pool_size;            // Size of each pool
+    
 } HierarchicalThreadPool;
 
 // ============================================================================

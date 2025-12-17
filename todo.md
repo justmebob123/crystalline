@@ -20,7 +20,7 @@
 - [x] Test all 5 Platonic solids
 - [x] Comprehensive documentation created
 
-## Phase 4: Component Updates [IN PROGRESS - 50%]
+## Phase 4: Component Updates [IN PROGRESS - 60%]
 - [x] Find and update model creation code (cllm_create.c)
 - [x] Add cllm_initialize_88d_threading() call to model creation
 - [x] Add cllm_cleanup_88d_threading() call to model destruction (cllm_free.c)
@@ -28,7 +28,10 @@
 - [x] Analyze memory profile and threading efficiency
 - [x] Implement adaptive threading for limited cores
 - [x] Update integration to use adaptive threading
-- [ ] Compile and run model creation tests
+- [x] Add adaptive threading fields to pool structure
+- [x] Implement physical thread management
+- [x] Create scalability test suite (4-128 cores)
+- [ ] Compile and run scalability tests
 - [ ] Create cllm_training_88d.c for parallel training operations
 - [ ] Create cllm_inference_88d.c for parallel inference operations
 - [ ] Update attention mechanism to use 88D threads
