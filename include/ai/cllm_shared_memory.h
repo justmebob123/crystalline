@@ -7,6 +7,9 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
+// Use algorithms library types
+#include "../../algorithms/include/shared_memory.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,233 +17,159 @@ extern "C" {
 /**
  * Shared Memory System for Kissing Spheres Architecture
  * 
- * Implements a three-tier memory model:
- * 1. READ_ONLY: Immutable shared data (no locks required)
- * 2. COPY_ON_WRITE: Lazy copying on first write
- * 3. LOCKED_WRITE: Explicit synchronization for writes
+ * NOTE: This now uses SharedMemoryRegion and SharedMemoryAccessMode 
+ * from algorithms/shared_memory.h
  * 
- * This enables efficient sharing between parent/child/sibling spheres
- * while maintaining thread safety and minimizing lock contention.
+ * The algorithms library provides:
+ * - SharedMemoryRegion struct
+ * - SharedMemoryAccessMode enum (SHARED_READ_ONLY, SHARED_COPY_ON_WRITE, SHARED_LOCKED_WRITE)
+ * - All shared memory functions (create, free, read, write, etc.)
+ * 
+ * CLLM-specific extensions are defined below.
  */
 
-// Cache line size for alignment (prevents false sharing)
-#define CACHE_LINE_SIZE 64
-
-// Shared memory access modes
-typedef enum {
-    SHARED_READ_ONLY,        // Immutable after creation (no locks)
-    SHARED_COPY_ON_WRITE,    // Copy on first write (lazy)
-    SHARED_LOCKED_WRITE      // Explicit locking for writes
-} SharedMemoryAccessMode;
-
-// Forward declarations for function pointers
-typedef void* (*CopyFunction)(const void* src, size_t size);
-typedef void (*FreeFunction)(void* ptr);
+// ============================================================================
+// CLLM-SPECIFIC EXTENSIONS
+// ============================================================================
 
 /**
- * Shared Memory Region
+ * CLLM Shared Memory Metadata
  * 
- * Represents a region of memory that can be shared between multiple
- * threads/spheres with different access patterns.
+ * Additional metadata for CLLM-specific shared memory regions.
+ * Wraps the base SharedMemoryRegion from algorithms library.
  */
-typedef struct SharedMemoryRegion {
-    // Memory
-    void* data;                      // Pointer to actual data
-    size_t size;                     // Current size in bytes
-    size_t capacity;                 // Allocated capacity in bytes
+typedef struct {
+    SharedMemoryRegion* region;       // Base region from algorithms library
     
-    // Access control
-    pthread_rwlock_t rwlock;         // Read-write lock
-    _Atomic(int) num_readers;        // Number of active readers
-    _Atomic(int) num_writers;        // Number of active writers
+    // CLLM-specific metadata
+    int sphere_id;                    // Owner sphere ID
+    int symmetry_group;               // Symmetry group
+    uint64_t last_update_epoch;       // Last update epoch
     
-    // Mode
-    SharedMemoryAccessMode access_mode;
+    // CLLM-specific statistics
+    _Atomic(uint64_t) gradient_updates;  // Number of gradient updates
+    _Atomic(uint64_t) weight_updates;    // Number of weight updates
     
-    // Versioning (for cache coherency)
-    _Atomic(uint64_t) version;       // Incremented on each write
-    
-    // Copy-on-write support
-    CopyFunction copy_fn;            // Function to copy data
-    FreeFunction free_fn;            // Function to free data
-    bool is_copy;                    // True if this is a COW copy
-    struct SharedMemoryRegion* original; // Original region (for COW)
-    
-    // Statistics
-    _Atomic(uint64_t) read_count;    // Number of reads
-    _Atomic(uint64_t) write_count;   // Number of writes
-    _Atomic(uint64_t) copy_count;    // Number of COW copies made
-    
-    // Padding to cache line boundary
-    char padding[CACHE_LINE_SIZE - 
-                 (sizeof(void*) + sizeof(size_t) * 2 + 
-                  sizeof(pthread_rwlock_t) + sizeof(_Atomic(int)) * 2 +
-                  sizeof(SharedMemoryAccessMode) + sizeof(_Atomic(uint64_t)) +
-                  sizeof(CopyFunction) + sizeof(FreeFunction) + 
-                  sizeof(bool) + sizeof(void*) + sizeof(_Atomic(uint64_t)) * 3) % CACHE_LINE_SIZE];
-    
-} SharedMemoryRegion;
+} CLLMSharedMemory;
+
+// ============================================================================
+// CLLM-SPECIFIC FUNCTIONS
+// ============================================================================
 
 /**
- * Create shared memory region
- * 
- * @param size Initial size in bytes
- * @param mode Access mode (READ_ONLY, COPY_ON_WRITE, LOCKED_WRITE)
- * @return Allocated region, or NULL on error
- */
-SharedMemoryRegion* shared_memory_create(size_t size, SharedMemoryAccessMode mode);
-
-/**
- * Create shared memory region with custom copy/free functions
+ * Create CLLM shared memory region
  * 
  * @param size Initial size in bytes
  * @param mode Access mode
- * @param copy_fn Custom copy function (for COW)
- * @param free_fn Custom free function
- * @return Allocated region, or NULL on error
+ * @param sphere_id Owner sphere ID
+ * @param symmetry_group Symmetry group
+ * @return CLLM shared memory, or NULL on error
  */
-SharedMemoryRegion* shared_memory_create_custom(size_t size, 
-                                                 SharedMemoryAccessMode mode,
-                                                 CopyFunction copy_fn,
-                                                 FreeFunction free_fn);
+CLLMSharedMemory* cllm_shared_memory_create(
+    size_t size,
+    SharedMemoryAccessMode mode,
+    int sphere_id,
+    int symmetry_group
+);
 
 /**
- * Free shared memory region
+ * Free CLLM shared memory region
  * 
- * @param region Region to free
+ * @param cllm_mem CLLM shared memory to free
  */
-void shared_memory_free(SharedMemoryRegion* region);
+void cllm_shared_memory_free(CLLMSharedMemory* cllm_mem);
 
 /**
- * Acquire read access to shared memory
+ * Get base region from CLLM shared memory
  * 
- * For READ_ONLY: No lock, just returns pointer
- * For COPY_ON_WRITE: Acquires read lock
- * For LOCKED_WRITE: Acquires read lock
- * 
- * @param region Region to read from
- * @return Pointer to data, or NULL on error
+ * @param cllm_mem CLLM shared memory
+ * @return Base SharedMemoryRegion
  */
-const void* shared_memory_read(SharedMemoryRegion* region);
+SharedMemoryRegion* cllm_shared_memory_get_region(CLLMSharedMemory* cllm_mem);
+
+/**
+ * Update gradient in shared memory
+ * 
+ * @param cllm_mem CLLM shared memory
+ * @param gradient Gradient data
+ * @param size Size of gradient
+ * @return 0 on success, -1 on error
+ */
+int cllm_shared_memory_update_gradient(
+    CLLMSharedMemory* cllm_mem,
+    const float* gradient,
+    size_t size
+);
+
+/**
+ * Update weights in shared memory
+ * 
+ * @param cllm_mem CLLM shared memory
+ * @param weights Weight data
+ * @param size Size of weights
+ * @return 0 on success, -1 on error
+ */
+int cllm_shared_memory_update_weights(
+    CLLMSharedMemory* cllm_mem,
+    const float* weights,
+    size_t size
+);
+
+/**
+ * Get CLLM shared memory statistics
+ * 
+ * @param cllm_mem CLLM shared memory
+ * @param gradient_updates Output: number of gradient updates
+ * @param weight_updates Output: number of weight updates
+ */
+void cllm_shared_memory_get_stats(
+    const CLLMSharedMemory* cllm_mem,
+    uint64_t* gradient_updates,
+    uint64_t* weight_updates
+);
+
+// ============================================================================
+// CONVENIENCE WRAPPERS
+// ============================================================================
+
+/**
+ * Read from CLLM shared memory
+ * 
+ * Convenience wrapper around shared_memory_read()
+ */
+static inline const void* cllm_shared_memory_read(CLLMSharedMemory* cllm_mem) {
+    return cllm_mem ? shared_memory_read(cllm_mem->region) : NULL;
+}
+
+/**
+ * Write to CLLM shared memory
+ * 
+ * Convenience wrapper around shared_memory_write()
+ */
+static inline void* cllm_shared_memory_write(CLLMSharedMemory* cllm_mem) {
+    return cllm_mem ? shared_memory_write(cllm_mem->region) : NULL;
+}
 
 /**
  * Release read access
  * 
- * @param region Region to release
+ * Convenience wrapper around shared_memory_release_read()
  */
-void shared_memory_release_read(SharedMemoryRegion* region);
-
-/**
- * Acquire write access to shared memory
- * 
- * For READ_ONLY: Returns NULL (immutable)
- * For COPY_ON_WRITE: Creates copy if needed, returns writable pointer
- * For LOCKED_WRITE: Acquires write lock, returns writable pointer
- * 
- * @param region Region to write to
- * @return Pointer to writable data, or NULL on error
- */
-void* shared_memory_write(SharedMemoryRegion* region);
+static inline void cllm_shared_memory_release_read(CLLMSharedMemory* cllm_mem) {
+    if (cllm_mem) shared_memory_release_read(cllm_mem->region);
+}
 
 /**
  * Release write access
  * 
- * @param region Region to release
+ * Convenience wrapper around shared_memory_release_write()
  */
-void shared_memory_release_write(SharedMemoryRegion* region);
-
-/**
- * Get current version of shared memory
- * 
- * Used for cache coherency checks.
- * 
- * @param region Region to query
- * @return Current version number
- */
-uint64_t shared_memory_get_version(const SharedMemoryRegion* region);
-
-/**
- * Check if shared memory has been modified since version
- * 
- * @param region Region to check
- * @param version Version to compare against
- * @return true if modified, false otherwise
- */
-bool shared_memory_is_modified(const SharedMemoryRegion* region, uint64_t version);
-
-/**
- * Resize shared memory region
- * 
- * Only allowed for LOCKED_WRITE mode.
- * Caller must hold write lock.
- * 
- * @param region Region to resize
- * @param new_size New size in bytes
- * @return 0 on success, -1 on error
- */
-int shared_memory_resize(SharedMemoryRegion* region, size_t new_size);
-
-/**
- * Get statistics for shared memory region
- * 
- * @param region Region to query
- * @param out_reads Output: number of reads
- * @param out_writes Output: number of writes
- * @param out_copies Output: number of COW copies
- */
-void shared_memory_get_stats(const SharedMemoryRegion* region,
-                             uint64_t* out_reads,
-                             uint64_t* out_writes,
-                             uint64_t* out_copies);
-
-/**
- * Print shared memory region info (for debugging)
- * 
- * @param region Region to print
- * @param name Optional name for the region
- */
-void shared_memory_print_info(const SharedMemoryRegion* region, const char* name);
-
-/**
- * Default copy function (memcpy)
- * 
- * @param src Source data
- * @param size Size in bytes
- * @return Allocated copy, or NULL on error
- */
-void* shared_memory_default_copy(const void* src, size_t size);
-
-/**
- * Default free function (free)
- * 
- * @param ptr Pointer to free
- */
-void shared_memory_default_free(void* ptr);
-
-/**
- * Create read-only view of existing data
- * 
- * Creates a SharedMemoryRegion that wraps existing data without copying.
- * The data must remain valid for the lifetime of the region.
- * 
- * @param data Pointer to existing data
- * @param size Size of data in bytes
- * @return Allocated region, or NULL on error
- */
-SharedMemoryRegion* shared_memory_create_readonly_view(const void* data, size_t size);
-
-/**
- * Validate shared memory region
- * 
- * Checks for consistency and correctness.
- * 
- * @param region Region to validate
- * @return true if valid, false otherwise
- */
-bool shared_memory_validate(const SharedMemoryRegion* region);
+static inline void cllm_shared_memory_release_write(CLLMSharedMemory* cllm_mem) {
+    if (cllm_mem) shared_memory_release_write(cllm_mem->region);
+}
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CLLM_SHARED_MEMORY_H */
+#endif // CLLM_SHARED_MEMORY_H

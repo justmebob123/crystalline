@@ -5,83 +5,67 @@
 #include <stdatomic.h>
 #include <time.h>
 
+// Use algorithms library types
+#include "../../algorithms/include/message_passing.h"
+
 /**
  * Sphere Message System
  * 
  * Lock-free message passing between spheres in the hierarchy.
  * Messages are used for coordination, work stealing, gradient synchronization,
  * and boundary notifications.
+ * 
+ * NOTE: This now uses MessageType and MessagePriority from algorithms/message_passing.h
+ * CLLM-specific message types are defined as custom messages (>= MSG_TYPE_USER_DEFINED)
  */
 
 // ============================================================================
-// MESSAGE TYPES
+// CLLM-SPECIFIC MESSAGE TYPES (Custom Messages)
 // ============================================================================
 
 /**
- * Message Type Enumeration
+ * CLLM Message Type Extensions
  * 
- * Defines all possible message types that can be sent between spheres.
+ * Defines CLLM-specific message types as extensions to the base MessageType enum.
+ * These start at MSG_TYPE_USER_DEFINED (1000) to avoid conflicts.
  */
 typedef enum {
-    // Work Distribution Messages
-    MSG_WORK_REQUEST,           // Request work from sibling
-    MSG_WORK_OFFER,             // Offer work to sibling
-    MSG_WORK_ACCEPT,            // Accept offered work
-    MSG_WORK_REJECT,            // Reject offered work
+    // Gradient Synchronization Messages (1000-1099)
+    MSG_CLLM_GRADIENT_READY = MSG_TYPE_USER_DEFINED,  // 1000
+    MSG_CLLM_GRADIENT_ACCUMULATE,                      // 1001
+    MSG_CLLM_GRADIENT_COMPLETE,                        // 1002
     
-    // Gradient Synchronization Messages
-    MSG_GRADIENT_READY,         // Gradients ready for accumulation
-    MSG_GRADIENT_ACCUMULATE,    // Request gradient accumulation
-    MSG_GRADIENT_COMPLETE,      // Gradient accumulation complete
+    // Weight Broadcasting Messages (1100-1199)
+    MSG_CLLM_WEIGHTS_UPDATED = 1100,                   // Weights have been updated
+    MSG_CLLM_WEIGHTS_REQUEST,                          // Request latest weights
+    MSG_CLLM_WEIGHTS_BROADCAST,                        // Broadcasting weights to children
     
-    // Weight Broadcasting Messages
-    MSG_WEIGHTS_UPDATED,        // Weights have been updated
-    MSG_WEIGHTS_REQUEST,        // Request latest weights
-    MSG_WEIGHTS_BROADCAST,      // Broadcasting weights to children
+    // Boundary Notifications (1200-1299)
+    MSG_CLLM_BOUNDARY_CROSSING = 1200,                 // Crossed 144000 boundary
+    MSG_CLLM_TWIN_PRIME_HIT,                           // Hit twin prime (143999 or 144001)
+    MSG_CLLM_BOUNDARY_REGION_ENTER,                    // Entered boundary region
+    MSG_CLLM_BOUNDARY_REGION_EXIT,                     // Exited boundary region
     
-    // Boundary Notifications
-    MSG_BOUNDARY_CROSSING,      // Crossed 144000 boundary
-    MSG_TWIN_PRIME_HIT,         // Hit twin prime (143999 or 144001)
-    MSG_BOUNDARY_REGION_ENTER,  // Entered boundary region
-    MSG_BOUNDARY_REGION_EXIT,   // Exited boundary region
+    // Coordination Messages (1300-1399)
+    MSG_CLLM_EPOCH_START = 1300,                       // Start new epoch
+    MSG_CLLM_EPOCH_COMPLETE,                           // Epoch complete
+    MSG_CLLM_BATCH_START,                              // Start new batch
+    MSG_CLLM_BATCH_COMPLETE,                           // Batch complete
     
-    // Coordination Messages
-    MSG_EPOCH_START,            // Start new epoch
-    MSG_EPOCH_COMPLETE,         // Epoch complete
-    MSG_BATCH_START,            // Start new batch
-    MSG_BATCH_COMPLETE,         // Batch complete
+    // Hierarchy Management (1400-1499)
+    MSG_CLLM_CHILD_SPAWN = 1400,                       // Spawn child sphere
+    MSG_CLLM_CHILD_TERMINATE,                          // Terminate child sphere
+    MSG_CLLM_PARENT_SYNC,                              // Synchronize with parent
+    MSG_CLLM_SIBLING_DISCOVER,                         // Discover sibling sphere
     
-    // Hierarchy Management
-    MSG_CHILD_SPAWN,            // Spawn child sphere
-    MSG_CHILD_TERMINATE,        // Terminate child sphere
-    MSG_PARENT_SYNC,            // Synchronize with parent
-    MSG_SIBLING_DISCOVER,       // Discover sibling sphere
+    // Statistics (1500-1599)
+    MSG_CLLM_STATS_REQUEST = 1500,                     // Request statistics
+    MSG_CLLM_STATS_REPORT,                             // Report statistics
     
-    // Error Handling
-    MSG_ERROR_REPORT,           // Report error
-    MSG_ERROR_RECOVERY,         // Error recovery initiated
-    
-    // Statistics
-    MSG_STATS_REQUEST,          // Request statistics
-    MSG_STATS_REPORT,           // Report statistics
-    
-    // Shutdown
-    MSG_SHUTDOWN_REQUEST,       // Request shutdown
-    MSG_SHUTDOWN_ACK,           // Acknowledge shutdown
-    
-} MessageType;
+} CLLMMessageType;
 
-/**
- * Message Priority
- * 
- * Higher priority messages are processed first.
- */
-typedef enum {
-    MSG_PRIORITY_LOW = 0,
-    MSG_PRIORITY_NORMAL = 1,
-    MSG_PRIORITY_HIGH = 2,
-    MSG_PRIORITY_CRITICAL = 3
-} MessagePriority;
+// Note: Use MessagePriority from algorithms/message_passing.h directly
+// No need to redefine it here
 
 // ============================================================================
 // MESSAGE PAYLOAD STRUCTURES
