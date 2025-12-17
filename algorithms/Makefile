@@ -256,3 +256,13 @@ test_geometric_space_ops: tests/test_geometric_space_ops.c $(SHARED_LIB)
 	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_geometric_space_ops
 
 .PHONY: test_geometric_space_ops
+
+
+# 88D Thread Pool Test
+test_88d_thread_pool: tests/test_88d_thread_pool.c $(SHARED_LIB)
+	@echo "Building 88D Thread Pool test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o tests/test_88d_thread_pool tests/test_88d_thread_pool.c -L. -lalgorithms -L.. -lcllm -L../math/lib -lcrystallinemath -lpthread
+	@echo "Running 88D Thread Pool test..."
+	LD_LIBRARY_PATH=.:..:../math/lib ./tests/test_88d_thread_pool
+
+.PHONY: test_88d_thread_pool

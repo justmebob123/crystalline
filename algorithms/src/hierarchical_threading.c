@@ -1105,10 +1105,20 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     
     // Enable 88D structure
     pool->use_88d_structure = true;
+    pool->num_levels = HIERARCHICAL_88D_NUM_LAYERS;
+    pool->threads_per_level = HIERARCHICAL_88D_THREADS_PER_LAYER;
     
     // Create clock lattice
-    pool->clock_lattice = clock_context_create();
+    pool->clock_lattice = calloc(1, sizeof(ClockContext));
     if (!pool->clock_lattice) {
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    MathError err = clock_init(pool->clock_lattice);
+    if (err != MATH_SUCCESS) {
+        free(pool->clock_lattice);
+        pool->clock_lattice = NULL;
         hierarchical_thread_pool_free(pool);
         return NULL;
     }
@@ -1137,39 +1147,53 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     // Initialize global barrier
     pthread_barrier_init(&pool->global_barrier, NULL, HIERARCHICAL_88D_TOTAL_THREADS);
     
-    // Organize threads into 88D structure
-    uint32_t thread_idx = 0;
-    for (uint8_t layer = 0; layer < HIERARCHICAL_88D_NUM_LAYERS; layer++) {
-        for (uint8_t dim = 0; dim < HIERARCHICAL_88D_THREADS_PER_LAYER; dim++) {
-            if (thread_idx < pool->num_threads) {
-                HierarchicalThread* thread = pool->threads[thread_idx];
-                
-                // Set 88D position
-                thread->layer = layer;
-                thread->dimension = (dim == 0) ? 0 : (dim - 1);  // Control at 0, workers 0-10
-                thread->clock_position = dim + 1;  // 1-12
-                
-                // Set role
-                thread->role = (dim == 0) ? THREAD_ROLE_CONTROL : THREAD_ROLE_WORKER;
-                
-                // Set geometric frame
-                thread->platonic_frame = pool->layer_frames[layer];
-                
-                // Create abacus values
-                thread->value = abacus_new(base);
-                thread->accumulator = abacus_new(base);
-                thread->temp = abacus_new(base);
-                
-                // Initialize gradient lock
-                pthread_mutex_init(&thread->gradient_lock, NULL);
-                
-                // Store in layer array
-                pool->layers[layer][dim] = thread;
-                if (dim == 0) {
-                    pool->control_threads[layer] = thread;
-                }
-                
-                thread_idx++;
+    // Create and organize threads into 88D structure
+    for (uint32_t i = 0; i < HIERARCHICAL_88D_TOTAL_THREADS; i++) {
+        // Create thread if it doesn't exist
+        if (!pool->threads[i]) {
+            pool->threads[i] = hierarchical_thread_create(i, THREAD_ROLE_WORKER, NULL, pool);
+            if (!pool->threads[i]) {
+                // Failed to create thread, clean up and return
+                hierarchical_thread_pool_free(pool);
+                return NULL;
+            }
+            pool->num_threads++;
+        }
+        
+        HierarchicalThread* thread = pool->threads[i];
+        
+        // Calculate 88D position from thread index
+        uint8_t layer = i / HIERARCHICAL_88D_THREADS_PER_LAYER;
+        uint8_t dim = i % HIERARCHICAL_88D_THREADS_PER_LAYER;
+        
+        // Set 88D position
+        thread->layer = layer;
+        thread->dimension = dim;  // Dimension matches array index (0-11)
+        thread->clock_position = dim;  // Clock position (0-11)
+        
+        // Set role
+        if (dim == 0) {
+            thread->role = THREAD_ROLE_CONTROL;
+        } else {
+            thread->role = THREAD_ROLE_WORKER;
+        }
+        
+        // Set geometric frame (will be NULL for now)
+        thread->platonic_frame = pool->layer_frames[layer];
+        
+        // Create abacus values
+        thread->value = abacus_new(base);
+        thread->accumulator = abacus_new(base);
+        thread->temp = abacus_new(base);
+        
+        // Initialize gradient lock
+        pthread_mutex_init(&thread->gradient_lock, NULL);
+        
+        // Store in layer array
+        if (layer < HIERARCHICAL_88D_NUM_LAYERS && dim < HIERARCHICAL_88D_THREADS_PER_LAYER) {
+            pool->layers[layer][dim] = thread;
+            if (dim == 0) {
+                pool->control_threads[layer] = thread;
             }
         }
     }

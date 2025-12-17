@@ -49,6 +49,8 @@
 #include "state_management.h"
 #include "work_distribution.h"
 #include "abacus88d.h"
+#include <math/types.h>
+#include <math/clock.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
