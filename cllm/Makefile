@@ -5,7 +5,7 @@ CC = gcc
 AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 CFLAGS += -I./include -I./include/ai
-CFLAGS += -I../include -I../algorithms/include -I../math/include
+CFLAGS += -I./include -I../algorithms/include -I../math/include
 LDFLAGS = -shared
 ARFLAGS = rcs
 

@@ -1,7 +1,7 @@
 # Algorithms Test Suite Makefile
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O0 -I../include -I../../include
+CFLAGS = -Wall -Wextra -g -O0 -I../include -I../../math/include
 LDFLAGS = -L.. -L../.. -lalgorithms -lcrystalline -lm -Wl,-rpath,'$$ORIGIN/..:$$ORIGIN/../..'
 
 # Test executables
