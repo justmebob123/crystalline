@@ -1,25 +1,90 @@
 Building Crystalline Math Library...
+Setting up PHP extension structure...
+Building Crystalline Math Library...
+make[1]: Entering directory '/workspace/math'
 make[1]: Entering directory '/workspace/math'
 Creating static library lib/libcrystallinemath.a...
+✓ PHP extension structure ready
+Building algorithms PHP extension...
+Creating static library lib/libcrystallinemath.a...
+Static library created: lib/libcrystallinemath.a
 Static library created: lib/libcrystallinemath.a
 Creating shared library lib/libcrystallinemath.so...
+Creating shared library lib/libcrystallinemath.so...
+Configuring for:
+PHP Api Version:         20220829
+Zend Module Api No:      20220829
+Zend Extension Api No:   420220829
+/usr/bin/ld: warning: build/platonic/nested_polytope.o: requires executable stack (because the .note.GNU-stack section is executable)
 /usr/bin/ld: warning: build/platonic/nested_polytope.o: requires executable stack (because the .note.GNU-stack section is executable)
 Shared library created: lib/libcrystallinemath.so
 make[1]: Leaving directory '/workspace/math'
 ✓ Math library built successfully
+Building algorithms static library...
+Shared library created: lib/libcrystallinemath.so
+make[1]: Leaving directory '/workspace/math'
+make[1]: Entering directory '/workspace/algorithms'
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/abacus88d/abacus88d.c -o src/abacus88d/abacus88d.o
+✓ Math library built successfully
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/dimensional_frequencies.c -o src/dimensional_frequencies.o
 Building algorithms shared library...
 make[1]: Entering directory '/workspace/algorithms'
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/abacus88d/abacus88d.c -o src/abacus88d/abacus88d.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_space_ops.c -o src/geometric_space_ops.o
+src/geometric_space_ops.c: In function ‘get_magnitude_double’:
+src/geometric_space_ops.c:30:12: warning: implicit declaration of function ‘fabs’ [-Wimplicit-function-declaration]
+   30 |     return fabs(result);
+      |            ^~~~
+src/geometric_space_ops.c:11:1: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
+   10 | #include <math.h>
+  +++ |+#include <math.h>
+   11 | 
+src/geometric_space_ops.c:30:12: warning: incompatible implicit declaration of built-in function ‘fabs’ [-Wbuiltin-declaration-mismatch]
+   30 |     return fabs(result);
+      |            ^~~~
+src/geometric_space_ops.c:30:12: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
+src/geometric_space_ops.c: In function ‘geometric_transform_dimension’:
+src/geometric_space_ops.c:260:9: warning: unused variable ‘angular_diff’ [-Wunused-variable]
+  260 |     int angular_diff = (int)target_dim - (int)source_dim;
+      |         ^~~~~~~~~~~~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/dimensional_frequencies.c -o src/dimensional_frequencies.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_space_ops.c -o src/geometric_space_ops.o
+src/geometric_space_ops.c: In function ‘get_magnitude_double’:
+src/geometric_space_ops.c:30:12: warning: implicit declaration of function ‘fabs’ [-Wimplicit-function-declaration]
+   30 |     return fabs(result);
+      |            ^~~~
+src/geometric_space_ops.c:11:1: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
+   10 | #include <math.h>
+  +++ |+#include <math.h>
+   11 | 
+src/geometric_space_ops.c:30:12: warning: incompatible implicit declaration of built-in function ‘fabs’ [-Wbuiltin-declaration-mismatch]
+   30 |     return fabs(result);
+      |            ^~~~
+src/geometric_space_ops.c:30:12: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
+src/geometric_space_ops.c: In function ‘geometric_transform_dimension’:
+src/geometric_space_ops.c:260:9: warning: unused variable ‘angular_diff’ [-Wunused-variable]
+  260 |     int angular_diff = (int)target_dim - (int)source_dim;
+      |         ^~~~~~~~~~~~
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/numerical.c -o src/numerical.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/loss_functions.c -o src/loss_functions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/numerical.c -o src/numerical.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/optimizers.c -o src/optimizers.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/backprop.c -o src/backprop.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/loss_functions.c -o src/loss_functions.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/statistics.c -o src/statistics.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/threading.c -o src/threading.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/optimizers.c -o src/optimizers.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/shared_memory.c -o src/shared_memory.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/shared_memory_rainbow.c -o src/shared_memory_rainbow.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/shared_memory_enhanced.c -o src/shared_memory_enhanced.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/statistics.c -o src/statistics.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/lock_free_queue.c -o src/lock_free_queue.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/sphere_packing.c -o src/sphere_packing.o
+configure.ac:162: warning: The macro `AC_PROG_LIBTOOL' is obsolete.
+configure.ac:162: You should run autoupdate.
+build/libtool.m4:100: AC_PROG_LIBTOOL is expanded from...
+configure.ac:162: the top level
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/shared_memory_rainbow.c -o src/shared_memory_rainbow.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/sphere_threading.c -o src/sphere_threading.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_memory.c -o src/hierarchical_memory.o
 src/hierarchical_memory.c: In function ‘hierarchical_memory_scale_segments’:
@@ -64,6 +129,7 @@ src/hierarchical_memory.c: At top level:
 src/hierarchical_memory.c:32:17: warning: ‘get_time_ns’ defined but not used [-Wunused-function]
    32 | static uint64_t get_time_ns(void) {
       |                 ^~~~~~~~~~~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/lock_free_queue.c -o src/lock_free_queue.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/threading_integration.c -o src/threading_integration.o
 src/threading_integration.c: In function ‘thread_compute_nd_position’:
 src/threading_integration.c:112:40: warning: implicit declaration of function ‘cos’ [-Wimplicit-function-declaration]
@@ -100,6 +166,7 @@ src/threading_integration.c:332:49: warning: implicit declaration of function �
 src/threading_integration.c:332:49: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
 src/threading_integration.c:332:49: warning: incompatible implicit declaration of built-in function ‘fabs’ [-Wbuiltin-declaration-mismatch]
 src/threading_integration.c:332:49: note: include ‘<math.h>’ or provide a declaration of ‘fabs’
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/sphere_threading.c -o src/sphere_threading.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/message_passing.c -o src/message_passing.o
 src/message_passing.c:6: warning: "_GNU_SOURCE" redefined
     6 | #define _GNU_SOURCE
@@ -110,12 +177,51 @@ src/state_management.c:6: warning: "_GNU_SOURCE" redefined
     6 | #define _GNU_SOURCE
       | 
 <command-line>: note: this is the location of the previous definition
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_memory.c -o src/hierarchical_memory.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/work_distribution.c -o src/work_distribution.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_threading.c -o src/hierarchical_threading.o
 src/work_distribution.c:6: warning: "_GNU_SOURCE" redefined
     6 | #define _GNU_SOURCE
       | 
+src/hierarchical_memory.c: In function ‘hierarchical_memory_scale_segments’:
 <command-line>: note: this is the location of the previous definition
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_threading.c -o src/hierarchical_threading.o
+src/hierarchical_memory.c:510:42: warning: implicit declaration of function ‘sin’ [-Wimplicit-function-declaration]
+  510 |             double perturbation = 0.01 * sin(2.0 * M_PI * i / new_num_segments + d);
+      |                                          ^~~
+src/hierarchical_memory.c:20:1: note: include ‘<math.h>’ or provide a declaration of ‘sin’
+   19 | #include <math.h>
+  +++ |+#include <math.h>
+   20 | 
+src/hierarchical_memory.c:510:42: warning: incompatible implicit declaration of built-in function ‘sin’ [-Wbuiltin-declaration-mismatch]
+  510 |             double perturbation = 0.01 * sin(2.0 * M_PI * i / new_num_segments + d);
+      |                                          ^~~
+src/hierarchical_memory.c:510:42: note: include ‘<math.h>’ or provide a declaration of ‘sin’
+src/hierarchical_memory.c: In function ‘hierarchical_memory_scale_dimensions’:
+src/hierarchical_memory.c:579:43: warning: implicit declaration of function ‘cos’ [-Wimplicit-function-declaration]
+  579 |                 sum += seg->position[j] * cos(2.0 * M_PI * prime * (d - block->num_dimensions) / new_num_dimensions);
+      |                                           ^~~
+src/hierarchical_memory.c:579:43: note: include ‘<math.h>’ or provide a declaration of ‘cos’
+src/hierarchical_memory.c:579:43: warning: incompatible implicit declaration of built-in function ‘cos’ [-Wbuiltin-declaration-mismatch]
+src/hierarchical_memory.c:579:43: note: include ‘<math.h>’ or provide a declaration of ‘cos’
+src/hierarchical_memory.c:581:37: warning: implicit declaration of function ‘sqrt’ [-Wimplicit-function-declaration]
+  581 |             new_position[d] = sum / sqrt((double)new_num_dimensions);
+      |                                     ^~~~
+src/hierarchical_memory.c:581:37: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+src/hierarchical_memory.c:581:37: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+src/hierarchical_memory.c:581:37: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+src/hierarchical_memory.c: In function ‘hierarchical_memory_compute_position’:
+src/hierarchical_memory.c:698:32: warning: incompatible implicit declaration of built-in function ‘cos’ [-Wbuiltin-declaration-mismatch]
+  698 |     out_position[0] = radius * cos(base_angle);
+      |                                ^~~
+src/hierarchical_memory.c:698:32: note: include ‘<math.h>’ or provide a declaration of ‘cos’
+src/hierarchical_memory.c:699:32: warning: incompatible implicit declaration of built-in function ‘sin’ [-Wbuiltin-declaration-mismatch]
+  699 |     out_position[1] = radius * sin(base_angle);
+      |                                ^~~
+src/hierarchical_memory.c:699:32: note: include ‘<math.h>’ or provide a declaration of ‘sin’
+src/hierarchical_memory.c:711:33: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+  711 |         out_position[d] = sum / sqrt((double)num_dimensions);
+      |                                 ^~~~
+src/hierarchical_memory.c:711:33: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
 src/hierarchical_threading.c: In function ‘calculate_distance’:
 src/hierarchical_threading.c:41:12: warning: implicit declaration of function ‘sqrt’ [-Wimplicit-function-declaration]
    41 |     return sqrt(sum);
@@ -136,32 +242,105 @@ src/hierarchical_threading.c:291:31: note: include ‘<math.h>’ or provide a d
 src/hierarchical_threading.c:291:31: warning: incompatible implicit declaration of built-in function ‘cos’ [-Wbuiltin-declaration-mismatch]
 src/hierarchical_threading.c:291:31: note: include ‘<math.h>’ or provide a declaration of ‘cos’
 src/hierarchical_threading.c: In function ‘hierarchical_thread_submit_work’:
+src/hierarchical_memory.c: At top level:
+src/hierarchical_memory.c:32:17: warning: ‘get_time_ns’ defined but not used [-Wunused-function]
+   32 | static uint64_t get_time_ns(void) {
+      |                 ^~~~~~~~~~~
 src/hierarchical_threading.c:703:11: warning: unused parameter ‘data’ [-Wunused-parameter]
   703 |     void* data,
       |     ~~~~~~^~~~
+src/hierarchical_threading.c: In function ‘hierarchical_thread_pool_create_88d’:
+src/hierarchical_threading.c:1127:18: warning: unused variable ‘solid_types’ [-Wunused-variable]
+ 1127 |     Layer88DType solid_types[HIERARCHICAL_88D_NUM_LAYERS] = {
+      |                  ^~~~~~~~~~~
+src/hierarchical_threading.c: In function ‘hierarchical_thread_notify_boundary_crossing’:
+src/hierarchical_threading.c:1268:13: warning: unused parameter ‘from_layer’ [-Wunused-parameter]
+ 1268 |     uint8_t from_layer,
+      |     ~~~~~~~~^~~~~~~~~~
+src/hierarchical_threading.c:1269:13: warning: unused parameter ‘to_layer’ [-Wunused-parameter]
+ 1269 |     uint8_t to_layer
+      |     ~~~~~~~~^~~~~~~~
+src/hierarchical_threading.c: In function ‘hierarchical_thread_notify_twin_prime’:
+src/hierarchical_threading.c:1286:14: warning: unused parameter ‘prime1’ [-Wunused-parameter]
+ 1286 |     uint64_t prime1,
+      |     ~~~~~~~~~^~~~~~
+src/hierarchical_threading.c:1287:14: warning: unused parameter ‘prime2’ [-Wunused-parameter]
+ 1287 |     uint64_t prime2
+      |     ~~~~~~~~~^~~~~~
+src/hierarchical_threading.c: In function ‘hierarchical_thread_pool_attach_group’:
+src/hierarchical_threading.c:1356:30: warning: assignment to ‘struct HierarchicalThreadPool **’ from incompatible pointer type ‘HierarchicalThreadPool **’ [-Wincompatible-pointer-types]
+ 1356 |         parent->child_groups = new_array;
+      |                              ^
+src/hierarchical_threading.c:1361:52: warning: assignment to ‘struct HierarchicalThreadPool *’ from incompatible pointer type ‘HierarchicalThreadPool *’ [-Wincompatible-pointer-types]
+ 1361 |     parent->child_groups[parent->num_child_groups] = child;
+      |                                                    ^
+src/hierarchical_threading.c:1363:25: warning: assignment to ‘struct HierarchicalThreadPool *’ from incompatible pointer type ‘HierarchicalThreadPool *’ [-Wincompatible-pointer-types]
+ 1363 |     child->parent_group = parent;
+      |                         ^
+src/hierarchical_threading.c: In function ‘hierarchical_thread_pool_detach_group’:
+src/hierarchical_threading.c:1382:37: warning: comparison of distinct pointer types lacks a cast
+ 1382 |         if (parent->child_groups[i] == child) {
+      |                                     ^~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/adaptive_threading.c -o src/adaptive_threading.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/memory_management.c -o src/memory_management.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/visualization.c -o src/visualization.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/message_passing.c -o src/message_passing.o
+src/message_passing.c:6: warning: "_GNU_SOURCE" redefined
+    6 | #define _GNU_SOURCE
+      | 
+<command-line>: note: this is the location of the previous definition
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/visualization_2d.c -o src/visualization_2d.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/memory_management.c -o src/memory_management.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/visualization_3d.c -o src/visualization_3d.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/visualization_crystalline.c -o src/visualization_crystalline.o
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking for cc... cc
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/batch_processing.c -o src/batch_processing.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_prime_partitions.c -o src/hierarchical_prime_partitions.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/visualization.c -o src/visualization.o
+checking whether the C compiler works... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/batch_processing.c -o src/batch_processing.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_primes.c -o src/hierarchical_primes.o
+yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_structures.c -o src/hierarchical_structures.o
+
+checking whether we are cross compiling... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/hierarchical_prime_partitions.c -o src/hierarchical_prime_partitions.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/lattice_sphere_positions.c -o src/lattice_sphere_positions.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/angular_attention.c -o src/angular_attention.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/cymatic_modulation.c -o src/cymatic_modulation.o
+no
+checking for suffix of object files... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/angular_attention.c -o src/angular_attention.o
+o
+checking whether the compiler supports GNU C... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/cymatic_modulation.c -o src/cymatic_modulation.o
+yes
+checking whether cc accepts -g... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/batch_processing.c -o src/batch_processing.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/ntt_attention.c -o src/ntt_attention.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/ntt_attention_backward.c -o src/ntt_attention_backward.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/lattice_embeddings.c -o src/lattice_embeddings.o
+yes
+checking for cc option to enable C11 features... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/ntt_attention_backward.c -o src/ntt_attention_backward.o
+none needed
+checking how to run the C preprocessor... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/lattice_embeddings.c -o src/lattice_embeddings.o
+cc -E
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/tensor_ops.c -o src/tensor_ops.o
+checking for icc... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/angular_attention.c -o src/angular_attention.o
+no
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/qk_mapping.c -o src/qk_mapping.o
+checking for suncc... no
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/iterative_search.c -o src/iterative_search.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/validation.c -o src/validation.o
+checking for system library directory... lib
+checking if compiler supports -Wl,-rpath,... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/validation.c -o src/validation.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/ntt_attention_backward.c -o src/ntt_attention_backward.o
+yes
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/mathematical_formulas.c -o src/mathematical_formulas.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/symbolic_field_theory.c -o src/symbolic_field_theory.o
+checking build system type... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/symbolic_field_theory.c -o src/symbolic_field_theory.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/iterative_search.c -o src/iterative_search.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/nonce_generation.c -o src/nonce_generation.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/math_wrappers.c -o src/math_wrappers.o
+x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking target system type... x86_64-pc-linux-gnu
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/mathematical_formulas.c -o src/mathematical_formulas.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/clock_position_wrapper.c -o src/clock_position_wrapper.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/oscillation_detection.c -o src/blind_recovery/oscillation_detection.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/structural_mapping.c -o src/blind_recovery/structural_mapping.o
@@ -169,40 +348,101 @@ gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/corruption_detection.c -o src/blind_recovery/corruption_detection.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/anchor_selection.c -o src/blind_recovery/anchor_selection.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/triangulation.c -o src/blind_recovery/triangulation.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/anchor_adjustment.c -o src/blind_recovery/anchor_adjustment.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/nonce_generation.c -o src/nonce_generation.o
+checking for PHP prefix... /usr
+checking for PHP includes... -I/usr/include/php/20220829 -I/usr/include/php/20220829/main -I/usr/include/php/20220829/TSRM -I/usr/include/php/20220829/Zend -I/usr/include/php/20220829/ext -I/usr/include/php/20220829/ext/date/lib
+checking for PHP extension directory... /usr/lib/php/20220829
+checking for PHP installed headers prefix... /usr/include/php/20220829
+checking if debug is enabled... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/anchor_adjustment.c -o src/blind_recovery/anchor_adjustment.o
+no
+checking if zts is enabled... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/anchor_selection.c -o src/blind_recovery/anchor_selection.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/confidence_scoring.c -o src/blind_recovery/confidence_scoring.o
+no
+checking for gawk... gawk
+checking whether to enable algorithms support... yes, shared
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/candidate_generation.c -o src/blind_recovery/candidate_generation.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/fitness_scoring.c -o src/blind_recovery/fitness_scoring.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/iterative_refinement.c -o src/blind_recovery/iterative_refinement.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/anchor_adjustment.c -o src/blind_recovery/anchor_adjustment.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/convergence_detection.c -o src/blind_recovery/convergence_detection.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/multi_scale_analysis.c -o src/blind_recovery/multi_scale_analysis.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/recursive_stabilization.c -o src/blind_recovery/recursive_stabilization.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/fitness_scoring.c -o src/blind_recovery/fitness_scoring.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/multi_scale_analysis.c -o src/blind_recovery/multi_scale_analysis.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/stabilization_metrics.c -o src/blind_recovery/stabilization_metrics.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/model_expansion.c -o src/blind_recovery/model_expansion.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/self_similar_generation.c -o src/blind_recovery/self_similar_generation.o
+checking how to print strings... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/model_expansion.c -o src/blind_recovery/model_expansion.o
+printf
+checking for a sed that does not truncate output... (cached) /usr/bin/sed
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/recursive_stabilization.c -o src/blind_recovery/recursive_stabilization.o
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by cc... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... /usr/bin/nm -B
+checking the name lister (/usr/bin/nm -B) interface... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/self_similar_generation.c -o src/blind_recovery/self_similar_generation.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/hyperdimensional_analysis.c -o src/blind_recovery/hyperdimensional_analysis.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/stabilization_metrics.c -o src/blind_recovery/stabilization_metrics.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/multi_scalar_analysis.c -o src/blind_recovery/multi_scalar_analysis.o
+BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/variance_analysis.c -o src/blind_recovery/variance_analysis.o
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for file... file
+checking for objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for ar... ar
+checking for archiver @FILE support... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/self_similar_generation.c -o src/blind_recovery/self_similar_generation.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/cross_correlation.c -o src/blind_recovery/cross_correlation.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/universal_recovery.c -o src/blind_recovery/universal_recovery.o
+@
+checking for strip... strip
+checking for ranlib... ranlib
+checking for gawk... (cached) gawk
+checking command to parse /usr/bin/nm -B output from cc object... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/universal_recovery.c -o src/blind_recovery/universal_recovery.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/universal_recovery_v2.c -o src/blind_recovery/universal_recovery_v2.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/multi_scalar_analysis.c -o src/blind_recovery/multi_scalar_analysis.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/tetration.c -o src/platonic_model/tetration.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/universal_recovery.c -o src/blind_recovery/universal_recovery.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_core.c -o src/platonic_model/platonic_model_core.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_scaling.c -o src/platonic_model/platonic_model_scaling.o
+ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/blind_recovery/universal_recovery_v2.c -o src/blind_recovery/universal_recovery_v2.o
+/usr/bin/dd bs=4096 count=1
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_oscillations.c -o src/platonic_model/platonic_model_oscillations.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_recovery.c -o src/platonic_model/platonic_model_recovery.o
+checking for mt... no
+checking if : is a manifest tool... no
+checking for stdio.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_recovery.c -o src/platonic_model/platonic_model_recovery.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_persistence.c -o src/platonic_model/platonic_model_persistence.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/tetration_attractors.c -o src/geometric_recovery/tetration_attractors.o
+yes
+checking for stdlib.h... yes
+checking for string.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/tetration_attractors.c -o src/geometric_recovery/tetration_attractors.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/torus_analysis.c -o src/geometric_recovery/torus_analysis.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/multi_torus_tracker.c -o src/geometric_recovery/multi_torus_tracker.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_decomposition.c -o src/geometric_recovery/oscillation_decomposition.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/platonic_model/platonic_model_core.c -o src/platonic_model/platonic_model_core.o
+yes
+checking for inttypes.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/multi_torus_tracker.c -o src/geometric_recovery/multi_torus_tracker.o
+yes
+checking for stdint.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_decomposition.c -o src/geometric_recovery/oscillation_decomposition.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/harmonic_folding.c -o src/geometric_recovery/harmonic_folding.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/kissing_spheres.c -o src/geometric_recovery/kissing_spheres.o
+yes
+checking for strings.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/tetration_attractors.c -o src/geometric_recovery/tetration_attractors.o
+yes
+checking for sys/stat.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/kissing_spheres.c -o src/geometric_recovery/kissing_spheres.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/micro_model.c -o src/geometric_recovery/micro_model.o
+yes
+checking for sys/types.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_decomposition.c -o src/geometric_recovery/oscillation_decomposition.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/g_triangulation.c -o src/geometric_recovery/g_triangulation.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/prime_factor_extraction.c -o src/geometric_recovery/prime_factor_extraction.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/recursive_recovery.c -o src/geometric_recovery/recursive_recovery.o
+yes
+checking for unistd.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/prime_factor_extraction.c -o src/geometric_recovery/prime_factor_extraction.o
+yes
+checking for dlfcn.h... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/recursive_recovery.c -o src/geometric_recovery/recursive_recovery.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/clock_lattice_integration.c -o src/geometric_recovery/clock_lattice_integration.o
+yes
+checking for objdir... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/kissing_spheres.c -o src/geometric_recovery/kissing_spheres.o
 src/geometric_recovery/clock_lattice_integration.c: In function ‘map_prime_to_clock’:
 src/geometric_recovery/clock_lattice_integration.c:81:9: warning: unused variable ‘r1’ [-Wunused-variable]
    81 |     int r1 = pos % RING_1_SIZE;
@@ -216,14 +456,16 @@ src/geometric_recovery/clock_lattice_integration.c:73:9: warning: unused variabl
 src/geometric_recovery/clock_lattice_integration.c:53:14: warning: unused parameter ‘prime’ [-Wunused-parameter]
    53 |     uint64_t prime,
       |     ~~~~~~~~~^~~~~
+.libs
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/spherical_recovery.c -o src/geometric_recovery/spherical_recovery.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/search_recovery.c -o src/geometric_recovery/search_recovery.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/recursive_recovery.c -o src/geometric_recovery/recursive_recovery.o
 src/geometric_recovery/search_recovery.c:144:12: warning: ‘compare_candidates’ defined but not used [-Wunused-function]
   144 | static int compare_candidates(const void* a, const void* b) {
       |            ^~~~~~~~~~~~~~~~~~
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/anchor_grid_24.c -o src/geometric_recovery/anchor_grid_24.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/anchor_grid.c -o src/geometric_recovery/anchor_grid.o
-src/geometric_recovery/anchor_grid.c: In function ‘anchor_grid_print_stats’:
+checking if cc supports -fno-rtti -fno-exceptions... src/geometric_recovery/anchor_grid.c: In function ‘anchor_grid_print_stats’:
 src/geometric_recovery/anchor_grid.c:536:27: warning: format ‘%u’ expects argument of type ‘unsigned int’, but argument 2 has type ‘uint64_t’ {aka ‘long unsigned int’} [-Wformat=]
   536 |         printf("  Edges: %u\n", grid->solid->num_edges);
       |                          ~^     ~~~~~~~~~~~~~~~~~~~~~~
@@ -237,15 +479,66 @@ src/geometric_recovery/anchor_grid.c:537:27: warning: format ‘%u’ expects ar
       |                           unsigned int     uint64_t {aka long unsigned int}
       |                          %lu
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/fractal_bounds.c -o src/geometric_recovery/fractal_bounds.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/multi_scale_search.c -o src/geometric_recovery/multi_scale_search.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/search_recovery.c -o src/geometric_recovery/search_recovery.o
+src/geometric_recovery/search_recovery.c:144:12: warning: ‘compare_candidates’ defined but not used [-Wunused-function]
+  144 | static int compare_candidates(const void* a, const void* b) {
+      |            ^~~~~~~~~~~~~~~~~~
+no
+checking for cc option to produce PIC... -fPIC -DPIC
+checking if cc PIC flag -fPIC -DPIC works... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/multi_scale_search.c -o src/geometric_recovery/multi_scale_search.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/anchor_grid.c -o src/geometric_recovery/anchor_grid.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/clock_recovery.c -o src/geometric_recovery/clock_recovery.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/convergence_detection.c -o src/geometric_recovery/convergence_detection.o
-gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_detection.c -o src/geometric_recovery/oscillation_detection.o
+src/geometric_recovery/anchor_grid.c: In function ‘anchor_grid_print_stats’:
+src/geometric_recovery/anchor_grid.c:536:27: warning: format ‘%u’ expects argument of type ‘unsigned int’, but argument 2 has type ‘uint64_t’ {aka ‘long unsigned int’} [-Wformat=]
+  536 |         printf("  Edges: %u\n", grid->solid->num_edges);
+      |                          ~^     ~~~~~~~~~~~~~~~~~~~~~~
+      |                           |                |
+      |                           unsigned int     uint64_t {aka long unsigned int}
+      |                          %lu
+src/geometric_recovery/anchor_grid.c:537:27: warning: format ‘%u’ expects argument of type ‘unsigned int’, but argument 2 has type ‘uint64_t’ {aka ‘long unsigned int’} [-Wformat=]
+  537 |         printf("  Faces: %u\n", grid->solid->num_faces);
+      |                          ~^     ~~~~~~~~~~~~~~~~~~~~~~
+      |                           |                |
+      |                           unsigned int     uint64_t {aka long unsigned int}
+      |                          %lu
+yes
+checking if cc static flag -static works... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/convergence_detection.c -o src/geometric_recovery/convergence_detection.o
+yes
+checking if cc supports -c -o file.o... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_detection.c -o src/geometric_recovery/oscillation_detection.o
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/fractal_bounds.c -o src/geometric_recovery/fractal_bounds.o
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/confidence_scoring.c -o src/geometric_recovery/confidence_scoring.o
 src/geometric_recovery/confidence_scoring.c: In function ‘confidence_from_error’:
 src/geometric_recovery/confidence_scoring.c:405:12: warning: unused variable ‘normalized_error’ [-Wunused-variable]
   405 |     double normalized_error = error / max_error;
       |            ^~~~~~~~~~~~~~~~
+yes
+checking if cc supports -c -o file.o... (cached) yes
+checking whether the cc linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/convergence_detection.c -o src/geometric_recovery/convergence_detection.o
+yes
+checking whether -lc should be explicitly linked in... gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/geometric_recovery_orchestrator.c -o src/geometric_recovery/geometric_recovery_orchestrator.o
+Building crystalline_math PHP extension...
+no
+checking dynamic linker characteristics... src/geometric_recovery/geometric_recovery_orchestrator.c: In function ‘initialize_phase_components’:
+Configuring for:
+PHP Api Version:         20220829
+Zend Module Api No:      20220829
+Zend Extension Api No:   420220829
+src/geometric_recovery/geometric_recovery_orchestrator.c:413:72: warning: passing argument 1 of ‘convergence_detector_create’ makes integer from pointer without a cast [-Wint-conversion]
+  413 |     orch->phase_convergence[phase_index] = convergence_detector_create(&criteria);
+      |                                                                        ^~~~~~~~~
+      |                                                                        |
+      |                                                                        ConvergenceCriteria *
+In file included from src/geometric_recovery/geometric_recovery_orchestrator.c:41:
+./include/geometric_recovery/convergence_detection.h:121:14: note: expected ‘uint32_t’ {aka ‘unsigned int’} but argument is of type ‘ConvergenceCriteria *’
+  121 |     uint32_t max_iterations
+      |     ~~~~~~~~~^~~~~~~~~~~~~~
+gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/oscillation_detection.c -o src/geometric_recovery/oscillation_detection.o
+GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
 gcc -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE -I./include -I./include/blind_recovery -I../include -I../math/include -c src/geometric_recovery/geometric_recovery_orchestrator.c -o src/geometric_recovery/geometric_recovery_orchestrator.o
 src/geometric_recovery/geometric_recovery_orchestrator.c: In function ‘initialize_phase_components’:
 src/geometric_recovery/geometric_recovery_orchestrator.c:413:72: warning: passing argument 1 of ‘convergence_detector_create’ makes integer from pointer without a cast [-Wint-conversion]
@@ -257,252 +550,661 @@ In file included from src/geometric_recovery/geometric_recovery_orchestrator.c:4
 ./include/geometric_recovery/convergence_detection.h:121:14: note: expected ‘uint32_t’ {aka ‘unsigned int’} but argument is of type ‘ConvergenceCriteria *’
   121 |     uint32_t max_iterations
       |     ~~~~~~~~~^~~~~~~~~~~~~~
-Creating shared algorithms library: libalgorithms.so
-gcc -shared -Wl,--unresolved-symbols=ignore-all -o libalgorithms.so src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/shared_memory_rainbow.o src/shared_memory_enhanced.o src/lock_free_queue.o src/sphere_packing.o src/sphere_threading.o src/hierarchical_memory.o src/threading_integration.o src/message_passing.o src/state_management.o src/work_distribution.o src/hierarchical_threading.o src/memory_management.o src/visualization.o src/visualization_2d.o src/visualization_3d.o src/visualization_crystalline.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o src/hierarchical_prime_partitions.o src/lattice_sphere_positions.o src/angular_attention.o src/cymatic_modulation.o src/ntt_attention.o src/ntt_attention_backward.o src/lattice_embeddings.o src/tensor_ops.o src/qk_mapping.o src/iterative_search.o src/validation.o src/mathematical_formulas.o src/symbolic_field_theory.o src/nonce_generation.o src/math_wrappers.o src/clock_position_wrapper.o src/blind_recovery/oscillation_detection.o src/blind_recovery/structural_mapping.o src/blind_recovery/coprime_analysis.o src/blind_recovery/corruption_detection.o src/blind_recovery/anchor_selection.o src/blind_recovery/triangulation.o src/blind_recovery/anchor_adjustment.o src/blind_recovery/confidence_scoring.o src/blind_recovery/candidate_generation.o src/blind_recovery/fitness_scoring.o src/blind_recovery/iterative_refinement.o src/blind_recovery/convergence_detection.o src/blind_recovery/multi_scale_analysis.o src/blind_recovery/recursive_stabilization.o src/blind_recovery/stabilization_metrics.o src/blind_recovery/model_expansion.o src/blind_recovery/self_similar_generation.o src/blind_recovery/hyperdimensional_analysis.o src/blind_recovery/multi_scalar_analysis.o src/blind_recovery/variance_analysis.o src/blind_recovery/cross_correlation.o src/blind_recovery/universal_recovery.o src/blind_recovery/universal_recovery_v2.o src/platonic_model/tetration.o src/platonic_model/platonic_model_core.o src/platonic_model/platonic_model_scaling.o src/platonic_model/platonic_model_oscillations.o src/platonic_model/platonic_model_recovery.o src/platonic_model/platonic_model_persistence.o src/geometric_recovery/tetration_attractors.o src/geometric_recovery/torus_analysis.o src/geometric_recovery/multi_torus_tracker.o src/geometric_recovery/oscillation_decomposition.o src/geometric_recovery/harmonic_folding.o src/geometric_recovery/kissing_spheres.o src/geometric_recovery/micro_model.o src/geometric_recovery/g_triangulation.o src/geometric_recovery/prime_factor_extraction.o src/geometric_recovery/recursive_recovery.o src/geometric_recovery/clock_lattice_integration.o src/geometric_recovery/spherical_recovery.o src/geometric_recovery/search_recovery.o src/geometric_recovery/anchor_grid_24.o src/geometric_recovery/anchor_grid.o src/geometric_recovery/fractal_bounds.o src/geometric_recovery/multi_scale_search.o src/geometric_recovery/clock_recovery.o src/geometric_recovery/convergence_detection.o src/geometric_recovery/oscillation_detection.o src/geometric_recovery/confidence_scoring.o src/geometric_recovery/geometric_recovery_orchestrator.o -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm
-✓ Shared algorithms library created
-make[1]: Leaving directory '/workspace/algorithms'
-✓ Algorithms shared library created
-Building algorithms static library...
-make[1]: Entering directory '/workspace/algorithms'
 Creating static algorithms library: libalgorithms.a
-ar rcs libalgorithms.a src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/shared_memory_rainbow.o src/shared_memory_enhanced.o src/lock_free_queue.o src/sphere_packing.o src/sphere_threading.o src/hierarchical_memory.o src/threading_integration.o src/message_passing.o src/state_management.o src/work_distribution.o src/hierarchical_threading.o src/memory_management.o src/visualization.o src/visualization_2d.o src/visualization_3d.o src/visualization_crystalline.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o src/hierarchical_prime_partitions.o src/lattice_sphere_positions.o src/angular_attention.o src/cymatic_modulation.o src/ntt_attention.o src/ntt_attention_backward.o src/lattice_embeddings.o src/tensor_ops.o src/qk_mapping.o src/iterative_search.o src/validation.o src/mathematical_formulas.o src/symbolic_field_theory.o src/nonce_generation.o src/math_wrappers.o src/clock_position_wrapper.o src/blind_recovery/oscillation_detection.o src/blind_recovery/structural_mapping.o src/blind_recovery/coprime_analysis.o src/blind_recovery/corruption_detection.o src/blind_recovery/anchor_selection.o src/blind_recovery/triangulation.o src/blind_recovery/anchor_adjustment.o src/blind_recovery/confidence_scoring.o src/blind_recovery/candidate_generation.o src/blind_recovery/fitness_scoring.o src/blind_recovery/iterative_refinement.o src/blind_recovery/convergence_detection.o src/blind_recovery/multi_scale_analysis.o src/blind_recovery/recursive_stabilization.o src/blind_recovery/stabilization_metrics.o src/blind_recovery/model_expansion.o src/blind_recovery/self_similar_generation.o src/blind_recovery/hyperdimensional_analysis.o src/blind_recovery/multi_scalar_analysis.o src/blind_recovery/variance_analysis.o src/blind_recovery/cross_correlation.o src/blind_recovery/universal_recovery.o src/blind_recovery/universal_recovery_v2.o src/platonic_model/tetration.o src/platonic_model/platonic_model_core.o src/platonic_model/platonic_model_scaling.o src/platonic_model/platonic_model_oscillations.o src/platonic_model/platonic_model_recovery.o src/platonic_model/platonic_model_persistence.o src/geometric_recovery/tetration_attractors.o src/geometric_recovery/torus_analysis.o src/geometric_recovery/multi_torus_tracker.o src/geometric_recovery/oscillation_decomposition.o src/geometric_recovery/harmonic_folding.o src/geometric_recovery/kissing_spheres.o src/geometric_recovery/micro_model.o src/geometric_recovery/g_triangulation.o src/geometric_recovery/prime_factor_extraction.o src/geometric_recovery/recursive_recovery.o src/geometric_recovery/clock_lattice_integration.o src/geometric_recovery/spherical_recovery.o src/geometric_recovery/search_recovery.o src/geometric_recovery/anchor_grid_24.o src/geometric_recovery/anchor_grid.o src/geometric_recovery/fractal_bounds.o src/geometric_recovery/multi_scale_search.o src/geometric_recovery/clock_recovery.o src/geometric_recovery/convergence_detection.o src/geometric_recovery/oscillation_detection.o src/geometric_recovery/confidence_scoring.o src/geometric_recovery/geometric_recovery_orchestrator.o
+ar rcs libalgorithms.a src/abacus88d/abacus88d.o src/dimensional_frequencies.o src/geometric_space_ops.o src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/shared_memory_rainbow.o src/shared_memory_enhanced.o src/lock_free_queue.o src/sphere_packing.o src/sphere_threading.o src/hierarchical_memory.o src/threading_integration.o src/message_passing.o src/state_management.o src/work_distribution.o src/hierarchical_threading.o src/adaptive_threading.o src/memory_management.o src/visualization.o src/visualization_2d.o src/visualization_3d.o src/visualization_crystalline.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o src/hierarchical_prime_partitions.o src/lattice_sphere_positions.o src/angular_attention.o src/cymatic_modulation.o src/ntt_attention.o src/ntt_attention_backward.o src/lattice_embeddings.o src/tensor_ops.o src/qk_mapping.o src/iterative_search.o src/validation.o src/mathematical_formulas.o src/symbolic_field_theory.o src/nonce_generation.o src/math_wrappers.o src/clock_position_wrapper.o src/blind_recovery/oscillation_detection.o src/blind_recovery/structural_mapping.o src/blind_recovery/coprime_analysis.o src/blind_recovery/corruption_detection.o src/blind_recovery/anchor_selection.o src/blind_recovery/triangulation.o src/blind_recovery/anchor_adjustment.o src/blind_recovery/confidence_scoring.o src/blind_recovery/candidate_generation.o src/blind_recovery/fitness_scoring.o src/blind_recovery/iterative_refinement.o src/blind_recovery/convergence_detection.o src/blind_recovery/multi_scale_analysis.o src/blind_recovery/recursive_stabilization.o src/blind_recovery/stabilization_metrics.o src/blind_recovery/model_expansion.o src/blind_recovery/self_similar_generation.o src/blind_recovery/hyperdimensional_analysis.o src/blind_recovery/multi_scalar_analysis.o src/blind_recovery/variance_analysis.o src/blind_recovery/cross_correlation.o src/blind_recovery/universal_recovery.o src/blind_recovery/universal_recovery_v2.o src/platonic_model/tetration.o src/platonic_model/platonic_model_core.o src/platonic_model/platonic_model_scaling.o src/platonic_model/platonic_model_oscillations.o src/platonic_model/platonic_model_recovery.o src/platonic_model/platonic_model_persistence.o src/geometric_recovery/tetration_attractors.o src/geometric_recovery/torus_analysis.o src/geometric_recovery/multi_torus_tracker.o src/geometric_recovery/oscillation_decomposition.o src/geometric_recovery/harmonic_folding.o src/geometric_recovery/kissing_spheres.o src/geometric_recovery/micro_model.o src/geometric_recovery/g_triangulation.o src/geometric_recovery/prime_factor_extraction.o src/geometric_recovery/recursive_recovery.o src/geometric_recovery/clock_lattice_integration.o src/geometric_recovery/spherical_recovery.o src/geometric_recovery/search_recovery.o src/geometric_recovery/anchor_grid_24.o src/geometric_recovery/anchor_grid.o src/geometric_recovery/fractal_bounds.o src/geometric_recovery/multi_scale_search.o src/geometric_recovery/clock_recovery.o src/geometric_recovery/convergence_detection.o src/geometric_recovery/oscillation_detection.o src/geometric_recovery/confidence_scoring.o src/geometric_recovery/geometric_recovery_orchestrator.o
 ✓ Static algorithms library created
 make[1]: Leaving directory '/workspace/algorithms'
 ✓ Algorithms static library created
-Compiling [AI]: src/ai/array_utils.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/array_utils.c -o src/ai/array_utils.o
-Compiling [AI]: src/ai/batch_accumulator.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/batch_accumulator.c -o src/ai/batch_accumulator.o
-Compiling [AI]: src/ai/cllm_abacus_matrix.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_abacus_matrix.c -o src/ai/cllm_abacus_matrix.o
-src/ai/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_xavier’:
-src/ai/cllm_abacus_matrix.c:142:20: warning: implicit declaration of function ‘sqrt’ [-Wimplicit-function-declaration]
+Building CLLM static library...
+make[1]: Entering directory '/workspace/cllm'
+Compiling src/array_utils.c...
+configure: patching config.h.in
+Compiling src/batch_accumulator.c...
+configure: creating ./config.status
+Compiling src/cllm_88d_integration.c...
+Creating shared algorithms library: libalgorithms.so
+gcc -shared -Wl,--unresolved-symbols=ignore-all -o libalgorithms.so src/abacus88d/abacus88d.o src/dimensional_frequencies.o src/geometric_space_ops.o src/numerical.o src/loss_functions.o src/optimizers.o src/backprop.o src/statistics.o src/threading.o src/shared_memory.o src/shared_memory_rainbow.o src/shared_memory_enhanced.o src/lock_free_queue.o src/sphere_packing.o src/sphere_threading.o src/hierarchical_memory.o src/threading_integration.o src/message_passing.o src/state_management.o src/work_distribution.o src/hierarchical_threading.o src/adaptive_threading.o src/memory_management.o src/visualization.o src/visualization_2d.o src/visualization_3d.o src/visualization_crystalline.o src/hierarchical_primes.o src/hierarchical_structures.o src/batch_processing.o src/hierarchical_prime_partitions.o src/lattice_sphere_positions.o src/angular_attention.o src/cymatic_modulation.o src/ntt_attention.o src/ntt_attention_backward.o src/lattice_embeddings.o src/tensor_ops.o src/qk_mapping.o src/iterative_search.o src/validation.o src/mathematical_formulas.o src/symbolic_field_theory.o src/nonce_generation.o src/math_wrappers.o src/clock_position_wrapper.o src/blind_recovery/oscillation_detection.o src/blind_recovery/structural_mapping.o src/blind_recovery/coprime_analysis.o src/blind_recovery/corruption_detection.o src/blind_recovery/anchor_selection.o src/blind_recovery/triangulation.o src/blind_recovery/anchor_adjustment.o src/blind_recovery/confidence_scoring.o src/blind_recovery/candidate_generation.o src/blind_recovery/fitness_scoring.o src/blind_recovery/iterative_refinement.o src/blind_recovery/convergence_detection.o src/blind_recovery/multi_scale_analysis.o src/blind_recovery/recursive_stabilization.o src/blind_recovery/stabilization_metrics.o src/blind_recovery/model_expansion.o src/blind_recovery/self_similar_generation.o src/blind_recovery/hyperdimensional_analysis.o src/blind_recovery/multi_scalar_analysis.o src/blind_recovery/variance_analysis.o src/blind_recovery/cross_correlation.o src/blind_recovery/universal_recovery.o src/blind_recovery/universal_recovery_v2.o src/platonic_model/tetration.o src/platonic_model/platonic_model_core.o src/platonic_model/platonic_model_scaling.o src/platonic_model/platonic_model_oscillations.o src/platonic_model/platonic_model_recovery.o src/platonic_model/platonic_model_persistence.o src/geometric_recovery/tetration_attractors.o src/geometric_recovery/torus_analysis.o src/geometric_recovery/multi_torus_tracker.o src/geometric_recovery/oscillation_decomposition.o src/geometric_recovery/harmonic_folding.o src/geometric_recovery/kissing_spheres.o src/geometric_recovery/micro_model.o src/geometric_recovery/g_triangulation.o src/geometric_recovery/prime_factor_extraction.o src/geometric_recovery/recursive_recovery.o src/geometric_recovery/clock_lattice_integration.o src/geometric_recovery/spherical_recovery.o src/geometric_recovery/search_recovery.o src/geometric_recovery/anchor_grid_24.o src/geometric_recovery/anchor_grid.o src/geometric_recovery/fractal_bounds.o src/geometric_recovery/multi_scale_search.o src/geometric_recovery/clock_recovery.o src/geometric_recovery/convergence_detection.o src/geometric_recovery/oscillation_detection.o src/geometric_recovery/confidence_scoring.o src/geometric_recovery/geometric_recovery_orchestrator.o -L.. -L../math/lib -lcrystallinemath -lssl -lcrypto -lm -lpthread
+src/cllm_88d_integration.c: In function ‘cllm_distribute_work_88d’:
+src/cllm_88d_integration.c:204:37: warning: unused parameter ‘work_data’ [-Wunused-parameter]
+  204 |                               void* work_data, uint32_t num_items) {
+      |                               ~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_broadcast_message’:
+src/cllm_88d_integration.c:262:40: warning: unused parameter ‘data’ [-Wunused-parameter]
+  262 |                            const void* data, size_t data_size) {
+      |                            ~~~~~~~~~~~~^~~~
+src/cllm_88d_integration.c:262:53: warning: unused parameter ‘data_size’ [-Wunused-parameter]
+  262 |                            const void* data, size_t data_size) {
+      |                                              ~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_embedding_lookup’:
+src/cllm_88d_integration.c:321:48: warning: unused parameter ‘model’ [-Wunused-parameter]
+  321 | void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
+      |                                     ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:321:71: warning: unused parameter ‘token_ids’ [-Wunused-parameter]
+  321 | void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
+      |                                                       ~~~~~~~~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:322:45: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  322 |                                    uint32_t batch_size, uint32_t seq_len,
+      |                                    ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:322:66: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  322 |                                    uint32_t batch_size, uint32_t seq_len,
+      |                                                         ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:323:44: warning: unused parameter ‘output’ [-Wunused-parameter]
+  323 |                                    double* output) {
+      |                                    ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_attention’:
+src/cllm_88d_integration.c:328:41: warning: unused parameter ‘model’ [-Wunused-parameter]
+  328 | void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
+      |                              ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:328:57: warning: unused parameter ‘layer_idx’ [-Wunused-parameter]
+  328 | void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
+      |                                                ~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:329:43: warning: unused parameter ‘input’ [-Wunused-parameter]
+  329 |                             const double* input, uint32_t batch_size,
+      |                             ~~~~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:329:59: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  329 |                             const double* input, uint32_t batch_size,
+      |                                                  ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:330:38: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  330 |                             uint32_t seq_len, double* output) {
+      |                             ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:330:55: warning: unused parameter ‘output’ [-Wunused-parameter]
+  330 |                             uint32_t seq_len, double* output) {
+      |                                               ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_ffn’:
+src/cllm_88d_integration.c:335:35: warning: unused parameter ‘model’ [-Wunused-parameter]
+  335 | void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
+      |                        ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:335:51: warning: unused parameter ‘layer_idx’ [-Wunused-parameter]
+  335 | void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
+      |                                          ~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:336:37: warning: unused parameter ‘input’ [-Wunused-parameter]
+  336 |                       const double* input, uint32_t batch_size,
+      |                       ~~~~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:336:53: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  336 |                       const double* input, uint32_t batch_size,
+      |                                            ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:337:32: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  337 |                       uint32_t seq_len, double* output) {
+      |                       ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:337:49: warning: unused parameter ‘output’ [-Wunused-parameter]
+  337 |                       uint32_t seq_len, double* output) {
+      |                                         ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_gradient_accumulation’:
+src/cllm_88d_integration.c:342:53: warning: unused parameter ‘model’ [-Wunused-parameter]
+  342 | void cllm_parallel_gradient_accumulation(CLLMModel* model) {
+      |                                          ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_weight_update’:
+src/cllm_88d_integration.c:347:45: warning: unused parameter ‘model’ [-Wunused-parameter]
+  347 | void cllm_parallel_weight_update(CLLMModel* model) {
+      |                                  ~~~~~~~~~~~^~~~~
+✓ Shared algorithms library created
+make[1]: Leaving directory '/workspace/algorithms'
+✓ Algorithms shared library created
+Building CLLM shared library...
+make[1]: Entering directory '/workspace/cllm'
+Compiling src/cllm_88d_integration.c...
+src/cllm_88d_integration.c: In function ‘cllm_distribute_work_88d’:
+src/cllm_88d_integration.c:204:37: warning: unused parameter ‘work_data’ [-Wunused-parameter]
+  204 |                               void* work_data, uint32_t num_items) {
+      |                               ~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_broadcast_message’:
+src/cllm_88d_integration.c:262:40: warning: unused parameter ‘data’ [-Wunused-parameter]
+  262 |                            const void* data, size_t data_size) {
+      |                            ~~~~~~~~~~~~^~~~
+src/cllm_88d_integration.c:262:53: warning: unused parameter ‘data_size’ [-Wunused-parameter]
+  262 |                            const void* data, size_t data_size) {
+      |                                              ~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_embedding_lookup’:
+src/cllm_88d_integration.c:321:48: warning: unused parameter ‘model’ [-Wunused-parameter]
+  321 | void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
+      |                                     ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:321:71: warning: unused parameter ‘token_ids’ [-Wunused-parameter]
+  321 | void cllm_parallel_embedding_lookup(CLLMModel* model, const uint32_t* token_ids,
+      |                                                       ~~~~~~~~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:322:45: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  322 |                                    uint32_t batch_size, uint32_t seq_len,
+      |                                    ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:322:66: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  322 |                                    uint32_t batch_size, uint32_t seq_len,
+      |                                                         ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:323:44: warning: unused parameter ‘output’ [-Wunused-parameter]
+  323 |                                    double* output) {
+      |                                    ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_attention’:
+src/cllm_88d_integration.c:328:41: warning: unused parameter ‘model’ [-Wunused-parameter]
+  328 | void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
+      |                              ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:328:57: warning: unused parameter ‘layer_idx’ [-Wunused-parameter]
+  328 | void cllm_parallel_attention(CLLMModel* model, uint32_t layer_idx,
+      |                                                ~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:329:43: warning: unused parameter ‘input’ [-Wunused-parameter]
+  329 |                             const double* input, uint32_t batch_size,
+      |                             ~~~~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:329:59: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  329 |                             const double* input, uint32_t batch_size,
+      |                                                  ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:330:38: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  330 |                             uint32_t seq_len, double* output) {
+      |                             ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:330:55: warning: unused parameter ‘output’ [-Wunused-parameter]
+  330 |                             uint32_t seq_len, double* output) {
+      |                                               ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_ffn’:
+src/cllm_88d_integration.c:335:35: warning: unused parameter ‘model’ [-Wunused-parameter]
+  335 | void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
+      |                        ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:335:51: warning: unused parameter ‘layer_idx’ [-Wunused-parameter]
+  335 | void cllm_parallel_ffn(CLLMModel* model, uint32_t layer_idx,
+      |                                          ~~~~~~~~~^~~~~~~~~
+src/cllm_88d_integration.c:336:37: warning: unused parameter ‘input’ [-Wunused-parameter]
+  336 |                       const double* input, uint32_t batch_size,
+      |                       ~~~~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c:336:53: warning: unused parameter ‘batch_size’ [-Wunused-parameter]
+  336 |                       const double* input, uint32_t batch_size,
+      |                                            ~~~~~~~~~^~~~~~~~~~
+src/cllm_88d_integration.c:337:32: warning: unused parameter ‘seq_len’ [-Wunused-parameter]
+  337 |                       uint32_t seq_len, double* output) {
+      |                       ~~~~~~~~~^~~~~~~
+src/cllm_88d_integration.c:337:49: warning: unused parameter ‘output’ [-Wunused-parameter]
+  337 |                       uint32_t seq_len, double* output) {
+      |                                         ~~~~~~~~^~~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_gradient_accumulation’:
+src/cllm_88d_integration.c:342:53: warning: unused parameter ‘model’ [-Wunused-parameter]
+  342 | void cllm_parallel_gradient_accumulation(CLLMModel* model) {
+      |                                          ~~~~~~~~~~~^~~~~
+src/cllm_88d_integration.c: In function ‘cllm_parallel_weight_update’:
+src/cllm_88d_integration.c:347:45: warning: unused parameter ‘model’ [-Wunused-parameter]
+  347 | void cllm_parallel_weight_update(CLLMModel* model) {
+      |                                  ~~~~~~~~~~~^~~~~
+Compiling src/cllm_abacus_matrix.c...
+src/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_xavier’:
+src/cllm_abacus_matrix.c:142:20: warning: implicit declaration of function ‘sqrt’ [-Wimplicit-function-declaration]
   142 |     double scale = sqrt(6.0 / (fan_in + fan_out));
       |                    ^~~~
-src/ai/cllm_abacus_matrix.c:11:1: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+src/cllm_abacus_matrix.c:11:1: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
    10 | #include <stdio.h>
   +++ |+#include <math.h>
    11 | 
-src/ai/cllm_abacus_matrix.c:142:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+src/cllm_abacus_matrix.c:142:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
   142 |     double scale = sqrt(6.0 / (fan_in + fan_out));
       |                    ^~~~
-src/ai/cllm_abacus_matrix.c:142:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
-src/ai/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_he’:
-src/ai/cllm_abacus_matrix.c:153:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+src/cllm_abacus_matrix.c:142:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+src/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_he’:
+src/cllm_abacus_matrix.c:153:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
   153 |     double scale = sqrt(2.0 / fan_in);
       |                    ^~~~
-src/ai/cllm_abacus_matrix.c:153:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
-Compiling [AI]: src/ai/cllm_adaptive_hierarchy.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_adaptive_hierarchy.c -o src/ai/cllm_adaptive_hierarchy.o
-Compiling [AI]: src/ai/cllm_advanced.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_advanced.c -o src/ai/cllm_advanced.o
-Compiling [AI]: src/ai/cllm_attention.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_attention.c -o src/ai/cllm_attention.o
-src/ai/cllm_attention.c:622:13: warning: ‘add_gradients’ defined but not used [-Wunused-function]
+src/cllm_abacus_matrix.c:153:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+Compiling src/cllm_abacus_matrix.c...
+src/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_xavier’:
+src/cllm_abacus_matrix.c:142:20: warning: implicit declaration of function ‘sqrt’ [-Wimplicit-function-declaration]
+  142 |     double scale = sqrt(6.0 / (fan_in + fan_out));
+      |                    ^~~~
+src/cllm_abacus_matrix.c:11:1: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+   10 | #include <stdio.h>
+  +++ |+#include <math.h>
+   11 | 
+src/cllm_abacus_matrix.c:142:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+  142 |     double scale = sqrt(6.0 / (fan_in + fan_out));
+      |                    ^~~~
+src/cllm_abacus_matrix.c:142:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+src/cllm_abacus_matrix.c: In function ‘abacus_matrix_init_he’:
+src/cllm_abacus_matrix.c:153:20: warning: incompatible implicit declaration of built-in function ‘sqrt’ [-Wbuiltin-declaration-mismatch]
+  153 |     double scale = sqrt(2.0 / fan_in);
+      |                    ^~~~
+src/cllm_abacus_matrix.c:153:20: note: include ‘<math.h>’ or provide a declaration of ‘sqrt’
+configure.ac:162: warning: The macro `AC_PROG_LIBTOOL' is obsolete.
+configure.ac:162: You should run autoupdate.
+build/libtool.m4:100: AC_PROG_LIBTOOL is expanded from...
+configure.ac:162: the top level
+Compiling src/cllm_adaptive_hierarchy.c...
+Compiling src/cllm_adaptive_hierarchy.c...
+Compiling src/cllm_advanced.c...
+Compiling src/cllm_advanced.c...
+Compiling src/cllm_attention.c...
+Compiling src/cllm_attention.c...
+src/cllm_attention.c:622:13: warning: ‘add_gradients’ defined but not used [-Wunused-function]
   622 | static void add_gradients(double* dest, const double* src, size_t size) {
       |             ^~~~~~~~~~~~~
-Compiling [AI]: src/ai/cllm_batch.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_batch.c -o src/ai/cllm_batch.o
-Compiling [AI]: src/ai/cllm_batch_splitting.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_batch_splitting.c -o src/ai/cllm_batch_splitting.o
-Compiling [AI]: src/ai/cllm_benchmark.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_benchmark.c -o src/ai/cllm_benchmark.o
-Compiling [AI]: src/ai/cllm_blind_recovery.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_blind_recovery.c -o src/ai/cllm_blind_recovery.o
-Compiling [AI]: src/ai/cllm_cache.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_cache.c -o src/ai/cllm_cache.o
-Compiling [AI]: src/ai/cllm_cache_aware_distribution.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_cache_aware_distribution.c -o src/ai/cllm_cache_aware_distribution.o
-Compiling [AI]: src/ai/cllm_cache_optimization.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_cache_optimization.c -o src/ai/cllm_cache_optimization.o
-Compiling [AI]: src/ai/cllm_clock_memory.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_clock_memory.c -o src/ai/cllm_clock_memory.o
-Compiling [AI]: src/ai/cllm_create.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_create.c -o src/ai/cllm_create.o
-Compiling [AI]: src/ai/cllm_create_from_schlafli.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_create_from_schlafli.c -o src/ai/cllm_create_from_schlafli.o
-Compiling [AI]: src/ai/cllm_crystalline_memory.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_crystalline_memory.c -o src/ai/cllm_crystalline_memory.o
-Compiling [AI]: src/ai/cllm_cymatic_frequencies.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_cymatic_frequencies.c -o src/ai/cllm_cymatic_frequencies.o
-Compiling [AI]: src/ai/cllm_cymatic_sync.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_cymatic_sync.c -o src/ai/cllm_cymatic_sync.o
-Compiling [AI]: src/ai/cllm_data_loader.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_data_loader.c -o src/ai/cllm_data_loader.o
-Compiling [AI]: src/ai/cllm_embedding.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_embedding.c -o src/ai/cllm_embedding.o
-Compiling [AI]: src/ai/cllm_embeddings.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_embeddings.c -o src/ai/cllm_embeddings.o
-Compiling [AI]: src/ai/cllm_entropy_allocation.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_entropy_allocation.c -o src/ai/cllm_entropy_allocation.o
-Compiling [AI]: src/ai/cllm_entropy_integration.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_entropy_integration.c -o src/ai/cllm_entropy_integration.o
-Compiling [AI]: src/ai/cllm_entropy_work_distribution.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_entropy_work_distribution.c -o src/ai/cllm_entropy_work_distribution.o
-Compiling [AI]: src/ai/cllm_epoch_sync.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_epoch_sync.c -o src/ai/cllm_epoch_sync.o
-Compiling [AI]: src/ai/cllm_feedforward.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_feedforward.c -o src/ai/cllm_feedforward.o
-Compiling [AI]: src/ai/cllm_format.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_format.c -o src/ai/cllm_format.o
-Compiling [AI]: src/ai/cllm_fp16.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_fp16.c -o src/ai/cllm_fp16.o
-Compiling [AI]: src/ai/cllm_free.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_free.c -o src/ai/cllm_free.o
-Compiling [AI]: src/ai/cllm_global_progress.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_global_progress.c -o src/ai/cllm_global_progress.o
-Compiling [AI]: src/ai/cllm_hierarchical_embeddings.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_hierarchical_embeddings.c -o src/ai/cllm_hierarchical_embeddings.o
-Compiling [AI]: src/ai/cllm_hierarchical_memory.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_hierarchical_memory.c -o src/ai/cllm_hierarchical_memory.o
-Compiling [AI]: src/ai/cllm_hierarchical_training.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_hierarchical_training.c -o src/ai/cllm_hierarchical_training.o
-Compiling [AI]: src/ai/cllm_inference.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_inference.c -o src/ai/cllm_inference.o
-Compiling [AI]: src/ai/cllm_inference_transformer.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_inference_transformer.c -o src/ai/cllm_inference_transformer.o
-Compiling [AI]: src/ai/cllm_kissing_boundaries.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_kissing_boundaries.c -o src/ai/cllm_kissing_boundaries.o
-Compiling [AI]: src/ai/cllm_lattice_conversion.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lattice_conversion.c -o src/ai/cllm_lattice_conversion.o
-Compiling [AI]: src/ai/cllm_lattice_entropy.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lattice_entropy.c -o src/ai/cllm_lattice_entropy.o
-Compiling [AI]: src/ai/cllm_lattice_formula.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lattice_formula.c -o src/ai/cllm_lattice_formula.o
-Compiling [AI]: src/ai/cllm_lattice_helpers.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lattice_helpers.c -o src/ai/cllm_lattice_helpers.o
-Compiling [AI]: src/ai/cllm_lattice_lookup.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lattice_lookup.c -o src/ai/cllm_lattice_lookup.o
-Compiling [AI]: src/ai/cllm_layernorm.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_layernorm.c -o src/ai/cllm_layernorm.o
-Compiling [AI]: src/ai/cllm_lockfree_memory.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_lockfree_memory.c -o src/ai/cllm_lockfree_memory.o
-Compiling [AI]: src/ai/cllm_loss.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_loss.c -o src/ai/cllm_loss.o
-Compiling [AI]: src/ai/cllm_metrics.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_metrics.c -o src/ai/cllm_metrics.o
-Compiling [AI]: src/ai/cllm_model_manager.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_model_manager.c -o src/ai/cllm_model_manager.o
-Compiling [AI]: src/ai/cllm_model_metadata.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_model_metadata.c -o src/ai/cllm_model_metadata.o
-Compiling [AI]: src/ai/cllm_model_registry.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_model_registry.c -o src/ai/cllm_model_registry.o
-Compiling [AI]: src/ai/cllm_model_rename.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_model_rename.c -o src/ai/cllm_model_rename.o
-Compiling [AI]: src/ai/cllm_nan_checker.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_nan_checker.c -o src/ai/cllm_nan_checker.o
-Compiling [AI]: src/ai/cllm_optimizer.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_optimizer.c -o src/ai/cllm_optimizer.o
-Compiling [AI]: src/ai/cllm_platonic_generator.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_platonic_generator.c -o src/ai/cllm_platonic_generator.o
-Compiling [AI]: src/ai/cllm_plimpton_integration.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_plimpton_integration.c -o src/ai/cllm_plimpton_integration.o
-Compiling [AI]: src/ai/cllm_plimpton_relationships.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_plimpton_relationships.c -o src/ai/cllm_plimpton_relationships.o
-Compiling [AI]: src/ai/cllm_production.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_production.c -o src/ai/cllm_production.o
-Compiling [AI]: src/ai/cllm_progress.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_progress.c -o src/ai/cllm_progress.o
-Compiling [AI]: src/ai/cllm_root_word_modeling.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_root_word_modeling.c -o src/ai/cllm_root_word_modeling.o
-Compiling [AI]: src/ai/cllm_sieve.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_sieve.c -o src/ai/cllm_sieve.o
-Compiling [AI]: src/ai/cllm_simd_gradient_ops.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_simd_gradient_ops.c -o src/ai/cllm_simd_gradient_ops.o
-Compiling [AI]: src/ai/cllm_simd_utils.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_simd_utils.c -o src/ai/cllm_simd_utils.o
-Compiling [AI]: src/ai/cllm_symmetry.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_symmetry.c -o src/ai/cllm_symmetry.o
-Compiling [AI]: src/ai/cllm_thread_pool.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_thread_pool.c -o src/ai/cllm_thread_pool.o
-Compiling [AI]: src/ai/cllm_threads.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_threads.c -o src/ai/cllm_threads.o
-Compiling [AI]: src/ai/cllm_threads_dynamic.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_threads_dynamic.c -o src/ai/cllm_threads_dynamic.o
-Compiling [AI]: src/ai/cllm_threads_spawn.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_threads_spawn.c -o src/ai/cllm_threads_spawn.o
-Compiling [AI]: src/ai/cllm_token.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_token.c -o src/ai/cllm_token.o
-Compiling [AI]: src/ai/cllm_tokenizer.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_tokenizer.c -o src/ai/cllm_tokenizer.o
-Compiling [AI]: src/ai/cllm_tokenizer_threadsafe.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_tokenizer_threadsafe.c -o src/ai/cllm_tokenizer_threadsafe.o
-Compiling [AI]: src/ai/cllm_training_functions.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_training_functions.c -o src/ai/cllm_training_functions.o
-Compiling [AI]: src/ai/cllm_training_threaded.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_training_threaded.c -o src/ai/cllm_training_threaded.o
-Compiling [AI]: src/ai/cllm_vocabulary.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_vocabulary.c -o src/ai/cllm_vocabulary.o
-Compiling [AI]: src/ai/cllm_vocabulary_integration.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_vocabulary_integration.c -o src/ai/cllm_vocabulary_integration.o
-Compiling [AI]: src/ai/cllm_work_distribution.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_work_distribution.c -o src/ai/cllm_work_distribution.o
-Compiling [AI]: src/ai/cllm_work_distribution_timing.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_work_distribution_timing.c -o src/ai/cllm_work_distribution_timing.o
-Compiling [AI]: src/ai/cllm_workload_detector.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/cllm_workload_detector.c -o src/ai/cllm_workload_detector.o
-Compiling [AI]: src/ai/model_history_manager.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/model_history_manager.c -o src/ai/model_history_manager.o
-Compiling [AI]: src/ai/model_queue_manager.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/model_queue_manager.c -o src/ai/model_queue_manager.o
-Compiling [AI]: src/ai/rainbow_table_compat.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/rainbow_table_compat.c -o src/ai/rainbow_table_compat.o
-Compiling [AI]: src/ai/infrastructure/cllm_batch.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_batch.c -o src/ai/infrastructure/cllm_batch.o
-Compiling [AI]: src/ai/infrastructure/cllm_control_process.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_control_process.c -o src/ai/infrastructure/cllm_control_process.o
-Compiling [AI]: src/ai/infrastructure/cllm_lattice_hierarchy.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_lattice_hierarchy.c -o src/ai/infrastructure/cllm_lattice_hierarchy.o
-Compiling [AI]: src/ai/infrastructure/cllm_message_queue.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_message_queue.c -o src/ai/infrastructure/cllm_message_queue.o
-Compiling [AI]: src/ai/infrastructure/cllm_optimizer.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_optimizer.c -o src/ai/infrastructure/cllm_optimizer.o
-Compiling [AI]: src/ai/infrastructure/cllm_shared_memory.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_shared_memory.c -o src/ai/infrastructure/cllm_shared_memory.o
-Compiling [AI]: src/ai/infrastructure/cllm_sphere_message.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_sphere_message.c -o src/ai/infrastructure/cllm_sphere_message.o
-Compiling [AI]: src/ai/infrastructure/cllm_sphere_stats.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_sphere_stats.c -o src/ai/infrastructure/cllm_sphere_stats.o
-Compiling [AI]: src/ai/infrastructure/cllm_thread_allocation.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/infrastructure/cllm_thread_allocation.c -o src/ai/infrastructure/cllm_thread_allocation.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_core.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_core.c -o src/ai/platonic/cllm_platonic_core.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_cube.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_cube.c -o src/ai/platonic/cllm_platonic_cube.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_dodecahedron.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_dodecahedron.c -o src/ai/platonic/cllm_platonic_dodecahedron.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_harmonic.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_harmonic.c -o src/ai/platonic/cllm_platonic_harmonic.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_icosahedron.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_icosahedron.c -o src/ai/platonic/cllm_platonic_icosahedron.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_octahedron.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_octahedron.c -o src/ai/platonic/cllm_platonic_octahedron.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_recovery.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_recovery.c -o src/ai/platonic/cllm_platonic_recovery.o
-Compiling [AI]: src/ai/platonic/cllm_platonic_tetrahedron.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma  -c src/ai/platonic/cllm_platonic_tetrahedron.c -o src/ai/platonic/cllm_platonic_tetrahedron.o
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/geometry/phonetic_values.o src/geometry/phonetic_values.c
-Creating CLLM shared library: libcllm.so
-gcc -shared -o libcllm.so src/ai/array_utils.o src/ai/batch_accumulator.o src/ai/cllm_abacus_matrix.o src/ai/cllm_adaptive_hierarchy.o src/ai/cllm_advanced.o src/ai/cllm_attention.o src/ai/cllm_batch.o src/ai/cllm_batch_splitting.o src/ai/cllm_benchmark.o src/ai/cllm_blind_recovery.o src/ai/cllm_cache.o src/ai/cllm_cache_aware_distribution.o src/ai/cllm_cache_optimization.o src/ai/cllm_clock_memory.o src/ai/cllm_create.o src/ai/cllm_create_from_schlafli.o src/ai/cllm_crystalline_memory.o src/ai/cllm_cymatic_frequencies.o src/ai/cllm_cymatic_sync.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_embeddings.o src/ai/cllm_entropy_allocation.o src/ai/cllm_entropy_integration.o src/ai/cllm_entropy_work_distribution.o src/ai/cllm_epoch_sync.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_free.o src/ai/cllm_global_progress.o src/ai/cllm_hierarchical_embeddings.o src/ai/cllm_hierarchical_memory.o src/ai/cllm_hierarchical_training.o src/ai/cllm_inference.o src/ai/cllm_inference_transformer.o src/ai/cllm_kissing_boundaries.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_entropy.o src/ai/cllm_lattice_formula.o src/ai/cllm_lattice_helpers.o src/ai/cllm_lattice_lookup.o src/ai/cllm_layernorm.o src/ai/cllm_lockfree_memory.o src/ai/cllm_loss.o src/ai/cllm_metrics.o src/ai/cllm_model_manager.o src/ai/cllm_model_metadata.o src/ai/cllm_model_registry.o src/ai/cllm_model_rename.o src/ai/cllm_nan_checker.o src/ai/cllm_optimizer.o src/ai/cllm_platonic_generator.o src/ai/cllm_plimpton_integration.o src/ai/cllm_plimpton_relationships.o src/ai/cllm_production.o src/ai/cllm_progress.o src/ai/cllm_root_word_modeling.o src/ai/cllm_sieve.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_thread_pool.o src/ai/cllm_threads.o src/ai/cllm_threads_dynamic.o src/ai/cllm_threads_spawn.o src/ai/cllm_token.o src/ai/cllm_tokenizer.o src/ai/cllm_tokenizer_threadsafe.o src/ai/cllm_training_functions.o src/ai/cllm_training_threaded.o src/ai/cllm_vocabulary.o src/ai/cllm_vocabulary_integration.o src/ai/cllm_work_distribution.o src/ai/cllm_work_distribution_timing.o src/ai/cllm_workload_detector.o src/ai/model_history_manager.o src/ai/model_queue_manager.o src/ai/rainbow_table_compat.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/platonic/cllm_platonic_core.o src/ai/platonic/cllm_platonic_cube.o src/ai/platonic/cllm_platonic_dodecahedron.o src/ai/platonic/cllm_platonic_harmonic.o src/ai/platonic/cllm_platonic_icosahedron.o src/ai/platonic/cllm_platonic_octahedron.o src/ai/platonic/cllm_platonic_recovery.o src/ai/platonic/cllm_platonic_tetrahedron.o src/geometry/phonetic_values.o -L. -Lmath/lib -lcrystallinemath -lalgorithms -lm
-✓ CLLM shared library created
-Creating CLLM static library: libcllm.a
-ar rcs libcllm.a src/ai/array_utils.o src/ai/batch_accumulator.o src/ai/cllm_abacus_matrix.o src/ai/cllm_adaptive_hierarchy.o src/ai/cllm_advanced.o src/ai/cllm_attention.o src/ai/cllm_batch.o src/ai/cllm_batch_splitting.o src/ai/cllm_benchmark.o src/ai/cllm_blind_recovery.o src/ai/cllm_cache.o src/ai/cllm_cache_aware_distribution.o src/ai/cllm_cache_optimization.o src/ai/cllm_clock_memory.o src/ai/cllm_create.o src/ai/cllm_create_from_schlafli.o src/ai/cllm_crystalline_memory.o src/ai/cllm_cymatic_frequencies.o src/ai/cllm_cymatic_sync.o src/ai/cllm_data_loader.o src/ai/cllm_embedding.o src/ai/cllm_embeddings.o src/ai/cllm_entropy_allocation.o src/ai/cllm_entropy_integration.o src/ai/cllm_entropy_work_distribution.o src/ai/cllm_epoch_sync.o src/ai/cllm_feedforward.o src/ai/cllm_format.o src/ai/cllm_fp16.o src/ai/cllm_free.o src/ai/cllm_global_progress.o src/ai/cllm_hierarchical_embeddings.o src/ai/cllm_hierarchical_memory.o src/ai/cllm_hierarchical_training.o src/ai/cllm_inference.o src/ai/cllm_inference_transformer.o src/ai/cllm_kissing_boundaries.o src/ai/cllm_lattice_conversion.o src/ai/cllm_lattice_entropy.o src/ai/cllm_lattice_formula.o src/ai/cllm_lattice_helpers.o src/ai/cllm_lattice_lookup.o src/ai/cllm_layernorm.o src/ai/cllm_lockfree_memory.o src/ai/cllm_loss.o src/ai/cllm_metrics.o src/ai/cllm_model_manager.o src/ai/cllm_model_metadata.o src/ai/cllm_model_registry.o src/ai/cllm_model_rename.o src/ai/cllm_nan_checker.o src/ai/cllm_optimizer.o src/ai/cllm_platonic_generator.o src/ai/cllm_plimpton_integration.o src/ai/cllm_plimpton_relationships.o src/ai/cllm_production.o src/ai/cllm_progress.o src/ai/cllm_root_word_modeling.o src/ai/cllm_sieve.o src/ai/cllm_simd_gradient_ops.o src/ai/cllm_simd_utils.o src/ai/cllm_symmetry.o src/ai/cllm_thread_pool.o src/ai/cllm_threads.o src/ai/cllm_threads_dynamic.o src/ai/cllm_threads_spawn.o src/ai/cllm_token.o src/ai/cllm_tokenizer.o src/ai/cllm_tokenizer_threadsafe.o src/ai/cllm_training_functions.o src/ai/cllm_training_threaded.o src/ai/cllm_vocabulary.o src/ai/cllm_vocabulary_integration.o src/ai/cllm_work_distribution.o src/ai/cllm_work_distribution_timing.o src/ai/cllm_workload_detector.o src/ai/model_history_manager.o src/ai/model_queue_manager.o src/ai/rainbow_table_compat.o src/ai/infrastructure/cllm_batch.o src/ai/infrastructure/cllm_control_process.o src/ai/infrastructure/cllm_lattice_hierarchy.o src/ai/infrastructure/cllm_message_queue.o src/ai/infrastructure/cllm_optimizer.o src/ai/infrastructure/cllm_shared_memory.o src/ai/infrastructure/cllm_sphere_message.o src/ai/infrastructure/cllm_sphere_stats.o src/ai/infrastructure/cllm_thread_allocation.o src/ai/platonic/cllm_platonic_core.o src/ai/platonic/cllm_platonic_cube.o src/ai/platonic/cllm_platonic_dodecahedron.o src/ai/platonic/cllm_platonic_harmonic.o src/ai/platonic/cllm_platonic_icosahedron.o src/ai/platonic/cllm_platonic_octahedron.o src/ai/platonic/cllm_platonic_recovery.o src/ai/platonic/cllm_platonic_tetrahedron.o src/geometry/phonetic_values.o
+src/cllm_attention.c:622:13: warning: ‘add_gradients’ defined but not used [-Wunused-function]
+  622 | static void add_gradients(double* dest, const double* src, size_t size) {
+      |             ^~~~~~~~~~~~~
+Compiling src/cllm_batch.c...
+Compiling src/cllm_batch.c...
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for a sed that does not truncate output... Compiling src/cllm_benchmark.c...
+/usr/bin/sed
+Compiling src/cllm_benchmark.c...
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking for cc... cc
+Compiling src/cllm_blind_recovery.c...
+checking whether the C compiler works... Compiling src/cllm_blind_recovery.c...
+yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... Compiling src/cllm_cache.c...
+Compiling src/cllm_cache_aware_distribution.c...
+no
+checking for suffix of object files... Compiling src/cllm_cache.c...
+Compiling src/cllm_cache_aware_distribution.c...
+o
+checking whether the compiler supports GNU C... yes
+checking whether cc accepts -g... Compiling src/cllm_cache_optimization.c...
+src/cllm_cache_optimization.c:7: warning: "_GNU_SOURCE" redefined
+    7 | #define _GNU_SOURCE  // For CPU_SET macros
+      | 
+<command-line>: note: this is the location of the previous definition
+Compiling src/cllm_cache_optimization.c...
+yes
+checking for cc option to enable C11 features... src/cllm_cache_optimization.c:7: warning: "_GNU_SOURCE" redefined
+    7 | #define _GNU_SOURCE  // For CPU_SET macros
+      | 
+<command-line>: note: this is the location of the previous definition
+Compiling src/cllm_clock_memory.c...
+Compiling src/cllm_create.c...
+Compiling src/cllm_clock_memory.c...
+Compiling src/cllm_create.c...
+none needed
+checking how to run the C preprocessor... Compiling src/cllm_create_from_schlafli.c...
+cc -E
+Compiling src/cllm_create_from_schlafli.c...
+Compiling src/cllm_crystalline_memory.c...
+config.status: creating config.h
+config.status: config.h is unchanged
+config.status: executing libtool commands
+checking for icc... no
+checking for suncc... no
+Compiling src/cllm_crystalline_memory.c...
+checking for system library directory... lib
+checking if compiler supports -Wl,-rpath,... make[1]: Entering directory '/workspace/php/algorithms'
+
+Build complete.
+Don't forget to run 'make test'.
+
+make[1]: Leaving directory '/workspace/php/algorithms'
+✓ algorithms extension built
+Compiling src/cllm_cymatic_frequencies.c...
+Compiling src/cllm_cymatic_frequencies.c...
+yes
+Compiling src/cllm_cymatic_sync.c...
+checking build system type... Compiling src/cllm_data_loader.c...
+Compiling src/cllm_cymatic_sync.c...
+Compiling src/cllm_embedding.c...
+Compiling src/cllm_data_loader.c...
+x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking target system type... x86_64-pc-linux-gnu
+Compiling src/cllm_embeddings.c...
+Compiling src/cllm_entropy_allocation.c...
+Compiling src/cllm_entropy_integration.c...
+Compiling src/cllm_embedding.c...
+Compiling src/cllm_entropy_work_distribution.c...
+checking for PHP prefix... /usr
+checking for PHP includes... -I/usr/include/php/20220829 -I/usr/include/php/20220829/main -I/usr/include/php/20220829/TSRM -I/usr/include/php/20220829/Zend -I/usr/include/php/20220829/ext -I/usr/include/php/20220829/ext/date/lib
+checking for PHP extension directory... /usr/lib/php/20220829
+checking for PHP installed headers prefix... /usr/include/php/20220829
+checking if debug is enabled... Compiling src/cllm_epoch_sync.c...
+no
+checking if zts is enabled... Compiling src/cllm_feedforward.c...
+no
+checking for gawk... gawk
+checking whether to enable crystalline_math support... yes, shared
+Compiling src/cllm_format.c...
+Compiling src/cllm_entropy_integration.c...
+Compiling src/cllm_feedforward.c...
+checking how to print strings... printf
+checking for a sed that does not truncate output... (cached) /usr/bin/sed
+Compiling src/cllm_fp16.c...
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by cc... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... /usr/bin/nm -B
+checking the name lister (/usr/bin/nm -B) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for file... file
+checking for objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for ar... ar
+checking for archiver @FILE support... Compiling src/cllm_free.c...
+Compiling src/cllm_format.c...
+@
+checking for strip... strip
+checking for ranlib... ranlib
+checking for gawk... (cached) gawk
+checking command to parse /usr/bin/nm -B output from cc object... Compiling src/cllm_global_progress.c...
+Compiling src/cllm_fp16.c...
+Compiling src/cllm_hierarchical_embeddings.c...
+Compiling src/cllm_hierarchical_memory.c...
+ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for mt... no
+checking if : is a manifest tool... Compiling src/cllm_inference.c...
+no
+checking for stdio.h... Compiling src/cllm_inference_transformer.c...
+yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... Compiling src/cllm_kissing_boundaries.c...
+Compiling src/cllm_global_progress.c...
+Compiling src/cllm_lattice_conversion.c...
+yes
+checking for stdint.h... yes
+checking for strings.h... Compiling src/cllm_lattice_entropy.c...
+Compiling src/cllm_inference_transformer.c...
+yes
+checking for sys/stat.h... yes
+checking for sys/types.h... Compiling src/cllm_lattice_formula.c...
+Compiling src/cllm_lattice_helpers.c...
+yes
+checking for unistd.h... Compiling src/cllm_lattice_lookup.c...
+Compiling src/cllm_lattice_conversion.c...
+yes
+checking for dlfcn.h... Compiling src/cllm_layernorm.c...
+yes
+checking for objdir... Compiling src/cllm_lockfree_memory.c...
+.libs
+Compiling src/cllm_lattice_formula.c...
+Compiling src/cllm_loss.c...
+checking if cc supports -fno-rtti -fno-exceptions... Compiling src/cllm_layernorm.c...
+Compiling src/cllm_metrics.c...
+no
+checking for cc option to produce PIC... -fPIC -DPIC
+checking if cc PIC flag -fPIC -DPIC works... yes
+checking if cc static flag -static works... Compiling src/cllm_model_manager.c...
+Compiling src/cllm_model_metadata.c...
+yes
+checking if cc supports -c -o file.o... Compiling src/cllm_loss.c...
+Compiling src/cllm_model_registry.c...
+Compiling src/cllm_model_manager.c...
+yes
+checking if cc supports -c -o file.o... (cached) yes
+checking whether the cc linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking whether -lc should be explicitly linked in... Compiling src/cllm_model_rename.c...
+no
+checking dynamic linker characteristics... Compiling src/cllm_optimizer.c...
+Compiling src/cllm_platonic_generator.c...
+GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
+Compiling src/cllm_plimpton_relationships.c...
+Compiling src/cllm_production.c...
+Compiling src/cllm_model_registry.c...
+Compiling src/cllm_progress.c...
+Compiling src/cllm_root_word_modeling.c...
+Compiling src/cllm_plimpton_relationships.c...
+Compiling src/cllm_sieve.c...
+configure: patching config.h.in
+configure: creating ./config.status
+Compiling src/cllm_simd_gradient_ops.c...
+Compiling src/cllm_simd_utils.c...
+Compiling src/cllm_progress.c...
+Compiling src/cllm_simd_gradient_ops.c...
+Compiling src/cllm_symmetry.c...
+Compiling src/cllm_token.c...
+Compiling src/cllm_tokenizer.c...
+Compiling src/cllm_tokenizer_threadsafe.c...
+Compiling src/cllm_training_functions.c...
+Compiling src/cllm_simd_utils.c...
+src/cllm_training_functions.c: In function ‘cllm_backward_training_threaded’:
+src/cllm_training_functions.c:502:28: warning: implicit declaration of function ‘exp’ [-Wimplicit-function-declaration]
+  502 |                 sum_exp += exp(x);
+      |                            ^~~
+src/cllm_training_functions.c:21:1: note: include ‘<math.h>’ or provide a declaration of ‘exp’
+   20 | #include "math/transcendental.h"
+  +++ |+#include <math.h>
+   21 | #include "math/constants.h"
+src/cllm_training_functions.c:502:28: warning: incompatible implicit declaration of built-in function ‘exp’ [-Wbuiltin-declaration-mismatch]
+  502 |                 sum_exp += exp(x);
+      |                            ^~~
+src/cllm_training_functions.c:502:28: note: include ‘<math.h>’ or provide a declaration of ‘exp’
+src/cllm_training_functions.c:509:31: warning: incompatible implicit declaration of built-in function ‘exp’ [-Wbuiltin-declaration-mismatch]
+  509 |                 double prob = exp(x) / sum_exp;
+      |                               ^~~
+src/cllm_training_functions.c:509:31: note: include ‘<math.h>’ or provide a declaration of ‘exp’
+Compiling src/cllm_vocabulary.c...
+Compiling src/cllm_vocabulary_integration.c...
+Compiling src/cllm_work_distribution.c...
+Compiling src/cllm_work_distribution_timing.c...
+Compiling src/cllm_workload_detector.c...
+Compiling src/cllm_tokenizer_threadsafe.c...
+Compiling src/model_history_manager.c...
+Compiling src/model_queue_manager.c...
+Compiling src/cllm_work_distribution_timing.c...
+Compiling src/rainbow_table_compat.c...
+Compiling src/space_88d.c...
+Compiling src/infrastructure/cllm_batch.c...
+Compiling src/model_history_manager.c...
+Compiling src/space_88d.c...
+Compiling src/infrastructure/cllm_optimizer.c...
+Compiling src/infrastructure/cllm_sphere_message.c...
+Compiling src/infrastructure/cllm_batch.c...
+src/infrastructure/cllm_sphere_message.c: In function ‘sphere_message_type_name’:
+src/infrastructure/cllm_sphere_message.c:222:9: warning: case value ‘1001’ not in enumerated type ‘MessageType’ [-Wswitch]
+  222 |         case MSG_CLLM_GRADIENT_ACCUMULATE: return "GRADIENT_ACCUMULATE";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:223:9: warning: case value ‘1002’ not in enumerated type ‘MessageType’ [-Wswitch]
+  223 |         case MSG_CLLM_GRADIENT_COMPLETE: return "GRADIENT_COMPLETE";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:224:9: warning: case value ‘1100’ not in enumerated type ‘MessageType’ [-Wswitch]
+  224 |         case MSG_CLLM_WEIGHTS_UPDATED: return "WEIGHTS_UPDATED";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:225:9: warning: case value ‘1101’ not in enumerated type ‘MessageType’ [-Wswitch]
+  225 |         case MSG_CLLM_WEIGHTS_REQUEST: return "WEIGHTS_REQUEST";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:226:9: warning: case value ‘1102’ not in enumerated type ‘MessageType’ [-Wswitch]
+  226 |         case MSG_CLLM_WEIGHTS_BROADCAST: return "WEIGHTS_BROADCAST";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:227:9: warning: case value ‘1200’ not in enumerated type ‘MessageType’ [-Wswitch]
+  227 |         case MSG_CLLM_BOUNDARY_CROSSING: return "BOUNDARY_CROSSING";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:228:9: warning: case value ‘1201’ not in enumerated type ‘MessageType’ [-Wswitch]
+  228 |         case MSG_CLLM_TWIN_PRIME_HIT: return "TWIN_PRIME_HIT";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:229:9: warning: case value ‘1202’ not in enumerated type ‘MessageType’ [-Wswitch]
+  229 |         case MSG_CLLM_BOUNDARY_REGION_ENTER: return "BOUNDARY_REGION_ENTER";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:230:9: warning: case value ‘1203’ not in enumerated type ‘MessageType’ [-Wswitch]
+  230 |         case MSG_CLLM_BOUNDARY_REGION_EXIT: return "BOUNDARY_REGION_EXIT";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:231:9: warning: case value ‘1300’ not in enumerated type ‘MessageType’ [-Wswitch]
+  231 |         case MSG_CLLM_EPOCH_START: return "EPOCH_START";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:232:9: warning: case value ‘1301’ not in enumerated type ‘MessageType’ [-Wswitch]
+  232 |         case MSG_CLLM_EPOCH_COMPLETE: return "EPOCH_COMPLETE";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:233:9: warning: case value ‘1302’ not in enumerated type ‘MessageType’ [-Wswitch]
+  233 |         case MSG_CLLM_BATCH_START: return "BATCH_START";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:234:9: warning: case value ‘1303’ not in enumerated type ‘MessageType’ [-Wswitch]
+  234 |         case MSG_CLLM_BATCH_COMPLETE: return "BATCH_COMPLETE";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:235:9: warning: case value ‘1400’ not in enumerated type ‘MessageType’ [-Wswitch]
+  235 |         case MSG_CLLM_CHILD_SPAWN: return "CHILD_SPAWN";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:236:9: warning: case value ‘1401’ not in enumerated type ‘MessageType’ [-Wswitch]
+  236 |         case MSG_CLLM_CHILD_TERMINATE: return "CHILD_TERMINATE";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:237:9: warning: case value ‘1402’ not in enumerated type ‘MessageType’ [-Wswitch]
+  237 |         case MSG_CLLM_PARENT_SYNC: return "PARENT_SYNC";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:238:9: warning: case value ‘1403’ not in enumerated type ‘MessageType’ [-Wswitch]
+  238 |         case MSG_CLLM_SIBLING_DISCOVER: return "SIBLING_DISCOVER";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:239:9: warning: case value ‘1500’ not in enumerated type ‘MessageType’ [-Wswitch]
+  239 |         case MSG_CLLM_ERROR_REPORT: return "ERROR_REPORT";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:240:9: warning: case value ‘1501’ not in enumerated type ‘MessageType’ [-Wswitch]
+  240 |         case MSG_CLLM_ERROR_RECOVERY: return "ERROR_RECOVERY";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:241:9: warning: case value ‘1600’ not in enumerated type ‘MessageType’ [-Wswitch]
+  241 |         case MSG_CLLM_STATS_REQUEST: return "STATS_REQUEST";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:242:9: warning: case value ‘1601’ not in enumerated type ‘MessageType’ [-Wswitch]
+  242 |         case MSG_CLLM_STATS_REPORT: return "STATS_REPORT";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:243:9: warning: case value ‘1700’ not in enumerated type ‘MessageType’ [-Wswitch]
+  243 |         case MSG_CLLM_SHUTDOWN_REQUEST: return "SHUTDOWN_REQUEST";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:244:9: warning: case value ‘1701’ not in enumerated type ‘MessageType’ [-Wswitch]
+  244 |         case MSG_CLLM_SHUTDOWN_ACK: return "SHUTDOWN_ACK";
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c: In function ‘sphere_message_print’:
+src/infrastructure/cllm_sphere_message.c:309:9: warning: case value ‘1200’ not in enumerated type ‘MessageType’ [-Wswitch]
+  309 |         case MSG_CLLM_BOUNDARY_CROSSING:
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:310:9: warning: case value ‘1201’ not in enumerated type ‘MessageType’ [-Wswitch]
+  310 |         case MSG_CLLM_TWIN_PRIME_HIT:
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:317:9: warning: case value ‘1300’ not in enumerated type ‘MessageType’ [-Wswitch]
+  317 |         case MSG_CLLM_EPOCH_START:
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:318:9: warning: case value ‘1301’ not in enumerated type ‘MessageType’ [-Wswitch]
+  318 |         case MSG_CLLM_EPOCH_COMPLETE:
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:324:9: warning: case value ‘1500’ not in enumerated type ‘MessageType’ [-Wswitch]
+  324 |         case MSG_CLLM_ERROR_REPORT:
+      |         ^~~~
+src/infrastructure/cllm_sphere_message.c:330:9: warning: case value ‘1601’ not in enumerated type ‘MessageType’ [-Wswitch]
+  330 |         case MSG_CLLM_STATS_REPORT:
+      |         ^~~~
+Compiling src/infrastructure/cllm_sphere_stats.c...
+Compiling src/platonic/cllm_platonic_core.c...
+Compiling src/platonic/cllm_platonic_cube.c...
+Compiling src/infrastructure/cllm_optimizer.c...
+Compiling src/platonic/cllm_platonic_dodecahedron.c...
+Compiling src/platonic/cllm_platonic_harmonic.c...
+Compiling src/platonic/cllm_platonic_icosahedron.c...
+Compiling src/platonic/cllm_platonic_octahedron.c...
+Compiling src/platonic/cllm_platonic_core.c...
+Compiling src/platonic/cllm_platonic_recovery.c...
+Compiling src/platonic/cllm_platonic_tetrahedron.c...
+Compiling src/platonic/cllm_platonic_icosahedron.c...
+Compiling src/platonic/cllm_platonic_recovery.c...
+Compiling src/crawler/handlers/archive_handler.c...
+Compiling src/crawler/handlers/britannica_handler.c...
+Compiling src/platonic/cllm_platonic_tetrahedron.c...
+config.status: creating config.h
+Compiling src/crawler/handlers/etymonline_handler.c...
+config.status: config.h is unchanged
+config.status: executing libtool commands
+Compiling src/crawler/handlers/handlers.c...
+Compiling src/crawler/handlers/archive_handler.c...
+Compiling src/crawler/handlers/news_handler.c...
+Compiling src/crawler/handlers/reddit_handler.c...
+Compiling src/crawler/handlers/stackoverflow_handler.c...
+make[1]: Entering directory '/workspace/php/math'
+
+Build complete.
+Don't forget to run 'make test'.
+
+make[1]: Leaving directory '/workspace/php/math'
+Compiling src/crawler/handlers/etymonline_handler.c...
+✓ crystalline_math extension built
+
+✓ All PHP extensions built successfully
+Compiling src/crawler/handlers/twitter_handler.c...
+
+Compiling src/crawler/handlers/wikipedia_handler.c...
+To install: sudo make install-php
+Compiling src/crawler/handlers/reddit_handler.c...
+Compiling src/crawler/handlers/twitter_handler.c...
+Compiling src/document_processing/cllm_ocr.c...
+Compiling src/crawler/handlers/wikipedia_handler.c...
+Compiling src/document_processing/cllm_pdf.c...
+Compiling src/document_processing/cllm_ocr.c...
+Compiling src/document_processing/cllm_pdf.c...
+Compiling src/crawler/content_filter.c...
+Compiling src/crawler/continuous_training.c...
+Compiling src/crawler/content_filter.c...
+src/crawler/continuous_training.c: In function ‘train_on_file’:
+src/crawler/continuous_training.c:302:41: warning: implicit declaration of function ‘cllm_batch_iterator_create’ [-Wimplicit-function-declaration]
+  302 |     CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/continuous_training.c:302:41: warning: initialization of ‘CLLMBatchIterator *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+src/crawler/continuous_training.c:326:9: warning: implicit declaration of function ‘cllm_batch_iterator_free’ [-Wimplicit-function-declaration]
+  326 |         cllm_batch_iterator_free(batch_iterator);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/continuous_training.c:334:29: warning: implicit declaration of function ‘cllm_train_epoch_88d’; did you mean ‘cllm_train_epoch’? [-Wimplicit-function-declaration]
+  334 |         float loss = (float)cllm_train_epoch_88d(threaded_system, epoch);
+      |                             ^~~~~~~~~~~~~~~~~~~~
+      |                             cllm_train_epoch
+Compiling src/crawler/continuous_training.c...
+Compiling src/crawler/crawler_api.c...
+src/crawler/continuous_training.c: In function ‘train_on_file’:
+src/crawler/continuous_training.c:302:41: warning: implicit declaration of function ‘cllm_batch_iterator_create’ [-Wimplicit-function-declaration]
+  302 |     CLLMBatchIterator* batch_iterator = cllm_batch_iterator_create(
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/continuous_training.c:302:41: warning: initialization of ‘CLLMBatchIterator *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+src/crawler/continuous_training.c:326:9: warning: implicit declaration of function ‘cllm_batch_iterator_free’ [-Wimplicit-function-declaration]
+  326 |         cllm_batch_iterator_free(batch_iterator);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+src/crawler/continuous_training.c:334:29: warning: implicit declaration of function ‘cllm_train_epoch_88d’; did you mean ‘cllm_train_epoch’? [-Wimplicit-function-declaration]
+  334 |         float loss = (float)cllm_train_epoch_88d(threaded_system, epoch);
+      |                             ^~~~~~~~~~~~~~~~~~~~
+      |                             cllm_train_epoch
+Compiling src/crawler/crawler_api.c...
+Compiling src/crawler/crawler_core.c...
+Compiling src/crawler/crawler_core.c...
+Compiling src/crawler/crawler_url_manager.c...
+Compiling src/crawler/crawler_url_manager.c...
+Compiling src/crawler/file_processor.c...
+Compiling src/crawler/file_processor_image.c...
+Compiling src/crawler/file_processor.c...
+Compiling src/crawler/file_processor_image.c...
+Compiling src/crawler/file_processor_office.c...
+Compiling src/crawler/file_processor_pdf.c...
+Compiling src/crawler/file_processor_office.c...
+Compiling src/crawler/link_management.c...
+Compiling src/crawler/file_processor_pdf.c...
+Compiling src/crawler/link_management.c...
+Compiling src/crawler/preprocessor.c...
+Compiling src/crawler/preprocessor.c...
+Compiling src/crawler/prime_randomization.c...
+Compiling src/crawler/prime_randomization.c...
+Compiling src/crawler/site_handlers.c...
+Compiling src/crawler/site_handlers.c...
+Compiling src/crawler/tokenizer.c...
+Compiling src/crawler/tokenizer.c...
+Compiling src/crawler/url_blocker.c...
+Compiling src/crawler/url_blocker.c...
+Compiling src/crawler/url_database.c...
+Compiling src/crawler/url_database.c...
+Compiling src/crawler/url_filter.c...
+Compiling src/crawler/url_filter.c...
+Compiling src/crawler/url_patterns.c...
+Compiling src/crawler/url_patterns.c...
+Compiling src/crawler/url_priority.c...
+Compiling src/crawler/url_priority.c...
+Creating static CLLM library: libcllm.a
+Creating shared CLLM library: libcllm.so
 ✓ CLLM static library created
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/crawler_core.o src/crawler/crawler_core.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/preprocessor.o src/crawler/preprocessor.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/tokenizer.o src/crawler/tokenizer.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/continuous_training.o src/crawler/continuous_training.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/crawler_api.o src/crawler/crawler_api.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/file_processor.o src/crawler/file_processor.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/prime_randomization.o src/crawler/prime_randomization.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/link_management.o src/crawler/link_management.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/url_patterns.o src/crawler/url_patterns.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/file_processor_pdf.o src/crawler/file_processor_pdf.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/file_processor_image.o src/crawler/file_processor_image.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/file_processor_office.o src/crawler/file_processor_office.c
-gcc -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include -mavx2 -mfma    -c -o src/crawler/url_database.o src/crawler/url_database.c
-src/crawler/url_database.c:15:10: fatal error: sqlite3.h: No such file or directory
-   15 | #include <sqlite3.h>
-      |          ^~~~~~~~~~~
-compilation terminated.
-make: *** [<builtin>: src/crawler/url_database.o] Error 1
+Creating static CLLM library: libcllm.a
+Creating shared CLLM library: libcllm.so
+✓ CLLM static library created
+✓ CLLM shared library created
+make[1]: Leaving directory '/workspace/cllm'
+✓ CLLM shared library created
+✓ CLLM shared library created
+make[1]: Leaving directory '/workspace/cllm'
+✓ CLLM static library created
+✓ Build complete!
+  Shared Libraries:
+    - math/lib/libcrystallinemath.so
+    - libalgorithms.so
+    - cllm/libcllm.so
+  Static Libraries:
+    - math/lib/libcrystallinemath.a
+    - libalgorithms.a
+    - cllm/libcllm.a

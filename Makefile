@@ -21,7 +21,7 @@ else
     DEBUG_FLAGS =
 endif
 
-CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./include -I./algorithms/include -I./math/include $(SIMD_FLAGS) $(DEBUG_FLAGS)
+CFLAGS = -Wall -Wextra -g -O2 -fPIC -I./cllm/include -I./algorithms/include -I./math/include $(SIMD_FLAGS) $(DEBUG_FLAGS)
 LDFLAGS = 
 ARFLAGS = rcs
 
@@ -29,13 +29,11 @@ ARFLAGS = rcs
 MATH_LIB = math/lib/libcrystallinemath.so
 ALGORITHMS_LIB = libalgorithms.so
 CLLM_LIB = cllm/libcllm.so
-CRAWLER_LIB = libcrawler.so
 
 # Library names - Static (.a)
 MATH_STATIC = math/lib/libcrystallinemath.a
 ALGORITHMS_STATIC = libalgorithms.a
 CLLM_STATIC = cllm/libcllm.a
-CRAWLER_STATIC = libcrawler.a
 
 # Installation directories
 PREFIX = /usr/local
@@ -50,7 +48,8 @@ UTILS_SOURCES = $(wildcard $(SRC_UTILS)/*.c)
 
 # All sources (OLD sources removed)
 # Note: CLLM sources now built in cllm/ directory
-ALL_SOURCES = $(UTILS_SOURCES) $(CRAWLER_SOURCES) $(DOCPROC_SOURCES)
+ALL_SOURCES = $(UTILS_SOURCES)
+# Note: CRAWLER and DOCPROC sources now built as part of CLLM library in cllm/
 
 # Object files (OLD objects removed)
 UTILS_OBJECTS = $(UTILS_SOURCES:.c=.o)
@@ -65,18 +64,16 @@ HEADERS = $(wildcard include/*.h)
 
 .PHONY: all clean install uninstall test demos app info verify help
 
-all: $(MATH_LIB) $(MATH_STATIC) $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) $(CRAWLER_LIB) $(CRAWLER_STATIC) $(DOCPROC_LIB) tools php-ext
+all: $(MATH_LIB) $(MATH_STATIC) $(ALGORITHMS_LIB) $(ALGORITHMS_STATIC) $(CLLM_LIB) $(CLLM_STATIC) tools php-ext
 	@echo "✓ Build complete!"
 	@echo "  Shared Libraries:"
 	@echo "    - $(MATH_LIB)"
 	@echo "    - $(ALGORITHMS_LIB)"
 	@echo "    - $(CLLM_LIB)"
-	@echo "    - $(CRAWLER_LIB)"
 	@echo "  Static Libraries:"
 	@echo "    - $(MATH_STATIC)"
 	@echo "    - $(ALGORITHMS_STATIC)"
 	@echo "    - $(CLLM_STATIC)"
-	@echo "    - $(CRAWLER_STATIC)"
 
 # ============================================================================
 # Math Library (Foundation)
@@ -144,14 +141,6 @@ $(SRC_AI)/%.o: $(SRC_AI)/%.c $(HEADERS)
 	@echo "Compiling [AI]: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Crawler objects
-src/crawler/%.o: src/crawler/%.c $(HEADERS)
-
-src/document_processing/%.o: src/document_processing/%.c $(HEADERS)
-	@echo "Compiling $<"
-	$(CC) $(CFLAGS) -c $< -o $@
-	@echo "Compiling [CRAWLER]: $<"
-	$(CC) $(CFLAGS) -c $< -o $@
 
 # ============================================================================
 # Subdirectory Builds
@@ -273,8 +262,8 @@ help:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(ALL_OBJECTS)
-	rm -f $(MATH_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(CRAWLER_LIB) $(DOCPROC_LIB) $(STATIC_LIB) $(SHARED_LIB)
-	rm -f $(MATH_STATIC) $(ALGORITHMS_STATIC) $(CLLM_STATIC) $(CRAWLER_STATIC)
+	rm -f $(MATH_LIB) $(ALGORITHMS_LIB) $(CLLM_LIB) $(STATIC_LIB) $(SHARED_LIB)
+	rm -f $(MATH_STATIC) $(ALGORITHMS_STATIC) $(CLLM_STATIC) 
 	rm -f libcrystalline.a libcrystalline.so  # Remove OLD library
 	rm -f libcllm.so libcllm.a libalgorithms.so libalgorithms.a  # Remove copied libraries
 	rm -f tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
@@ -296,99 +285,6 @@ debug: clean all
 	@echo "✓ Debug build complete"
 
 # ============================================================================
-# ============================================================================
-# Crawler Library (libcrawler.so)
-# ============================================================================
-
-CRAWLER_SOURCES = src/crawler/crawler_core.c src/crawler/preprocessor.c \
-                  src/crawler/tokenizer.c src/crawler/continuous_training.c \
-                  src/crawler/crawler_api.c src/crawler/file_processor.c \
-                  src/crawler/prime_randomization.c src/crawler/link_management.c \
-                  src/crawler/url_patterns.c src/crawler/file_processor_pdf.c \
-                  src/crawler/file_processor_image.c src/crawler/file_processor_office.c \
-                  src/crawler/url_database.c src/crawler/url_filter.c \
-                  src/crawler/url_priority.c src/crawler/url_blocker.c \
-                  src/crawler/crawler_url_manager.c src/crawler/content_filter.c \
-                  src/crawler/site_handlers.c src/crawler/handlers/handlers.c \
-                  src/crawler/handlers/twitter_handler.c src/crawler/handlers/britannica_handler.c \
-                  src/crawler/handlers/etymonline_handler.c src/crawler/handlers/wikipedia_handler.c \
-                  src/crawler/handlers/reddit_handler.c src/crawler/handlers/stackoverflow_handler.c \
-                  src/crawler/handlers/news_handler.c src/crawler/handlers/archive_handler.c
-CRAWLER_OBJECTS = $(CRAWLER_SOURCES:.c=.o)
-CRAWLER_LIB = libcrawler.so
-
-$(CRAWLER_LIB): $(CRAWLER_OBJECTS) $(CLLM_LIB)
-	@echo "Creating crawler shared library: $@"
-	$(CC) -shared -o $@ $(CRAWLER_OBJECTS) -L. -Lmath/lib -lcrystallinemath -lcllm -lcurl -lpthread -lsqlite3
-	@echo "✓ Crawler shared library created"
-
-$(CRAWLER_STATIC): $(CRAWLER_OBJECTS) $(CLLM_STATIC)
-	@echo "Creating crawler static library: $@"
-	$(AR) $(ARFLAGS) $@ $(CRAWLER_OBJECTS)
-	@echo "✓ Crawler static library created"
-
-# ============================================================================
-# Crawler CLI Tool (uses libcrawler.so)
-# ============================================================================
-
-crawler: $(CRAWLER_LIB)
-	@echo "Building crawler CLI tool..."
-	@mkdir -p tools
-	$(CC) $(CFLAGS) -o tools/cllm_crawler tools/cllm_crawler.c \
-		-L. -lcrawler -lalgorithms -lcllm -Lmath/lib -lcrystallinemath -lpthread -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ Crawler CLI built: tools/cllm_crawler"
-
-
-# ============================================================================
-# Document Processing Library (libdocproc.so)
-# ============================================================================
-
-DOCPROC_SOURCES = src/document_processing/cllm_pdf.c src/document_processing/cllm_ocr.c
-DOCPROC_OBJECTS = $(DOCPROC_SOURCES:.c=.o)
-DOCPROC_LIB = libdocproc.so
-
-$(DOCPROC_LIB): $(DOCPROC_OBJECTS)
-	@echo "Creating document processing library: $@"
-	$(CC) -shared -o $@ $(DOCPROC_OBJECTS)
-	@echo "✓ Document processing library created"
-
-# ============================================================================
-# Document Processing CLI Tools
-# ============================================================================
-
-tools: tools/cllm_pdf_extract tools/cllm_ocr tools/cllm_pdf_ocr tools/cllm \
-       tools/cllm_inference tools/cllm_tokenize tools/cllm_vocab_build \
-       tools/cllm_model_manager \
-       tools/init_lattice_embeddings tools/benchmark_ntt_attention \
-       # tools/validate_lattice tools/analyze_cymatic_resonance \
-       tools/visualize_angular_positions tools/ui_layout_analyzer \
-       tools/benchmark_prime_validation \
-       tools/platonic_prime_resonance tools/tetration_analysis \
-
-
-
-tools/cllm_pdf_extract: $(DOCPROC_LIB)
-	@echo "Building PDF extraction tool..."
-	@mkdir -p tools
-	$(CC) $(CFLAGS) -o tools/cllm_pdf_extract tools/cllm_pdf_extract.c \
-		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ PDF extraction tool built: tools/cllm_pdf_extract"
-
-tools/cllm_ocr: $(DOCPROC_LIB)
-	@echo "Building OCR tool..."
-	@mkdir -p tools
-	$(CC) $(CFLAGS) -o tools/cllm_ocr tools/cllm_ocr.c \
-		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ OCR tool built: tools/cllm_ocr"
-
-tools/cllm_pdf_ocr: $(DOCPROC_LIB)
-	@echo "Building combined PDF+OCR tool..."
-	@mkdir -p tools
-	$(CC) $(CFLAGS) -o tools/cllm_pdf_ocr tools/cllm_pdf_ocr.c \
-		-L. -ldocproc -Wl,-rpath,'$$ORIGIN/..'
-	@echo "✓ Combined PDF+OCR tool built: tools/cllm_pdf_ocr"
-
-
 # ============================================================================
 # Additional CLI Tools
 # ============================================================================

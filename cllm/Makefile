@@ -13,13 +13,16 @@ ARFLAGS = rcs
 SIMD_FLAGS := $(shell grep -q avx2 /proc/cpuinfo 2>/dev/null && echo "-mavx2 -mfma" || echo "")
 CFLAGS += $(SIMD_FLAGS)
 
-# Source files
+# Source files (excluding test files)
 SOURCES = $(wildcard src/*.c) \
           $(wildcard src/infrastructure/*.c) \
           $(wildcard src/platonic/*.c) \
-          $(wildcard src/crawler/*.c) \
           $(wildcard src/crawler/handlers/*.c) \
           $(wildcard src/document_processing/*.c)
+
+# Crawler sources (excluding test files)
+CRAWLER_SOURCES = $(filter-out %test_links.c %test_prime.c, $(wildcard src/crawler/*.c))
+SOURCES += $(CRAWLER_SOURCES)
 
 # Object files
 OBJECTS = $(SOURCES:.c=.o)
