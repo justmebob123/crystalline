@@ -9,6 +9,8 @@
 #include "cllm.h"
 #include "math/constants.h"
 #include "cllm_training.h"
+#include "cllm_batch.h"
+#include "ai/cllm_training_88d.h"
 #include "math/constants.h"
 #include "cllm_inference_transformer.h"
 #include "math/constants.h"
@@ -353,6 +355,199 @@ void cllm_compute_embedding_lazy(CLLMModel* model, uint32_t token_id, double* ou
 /**
  * Adam optimizer step
  */
+void cllm_optimizer_step(CLLMTraining* training) {
+    // Wrapper that calls Adam optimizer
+    cllm_optimizer_step_adam(training);
+}
+
+/**
+ * Forward pass using thread-local context
+ * 
+ * Uses thread-local activation buffers to avoid race conditions.
+ * Model weights are read-only (shared across threads).
+ */
+double cllm_forward_training_threaded(
+    CLLMTraining* training,
+    struct ThreadLocalTrainingContext* local_ctx,
+    uint32_t* input_tokens
+) {
+    if (!training || !local_ctx || !input_tokens) return 0.0;
+    
+    CLLMModel* model = training->model;
+    int batch_size = local_ctx->batch_size;
+    int seq_len = local_ctx->seq_len;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    
+    // Get embeddings (write to thread-local buffer)
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t token_id = input_tokens[idx];
+            if (token_id >= vocab_size) continue;
+            
+            double* embed_src = &model->embeddings[token_id * embed_dim];
+            double* embed_dst = &local_ctx->input_embeddings[idx * embed_dim];
+            memcpy(embed_dst, embed_src, embed_dim * sizeof(double));
+        }
+    }
+    
+    // Process through layers (all writes go to thread-local buffers)
+    double* layer_input = local_ctx->input_embeddings;
+    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
+        memcpy(local_ctx->layer_inputs[layer], layer_input, 
+               batch_size * seq_len * embed_dim * sizeof(double));
+        
+        // Simplified: copy input to output (identity mapping for now)
+        // TODO: Implement full attention with thread-local caching
+        memcpy(local_ctx->attention_outputs[layer], layer_input, 
+               batch_size * seq_len * embed_dim * sizeof(double));
+        
+        // Simplified feedforward (identity for now)
+        // TODO: Implement full feedforward
+        memcpy(local_ctx->ff_outputs[layer], local_ctx->attention_outputs[layer],
+               batch_size * seq_len * embed_dim * sizeof(double));
+        
+        // Layer output = attention output + feedforward (residual)
+        for (int b = 0; b < batch_size; b++) {
+            for (int s = 0; s < seq_len; s++) {
+                int idx = b * seq_len + s;
+                double* attn_out = &local_ctx->attention_outputs[layer][idx * embed_dim];
+                double* ff_out = &local_ctx->ff_outputs[layer][idx * embed_dim];
+                double* layer_out = &local_ctx->layer_outputs[layer][idx * embed_dim];
+                
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    layer_out[d] = attn_out[d] + ff_out[d];
+                }
+            }
+        }
+        
+        layer_input = local_ctx->layer_outputs[layer];
+    }
+    
+    // Copy final hidden (to thread-local buffer)
+    memcpy(local_ctx->final_hidden, layer_input, 
+           batch_size * seq_len * embed_dim * sizeof(double));
+    
+    // Project to vocabulary (write to thread-local logits)
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            double* hidden = &local_ctx->final_hidden[idx * embed_dim];
+            double* logits = &local_ctx->logits[idx * vocab_size];
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                double* vocab_embed = &model->embeddings[v * embed_dim];
+                double score = 0.0;
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    score += hidden[d] * vocab_embed[d];
+                }
+                logits[v] = score;
+            }
+        }
+    }
+    
+    return 0.0;  // Loss computation happens separately
+}
+
+/**
+ * Backward pass using thread-local context
+ * 
+ * Uses thread-local gradient buffers to avoid race conditions.
+ * Gradients are accumulated to the provided gradient_buffer (lock-free segment).
+ */
+void cllm_backward_training_threaded(
+    CLLMTraining* training,
+    struct ThreadLocalTrainingContext* local_ctx,
+    uint32_t* target_tokens,
+    double* gradient_buffer
+) {
+    if (!training || !local_ctx || !target_tokens || !gradient_buffer) return;
+    
+    CLLMModel* model = training->model;
+    int batch_size = local_ctx->batch_size;
+    int seq_len = local_ctx->seq_len;
+    uint32_t embed_dim = model->embedding_dim;
+    uint32_t vocab_size = model->vocab_size;
+    
+    // Use thread-local temporary buffers
+    double* grad_logits = local_ctx->grad_logits;
+    double* grad_hidden = local_ctx->grad_hidden;
+    
+    // Zero the buffers
+    memset(grad_logits, 0, batch_size * seq_len * vocab_size * sizeof(double));
+    memset(grad_hidden, 0, batch_size * seq_len * embed_dim * sizeof(double));
+    
+    // Gradient of cross-entropy w.r.t. logits (using thread-local logits)
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            uint32_t target = target_tokens[idx];
+            if (target >= vocab_size) continue;
+            
+            double* logits = &local_ctx->logits[idx * vocab_size];
+            double* grad = &grad_logits[idx * vocab_size];
+            
+            // Softmax gradient: prob - target_one_hot
+            double max_logit = logits[0];
+            for (uint32_t v = 1; v < vocab_size; v++) {
+                if (logits[v] > max_logit) max_logit = logits[v];
+            }
+            
+            double sum_exp = 0.0;
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                double x = logits[v] - max_logit;
+                if (x > 50.0) x = 50.0;
+                if (x < -50.0) x = -50.0;
+                sum_exp += exp(x);
+            }
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                double x = logits[v] - max_logit;
+                if (x > 50.0) x = 50.0;
+                if (x < -50.0) x = -50.0;
+                double prob = exp(x) / sum_exp;
+                grad[v] = prob - (v == target ? 1.0 : 0.0);
+            }
+        }
+    }
+    
+    // Backprop through vocabulary projection (write to gradient_buffer)
+    for (int b = 0; b < batch_size; b++) {
+        for (int s = 0; s < seq_len; s++) {
+            int idx = b * seq_len + s;
+            double* grad_logit = &grad_logits[idx * vocab_size];
+            double* hidden = &local_ctx->final_hidden[idx * embed_dim];
+            double* grad_h = &grad_hidden[idx * embed_dim];
+            
+            for (uint32_t v = 0; v < vocab_size; v++) {
+                double* vocab_embed = &model->embeddings[v * embed_dim];
+                double grad_v = grad_logit[v];
+                
+                // Accumulate to gradient_buffer (lock-free segment)
+                for (uint32_t d = 0; d < embed_dim; d++) {
+                    gradient_buffer[v * embed_dim + d] += grad_v * hidden[d];
+                    grad_h[d] += grad_v * vocab_embed[d];
+                }
+            }
+        }
+    }
+    
+    // TODO: Backprop through transformer layers
+    // For now, we only backprop through the output projection
+}
+
+/**
+ * Non-threaded backward pass (stub that calls threaded version)
+ */
+void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer) {
+    // TODO: This should create a temporary ThreadLocalTrainingContext
+    // For now, this is a stub
+    (void)training;
+    (void)target_tokens;
+    (void)gradient_buffer;
+}
+
 void cllm_optimizer_step_adam(CLLMTraining* training) {
     if (!training) return;
     

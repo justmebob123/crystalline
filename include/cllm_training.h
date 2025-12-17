@@ -214,4 +214,26 @@ void cllm_training_cleanup(CLLMTraining* training);
 double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer);
 
+// Forward declare for 88D integration
+struct ThreadLocalTrainingContext;
+
+/**
+ * Forward pass using thread-local context (for 88D training)
+ */
+double cllm_forward_training_threaded(
+    CLLMTraining* training,
+    struct ThreadLocalTrainingContext* local_ctx,
+    uint32_t* input_tokens
+);
+
+/**
+ * Backward pass using thread-local context (for 88D training)
+ */
+void cllm_backward_training_threaded(
+    CLLMTraining* training,
+    struct ThreadLocalTrainingContext* local_ctx,
+    uint32_t* target_tokens,
+    double* gradient_buffer
+);
+
 #endif /* CLLM_TRAINING_H */

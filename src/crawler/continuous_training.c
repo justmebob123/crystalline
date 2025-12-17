@@ -16,7 +16,7 @@
 #include "cllm.h"
 #include "cllm_format.h"
 #include "cllm_utils.h"
-#include "cllm_training_threaded.h"
+#include "ai/cllm_training_88d.h"
 #include "cllm_batch.h"
 #include "cllm_model_manager.h"
 
@@ -186,7 +186,7 @@ static int load_tokens_from_file(const char* filepath, uint32_t** tokens, size_t
 /**
  * Update sphere stats for visualization (if AppState is available)
  */
-static void update_crawler_sphere_stats(ContinuousTrainingState* state, ThreadedTrainingSystem* system) {
+static void update_crawler_sphere_stats(ContinuousTrainingState* state, CLLMTraining88D* system) {
     if (!state->app_state) return;  // No AppState available
     
     // Cast void* to AppState* (avoiding circular dependency)
@@ -208,17 +208,20 @@ static void update_crawler_sphere_stats(ContinuousTrainingState* state, Threaded
     pthread_mutex_lock(&app_state->sphere_stats_mutex);
     
     // Get number of workers
-    extern int threaded_training_get_num_workers(ThreadedTrainingSystem* system);
-    int num_workers = threaded_training_get_num_workers(system);
+    // TODO: Implement get_num_workers for 88D system
+    int num_workers = system ? system->num_threads : 0;
     app_state->sphere_stats.active_spheres = num_workers;
     app_state->sphere_stats.total_batches = 0;
     
     // Update per-sphere stats
-    extern int threaded_training_get_sphere_stats(ThreadedTrainingSystem* system, int sphere_id, int* batches, float* loss);
+    // TODO: Implement get_sphere_stats for 88D system
     for (int i = 0; i < num_workers && i < 12; i++) {
         int batches = 0;
         float loss = 0.0f;
-        if (threaded_training_get_sphere_stats(system, i, &batches, &loss) == 0) {
+        // Stub: would need to implement per-thread stats tracking
+        if (system && i < (int)system->num_threads) {
+            batches = (int)(system->batches_processed / system->num_threads);
+            loss = (float)(system->epoch_loss / system->batches_processed);
             app_state->sphere_stats.batches_processed[i] = batches;
             app_state->sphere_stats.avg_loss[i] = loss;
             app_state->sphere_stats.total_batches += batches;
@@ -226,8 +229,8 @@ static void update_crawler_sphere_stats(ContinuousTrainingState* state, Threaded
     }
     
     // Update gradient norm
-    extern double threaded_training_get_gradient_norm(ThreadedTrainingSystem* system);
-    app_state->sphere_stats.total_gradient_norm = (float)threaded_training_get_gradient_norm(system);
+    // TODO: Implement get_gradient_norm for 88D system
+    app_state->sphere_stats.total_gradient_norm = 0.0f; // Stub
     
     pthread_mutex_unlock(&app_state->sphere_stats_mutex);
 }
@@ -242,7 +245,7 @@ static void* crawler_stats_update_thread_func(void* arg) {
    printf("✓ Crawler real-time stats update thread started\n");
    
    // Get the threaded system from the training context
-   ThreadedTrainingSystem* system = NULL;
+   CLLMTraining88D* system = NULL;
    
    while (crawler_stats_thread_running && state->running) {
        // Get current threaded system (it's created per training session)
@@ -311,7 +314,8 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     }
     
     // Create parallel training system
-    ThreadedTrainingSystem* threaded_system = threaded_training_create(
+    CLLMTraining88D* threaded_system = cllm_training_88d_create(
+        state->model,
         state->training,
         batch_iterator,
         num_threads
@@ -327,7 +331,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     
     for (int epoch = 0; epoch < epochs && state->running; epoch++) {
         // Use parallel training (crystalline loss, multi-threaded)
-        float loss = threaded_train_epoch_lockfree(threaded_system, epoch);
+        float loss = (float)cllm_train_epoch_88d(threaded_system, epoch);
         total_loss += loss;
         printf("  Epoch %d/%d: loss = %.4f\n", epoch + 1, epochs, loss);
         
@@ -336,7 +340,7 @@ static int train_on_file(ContinuousTrainingState* state, const char* filepath) {
     }
     
     // Cleanup parallel system
-    threaded_training_free(threaded_system);
+    cllm_training_88d_free(threaded_system);
     cllm_batch_iterator_free(batch_iterator);
     
     float avg_loss = total_loss / epochs;

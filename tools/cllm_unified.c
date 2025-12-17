@@ -18,15 +18,15 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include "../include/cllm.h"
+#include "../include/cllm_batch.h"
 #include "../include/cllm_training.h"
-#include "../include/cllm_training_threaded.h"
+#include "../include/ai/cllm_training_88d.h"
 #include "../include/ai/cllm_hierarchical_training.h"
 #include "../include/cllm_inference.h"
 #include "../include/cllm_tokenizer.h"
 #include "../include/cllm_data_loader.h"
 #include "../include/cllm_format.h"
 #include "../include/cllm_utils.h"
-#include "../include/cllm_batch.h"
 #include "../include/cllm_global_progress.h"
 
 // ============================================================================
@@ -426,8 +426,9 @@ int cmd_train(int argc, char** argv) {
             return 1;
         }
         
-        // Create threaded training system
-        ThreadedTrainingSystem* threaded_system = threaded_training_create(
+        // Create 88D training system
+        CLLMTraining88D* threaded_system = cllm_training_88d_create(
+            model,
             training,
             batch_iter,
             training_threads
@@ -451,11 +452,11 @@ int cmd_train(int argc, char** argv) {
                                          config.num_epochs * total_batches);
         
         // Set total epochs for progress tracking
-        threaded_training_set_total_epochs(threaded_system, config.num_epochs);
+        // Note: 88D system doesn't need set_total_epochs
         
         // Training loop with threading
         for (int epoch = 0; epoch < config.num_epochs; epoch++) {
-            float epoch_loss = threaded_train_epoch_lockfree(threaded_system, epoch);
+            float epoch_loss = (float)cllm_train_epoch_88d(threaded_system, epoch);
             
             // Update training progress
             cllm_global_progress_update_training(epoch + 1, config.num_epochs, epoch_loss);
@@ -475,7 +476,7 @@ int cmd_train(int argc, char** argv) {
         cllm_global_progress_complete_phase();
         
         // Cleanup threaded system
-        threaded_training_free(threaded_system);
+        cllm_training_88d_free(threaded_system);
         cllm_batch_iterator_free(batch_iter);
         
     } else {

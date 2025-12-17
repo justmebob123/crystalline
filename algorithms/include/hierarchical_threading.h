@@ -229,6 +229,13 @@ typedef struct HierarchicalThread {
     uint32_t batch_capacity;            // Batch capacity
     atomic_uint batch_count;            // Current batch count
     
+    // CLLM Training Integration (reuse existing patterns)
+    void* thread_local_training_ctx;    // ThreadLocalTrainingContext* (from legacy)
+    double* activation_buffer;          // Forward pass activations
+    size_t activation_buffer_size;      // Activation buffer size
+    double* cached_qkv;                 // Cached Q, K, V for backward pass
+    size_t cached_qkv_size;             // Cache size
+    
 } HierarchicalThread;
 
 // ============================================================================
