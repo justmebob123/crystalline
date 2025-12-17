@@ -36,7 +36,11 @@
 - [x] Create cllm_inference_88d.c for parallel inference operations
 - [x] Create parallel ML component interfaces (headers)
 - [x] Create parallel ML component implementations (PLACEHOLDER CODE ONLY)
-- [ ] Fix compilation errors (field names, message types)
+- [ ] Fix compilation errors (301 errors remaining)
+- [ ] Fix cllm_message_queue.c (trying to access internal MessageQueue structures)
+- [ ] Fix remaining message type constants
+- [ ] Fix SphereMessage vs Message type conflicts
+- [ ] Consider using algorithms MessageQueue directly instead of wrapper
 - [ ] Implement actual tensor operations in parallel ML components
 - [ ] Implement actual gradient computations
 - [ ] Implement actual attention mechanisms (Q×K^T, softmax, attention×V)

@@ -656,7 +656,7 @@ int lattice_hierarchy_process_messages(CLLMLatticeHierarchy* sphere) {
                 lattice_hierarchy_set_state(sphere, HIERARCHY_STATE_WAITING);
                 break;
                 
-            case MSG_CLLM_SHUTDOWN_REQUEST:
+            case MSG_TYPE_SHUTDOWN:
                 // Shutdown request
                 lattice_hierarchy_set_state(sphere, HIERARCHY_STATE_TERMINATING);
                 break;
