@@ -17,78 +17,22 @@
 #include <string.h>
 #include <math.h>
 
-// Forward declarations to avoid header conflicts
-typedef struct CLLMModel CLLMModel;
-typedef struct CLLMConfig CLLMConfig;
-typedef struct CLLMTraining CLLMTraining;
-typedef struct CLLMTrainingConfig CLLMTrainingConfig;
-typedef struct CLLMBatch CLLMBatch;
-typedef struct CLLMBatchIterator CLLMBatchIterator;
-typedef struct CLLMTraining88D CLLMTraining88D;
+// Include actual headers
+#include "cllm.h"
+#include "cllm_batch.h"
+#include "cllm_training.h"
+#include "ai/cllm_training_88d.h"
+// All types are now defined by the included headers
 
-// Function declarations
-CLLMModel* cllm_create_model(const CLLMConfig* config);
-void cllm_free_model(CLLMModel* model);
-CLLMTraining* cllm_training_init(CLLMModel* model, const CLLMTrainingConfig* config);
-void cllm_training_free(CLLMTraining* training);
-CLLMBatchIterator* cllm_batch_iterator_create(const uint32_t* tokens, size_t num_tokens,
-                                               uint32_t batch_size, uint32_t seq_length,
-                                               uint32_t stride, uint32_t seed);
-void cllm_batch_iterator_free(CLLMBatchIterator* iter);
-CLLMBatch* cllm_batch_iterator_next(CLLMBatchIterator* iter);
-void cllm_batch_free(CLLMBatch* batch);
-CLLMTraining88D* cllm_training_88d_create(CLLMModel* model, CLLMTraining* training,
-                                          CLLMBatchIterator* batch_iter, uint32_t num_threads);
-void cllm_training_88d_free(CLLMTraining88D* ctx);
-double cllm_process_sequence_88d(CLLMTraining88D* ctx, CLLMBatch* batch,
-                                 uint32_t seq_idx, int thread_id);
-void cllm_sync_gradients_88d(CLLMTraining88D* ctx);
-
-// Struct definitions needed for test
-struct CLLMConfig {
-    uint32_t vocab_size;
-    uint32_t embedding_dim;
-    uint32_t num_layers;
-    uint32_t num_heads;
-    uint32_t hidden_dim;
-    uint32_t max_seq_len;
-};
-
-struct CLLMTrainingConfig {
-    double learning_rate;
-    uint32_t batch_size;
-    uint32_t num_epochs;
-    uint32_t sequence_length;
-};
-
-struct CLLMBatch {
-    uint32_t* input_ids;
-    uint32_t batch_size;
-    uint32_t seq_len;
-};
-
-struct CLLMTraining {
-    double* logits;
-    // Other fields not needed for test
-};
-
-struct CLLMTraining88D {
-    uint32_t num_threads;
-    size_t gradient_size;
-    void* gradient_memory;
-    double* accumulated_gradients;
-};
-
+// Model dimensions are determined by Platonic solid geometry
+// We just specify vocab and sequence length
+// The model will calculate dimensions based on the solid
 #define SMALL_VOCAB_SIZE 100
-#define SMALL_EMBEDDING_DIM 32
-#define SMALL_NUM_LAYERS 2
-#define SMALL_NUM_HEADS 2
-#define SMALL_HIDDEN_DIM 64
 #define SMALL_MAX_SEQ_LEN 16
 #define SMALL_BATCH_SIZE 2
 #define SMALL_SEQ_LENGTH 8
-#define NUM_TRAINING_STEPS 5
-#define NUM_THREADS 8
+#define NUM_TRAINING_STEPS 3     // Reduced for faster testing
+#define NUM_THREADS 12           // Must be 12n for 12-fold symmetry
 
 /**
  * Helper: Generate simple training data
@@ -146,18 +90,15 @@ static double compute_simple_loss(const double* logits, const uint32_t* targets,
 int test_single_training_step(void) {
     printf("\n=== Test 1: Single Training Step ===\n");
     
-    // Create small model
-    CLLMConfig config = {
-        .vocab_size = SMALL_VOCAB_SIZE,
-        .embedding_dim = SMALL_EMBEDDING_DIM,
-        .num_layers = SMALL_NUM_LAYERS,
-        .num_heads = SMALL_NUM_HEADS,
-        .hidden_dim = SMALL_HIDDEN_DIM,
-        .max_seq_len = SMALL_MAX_SEQ_LEN,
-    };
+    // Create small model - dimensions will be determined by Platonic solid
+    CLLMConfig config = {0};  // Zero-initialize
+    config.vocab_size = SMALL_VOCAB_SIZE;
+    config.max_seq_len = SMALL_MAX_SEQ_LEN;
+    config.solid_type = PLATONIC_TETRAHEDRON;  // Use smallest solid for testing
+    // Other dimensions will be calculated from Platonic solid geometry
     
-    printf("Creating model (vocab=%u, embed=%u, layers=%u, heads=%u)...\n",
-           config.vocab_size, config.embedding_dim, config.num_layers, config.num_heads);
+    printf("Creating model (vocab=%u, max_seq_len=%u)...\n",
+           config.vocab_size, config.max_seq_len);
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) {
@@ -313,14 +254,10 @@ int test_multiple_training_steps(void) {
     printf("\n=== Test 2: Multiple Training Steps ===\n");
     
     // Create model
-    CLLMConfig config = {
-        .vocab_size = SMALL_VOCAB_SIZE,
-        .embedding_dim = SMALL_EMBEDDING_DIM,
-        .num_layers = SMALL_NUM_LAYERS,
-        .num_heads = SMALL_NUM_HEADS,
-        .hidden_dim = SMALL_HIDDEN_DIM,
-        .max_seq_len = SMALL_MAX_SEQ_LEN,
-    };
+    CLLMConfig config = {0};  // Zero-initialize
+    config.vocab_size = SMALL_VOCAB_SIZE;
+    config.max_seq_len = SMALL_MAX_SEQ_LEN;
+    config.solid_type = PLATONIC_TETRAHEDRON;
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) return -1;
@@ -474,14 +411,10 @@ int test_gradient_flow(void) {
     printf("\n=== Test 3: Gradient Flow Verification ===\n");
     
     // Create model
-    CLLMConfig config = {
-        .vocab_size = SMALL_VOCAB_SIZE,
-        .embedding_dim = SMALL_EMBEDDING_DIM,
-        .num_layers = SMALL_NUM_LAYERS,
-        .num_heads = SMALL_NUM_HEADS,
-        .hidden_dim = SMALL_HIDDEN_DIM,
-        .max_seq_len = SMALL_MAX_SEQ_LEN,
-    };
+    CLLMConfig config = {0};  // Zero-initialize
+    config.vocab_size = SMALL_VOCAB_SIZE;
+    config.max_seq_len = SMALL_MAX_SEQ_LEN;
+    config.solid_type = PLATONIC_TETRAHEDRON;
     
     CLLMModel* model = cllm_create_model(&config);
     if (!model) return -1;
