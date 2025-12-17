@@ -621,7 +621,7 @@ int lattice_hierarchy_process_messages(CLLMLatticeHierarchy* sphere) {
                 // TODO: Implement work stealing response
                 break;
                 
-            case MSG_TYPE_WORK_OFFER:
+            case MSG_TYPE_WORK_ASSIGN:
                 // Handle work offer
                 // TODO: Implement work acceptance
                 break;
