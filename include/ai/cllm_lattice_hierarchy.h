@@ -10,6 +10,7 @@
 #include "../../algorithms/include/hierarchical_prime_partitions.h"
 #include "ai/cllm_shared_memory.h"
 #include "ai/cllm_thread_allocation.h"
+#include "ai/space_88d.h"
 
 /**
  * Lattice Hierarchy Core
@@ -113,10 +114,10 @@ struct CLLMLatticeHierarchy {
     LatticePartition* partition;     // Lattice partition owned by this sphere
     
     // ========================================================================
-    // PRIME GENERATION
+    // 88D COMPUTATIONAL SPACE
     // ========================================================================
     
-    HierarchicalAbacus* abacus;      // Prime generator for this sphere
+    Space88D* space;                 // 88-dimensional computational space
     uint64_t primes_generated;       // Total primes generated
     uint64_t current_prime;          // Current prime being processed
     

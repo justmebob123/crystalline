@@ -125,6 +125,15 @@ CLLMLatticeHierarchy* lattice_hierarchy_create(
     // Initialize statistics
     cllm_sphere_stats_init(&sphere->stats, sphere->primary_symmetry_group, hierarchy_level);
     
+    // Initialize 88D computational space
+    // Use base-60 (Babylonian) with precision of 10 digits
+    sphere->space = space88d_create(60, 10);
+    if (!sphere->space) {
+        fprintf(stderr, "ERROR: Failed to create 88D space\n");
+        lattice_hierarchy_free(sphere);
+        return NULL;
+    }
+    
     // Initialize boundary awareness
     atomic_init(&sphere->near_144000_boundary, 0);
     atomic_init(&sphere->boundary_crossings, 0);
@@ -177,6 +186,11 @@ void lattice_hierarchy_free(CLLMLatticeHierarchy* sphere) {
         free(sphere->child_gradients);
     }
     
+    // Free 88D computational space
+    if (sphere->space) {
+        space88d_free(sphere->space);
+    }
+    
     // Free shared memory regions
     if (sphere->parent_weights) {
         shared_memory_free(sphere->parent_weights);
@@ -202,10 +216,8 @@ void lattice_hierarchy_free(CLLMLatticeHierarchy* sphere) {
         free_lattice_partition(sphere->partition);
     }
     
-    // Free abacus
-    if (sphere->abacus) {
-        hierarchical_abacus_free(sphere->abacus);
-    }
+    // Note: 88D space is already freed above
+    // Old abacus field has been replaced with Space88D
     
     // Destroy mutexes and condition variables
     pthread_mutex_destroy(&sphere->state_mutex);
