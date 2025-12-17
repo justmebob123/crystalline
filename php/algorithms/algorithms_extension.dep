@@ -9,15 +9,17 @@ algorithms_extension.lo: /workspace/php/algorithms/algorithms_extension.c \
  /usr/include/php/20220829/Zend/../TSRM/TSRM.h \
  /usr/include/php/20220829/main/php_config.h \
  /workspace/math/include/math.h /workspace/math/include/math/types.h \
- /workspace/math/include/math/arithmetic.h \
+ /workspace/math/include/math/prime_types.h \
  /workspace/math/include/math/types.h \
+ /workspace/math/include/math/arithmetic.h \
  /workspace/math/include/math/transcendental.h \
+ /workspace/math/include/math/abacus.h \
+ /workspace/math/include/math/types.h \
+ /workspace/math/include/math/clock.h \
  /workspace/math/include/math/clock.h \
  /workspace/math/include/math/prime.h \
  /workspace/math/include/math/clock.h \
  /workspace/math/include/math/rainbow.h \
- /workspace/math/include/math/types.h \
- /workspace/math/include/math/clock.h \
  /workspace/math/include/math/abacus.h /workspace/math/include/math/ntt.h \
  /workspace/math/include/math/abacus.h \
  /usr/include/php/20220829/Zend/zend_range_check.h \
