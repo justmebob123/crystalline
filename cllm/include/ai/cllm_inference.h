@@ -36,25 +36,24 @@ typedef struct FeedForwardLayer {
 
 /*
  * CLLM Inference Engine - Runtime inference state
- * Uses double* for working buffers (64-bit precision)
+ * Phase 2: NO GLOBAL BUFFERS - All computation in thread-local storage
+ * 
+ * CRITICAL: This structure contains NO working buffers.
+ * All computation happens in thread-local CrystallineAbacus storage.
+ * The 88D thread pool (model->pool_88d) is MANDATORY.
  */
 typedef struct {
-    CLLMModel* model;            // Pointer to the model
+    CLLMModel* model;            // Pointer to the model (MUST have pool_88d)
     float temperature;           // Sampling temperature
     float top_p;                 // Nucleus sampling parameter
     int top_k;                   // Top-k sampling parameter
     int max_tokens;              // Maximum tokens to generate
     float repetition_penalty;    // Repetition penalty factor
     
-    // KV cache for attention - double precision
-    int kv_cache_size;           // Size of KV cache
-    int kv_cache_used;           // Number of cached positions
-    double* key_cache;           // Cached keys (double*)
-    double* value_cache;         // Cached values (double*)
-    
-    // Working buffers - double precision
-    double* hidden_states;       // Hidden state buffer (double*)
-    double* logits;              // Output logits buffer (double*)
+    // Generation state tracking (NO working buffers)
+    int current_position;        // Current generation position
+    uint32_t* generated_tokens;  // Generated token sequence
+    int num_generated;           // Number of tokens generated
        
 } CLLMInference;
 
