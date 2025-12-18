@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "math/math.h"
-#include "../../include/cllm.h"
-#include "../../include/cllm_training.h"
+#include "math.h"
+#include "ai/cllm.h"
+#include "ai/cllm_training.h"
 
 // Helper: Create a minimal test model
 CLLMModel* create_minimal_model() {

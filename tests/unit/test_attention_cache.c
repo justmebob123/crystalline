@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../include/cllm.h"
-#include "../../include/cllm_training.h"
+#include "ai/cllm.h"
+#include "ai/cllm_training.h"
 
 // Test 1: Single layer cache allocation
 int test_single_layer_allocation() {
