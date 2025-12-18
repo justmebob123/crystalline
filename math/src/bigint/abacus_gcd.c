@@ -324,8 +324,18 @@ MathError abacus_sqrt(CrystallineAbacus* result, const CrystallineAbacus* n) {
     /* For small numbers, use direct calculation */
     uint64_t n_val;
     if (abacus_to_uint64(n, &n_val) == MATH_SUCCESS) {
+        /* Handle zero case explicitly */
+        if (n_val == 0) {
+            abacus_init_zero(result);
+            abacus_free(one);
+            return MATH_SUCCESS;
+        }
+        
         /* Fast path: compute sqrt directly */
         uint64_t x = 1ULL << ((64 - __builtin_clzll(n_val) + 1) / 2);
+        
+        /* Safety check: ensure x is never zero */
+        if (x == 0) x = 1;
         
         /* Newton-Raphson iteration */
         while (true) {
