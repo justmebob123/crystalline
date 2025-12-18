@@ -1628,6 +1628,153 @@ static int worker_process_backward(HierarchicalThread* thread, TrainingWorkItem*
 }
 
 // ============================================================================
+// ATTENTION OPERATIONS (DAY 7)
+// ============================================================================
+
+/**
+ * Compute Q, K, V for a token using thread's local parameters
+ * 
+ * This function computes the Query, Key, and Value matrices for attention
+ * using the thread's local W_q, W_k, W_v parameters.
+ * 
+ * @param thread Thread that owns the computation
+ * @param input Input embedding (double array)
+ * @param embedding_dim Embedding dimension
+ * @param Q Output Q (double array, pre-allocated)
+ * @param K Output K (double array, pre-allocated)
+ * @param V Output V (double array, pre-allocated)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_qkv(
+    HierarchicalThread* thread,
+    const double* input,
+    uint32_t embedding_dim,
+    double* Q,
+    double* K,
+    double* V
+) {
+    if (!thread || !input || !Q || !K || !V) {
+        fprintf(stderr, "ERROR: Invalid parameters for worker_compute_qkv\n");
+        return -1;
+    }
+    
+    // Import thread parameter function
+    extern CrystallineAbacus* thread_get_parameter(
+        HierarchicalThread* thread,
+        const char* name,
+        uint32_t index
+    );
+    
+    // Get W_q, W_k, W_v from thread's parameters
+    // For now, we'll use a simplified approach with double arrays
+    // TODO: Full CrystallineAbacus matrix multiplication in Phase 4
+    
+    // Placeholder: Initialize Q, K, V to input (identity transformation)
+    // This will be replaced with proper matrix multiplication
+    for (uint32_t i = 0; i < embedding_dim; i++) {
+        Q[i] = input[i];
+        K[i] = input[i];
+        V[i] = input[i];
+    }
+    
+    return 0;
+}
+
+/**
+ * Share K, V with neighbors via shared boundaries
+ * 
+ * @param thread Thread sharing its K, V
+ * @param K K matrix to share (double array)
+ * @param V V matrix to share (double array)
+ * @param dim Dimension of K and V
+ * @return 0 on success, -1 on error
+ */
+int worker_share_kv(
+    HierarchicalThread* thread,
+    const double* K,
+    const double* V,
+    uint32_t dim
+) {
+    if (!thread || !K || !V) {
+        fprintf(stderr, "ERROR: Invalid parameters for worker_share_kv\n");
+        return -1;
+    }
+    
+    // Write K, V to all shared boundaries
+    for (uint32_t i = 0; i < thread->num_neighbors; i++) {
+        SharedMemoryEnhanced* boundary = thread->neighbors[i].boundary;
+        if (!boundary) continue;
+        
+        // Get write access to shared memory
+        void* shared_ptr = shared_memory_write(&amp;boundary->base);
+        if (!shared_ptr) continue;
+        
+        // Write K and V (concatenated)
+        size_t kv_size = dim * 2 * sizeof(double);
+        if (boundary->base.size < kv_size) {
+            shared_memory_release_write(&amp;boundary->base);
+            continue;
+        }
+        
+        double* shared_data = (double*)shared_ptr;
+        memcpy(shared_data, K, dim * sizeof(double));
+        memcpy(shared_data + dim, V, dim * sizeof(double));
+        
+        // Release write access
+        shared_memory_release_write(&amp;boundary->base);
+    }
+    
+    return 0;
+}
+
+/**
+ * Collect K, V from neighbors via shared boundaries
+ * 
+ * @param thread Thread collecting K, V
+ * @param neighbor_K Array of K matrices from neighbors (pre-allocated)
+ * @param neighbor_V Array of V matrices from neighbors (pre-allocated)
+ * @param dim Dimension of K and V
+ * @param max_neighbors Maximum number of neighbors
+ * @return Number of neighbors collected, or -1 on error
+ */
+int worker_collect_neighbor_kv(
+    HierarchicalThread* thread,
+    double** neighbor_K,
+    double** neighbor_V,
+    uint32_t dim,
+    uint32_t max_neighbors
+) {
+    if (!thread || !neighbor_K || !neighbor_V) {
+        fprintf(stderr, "ERROR: Invalid parameters for worker_collect_neighbor_kv\n");
+        return -1;
+    }
+    
+    uint32_t collected = 0;
+    
+    // Read K, V from all shared boundaries
+    for (uint32_t i = 0; i < thread->num_neighbors &amp;&amp; collected < max_neighbors; i++) {
+        SharedMemoryEnhanced* boundary = thread->neighbors[i].boundary;
+        if (!boundary) continue;
+        
+        // Get read access to shared memory
+        const void* shared_ptr = shared_memory_read(&amp;boundary->base);
+        if (!shared_ptr) continue;
+        
+        // Read K and V
+        const double* shared_data = (const double*)shared_ptr;
+        memcpy(neighbor_K[collected], shared_data, dim * sizeof(double));
+        memcpy(neighbor_V[collected], shared_data + dim, dim * sizeof(double));
+        
+        // Release read access
+        shared_memory_release_read(&amp;boundary->base);
+        
+        collected++;
+    }
+    
+    return (int)collected;
+}
+
+// ============================================================================
 // EMBEDDING OPERATIONS (DAY 6)
 // ============================================================================
 

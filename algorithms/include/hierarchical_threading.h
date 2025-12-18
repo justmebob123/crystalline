@@ -1098,6 +1098,64 @@ void* hierarchical_thread_worker_88d(void* arg);
 // ============================================================================
 
 // ============================================================================
+// ATTENTION OPERATIONS (DAY 7)
+// ============================================================================
+
+/**
+ * Compute Q, K, V for a token using thread's local parameters
+ * 
+ * @param thread Thread that owns the computation
+ * @param input Input embedding (double array)
+ * @param embedding_dim Embedding dimension
+ * @param Q Output Q (double array, pre-allocated)
+ * @param K Output K (double array, pre-allocated)
+ * @param V Output V (double array, pre-allocated)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_qkv(
+    HierarchicalThread* thread,
+    const double* input,
+    uint32_t embedding_dim,
+    double* Q,
+    double* K,
+    double* V
+);
+
+/**
+ * Share K, V with neighbors via shared boundaries
+ * 
+ * @param thread Thread sharing its K, V
+ * @param K K matrix to share (double array)
+ * @param V V matrix to share (double array)
+ * @param dim Dimension of K and V
+ * @return 0 on success, -1 on error
+ */
+int worker_share_kv(
+    HierarchicalThread* thread,
+    const double* K,
+    const double* V,
+    uint32_t dim
+);
+
+/**
+ * Collect K, V from neighbors via shared boundaries
+ * 
+ * @param thread Thread collecting K, V
+ * @param neighbor_K Array of K matrices from neighbors (pre-allocated)
+ * @param neighbor_V Array of V matrices from neighbors (pre-allocated)
+ * @param dim Dimension of K and V
+ * @param max_neighbors Maximum number of neighbors
+ * @return Number of neighbors collected, or -1 on error
+ */
+int worker_collect_neighbor_kv(
+    HierarchicalThread* thread,
+    double** neighbor_K,
+    double** neighbor_V,
+    uint32_t dim,
+    uint32_t max_neighbors
+);
+
+// ============================================================================
 // EMBEDDING OPERATIONS (DAY 6)
 // ============================================================================
 
