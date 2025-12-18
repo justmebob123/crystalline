@@ -72,21 +72,23 @@ static double random_normal(double mean, double stddev, uint64_t* seed) {
     CrystallineAbacus* temp2 = abacus_new(60);
     CrystallineAbacus* result_abacus = abacus_new(60);
     
-    // temp1 = -2.0 * u1
-    CrystallineAbacus* u1_abacus = abacus_from_double(-2.0 * u1, 60, 10);
+    // Create abacus for u1
+    CrystallineAbacus* u1_abacus = abacus_from_double(u1, 60, 10);
     
-    // temp2 = log(u1) - need to implement or use existing function
-    // For now, use the double version as we need to implement abacus_log
-    // TODO: Implement abacus_log() in math library
-    double log_u1 = math_log(u1);
-    CrystallineAbacus* log_abacus = abacus_from_double(-2.0 * log_u1, 60, 10);
+    // temp1 = log(u1)
+    math_log_abacus(temp1, u1_abacus, 10);
+    
+    // temp1 = -2 * log(u1)
+    CrystallineAbacus* neg_two = abacus_from_double(-2.0, 60, 10);
+    CrystallineAbacus* log_result = abacus_new(60);
+    abacus_mul(log_result, neg_two, temp1);
     
     // temp1 = sqrt(-2 * log(u1))
-    abacus_sqrt(temp1, log_abacus);
+    abacus_sqrt(temp1, log_result);
     
     // temp2 = cos(2*pi*u2)
     CrystallineAbacus* angle = abacus_from_double(2.0 * M_PI * u2, 60, 10);
-    math_cos_abacus(temp2, angle);
+    math_cos_abacus(temp2, angle, 10);
     
     // result = temp1 * temp2
     abacus_mul(result_abacus, temp1, temp2);
@@ -98,7 +100,8 @@ static double random_normal(double mean, double stddev, uint64_t* seed) {
     abacus_free(temp2);
     abacus_free(result_abacus);
     abacus_free(u1_abacus);
-    abacus_free(log_abacus);
+    abacus_free(neg_two);
+    abacus_free(log_result);
     abacus_free(angle);
     
     return mean + stddev * z0;

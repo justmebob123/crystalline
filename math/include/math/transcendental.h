@@ -358,6 +358,28 @@ MathError math_atan2_abacus(CrystallineAbacus* result,
                             const CrystallineAbacus* x,
                             uint32_t precision);
 
+
+/**
+ * @brief Natural logarithm with Abacus input/output
+ * @param result Output: ln(x)
+ * @param x Input value (must be > 0)
+ * @param precision Decimal precision
+ * @return MATH_SUCCESS or error code
+ */
+MathError math_log_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision);
+
+/**
+ * @brief Exponential function with Abacus input/output
+ * @param result Output: e^x
+ * @param x Input value
+ * @param precision Decimal precision
+ * @return MATH_SUCCESS or error code
+ */
+MathError math_exp_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision);
 /**
  * @brief Compute sine and cosine simultaneously with Abacus
  * @param sin_result Output for sin(x)

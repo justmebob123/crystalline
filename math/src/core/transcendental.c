@@ -793,3 +793,79 @@ MathError math_atan2_abacus(CrystallineAbacus* result,
     abacus_free(temp);
     return err;
 }
+
+/**
+ * @brief Natural logarithm with Abacus input/output
+ * 
+ * Currently uses double precision as intermediate step.
+ * TODO: Implement pure Abacus Taylor series for true arbitrary precision.
+ */
+MathError math_log_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision) {
+    if (!result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Convert to double
+    double x_val;
+    MathError err = abacus_to_double(x, &x_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    if (x_val <= 0.0) {
+        return MATH_ERROR_DOMAIN;
+    }
+    
+    // Compute log
+    double log_val = math_log(x_val);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(log_val, result->base, (int32_t)precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy completely
+    err = copy_abacus_complete(result, temp);
+    
+    abacus_free(temp);
+    return err;
+}
+
+/**
+ * @brief Exponential function with Abacus input/output
+ * 
+ * Currently uses double precision as intermediate step.
+ * TODO: Implement pure Abacus Taylor series for true arbitrary precision.
+ */
+MathError math_exp_abacus(CrystallineAbacus* result,
+                          const CrystallineAbacus* x,
+                          uint32_t precision) {
+    if (!result || !x) {
+        return MATH_ERROR_INVALID_ARG;
+    }
+    
+    // Convert to double
+    double x_val;
+    MathError err = abacus_to_double(x, &x_val);
+    if (err != MATH_SUCCESS) {
+        return err;
+    }
+    
+    // Compute exp
+    double exp_val = math_exp(x_val);
+    
+    // Convert back to Abacus
+    CrystallineAbacus* temp = abacus_from_double(exp_val, result->base, (int32_t)precision);
+    if (!temp) {
+        return MATH_ERROR_OUT_OF_MEMORY;
+    }
+    
+    // Copy completely
+    err = copy_abacus_complete(result, temp);
+    
+    abacus_free(temp);
+    return err;
+}
