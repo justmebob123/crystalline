@@ -20,14 +20,19 @@
 // Using unified 88D implementation with thread-local storage
 
 /**
- * Check if model has transformer layers (STUBBED)
+ * Check if model has transformer layers
  */
 bool cllm_has_transformer_layers(const CLLMModel* model) {
-    // TODO: Reimplement for 88D architecture
-    // Check if threads have transformer weights
+    if (!model) {
+        return false;
+    }
     
-    (void)model;
-    return false;  // Not implemented yet
+    // Check if model has layers and thread pool
+    if (model->num_layers > 0 && model->threads) {
+        return true;
+    }
+    
+    return false;
 }
 
 /**

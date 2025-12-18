@@ -560,11 +560,19 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         
         // Process through transformer layers (thread-local)
         // The transformer layer functions will use thread->activation_buffer
-        extern void cllm_transformer_forward(const CLLMModel* model, double* hidden_states);
+        extern int cllm_transformer_forward(
+            CLLMModel* model,
+            HierarchicalThread* thread,
+            const double* input,
+            double* output
+        );
         extern bool cllm_has_transformer_layers(const CLLMModel* model);
         
         if (cllm_has_transformer_layers(model)) {
-            cllm_transformer_forward(model, thread->activation_buffer);
+            // Process in-place using activation_buffer
+            cllm_transformer_forward(model, thread, 
+                                    thread->activation_buffer, 
+                                    thread->activation_buffer);
         }
     }
     

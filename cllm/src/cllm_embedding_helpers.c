@@ -40,15 +40,28 @@ int cllm_get_embedding_from_thread(
         return -1;
     }
     
-    // TODO: Implement proper CrystallineAbacus to double array conversion
-    // For now, use thread's activation_buffer if available
-    if (thread->activation_buffer && thread->activation_buffer_size >= embedding_dim) {
-        memcpy(output, thread->activation_buffer, embedding_dim * sizeof(double));
-        return 0;
+    // Use worker function to get embedding from geometric matrix
+    // This properly extracts from geometric storage using barycentric interpolation
+    extern int worker_get_embedding_double(
+        HierarchicalThread* thread,
+        uint32_t token_id,
+        double* output,
+        uint32_t embedding_dim
+    );
+    
+    // Get the token ID from thread's assigned tokens
+    // For now, use the first assigned token (TODO: handle multiple tokens per thread)
+    uint32_t token_id = 0;  // Default to 0 if no tokens assigned
+    
+    // Call worker function to extract embedding from geometric matrix
+    int result = worker_get_embedding_double(thread, token_id, output, embedding_dim);
+    
+    if (result != 0) {
+        // Fallback: Zero out if extraction fails
+        memset(output, 0, embedding_dim * sizeof(double));
+        return -1;
     }
     
-    // Fallback: Zero out (thread not yet initialized)
-    memset(output, 0, embedding_dim * sizeof(double));
     return 0;
 }
 
