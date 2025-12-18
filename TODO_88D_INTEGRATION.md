@@ -58,17 +58,26 @@
 - [x] Test: Verify inference works without global buffers
 - [x] **Testing**: All 11 tests passing (100%)
 
-### [ ] Days 6-7: Remove _threaded Suffixes
-- [ ] **File**: `cllm/src/cllm_transformer_layer.c`
-- [ ] RENAME functions to remove _threaded suffix
-- [ ] **File**: `cllm/src/cllm_inference.c`
-- [ ] DELETE old implementations
-- [ ] **File**: `cllm/src/cllm_inference_transformer.c`
-- [ ] DELETE old implementations
-- [ ] **File**: `cllm/include/ai/cllm_transformer_layer.h`
-- [ ] UPDATE all function declarations
-- [ ] Find and update ALL call sites
-- [ ] Test: Verify no _threaded suffixes remain
+### [x] Days 6-7: Remove _threaded Suffixes ✅ COMPLETE
+- [x] **File**: `cllm/include/ai/cllm_attention_helpers.h`
+- [x] RENAMED: cllm_compute_qkv_threaded → cllm_compute_qkv
+- [x] RENAMED: cllm_apply_output_projection_threaded → cllm_apply_output_projection
+- [x] **File**: `cllm/src/cllm_attention_helpers.c`
+- [x] Updated function definitions
+- [x] **File**: `cllm/src/cllm_attention_threaded.c`
+- [x] RENAMED: cllm_attention_forward_threaded → cllm_attention_forward
+- [x] Updated all call sites
+- [x] **File**: `cllm/src/cllm_attention.c`
+- [x] Removed duplicate wrapper function
+- [x] **File**: `cllm/include/ai/cllm_training.h`
+- [x] Removed old function declarations
+- [x] **File**: `cllm/src/crawler/crawler_api.c`
+- [x] RENAMED: crawler_state_init_threaded → crawler_state_init
+- [x] **File**: `cllm/include/ai/crawler.h`
+- [x] Updated function declaration
+- [x] Updated comments in cllm_metrics.c and cllm_training_system.h
+- [x] Test: Verified no _threaded suffixes remain
+- [x] **Testing**: All 11 tests passing (100%)
 
 ---
 
