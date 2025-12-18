@@ -501,6 +501,13 @@ typedef struct {
     CLLMHeader header;               // File format header
     CLLMToken* tokens;               // Token array (for serialization)
     
+    // ========================================================================
+    // GENERIC MODEL INTERFACE (for threading system)
+    // ========================================================================
+    
+    void* generic_interface;         // GenericModel* (void* to avoid circular dependency)
+                                     // This wraps the CLLMModel for use by worker threads
+    
 } CLLMModel;
 
 // ============================================================================

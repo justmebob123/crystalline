@@ -20,6 +20,7 @@
 #include "math/clock_lattice_13d.h"
 #include "ai/cllm.h"
 #include "ai/cllm_platonic.h"
+#include "ai/cllm_generic_interface.h"
 #include "hierarchical_threading.h"
 #include <stdlib.h>
 #include <string.h>
@@ -102,13 +103,25 @@ static bool allocate_model_parameters(CLLMModel* model) {
     
     printf("  ✓ Created 88D thread pool: 96 threads (8 layers × 12 threads per layer)\n");
     
-    // Set model pointer in all threads (for worker loop access)
+    // Create generic model interface (NO circular dependency!)
+    GenericModel* generic = cllm_create_generic_interface(model);
+    if (!generic) {
+        fprintf(stderr, "FATAL: Failed to create generic model interface\n");
+        return false;
+    }
+    
+    // Set generic interface in all threads (for worker loop access)
     for (uint32_t i = 0; i < 96; i++) {
         HierarchicalThread* thread = model->pool_88d->threads[i];
         if (thread) {
-            thread->model = model;
+            thread->model = generic;  // Generic interface, not CLLMModel directly
         }
     }
+    
+    // Store generic interface in model for cleanup
+    model->generic_interface = generic;
+    
+    printf("  ✓ Created generic model interface (no circular dependency)\n");
     
     // ========================================================================
     // STEP 2: ALLOCATE TOKEN ASSIGNMENTS (PERMANENT)

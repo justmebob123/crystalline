@@ -61,6 +61,9 @@
 extern "C" {
 #endif
 
+// Forward declaration for generic model interface
+struct GenericModel;
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -237,7 +240,7 @@ typedef struct HierarchicalThread {
     size_t cached_qkv_size;             // Cache size
     
     // Model Reference (for accessing model parameters during computation)
-    void* model;                        // CLLMModel* (void* to avoid circular dependency)
+    struct GenericModel* model;         // Generic model interface (no circular dependency)
     
 } HierarchicalThread;
 

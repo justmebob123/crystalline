@@ -5,9 +5,8 @@
 
 #define _USE_MATH_DEFINES
 #include "hierarchical_threading.h"
+#include "generic_model.h"
 #include "math/transcendental.h"
-#include "ai/cllm.h"
-#include "ai/cllm_transformer_layer.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -1442,19 +1441,21 @@ int hierarchical_thread_pool_get_88d_stats(
  * This is where the actual computation happens
  */
 /**
- * Process a single token through the transformer layer
+ * Process a single token through the model layer
  * This is called by worker threads to perform actual computation
+ * 
+ * Uses the generic model interface - no CLLM dependency!
  */
 static int worker_process_token(HierarchicalThread* thread) {
     if (!thread || !thread->activation_buffer || !thread->model) {
         return -1;
     }
     
-    // Cast model pointer
-    CLLMModel* model = (CLLMModel*)thread->model;
+    // Get generic model interface
+    GenericModel* model = thread->model;
     
-    // Verify model has required components
-    if (!model->pool_88d || !model->token_assignments || !model->thread_params) {
+    // Validate model
+    if (!generic_model_validate(model)) {
         return -1;
     }
     
@@ -1469,7 +1470,7 @@ static int worker_process_token(HierarchicalThread* thread) {
         return 0;
     }
     
-    // Worker thread - process token through transformer layer
+    // Worker thread - process token through model layer
     uint32_t dim = model->embedding_dim;
     
     // Allocate output buffer
@@ -1482,14 +1483,14 @@ static int worker_process_token(HierarchicalThread* thread) {
     // (This was set by the previous layer or initial embedding)
     double* input = thread->activation_buffer;
     
-    // Apply transformer layer operations
-    // This calls the transformer layer forward function which handles:
-    // - Layer normalization
-    // - Multi-head attention
-    // - Residual connections
-    // - Feed-forward network
-    int result = cllm_transformer_layer_forward(
-        model, thread, layer_idx, input, output
+    // Call through generic interface (NO CLLM dependency!)
+    // The model implementation provides the actual computation
+    int result = model->forward_layer(
+        model->model_data,  // Opaque model data
+        thread,             // Thread context
+        layer_idx,          // Layer index
+        input,              // Input
+        output              // Output
     );
     
     if (result != 0) {

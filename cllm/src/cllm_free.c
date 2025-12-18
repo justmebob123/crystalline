@@ -11,6 +11,7 @@
  */
 
 #include "ai/cllm.h"
+#include "ai/cllm_generic_interface.h"
 #include "hierarchical_threading.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,6 +29,16 @@ void cllm_free_model(CLLMModel* model) {
     }
     
     printf("🗑️  Freeing CLLM model...\n");
+    
+    // ========================================================================
+    // FREE GENERIC MODEL INTERFACE
+    // ========================================================================
+    
+    if (model->generic_interface) {
+        cllm_free_generic_interface((GenericModel*)model->generic_interface);
+        model->generic_interface = NULL;
+    }
+    printf("  ✓ Freed generic model interface\n");
     
     // ========================================================================
     // FREE CLOCK LATTICE MAPPING

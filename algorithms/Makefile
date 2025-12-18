@@ -5,10 +5,11 @@ AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 LDFLAGS = -shared
 ARFLAGS = rcs
-INCLUDES = -I./include -I./include/blind_recovery -I../math/include -I../cllm/include
+INCLUDES = -I./include -I./include/blind_recovery -I../math/include
 
 # Source files
 SOURCES = src/abacus88d/abacus88d.c \
+          src/generic_model.c \
           src/dimensional_frequencies.c \
           src/geometric_space_ops.c \
           src/numerical.c \
