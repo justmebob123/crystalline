@@ -16,18 +16,31 @@
 
 ## Week 3: Eliminate Dual Implementations
 
-### [ ] Days 1-3: Merge Training Functions
-- [ ] **File**: `cllm/src/cllm_training_functions.c`
-- [ ] DELETE `cllm_forward_training()` sequential implementation (lines 183-222)
-- [ ] DELETE `cllm_forward_training_threaded()` (line 315)
-- [ ] REWRITE `cllm_forward_training()` to BE the threaded version (no suffix)
-- [ ] ADD hard failure if pool_88d is NULL (no fallback allowed)
-- [ ] DELETE `cllm_backward_training()` sequential implementation (line 498)
-- [ ] DELETE `cllm_backward_training_threaded()` (line 414)
-- [ ] REWRITE `cllm_backward_training()` to BE the threaded version
-- [ ] REMOVE `gradient_buffer` parameter (gradients in threads)
-- [ ] UPDATE `cllm_optimizer_step()` to use thread-local parameters
-- [ ] Test: Verify forward/backward only work with threading
+### [x] Days 1-3: Merge Training Functions ✅ COMPLETE
+- [x] **File**: `cllm/src/cllm_training_functions.c`
+- [x] DELETE `cllm_forward_training()` sequential implementation (lines 183-222)
+- [x] DELETE `cllm_forward_training_threaded()` (line 315)
+- [x] REWRITE `cllm_forward_training()` to BE the threaded version (no suffix)
+- [x] ADD hard failure if pool_88d is NULL (no fallback allowed)
+- [x] DELETE `cllm_backward_training()` sequential implementation (line 498)
+- [x] DELETE `cllm_backward_training_threaded()` (line 414)
+- [x] REWRITE `cllm_backward_training()` to BE the threaded version
+- [x] REMOVE `gradient_buffer` parameter (gradients in threads)
+- [x] UPDATE `cllm_optimizer_step()` to use thread-local parameters
+- [x] Test: Verify forward/backward only work with threading
+- [x] **File**: `cllm/src/cllm_transformer_layer.c`
+- [x] RENAMED: `cllm_transformer_forward_threaded` → `cllm_transformer_forward`
+- [x] RENAMED: `cllm_compute_logits_threaded` → `cllm_compute_logits`
+- [x] RENAMED: `cllm_softmax_threaded` → `cllm_softmax`
+- [x] RENAMED: `cllm_sample_token_threaded` → `cllm_sample_token`
+- [x] **File**: `cllm/src/cllm_inference.c`
+- [x] DELETED: Old `cllm_softmax` implementation
+- [x] RENAMED: `cllm_sample_token` → `cllm_inference_sample_token` (different signature)
+- [x] **File**: `cllm/src/cllm_inference_transformer.c`
+- [x] DELETED: Old `cllm_transformer_forward` stub
+- [x] **File**: `tests/test_transformer_layer.c`
+- [x] Updated all function calls to remove `_threaded` suffixes
+- [x] **Testing**: All 11 tests passing (5 + 3 + 3)
 
 ### [ ] Days 4-5: Eliminate Global Buffers
 - [ ] **File**: `cllm/include/ai/cllm_inference.h`

@@ -156,7 +156,7 @@ int test_multi_layer() {
     }
     
     // Process through all layers
-    int result = cllm_transformer_forward_threaded(model, thread, input, output);
+    int result = cllm_transformer_forward(model, thread, input, output);
     
     if (result != 0) {
         printf("%s✗ Multi-layer processing failed%s\n", COLOR_RED, COLOR_RESET);
@@ -219,7 +219,7 @@ int test_logits_and_softmax() {
     }
     
     // Compute logits
-    int result = cllm_compute_logits_threaded(model, hidden, logits);
+    int result = cllm_compute_logits(model, hidden, logits);
     
     if (result != 0) {
         printf("%s✗ Logit computation failed%s\n", COLOR_RED, COLOR_RESET);
@@ -230,7 +230,7 @@ int test_logits_and_softmax() {
     }
     
     // Apply softmax
-    cllm_softmax_threaded(logits, TEST_VOCAB_SIZE);
+    cllm_softmax(logits, TEST_VOCAB_SIZE);
     
     // Verify softmax properties
     double sum = 0.0;
@@ -258,7 +258,7 @@ int test_logits_and_softmax() {
     }
     
     // Test sampling
-    uint32_t sampled = cllm_sample_token_threaded(logits, TEST_VOCAB_SIZE, 1.0);
+    uint32_t sampled = cllm_sample_token(logits, TEST_VOCAB_SIZE, 1.0);
     printf("  Sampled token: %u\n", sampled);
     
     printf("%s✓ Logit computation and softmax successful%s\n", COLOR_GREEN, COLOR_RESET);
