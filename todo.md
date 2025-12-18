@@ -1,5 +1,59 @@
 # 88D Deep Integration - Complete Architectural Redesign
 
+## 🔴 PERMANENT RULES - READ FIRST, ALWAYS
+
+### RULE 0: MANDATORY READING SEQUENCE
+**BEFORE ANY ACTION, YOU MUST:**
+1. Read these PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Read TERTIARY_OBJECTIVES.md for implementation details
+5. Update todo.md with current progress
+
+### RULE 11: GIT OPERATIONS
+**ALWAYS use correct authentication:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+**If token expires, REFRESH it:**
+```bash
+gh auth status
+gh auth refresh -h github.com -s repo
+gh auth status
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+
+**NEVER create branches - ALWAYS work on main and push directly!**
+
+### RULE 12: BUILD VERIFICATION
+**MANDATORY after every change:**
+```bash
+make clean && make 2>&1 | tee build.log
+grep -c "warning:" build.log
+# VERIFY: Zero warnings, zero errors
+```
+
+**NEVER commit without successful build verification.**
+
+### OTHER CRITICAL RULES
+- RULE 1: NO external math libraries (except in tests)
+- RULE 2: NO duplicate constants
+- RULE 3: Proper naming conventions (no "old", "new", "temp")
+- RULE 4: Babylonian mathematics foundation (base-60, 12-fold symmetry)
+- RULE 5: O(1) deterministic operations
+- RULE 6: 12-fold symmetry everywhere
+- RULE 7: Kissing spheres threading
+- RULE 8: Clock lattice validation
+- RULE 9: Geometric operations
+- RULE 10: Infinite scalability
+
+**See MASTER_PLAN.md for complete rules.**
+
+---
+
 ## CRITICAL UNDERSTANDING ✅
 
 **NO BACKWARD COMPATIBILITY NEEDED**
