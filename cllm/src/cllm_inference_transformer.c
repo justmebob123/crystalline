@@ -16,15 +16,8 @@
 /**
  * Apply transformer forward pass (STUBBED)
  */
-void cllm_transformer_forward(const CLLMModel* model, double* hidden_states) {
-    // TODO: Reimplement for 88D architecture
-    // This function needs to use thread-local weights instead of model->layers[]
-    
-    fprintf(stderr, "WARNING: cllm_transformer_forward() not yet implemented for 88D architecture\n");
-    
-    (void)model;
-    (void)hidden_states;
-}
+// cllm_transformer_forward moved to cllm_transformer_layer.c
+// Using unified 88D implementation with thread-local storage
 
 /**
  * Check if model has transformer layers (STUBBED)

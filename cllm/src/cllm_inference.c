@@ -606,25 +606,8 @@ void cllm_apply_temperature(double* logits, int vocab_size, double temperature) 
 
 
 // Softmax
-void cllm_softmax(double* logits, int vocab_size) {
-    // Find max for numerical stability
-    double max_logit = logits[0];
-    for (int i = 1; i < vocab_size; i++) {
-        if (logits[i] > max_logit) max_logit = logits[i];
-    }
-    
-    // Compute exp and sum
-    double sum = 0.0;
-    for (int i = 0; i < vocab_size; i++) {
-        logits[i] = math_exp(logits[i] - max_logit);
-        sum += logits[i];
-    }
-    
-    // Normalize
-    for (int i = 0; i < vocab_size; i++) {
-        logits[i] /= sum;
-    }
-}
+// cllm_softmax moved to cllm_transformer_layer.c
+// Using unified 88D implementation
 
 
 
@@ -739,7 +722,7 @@ void cllm_set_max_tokens(CLLMInference* inference, int max_tokens) {
 }
 
 // Sample token from logits distribution
-int cllm_sample_token(CLLMInference* inf, double* logits) {
+int cllm_inference_sample_token(CLLMInference* inf, double* logits) {
     if (!inf || !logits) return 0;
     
     uint32_t vocab_size = inf->model->vocab_size;

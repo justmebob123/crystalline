@@ -39,7 +39,7 @@ int cllm_transformer_layer_forward(
  * @param output Output embedding (embedding_dim)
  * @return 0 on success, -1 on error
  */
-int cllm_transformer_forward_threaded(
+int cllm_transformer_forward(
     CLLMModel* model,
     HierarchicalThread* thread,
     const double* input,
@@ -47,36 +47,36 @@ int cllm_transformer_forward_threaded(
 );
 
 /**
- * Compute logits for all vocabulary tokens (thread-based)
+ * Compute logits for all vocabulary tokens
  * 
  * @param model The CLLM model
  * @param hidden Final hidden state (embedding_dim)
  * @param logits Output logits (vocab_size)
  * @return 0 on success, -1 on error
  */
-int cllm_compute_logits_threaded(
+int cllm_compute_logits(
     CLLMModel* model,
     const double* hidden,
     double* logits
 );
 
 /**
- * Apply softmax to logits (in-place) - thread-safe version
+ * Apply softmax to logits (in-place)
  * Uses pure crystalline math (no math.h)
  * 
  * @param logits Logits array (vocab_size)
  * @param vocab_size Size of vocabulary
  */
-void cllm_softmax_threaded(double* logits, uint32_t vocab_size);
+void cllm_softmax(double* logits, uint32_t vocab_size);
 
 /**
- * Sample from probability distribution (thread-safe)
+ * Sample from probability distribution
  * 
  * @param probs Probability distribution (vocab_size)
  * @param vocab_size Size of vocabulary
  * @param temperature Sampling temperature (higher = more random)
  * @return Sampled token ID
  */
-uint32_t cllm_sample_token_threaded(const double* probs, uint32_t vocab_size, double temperature);
+uint32_t cllm_sample_token(const double* probs, uint32_t vocab_size, double temperature);
 
 #endif // CLLM_TRANSFORMER_LAYER_H

@@ -136,7 +136,7 @@ int cllm_transformer_layer_forward(
  * @param output Output embedding (embedding_dim)
  * @return 0 on success, -1 on error
  */
-int cllm_transformer_forward_threaded(
+int cllm_transformer_forward(
     CLLMModel* model,
     HierarchicalThread* thread,
     const double* input,
@@ -195,7 +195,7 @@ int cllm_transformer_forward_threaded(
  * @param logits Output logits (vocab_size)
  * @return 0 on success, -1 on error
  */
-int cllm_compute_logits_threaded(
+int cllm_compute_logits(
     CLLMModel* model,
     const double* hidden,
     double* logits
@@ -237,7 +237,7 @@ int cllm_compute_logits_threaded(
  * @param logits Logits array (vocab_size)
  * @param vocab_size Size of vocabulary
  */
-void cllm_softmax_threaded(double* logits, uint32_t vocab_size) {
+void cllm_softmax(double* logits, uint32_t vocab_size) {
     if (!logits || vocab_size == 0) {
         return;
     }
@@ -273,7 +273,7 @@ void cllm_softmax_threaded(double* logits, uint32_t vocab_size) {
  * @param temperature Sampling temperature (higher = more random)
  * @return Sampled token ID
  */
-uint32_t cllm_sample_token_threaded(const double* probs, uint32_t vocab_size, double temperature) {
+uint32_t cllm_sample_token(const double* probs, uint32_t vocab_size, double temperature) {
     if (!probs || vocab_size == 0) {
         return 0;
     }
