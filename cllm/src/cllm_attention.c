@@ -9,7 +9,21 @@
  * - Angular position integration
  * - Geometric attention with clock lattice
  * - 10-100x speedup for sequences > 512 tokens
+ * 
+ * ============================================================================
+ * PHASE 2 NOTE: This file will be DELETED in Phase 3
+ * ============================================================================
+ * This is a sequential implementation that will be replaced by thread-local
+ * attention computation in worker threads. Temporarily disabled to allow
+ * compilation during Phase 2 restructuring.
+ * 
+ * The attention logic will move to:
+ * - algorithms/src/thread_workers.c: worker_compute_attention()
+ * ============================================================================
  */
+
+// PHASE 2: Temporarily disable this entire file
+#if 0
 
 #include <stdlib.h>
 #include <string.h>
@@ -1083,3 +1097,5 @@ void cllm_attention_print_stats(const CLLMModel* model) {
         printf("  Average speedup: %.1fx\n", speedup);
     }
 }
+
+#endif // PHASE 2: End of disabled code

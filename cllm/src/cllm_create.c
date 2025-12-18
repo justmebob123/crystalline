@@ -498,9 +498,10 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         model->ntt.threshold_seq_len = config->ntt_threshold_seq_len;
         model->ntt.auto_select = config->ntt_auto_select;
         
-        // Pre-allocate workspace
-        model->ntt.ntt_workspace = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
-        model->ntt.ntt_frequencies = (double*)calloc(model->max_seq_len, sizeof(double));
+        // PHASE 2: NTT workspace removed - computation now in thread-local storage
+        // Each thread performs NTT in its own CrystallineAbacus temp storage
+        // model->ntt.ntt_workspace = (double*)calloc(model->max_seq_len * model->embedding_dim, sizeof(double));
+        // model->ntt.ntt_frequencies = (double*)calloc(model->max_seq_len, sizeof(double));
         
         model->ntt.ntt_calls = 0;
         model->ntt.standard_calls = 0;

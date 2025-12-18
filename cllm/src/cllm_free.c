@@ -213,16 +213,9 @@ void cllm_free_model(CLLMModel* model) {
     // ========================================================================
     
     if (model->ntt.enabled) {
-        if (model->ntt.ntt_workspace) {
-            free(model->ntt.ntt_workspace);
-            model->ntt.ntt_workspace = NULL;
-        }
-        
-        if (model->ntt.ntt_frequencies) {
-            free(model->ntt.ntt_frequencies);
-            model->ntt.ntt_frequencies = NULL;
-        }
-        printf("  ✓ Freed NTT attention state\n");
+        // PHASE 2: NTT workspace removed - was in thread-local storage
+        // Nothing to free here anymore
+        printf("  ✓ NTT attention state (thread-local, freed with threads)\n");
     }
     
     // ========================================================================

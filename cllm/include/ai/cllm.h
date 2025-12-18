@@ -322,9 +322,10 @@ typedef struct {
         uint32_t recovery_count;
         
         // Backup for recovery
-        double* vertex_backup;        // Backup of vertex-related weights
-        double* edge_backup;          // Backup of edge-related weights
-        double* face_backup;          // Backup of face-related weights
+        // TODO Phase 3: Make thread-aware - each thread should backup its own parameters
+        double* vertex_backup;        // TEMPORARY - Backup of vertex-related weights
+        double* edge_backup;          // TEMPORARY - Backup of edge-related weights
+        double* face_backup;          // TEMPORARY - Backup of face-related weights
         
         // Recovery methods (bit flags)
         // 0x01 = structural (Euler's formula)
@@ -347,7 +348,8 @@ typedef struct {
         double primary_frequency;     // 432 Hz (universal)
         
         // Fourier coefficients
-        double* fourier_coefficients; // [embedding_dim]
+        // TODO Phase 3: Move to thread-local storage
+        double* fourier_coefficients; // TEMPORARY - [embedding_dim]
         
         // Prime resonance (Platonic primes)
         uint32_t platonic_primes[NUM_PLATONIC_PRIMES]; // 5, 23, 29, 127, 241
@@ -372,9 +374,8 @@ typedef struct {
         uint32_t threshold_seq_len;   // Use NTT if seq_len > threshold (default: 512)
         bool auto_select;             // Automatically select NTT for long sequences
         
-        // NTT workspace (pre-allocated for efficiency)
-        double* ntt_workspace;        // [max_seq_len × embedding_dim]
-        double* ntt_frequencies;      // [max_seq_len]
+        // NTT workspace removed - computation now in thread-local storage
+        // Each thread performs NTT in its own CrystallineAbacus temp storage
         
         // Statistics
         uint64_t ntt_calls;           // Number of times NTT was used
@@ -393,17 +394,12 @@ typedef struct {
         uint32_t max_batch_size;        // Maximum batch size
         uint32_t max_seq_len;           // Maximum sequence length
         
-        // Intermediate activations (per layer) - needed for backward pass
-        struct {
-            double* Q;                   // Queries [batch × seq_len × embedding_dim]
-            double* K;                   // Keys [batch × seq_len × embedding_dim]
-            double* V;                   // Values [batch × seq_len × embedding_dim]
-            double* attention_weights;   // Attention weights [batch × num_heads × seq_len × seq_len]
-            double* attn_output;         // Attention output [batch × seq_len × embedding_dim]
-            
-            // Allocation flags
-            bool allocated;
-        } *layer_cache;                  // [num_layers]
+        // Layer cache removed - all activations now in thread-local storage
+        // Each thread stores Q, K, V, attention_weights, attn_output in its own:
+        // - thread->activation_buffer (forward pass activations)
+        // - thread->cached_qkv (cached Q, K, V for backward pass)
+        // - thread->value (current computation)
+        // - thread->temp (temporary computation space)
         
         // Gradient accumulation
         uint32_t gradient_accumulation_steps;
@@ -464,6 +460,30 @@ typedef struct {
         double tetration_base;
         
     } optimizer;
+    
+    // ========================================================================
+    // TRAINING STATE (GLOBAL COORDINATION ONLY)
+    // ========================================================================
+    
+    struct {
+        uint64_t step;                  // Global training step
+        double learning_rate;           // Current learning rate
+        OptimizerType optimizer_type;   // Optimizer type (duplicated from optimizer for convenience)
+        double beta1, beta2;            // Adam parameters (duplicated from optimizer)
+        double epsilon;                 // Numerical stability (duplicated from optimizer)
+        double weight_decay;            // L2 regularization (duplicated from optimizer)
+        
+        // Learning rate schedule
+        bool use_lr_schedule;           // Use learning rate scheduling
+        double lr_decay_rate;           // Learning rate decay rate
+        uint64_t lr_decay_steps;        // Steps between decay
+        double min_lr;                  // Minimum learning rate
+        
+        // Gradient clipping
+        bool use_grad_clip;             // Use gradient clipping
+        double grad_clip_norm;          // Maximum gradient norm
+        
+    } training_state;
     
     // ========================================================================
     // TRAINING METRICS
