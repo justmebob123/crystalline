@@ -180,21 +180,63 @@ int thread_allocate_parameter(
     // Calculate total elements
     size_t total_elements = calculate_total_elements(shape, num_dims);
     
-    // Allocate parameter (CrystallineAbacus)
-    // For now, we'll use a simple flat array representation
-    // TODO: Implement proper CrystallineAbacus allocation
-    thread->parameters[thread->num_parameters] = (CrystallineAbacus*)calloc(1, sizeof(CrystallineAbacus));
-    thread->gradients[thread->num_parameters] = (CrystallineAbacus*)calloc(1, sizeof(CrystallineAbacus));
-    thread->momentum[thread->num_parameters] = (CrystallineAbacus*)calloc(1, sizeof(CrystallineAbacus));
-    thread->velocity[thread->num_parameters] = (CrystallineAbacus*)calloc(1, sizeof(CrystallineAbacus));
+    // Allocate array of CrystallineAbacus (one per matrix element)
+    // This properly handles matrices by flattening them into 1D arrays
+    thread->parameters[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus));
+    thread->gradients[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus));
+    thread->momentum[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus));
+    thread->velocity[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus));
     
     if (!thread->parameters[thread->num_parameters] ||
         !thread->gradients[thread->num_parameters] ||
         !thread->momentum[thread->num_parameters] ||
         !thread->velocity[thread->num_parameters]) {
-        fprintf(stderr, "ERROR: Failed to allocate parameter storage\n");
+        fprintf(stderr, "ERROR: Failed to allocate parameter storage for %zu elements\n", total_elements);
         pthread_mutex_unlock(&thread->param_list_lock);
         return -1;
+    }
+    
+    // Initialize each CrystallineAbacus in the arrays
+    for (size_t i = 0; i < total_elements; i++) {
+        // Initialize parameter abacus
+        CrystallineAbacus* temp_param = abacus_new(60);
+        if (!temp_param) {
+            fprintf(stderr, "ERROR: Failed to create abacus for parameter element %zu\n", i);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        memcpy(&thread->parameters[thread->num_parameters][i], temp_param, sizeof(CrystallineAbacus));
+        free(temp_param);
+        
+        // Initialize gradient abacus
+        CrystallineAbacus* temp_grad = abacus_new(60);
+        if (!temp_grad) {
+            fprintf(stderr, "ERROR: Failed to create abacus for gradient element %zu\n", i);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        memcpy(&thread->gradients[thread->num_parameters][i], temp_grad, sizeof(CrystallineAbacus));
+        free(temp_grad);
+        
+        // Initialize momentum abacus
+        CrystallineAbacus* temp_mom = abacus_new(60);
+        if (!temp_mom) {
+            fprintf(stderr, "ERROR: Failed to create abacus for momentum element %zu\n", i);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        memcpy(&thread->momentum[thread->num_parameters][i], temp_mom, sizeof(CrystallineAbacus));
+        free(temp_mom);
+        
+        // Initialize velocity abacus
+        CrystallineAbacus* temp_vel = abacus_new(60);
+        if (!temp_vel) {
+            fprintf(stderr, "ERROR: Failed to create abacus for velocity element %zu\n", i);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        memcpy(&thread->velocity[thread->num_parameters][i], temp_vel, sizeof(CrystallineAbacus));
+        free(temp_vel);
     }
     
     // Initialize metadata
@@ -319,15 +361,25 @@ int thread_initialize_parameter(
             
         case PARAM_INIT_ONES:
             // Set all to 1.0
-            // TODO: Implement with CrystallineAbacus
+            for (size_t i = 0; i < total_elements; i++) {
+                CrystallineAbacus* one = abacus_from_double(1.0, 60, 10);
+                if (one) {
+                    memcpy(&param[i], one, sizeof(CrystallineAbacus));
+                    free(one);
+                }
+            }
             break;
             
         case PARAM_INIT_RANDOM:
             // Random uniform [-0.1, 0.1]
             for (size_t i = 0; i < total_elements; i++) {
-                // TODO: Set value in CrystallineAbacus
                 double val = random_uniform(-0.1, 0.1, &seed);
-                (void)val; // Placeholder
+                // Store value in CrystallineAbacus
+                CrystallineAbacus* val_abacus = abacus_from_double(val, 60, 10);
+                if (val_abacus) {
+                    memcpy(&param[i], val_abacus, sizeof(CrystallineAbacus));
+                    free(val_abacus);
+                }
             }
             break;
             
@@ -358,7 +410,12 @@ int thread_initialize_parameter(
                 
                 for (size_t i = 0; i < total_elements; i++) {
                     double val = random_normal(0.0, stddev, &seed);
-                    (void)val; // Placeholder
+                    // Store value in CrystallineAbacus
+                    CrystallineAbacus* val_abacus = abacus_from_double(val, 60, 10);
+                    if (val_abacus) {
+                        memcpy(&param[i], val_abacus, sizeof(CrystallineAbacus));
+                        free(val_abacus);
+                    }
                 }
             }
             break;
@@ -389,7 +446,12 @@ int thread_initialize_parameter(
                 
                 for (size_t i = 0; i < total_elements; i++) {
                     double val = random_normal(0.0, stddev, &seed);
-                    (void)val; // Placeholder
+                    // Store value in CrystallineAbacus
+                    CrystallineAbacus* val_abacus = abacus_from_double(val, 60, 10);
+                    if (val_abacus) {
+                        memcpy(&param[i], val_abacus, sizeof(CrystallineAbacus));
+                        free(val_abacus);
+                    }
                 }
             }
             break;
@@ -398,7 +460,12 @@ int thread_initialize_parameter(
             // Normal distribution N(0, 0.02)
             for (size_t i = 0; i < total_elements; i++) {
                 double val = random_normal(0.0, 0.02, &seed);
-                (void)val; // Placeholder
+                // Store value in CrystallineAbacus
+                    CrystallineAbacus* val_abacus = abacus_from_double(val, 60, 10);
+                    if (val_abacus) {
+                        memcpy(&param[i], val_abacus, sizeof(CrystallineAbacus));
+                        free(val_abacus);
+                    }
             }
             break;
     }
