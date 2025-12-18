@@ -15,6 +15,7 @@
 #include "ai/cllm_feedforward_helpers.h"
 #include "ai/cllm_layernorm_helpers.h"
 #include "hierarchical_threading.h"
+#include "worker_functions_geometric.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -95,11 +96,15 @@ int cllm_transformer_layer_forward(
     // Step 1: Pre-attention layer normalization
     cllm_layernorm_forward_thread(thread, attn_input, attn_input, dim, 1e-5);
 
-    // Step 2: Multi-head self-attention
-    // For now, we'll use a simplified attention mechanism
-    // In a full implementation, this would query other threads
-    // For simplicity, just copy input to output (identity transformation)
-    memcpy(attn_output, attn_input, dim * sizeof(double));
+    // Step 2: Multi-head self-attention using geometric matrices
+    int attn_result = worker_compute_attention_double(thread, attn_input, dim, attn_output);
+    if (attn_result != 0) {
+        free(attn_input);
+        free(attn_output);
+        free(ffn_input);
+        free(ffn_output);
+        return -1;
+    }
 
     // Step 3: Residual connection (input + attention output)
     for (uint32_t i = 0; i < dim; i++) {
@@ -109,9 +114,16 @@ int cllm_transformer_layer_forward(
     // Step 4: Pre-FFN layer normalization
     cllm_layernorm_forward_thread(thread, ffn_input, ffn_input, dim, 1e-5);
 
-    // Step 5: Feed-forward network
+    // Step 5: Feed-forward network using geometric matrices
     uint32_t hidden_dim = dim * 4; // Standard transformer uses 4x expansion
-    cllm_ffn_forward_thread(thread, ffn_input, ffn_output, dim, hidden_dim);
+    int ffn_result = worker_compute_ffn_double(thread, ffn_input, dim, hidden_dim, ffn_output);
+    if (ffn_result != 0) {
+        free(attn_input);
+        free(attn_output);
+        free(ffn_input);
+        free(ffn_output);
+        return -1;
+    }
 
     // Step 6: Residual connection (ffn_input + ffn_output)
     for (uint32_t i = 0; i < dim; i++) {
