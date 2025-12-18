@@ -52,7 +52,7 @@ int test_single_layer() {
     }
     
     // Get a test thread
-    HierarchicalThread* thread = hierarchical_thread_get_88d(model->pool_88d, 0, 1);
+    HierarchicalThread* thread = hierarchical_thread_get(model->pool_88d, 0, 1);
     if (!thread) {
         printf("%s✗ Failed to get thread%s\n", COLOR_RED, COLOR_RESET);
         cllm_free_model(model);
@@ -139,7 +139,7 @@ int test_multi_layer() {
     }
     
     // Get a test thread
-    HierarchicalThread* thread = hierarchical_thread_get_88d(model->pool_88d, 0, 1);
+    HierarchicalThread* thread = hierarchical_thread_get(model->pool_88d, 0, 1);
     if (!thread) {
         printf("%s✗ Failed to get thread%s\n", COLOR_RED, COLOR_RESET);
         cllm_free_model(model);

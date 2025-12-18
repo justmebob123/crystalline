@@ -96,7 +96,7 @@ void test_model_creation() {
         printf("  ✓ Model created successfully\n");
         
         // Verify 88D thread pool exists
-        if (model->pool_88d == NULL) {
+        if (model->threads == NULL) {
             printf("  ERROR: 88D thread pool not created\n");
             passed = 0;
         } else {
@@ -347,7 +347,7 @@ void test_thread_pool_structure() {
     
     int passed = 1;
     
-    if (model == NULL || model->pool_88d == NULL) {
+    if (model == NULL || model->threads == NULL) {
         printf("  ERROR: Model or thread pool not created\n");
         passed = 0;
     } else {
@@ -356,8 +356,8 @@ void test_thread_pool_structure() {
         
         for (uint8_t layer = 0; layer < 8; layer++) {
             for (uint8_t dim = 1; dim <= 11; dim++) {
-                HierarchicalThread* thread = hierarchical_thread_get_88d(
-                    model->pool_88d, layer, dim
+                HierarchicalThread* thread = hierarchical_thread_get(
+                    model->threads, layer, dim
                 );
                 
                 if (thread == NULL) {

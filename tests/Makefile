@@ -1,8 +1,8 @@
 # Test Suite Makefile for Crystalline CLLM
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O0 -I../cllm/include/ai -I../algorithms/include -I../math/include -mavx2 -mfma
-LDFLAGS = -L.. -L../algorithms -L../math/lib -lcllm -lalgorithms -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/..':'$$ORIGIN/../math/lib'
+CFLAGS = -Wall -Wextra -g -O0 -I../cllm/include -I../algorithms/include -I../math/include -mavx2 -mfma
+LDFLAGS = -L../cllm -L../algorithms -L../math/lib -lcllm -lalgorithms -lcrystallinemath -lm -Wl,-rpath,'$$ORIGIN/../cllm':'$$ORIGIN/../algorithms':'$$ORIGIN/../math/lib'
 
 # Test directories
 UNIT_DIR = unit

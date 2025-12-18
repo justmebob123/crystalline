@@ -104,7 +104,7 @@ void test_feedforward() {
         }
         
         // Get a thread to test with
-        HierarchicalThread* thread = hierarchical_thread_get_88d(
+        HierarchicalThread* thread = hierarchical_thread_get(
             model->pool_88d, 0, 1
         );
         
@@ -181,7 +181,7 @@ void test_layernorm() {
         }
         
         // Get a thread to test with
-        HierarchicalThread* thread = hierarchical_thread_get_88d(
+        HierarchicalThread* thread = hierarchical_thread_get(
             model->pool_88d, 0, 1
         );
         

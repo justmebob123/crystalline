@@ -63,24 +63,11 @@ static double random_normal(double mean, double stddev, uint64_t* seed) {
     double u1 = random_uniform(0.0, 1.0, seed);
     double u2 = random_uniform(0.0, 1.0, seed);
     
-    // Use crystalline math functions
-    CrystallineAbacus* temp1 = abacus_create(60);
-    CrystallineAbacus* temp2 = abacus_create(60);
+    // Avoid log(0)
+    if (u1 < 1e-10) u1 = 1e-10;
     
-    abacus_set_double(temp1, -2.0 * u1);
-    crystalline_ln(temp2, temp1);  // log(u1)
-    abacus_multiply_double(temp2, temp2, -2.0);
-    crystalline_sqrt(temp1, temp2);  // sqrt(-2 * log(u1))
-    
-    abacus_set_double(temp2, 2.0 * M_PI * u2);
-    crystalline_cos(temp2, temp2);  // cos(2*pi*u2)
-    
-    abacus_multiply(temp1, temp1, temp2);
-    double z0;
-    abacus_to_double(temp1, &z0);
-    
-    abacus_free(temp1);
-    abacus_free(temp2);
+    // Box-Muller transform using standard math
+    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
     
     return mean + stddev * z0;
 }
@@ -315,12 +302,7 @@ int thread_initialize_parameter(
                 uint32_t fan_in = thread->param_metadata[idx].shape[0];
                 uint32_t fan_out = thread->param_metadata[idx].shape[1];
                 
-                CrystallineAbacus* temp = abacus_create(60);
-                abacus_set_double(temp, 2.0 / (fan_in + fan_out));
-                crystalline_sqrt(temp, temp);
-                double stddev;
-                abacus_to_double(temp, &stddev);
-                abacus_free(temp);
+                double stddev = sqrt(2.0 / (fan_in + fan_out));
                 
                 for (size_t i = 0; i < total_elements; i++) {
                     double val = random_normal(0.0, stddev, &seed);
@@ -334,12 +316,7 @@ int thread_initialize_parameter(
             if (thread->param_metadata[idx].num_dims == 2) {
                 uint32_t fan_in = thread->param_metadata[idx].shape[0];
                 
-                CrystallineAbacus* temp = abacus_create(60);
-                abacus_set_double(temp, 2.0 / fan_in);
-                crystalline_sqrt(temp, temp);
-                double stddev;
-                abacus_to_double(temp, &stddev);
-                abacus_free(temp);
+                double stddev = sqrt(2.0 / fan_in);
                 
                 for (size_t i = 0; i < total_elements; i++) {
                     double val = random_normal(0.0, stddev, &seed);
