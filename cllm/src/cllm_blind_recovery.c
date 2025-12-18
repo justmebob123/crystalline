@@ -43,56 +43,19 @@ typedef enum {
  * 
  * @param model The CLLM model to check
  * @return Number of corrupted parameters detected
+ * 
+ * NOTE: This function is STUBBED for 88D architecture.
+ * Will be reimplemented in Week 3 to work with thread-local storage.
  */
 int cllm_detect_corruption(CLLMModel* model) {
     if (!model) return -1;
     
-    int corruption_count = 0;
+    // TODO: Reimplement for 88D architecture in Week 3
+    // Need to check thread-local CrystallineAbacus storage instead of flat arrays
     
-    // Check embeddings
-    if (model->embeddings) {
-        for (uint32_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
-            double val = model->embeddings[i];
-            if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
-                corruption_count++;
-            }
-        }
-    }
+    fprintf(stderr, "WARNING: cllm_detect_corruption() not yet implemented for 88D architecture\n");
     
-    // Check layer parameters
-    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-        // Query weights
-        if (model->layers[layer].query_weights) {
-            for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
-                double val = model->layers[layer].query_weights[i];
-                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
-                    corruption_count++;
-                }
-            }
-        }
-        
-        // Key weights
-        if (model->layers[layer].key_weights) {
-            for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
-                double val = model->layers[layer].key_weights[i];
-                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
-                    corruption_count++;
-                }
-            }
-        }
-        
-        // Value weights
-        if (model->layers[layer].value_weights) {
-            for (uint32_t i = 0; i < model->embedding_dim * model->embedding_dim; i++) {
-                double val = model->layers[layer].value_weights[i];
-                if (math_is_nan(val) || math_is_inf(val) || math_abs(val) > 100.0) {
-                    corruption_count++;
-                }
-            }
-        }
-    }
-    
-    return corruption_count;
+    return 0;  // No corruption detected (stub)
 }
 
 /**
@@ -105,6 +68,13 @@ int cllm_detect_corruption(CLLMModel* model) {
  * @return 0 on success, -1 on failure
  */
 int cllm_recover_structural(CLLMModel* model) {
+    if (!model) return -1;
+    fprintf(stderr, "WARNING: cllm_recover_structural() not yet implemented for 88D architecture\n");
+    return 0;
+}
+
+#if 0  // OLD IMPLEMENTATION - kept for reference
+int cllm_recover_structural_OLD(CLLMModel* model) {
     if (!model || !model->recovery.enabled) return -1;
     
     printf("🔧 Applying structural redundancy recovery (Euler's formula)...\n");
@@ -145,6 +115,7 @@ int cllm_recover_structural(CLLMModel* model) {
     printf("  ✓ Structural recovery complete\n");
     return 0;
 }
+#endif  // OLD IMPLEMENTATION
 
 /**
  * @brief 26B: Symmetry-Based Reconstruction
@@ -156,6 +127,13 @@ int cllm_recover_structural(CLLMModel* model) {
  * @return 0 on success, -1 on failure
  */
 int cllm_recover_symmetry(CLLMModel* model) {
+    if (!model) return -1;
+    fprintf(stderr, "WARNING: cllm_recover_symmetry() not yet implemented for 88D architecture\n");
+    return 0;
+}
+
+#if 0  // OLD IMPLEMENTATION - kept for reference
+int cllm_recover_symmetry_OLD(CLLMModel* model) {
     if (!model || !model->recovery.enabled) return -1;
     
     printf("🔄 Applying symmetry-based reconstruction...\n");
@@ -196,6 +174,7 @@ int cllm_recover_symmetry(CLLMModel* model) {
     printf("  ✓ Symmetry recovery complete\n");
     return 0;
 }
+#endif  // OLD IMPLEMENTATION
 
 /**
  * @brief 26C: Prime-Based Validation
@@ -207,6 +186,13 @@ int cllm_recover_symmetry(CLLMModel* model) {
  * @return 0 on success, -1 on failure
  */
 int cllm_recover_prime(CLLMModel* model) {
+    if (!model) return -1;
+    fprintf(stderr, "WARNING: cllm_recover_prime() not yet implemented for 88D architecture\n");
+    return 0;
+}
+
+#if 0  // OLD IMPLEMENTATION - kept for reference
+int cllm_recover_prime_OLD(CLLMModel* model) {
     if (!model || !model->recovery.enabled) return -1;
     
     printf("🔢 Applying prime-based validation...\n");
@@ -250,6 +236,7 @@ int cllm_recover_prime(CLLMModel* model) {
     printf("  ✓ Prime validation complete\n");
     return 0;
 }
+#endif  // OLD IMPLEMENTATION
 
 /**
  * @brief 26D: Tetration Attractors
@@ -266,6 +253,13 @@ int cllm_recover_prime(CLLMModel* model) {
  * @return 0 on success, -1 on failure
  */
 int cllm_recover_tetration(CLLMModel* model) {
+    if (!model) return -1;
+    fprintf(stderr, "WARNING: cllm_recover_tetration() not yet implemented for 88D architecture\n");
+    return 0;
+}
+
+#if 0  // OLD IMPLEMENTATION - kept for reference
+int cllm_recover_tetration_OLD(CLLMModel* model) {
     if (!model || !model->recovery.enabled) return -1;
     
     printf("🎯 Applying tetration attractor recovery...\n");
@@ -286,6 +280,7 @@ int cllm_recover_tetration(CLLMModel* model) {
     printf("  ✓ Tetration recovery complete\n");
     return 0;
 }
+#endif  // OLD IMPLEMENTATION
 
 /**
  * @brief Comprehensive blind recovery
@@ -389,22 +384,10 @@ RecoveryStats cllm_blind_recovery(CLLMModel* model) {
  * @return 0 on success, -1 on failure
  */
 int cllm_create_backup(CLLMModel* model) {
-    if (!model || !model->recovery.enabled) return -1;
+    if (!model) return -1;
     
-    // Backup embeddings to vertex_backup
-    if (model->embeddings && model->recovery.vertex_backup) {
-        memcpy(model->recovery.vertex_backup, 
-               model->embeddings,
-               model->vocab_size * model->embedding_dim * sizeof(double));
-    }
-    
-    // Backup weights to edge_backup (simplified - just first layer for now)
-    if (model->num_layers > 0 && model->layers[0].query_weights &&
-        model->recovery.edge_backup) {
-        memcpy(model->recovery.edge_backup,
-               model->layers[0].query_weights,
-               model->embedding_dim * model->embedding_dim * sizeof(double));
-    }
+    // TODO: Reimplement for 88D architecture in Week 3
+    fprintf(stderr, "WARNING: cllm_create_backup() not yet implemented for 88D architecture\n");
     
     return 0;
 }
@@ -421,20 +404,8 @@ int cllm_create_backup(CLLMModel* model) {
 int cllm_simulate_corruption(CLLMModel* model, double corruption_rate) {
     if (!model || corruption_rate < 0.0 || corruption_rate > 1.0) return -1;
     
-    uint32_t total_params = model->vocab_size * model->embedding_dim;
-    int to_corrupt = (int)(total_params * corruption_rate);
-    int corrupted = 0;
+    // TODO: Reimplement for 88D architecture in Week 3
+    fprintf(stderr, "WARNING: cllm_simulate_corruption() not yet implemented for 88D architecture\n");
     
-    printf("🧪 Simulating corruption: %.1f%% (%d parameters)\n", 
-           corruption_rate * 100.0, to_corrupt);
-    
-    // Corrupt random embeddings
-    for (int i = 0; i < to_corrupt && i < (int)total_params; i++) {
-        int idx = rand() % total_params;
-        model->embeddings[idx] = 0.0 / 0.0; // Set to NaN using NEW math library approach
-        corrupted++;
-    }
-    
-    printf("  ✓ Corrupted %d parameters\n", corrupted);
-    return corrupted;
+    return 0;
 }
