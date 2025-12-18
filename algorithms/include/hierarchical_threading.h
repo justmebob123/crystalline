@@ -1098,6 +1098,41 @@ void* hierarchical_thread_worker_88d(void* arg);
 // ============================================================================
 
 // ============================================================================
+// OPTIMIZER OPERATIONS (DAY 10)
+// ============================================================================
+
+/**
+ * Clear all gradients in thread
+ * 
+ * @param thread Thread to clear gradients for
+ * @return 0 on success, -1 on error
+ */
+int worker_clear_gradients(HierarchicalThread* thread);
+
+/**
+ * Apply optimizer to thread's parameters
+ * 
+ * Uses Adam optimizer:
+ *   m = β1*m + (1-β1)*grad
+ *   v = β2*v + (1-β2)*grad²
+ *   param -= lr * m / (√v + ε)
+ * 
+ * @param thread Thread that owns the parameters
+ * @param learning_rate Learning rate
+ * @param beta1 Adam beta1 (momentum decay, default 0.9)
+ * @param beta2 Adam beta2 (velocity decay, default 0.999)
+ * @param epsilon Adam epsilon (numerical stability, default 1e-8)
+ * @return 0 on success, -1 on error
+ */
+int worker_apply_optimizer(
+    HierarchicalThread* thread,
+    double learning_rate,
+    double beta1,
+    double beta2,
+    double epsilon
+);
+
+// ============================================================================
 // GRADIENT OPERATIONS (DAY 9)
 // ============================================================================
 

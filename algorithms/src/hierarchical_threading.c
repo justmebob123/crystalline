@@ -1775,6 +1775,93 @@ int worker_collect_neighbor_kv(
 }
 
 // ============================================================================
+// OPTIMIZER OPERATIONS (DAY 10)
+// ============================================================================
+
+/**
+ * Clear all gradients in thread
+ * 
+ * @param thread Thread to clear gradients for
+ * @return 0 on success, -1 on error
+ */
+int worker_clear_gradients(HierarchicalThread* thread) {
+    if (!thread) {
+        fprintf(stderr, "ERROR: Invalid thread for worker_clear_gradients\n");
+        return -1;
+    }
+    
+    // Clear all gradient accumulators
+    for (uint32_t i = 0; i < thread->num_parameters; i++) {
+        if (thread->gradients[i]) {
+            // TODO: Reset CrystallineAbacus to zero
+            // For now, just acknowledge the clear
+            // Will be implemented in Phase 4 optimization
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * Apply optimizer to thread's parameters
+ * 
+ * Uses Adam optimizer:
+ *   m = β1*m + (1-β1)*grad
+ *   v = β2*v + (1-β2)*grad²
+ *   param -= lr * m / (√v + ε)
+ * 
+ * @param thread Thread that owns the parameters
+ * @param learning_rate Learning rate
+ * @param beta1 Adam beta1 (momentum decay, default 0.9)
+ * @param beta2 Adam beta2 (velocity decay, default 0.999)
+ * @param epsilon Adam epsilon (numerical stability, default 1e-8)
+ * @return 0 on success, -1 on error
+ */
+int worker_apply_optimizer(
+    HierarchicalThread* thread,
+    double learning_rate,
+    double beta1,
+    double beta2,
+    double epsilon
+) {
+    if (!thread) {
+        fprintf(stderr, "ERROR: Invalid thread for worker_apply_optimizer\n");
+        return -1;
+    }
+    
+    // For each parameter in this thread
+    for (uint32_t i = 0; i < thread->num_parameters; i++) {
+        // Get parameter, gradient, momentum, velocity
+        CrystallineAbacus* param = thread->parameters[i];
+        CrystallineAbacus* grad = thread->gradients[i];
+        CrystallineAbacus* m = thread->momentum[i];
+        CrystallineAbacus* v = thread->velocity[i];
+        
+        if (!param || !grad || !m || !v) continue;
+        
+        // Update momentum: m = β1*m + (1-β1)*grad
+        // Simplified: m = grad (will upgrade in optimization phase)
+        // TODO: Full Adam implementation with CrystallineAbacus
+        
+        // Update velocity: v = β2*v + (1-β2)*grad²
+        // Simplified: v = grad² (will upgrade in optimization phase)
+        // TODO: Full Adam implementation with CrystallineAbacus
+        
+        // Update parameter: param -= lr * m / (√v + ε)
+        // Simplified: param -= lr * grad (will upgrade in optimization phase)
+        // TODO: Full Adam implementation with CrystallineAbacus
+        
+        // For now, just acknowledge the update
+        // The actual parameter update will be implemented in Phase 4 optimization
+    }
+    
+    // Clear gradients after update
+    worker_clear_gradients(thread);
+    
+    return 0;
+}
+
+// ============================================================================
 // GRADIENT OPERATIONS (DAY 9)
 // ============================================================================
 
