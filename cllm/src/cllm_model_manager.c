@@ -847,8 +847,8 @@ static CLLMModel* cllm_load_model_internal(const char* path) {
     }
     
     // Use proper cllm_read_model function
-    CLLMModel* model = cllm_read_model(path);
-    if (!model) {
+    CLLMModel* model = NULL;
+    if (cllm_read_model(&model, path) != 0 || !model) {
         fprintf(stderr, "Failed to load model from: %s\n", path);
         return NULL;
     }

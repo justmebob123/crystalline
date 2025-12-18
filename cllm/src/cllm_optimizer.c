@@ -153,18 +153,11 @@ void cllm_adam_step(CLLMTraining* training, double learning_rate) {
     double bias_correction1 = 1.0 - math_pow(beta1, (float)t);
     double bias_correction2 = 1.0 - math_pow(beta2, (float)t);
     
-    // Skip if no gradients allocated
-    if (!training->gradients || !training->optimizer_state) {
-        printf("DEBUG: No gradients, skipping update\n");
-        return;
-    }
+    // TODO: Reimplement for 88D architecture
+    // Gradients are now in thread-local storage
+    fprintf(stderr, "WARNING: cllm_adam_step() not yet implemented for 88D architecture\n");
     
-    printf("DEBUG: Updating embeddings...\n");
-    fflush(stdout);
-    
-    // LEGACY FLOAT CODE - DISABLED
-    // Use cllm_adam_step_bigfixed() instead
-    // This function is kept for API compatibility but does nothing
+    (void)training;
     (void)learning_rate;
     (void)beta1;
     (void)beta2;
@@ -173,8 +166,6 @@ void cllm_adam_step(CLLMTraining* training, double learning_rate) {
     (void)bias_correction1;
     (void)bias_correction2;
     (void)model;
-    // LEGACY FLOAT CODE - All operations disabled
-    // The actual optimizer work is done by cllm_adam_step_bigfixed()
 }
 
 /**

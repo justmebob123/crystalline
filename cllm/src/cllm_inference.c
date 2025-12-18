@@ -527,20 +527,20 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         fprintf(stderr, "Error: logits is NULL\n");
         return;
     }
-    if (!model->embeddings) {
-        fprintf(stderr, "Error: embeddings is NULL\n");
-        return;
-    }
-    
-    // Get embedding for last token
+    // Get embedding for last token from thread-local storage
     uint32_t last_token = tokens[num_tokens - 1];
     if (last_token >= model->vocab_size) {
         fprintf(stderr, "Error: token %u out of range (vocab_size=%lu)\n", last_token, (unsigned long)model->vocab_size);
         return;
     }
     
-    // Copy double embedding to double hidden_states
-    double* double_embedding = &model->embeddings[last_token * embed_dim];
+    extern bool cllm_get_embedding_from_model(const CLLMModel* model, uint32_t token_id, double* output);
+    double* double_embedding = (double*)malloc(embed_dim * sizeof(double));
+    if (!double_embedding || !cllm_get_embedding_from_model(model, last_token, double_embedding)) {
+        fprintf(stderr, "Error: Failed to get embedding for token %u\n", last_token);
+        if (double_embedding) free(double_embedding);
+        return;
+    }
     
     // CRITICAL FIX: Check for NaN embeddings and trigger lazy initialization
     if (math_is_nan(double_embedding[0])) {
@@ -578,14 +578,20 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     }
     
     // Project to vocabulary - compute logits
+    double* temp_embed = (double*)malloc(embed_dim * sizeof(double));
     for (uint32_t i = 0; i < model->vocab_size; i++) {
         double logit_value = 0.0;
-        double* token_embed = &model->embeddings[i * embed_dim];
-        for (uint32_t j = 0; j < embed_dim; j++) {
-            logit_value += inference->hidden_states[j] * (double)token_embed[j];
+        
+        // Get embedding from thread-local storage
+        if (temp_embed && cllm_get_embedding_from_model(model, i, temp_embed)) {
+            for (uint32_t j = 0; j < embed_dim; j++) {
+                logit_value += inference->hidden_states[j] * temp_embed[j];
+            }
         }
         inference->logits[i] = logit_value;
     }
+    free(temp_embed);
+    free(double_embedding);
 }
 
 // Apply temperature scaling

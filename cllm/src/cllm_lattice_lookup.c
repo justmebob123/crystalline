@@ -120,45 +120,16 @@ float cllm_get_embedding_from_pattern(uint32_t token_id, uint32_t dim,
  * This is INSTANT - no L_lattice computation!
  */
 void cllm_embeddings_init_from_patterns(CLLMModel* model) {
-    if (!model || !model->embeddings) {
-        fprintf(stderr, "ERROR: Invalid model or embeddings\n");
+    if (!model) {
+        fprintf(stderr, "ERROR: Invalid model\n");
         return;
     }
     
-    printf("\n=== Initializing Embeddings from Deterministic Patterns ===\n");
-    printf("Vocabulary size: %lu\n", (unsigned long)model->vocab_size);
-    printf("Embedding dimension: %u\n", model->embedding_dim);
-    printf("Using direct geometric lookup - NO computation needed!\n\n");
+    // TODO: Reimplement for 88D architecture
+    // Embeddings are now stored in thread-local CrystallineAbacus
+    fprintf(stderr, "WARNING: cllm_embeddings_init_from_patterns() not yet implemented for 88D architecture\n");
     
-    // Initialize patterns if needed
-    cllm_init_ring_patterns(model->embedding_dim);
-    
-    uint32_t vocab_size = model->vocab_size;
-    uint32_t embedding_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
-    
-    // Fill embeddings using direct lookup
-    for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-        CLLMToken* token = &model->tokens[token_id];
-        uint32_t symmetry_group = token->symmetry_group;
-        
-        for (uint32_t dim = 0; dim < embedding_dim; dim++) {
-            embeddings[token_id * embedding_dim + dim] = 
-                cllm_get_embedding_from_pattern(token_id, dim, symmetry_group, vocab_size);
-        }
-        
-        // Progress indicator
-        if ((token_id + 1) % 1000 == 0 || token_id == vocab_size - 1) {
-            printf("  Initialized %u/%u tokens (%.1f%%) - INSTANT\r", 
-                   token_id + 1, vocab_size, 
-                   100.0 * (token_id + 1) / vocab_size);
-            fflush(stdout);
-        }
-    }
-    
-    printf("\n✓ Embeddings initialized from patterns (INSTANT)\n");
-    printf("  No L_lattice() computation - pure geometric lookup!\n");
-    printf("  Total time: <1 second for any vocabulary size\n\n");
+    (void)model;
 }
 
 /**

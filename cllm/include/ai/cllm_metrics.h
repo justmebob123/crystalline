@@ -33,12 +33,8 @@ typedef enum {
     THREAD_STATE_TERMINATED = 4
 } ThreadState;
 
-// Thread role
-typedef enum {
-    THREAD_ROLE_WORKER = 0,
-    THREAD_ROLE_CONTROL = 1,
-    THREAD_ROLE_BOTH = 2  // Worker that can become control
-} ThreadRole;
+// Thread role - use the one from hierarchical_threading.h
+// (Removed duplicate definition to avoid conflict)
 
 // Per-thread metrics
 typedef struct {

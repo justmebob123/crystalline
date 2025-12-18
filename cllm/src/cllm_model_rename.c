@@ -52,8 +52,8 @@ int cllm_model_rename(const char* old_name, const char* new_name) {
     char old_path[512];
     snprintf(old_path, sizeof(old_path), "models/%s.cllm", old_name);
     
-    CLLMModel* model = cllm_read_model(old_path);
-    if (!model) {
+    CLLMModel* model = NULL;
+    if (cllm_read_model(&model, old_path) != 0 || !model) {
         fprintf(stderr, "Error: Failed to load model '%s'\n", old_name);
         return -1;
     }
