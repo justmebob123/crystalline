@@ -1,5 +1,6 @@
 /**
  * @file cllm_attention_threaded.c
+ * Note: Function names no longer have _threaded suffix (Phase 3)
  * @brief Thread-centric attention mechanism (88D architecture)
  * 
  * This file implements attention using the 88D thread-centric architecture.
@@ -66,7 +67,7 @@ static double crystalline_sqrt(double x) {
  * @param batch_size Batch size
  * @param seq_len Sequence length
  */
-void cllm_attention_forward_threaded(
+void cllm_attention_forward(
     CLLMModel* model,
     uint32_t layer_idx,
     const double* input,
@@ -126,7 +127,7 @@ void cllm_attention_forward_threaded(
             double* token_V = &V[b * seq_len * embedding_dim + t * embedding_dim];
             
             // Compute Q/K/V using thread-local weights
-            cllm_compute_qkv_threaded(
+            cllm_compute_qkv(
                 worker_thread,
                 token_embedding,
                 token_Q,
@@ -185,7 +186,7 @@ void cllm_attention_forward_threaded(
             double* token_output = &output[b * seq_len * embedding_dim + t * embedding_dim];
             
             // Apply output projection using thread-local weights
-            cllm_apply_output_projection_threaded(
+            cllm_apply_output_projection(
                 worker_thread,
                 token_attn,
                 token_output,
@@ -218,5 +219,5 @@ void cllm_attention_forward_simple(
     uint32_t batch_size,
     uint32_t seq_len
 ) {
-    cllm_attention_forward_threaded(model, layer_idx, input, output, batch_size, seq_len);
+    cllm_attention_forward(model, layer_idx, input, output, batch_size, seq_len);
 }

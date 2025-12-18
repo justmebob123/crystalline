@@ -556,32 +556,8 @@ static void cllm_ntt_attention_forward(
  * @param batch_size Batch size
  * @param seq_len Sequence length
  */
-void cllm_attention_forward(
-    CLLMModel* model,
-    uint32_t layer_idx,
-    const double* input,
-    double* output,
-    uint32_t batch_size,
-    uint32_t seq_len
-) {
-    if (!model || !input || !output || layer_idx >= model->num_layers) {
-        fprintf(stderr, "Error: Invalid attention parameters\n");
-        return;
-    }
-    
-    // Use thread-centric attention (88D architecture)
-    // Forward declaration - implemented in cllm_attention_threaded.c
-    extern void cllm_attention_forward_threaded(
-        CLLMModel* model,
-        uint32_t layer_idx,
-        const double* input,
-        double* output,
-        uint32_t batch_size,
-        uint32_t seq_len
-    );
-    
-    cllm_attention_forward_threaded(model, layer_idx, input, output, batch_size, seq_len);
-}
+// cllm_attention_forward() is now implemented in cllm_attention_threaded.c
+// (No wrapper needed - direct implementation)
 
 // ============================================================================
 // HELPER FUNCTIONS FOR BACKWARD PASS

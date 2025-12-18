@@ -70,7 +70,7 @@ void cllm_set_output_weights_to_thread(
 /**
  * Compute Q/K/V for a single token using thread-local weights
  */
-void cllm_compute_qkv_threaded(
+void cllm_compute_qkv(
     HierarchicalThread* thread,
     const double* embedding,
     double* Q,
@@ -84,7 +84,7 @@ void cllm_compute_qkv_threaded(
 /**
  * Apply output projection using thread-local weights
  */
-void cllm_apply_output_projection_threaded(
+void cllm_apply_output_projection(
     HierarchicalThread* thread,
     const double* attention_output,
     double* output,

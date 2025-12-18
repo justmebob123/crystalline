@@ -17,7 +17,7 @@
  * - Lock-free gradient accumulation
  * - Automatic work stealing
  * 
- * This replaces the legacy cllm_training_threaded.c system.
+ * This is the unified 88D training system (no legacy code).
  */
 
 #include "cllm.h"

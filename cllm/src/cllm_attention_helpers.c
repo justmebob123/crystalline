@@ -181,7 +181,7 @@ void cllm_set_output_weights_to_thread(
  * @param num_heads Number of attention heads
  * @param head_dim Head dimension
  */
-void cllm_compute_qkv_threaded(
+void cllm_compute_qkv(
     HierarchicalThread* thread,
     const double* embedding,
     double* Q,
@@ -251,7 +251,7 @@ void cllm_compute_qkv_threaded(
  * @param num_heads Number of attention heads
  * @param head_dim Head dimension
  */
-void cllm_apply_output_projection_threaded(
+void cllm_apply_output_projection(
     HierarchicalThread* thread,
     const double* attention_output,
     double* output,

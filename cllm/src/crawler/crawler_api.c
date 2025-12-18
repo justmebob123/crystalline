@@ -169,12 +169,8 @@ static void* status_monitor_thread_func(void* arg) {
 // PUBLIC API IMPLEMENTATION
 // ============================================================================
 
-CrawlerState* crawler_state_init(const char* data_dir, const char* start_url, int max_pages) {
-    return crawler_state_init_threaded(data_dir, start_url, max_pages, 0);
-}
-
-CrawlerState* crawler_state_init_threaded(const char* data_dir, const char* start_url, 
-                                          int max_pages, int num_threads) {
+CrawlerState* crawler_state_init(const char* data_dir, const char* start_url, 
+                                 int max_pages, int num_threads) {
     CrawlerState* state = (CrawlerState*)calloc(1, sizeof(CrawlerState));
     if (!state) return NULL;
     

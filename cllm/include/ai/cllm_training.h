@@ -208,22 +208,9 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
 struct ThreadLocalTrainingContext;
 
 /**
- * Forward pass using thread-local context (for 88D training)
+ * Note: cllm_forward_training() and cllm_backward_training() are now
+ * the unified 88D implementations (no _threaded suffix needed).
+ * See cllm_training_functions.c for implementation.
  */
-double cllm_forward_training_threaded(
-    CLLMTraining* training,
-    struct ThreadLocalTrainingContext* local_ctx,
-    uint32_t* input_tokens
-);
-
-/**
- * Backward pass using thread-local context (for 88D training)
- */
-void cllm_backward_training_threaded(
-    CLLMTraining* training,
-    struct ThreadLocalTrainingContext* local_ctx,
-    uint32_t* target_tokens,
-    double* gradient_buffer
-);
 
 #endif /* CLLM_TRAINING_H */

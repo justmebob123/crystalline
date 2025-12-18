@@ -98,7 +98,7 @@ void cllm_metrics_collect(
     }
     
     // Collect thread metrics from thread_system
-    // (This will be implemented when we integrate with cllm_training_threaded.c)
+    // (This will be implemented when we integrate with cllm_training_functions.c)
     if (thread_system_ptr) {
         // TODO: Collect thread states, positions, workloads
         // This requires access to ThreadedTrainingSystem internals
