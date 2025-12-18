@@ -181,4 +181,40 @@ void cllm_set_top_k(CLLMInference* inference, int top_k);
 void cllm_set_max_tokens(CLLMInference* inference, int max_tokens);
 void cllm_inference_cleanup(CLLMInference* inference);
 
+// ============================================================================
+// THREAD-LOCAL INFERENCE FUNCTIONS (DAY 12)
+// ============================================================================
+
+/**
+ * Generate a single token using thread-local computation
+ * 
+ * This function uses the 88D thread pool and work queue system to generate
+ * the next token. All computation happens in thread-local CrystallineAbacus.
+ * 
+ * @param inference Inference context
+ * @param context Array of context token IDs
+ * @param context_len Number of tokens in context
+ * @return Next token ID, or 0 on error
+ */
+uint32_t cllm_generate_token_threaded(CLLMInference* inference,
+                                       const uint32_t* context,
+                                       int context_len);
+
+/**
+ * Generate text using thread-local computation
+ * 
+ * This function generates text by repeatedly calling cllm_generate_token_threaded()
+ * until max_tokens is reached or an end-of-sequence token is generated.
+ * 
+ * @param inference Inference context
+ * @param prompt Input prompt text
+ * @param output Output buffer for generated text
+ * @param max_output_length Maximum length of output buffer
+ * @return Number of tokens generated, or -1 on error
+ */
+int cllm_generate_threaded(CLLMInference* inference,
+                           const char* prompt,
+                           char* output,
+                           int max_output_length);
+
 #endif /* CLLM_INFERENCE_H */

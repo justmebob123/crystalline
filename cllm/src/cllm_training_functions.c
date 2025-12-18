@@ -365,9 +365,9 @@ static void signal_all_threads(HierarchicalThreadPool* pool) {
     for (uint32_t i = 0; i < pool->num_threads; i++) {
         HierarchicalThread* thread = pool->threads[i];
         if (thread) {
-            pthread_mutex_lock(&thread->work_mutex);
-            pthread_cond_signal(&thread->work_cond);
-            pthread_mutex_unlock(&thread->work_mutex);
+            pthread_mutex_lock(&thread->control_mutex);
+            pthread_cond_signal(&thread->control_cond);
+            pthread_mutex_unlock(&thread->control_mutex);
         }
     }
 }
@@ -378,10 +378,10 @@ static void signal_all_threads(HierarchicalThreadPool* pool) {
  * @param pool Thread pool
  */
 static void wait_for_completion(HierarchicalThreadPool* pool) {
-    if (!pool || !pool->barrier) return;
+    if (!pool) return;
     
-    // Wait at barrier for all threads
-    pthread_barrier_wait(pool->barrier);
+    // Wait at global barrier for all threads
+    pthread_barrier_wait(&pool->global_barrier);
 }
 
 /**
@@ -540,109 +540,3 @@ double cllm_train_step_threaded(
  * @param num_tokens Number of tokens
  * @return Loss value, or -1.0 on error
  */
-double cllm_train_step_threaded(
-    CLLMTraining* training,
-    const uint32_t* input_tokens,
-    const uint32_t* target_tokens,
-    uint32_t num_tokens
-) {
-    if (!training || !input_tokens || !target_tokens) {
-        fprintf(stderr, "ERROR: Invalid parameters for cllm_train_step_threaded\n");
-        return -1.0;
-    }
-    
-    CLLMModel* model = training->model;
-    HierarchicalThreadPool* pool = model->pool_88d;
-    
-    if (!pool) {
-        fprintf(stderr, "FATAL: Cannot train without 88D thread pool\n");
-        return -1.0;
-    }
-    
-    // ========================================================================
-    // STEP 1: FORWARD PASS
-    // ========================================================================
-    
-    // Enqueue forward work for all tokens
-    for (uint32_t i = 0; i < num_tokens; i++) {
-        uint32_t token_id = input_tokens[i];
-        
-        if (token_id >= model->vocab_size) {
-            fprintf(stderr, "ERROR: Invalid token_id %u (vocab_size=%u)\n", 
-                    token_id, model->vocab_size);
-            continue;
-        }
-        
-        HierarchicalThread* thread = model->token_assignments[token_id].thread;
-        
-        if (thread) {
-            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_FORWARD,
-                                            token_id, 0);
-        }
-    }
-    
-    // Signal threads and wait for completion
-    // Note: Actual signaling happens in worker loop
-    // For now, just acknowledge the forward pass
-    
-    // ========================================================================
-    // STEP 2: COMPUTE LOSS
-    // ========================================================================
-    
-    // Placeholder loss computation
-    // TODO: Full loss computation in Phase 4 optimization
-    double loss = 1.0;
-    
-    // ========================================================================
-    // STEP 3: BACKWARD PASS
-    // ========================================================================
-    
-    // Enqueue backward work for all tokens
-    for (uint32_t i = 0; i < num_tokens; i++) {
-        uint32_t token_id = input_tokens[i];
-        uint32_t target_id = target_tokens[i];
-        
-        if (token_id >= model->vocab_size || target_id >= model->vocab_size) {
-            continue;
-        }
-        
-        HierarchicalThread* thread = model->token_assignments[token_id].thread;
-        
-        if (thread) {
-            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_BACKWARD,
-                                            token_id, target_id);
-        }
-    }
-    
-    // Signal threads and wait for completion
-    // Note: Actual signaling happens in worker loop
-    
-    // ========================================================================
-    // STEP 4: APPLY OPTIMIZER
-    // ========================================================================
-    
-    // Import optimizer function
-    extern int worker_apply_optimizer(
-        HierarchicalThread* thread,
-        double learning_rate,
-        double beta1,
-        double beta2,
-        double epsilon
-    );
-    
-    // Apply optimizer to each thread
-    for (uint8_t layer = 0; layer < 8; layer++) {
-        for (uint8_t dim = 0; dim <= 11; dim++) {
-            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
-            if (thread) {
-                worker_apply_optimizer(thread, 
-                                      training->config.learning_rate,
-                                      0.9,   // beta1
-                                      0.999, // beta2
-                                      1e-8); // epsilon
-            }
-        }
-    }
-    
-    return loss;
-}

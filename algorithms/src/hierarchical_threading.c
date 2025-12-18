@@ -12,6 +12,7 @@
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
+#include <math.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -1706,13 +1707,13 @@ int worker_share_kv(
         if (!boundary) continue;
         
         // Get write access to shared memory
-        void* shared_ptr = shared_memory_write(&amp;boundary->base);
+        void* shared_ptr = shared_memory_write(&boundary->base);
         if (!shared_ptr) continue;
         
         // Write K and V (concatenated)
         size_t kv_size = dim * 2 * sizeof(double);
         if (boundary->base.size < kv_size) {
-            shared_memory_release_write(&amp;boundary->base);
+            shared_memory_release_write(&boundary->base);
             continue;
         }
         
@@ -1721,7 +1722,7 @@ int worker_share_kv(
         memcpy(shared_data + dim, V, dim * sizeof(double));
         
         // Release write access
-        shared_memory_release_write(&amp;boundary->base);
+        shared_memory_release_write(&boundary->base);
     }
     
     return 0;
@@ -1752,12 +1753,12 @@ int worker_collect_neighbor_kv(
     uint32_t collected = 0;
     
     // Read K, V from all shared boundaries
-    for (uint32_t i = 0; i < thread->num_neighbors &amp;&amp; collected < max_neighbors; i++) {
+    for (uint32_t i = 0; i < thread->num_neighbors && collected < max_neighbors; i++) {
         SharedMemoryEnhanced* boundary = thread->neighbors[i].boundary;
         if (!boundary) continue;
         
         // Get read access to shared memory
-        const void* shared_ptr = shared_memory_read(&amp;boundary->base);
+        const void* shared_ptr = shared_memory_read(&boundary->base);
         if (!shared_ptr) continue;
         
         // Read K and V
@@ -1766,7 +1767,7 @@ int worker_collect_neighbor_kv(
         memcpy(neighbor_V[collected], shared_data + dim, dim * sizeof(double));
         
         // Release read access
-        shared_memory_release_read(&amp;boundary->base);
+        shared_memory_release_read(&boundary->base);
         
         collected++;
     }
@@ -2403,4 +2404,121 @@ void* hierarchical_thread_worker_88d(void* arg) {
     hierarchical_thread_change_state(thread, STATE_STOPPED);
     
     return NULL;
+}
+
+// ============================================================================
+// INFERENCE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Collect logits from Layer 7 threads
+ * 
+ * This function collects the output values from all Layer 7 worker threads
+ * and concatenates them into a single logits array.
+ * 
+ * @param pool The 88D thread pool
+ * @param logits Output array to store logits (must be pre-allocated)
+ * @param vocab_size Total vocabulary size
+ * @return 0 on success, -1 on error
+ */
+int collect_logits_from_layer7(HierarchicalThreadPool* pool, 
+                                double* logits,
+                                uint32_t vocab_size) {
+    if (!pool || !logits) {
+        fprintf(stderr, "ERROR: Invalid parameters for collect_logits_from_layer7\n");
+        return -1;
+    }
+    
+    // Layer 7 has 12 threads (dimensions 0-11)
+    // Each thread outputs vocab_size/12 logits
+    uint32_t logits_per_thread = vocab_size / 12;
+    
+    // Collect from each Layer 7 thread
+    for (uint8_t dim = 0; dim < 12; dim++) {
+        HierarchicalThread* thread = hierarchical_thread_get_88d(pool, 7, dim);
+        if (!thread || !thread->activation_buffer) {
+            fprintf(stderr, "ERROR: Layer 7 thread %d is NULL or has no activation buffer\n", dim);
+            return -1;
+        }
+        
+        // Copy this thread's logits to the output array
+        // Offset = dim * logits_per_thread
+        uint32_t offset = dim * logits_per_thread;
+        
+        // Copy values from thread's activation buffer to logits
+        for (uint32_t i = 0; i < logits_per_thread && (offset + i) < vocab_size; i++) {
+            logits[offset + i] = thread->activation_buffer[i];
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * Apply temperature scaling to logits
+ * 
+ * Divides all logits by the temperature parameter to control randomness.
+ * Higher temperature = more random, lower temperature = more deterministic.
+ * 
+ * @param logits The logits array (modified in place)
+ * @param vocab_size Size of vocabulary
+ * @param temperature Temperature parameter (> 0)
+ * @return 0 on success, -1 on error
+ */
+int apply_temperature_to_logits(double* logits,
+                                 uint32_t vocab_size,
+                                 double temperature) {
+    if (!logits || temperature <= 0.0) {
+        fprintf(stderr, "ERROR: Invalid parameters for apply_temperature_to_logits\n");
+        return -1;
+    }
+    
+    // Divide each logit by temperature
+    for (uint32_t i = 0; i < vocab_size; i++) {
+        logits[i] /= temperature;
+    }
+    
+    return 0;
+}
+
+/**
+ * Apply softmax to logits to get probabilities
+ * 
+ * Converts logits to probabilities using softmax:
+ * P(i) = exp(logit[i]) / sum(exp(logit[j]) for all j)
+ * 
+ * @param logits The logits array (modified in place to probabilities)
+ * @param vocab_size Size of vocabulary
+ * @return 0 on success, -1 on error
+ */
+int apply_softmax_to_logits(double* logits, uint32_t vocab_size) {
+    if (!logits) {
+        fprintf(stderr, "ERROR: Invalid parameters for apply_softmax_to_logits\n");
+        return -1;
+    }
+    
+    // Find max logit for numerical stability
+    double max_logit = logits[0];
+    for (uint32_t i = 1; i < vocab_size; i++) {
+        if (logits[i] > max_logit) {
+            max_logit = logits[i];
+        }
+    }
+    
+    // Compute exp(logit - max_logit) and sum
+    double sum = 0.0;
+    for (uint32_t i = 0; i < vocab_size; i++) {
+        double exp_value = exp(logits[i] - max_logit);
+        logits[i] = exp_value;
+        sum += exp_value;
+    }
+    
+    // Normalize to get probabilities
+    if (sum > 0.0) {
+        for (uint32_t i = 0; i < vocab_size; i++) {
+            logits[i] /= sum;
+        }
+    }
+    
+    return 0;
 }

@@ -1351,4 +1351,50 @@ uint32_t hierarchical_thread_get_work_queue_size(HierarchicalThread* thread);
 }
 #endif
 
+// ============================================================================
+// INFERENCE HELPER FUNCTIONS (DAY 12)
+// ============================================================================
+
+/**
+ * Collect logits from Layer 7 threads
+ * 
+ * This function collects the output values from all Layer 7 worker threads
+ * and concatenates them into a single logits array.
+ * 
+ * @param pool The 88D thread pool
+ * @param logits Output array to store logits (must be pre-allocated)
+ * @param vocab_size Total vocabulary size
+ * @return 0 on success, -1 on error
+ */
+int collect_logits_from_layer7(HierarchicalThreadPool* pool, 
+                                double* logits,
+                                uint32_t vocab_size);
+
+/**
+ * Apply temperature scaling to logits
+ * 
+ * Divides all logits by the temperature parameter to control randomness.
+ * Higher temperature = more random, lower temperature = more deterministic.
+ * 
+ * @param logits The logits array (modified in place)
+ * @param vocab_size Size of vocabulary
+ * @param temperature Temperature parameter (> 0)
+ * @return 0 on success, -1 on error
+ */
+int apply_temperature_to_logits(double* logits,
+                                 uint32_t vocab_size,
+                                 double temperature);
+
+/**
+ * Apply softmax to logits to get probabilities
+ * 
+ * Converts logits to probabilities using softmax:
+ * P(i) = exp(logit[i]) / sum(exp(logit[j]) for all j)
+ * 
+ * @param logits The logits array (modified in place to probabilities)
+ * @param vocab_size Size of vocabulary
+ * @return 0 on success, -1 on error
+ */
+int apply_softmax_to_logits(double* logits, uint32_t vocab_size);
+
 #endif // HIERARCHICAL_THREADING_H
