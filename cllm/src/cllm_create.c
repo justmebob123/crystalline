@@ -22,6 +22,7 @@
 #include "ai/cllm_platonic.h"
 #include "ai/cllm_generic_interface.h"
 #include "hierarchical_threading.h"
+#include "thread_parameters.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -266,11 +267,71 @@ static bool allocate_model_parameters(CLLMModel* model) {
     printf("  ✓ Initialized threading barriers\n");
     
     // ========================================================================
+    // STEP 6: DISTRIBUTE PARAMETERS TO THREADS (NEW - DAY 5)
+    // ========================================================================
+    
+    printf("  → Distributing parameters to threads...\n");
+    
+    // Import thread parameter functions
+    extern int thread_allocate_all_parameters(
+        HierarchicalThread* thread,
+        uint32_t embedding_dim,
+        uint32_t hidden_dim,
+        uint32_t vocab_size,
+        uint32_t num_tokens_assigned
+    );
+    
+    extern int thread_initialize_all_parameters(
+        HierarchicalThread* thread,
+        ParameterInitMethod method
+    );
+    
+    // Distribute parameters to each thread based on its role
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 0; dim <= 11; dim++) {
+            uint32_t thread_idx = layer * 12 + dim;
+            HierarchicalThread* thread = hierarchical_thread_get_88d(model->pool_88d, layer, dim);
+            
+            if (!thread) {
+                fprintf(stderr, "Failed to get thread [%d][%d]\n", layer, dim);
+                return false;
+            }
+            
+            // Get number of tokens assigned to this thread
+            uint32_t num_tokens = model->thread_params[thread_idx].num_tokens_assigned;
+            
+            // Allocate parameters based on thread role
+            int result = thread_allocate_all_parameters(
+                thread,
+                model->embedding_dim,
+                model->hidden_dim,
+                model->vocab_size,
+                num_tokens
+            );
+            
+            if (result != 0) {
+                fprintf(stderr, "Failed to allocate parameters for thread [%d][%d]\n", layer, dim);
+                return false;
+            }
+            
+            // Initialize parameters using Xavier initialization
+            result = thread_initialize_all_parameters(thread, PARAM_INIT_XAVIER);
+            if (result != 0) {
+                fprintf(stderr, "Failed to initialize parameters for thread [%d][%d]\n", layer, dim);
+                return false;
+            }
+        }
+    }
+    
+    printf("  ✓ Distributed parameters to 96 threads\n");
+    printf("  ✓ Initialized all parameters using Xavier initialization\n");
+    
+    // ========================================================================
     // LEGACY REMOVED: No flat arrays allocated
     // ========================================================================
     
     printf("  ✓ Thread-centric architecture initialized\n");
-    printf("  ✓ All parameters will be stored in thread CrystallineAbacus\n");
+    printf("  ✓ All parameters stored in thread CrystallineAbacus\n");
     
     return true;
 }
