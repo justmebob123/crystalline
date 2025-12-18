@@ -114,31 +114,14 @@ This is a complete architectural redesign where:
 - [x] Update validation to check thread-centric structures
 - [x] Commit: "Week 1 Day 5: Rewrite cllm_free.c for thread-centric architecture"
 
-### [ ] Day 6: Initialize Thread Embeddings
-- [ ] For each token, initialize its embedding in the assigned thread:
-  ```c
-  for (uint32_t token_id = 0; token_id < vocab_size; token_id++) {
-      uint8_t layer = model->token_assignments[token_id].layer;
-      uint8_t dimension = model->token_assignments[token_id].dimension;
-      
-      HierarchicalThread* thread = 
-          hierarchical_thread_get_88d(model->pool_88d, layer, dimension);
-      
-      // Initialize embedding using clock lattice
-      ClockPosition pos = clock_position_create(
-          token_id % 12, (token_id / 12) % 60,
-          (token_id / 720) % 60, (token_id / 43200) % 100
-      );
-      
-      double* embedding = calloc(embedding_dim, sizeof(double));
-      clock_position_to_embedding(&pos, embedding, embedding_dim);
-      abacus_from_double_array(thread->value, embedding, embedding_dim);
-      free(embedding);
-  }
-  ```
-- [ ] Test embedding initialization
-- [ ] Verify all threads have embeddings
-- [ ] Commit: "Initialize embeddings in thread CrystallineAbacus"
+### [x] Day 6: Update cllm_format.c ✅
+- [x] Rewrite cllm_write_model() for thread-centric serialization
+- [x] Save token assignments and thread parameters
+- [x] Extract embeddings from thread CrystallineAbacus
+- [x] Rewrite cllm_read_model() for thread-centric deserialization
+- [x] Load embeddings into thread CrystallineAbacus
+- [x] Update to Version 3 file format
+- [x] Commit: "Week 1 Day 6: Rewrite cllm_format.c for thread-centric serialization"
 
 ### [ ] Day 7: Remove Legacy Arrays
 - [ ] Delete all flat array allocations in `cllm_create_model()`:
