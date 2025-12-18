@@ -1627,6 +1627,100 @@ static int worker_process_backward(HierarchicalThread* thread, TrainingWorkItem*
     return 0;
 }
 
+// ============================================================================
+// EMBEDDING OPERATIONS (DAY 6)
+// ============================================================================
+
+/**
+ * Get embedding for a token from thread's local storage
+ * 
+ * This function retrieves the embedding for a specific token from the thread
+ * that owns it. The embedding is stored in the thread's parameter storage
+ * as a CrystallineAbacus.
+ * 
+ * @param thread Thread that owns the token's embedding
+ * @param token_id Token ID to get embedding for
+ * @param output Output buffer (CrystallineAbacus) to store the embedding
+ * @return 0 on success, -1 on error
+ */
+int worker_get_embedding(
+    HierarchicalThread* thread,
+    uint32_t token_id,
+    CrystallineAbacus* output
+) {
+    if (!thread || !output) {
+        fprintf(stderr, "ERROR: Invalid thread or output buffer\n");
+        return -1;
+    }
+    
+    // Import thread parameter function
+    extern CrystallineAbacus* thread_get_parameter(
+        HierarchicalThread* thread,
+        const char* name,
+        uint32_t index
+    );
+    
+    // Get embedding parameter from thread's storage
+    // For Layer 0 threads, embeddings are stored with the token_id as index
+    CrystallineAbacus* embedding = thread_get_parameter(thread, "embeddings", token_id);
+    if (!embedding) {
+        fprintf(stderr, "ERROR: Failed to get embedding for token %u from thread [%d][%d]\n",
+                token_id, thread->layer, thread->dimension);
+        return -1;
+    }
+    
+    // Import abacus copy function (returns new abacus)
+    extern CrystallineAbacus* abacus_copy(const CrystallineAbacus* src);
+    
+    // Copy embedding to output
+    // Note: abacus_copy creates a new abacus, so we need to copy the data manually
+    // to the provided output buffer
+    
+    // Verify bases match
+    if (output->base != embedding->base) {
+        fprintf(stderr, "ERROR: Output abacus has different base than embedding\n");
+        return -1;
+    }
+    
+    // Copy dense beads if in dense mode
+    if (!embedding->is_sparse && embedding->beads) {
+        // Ensure output has enough capacity
+        if (output->capacity < embedding->num_beads) {
+            fprintf(stderr, "ERROR: Output abacus capacity too small\n");
+            return -1;
+        }
+        
+        // Copy beads
+        for (size_t i = 0; i < embedding->num_beads; i++) {
+            output->beads[i] = embedding->beads[i];
+        }
+        output->num_beads = embedding->num_beads;
+    }
+    
+    // Copy sparse beads if in sparse mode
+    if (embedding->is_sparse && embedding->sparse_beads) {
+        // Ensure output has enough capacity
+        if (output->sparse_capacity < embedding->num_nonzero) {
+            fprintf(stderr, "ERROR: Output abacus sparse capacity too small\n");
+            return -1;
+        }
+        
+        // Copy sparse beads
+        for (size_t i = 0; i < embedding->num_nonzero; i++) {
+            output->sparse_beads[i] = embedding->sparse_beads[i];
+        }
+        output->num_nonzero = embedding->num_nonzero;
+    }
+    
+    // Copy metadata
+    output->is_sparse = embedding->is_sparse;
+    output->negative = embedding->negative;
+    output->min_exponent = embedding->min_exponent;
+    output->max_exponent = embedding->max_exponent;
+    
+    return 0;
+}
+
 /**
  * DEPRECATED: Old token processor (kept for compatibility)
  */

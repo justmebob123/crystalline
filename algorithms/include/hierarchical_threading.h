@@ -1097,6 +1097,32 @@ void* hierarchical_thread_worker_88d(void* arg);
 // WORK QUEUE OPERATIONS
 // ============================================================================
 
+// ============================================================================
+// EMBEDDING OPERATIONS (DAY 6)
+// ============================================================================
+
+/**
+ * Get embedding for a token from thread's local storage
+ * 
+ * This function retrieves the embedding for a specific token from the thread
+ * that owns it. The embedding is stored in the thread's parameter storage
+ * as a CrystallineAbacus.
+ * 
+ * @param thread Thread that owns the token's embedding
+ * @param token_id Token ID to get embedding for
+ * @param output Output buffer (CrystallineAbacus) to store the embedding
+ * @return 0 on success, -1 on error
+ */
+int worker_get_embedding(
+    HierarchicalThread* thread,
+    uint32_t token_id,
+    CrystallineAbacus* output
+);
+
+// ============================================================================
+// WORK QUEUE OPERATIONS
+// ============================================================================
+
 /**
  * Enqueue work item to thread's work queue
  * 
