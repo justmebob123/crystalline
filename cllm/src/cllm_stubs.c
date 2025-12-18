@@ -40,10 +40,7 @@ double get_phonetic_value(const char* lambda) {
     return 0.0;
 }
 
-// Stub for cllm_training_free
-void cllm_training_free(CLLMTraining* training) {
-    (void)training;
-}
+// cllm_training_free is now implemented in cllm_training_functions.c
 
 // Stub for cllm_compute_loss
 double cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens) {

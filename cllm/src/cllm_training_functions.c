@@ -540,3 +540,66 @@ double cllm_train_step_threaded(
  * @param num_tokens Number of tokens
  * @return Loss value, or -1.0 on error
  */
+
+/**
+ * Free training resources
+ */
+void cllm_training_free(CLLMTraining* training) {
+    if (!training) return;
+    
+    // Free thread statistics
+    if (training->thread_stats) {
+        free(training->thread_stats);
+    }
+    
+    // Free current batch data
+    if (training->current_batch.token_ids) {
+        free(training->current_batch.token_ids);
+    }
+    if (training->current_batch.target_ids) {
+        free(training->current_batch.target_ids);
+    }
+    if (training->current_batch.assigned_layers) {
+        free(training->current_batch.assigned_layers);
+    }
+    if (training->current_batch.assigned_dimensions) {
+        free(training->current_batch.assigned_dimensions);
+    }
+    
+    // Free optimizer state
+    if (training->optimizer_state_alg) {
+        // TODO: Call optimizer cleanup function when available
+        free(training->optimizer_state_alg);
+    }
+    
+    // Free gradient buffer
+    if (training->gradient_buffer) {
+        free(training->gradient_buffer);
+    }
+    
+    // Free training tokens
+    if (training->tokens) {
+        free(training->tokens);
+    }
+    
+    // Free mixed precision buffers
+    if (training->master_weights) {
+        free(training->master_weights);
+    }
+    if (training->fp16_activations) {
+        free(training->fp16_activations);
+    }
+    if (training->fp16_gradients) {
+        free(training->fp16_gradients);
+    }
+    
+    // Free the training structure itself
+    free(training);
+}
+
+/**
+ * Cleanup training (alias for cllm_training_free)
+ */
+void cllm_training_cleanup(CLLMTraining* training) {
+    cllm_training_free(training);
+}

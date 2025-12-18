@@ -17,7 +17,7 @@ UNIT_TESTS = \
 
 # Integration tests
 INTEGRATION_TESTS = \
-	$(INTEGRATION_DIR)/test_forward_backward \
+	$(INTEGRATION_DIR)/test_forward_backward_geometric \
 	$(INTEGRATION_DIR)/test_lr_scheduling
 
 # Performance tests
@@ -369,3 +369,9 @@ run-geometric: $(GEOMETRIC_TESTS)
 	done
 	@echo ""
 	@echo "✓ All geometric matrix tests completed"
+
+# New geometric test
+$(INTEGRATION_DIR)/test_forward_backward_geometric: $(INTEGRATION_DIR)/test_forward_backward_geometric.c
+	@echo "Building integration test: test_forward_backward_geometric..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_forward_backward_geometric built"
