@@ -243,8 +243,8 @@ int load_checkpoint(CLLMTraining* training, const char* filepath) {
     char model_path[512];
     snprintf(model_path, sizeof(model_path), "%s.model", filepath);
     
-    CLLMModel* loaded_model = cllm_read_model(model_path);
-    if (!loaded_model) {
+    CLLMModel* loaded_model = NULL;
+    if (cllm_read_model(&loaded_model, model_path) != 0 || !loaded_model) {
         fprintf(stderr, "ERROR: Failed to load model from checkpoint\n");
         return -1;
     }
@@ -357,70 +357,12 @@ void step_lr_scheduler(LRScheduler* scheduler, CLLMTraining* training) {
 void clip_gradients(CLLMTraining* training, float max_norm) {
     if (!training) return;
     
-    CLLMModel* model = training->model;
-    uint32_t vocab_size = model->vocab_size;
-    uint32_t embed_dim = model->embedding_dim;
-    uint32_t num_layers = model->num_layers;
+    // TODO: Reimplement for 88D architecture
+    // Gradients are now in thread-local storage
+    fprintf(stderr, "WARNING: clip_gradients() not yet implemented for 88D architecture\n");
     
-    // Compute gradient norm
-    float grad_norm = 0.0;
-    
-    // Embedding gradients
-    if (training->gradients) {
-        for (size_t i = 0; i < vocab_size * embed_dim; i++) {
-// DISABLED - USE BigFixed version:             grad_norm += training->gradients[i] * training->gradients[i];
-        }
-    }
-    
-    // Layer gradients
-    for (uint32_t layer = 0; layer < num_layers; layer++) {
-        if (training->attention_grads) {
-            uint64_t attn_size = embed_dim * embed_dim;
-            // DISABLED - Legacy float gradient norm calculation
-            // Now handled by BigFixed version
-            (void)attn_size;  // Suppress unused warning
-        }
-        
-        // DISABLED - Legacy float gradient norm calculation for feedforward
-        // Now handled by BigFixed version
-    }
-    
-    grad_norm = math_sqrt((double)grad_norm);
-    
-    // Clip if necessary
-    if (grad_norm > max_norm) {
-        float scale = max_norm / grad_norm;
-        (void)scale;  // Currently unused - reserved for gradient clipping
-        
-        // Scale embedding gradients
-        if (training->gradients) {
-            for (size_t i = 0; i < vocab_size * embed_dim; i++) {
-// DISABLED - USE BigFixed version:                 training->gradients[i] *= scale;
-            }
-        }
-        
-        // Scale layer gradients
-        for (uint32_t layer = 0; layer < num_layers; layer++) {
-            if (training->attention_grads) {
-                uint64_t attn_size = embed_dim * embed_dim;
-                for (uint64_t i = 0; i < attn_size; i++) {
-// DISABLED - USE BigFixed version:                     training->attention_grads[layer].query_lattice[i] *= scale;
-// DISABLED - USE BigFixed version:                     training->attention_grads[layer].key_lattice[i] *= scale;
-// DISABLED - USE BigFixed version:                     training->attention_grads[layer].value_lattice[i] *= scale;
-                }
-            }
-            
-            if (training->ff_grads) {
-                uint64_t ff_size = embed_dim * embed_dim;
-                for (uint64_t i = 0; i < ff_size; i++) {
-// DISABLED - USE BigFixed version:                     training->ff_grads[layer].w1_lattice[i] *= scale;
-// DISABLED - USE BigFixed version:                     training->ff_grads[layer].w2_lattice[i] *= scale;
-                }
-            }
-        }
-        
-        printf("Gradients clipped: norm %.2f → %.2f\n", grad_norm, max_norm);
-    }
+    (void)training;
+    (void)max_norm;
 }
 
 /**
