@@ -52,6 +52,9 @@
 #include <math/types.h>
 #include <math/clock.h>
 #include <stdint.h>
+
+// Forward declaration for GeometricMatrix (to avoid circular dependency)
+struct GeometricMatrix;
 #include <stdbool.h>
 #include <stddef.h>
 #include <pthread.h>
@@ -233,10 +236,18 @@ typedef struct HierarchicalThread {
     // PHASE 2: THREAD-LOCAL PARAMETER STORAGE
     // ========================================================================
     
-    // Parameter storage (replaces global parameter arrays)
+    // LEGACY: Flat array parameter storage (being phased out)
     CrystallineAbacus** parameters;     // Array of parameters
     uint32_t num_parameters;            // Number of parameters
     uint32_t max_parameters;            // Maximum parameters (capacity)
+    
+    // NEW: Geometric matrix parameter storage (88D architecture)
+    struct GeometricMatrix** geometric_params;      // Array of geometric matrices
+    struct GeometricMatrix** geometric_gradients;   // Gradient matrices
+    struct GeometricMatrix** geometric_momentum;    // Momentum matrices (Adam)
+    struct GeometricMatrix** geometric_velocity;    // Velocity matrices (Adam)
+    uint32_t num_geometric_params;                  // Number of geometric parameters
+    uint32_t max_geometric_params;                  // Maximum geometric parameters
     
     // Parameter metadata
     struct {
