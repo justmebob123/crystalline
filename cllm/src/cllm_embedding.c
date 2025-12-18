@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ai/cllm.h"
+#include "ai/cllm_embedding_helpers.h"
 #include "math/constants.h"
 #include "ai/cllm_inference.h"
 #include "math/constants.h"
@@ -273,16 +274,22 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
  * 2. Otherwise: Use clock lattice + L(n,d,k,λ) formula
  */
 void cllm_init_embeddings(CLLMModel* model) {
-    if (!model || !model->embeddings) {
-        fprintf(stderr, "ERROR: Invalid model or embeddings\n");
+    if (!model || !model->pool_88d) {
+        fprintf(stderr, "ERROR: Invalid model or thread pool\n");
         return;
     }
     
-    printf("Initializing embeddings (CONSOLIDATED implementation)...\n");
+    printf("Initializing embeddings (THREAD-CENTRIC implementation)...\n");
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embedding_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
+    
+    // Temporary buffer for embedding initialization
+    double* temp_embedding = calloc(embedding_dim, sizeof(double));
+    if (!temp_embedding) {
+        fprintf(stderr, "ERROR: Failed to allocate temporary embedding buffer\n");
+        return;
+    }
     
     // Check if model uses Platonic geometry
     if (model->token_positions) {
@@ -311,11 +318,16 @@ void cllm_init_embeddings(CLLMModel* model) {
                 // Scale by 1/math_sqrt(embedding_dim) for stability
                 value *= 1.0 / math_sqrt((double)embedding_dim);
                 
-                embeddings[token * embedding_dim + dim] = value;
+                temp_embedding[dim] = value;
+            }
+            
+            // Store embedding in thread
+            if (!cllm_set_embedding(model, token, temp_embedding)) {
+                fprintf(stderr, "ERROR: Failed to set embedding for token %u\n", token);
             }
         }
         
-        printf("✓ Embeddings initialized with Platonic geometry\n");
+        printf("✓ Embeddings initialized with Platonic geometry (in threads)\n");
         
     } else {
         printf("  Using standard clock lattice initialization\n");
@@ -334,33 +346,22 @@ void cllm_init_embeddings(CLLMModel* model) {
                 double angle = pos.angle + (double)dim / embedding_dim * 2.0 * MATH_PI;
                 double value = math_sin(angle) / math_sqrt((double)embedding_dim);
                 
-                embeddings[token * embedding_dim + dim] = value;
+                temp_embedding[dim] = value;
+            }
+            
+            // Store embedding in thread
+            if (!cllm_set_embedding(model, token, temp_embedding)) {
+                fprintf(stderr, "ERROR: Failed to set embedding for token %u\n", token);
             }
         }
         
-        printf("✓ Embeddings initialized with clock lattice\n");
+        printf("✓ Embeddings initialized with clock lattice (in threads)\n");
     }
     
-    // Sync to abacus embeddings if enabled
-    if (model->use_abacus_embeddings && model->abacus_embeddings) {
-        printf("  Syncing to abacus embeddings (arbitrary precision)...\n");
-        
-        MathError err = abacus_matrix_from_doubles(model->abacus_embeddings, embeddings);
-        if (err != MATH_SUCCESS) {
-            fprintf(stderr, "ERROR: Failed to sync embeddings to abacus (error %d)\n", err);
-            return;
-        }
-        
-        printf("✓ Embeddings synced to abacus (base 60, precision 10)\n");
-        
-        // Calculate memory usage
-        size_t abacus_memory = abacus_matrix_memory_usage(model->abacus_embeddings);
-        size_t double_memory = vocab_size * embedding_dim * sizeof(double);
-        
-        printf("  Memory: Abacus = %.2f MB, Double = %.2f MB\n",
-               abacus_memory / (1024.0 * 1024.0),
-               double_memory / (1024.0 * 1024.0));
-    }
+    free(temp_embedding);
+    
+    printf("✓ All embeddings stored in thread CrystallineAbacus\n");
+    printf("  Note: Embeddings are now in thread-local storage, not flat arrays\n");
 }
 
 // ============================================================================
@@ -1012,15 +1013,19 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
     }
     
     CLLMModel* model = inf->model;
-    uint32_t embedding_dim = model->embedding_dim;  // Direct field access
+    uint32_t embedding_dim = model->embedding_dim;
     
-    // Copy embedding from embedding matrix
-    double* embedding_matrix = model->embeddings;
-    size_t offset = token_id * embedding_dim;
+    // Get embedding from thread
+    double* temp = calloc(embedding_dim, sizeof(double));
+    if (!temp) return;
     
-    for (uint32_t i = 0; i < embedding_dim; i++) {
-        output[i] = (float)embedding_matrix[offset + i];
+    if (cllm_get_embedding(model, token_id, temp)) {
+        for (uint32_t i = 0; i < embedding_dim; i++) {
+            output[i] = (float)temp[i];
+        }
     }
+    
+    free(temp);
 }
 
 // ============================================================================
@@ -1067,8 +1072,15 @@ void cllm_update_embedding(CLLMModel* model, uint32_t token_id,
     }
     
     uint32_t embedding_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
-    size_t offset = token_id * embedding_dim;
+    
+    // Get current embedding from thread
+    double* embedding = calloc(embedding_dim, sizeof(double));
+    if (!embedding) return;
+    
+    if (!cllm_get_embedding(model, token_id, embedding)) {
+        free(embedding);
+        return;
+    }
     
     // Apply gradient update with optional harmonic modulation
     double modulation = 1.0;
@@ -1079,8 +1091,12 @@ void cllm_update_embedding(CLLMModel* model, uint32_t token_id,
     }
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        embeddings[offset + i] -= learning_rate * modulation * gradient[i];
+        embedding[i] -= learning_rate * modulation * gradient[i];
     }
+    
+    // Store updated embedding back to thread
+    cllm_set_embedding(model, token_id, embedding);
+    free(embedding);
 }
 
 // ============================================================================

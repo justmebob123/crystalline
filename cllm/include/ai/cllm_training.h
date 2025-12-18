@@ -90,63 +90,53 @@ typedef struct {
     int total_batches;           // Total number of batches
     int current_batch_offset;    // Current batch offset in tokens
     
-    // Optimizer state
-    double* gradients;            // Gradient buffer for embeddings
-    double* optimizer_state;      // Optimizer state (e.g., momentum, variance)
+    // ========================================================================
+    // 88D THREAD-CENTRIC TRAINING (MANDATORY)
+    // ========================================================================
     
-    // Layer-specific gradient buffers
+    // Current Batch Distribution
+    // Each batch is distributed across threads based on token assignments
     struct {
-        double* query_lattice;   // Gradients for query weights
-        double* key_lattice;     // Gradients for key weights
-        double* value_lattice;   // Gradients for value weights
-    }* attention_grads;          // Array of num_layers
+        uint32_t* token_ids;           // Tokens in this batch [batch_size * seq_len]
+        uint32_t* target_ids;          // Target tokens [batch_size * seq_len]
+        uint8_t* assigned_layers;      // Which layer processes each token
+        uint8_t* assigned_dimensions;  // Which dimension processes each token
+        uint32_t batch_size;           // Current batch size
+        uint32_t seq_len;              // Current sequence length
+    } current_batch;
     
+    // Thread Statistics (per-thread tracking)
     struct {
-        double* w1_lattice;      // Gradients for W1
-        double* w2_lattice;      // Gradients for W2
-        double* bias1;           // Gradients for bias1
-        double* bias2;           // Gradients for bias2
-    }* ff_grads;                 // Array of num_layers
+        uint64_t tokens_processed;     // Total tokens processed by this thread
+        uint64_t gradients_computed;   // Total gradients computed
+        double avg_loss;               // Average loss for this thread
+        uint64_t forward_time_ns;      // Time spent in forward pass
+        uint64_t backward_time_ns;     // Time spent in backward pass
+    } *thread_stats;                   // [96 threads]
     
-    struct {
-        double* gamma;           // Gradients for gamma
-        double* beta;            // Gradients for beta
-    }* ln_grads;                 // Array of num_layers
-    
-    // Pre-allocated backward pass buffers (OPTIMIZATION)
-    double* backward_embeddings;     // Reusable embedding buffer
-    double* backward_grad_output;    // Reusable gradient output buffer
-    double* backward_layer_input;    // Reusable layer input buffer
-    double* backward_layer_grad;     // Reusable layer gradient buffer
-    double* backward_temp_grad;      // Reusable temporary gradient buffer
-    size_t backward_buffer_size;     // Size of activation buffers
-    
-    // Embedding cache for batch processing (OPTIMIZATION)
-    double* cached_input_embeddings;  // Cached input embeddings
-    double* cached_target_embeddings; // Cached target embeddings
-    int cached_batch_size;            // Size of embedding cache
-    
-    // Forward pass activation storage
-    double* input_embeddings;         // Input embeddings [batch * seq * embed]
-    double** layer_inputs;            // Per-layer inputs [num_layers][batch * seq * embed]
-    double** attention_outputs;       // Per-layer attention outputs
-    double** ff_outputs;              // Per-layer FF outputs
-    double** layer_outputs;           // Per-layer final outputs
-    double** ff_hidden;               // Per-layer FF hidden states
-    double* final_hidden;             // Final hidden state
-    double* logits;                   // Output logits [batch * seq * vocab]
-    
-    // Attention backward pass storage (for full gradient computation)
-    struct {
-        double* attention_weights;   // [num_heads * seq_len * seq_len]
-        double* queries;             // [seq_len * embedding_dim]
-        double* keys;                // [seq_len * embedding_dim]
-        double* values;              // [seq_len * embedding_dim]
-        double* scores;              // [num_heads * seq_len * seq_len]
-    }* attention_cache;              // Array of num_layers
-    
-    int cached_seq_len;              // Cached sequence length
-    int store_attention_weights;     // Flag to enable full attention backward (1=enabled, 0=simplified)
+    // LEGACY REMOVED: All buffers now thread-local
+    // DELETED: double* gradients;
+    // DELETED: double* optimizer_state;
+    // DELETED: struct { ... }* attention_grads;
+    // DELETED: struct { ... }* ff_grads;
+    // DELETED: struct { ... }* ln_grads;
+    // DELETED: double* backward_embeddings;
+    // DELETED: double* backward_grad_output;
+    // DELETED: double* backward_layer_input;
+    // DELETED: double* backward_layer_grad;
+    // DELETED: double* backward_temp_grad;
+    // DELETED: double* cached_input_embeddings;
+    // DELETED: double* cached_target_embeddings;
+    // DELETED: double* input_embeddings;
+    // DELETED: double** layer_inputs;
+    // DELETED: double** attention_outputs;
+    // DELETED: double** ff_outputs;
+    // DELETED: double** layer_outputs;
+    // DELETED: double** ff_hidden;
+    // DELETED: double* final_hidden;
+    // DELETED: double* logits;
+    // DELETED: struct { ... }* attention_cache;
+    // All activations/gradients now stored in thread-local buffers
     
     // Algorithm layer integration (WIRED)
     // LossConfig loss_config;  // TODO: Define LossConfig type or remove          // Loss function configuration from algorithms layer

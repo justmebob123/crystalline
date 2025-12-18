@@ -2,17 +2,16 @@
  * @file cllm_free.c
  * @brief Free CLLM Model with Complete Cleanup
  * 
- * Properly frees all allocated memory including:
- * - Geometric structures
- * - Clock lattice mappings
- * - Blind recovery state
- * - Harmonic integration state
- * - NTT attention workspace
- * - Kissing spheres threading state
- * - All model parameters and gradients
+ * UPDATED FOR THREAD-CENTRIC ARCHITECTURE:
+ * - Frees 88D thread pool and all thread-local storage
+ * - Frees token assignments and thread parameters
+ * - Frees layer info and threading barriers
+ * - NO flat arrays to free (they don't exist anymore)
+ * - All parameters stored in thread CrystallineAbacus
  */
 
 #include "ai/cllm.h"
+#include "hierarchical_threading.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -54,100 +53,95 @@ void cllm_free_model(CLLMModel* model) {
         model->token_positions_13d = NULL;
     }
     
+    printf("  ✓ Freed clock lattice mappings\n");
+    
     // ========================================================================
-    // FREE MODEL PARAMETERS
+    // FREE 88D THREAD-CENTRIC ARCHITECTURE
     // ========================================================================
     
-    // Embeddings (legacy double arrays)
-    if (model->embeddings) {
-        free(model->embeddings);
-        model->embeddings = NULL;
+    // Free token assignments
+    if (model->token_assignments) {
+        free(model->token_assignments);
+        model->token_assignments = NULL;
     }
+    printf("  ✓ Freed token assignments\n");
     
-    if (model->embeddings_grad) {
-        free(model->embeddings_grad);
-        model->embeddings_grad = NULL;
-    }
-    
-    if (model->positional_encoding) {
-        free(model->positional_encoding);
-        model->positional_encoding = NULL;
-    }
-    
-    // Abacus embeddings (NEW - arbitrary precision)
-    if (model->abacus_embeddings) {
-        abacus_matrix_free(model->abacus_embeddings);
-        model->abacus_embeddings = NULL;
-    }
-    
-    if (model->abacus_positional_encoding) {
-        abacus_matrix_free(model->abacus_positional_encoding);
-        model->abacus_positional_encoding = NULL;
-    }
-    
-    // Layers
-    if (model->layers) {
-        for (uint32_t i = 0; i < model->num_layers; i++) {
-            // Attention weights
-            if (model->layers[i].query_weights) free(model->layers[i].query_weights);
-            if (model->layers[i].key_weights) free(model->layers[i].key_weights);
-            if (model->layers[i].value_weights) free(model->layers[i].value_weights);
-            if (model->layers[i].output_weights) free(model->layers[i].output_weights);
-            
-            // Attention gradients
-            if (model->layers[i].query_grad) free(model->layers[i].query_grad);
-            if (model->layers[i].key_grad) free(model->layers[i].key_grad);
-            if (model->layers[i].value_grad) free(model->layers[i].value_grad);
-            if (model->layers[i].output_grad) free(model->layers[i].output_grad);
-            
-            // Feed-forward weights
-            if (model->layers[i].ffn_w1) free(model->layers[i].ffn_w1);
-            if (model->layers[i].ffn_w2) free(model->layers[i].ffn_w2);
-            if (model->layers[i].ffn_b1) free(model->layers[i].ffn_b1);
-            if (model->layers[i].ffn_b2) free(model->layers[i].ffn_b2);
-            
-            // Feed-forward gradients
-            if (model->layers[i].ffn_w1_grad) free(model->layers[i].ffn_w1_grad);
-            if (model->layers[i].ffn_w2_grad) free(model->layers[i].ffn_w2_grad);
-            if (model->layers[i].ffn_b1_grad) free(model->layers[i].ffn_b1_grad);
-            if (model->layers[i].ffn_b2_grad) free(model->layers[i].ffn_b2_grad);
-            
-            // Layer norm parameters
-            if (model->layers[i].ln1_gamma) free(model->layers[i].ln1_gamma);
-            if (model->layers[i].ln1_beta) free(model->layers[i].ln1_beta);
-            if (model->layers[i].ln2_gamma) free(model->layers[i].ln2_gamma);
-            if (model->layers[i].ln2_beta) free(model->layers[i].ln2_beta);
-            
-            // Layer norm gradients
-            if (model->layers[i].ln1_gamma_grad) free(model->layers[i].ln1_gamma_grad);
-            if (model->layers[i].ln1_beta_grad) free(model->layers[i].ln1_beta_grad);
-            if (model->layers[i].ln2_gamma_grad) free(model->layers[i].ln2_gamma_grad);
-            if (model->layers[i].ln2_beta_grad) free(model->layers[i].ln2_beta_grad);
+    // Free thread parameters
+    if (model->thread_params) {
+        // Free token ID arrays for each thread
+        for (uint32_t i = 0; i < 96; i++) {
+            if (model->thread_params[i].token_ids) {
+                free(model->thread_params[i].token_ids);
+                model->thread_params[i].token_ids = NULL;
+            }
         }
-        free(model->layers);
-        model->layers = NULL;
+        free(model->thread_params);
+        model->thread_params = NULL;
+    }
+    printf("  ✓ Freed thread parameters\n");
+    
+    // Free layer info
+    if (model->layer_info) {
+        for (uint32_t i = 0; i < model->num_layers; i++) {
+            if (model->layer_info[i].worker_threads) {
+                free(model->layer_info[i].worker_threads);
+                model->layer_info[i].worker_threads = NULL;
+            }
+        }
+        free(model->layer_info);
+        model->layer_info = NULL;
+    }
+    printf("  ✓ Freed layer info\n");
+    
+    // Free threading barriers
+    if (model->threading.forward_barrier) {
+        pthread_barrier_destroy(model->threading.forward_barrier);
+        free(model->threading.forward_barrier);
+        model->threading.forward_barrier = NULL;
     }
     
-    // Output layer
-    if (model->output_weights) {
-        free(model->output_weights);
-        model->output_weights = NULL;
+    if (model->threading.backward_barrier) {
+        pthread_barrier_destroy(model->threading.backward_barrier);
+        free(model->threading.backward_barrier);
+        model->threading.backward_barrier = NULL;
     }
     
-    if (model->output_bias) {
-        free(model->output_bias);
-        model->output_bias = NULL;
+    if (model->threading.optimizer_barrier) {
+        pthread_barrier_destroy(model->threading.optimizer_barrier);
+        free(model->threading.optimizer_barrier);
+        model->threading.optimizer_barrier = NULL;
+    }
+    printf("  ✓ Freed threading barriers\n");
+    
+    // Free 88D thread pool (this frees all thread-local storage)
+    // All parameters stored in thread CrystallineAbacus are freed here
+    if (model->pool_88d) {
+        hierarchical_thread_pool_free(model->pool_88d);
+        model->pool_88d = NULL;
+        printf("  ✓ Freed 88D thread pool (including all thread-local parameters)\n");
     }
     
-    if (model->output_weights_grad) {
-        free(model->output_weights_grad);
-        model->output_weights_grad = NULL;
-    }
+    // ========================================================================
+    // LEGACY REMOVED: No flat arrays to free
+    // ========================================================================
     
-    if (model->output_bias_grad) {
-        free(model->output_bias_grad);
-        model->output_bias_grad = NULL;
-    }
+    // DELETED: model->embeddings (now in thread CrystallineAbacus)
+    // DELETED: model->embeddings_grad (now in thread accumulators)
+    // DELETED: model->positional_encoding (now in threads)
+    // DELETED: model->abacus_embeddings (now in threads)
+    // DELETED: model->abacus_positional_encoding (now in threads)
+    // DELETED: model->layers[i].query_weights (now in threads)
+    // DELETED: model->layers[i].key_weights (now in threads)
+    // DELETED: model->layers[i].value_weights (now in threads)
+    // DELETED: model->layers[i].ffn_w1 (now in threads)
+    // DELETED: model->layers[i].ffn_w2 (now in threads)
+    // DELETED: model->layers[i].ln1_gamma (now in threads)
+    // DELETED: model->layers[i].ln1_beta (now in threads)
+    // DELETED: model->output_weights (now in threads)
+    // DELETED: model->output_bias (now in threads)
+    // All parameters are stored in thread CrystallineAbacus and freed with the thread pool
+    
+    printf("  ✓ All thread-local parameters freed with thread pool\n");
     
     // ========================================================================
     // FREE BLIND RECOVERY STATE
@@ -168,6 +162,7 @@ void cllm_free_model(CLLMModel* model) {
             free(model->recovery.face_backup);
             model->recovery.face_backup = NULL;
         }
+        printf("  ✓ Freed blind recovery state\n");
     }
     
     // ========================================================================
@@ -179,6 +174,7 @@ void cllm_free_model(CLLMModel* model) {
             free(model->harmonic.fourier_coefficients);
             model->harmonic.fourier_coefficients = NULL;
         }
+        printf("  ✓ Freed harmonic integration state\n");
     }
     
     // ========================================================================
@@ -195,45 +191,36 @@ void cllm_free_model(CLLMModel* model) {
             free(model->ntt.ntt_frequencies);
             model->ntt.ntt_frequencies = NULL;
         }
+        printf("  ✓ Freed NTT attention state\n");
     }
     
     // ========================================================================
-    // FREE KISSING SPHERES THREADING STATE
+    // FREE THREADING GEOMETRY MAPPINGS
     // ========================================================================
     
-    if (model->threading.enabled) {
-        if (model->threading.vertex_to_thread) {
-            free(model->threading.vertex_to_thread);
-            model->threading.vertex_to_thread = NULL;
-        }
-        
-        if (model->threading.edge_to_boundary) {
-            free(model->threading.edge_to_boundary);
-            model->threading.edge_to_boundary = NULL;
-        }
-        
-        if (model->threading.token_to_thread) {
-            free(model->threading.token_to_thread);
-            model->threading.token_to_thread = NULL;
-        }
-        
-        // Note: threading.model (SphereThreadingModel*) should be freed by threading system
-        // Note: sync_barriers and shared_memory should be freed by threading system
+    if (model->threading.vertex_to_thread) {
+        free(model->threading.vertex_to_thread);
+        model->threading.vertex_to_thread = NULL;
     }
+    
+    if (model->threading.edge_to_boundary) {
+        free(model->threading.edge_to_boundary);
+        model->threading.edge_to_boundary = NULL;
+    }
+    
+    if (model->threading.face_to_layer) {
+        free(model->threading.face_to_layer);
+        model->threading.face_to_layer = NULL;
+    }
+    printf("  ✓ Freed threading geometry mappings\n");
     
     // ========================================================================
-    // FREE OPTIMIZER STATE
+    // FREE OPTIMIZER STATE (LEGACY REMOVED)
     // ========================================================================
     
-    if (model->optimizer.m) {
-        free(model->optimizer.m);
-        model->optimizer.m = NULL;
-    }
-    
-    if (model->optimizer.v) {
-        free(model->optimizer.v);
-        model->optimizer.v = NULL;
-    }
+    // DELETED: model->optimizer.m (now in thread CrystallineAbacus)
+    // DELETED: model->optimizer.v (now in thread CrystallineAbacus)
+    // Optimizer state is now stored in thread temp storage
     
     // ========================================================================
     // FREE FILE FORMAT STRUCTURES
@@ -245,20 +232,16 @@ void cllm_free_model(CLLMModel* model) {
     }
     
     // ========================================================================
-    // FREE GEOMETRY (if dynamically allocated)
+    // FREE PLATONIC SOLID
     // ========================================================================
     
-    // Note: PlatonicGeometry is a simple struct with no dynamic allocations
-    // (vertices, edges, faces, symmetries, edge_length, has_golden_ratio)
-    // No need to free anything here
-    
-    // PHASE 2: Free Platonic solid from math library
     if (model->platonic_solid) {
         // Forward declare platonic_free to avoid including math library headers
         void platonic_free(void* solid);
         platonic_free(model->platonic_solid);
         model->platonic_solid = NULL;
     }
+    printf("  ✓ Freed Platonic solid\n");
     
     // ========================================================================
     // FREE MODEL STRUCTURE
@@ -267,11 +250,12 @@ void cllm_free_model(CLLMModel* model) {
     free(model);
     
     printf("  ✓ Model freed successfully\n");
+    printf("  ✓ Thread-centric architecture cleanup complete\n");
 }
 
 /**
  * Validate model integrity
- * Checks Euler's formula, symmetry, and other geometric properties
+ * Checks Euler's formula, symmetry, and thread-centric architecture
  */
 bool cllm_validate_model(const CLLMModel* model) {
     if (!model) return false;
@@ -313,12 +297,38 @@ bool cllm_validate_model(const CLLMModel* model) {
     }
     printf("  ✓ 12-fold symmetry: num_heads = 12\n");
     
-    // Check parameters are allocated
-    if (!model->embeddings || !model->layers || !model->output_weights) {
-        fprintf(stderr, "  ✗ Model parameters not allocated\n");
+    // Check thread-centric architecture
+    if (!model->pool_88d) {
+        fprintf(stderr, "  ✗ 88D thread pool not initialized\n");
         return false;
     }
-    printf("  ✓ Model parameters allocated\n");
+    printf("  ✓ 88D thread pool initialized\n");
+    
+    if (!model->token_assignments) {
+        fprintf(stderr, "  ✗ Token assignments not initialized\n");
+        return false;
+    }
+    printf("  ✓ Token assignments initialized\n");
+    
+    if (!model->thread_params) {
+        fprintf(stderr, "  ✗ Thread parameters not initialized\n");
+        return false;
+    }
+    printf("  ✓ Thread parameters initialized\n");
+    
+    if (!model->layer_info) {
+        fprintf(stderr, "  ✗ Layer info not initialized\n");
+        return false;
+    }
+    printf("  ✓ Layer info initialized\n");
+    
+    // Check threading barriers
+    if (!model->threading.forward_barrier || !model->threading.backward_barrier || 
+        !model->threading.optimizer_barrier) {
+        fprintf(stderr, "  ✗ Threading barriers not initialized\n");
+        return false;
+    }
+    printf("  ✓ Threading barriers initialized\n");
     
     // Check clock lattice mapping
     if (!model->token_positions || !model->token_angular_positions) {
@@ -327,6 +337,6 @@ bool cllm_validate_model(const CLLMModel* model) {
     }
     printf("  ✓ Clock lattice mapping initialized\n");
     
-    printf("✅ Model validation passed\n");
+    printf("✅ Model validation passed (thread-centric architecture)\n");
     return true;
 }

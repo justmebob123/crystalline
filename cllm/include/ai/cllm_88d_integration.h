@@ -84,7 +84,7 @@ typedef struct {
  * @param model CLLM model to initialize threading for
  * @return true on success, false on failure
  */
-bool cllm_initialize_88d_threading(CLLMModel* model);
+bool cllm_initialize_88d_threading(CLLMModel* model, uint32_t base);
 
 /**
  * Cleanup 88D threading for a CLLM model
@@ -164,8 +164,7 @@ uint32_t cllm_get_layer_for_face(const CLLMModel* model, uint32_t face_idx);
  * @param num_items Number of work items
  * @return true on success, false on failure
  */
-bool cllm_distribute_work_88d(CLLMModel* model, CLLMWorkType work_type, 
-                              void* work_data, uint32_t num_items);
+bool cllm_distribute_work_88d(CLLMModel* model, void* work_items, size_t num_items);
 
 /**
  * Submit a single work item to the thread pool
@@ -174,7 +173,7 @@ bool cllm_distribute_work_88d(CLLMModel* model, CLLMWorkType work_type,
  * @param work_item Work item to submit
  * @return true on success, false on failure
  */
-bool cllm_submit_work_item(CLLMModel* model, const CLLMWorkItem* work_item);
+bool cllm_submit_work_item(CLLMModel* model, void* work_item);
 
 /**
  * Wait for all work to complete
@@ -183,7 +182,7 @@ bool cllm_submit_work_item(CLLMModel* model, const CLLMWorkItem* work_item);
  * 
  * @param model CLLM model
  */
-void cllm_wait_for_work_completion(CLLMModel* model);
+bool cllm_wait_for_work_completion(CLLMModel* model);
 
 // ============================================================================
 // SYNCHRONIZATION

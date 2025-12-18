@@ -262,7 +262,12 @@ static void matmul(
  * Standard attention with angular position bias
  * Complexity: O(n²)
  * Use for: Short sequences (seq_len <= 512)
+ * 
+ * NOTE: This function is DEPRECATED in favor of thread-centric attention.
+ * It references deleted flat arrays (model->layers[].query_weights, etc.)
+ * Kept for reference only - DO NOT USE.
  */
+#if 0
 static void standard_attention_forward(
     CLLMModel* model,
     uint32_t layer_idx,
@@ -404,6 +409,7 @@ static void standard_attention_forward(
         model->training.forward_passes++;
     }
 }
+#endif // Deprecated standard_attention_forward
 
 // ============================================================================
 // NTT ATTENTION (O(n log n))
@@ -414,7 +420,12 @@ static void standard_attention_forward(
  * Complexity: O(n log n)
  * Use for: Long sequences (seq_len > 512)
  * Speedup: 10-100x faster than standard attention
+ * 
+ * NOTE: This function is DEPRECATED in favor of thread-centric attention.
+ * It references deleted flat arrays (model->layers[].query_weights, etc.)
+ * Kept for reference only - DO NOT USE.
  */
+#if 0
 static void cllm_ntt_attention_forward(
     CLLMModel* model,
     uint32_t layer_idx,
@@ -525,6 +536,7 @@ static void cllm_ntt_attention_forward(
         model->training.forward_passes++;
     }
 }
+#endif // Deprecated cllm_ntt_attention_forward
 
 // ============================================================================
 // MAIN ATTENTION FUNCTION (WITH AUTOMATIC SWITCHING)
@@ -557,23 +569,18 @@ void cllm_attention_forward(
         return;
     }
     
-    // Decide which attention to use
-    bool use_ntt = model->ntt.enabled && 
-                   model->ntt.auto_select && 
-                   (seq_len > model->ntt.threshold_seq_len);
+    // Use thread-centric attention (88D architecture)
+    // Forward declaration - implemented in cllm_attention_threaded.c
+    extern void cllm_attention_forward_threaded(
+        CLLMModel* model,
+        uint32_t layer_idx,
+        const double* input,
+        double* output,
+        uint32_t batch_size,
+        uint32_t seq_len
+    );
     
-    if (use_ntt) {
-        // Use NTT attention (O(n log n))
-        printf("  ⚡ Using NTT attention (seq_len=%u > %u)\n", 
-               seq_len, model->ntt.threshold_seq_len);
-        cllm_ntt_attention_forward(model, layer_idx, input, output, batch_size, seq_len);
-    } else {
-        // Use standard attention (O(n²))
-        if (seq_len > 256) {
-            printf("  🔷 Using standard attention (seq_len=%u)\n", seq_len);
-        }
-        standard_attention_forward(model, layer_idx, input, output, batch_size, seq_len);
-    }
+    cllm_attention_forward_threaded(model, layer_idx, input, output, batch_size, seq_len);
 }
 
 // ============================================================================
@@ -764,6 +771,23 @@ void cllm_attention_backward(
     uint32_t batch_size,
     uint32_t seq_len
 ) {
+    // TODO: Implement thread-centric backward pass in Week 3 (Days 15-21)
+    // This will be implemented after forward pass is complete and tested
+    
+    fprintf(stderr, "WARNING: cllm_attention_backward() not yet implemented for 88D architecture\n");
+    fprintf(stderr, "         Will be implemented in Week 3 (Days 15-21)\n");
+    
+    (void)model;
+    (void)layer_idx;
+    (void)grad_output;
+    (void)input;
+    (void)batch_size;
+    (void)seq_len;
+    
+    return;
+    
+    // OLD IMPLEMENTATION (references deleted arrays - kept for reference)
+    #if 0
     if (!model || !grad_output || !input || layer_idx >= model->num_layers) {
         fprintf(stderr, "Error: Invalid attention backward parameters\n");
         return;
@@ -1059,6 +1083,7 @@ void cllm_attention_backward(
     free(grad_K);
     free(grad_V);
     free(grad_attn_output);
+    #endif // OLD IMPLEMENTATION
 }
 
 /**

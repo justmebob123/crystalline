@@ -273,16 +273,22 @@ uint32_t cvp_find_closest_token(CLLMModel* model, const float* query_embedding) 
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
+    
+    // Get embedding helper function
+    extern double* cllm_get_embedding_ptr(CLLMModel* model, uint32_t token_id);
     
     uint32_t closest_token = 0;
     float min_distance = MATH_INFINITY;
     
     // Find token with minimum Euclidean distance
     for (uint32_t v = 0; v < vocab_size; v++) {
+        // Get embedding from thread storage
+        double* token_embedding = cllm_get_embedding_ptr(model, v);
+        if (!token_embedding) continue;
+        
         float distance = 0.0;
         for (uint32_t d = 0; d < embed_dim; d++) {
-            float diff = query_embedding[d] - embeddings[v * embed_dim + d];
+            float diff = query_embedding[d] - token_embedding[d];
             distance += diff * diff;
         }
         
@@ -306,23 +312,31 @@ float* svp_find_shortest_vector(CLLMModel* model) {
     
     uint32_t vocab_size = model->vocab_size;
     uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
+    
+    // Get embedding helper function
+    extern double* cllm_get_embedding_ptr(CLLMModel* model, uint32_t token_id);
     
     float* shortest = (float*)malloc(embed_dim * sizeof(float));
     float min_length = MATH_INFINITY;
     
     // Find embedding with minimum length
     for (uint32_t v = 0; v < vocab_size; v++) {
+        // Get embedding from thread storage
+        double* token_embedding = cllm_get_embedding_ptr(model, v);
+        if (!token_embedding) continue;
+        
         float length = 0.0;
         for (uint32_t d = 0; d < embed_dim; d++) {
-            float val = embeddings[v * embed_dim + d];
+            float val = token_embedding[d];
             length += val * val;
         }
         length = math_sqrt((double)length);
         
         if (length > 1e-6f && length < min_length) {
             min_length = length;
-            memcpy(shortest, &embeddings[v * embed_dim], embed_dim * sizeof(float));
+            for (uint32_t d = 0; d < embed_dim; d++) {
+                shortest[d] = (float)token_embedding[d];
+            }
         }
     }
     
@@ -406,12 +420,17 @@ void crystalline_prefetch_nearby(CrystallineAdvancedState* state,
     // Find k nearest tokens
     int* nearby = find_nearby_tokens(state->spatial_index, token_id, k, NULL);
     
+    // Get embedding helper function
+    extern double* cllm_get_embedding_ptr(CLLMModel* model, uint32_t token_id);
+    
     // Prefetch their embeddings (hint to CPU cache)
     for (int i = 0; i < k; i++) {
         uint32_t nearby_token = nearby[i];
         if (nearby_token < model->vocab_size) {
-            double* embedding = &model->embeddings[nearby_token * model->embedding_dim];
-            __builtin_prefetch(embedding, 0, 3);  // Prefetch for read, high temporal locality
+            double* embedding = cllm_get_embedding_ptr(model, nearby_token);
+            if (embedding) {
+                __builtin_prefetch(embedding, 0, 3);  // Prefetch for read, high temporal locality
+            }
         }
     }
     
