@@ -1098,6 +1098,72 @@ void* hierarchical_thread_worker_88d(void* arg);
 // ============================================================================
 
 // ============================================================================
+// GRADIENT OPERATIONS (DAY 9)
+// ============================================================================
+
+/**
+ * Compute gradients for FFN parameters
+ * 
+ * @param thread Thread that owns the computation
+ * @param grad_output Gradient from next layer (double array)
+ * @param input Input that was used in forward pass (double array)
+ * @param hidden Hidden layer from forward pass (double array)
+ * @param embedding_dim Embedding dimension
+ * @param hidden_dim Hidden dimension
+ * @param grad_input Gradient to pass to previous layer (output)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_ffn_gradients(
+    HierarchicalThread* thread,
+    const double* grad_output,
+    const double* input,
+    const double* hidden,
+    uint32_t embedding_dim,
+    uint32_t hidden_dim,
+    double* grad_input
+);
+
+/**
+ * Compute gradients for attention parameters
+ * 
+ * @param thread Thread that owns the computation
+ * @param grad_output Gradient from next layer
+ * @param Q Query matrix from forward pass
+ * @param K Key matrix from forward pass
+ * @param V Value matrix from forward pass
+ * @param input Input from forward pass
+ * @param embedding_dim Embedding dimension
+ * @param grad_input Gradient to pass to previous layer (output)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_attention_gradients(
+    HierarchicalThread* thread,
+    const double* grad_output,
+    const double* Q,
+    const double* K,
+    const double* V,
+    const double* input,
+    uint32_t embedding_dim,
+    double* grad_input
+);
+
+/**
+ * Compute gradients for embeddings
+ * 
+ * @param thread Thread that owns the embedding
+ * @param token_id Token ID
+ * @param grad_output Gradient from next layer
+ * @param embedding_dim Embedding dimension
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_embedding_gradients(
+    HierarchicalThread* thread,
+    uint32_t token_id,
+    const double* grad_output,
+    uint32_t embedding_dim
+);
+
+// ============================================================================
 // FFN OPERATIONS (DAY 8)
 // ============================================================================
 
