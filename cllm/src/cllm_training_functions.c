@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "math/transcendental.h"
 #include "cllm.h"
 #include "math/constants.h"
@@ -36,10 +37,14 @@
  * @return Average loss across all threads
  */
 double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
+    fprintf(stderr, "DEBUG: cllm_forward_training ENTERED\n");
+    
     if (!training || !input_tokens) {
         fprintf(stderr, "ERROR: NULL training or input_tokens\n");
         return -1.0;
     }
+    
+    fprintf(stderr, "DEBUG: Parameters validated\n");
     
     CLLMModel* model = training->model;
     
@@ -63,7 +68,10 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     int num_tokens = training->config.batch_size * training->config.sequence_length;
     HierarchicalThreadPool* pool = model->pool_88d;
     
-    // Distribute tokens to threads
+    fprintf(stderr, "DEBUG: cllm_forward_training - num_tokens=%d, pool=%p\n", num_tokens, (void*)pool);
+    
+    // Enqueue forward work items to threads
+    int work_enqueued = 0;
     for (int i = 0; i < num_tokens; i++) {
         uint32_t token_id = input_tokens[i];
         
@@ -80,11 +88,25 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             abort();
         }
         
-        // Mark work for this thread
-        __atomic_add_fetch(&thread->batch_count, 1, __ATOMIC_SEQ_CST);
+        // Enqueue forward work item
+        int result = hierarchical_thread_enqueue_work(
+            thread,
+            TRAINING_WORK_TYPE_FORWARD,
+            token_id,
+            0  // target_id not used for forward pass
+        );
+        
+        if (result == 0) {
+            work_enqueued++;
+        } else {
+            fprintf(stderr, "WARNING: Failed to enqueue work for token %u\n", token_id);
+        }
     }
     
-    // Signal all threads to start
+    fprintf(stderr, "DEBUG: Enqueued %d forward work items\n", work_enqueued);
+    
+    // Signal all threads to start processing
+    int threads_signaled = 0;
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
             HierarchicalThread* thread = 
@@ -92,13 +114,42 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             
             if (thread) {
                 pthread_cond_signal(&thread->control_cond);
+                threads_signaled++;
             }
         }
     }
+    fprintf(stderr, "DEBUG: Signaled %d threads\n", threads_signaled);
     
-    // Wait for completion
-    if (model->threading.forward_barrier) {
-        pthread_barrier_wait(model->threading.forward_barrier);
+    // Wait for completion (poll atomic counters instead of barrier)
+    // This avoids deadlock since worker threads don't wait on barrier
+    uint64_t expected_work = (uint64_t)num_tokens;
+    uint64_t completed_work = 0;
+    
+    while (completed_work < expected_work) {
+        completed_work = 0;
+        
+        for (uint8_t layer = 0; layer < 8; layer++) {
+            for (uint8_t dim = 1; dim <= 11; dim++) {
+                HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+                if (thread) {
+                    completed_work += __atomic_load_n(&thread->work_completed, __ATOMIC_SEQ_CST);
+                }
+            }
+        }
+        
+        if (completed_work < expected_work) {
+            usleep(100);  // 100 microseconds
+        }
+    }
+    
+    // Reset work_completed counters for next iteration
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 1; dim <= 11; dim++) {
+            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            if (thread) {
+                __atomic_store_n(&thread->work_completed, 0, __ATOMIC_SEQ_CST);
+            }
+        }
     }
     
     // Collect results
@@ -156,7 +207,8 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     int num_tokens = training->config.batch_size * training->config.sequence_length;
     HierarchicalThreadPool* pool = model->pool_88d;
     
-    // Distribute gradient computation to threads
+    // Enqueue backward work items to threads
+    int work_enqueued = 0;
     for (int i = 0; i < num_tokens; i++) {
         uint32_t token_id = i % model->vocab_size;
         uint32_t target_id = target_tokens[i];
@@ -169,16 +221,24 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
         
         if (!thread) continue;
         
-        // Store target in thread for gradient computation
-        if (thread->gradient_buffer && thread->gradient_buffer_size > 0) {
-            double* grad_buf = (double*)thread->gradient_buffer;
-            grad_buf[0] = (double)target_id;
-        }
+        // Enqueue backward work item
+        int result = hierarchical_thread_enqueue_work(
+            thread,
+            TRAINING_WORK_TYPE_BACKWARD,
+            token_id,
+            target_id
+        );
         
-        __atomic_add_fetch(&thread->batch_count, 1, __ATOMIC_SEQ_CST);
+        if (result == 0) {
+            work_enqueued++;
+        } else {
+            fprintf(stderr, "WARNING: Failed to enqueue backward work for token %u\n", token_id);
+        }
     }
     
-    // Signal all threads
+    fprintf(stderr, "DEBUG: Enqueued %d backward work items\n", work_enqueued);
+    
+    // Signal all threads to start processing
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
             HierarchicalThread* thread = 
@@ -190,9 +250,35 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
         }
     }
     
-    // Wait for completion
-    if (model->threading.backward_barrier) {
-        pthread_barrier_wait(model->threading.backward_barrier);
+    // Wait for completion (poll atomic counters instead of barrier)
+    uint64_t expected_work = (uint64_t)num_tokens;
+    uint64_t completed_work = 0;
+    
+    while (completed_work < expected_work) {
+        completed_work = 0;
+        
+        for (uint8_t layer = 0; layer < 8; layer++) {
+            for (uint8_t dim = 1; dim <= 11; dim++) {
+                HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+                if (thread) {
+                    completed_work += __atomic_load_n(&thread->work_completed, __ATOMIC_SEQ_CST);
+                }
+            }
+        }
+        
+        if (completed_work < expected_work) {
+            usleep(100);  // 100 microseconds
+        }
+    }
+    
+    // Reset work_completed counters for next iteration
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 1; dim <= 11; dim++) {
+            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            if (thread) {
+                __atomic_store_n(&thread->work_completed, 0, __ATOMIC_SEQ_CST);
+            }
+        }
     }
     
     // Gradients now in thread-local CrystallineAbacus

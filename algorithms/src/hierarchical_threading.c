@@ -125,13 +125,25 @@ HierarchicalThreadPool* hierarchical_thread_pool_create(
 }
 
 void hierarchical_thread_pool_free(HierarchicalThreadPool* pool) {
+    fprintf(stderr, "DEBUG: hierarchical_thread_pool_free ENTERED, pool=%p\n", (void*)pool);
+    fflush(stderr);
+    
     if (!pool) {
+        fprintf(stderr, "DEBUG: pool is NULL, returning\n");
+        fflush(stderr);
         return;
     }
     
+    fprintf(stderr, "DEBUG: pool->running=%d\n", pool->running);
+    fflush(stderr);
+    
     // Stop pool if running
     if (pool->running) {
+        fprintf(stderr, "DEBUG: Calling hierarchical_thread_pool_stop...\n");
+        fflush(stderr);
         hierarchical_thread_pool_stop(pool);
+        fprintf(stderr, "DEBUG: hierarchical_thread_pool_stop returned\n");
+        fflush(stderr);
     }
     
     // Free all threads
@@ -202,13 +214,31 @@ int hierarchical_thread_pool_stop(HierarchicalThreadPool* pool) {
     }
     
     // Signal all threads to stop
+    int threads_stopped = 0;
+    fprintf(stderr, "DEBUG: Stopping %u threads...\n", pool->num_threads);
     for (uint32_t i = 0; i < pool->num_threads; i++) {
         HierarchicalThread* thread = pool->threads[i];
-        if (thread && thread->running) {
-            thread->should_stop = true;
-            hierarchical_thread_change_state(thread, STATE_STOPPING);
+        if (thread) {
+            fprintf(stderr, "DEBUG: Thread %u - running=%d\n", i, thread->running);
+            if (thread->running) {
+                // Lock thread's control mutex before modifying state
+                pthread_mutex_lock(&thread->control_mutex);
+                
+                thread->should_stop = true;
+                thread->running = false;  // Set running to false so worker loop exits
+                
+                // Wake up thread if it's waiting
+                pthread_cond_signal(&thread->control_cond);
+                
+                pthread_mutex_unlock(&thread->control_mutex);
+                
+                hierarchical_thread_change_state(thread, STATE_STOPPING);
+                threads_stopped++;
+                fprintf(stderr, "DEBUG: Signaled thread %u to stop\n", i);
+            }
         }
     }
+    fprintf(stderr, "DEBUG: Signaled %d threads to stop\n", threads_stopped);
     
     pthread_mutex_unlock(&pool->pool_mutex);
     
@@ -221,17 +251,23 @@ int hierarchical_thread_pool_wait(HierarchicalThreadPool* pool) {
         return -1;
     }
     
-    // Join all threads
+    fprintf(stderr, "DEBUG: Waiting for %u threads to join...\n", pool->num_threads);
+    
+    // Join all threads (don't check running flag - threads may have already exited)
     for (uint32_t i = 0; i < pool->num_threads; i++) {
         HierarchicalThread* thread = pool->threads[i];
-        if (thread && thread->running) {
+        if (thread) {
+            fprintf(stderr, "DEBUG: Joining thread %u...\n", i);
             hierarchical_thread_join(thread);
+            fprintf(stderr, "DEBUG: Thread %u joined\n", i);
         }
     }
     
     pthread_mutex_lock(&pool->pool_mutex);
     pool->running = false;
     pthread_mutex_unlock(&pool->pool_mutex);
+    
+    fprintf(stderr, "DEBUG: All threads joined successfully\n");
     
     return 0;
 }
@@ -1238,6 +1274,13 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     pool->num_child_groups = 0;
     pool->max_child_groups = 0;
     
+    // Mark pool as running since threads are started
+    pool->running = true;
+    
+    fprintf(stderr, "DEBUG: 88D pool created with %u threads, pool->running=%d\n", 
+            pool->num_threads, pool->running);
+    fflush(stderr);
+    
     return pool;
 }
 
@@ -1465,6 +1508,128 @@ int hierarchical_thread_pool_get_88d_stats(
  * 
  * Uses the generic model interface - no CLLM dependency!
  */
+// ============================================================================
+// WORK PROCESSORS
+// ============================================================================
+
+/**
+ * Process forward pass work item
+ */
+static int worker_process_forward(HierarchicalThread* thread, TrainingWorkItem* work) {
+    if (!thread || !work || !thread->model) {
+        return -1;
+    }
+    
+    // Get generic model interface
+    GenericModel* model = thread->model;
+    
+    // Validate model
+    if (!generic_model_validate(model)) {
+        return -1;
+    }
+    
+    // Check if this is a control thread or worker thread
+    if (thread->dimension == 0) {
+        // Control thread - coordinate layer processing
+        return 0;
+    }
+    
+    // Worker thread - process token through model layer
+    uint32_t dim = model->embedding_dim;
+    
+    // Allocate output buffer
+    double* output = (double*)malloc(dim * sizeof(double));
+    if (!output) {
+        return -1;
+    }
+    
+    // Get input from activation buffer
+    double* input = thread->activation_buffer;
+    
+    // Call through generic interface
+    int result = model->forward_layer(
+        model->model_data,  // Opaque model data
+        thread,             // Thread context
+        thread->layer,      // Layer index
+        input,              // Input
+        output              // Output
+    );
+    
+    if (result != 0) {
+        free(output);
+        return -1;
+    }
+    
+    // Copy output back to activation buffer for next layer
+    memcpy(thread->activation_buffer, output, dim * sizeof(double));
+    
+    free(output);
+    return 0;
+}
+
+/**
+ * Process backward pass work item
+ */
+static int worker_process_backward(HierarchicalThread* thread, TrainingWorkItem* work) {
+    if (!thread || !work || !thread->model) {
+        return -1;
+    }
+    
+    // Get generic model interface
+    GenericModel* model = thread->model;
+    
+    // Validate model
+    if (!generic_model_validate(model)) {
+        return -1;
+    }
+    
+    // Check if this is a control thread or worker thread
+    if (thread->dimension == 0) {
+        // Control thread - coordinate layer processing
+        return 0;
+    }
+    
+    // Worker thread - compute gradients
+    uint32_t dim = model->embedding_dim;
+    
+    // Allocate gradient buffer
+    double* grad_output = (double*)malloc(dim * sizeof(double));
+    if (!grad_output) {
+        return -1;
+    }
+    
+    // Initialize gradient from loss
+    // For now, use simple gradient (will be replaced with actual loss gradient)
+    for (uint32_t i = 0; i < dim; i++) {
+        grad_output[i] = thread->activation_buffer[i] - (double)work->target_id;
+    }
+    
+    // Call through generic interface for backward pass
+    int result = model->backward_layer(
+        model->model_data,  // Opaque model data
+        thread,             // Thread context
+        thread->layer,      // Layer index
+        grad_output,        // Gradient output
+        grad_output         // Gradient input (in-place)
+    );
+    
+    if (result != 0) {
+        free(grad_output);
+        return -1;
+    }
+    
+    // Store gradients in thread's gradient buffer (cached_qkv used as gradient storage)
+    if (thread->cached_qkv && thread->cached_qkv_size >= dim) {
+        memcpy(thread->cached_qkv, grad_output, dim * sizeof(double));
+    }
+    
+    free(grad_output);
+    return 0;
+}
+
+/**
+ * DEPRECATED: Old token processor (kept for compatibility)
+ */
 static int worker_process_token(HierarchicalThread* thread) {
     if (!thread || !thread->activation_buffer || !thread->model) {
         return -1;
@@ -1642,27 +1807,48 @@ void* hierarchical_thread_worker_88d(void* arg) {
     while (thread->running) {
         // Wait for work
         pthread_mutex_lock(&thread->control_mutex);
-        while (thread->batch_count == 0 && thread->running) {
+        while (thread->work_queue_size == 0 && thread->running) {
             pthread_cond_wait(&thread->control_cond, &thread->control_mutex);
         }
-        
-        // Get work count and reset
-        uint32_t work_count = thread->batch_count;
-        thread->batch_count = 0;
         pthread_mutex_unlock(&thread->control_mutex);
         
         if (!thread->running) break;
         
-        // Process all work items
-        for (uint32_t i = 0; i < work_count; i++) {
-            worker_process_token(thread);
+        // Process all work items in queue
+        uint32_t processed = 0;
+        TrainingWorkItem* work;
+        
+        while ((work = hierarchical_thread_dequeue_work(thread)) != NULL) {
+            // Process based on work type
+            int result = 0;
+            
+            switch (work->type) {
+                case TRAINING_WORK_TYPE_FORWARD:
+                    result = worker_process_forward(thread, work);
+                    break;
+                    
+                case TRAINING_WORK_TYPE_BACKWARD:
+                    result = worker_process_backward(thread, work);
+                    break;
+                    
+                default:
+                    fprintf(stderr, "WARNING: Unknown work type %d\n", work->type);
+                    result = -1;
+                    break;
+            }
+            
+            // Free work item
+            hierarchical_thread_free_work_item(work);
+            
+            if (result == 0) {
+                processed++;
+            }
         }
         
         // Mark work complete
-        __atomic_add_fetch(&thread->work_completed, work_count, __ATOMIC_SEQ_CST);
-        
-        // Update statistics
-        __atomic_add_fetch(&thread->work_completed, 0, __ATOMIC_SEQ_CST); // Just to ensure visibility
+        if (processed > 0) {
+            __atomic_add_fetch(&thread->work_completed, processed, __ATOMIC_SEQ_CST);
+        }
     }
     
     // Change state to STOPPED

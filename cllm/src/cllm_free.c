@@ -20,25 +20,42 @@
  * Free a CLLM model and all associated memory
  */
 void cllm_free_model(CLLMModel* model) {
-    if (!model) return;
+    // IMMEDIATE DEBUG - write to stderr FIRST
+    fprintf(stderr, "DEBUG: cllm_free_model ENTERED, model=%p\n", (void*)model);
     
-    // Free vocabulary
-    if (model->vocabulary) {
-        cllm_vocab_destroy(model->vocabulary);
-        model->vocabulary = NULL;
+    if (!model) {
+        fprintf(stderr, "DEBUG: model is NULL, returning\n");
+        return;
     }
     
+    fprintf(stderr, "DEBUG: model is NOT NULL, continuing\n");
+    
     printf("🗑️  Freeing CLLM model...\n");
+    fflush(stdout);
+    
+    // Free vocabulary
+    printf("  → Freeing vocabulary...\n");
+    fflush(stdout);
+    if (model->vocabulary) {
+        // TEMPORARILY DISABLED TO DEBUG HANG
+        // cllm_vocab_destroy(model->vocabulary);
+        model->vocabulary = NULL;
+    }
+    printf("  ✓ Freed vocabulary (skipped for debug)\n");
+    fflush(stdout);
     
     // ========================================================================
     // FREE GENERIC MODEL INTERFACE
     // ========================================================================
     
+    printf("  → Freeing generic model interface...\n");
+    fflush(stdout);
     if (model->generic_interface) {
         cllm_free_generic_interface((GenericModel*)model->generic_interface);
         model->generic_interface = NULL;
     }
     printf("  ✓ Freed generic model interface\n");
+    fflush(stdout);
     
     // ========================================================================
     // FREE CLOCK LATTICE MAPPING
@@ -126,10 +143,13 @@ void cllm_free_model(CLLMModel* model) {
     
     // Free 88D thread pool (this frees all thread-local storage)
     // All parameters stored in thread CrystallineAbacus are freed here
+    printf("  → About to free 88D thread pool...\n");
+    fflush(stdout);
     if (model->pool_88d) {
         hierarchical_thread_pool_free(model->pool_88d);
         model->pool_88d = NULL;
         printf("  ✓ Freed 88D thread pool (including all thread-local parameters)\n");
+        fflush(stdout);
     }
     
     // ========================================================================
