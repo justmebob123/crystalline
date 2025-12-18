@@ -30,6 +30,7 @@ SOURCES = src/abacus88d/abacus88d.c \
           src/state_management.c \
           src/work_distribution.c \
           src/hierarchical_threading.c \
+          src/thread_parameters.c \
           src/adaptive_threading.c \
           src/memory_management.c \
           src/visualization.c \

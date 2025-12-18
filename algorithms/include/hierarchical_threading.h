@@ -229,6 +229,39 @@ typedef struct HierarchicalThread {
     CrystallineAbacus* accumulator;     // Gradient/result accumulator
     CrystallineAbacus* temp;            // Temporary computation space
     
+    // ========================================================================
+    // PHASE 2: THREAD-LOCAL PARAMETER STORAGE
+    // ========================================================================
+    
+    // Parameter storage (replaces global parameter arrays)
+    CrystallineAbacus** parameters;     // Array of parameters
+    uint32_t num_parameters;            // Number of parameters
+    uint32_t max_parameters;            // Maximum parameters (capacity)
+    
+    // Parameter metadata
+    struct {
+        char name[64];                  // Parameter name
+        uint32_t* shape;                // Parameter shape
+        uint32_t num_dims;              // Number of dimensions
+        size_t total_elements;          // Total elements
+        bool requires_grad;             // Needs gradients
+        bool is_initialized;            // Is initialized
+    } *param_metadata;                  // [num_parameters]
+    
+    // Gradient storage (same structure as parameters)
+    CrystallineAbacus** gradients;      // Array of gradients
+    
+    // Optimizer state (Adam)
+    CrystallineAbacus** momentum;       // First moment (m)
+    CrystallineAbacus** velocity;       // Second moment (v)
+    uint64_t optimizer_step;            // Optimizer step count
+    
+    // Parameter locks (for thread-safe access)
+    pthread_mutex_t* param_locks;       // One lock per parameter
+    pthread_mutex_t param_list_lock;    // Lock for parameter list operations
+    
+    // ========================================================================
+    
     // Sibling Relationships (same layer)
     struct HierarchicalThread** siblings;  // Sibling threads
     uint32_t num_siblings;              // Number of siblings
