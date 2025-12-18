@@ -401,9 +401,20 @@ void hierarchical_thread_free(HierarchicalThread* thread) {
     // Free children array
     free(thread->children);
     
+    // Clean up work queue
+    pthread_mutex_lock(&thread->work_queue_mutex);
+    TrainingWorkItem* item = thread->work_queue_head;
+    while (item) {
+        TrainingWorkItem* next = item->next;
+        free(item);
+        item = next;
+    }
+    pthread_mutex_unlock(&thread->work_queue_mutex);
+    
     // Destroy mutexes
     pthread_mutex_destroy(&thread->control_mutex);
     pthread_cond_destroy(&thread->control_cond);
+    pthread_mutex_destroy(&thread->work_queue_mutex);
     
     free(thread);
 }
@@ -1181,6 +1192,14 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
         // Initialize gradient lock
         pthread_mutex_init(&thread->gradient_lock, NULL);
         
+        // Initialize work queue
+        thread->work_queue_head = NULL;
+        thread->work_queue_tail = NULL;
+        thread->work_queue_size = 0;
+        pthread_mutex_init(&thread->work_queue_mutex, NULL);
+        thread->should_exit = false;
+        thread->completion_barrier = NULL;  // Will be set by training system
+        
         // Store in layer array
         if (layer < HIERARCHICAL_88D_NUM_LAYERS && dim < HIERARCHICAL_88D_THREADS_PER_LAYER) {
             pool->layers[layer][dim] = thread;
@@ -1504,6 +1523,106 @@ static int worker_process_token(HierarchicalThread* thread) {
     free(output);
     return 0;
 }
+
+// ============================================================================
+// WORK QUEUE OPERATIONS
+// ============================================================================
+
+/**
+ * Enqueue work item to thread's work queue
+ */
+int hierarchical_thread_enqueue_work(
+    HierarchicalThread* thread,
+    TrainingWorkType type,
+    uint32_t token_id,
+    uint32_t target_id
+) {
+    if (!thread) {
+        return -1;
+    }
+    
+    // Allocate work item
+    TrainingWorkItem* item = (TrainingWorkItem*)malloc(sizeof(TrainingWorkItem));
+    if (!item) {
+        return -1;
+    }
+    
+    item->type = type;
+    item->token_id = token_id;
+    item->target_id = target_id;
+    item->next = NULL;
+    
+    // Lock queue
+    pthread_mutex_lock(&thread->work_queue_mutex);
+    
+    // Add to tail
+    if (thread->work_queue_tail) {
+        thread->work_queue_tail->next = item;
+        thread->work_queue_tail = item;
+    } else {
+        thread->work_queue_head = item;
+        thread->work_queue_tail = item;
+    }
+    
+    thread->work_queue_size++;
+    
+    pthread_mutex_unlock(&thread->work_queue_mutex);
+    
+    return 0;
+}
+
+/**
+ * Dequeue work item from thread's work queue
+ */
+TrainingWorkItem* hierarchical_thread_dequeue_work(HierarchicalThread* thread) {
+    if (!thread) {
+        return NULL;
+    }
+    
+    pthread_mutex_lock(&thread->work_queue_mutex);
+    
+    TrainingWorkItem* item = thread->work_queue_head;
+    
+    if (item) {
+        thread->work_queue_head = item->next;
+        if (!thread->work_queue_head) {
+            thread->work_queue_tail = NULL;
+        }
+        thread->work_queue_size--;
+    }
+    
+    pthread_mutex_unlock(&thread->work_queue_mutex);
+    
+    return item;
+}
+
+/**
+ * Free work item
+ */
+void hierarchical_thread_free_work_item(TrainingWorkItem* item) {
+    if (item) {
+        free(item);
+    }
+}
+
+/**
+ * Get work queue size
+ */
+uint32_t hierarchical_thread_get_work_queue_size(HierarchicalThread* thread) {
+    if (!thread) {
+        return 0;
+    }
+    
+    pthread_mutex_lock(&thread->work_queue_mutex);
+    uint32_t size = thread->work_queue_size;
+    pthread_mutex_unlock(&thread->work_queue_mutex);
+    
+    return size;
+}
+
+// ============================================================================
+// WORKER LOOP
+// ============================================================================
 
 /**
  * Main worker loop for 88D threads

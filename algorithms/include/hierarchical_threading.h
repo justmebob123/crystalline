@@ -132,6 +132,26 @@ typedef struct {
  * Represents one thread in the hierarchical threading system.
  * Integrates all Week 1-4 components.
  */
+// ============================================================================
+// WORK QUEUE FOR TRAINING
+// ============================================================================
+
+typedef enum {
+    TRAINING_WORK_TYPE_FORWARD,
+    TRAINING_WORK_TYPE_BACKWARD
+} TrainingWorkType;
+
+typedef struct TrainingWorkItem {
+    TrainingWorkType type;
+    uint32_t token_id;
+    uint32_t target_id;  // For backward pass
+    struct TrainingWorkItem* next;
+} TrainingWorkItem;
+
+// ============================================================================
+// HIERARCHICAL THREAD STRUCTURE
+// ============================================================================
+
 typedef struct HierarchicalThread {
     // Identity
     uint32_t thread_id;                 // Unique thread ID
@@ -241,6 +261,16 @@ typedef struct HierarchicalThread {
     
     // Model Reference (for accessing model parameters during computation)
     struct GenericModel* model;         // Generic model interface (no circular dependency)
+    
+    // Work Queue (for training)
+    TrainingWorkItem* work_queue_head;  // Head of work queue
+    TrainingWorkItem* work_queue_tail;  // Tail of work queue
+    pthread_mutex_t work_queue_mutex;   // Work queue mutex
+    uint32_t work_queue_size;           // Current queue size
+    
+    // Completion tracking
+    volatile bool should_exit;          // Thread should exit
+    pthread_barrier_t* completion_barrier; // Barrier for completion signaling
     
 } HierarchicalThread;
 
@@ -1029,6 +1059,49 @@ int hierarchical_thread_pool_get_88d_stats(
  * @return NULL
  */
 void* hierarchical_thread_worker_88d(void* arg);
+
+// ============================================================================
+// WORK QUEUE OPERATIONS
+// ============================================================================
+
+/**
+ * Enqueue work item to thread's work queue
+ * 
+ * @param thread Target thread
+ * @param type Work type (forward or backward)
+ * @param token_id Token ID to process
+ * @param target_id Target token ID (for backward pass)
+ * @return 0 on success, -1 on error
+ */
+int hierarchical_thread_enqueue_work(
+    HierarchicalThread* thread,
+    TrainingWorkType type,
+    uint32_t token_id,
+    uint32_t target_id
+);
+
+/**
+ * Dequeue work item from thread's work queue
+ * 
+ * @param thread Source thread
+ * @return Work item or NULL if queue is empty
+ */
+TrainingWorkItem* hierarchical_thread_dequeue_work(HierarchicalThread* thread);
+
+/**
+ * Free work item
+ * 
+ * @param item Work item to free
+ */
+void hierarchical_thread_free_work_item(TrainingWorkItem* item);
+
+/**
+ * Get work queue size
+ * 
+ * @param thread Thread
+ * @return Number of items in work queue
+ */
+uint32_t hierarchical_thread_get_work_queue_size(HierarchicalThread* thread);
 
 #ifdef __cplusplus
 }

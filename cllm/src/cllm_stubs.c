@@ -39,3 +39,17 @@ double get_phonetic_value(const char* lambda) {
     (void)lambda;
     return 0.0;
 }
+
+// Stub for cllm_training_free
+void cllm_training_free(CLLMTraining* training) {
+    (void)training;
+}
+
+// Stub for cllm_compute_loss
+double cllm_compute_loss(CLLMTraining* training, uint32_t* input_tokens, uint32_t* target_tokens, int num_tokens) {
+    (void)training;
+    (void)input_tokens;
+    (void)target_tokens;
+    (void)num_tokens;
+    return 0.0;
+}
