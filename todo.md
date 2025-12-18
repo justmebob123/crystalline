@@ -343,8 +343,15 @@ This is a complete architectural redesign where:
 - [x] Created stub functions for missing implementations
 - [x] Fixed build system and linking issues
 - [x] Documented progress in WEEK2_DAY10_PROGRESS.md
+- [x] **CRITICAL FIX: RULE 1 COMPLIANCE**
+  - [x] Removed math.h from cllm/src/cllm_attention_helpers.c
+  - [x] Removed math.h from cllm/src/cllm_attention_threaded.c
+  - [x] Implemented crystalline_sqrt() using Newton's method
+  - [x] Implemented crystalline_exp() using Taylor series
+  - [x] NO external math libraries in production code ✅
+  - [x] Documented in RULE1_COMPLIANCE_FIXED.md
 
-### [ ] Day 11: Fix Embedding Helpers and Continue Testing ⏳ NEXT
+### [ ] Day 11: Fix Embedding Helpers and Continue Testing ⏳ IN PROGRESS
 - [ ] Implement embedding helper functions:
   - [ ] Fix cllm_set_embedding() to work with thread storage
   - [ ] Fix cllm_get_embedding_from_model() to retrieve from threads
