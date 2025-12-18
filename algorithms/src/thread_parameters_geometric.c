@@ -524,3 +524,62 @@ bool thread_is_using_geometric(const HierarchicalThread* thread) {
     
     return thread->geometric_params != NULL && thread->num_geometric_params > 0;
 }
+
+// ============================================================================
+// PARAMETER ACCESS BY NAME
+// ============================================================================
+
+// Import thread_get_parameter_index from thread_parameters.c
+extern int thread_get_parameter_index(const HierarchicalThread* thread, const char* name);
+
+GeometricMatrix* thread_get_parameter_matrix(HierarchicalThread* thread,
+                                             const char* name,
+                                             uint32_t token_id) {
+    (void)token_id; // Token ID not used for now (future: for embeddings)
+    
+    if (!thread || !name) return NULL;
+    
+    int idx = thread_get_parameter_index(thread, name);
+    if (idx < 0) return NULL;
+    
+    return thread->geometric_params[idx];
+}
+
+GeometricMatrix* thread_get_gradient_matrix(HierarchicalThread* thread,
+                                            const char* name,
+                                            uint32_t token_id) {
+    (void)token_id; // Token ID not used for now
+    
+    if (!thread || !name) return NULL;
+    
+    int idx = thread_get_parameter_index(thread, name);
+    if (idx < 0) return NULL;
+    
+    return thread->geometric_gradients[idx];
+}
+
+GeometricMatrix* thread_get_momentum_matrix(HierarchicalThread* thread,
+                                           const char* name,
+                                           uint32_t token_id) {
+    (void)token_id; // Token ID not used for now
+    
+    if (!thread || !name) return NULL;
+    
+    int idx = thread_get_parameter_index(thread, name);
+    if (idx < 0) return NULL;
+    
+    return thread->geometric_momentum[idx];
+}
+
+GeometricMatrix* thread_get_velocity_matrix(HierarchicalThread* thread,
+                                           const char* name,
+                                           uint32_t token_id) {
+    (void)token_id; // Token ID not used for now
+    
+    if (!thread || !name) return NULL;
+    
+    int idx = thread_get_parameter_index(thread, name);
+    if (idx < 0) return NULL;
+    
+    return thread->geometric_velocity[idx];
+}

@@ -48,6 +48,33 @@ static void copy_abacus_value(CrystallineAbacus* dest, const CrystallineAbacus* 
 }
 
 /**
+ * @brief Get double value from CrystallineAbacus
+ */
+static double abacus_get_value(const CrystallineAbacus* abacus, uint32_t index) {
+    (void)index; // For now, we only use index 0
+    double value = 0.0;
+    abacus_to_double(abacus, &value);
+    return value;
+}
+
+/**
+ * @brief Set double value in CrystallineAbacus
+ */
+static void abacus_set_value(CrystallineAbacus* abacus, uint32_t index, double value) {
+    (void)index; // For now, we only use index 0
+    CrystallineAbacus* temp = abacus_from_double(value, 60, 10);
+    if (temp) {
+        // Copy beads
+        abacus->num_beads = temp->num_beads;
+        abacus->negative = temp->negative;
+        for (size_t i = 0; i < temp->num_beads && i < abacus->capacity; i++) {
+            abacus->beads[i] = temp->beads[i];
+        }
+        abacus_free(temp);
+    }
+}
+
+/**
  * @brief Map (row, col) to normalized coordinates [0, 1] × [0, 1]
  */
 static void normalize_coordinates(
@@ -647,6 +674,43 @@ int geometric_matrix_accumulate_gradient(
     }
     
     abacus_free(weighted_grad);
+    barycentric_coords_free(&coords);
+    
+    pthread_mutex_unlock(&matrix->lock);
+    
+    return 0;
+}
+
+int geometric_matrix_accumulate_gradient_value(
+    GeometricMatrix* matrix,
+    uint32_t row,
+    uint32_t col,
+    double gradient_value
+) {
+    if (!matrix) return -1;
+    if (row >= matrix->rows || col >= matrix->cols) return -1;
+    
+    // Compute barycentric coordinates
+    BarycentricCoords coords;
+    if (geometric_matrix_compute_barycentric(matrix, row, col, &coords) != 0) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&matrix->lock);
+    
+    // Distribute gradient to vertices using barycentric weights
+    for (uint32_t i = 0; i < coords.num_vertices; i++) {
+        uint32_t v_idx = coords.vertex_indices[i];
+        double weight = coords.weights[i];
+        
+        // Weighted gradient contribution
+        double weighted_grad = gradient_value * weight;
+        
+        // Add to vertex value
+        double current = abacus_get_value(matrix->vertex_values[v_idx], 0);
+        abacus_set_value(matrix->vertex_values[v_idx], 0, current + weighted_grad);
+    }
+    
     barycentric_coords_free(&coords);
     
     pthread_mutex_unlock(&matrix->lock);

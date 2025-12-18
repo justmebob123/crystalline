@@ -33,6 +33,7 @@ SOURCES = src/abacus88d/abacus88d.c \
           src/thread_parameters.c \
           src/geometric_matrix.c \
           src/thread_parameters_geometric.c \
+          src/worker_functions_geometric.c \
           src/adaptive_threading.c \
           src/memory_management.c \
           src/visualization.c \

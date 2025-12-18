@@ -229,6 +229,78 @@ int thread_apply_geometric_optimizer(
 );
 
 // ============================================================================
+// PARAMETER ACCESS BY NAME
+// ============================================================================
+
+/**
+ * @brief Get parameter matrix by name
+ * 
+ * @param thread Thread that owns the parameter
+ * @param name Parameter name (e.g., "W_q", "W_k")
+ * @param token_id Token ID (for embeddings, 0 for others)
+ * @return Pointer to GeometricMatrix, or NULL if not found
+ */
+GeometricMatrix* thread_get_parameter_matrix(
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id
+);
+
+/**
+ * @brief Get gradient matrix by name
+ * 
+ * @param thread Thread that owns the parameter
+ * @param name Parameter name (e.g., "W_q", "W_k")
+ * @param token_id Token ID (for embeddings, 0 for others)
+ * @return Pointer to gradient GeometricMatrix, or NULL if not found
+ */
+GeometricMatrix* thread_get_gradient_matrix(
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id
+);
+
+/**
+ * @brief Get momentum matrix by name
+ * 
+ * @param thread Thread that owns the parameter
+ * @param name Parameter name (e.g., "W_q", "W_k")
+ * @param token_id Token ID (for embeddings, 0 for others)
+ * @return Pointer to momentum GeometricMatrix, or NULL if not found
+ */
+GeometricMatrix* thread_get_momentum_matrix(
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id
+);
+
+/**
+ * @brief Get velocity matrix by name
+ * 
+ * @param thread Thread that owns the parameter
+ * @param name Parameter name (e.g., "W_q", "W_k")
+ * @param token_id Token ID (for embeddings, 0 for others)
+ * @return Pointer to velocity GeometricMatrix, or NULL if not found
+ */
+GeometricMatrix* thread_get_velocity_matrix(
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id
+);
+
+/**
+ * @brief Get parameter index by name
+ * 
+ * @param thread Thread that owns the parameter
+ * @param name Parameter name
+ * @return Parameter index, or -1 if not found
+ */
+int thread_get_parameter_index(
+    const HierarchicalThread* thread,
+    const char* name
+);
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 

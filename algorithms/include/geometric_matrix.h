@@ -284,6 +284,25 @@ int geometric_matrix_accumulate_gradient(
     const CrystallineAbacus* gradient
 );
 
+/**
+ * @brief Accumulate gradient value (double) to geometric matrix
+ * 
+ * Simplified version that takes a double gradient value and distributes
+ * it to vertices using barycentric coordinates.
+ * 
+ * @param matrix Geometric matrix
+ * @param row Row index
+ * @param col Column index
+ * @param gradient_value Gradient value (double)
+ * @return 0 on success, -1 on error
+ */
+int geometric_matrix_accumulate_gradient_value(
+    GeometricMatrix* matrix,
+    uint32_t row,
+    uint32_t col,
+    double gradient_value
+);
+
 // ============================================================================
 // BARYCENTRIC OPERATIONS
 // ============================================================================
