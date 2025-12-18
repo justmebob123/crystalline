@@ -21,8 +21,9 @@ extern "C" {
 
 /**
  * Get embedding from thread's CrystallineAbacus
+ * @return 0 on success, -1 on error
  */
-bool cllm_get_embedding_from_thread(
+int cllm_get_embedding_from_thread(
     HierarchicalThread* thread,
     double* output,
     uint32_t embedding_dim
@@ -30,8 +31,9 @@ bool cllm_get_embedding_from_thread(
 
 /**
  * Set embedding in thread's CrystallineAbacus
+ * @return 0 on success, -1 on error
  */
-bool cllm_set_embedding_to_thread(
+int cllm_set_embedding_to_thread(
     HierarchicalThread* thread,
     const double* input,
     uint32_t embedding_dim
@@ -40,8 +42,9 @@ bool cllm_set_embedding_to_thread(
 /**
  * Get embedding by token ID from thread storage (convenience function)
  * Renamed to avoid conflict with cllm_inference.h
+ * @return 0 on success, -1 on error
  */
-bool cllm_get_embedding_from_model(
+int cllm_get_embedding_from_model(
     const CLLMModel* model,
     uint32_t token_id,
     double* output
@@ -49,8 +52,9 @@ bool cllm_get_embedding_from_model(
 
 /**
  * Set embedding by token ID (convenience function)
+ * @return 0 on success, -1 on error
  */
-bool cllm_set_embedding(
+int cllm_set_embedding(
     CLLMModel* model,
     uint32_t token_id,
     const double* input
@@ -78,8 +82,9 @@ double* cllm_get_embedding_ptr_mut(
 
 /**
  * Copy embedding from one token to another
+ * @return 0 on success, -1 on error
  */
-bool cllm_copy_embedding(
+int cllm_copy_embedding(
     CLLMModel* model,
     uint32_t src_token_id,
     uint32_t dst_token_id
