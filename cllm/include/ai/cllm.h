@@ -241,12 +241,12 @@ typedef struct {
     CLLMVocabulary* vocabulary;      // Token vocabulary with save/load support
     
     // ========================================================================
-    // 88D THREAD-CENTRIC ARCHITECTURE (MANDATORY)
+    // THREAD-CENTRIC ARCHITECTURE (MANDATORY)
     // ========================================================================
     
-    // 88D Thread Pool (MANDATORY - not optional)
+    // Thread Pool (MANDATORY - not optional)
     // This is THE core of the model - everything else is organized around it
-    HierarchicalThreadPool* pool_88d;  // 96 threads (8 layers × 12 threads per layer)
+    HierarchicalThreadPool* threads;  // 96 threads (8 layers × 12 threads per layer)
     
     // Token → Thread Assignment (PERMANENT)
     // Every token is permanently assigned to a specific thread
@@ -417,7 +417,7 @@ typedef struct {
     
     struct {
         // Threading is ALWAYS enabled (not optional)
-        // pool_88d is now a direct field above, not in this struct
+        // threads is now a direct field above, not in this struct
         
         // Geometric mapping (automatic from Platonic solid)
         uint32_t* vertex_to_thread;   // Map vertices to threads [vertices]

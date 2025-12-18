@@ -213,8 +213,8 @@ int cllm_layernorm_forward_batch(
         double* token_output = output + t * model->embedding_dim;
         
         // Get thread for this layer (use control thread for now)
-        HierarchicalThread* thread = hierarchical_thread_get_88d(
-            model->pool_88d, layer_id, 0
+        HierarchicalThread* thread = hierarchical_thread_get(
+            model->threads, layer_id, 0
         );
         
         if (!thread) {

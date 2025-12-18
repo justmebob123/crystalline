@@ -145,9 +145,9 @@ void cllm_free_model(CLLMModel* model) {
     // All parameters stored in thread CrystallineAbacus are freed here
     printf("  → About to free 88D thread pool...\n");
     fflush(stdout);
-    if (model->pool_88d) {
-        hierarchical_thread_pool_free(model->pool_88d);
-        model->pool_88d = NULL;
+    if (model->threads) {
+        hierarchical_thread_pool_free(model->threads);
+        model->threads = NULL;
         printf("  ✓ Freed 88D thread pool (including all thread-local parameters)\n");
         fflush(stdout);
     }
@@ -322,7 +322,7 @@ bool cllm_validate_model(const CLLMModel* model) {
     printf("  ✓ 12-fold symmetry: num_heads = 12\n");
     
     // Check thread-centric architecture
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "  ✗ 88D thread pool not initialized\n");
         return false;
     }

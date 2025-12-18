@@ -39,7 +39,7 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
     inference->max_tokens = 50;
     
     // CRITICAL: Verify 88D thread pool exists (MANDATORY)
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "Error: 88D thread pool is NULL - threading is MANDATORY\n");
         fprintf(stderr, "Inference requires thread-local storage for all computation\n");
         free(inference);
@@ -58,7 +58,7 @@ CLLMInference* cllm_inference_init(CLLMModel* model) {
     }
     
     printf("✅ Inference context initialized (thread-local storage only)\n");
-    printf("   88D thread pool: %d threads\n", model->pool_88d ? 96 : 0);
+    printf("   88D thread pool: %d threads\n", model->threads ? 96 : 0);
     printf("   Max tokens: %d\n", inference->max_tokens);
     return inference;
 }
@@ -516,7 +516,7 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
     }
     
     // CRITICAL: Verify 88D thread pool (MANDATORY)
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "Error: 88D thread pool is NULL - threading is MANDATORY\n");
         return;
     }
@@ -536,10 +536,10 @@ void cllm_forward(CLLMInference* inference, uint32_t* tokens, int num_tokens) {
         uint8_t dimension = model->token_assignments[token_id].dimension;
         
         // Get the thread
-        extern HierarchicalThread* hierarchical_thread_get_88d(
+        extern HierarchicalThread* hierarchical_thread_get(
             HierarchicalThreadPool* pool, uint8_t layer, uint8_t dimension);
-        HierarchicalThread* thread = hierarchical_thread_get_88d(
-            model->pool_88d, layer, dimension
+        HierarchicalThread* thread = hierarchical_thread_get(
+            model->threads, layer, dimension
         );
         
         if (!thread || !thread->activation_buffer) {
@@ -622,120 +622,120 @@ uint32_t cllm_sample_top_p(double* probs, int vocab_size, double p) {
 
 
 // Generate text - MAIN FUNCTION (Phase 2: Thread-local storage only)
-int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length) {
-    if (!inference || !prompt || !output) return -1;
-    
-    CLLMModel* model = inference->model;
-    if (!model || !model->pool_88d) {
-        fprintf(stderr, "Error: Model or 88D thread pool is NULL\n");
-        strcpy(output, "Error: Invalid model state");
-        return -1;
-    }
-    
-    // Tokenize prompt
-    uint32_t tokens[MAX_SEQUENCE_LENGTH];
-    int num_tokens = cllm_tokenize(inference, prompt, tokens, MAX_SEQUENCE_LENGTH);
-    
-    if (num_tokens <= 0) {
-        strcpy(output, "Error: Could not tokenize prompt");
-        return -1;
-    }
-    
-    // Process prompt tokens
-    cllm_forward(inference, tokens, num_tokens);
-    
-    // Generate tokens
-    int tokens_generated = 0;
-    while (tokens_generated < inference->max_tokens && num_tokens < MAX_SEQUENCE_LENGTH) {
-        // Allocate temporary logits buffer (thread-local, on stack would be better but vocab_size is large)
-        double* logits = (double*)calloc(model->vocab_size, sizeof(double));
-        if (!logits) {
-            fprintf(stderr, "Error: Failed to allocate logits buffer\n");
-            break;
-        }
-        
-        // Compute logits by aggregating from all threads
-        // Each token's thread contains its final hidden state in activation_buffer
-        uint32_t last_token = tokens[num_tokens - 1];
-        uint8_t last_layer = model->token_assignments[last_token].layer;
-        uint8_t last_dim = model->token_assignments[last_token].dimension;
-        
-        extern HierarchicalThread* hierarchical_thread_get_88d(
-            HierarchicalThreadPool* pool, uint8_t layer, uint8_t dimension);
-        HierarchicalThread* last_thread = hierarchical_thread_get_88d(
-            model->pool_88d, last_layer, last_dim
-        );
-        
-        if (!last_thread || !last_thread->activation_buffer) {
-            fprintf(stderr, "Error: Cannot get last token's thread\n");
-            free(logits);
-            break;
-        }
-        
-        // Compute dot product with each vocabulary token's embedding
-        for (uint32_t v = 0; v < model->vocab_size; v++) {
-            uint8_t v_layer = model->token_assignments[v].layer;
-            uint8_t v_dim = model->token_assignments[v].dimension;
-            
-            HierarchicalThread* v_thread = hierarchical_thread_get_88d(
-                model->pool_88d, v_layer, v_dim
-            );
-            
-            if (!v_thread) continue;
-            
-            // Get vocabulary token's embedding
-            double* v_embedding = (double*)malloc(model->embedding_dim * sizeof(double));
-            if (!v_embedding) continue;
-            
-            extern bool cllm_get_embedding_from_model(const CLLMModel* model, uint32_t token_id, double* output);
-            if (!cllm_get_embedding_from_model(model, v, v_embedding)) {
-                free(v_embedding);
-                continue;
-            }
-            
-            // Compute dot product
-            double score = 0.0;
-            for (uint32_t d = 0; d < model->embedding_dim; d++) {
-                score += last_thread->activation_buffer[d] * v_embedding[d];
-            }
-            logits[v] = score;
-            
-            free(v_embedding);
-        }
-        
-        // Apply temperature and softmax
-        cllm_apply_temperature(logits, model->vocab_size, inference->temperature);
-        cllm_softmax(logits, model->vocab_size);
-        
-        // Sample next token
-        uint32_t next_token;
-        if (inference->top_k > 0) {
-            next_token = cllm_sample_top_k(logits, model->vocab_size, inference->top_k);
-        } else {
-            next_token = cllm_sample_top_p(logits, model->vocab_size, inference->top_p);
-        }
-        
-        free(logits);
-        
-        // Check for end of sequence (assuming 0 is EOS or invalid)
-        if (next_token == 0 || next_token >= model->vocab_size) break;
-        
-        // Add to sequence
-        tokens[num_tokens++] = next_token;
-        inference->generated_tokens[tokens_generated] = next_token;
-        tokens_generated++;
-        inference->num_generated = tokens_generated;
-        
-        // Process next token
-        cllm_forward(inference, &next_token, 1);
-    }
-    
-    // Detokenize
-    cllm_detokenize(inference, tokens, num_tokens, output, max_output_length);
-    
-    return tokens_generated;
-}
-
+// REMOVED: int cllm_generate(CLLMInference* inference, const char* prompt, char* output, int max_output_length) {
+// REMOVED:     if (!inference || !prompt || !output) return -1;
+// REMOVED:     
+// REMOVED:     CLLMModel* model = inference->model;
+// REMOVED:     if (!model || !model->threads) {
+// REMOVED:         fprintf(stderr, "Error: Model or 88D thread pool is NULL\n");
+// REMOVED:         strcpy(output, "Error: Invalid model state");
+// REMOVED:         return -1;
+// REMOVED:     }
+// REMOVED:     
+// REMOVED:     // Tokenize prompt
+// REMOVED:     uint32_t tokens[MAX_SEQUENCE_LENGTH];
+// REMOVED:     int num_tokens = cllm_tokenize(inference, prompt, tokens, MAX_SEQUENCE_LENGTH);
+// REMOVED:     
+// REMOVED:     if (num_tokens <= 0) {
+// REMOVED:         strcpy(output, "Error: Could not tokenize prompt");
+// REMOVED:         return -1;
+// REMOVED:     }
+// REMOVED:     
+// REMOVED:     // Process prompt tokens
+// REMOVED:     cllm_forward(inference, tokens, num_tokens);
+// REMOVED:     
+// REMOVED:     // Generate tokens
+// REMOVED:     int tokens_generated = 0;
+// REMOVED:     while (tokens_generated < inference->max_tokens && num_tokens < MAX_SEQUENCE_LENGTH) {
+// REMOVED:         // Allocate temporary logits buffer (thread-local, on stack would be better but vocab_size is large)
+// REMOVED:         double* logits = (double*)calloc(model->vocab_size, sizeof(double));
+// REMOVED:         if (!logits) {
+// REMOVED:             fprintf(stderr, "Error: Failed to allocate logits buffer\n");
+// REMOVED:             break;
+// REMOVED:         }
+// REMOVED:         
+// REMOVED:         // Compute logits by aggregating from all threads
+// REMOVED:         // Each token's thread contains its final hidden state in activation_buffer
+// REMOVED:         uint32_t last_token = tokens[num_tokens - 1];
+// REMOVED:         uint8_t last_layer = model->token_assignments[last_token].layer;
+// REMOVED:         uint8_t last_dim = model->token_assignments[last_token].dimension;
+// REMOVED:         
+// REMOVED:         extern HierarchicalThread* hierarchical_thread_get(
+// REMOVED:             HierarchicalThreadPool* pool, uint8_t layer, uint8_t dimension);
+// REMOVED:         HierarchicalThread* last_thread = hierarchical_thread_get(
+// REMOVED:             model->threads, last_layer, last_dim
+// REMOVED:         );
+// REMOVED:         
+// REMOVED:         if (!last_thread || !last_thread->activation_buffer) {
+// REMOVED:             fprintf(stderr, "Error: Cannot get last token's thread\n");
+// REMOVED:             free(logits);
+// REMOVED:             break;
+// REMOVED:         }
+// REMOVED:         
+// REMOVED:         // Compute dot product with each vocabulary token's embedding
+// REMOVED:         for (uint32_t v = 0; v < model->vocab_size; v++) {
+// REMOVED:             uint8_t v_layer = model->token_assignments[v].layer;
+// REMOVED:             uint8_t v_dim = model->token_assignments[v].dimension;
+// REMOVED:             
+// REMOVED:             HierarchicalThread* v_thread = hierarchical_thread_get(
+// REMOVED:                 model->threads, v_layer, v_dim
+// REMOVED:             );
+// REMOVED:             
+// REMOVED:             if (!v_thread) continue;
+// REMOVED:             
+// REMOVED:             // Get vocabulary token's embedding
+// REMOVED:             double* v_embedding = (double*)malloc(model->embedding_dim * sizeof(double));
+// REMOVED:             if (!v_embedding) continue;
+// REMOVED:             
+// REMOVED:             extern bool cllm_get_embedding_from_model(const CLLMModel* model, uint32_t token_id, double* output);
+// REMOVED:             if (!cllm_get_embedding_from_model(model, v, v_embedding)) {
+// REMOVED:                 free(v_embedding);
+// REMOVED:                 continue;
+// REMOVED:             }
+// REMOVED:             
+// REMOVED:             // Compute dot product
+// REMOVED:             double score = 0.0;
+// REMOVED:             for (uint32_t d = 0; d < model->embedding_dim; d++) {
+// REMOVED:                 score += last_thread->activation_buffer[d] * v_embedding[d];
+// REMOVED:             }
+// REMOVED:             logits[v] = score;
+// REMOVED:             
+// REMOVED:             free(v_embedding);
+// REMOVED:         }
+// REMOVED:         
+// REMOVED:         // Apply temperature and softmax
+// REMOVED:         cllm_apply_temperature(logits, model->vocab_size, inference->temperature);
+// REMOVED:         cllm_softmax(logits, model->vocab_size);
+// REMOVED:         
+// REMOVED:         // Sample next token
+// REMOVED:         uint32_t next_token;
+// REMOVED:         if (inference->top_k > 0) {
+// REMOVED:             next_token = cllm_sample_top_k(logits, model->vocab_size, inference->top_k);
+// REMOVED:         } else {
+// REMOVED:             next_token = cllm_sample_top_p(logits, model->vocab_size, inference->top_p);
+// REMOVED:         }
+// REMOVED:         
+// REMOVED:         free(logits);
+// REMOVED:         
+// REMOVED:         // Check for end of sequence (assuming 0 is EOS or invalid)
+// REMOVED:         if (next_token == 0 || next_token >= model->vocab_size) break;
+// REMOVED:         
+// REMOVED:         // Add to sequence
+// REMOVED:         tokens[num_tokens++] = next_token;
+// REMOVED:         inference->generated_tokens[tokens_generated] = next_token;
+// REMOVED:         tokens_generated++;
+// REMOVED:         inference->num_generated = tokens_generated;
+// REMOVED:         
+// REMOVED:         // Process next token
+// REMOVED:         cllm_forward(inference, &next_token, 1);
+// REMOVED:     }
+// REMOVED:     
+// REMOVED:     // Detokenize
+// REMOVED:     cllm_detokenize(inference, tokens, num_tokens, output, max_output_length);
+// REMOVED:     
+// REMOVED:     return tokens_generated;
+// REMOVED: }
+// REMOVED: 
 // Set generation parameters
 void cllm_set_temperature(CLLMInference* inference, float temperature) {
     if (inference) {

@@ -274,7 +274,7 @@ void cllm_generate_lattice_transform(double* transform, int dim) {
  * 2. Otherwise: Use clock lattice + L(n,d,k,λ) formula
  */
 void cllm_init_embeddings(CLLMModel* model) {
-    if (!model || !model->pool_88d) {
+    if (!model || !model->threads) {
         fprintf(stderr, "ERROR: Invalid model or thread pool\n");
         return;
     }

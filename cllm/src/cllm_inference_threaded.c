@@ -28,7 +28,7 @@ static void signal_all_threads(HierarchicalThreadPool* pool) {
     
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 0; dim < 12; dim++) {
-            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
             if (thread) {
                 pthread_cond_signal(&thread->control_cond);
             }
@@ -185,16 +185,16 @@ static uint32_t sample_top_p(const double* probs, uint32_t vocab_size, double p)
  * @param context_len Number of tokens in context
  * @return Next token ID, or 0 on error
  */
-uint32_t cllm_generate_token_threaded(CLLMInference* inference, 
+uint32_t cllm_generate_token(CLLMInference* inference, 
                                        const uint32_t* context,
                                        int context_len) {
     if (!inference || !context || context_len <= 0) {
-        fprintf(stderr, "ERROR: Invalid parameters for cllm_generate_token_threaded\n");
+        fprintf(stderr, "ERROR: Invalid parameters for cllm_generate_token\n");
         return 0;
     }
     
     CLLMModel* model = inference->model;
-    HierarchicalThreadPool* pool = model->pool_88d;
+    HierarchicalThreadPool* pool = model->threads;
     
     if (!pool) {
         fprintf(stderr, "FATAL: Cannot generate without 88D thread pool\n");
@@ -287,7 +287,7 @@ uint32_t cllm_generate_token_threaded(CLLMInference* inference,
  * 
  * This function:
  * 1. Tokenizes the prompt
- * 2. Generates tokens one by one using cllm_generate_token_threaded()
+ * 2. Generates tokens one by one using cllm_generate_token()
  * 3. Detokenizes and returns the generated text
  * 
  * @param inference Inference context
@@ -296,17 +296,17 @@ uint32_t cllm_generate_token_threaded(CLLMInference* inference,
  * @param max_output_length Maximum length of output buffer
  * @return Number of tokens generated, or -1 on error
  */
-int cllm_generate_threaded(CLLMInference* inference, 
+int cllm_generate(CLLMInference* inference, 
                            const char* prompt,
                            char* output,
                            int max_output_length) {
     if (!inference || !prompt || !output) {
-        fprintf(stderr, "ERROR: Invalid parameters for cllm_generate_threaded\n");
+        fprintf(stderr, "ERROR: Invalid parameters for cllm_generate\n");
         return -1;
     }
     
     CLLMModel* model = inference->model;
-    if (!model || !model->pool_88d) {
+    if (!model || !model->threads) {
         fprintf(stderr, "ERROR: Model or 88D thread pool is NULL\n");
         strcpy(output, "Error: Invalid model state");
         return -1;
@@ -338,7 +338,7 @@ int cllm_generate_threaded(CLLMInference* inference,
            num_tokens < MAX_SEQUENCE_LENGTH) {
         
         // Generate next token
-        uint32_t next_token = cllm_generate_token_threaded(inference, tokens, num_tokens);
+        uint32_t next_token = cllm_generate_token(inference, tokens, num_tokens);
         
         // Check for end of sequence or invalid token
         if (next_token == 0 || next_token >= model->vocab_size) {

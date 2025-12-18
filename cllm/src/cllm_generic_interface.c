@@ -94,7 +94,7 @@ GenericModel* cllm_create_generic_interface(CLLMModel* model) {
     }
     
     // Verify model has required components
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "Error: CLLMModel has no thread pool\n");
         return NULL;
     }

@@ -127,7 +127,7 @@ int cllm_write_model(const CLLMModel* model, const char* filename) {
         return -1;
     }
     
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "Error: Model has no thread pool (thread-centric architecture required)\n");
         return -1;
     }

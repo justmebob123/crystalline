@@ -81,7 +81,7 @@ void cllm_attention_forward(
     }
     
     // Verify 88D threading is initialized
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "Error: 88D thread pool not initialized\n");
         return;
     }
@@ -108,8 +108,8 @@ void cllm_attention_forward(
     // For now, use a simplified approach: get weights from first worker thread
     // TODO: Properly distribute across all 11 worker threads
     
-    HierarchicalThread* worker_thread = hierarchical_thread_get_88d(
-        model->pool_88d, layer_idx, 1  // First worker thread
+    HierarchicalThread* worker_thread = hierarchical_thread_get(
+        model->threads, layer_idx, 1  // First worker thread
     );
     
     if (!worker_thread) {

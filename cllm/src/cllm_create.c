@@ -95,8 +95,8 @@ static bool allocate_model_parameters(CLLMModel* model) {
     // ========================================================================
     
     printf("  → Creating 88D thread pool (MANDATORY)...\n");
-    model->pool_88d = hierarchical_thread_pool_create_88d(60);  // Base 60 for CrystallineAbacus
-    if (!model->pool_88d) {
+    model->threads = hierarchical_thread_pool_create_88d(60);  // Base 60 for CrystallineAbacus
+    if (!model->threads) {
         fprintf(stderr, "FATAL: Failed to create 88D thread pool\n");
         fprintf(stderr, "Threading is MANDATORY in the new architecture\n");
         return false;
@@ -113,7 +113,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
     
     // Set generic interface in all threads (for worker loop access)
     for (uint32_t i = 0; i < 96; i++) {
-        HierarchicalThread* thread = model->pool_88d->threads[i];
+        HierarchicalThread* thread = model->threads->threads[i];
         if (thread) {
             thread->model = generic;  // Generic interface, not CLLMModel directly
         }
@@ -147,7 +147,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
         
         // Get direct pointer to thread
         model->token_assignments[token_id].thread = 
-            hierarchical_thread_get_88d(model->pool_88d, layer, dimension);
+            hierarchical_thread_get(model->threads, layer, dimension);
         
         if (!model->token_assignments[token_id].thread) {
             fprintf(stderr, "Failed to get thread [%d][%d] for token %u\n", 
@@ -225,7 +225,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
     for (uint32_t layer = 0; layer < model->num_layers; layer++) {
         // Get control thread for this layer
         model->layer_info[layer].control_thread = 
-            hierarchical_thread_get_88d(model->pool_88d, layer, 0);
+            hierarchical_thread_get(model->threads, layer, 0);
         
         // Allocate worker thread array
         model->layer_info[layer].worker_threads = calloc(11, sizeof(HierarchicalThread*));
@@ -237,7 +237,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
         // Get worker threads
         for (uint8_t dim = 1; dim <= 11; dim++) {
             model->layer_info[layer].worker_threads[dim - 1] = 
-                hierarchical_thread_get_88d(model->pool_88d, layer, dim);
+                hierarchical_thread_get(model->threads, layer, dim);
         }
     }
     
@@ -290,7 +290,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 0; dim <= 11; dim++) {
             uint32_t thread_idx = layer * 12 + dim;
-            HierarchicalThread* thread = hierarchical_thread_get_88d(model->pool_88d, layer, dim);
+            HierarchicalThread* thread = hierarchical_thread_get(model->threads, layer, dim);
             
             if (!thread) {
                 fprintf(stderr, "Failed to get thread [%d][%d]\n", layer, dim);
@@ -577,7 +577,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     if (config->enable_kissing_spheres) {
         printf("🔮 Initializing kissing spheres threading...\n");
         
-        // Threading is now ALWAYS enabled via pool_88d
+        // Threading is now ALWAYS enabled via threads
         // Token assignments are in model->token_assignments (already allocated)
         
         // Allocate work distribution maps for geometric operations
@@ -672,7 +672,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.blind_recovery_enabled = model->recovery.enabled;
     model->header.harmonic_enabled = model->harmonic.enabled;
     model->header.ntt_attention_enabled = model->ntt.enabled;
-    model->header.kissing_spheres_enabled = (model->pool_88d != NULL);
+    model->header.kissing_spheres_enabled = (model->threads != NULL);
     model->header.created_timestamp = time(NULL);
     model->header.modified_timestamp = time(NULL);
     
@@ -687,7 +687,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
            model->embedding_dim, model->hidden_dim, model->num_layers, model->num_heads);
     printf("   Features: recovery=%d, harmonic=%d, ntt=%d, threading=%d\n",
            model->recovery.enabled, model->harmonic.enabled, 
-           model->ntt.enabled, (model->pool_88d != NULL));
+           model->ntt.enabled, (model->threads != NULL));
     
     return model;
 }

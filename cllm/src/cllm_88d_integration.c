@@ -3,7 +3,7 @@
  * @brief CLLM Integration with 88D Unified Threading System - Implementation
  * 
  * UPDATED FOR THREAD-CENTRIC ARCHITECTURE:
- * - pool_88d is now a direct field in CLLMModel (not in threading struct)
+ * - threads is now a direct field in CLLMModel (not in threading struct)
  * - Threading is MANDATORY (not optional)
  * - Token assignments are permanent (in token_assignments array)
  * - All parameters stored in thread CrystallineAbacus
@@ -27,7 +27,7 @@ bool cllm_initialize_88d_threading(CLLMModel* model, uint32_t base) {
     }
     
     // Check if already initialized
-    if (model->pool_88d) {
+    if (model->threads) {
         fprintf(stderr, "cllm_initialize_88d_threading: Already initialized\n");
         return true;  // Already initialized is not an error
     }
@@ -35,8 +35,8 @@ bool cllm_initialize_88d_threading(CLLMModel* model, uint32_t base) {
     printf("Initializing 88D threading system for CLLM model...\n");
     
     // Create 88D thread pool (96 threads: 8 layers × 12 threads per layer)
-    model->pool_88d = hierarchical_thread_pool_create_88d(base);
-    if (!model->pool_88d) {
+    model->threads = hierarchical_thread_pool_create_88d(base);
+    if (!model->threads) {
         fprintf(stderr, "Failed to create 88D thread pool\n");
         return false;
     }
@@ -95,9 +95,9 @@ void cllm_cleanup_88d_threading(CLLMModel* model) {
     printf("  ✓ Destroyed threading barriers\n");
     
     // Stop and destroy thread pool
-    if (model->pool_88d) {
-        hierarchical_thread_pool_free(model->pool_88d);
-        model->pool_88d = NULL;
+    if (model->threads) {
+        hierarchical_thread_pool_free(model->threads);
+        model->threads = NULL;
         printf("  ✓ Freed thread pool\n");
     }
     
@@ -171,7 +171,7 @@ HierarchicalThread* cllm_get_thread_for_token_direct(const CLLMModel* model, uin
 // ============================================================================
 
 bool cllm_distribute_work_88d(CLLMModel* model, void* work_items, size_t num_items) {
-    if (!model || !model->pool_88d) return false;
+    if (!model || !model->threads) return false;
     
     // Work distribution is handled by the thread pool
     // This is a placeholder for future work distribution logic
@@ -182,7 +182,7 @@ bool cllm_distribute_work_88d(CLLMModel* model, void* work_items, size_t num_ite
 }
 
 bool cllm_submit_work_item(CLLMModel* model, void* work_item) {
-    if (!model || !model->pool_88d || !work_item) return false;
+    if (!model || !model->threads || !work_item) return false;
     
     // Work submission is handled by the thread pool
     // This is a placeholder for future work submission logic
@@ -191,7 +191,7 @@ bool cllm_submit_work_item(CLLMModel* model, void* work_item) {
 }
 
 bool cllm_wait_for_work_completion(CLLMModel* model) {
-    if (!model || !model->pool_88d) return false;
+    if (!model || !model->threads) return false;
     
     // Wait for all threads to complete
     // This uses the global barrier
@@ -207,9 +207,9 @@ bool cllm_wait_for_work_completion(CLLMModel* model) {
 // ============================================================================
 
 void cllm_update_threading_stats(CLLMModel* model) {
-    if (!model || !model->pool_88d) return;
+    if (!model || !model->threads) return;
     
-    HierarchicalThreadPool* pool = model->pool_88d;
+    HierarchicalThreadPool* pool = model->threads;
     
     // Update statistics from thread pool
     model->threading.total_work_units = pool->total_work_items;

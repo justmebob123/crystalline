@@ -1260,7 +1260,7 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
             thread->work_completed = 0;
             
             int result = pthread_create(&thread->pthread, NULL, 
-                                       hierarchical_thread_worker_88d, thread);
+                                       hierarchical_thread_worker, thread);
             if (result != 0) {
                 fprintf(stderr, "Failed to start worker thread %u\n", i);
                 // Continue with other threads
@@ -1285,7 +1285,7 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     return pool;
 }
 
-HierarchicalThread* hierarchical_thread_get_88d(
+HierarchicalThread* hierarchical_thread_get(
     HierarchicalThreadPool* pool,
     uint8_t layer,
     uint8_t dimension
@@ -2342,7 +2342,7 @@ uint32_t hierarchical_thread_get_work_queue_size(HierarchicalThread* thread) {
  * Main worker loop for 88D threads
  * This runs continuously, processing work items as they arrive
  */
-void* hierarchical_thread_worker_88d(void* arg) {
+void* hierarchical_thread_worker(void* arg) {
     HierarchicalThread* thread = (HierarchicalThread*)arg;
     
     if (!thread) {
@@ -2435,7 +2435,7 @@ int collect_logits_from_layer7(HierarchicalThreadPool* pool,
     
     // Collect from each Layer 7 thread
     for (uint8_t dim = 0; dim < 12; dim++) {
-        HierarchicalThread* thread = hierarchical_thread_get_88d(pool, 7, dim);
+        HierarchicalThread* thread = hierarchical_thread_get(pool, 7, dim);
         if (!thread || !thread->activation_buffer) {
             fprintf(stderr, "ERROR: Layer 7 thread %d is NULL or has no activation buffer\n", dim);
             return -1;

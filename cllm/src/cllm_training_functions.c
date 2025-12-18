@@ -29,7 +29,7 @@
 /**
  * Forward pass - Threading is MANDATORY
  * 
- * This function will abort if pool_88d is NULL.
+ * This function will abort if threads is NULL.
  * All computation happens in parallel across 88 worker threads.
  * 
  * @param training Training context
@@ -49,7 +49,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     CLLMModel* model = training->model;
     
     // CRITICAL: Verify 88D thread pool exists
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "\n");
         fprintf(stderr, "╔════════════════════════════════════════════════════════╗\n");
         fprintf(stderr, "║              FATAL ERROR: NO THREADING                 ║\n");
@@ -60,13 +60,13 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         fprintf(stderr, "There is NO sequential fallback.\n");
         fprintf(stderr, "\n");
         fprintf(stderr, "Model must be created with cllm_create_model().\n");
-        fprintf(stderr, "Ensure pool_88d is properly initialized.\n");
+        fprintf(stderr, "Ensure threads is properly initialized.\n");
         fprintf(stderr, "\n");
         abort();
     }
     
     int num_tokens = training->config.batch_size * training->config.sequence_length;
-    HierarchicalThreadPool* pool = model->pool_88d;
+    HierarchicalThreadPool* pool = model->threads;
     
     fprintf(stderr, "DEBUG: cllm_forward_training - num_tokens=%d, pool=%p\n", num_tokens, (void*)pool);
     
@@ -110,7 +110,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
             HierarchicalThread* thread = 
-                hierarchical_thread_get_88d(pool, layer, dim);
+                hierarchical_thread_get(pool, layer, dim);
             
             if (thread) {
                 pthread_cond_signal(&thread->control_cond);
@@ -130,7 +130,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
         
         for (uint8_t layer = 0; layer < 8; layer++) {
             for (uint8_t dim = 1; dim <= 11; dim++) {
-                HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+                HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
                 if (thread) {
                     completed_work += __atomic_load_n(&thread->work_completed, __ATOMIC_SEQ_CST);
                 }
@@ -145,7 +145,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     // Reset work_completed counters for next iteration
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
-            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
             if (thread) {
                 __atomic_store_n(&thread->work_completed, 0, __ATOMIC_SEQ_CST);
             }
@@ -159,7 +159,7 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
             HierarchicalThread* thread = 
-                hierarchical_thread_get_88d(pool, layer, dim);
+                hierarchical_thread_get(pool, layer, dim);
             
             if (thread && thread->work_completed > 0) {
                 if (thread->activation_buffer && thread->activation_buffer_size > 0) {
@@ -199,13 +199,13 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     CLLMModel* model = training->model;
     
     // CRITICAL: Verify 88D thread pool exists
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "FATAL ERROR: 88D thread pool not initialized\n");
         abort();
     }
     
     int num_tokens = training->config.batch_size * training->config.sequence_length;
-    HierarchicalThreadPool* pool = model->pool_88d;
+    HierarchicalThreadPool* pool = model->threads;
     
     // Enqueue backward work items to threads
     int work_enqueued = 0;
@@ -242,7 +242,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
             HierarchicalThread* thread = 
-                hierarchical_thread_get_88d(pool, layer, dim);
+                hierarchical_thread_get(pool, layer, dim);
             
             if (thread) {
                 pthread_cond_signal(&thread->control_cond);
@@ -259,7 +259,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
         
         for (uint8_t layer = 0; layer < 8; layer++) {
             for (uint8_t dim = 1; dim <= 11; dim++) {
-                HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+                HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
                 if (thread) {
                     completed_work += __atomic_load_n(&thread->work_completed, __ATOMIC_SEQ_CST);
                 }
@@ -274,7 +274,7 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
     // Reset work_completed counters for next iteration
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 1; dim <= 11; dim++) {
-            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
             if (thread) {
                 __atomic_store_n(&thread->work_completed, 0, __ATOMIC_SEQ_CST);
             }
@@ -302,7 +302,7 @@ void cllm_precompute_all_embeddings(CLLMModel* model) {
 CLLMTraining* cllm_training_init(CLLMModel* model, CLLMTrainingConfig* config) {
     if (!model || !config) return NULL;
     
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "FATAL: Cannot initialize training without 88D thread pool\n");
         return NULL;
     }
@@ -332,7 +332,7 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     
     CLLMModel* model = training->model;
     
-    if (!model->pool_88d) {
+    if (!model->threads) {
         fprintf(stderr, "FATAL: Cannot run optimizer without 88D thread pool\n");
         abort();
     }
@@ -440,7 +440,7 @@ double cllm_train_step_threaded(
     }
     
     CLLMModel* model = training->model;
-    HierarchicalThreadPool* pool = model->pool_88d;
+    HierarchicalThreadPool* pool = model->threads;
     
     if (!pool) {
         fprintf(stderr, "FATAL: Cannot train without 88D thread pool\n");
@@ -508,7 +508,7 @@ double cllm_train_step_threaded(
     // Apply optimizer to each thread
     for (uint8_t layer = 0; layer < 8; layer++) {
         for (uint8_t dim = 0; dim <= 11; dim++) {
-            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            HierarchicalThread* thread = hierarchical_thread_get(pool, layer, dim);
             if (thread) {
                 worker_apply_optimizer(thread, 
                                       training->config.learning_rate,

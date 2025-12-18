@@ -211,7 +211,7 @@ int cllm_compute_logits(
         uint8_t v_dim = model->token_assignments[v].dimension;
         
         HierarchicalThread* v_thread = 
-            hierarchical_thread_get_88d(model->pool_88d, v_layer, v_dim);
+            hierarchical_thread_get(model->threads, v_layer, v_dim);
         
         if (!v_thread || !v_thread->activation_buffer) {
             logits[v] = 0.0;

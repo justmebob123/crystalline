@@ -943,9 +943,10 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
 // ============================================================================
 
 /**
- * Create 88D thread pool
+ * Create hierarchical thread pool (88D specialized version)
  * 
  * Creates a thread pool with 88D organization (8 layers × 11 dimensions).
+ * This is a convenience wrapper around the general hierarchical_thread_pool_create.
  * 
  * @param base Abacus base (typically 60 for base-60)
  * @return Thread pool or NULL on error
@@ -953,14 +954,14 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
 HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base);
 
 /**
- * Get thread by 88D position
+ * Get thread by position
  * 
  * @param pool Thread pool
  * @param layer Layer (0-7)
  * @param dimension Dimension (0-10)
  * @return Thread or NULL if not found
  */
-HierarchicalThread* hierarchical_thread_get_88d(
+HierarchicalThread* hierarchical_thread_get(
     HierarchicalThreadPool* pool,
     uint8_t layer,
     uint8_t dimension
@@ -1091,7 +1092,7 @@ int hierarchical_thread_pool_get_88d_stats(
  * @param arg HierarchicalThread pointer
  * @return NULL
  */
-void* hierarchical_thread_worker_88d(void* arg);
+void* hierarchical_thread_worker(void* arg);
 
 // ============================================================================
 // WORK QUEUE OPERATIONS
