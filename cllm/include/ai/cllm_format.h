@@ -39,7 +39,7 @@ void cllm_token_create(CLLMToken* token, uint32_t token_id, const char* token_st
  */
 
 // RECOMMENDED: New API with proper layer-by-layer save/load
-CLLMModel* cllm_read_model(const char* filename);
+int cllm_read_model(CLLMModel** model_out, const char* filename);
 int cllm_write_model(const CLLMModel* model, const char* filepath);
 
 // DEPRECATED API REMOVED - Use cllm_read_model/cllm_write_model instead

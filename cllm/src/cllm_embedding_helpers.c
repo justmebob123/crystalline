@@ -17,6 +17,7 @@
 #include "math/abacus.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // ============================================================================
 // THREAD-BASED EMBEDDING ACCESS
@@ -92,7 +93,7 @@ bool cllm_set_embedding_to_thread(
  * @param output Output buffer [embedding_dim]
  * @return true on success, false on error
  */
-bool cllm_get_embedding(
+bool cllm_get_embedding_from_model(
     const CLLMModel* model,
     uint32_t token_id,
     double* output
@@ -240,7 +241,7 @@ bool cllm_copy_embedding(
         return false;
     }
     
-    if (!cllm_get_embedding(model, src_token_id, temp)) {
+    if (!cllm_get_embedding_from_model(model, src_token_id, temp)) {
         free(temp);
         return false;
     }

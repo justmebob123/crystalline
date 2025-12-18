@@ -38,9 +38,10 @@ bool cllm_set_embedding_to_thread(
 );
 
 /**
- * Get embedding by token ID (convenience function)
+ * Get embedding by token ID from thread storage (convenience function)
+ * Renamed to avoid conflict with cllm_inference.h
  */
-bool cllm_get_embedding(
+bool cllm_get_embedding_from_model(
     const CLLMModel* model,
     uint32_t token_id,
     double* output

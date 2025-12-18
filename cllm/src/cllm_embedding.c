@@ -777,47 +777,10 @@ int cllm_embeddings_iterative_refinement(
  * Compute covariance matrix of embeddings
  */
 static float** compute_embedding_covariance(CLLMModel* model) {
-    uint32_t vocab_size = model->vocab_size;
-    uint32_t embed_dim = model->embedding_dim;
-    double* embeddings = model->embeddings;
-    
-    // Allocate covariance matrix
-    float** cov = (float**)malloc(embed_dim * sizeof(float*));
-    for (uint32_t i = 0; i < embed_dim; i++) {
-        cov[i] = (float*)calloc(embed_dim, sizeof(float));
-    }
-    
-    // Compute mean
-    float* mean = (float*)calloc(embed_dim, sizeof(float));
-    for (uint32_t v = 0; v < vocab_size; v++) {
-        for (uint32_t d = 0; d < embed_dim; d++) {
-            mean[d] += embeddings[v * embed_dim + d];
-        }
-    }
-    for (uint32_t d = 0; d < embed_dim; d++) {
-        mean[d] /= vocab_size;
-    }
-    
-    // Compute covariance
-    for (uint32_t v = 0; v < vocab_size; v++) {
-        for (uint32_t i = 0; i < embed_dim; i++) {
-            float xi = embeddings[v * embed_dim + i] - mean[i];
-            for (uint32_t j = 0; j < embed_dim; j++) {
-                float xj = embeddings[v * embed_dim + j] - mean[j];
-                cov[i][j] += xi * xj;
-            }
-        }
-    }
-    
-    // Normalize
-    for (uint32_t i = 0; i < embed_dim; i++) {
-        for (uint32_t j = 0; j < embed_dim; j++) {
-            cov[i][j] /= vocab_size;
-        }
-    }
-    
-    free(mean);
-    return cov;
+    // TODO: Reimplement for thread-local storage
+    fprintf(stderr, "WARNING: compute_embedding_covariance() not yet implemented for 88D architecture\n");
+    (void)model;
+    return NULL;
 }
 
 /**
@@ -988,16 +951,12 @@ void lll_reconstruct_embedding(LLLEmbeddingReducer* reducer, const float* reduce
 float* lll_project_all_embeddings(LLLEmbeddingReducer* reducer, CLLMModel* model) {
     if (!reducer || !model) return NULL;
     
-    uint32_t vocab_size = model->vocab_size;
-    float* reduced_embeddings = (float*)malloc(vocab_size * reducer->reduced_dim * sizeof(float));
+    // TODO: Reimplement for thread-local storage
+    fprintf(stderr, "WARNING: lll_project_all_embeddings() not yet implemented for 88D architecture\n");
     
-    for (uint32_t v = 0; v < vocab_size; v++) {
-        double* original = &model->embeddings[v * reducer->original_dim];
-        float* reduced = &reduced_embeddings[v * reducer->reduced_dim];
-        lll_project_embedding(reducer, original, reduced);
-    }
-    
-    return reduced_embeddings;
+    (void)reducer;
+    (void)model;
+    return NULL;
 }
 
 // ============================================================================
@@ -1019,7 +978,7 @@ void cllm_embed_token(CLLMInference* inf, uint32_t token_id, float* output) {
     double* temp = calloc(embedding_dim, sizeof(double));
     if (!temp) return;
     
-    if (cllm_get_embedding(model, token_id, temp)) {
+    if (cllm_get_embedding_from_model(model, token_id, temp)) {
         for (uint32_t i = 0; i < embedding_dim; i++) {
             output[i] = (float)temp[i];
         }
@@ -1077,7 +1036,7 @@ void cllm_update_embedding(CLLMModel* model, uint32_t token_id,
     double* embedding = calloc(embedding_dim, sizeof(double));
     if (!embedding) return;
     
-    if (!cllm_get_embedding(model, token_id, embedding)) {
+    if (!cllm_get_embedding_from_model(model, token_id, embedding)) {
         free(embedding);
         return;
     }

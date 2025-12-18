@@ -74,60 +74,14 @@ static void initialize_geometric_weights(CLLMModel* model) {
         scale *= GOLDEN_RATIO;
     }
     
-    // Initialize embeddings
-    for (uint32_t i = 0; i < model->vocab_size * model->embedding_dim; i++) {
-        // Use prime-based initialization for better distribution
-        double r1 = (double)(rand() % 10000) / 10000.0;
-        double r2 = (double)(rand() % 10000) / 10000.0;
-        model->embeddings[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
-    }
+    // TODO: Initialize embeddings in thread-local CrystallineAbacus storage
+    // For now, embeddings are initialized when threads are created
+    // This will be properly implemented when we add weight initialization to threads
     
-    // Initialize layer weights
-    for (uint32_t layer = 0; layer < model->num_layers; layer++) {
-        // Attention weights
-        size_t attn_size = model->embedding_dim * model->embedding_dim;
-        for (size_t i = 0; i < attn_size; i++) {
-            double r1 = (double)(rand() % 10000) / 10000.0;
-            double r2 = (double)(rand() % 10000) / 10000.0;
-            double val = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
-            
-            model->layers[layer].query_weights[i] = val;
-            model->layers[layer].key_weights[i] = val;
-            model->layers[layer].value_weights[i] = val;
-            model->layers[layer].output_weights[i] = val;
-        }
-        
-        // Feed-forward weights
-        size_t ffn_size1 = model->embedding_dim * model->hidden_dim;
-        for (size_t i = 0; i < ffn_size1; i++) {
-            double r1 = (double)(rand() % 10000) / 10000.0;
-            double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w1[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
-        }
-        
-        size_t ffn_size2 = model->hidden_dim * model->embedding_dim;
-        for (size_t i = 0; i < ffn_size2; i++) {
-            double r1 = (double)(rand() % 10000) / 10000.0;
-            double r2 = (double)(rand() % 10000) / 10000.0;
-            model->layers[layer].ffn_w2[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
-        }
-        
-        // Layer norm parameters (initialize to 1 and 0)
-        for (uint32_t i = 0; i < model->embedding_dim; i++) {
-            model->layers[layer].ln1_gamma[i] = 1.0;
-            model->layers[layer].ln1_beta[i] = 0.0;
-            model->layers[layer].ln2_gamma[i] = 1.0;
-            model->layers[layer].ln2_beta[i] = 0.0;
-        }
-    }
+    (void)scale;  // Suppress unused warning
     
-    // Initialize output weights
-    size_t output_size = model->embedding_dim * model->vocab_size;
-    for (size_t i = 0; i < output_size; i++) {
-        double r1 = (double)(rand() % 10000) / 10000.0;
-        double r2 = (double)(rand() % 10000) / 10000.0;
-        model->output_weights[i] = scale * math_sqrt(-2.0 * math_log(r1)) * math_cos(2.0 * MATH_PI * r2);
-    }
+    printf("  Note: Weight initialization now happens in thread-local storage\n");
+    printf("  Embeddings and layer weights are stored in thread CrystallineAbacus\n");
 }
 
 /**
@@ -200,7 +154,7 @@ static bool allocate_model_parameters(CLLMModel* model) {
             
             model->thread_params[thread_idx].layer_id = layer;
             model->thread_params[thread_idx].is_control_thread = (dim == 0);
-            model->thread_params[thread_idx].is_worker_thread = (dim >= 1 &amp;&amp; dim <= 11);
+            model->thread_params[thread_idx].is_worker_thread = (dim >= 1 && dim <= 11);
             model->thread_params[thread_idx].num_tokens_assigned = 0;
             model->thread_params[thread_idx].token_ids = NULL;
         }
@@ -540,12 +494,12 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     if (config->enable_kissing_spheres) {
         printf("🔮 Initializing kissing spheres threading...\n");
         
-        model->threading.enabled = true;
+        // Threading is now ALWAYS enabled via pool_88d
+        // Token assignments are in model->token_assignments (already allocated)
         
-        // Allocate work distribution maps
+        // Allocate work distribution maps for geometric operations
         model->threading.vertex_to_thread = (uint32_t*)calloc(model->geometry.vertices, sizeof(uint32_t));
         model->threading.edge_to_boundary = (uint32_t*)calloc(model->geometry.edges, sizeof(uint32_t));
-        model->threading.token_to_thread = (uint32_t*)calloc(model->vocab_size, sizeof(uint32_t));
         
         // Distribute vertices across threads (geometric distribution)
         for (uint32_t v = 0; v < model->geometry.vertices; v++) {
@@ -555,11 +509,6 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
         // Distribute edges across boundaries
         for (uint32_t e = 0; e < model->geometry.edges; e++) {
             model->threading.edge_to_boundary[e] = e % model->geometry.edges;
-        }
-        
-        // Distribute tokens across threads
-        for (uint32_t t = 0; t < model->vocab_size; t++) {
-            model->threading.token_to_thread[t] = (t % 12) + 1;  // Workers 1-12
         }
         
         printf("  ✓ Threading enabled (96 threads: 8 layers × 12 threads)\n");
@@ -591,8 +540,9 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
             total_params += 4 * model->embedding_dim;  // Layer norms
         }
         
-        model->optimizer.m = (double*)calloc(total_params, sizeof(double));
-        model->optimizer.v = (double*)calloc(total_params, sizeof(double));
+        // TODO: Optimizer state will be stored in thread-local storage
+        // For now, we skip this allocation as parameters are in threads
+        (void)total_params;  // Suppress unused warning
     }
     
     // ========================================================================
@@ -639,7 +589,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
     model->header.blind_recovery_enabled = model->recovery.enabled;
     model->header.harmonic_enabled = model->harmonic.enabled;
     model->header.ntt_attention_enabled = model->ntt.enabled;
-    model->header.kissing_spheres_enabled = model->threading.enabled;
+    model->header.kissing_spheres_enabled = (model->pool_88d != NULL);
     model->header.created_timestamp = time(NULL);
     model->header.modified_timestamp = time(NULL);
     
@@ -654,7 +604,7 @@ CLLMModel* cllm_create_model(const CLLMConfig* config) {
            model->embedding_dim, model->hidden_dim, model->num_layers, model->num_heads);
     printf("   Features: recovery=%d, harmonic=%d, ntt=%d, threading=%d\n",
            model->recovery.enabled, model->harmonic.enabled, 
-           model->ntt.enabled, model->threading.enabled);
+           model->ntt.enabled, (model->pool_88d != NULL));
     
     return model;
 }

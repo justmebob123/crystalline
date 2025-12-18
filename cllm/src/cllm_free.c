@@ -236,9 +236,9 @@ void cllm_free_model(CLLMModel* model) {
     // ========================================================================
     
     if (model->platonic_solid) {
-        // Forward declare platonic_free to avoid including math library headers
-        void platonic_free(void* solid);
-        platonic_free(model->platonic_solid);
+        // Use proper type from math library
+        extern void platonic_free(PlatonicSolid* solid);
+        platonic_free((PlatonicSolid*)model->platonic_solid);
         model->platonic_solid = NULL;
     }
     printf("  ✓ Freed Platonic solid\n");
