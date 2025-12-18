@@ -58,12 +58,17 @@ TRAINING_88D_TESTS = \
         test_gradient_accumulation \
         test_training_loop_88d
 
+# Geometric Matrix tests (NEW)
+GEOMETRIC_TESTS = \
+        test_geometric_matrix_simple \
+        test_geometric_integration
+
 # All tests
-ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS) $(PHASE3_TESTS) $(TRAINING_88D_TESTS)
+ALL_TESTS = $(UNIT_TESTS) $(INTEGRATION_TESTS) $(PERFORMANCE_TESTS) $(VALIDATION_TESTS) $(MATH_TESTS) $(DIAGNOSTIC_TESTS) $(KISSING_SPHERES_TESTS) $(PHASE2_TESTS) $(PHASE3_TESTS) $(TRAINING_88D_TESTS) $(GEOMETRIC_TESTS)
 
-.PHONY: all unit integration performance validation diagnostic kissing-spheres training-88d clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-training-88d run-all
+.PHONY: all unit integration performance validation diagnostic kissing-spheres training-88d geometric clean run-unit run-integration run-performance run-validation run-diagnostic run-kissing-spheres run-training-88d run-geometric run-all
 
-all: unit integration diagnostic kissing-spheres training-88d
+all: unit integration diagnostic kissing-spheres training-88d geometric
 
 unit: $(UNIT_TESTS)
 
@@ -78,6 +83,8 @@ diagnostic: $(DIAGNOSTIC_TESTS)
 kissing-spheres: $(KISSING_SPHERES_TESTS)
 
 training-88d: $(TRAINING_88D_TESTS)
+
+geometric: $(GEOMETRIC_TESTS)
 
 # Unit test compilation
 $(UNIT_DIR)/test_softmax_backward: $(UNIT_DIR)/test_softmax_backward.c
@@ -336,3 +343,29 @@ run-training-88d: $(TRAINING_88D_TESTS)
 	done
 	@echo ""
 	@echo "✓ All 88D training tests completed"
+
+# ============================================================================
+# GEOMETRIC MATRIX TESTS
+# ============================================================================
+
+test_geometric_matrix_simple: test_geometric_matrix_simple.c
+	@echo "Building test_geometric_matrix_simple..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_geometric_matrix_simple built"
+
+test_geometric_integration: test_geometric_integration.c
+	@echo "Building test_geometric_integration..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_geometric_integration built"
+
+run-geometric: $(GEOMETRIC_TESTS)
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "Running Geometric Matrix Tests"
+	@echo "════════════════════════════════════════════════════════════"
+	@for test in $(GEOMETRIC_TESTS); do \
+		echo ""; \
+		LD_LIBRARY_PATH=../math/lib:$$LD_LIBRARY_PATH ./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All geometric matrix tests completed"
