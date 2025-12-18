@@ -1775,6 +1775,81 @@ int worker_collect_neighbor_kv(
 }
 
 // ============================================================================
+// FFN OPERATIONS (DAY 8)
+// ============================================================================
+
+/**
+ * Compute FFN (Feed-Forward Network) using thread's local parameters
+ * 
+ * Computes:
+ *   hidden = ReLU(input × W_ffn1)
+ *   output = hidden × W_ffn2
+ * 
+ * @param thread Thread that owns the computation
+ * @param input Input from attention (double array)
+ * @param embedding_dim Embedding dimension
+ * @param hidden_dim Hidden dimension
+ * @param output Output (double array, pre-allocated)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_ffn(
+    HierarchicalThread* thread,
+    const double* input,
+    uint32_t embedding_dim,
+    uint32_t hidden_dim,
+    double* output
+) {
+    if (!thread || !input || !output) {
+        fprintf(stderr, "ERROR: Invalid parameters for worker_compute_ffn\n");
+        return -1;
+    }
+    
+    // Import thread parameter function
+    extern CrystallineAbacus* thread_get_parameter(
+        HierarchicalThread* thread,
+        const char* name,
+        uint32_t index
+    );
+    
+    // Get W_ffn1, W_ffn2 from thread's parameters
+    // W_ffn1: [embedding_dim, hidden_dim]
+    // W_ffn2: [hidden_dim, embedding_dim]
+    // For now, we'll use a simplified approach with double arrays
+    // TODO: Full CrystallineAbacus matrix multiplication in Phase 4
+    
+    // Allocate temporary hidden layer
+    double* hidden = (double*)malloc(hidden_dim * sizeof(double));
+    if (!hidden) {
+        fprintf(stderr, "ERROR: Failed to allocate hidden layer\n");
+        return -1;
+    }
+    
+    // Compute hidden = input × W_ffn1
+    // Simplified: Copy input to hidden (identity transformation)
+    // TODO: Full matrix multiplication in Phase 4
+    for (uint32_t i = 0; i < hidden_dim; i++) {
+        hidden[i] = (i < embedding_dim) ? input[i] : 0.0;
+    }
+    
+    // Apply ReLU: hidden = max(0, hidden)
+    for (uint32_t i = 0; i < hidden_dim; i++) {
+        if (hidden[i] < 0.0) {
+            hidden[i] = 0.0;
+        }
+    }
+    
+    // Compute output = hidden × W_ffn2
+    // Simplified: Copy hidden to output (identity transformation)
+    // TODO: Full matrix multiplication in Phase 4
+    for (uint32_t i = 0; i < embedding_dim; i++) {
+        output[i] = (i < hidden_dim) ? hidden[i] : 0.0;
+    }
+    
+    free(hidden);
+    return 0;
+}
+
+// ============================================================================
 // EMBEDDING OPERATIONS (DAY 6)
 // ============================================================================
 

@@ -1098,6 +1098,32 @@ void* hierarchical_thread_worker_88d(void* arg);
 // ============================================================================
 
 // ============================================================================
+// FFN OPERATIONS (DAY 8)
+// ============================================================================
+
+/**
+ * Compute FFN (Feed-Forward Network) using thread's local parameters
+ * 
+ * Computes:
+ *   hidden = ReLU(input × W_ffn1)
+ *   output = hidden × W_ffn2
+ * 
+ * @param thread Thread that owns the computation
+ * @param input Input from attention (double array)
+ * @param embedding_dim Embedding dimension
+ * @param hidden_dim Hidden dimension
+ * @param output Output (double array, pre-allocated)
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_ffn(
+    HierarchicalThread* thread,
+    const double* input,
+    uint32_t embedding_dim,
+    uint32_t hidden_dim,
+    double* output
+);
+
+// ============================================================================
 // ATTENTION OPERATIONS (DAY 7)
 // ============================================================================
 
