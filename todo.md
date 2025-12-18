@@ -2,7 +2,7 @@
 
 ## 🔴 PERMANENT RULES - READ FIRST, ALWAYS
 
-### RULE 0: MANDATORY READING SEQUENCE
+### 🔴 RULE 0: MANDATORY READING SEQUENCE
 **BEFORE ANY ACTION, YOU MUST:**
 1. Read these PERMANENT RULES completely
 2. Read MASTER_PLAN.md for objectives
@@ -10,7 +10,106 @@
 4. Read TERTIARY_OBJECTIVES.md for implementation details
 5. Update todo.md with current progress
 
-### RULE 11: GIT OPERATIONS
+### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES (EXCEPT IN TESTS)
+- ❌ **NEVER** use math.h, complex.h, or any standard math libraries **IN PRODUCTION CODE**
+- ❌ **NEVER** use floating-point arithmetic for core operations
+- ✅ **ALL** operations must use CrystallineAbacus (arbitrary precision)
+- ✅ **ALL** missing operations must be added as O(1) functions
+- ✅ **PURE** crystalline mathematics only
+- ✅ **EXCEPTION**: Test files (math/tests/*.c) MAY use math.h for validation and comparison
+
+**Rationale**: External libraries break the geometric structure and introduce floating-point errors that compound through recursive operations. Tests need math.h to validate our implementations against known-good reference values.
+
+### 🔴 RULE 2: NO DUPLICATE CONSTANTS
+- ❌ **NO** multiple definitions of π, φ, infinity, etc.
+- ❌ **NO** constants defined in multiple files
+- ✅ **ALL** constants defined ONCE in `math/include/math/constants.h`
+- ✅ **ALL** files must include this single source
+- ✅ **AUDIT** entire codebase for duplicate definitions
+
+**Rationale**: Duplicate constants lead to inconsistencies and precision errors across the system.
+
+### 🔴 RULE 3: PROPER NAMING CONVENTIONS
+- ❌ **NO** "bigfixed", "complete", "new", or temporal suffixes
+- ❌ **NO** "old", "backup", "temp", "legacy" in names
+- ❌ **NO** misleading function names
+- ✅ **CLEAR** descriptive names reflecting Babylonian/clock lattice design
+- ✅ **FUNCTION** names must reflect O(1) deterministic nature
+- ✅ **PREFIX** based organization (math_, prime_, clock_, abacus_, platonic_)
+
+**Rationale**: Clear naming reflects the mathematical structure and prevents confusion between old and new implementations.
+
+### 🔴 RULE 4: BABYLONIAN MATHEMATICS FOUNDATION
+- ✅ **BASE-60** (sexagesimal) system
+- ✅ **12-FOLD** clock symmetry (zodiac structure)
+- ✅ **4,320,000** = 12 × 60 × 60 × 100 (complete clock cycle)
+- ✅ **QUADRATURE** (90° phase relationships)
+- ✅ **π ≈ 3** (Babylonian approximation as core)
+- ✅ **π × φ** relationship (φ as π's hyperdimensional projection)
+- ✅ **VECTOR CULMINATION** = 144,000 = 3 × 12³ × (250/9)
+- ✅ **TWIN PRIMES** = 143,999 and 144,001 (lattice twins)
+
+**Rationale**: Babylonian mathematics provides the geometric foundation that makes O(1) operations possible.
+
+### 🔴 RULE 5: O(1) DETERMINISTIC OPERATIONS
+- ✅ **PRIME GENERATION** via clock lattice (position + magnitude)
+- ✅ **PRIME INDEX** via abacus counting
+- ✅ **ALL OPERATIONS** should be O(1) or O(log n) maximum
+- ❌ **NO** trial division or brute force loops where deterministic formula exists
+- ✅ **INTERFERENCE FORMULA**: `interference_mod = (-base × 12^(-1)) mod prime`
+- ✅ **CANDIDATE FORMULA**: `candidate = base + magnitude × 12`
+
+**Rationale**: The clock lattice structure enables O(1) deterministic operations, eliminating the need for iterative algorithms.
+
+### 🔴 RULE 6: 12-FOLD SYMMETRY EVERYWHERE
+- ✅ **THREAD COUNT** must be 12n or 12n+1 (with control thread)
+- ✅ **EMBEDDING DIMENSIONS** must be multiple of 12
+- ✅ **ATTENTION HEADS** should reflect geometric faces
+- ✅ **ALL TRANSFORMATIONS** preserve 12-fold symmetry
+- ✅ **CLOCK POSITIONS** at 3, 6, 9 o'clock (mod 12 = 5, 7, 11)
+
+**Rationale**: 12-fold symmetry is fundamental to the Babylonian clock structure and enables geometric operations.
+
+### 🔴 RULE 7: KISSING SPHERES THREADING
+- ✅ **EACH THREAD** maps to sphere vertex
+- ✅ **SHARED MEMORY** along sphere edges
+- ✅ **CONTROL THREAD** never processes batches
+- ✅ **RECURSIVE HIERARCHY** possible (infinite depth)
+- ✅ **12 NEIGHBORS** per sphere (kissing sphere structure)
+- ✅ **SELF-SIMILAR** at all scales
+
+**Rationale**: Kissing spheres provide optimal sphere packing and natural parallelization structure.
+
+### 🔴 RULE 8: CLOCK LATTICE VALIDATION
+- ✅ **POSITION IS THE PRIME** (deterministic)
+- ✅ **USE** `clock_map_prime_to_position` for validation
+- ✅ **AVOID** redundant primality testing
+- ✅ **STRUCTURE IS VALIDATION** (position determines primality)
+- ✅ **RING STRUCTURE**: 12 (hours), 60 (minutes), 60 (seconds), 100 (milliseconds)
+
+**Rationale**: In deterministic systems, structure IS validation. The clock lattice defines primes through position.
+
+### 🔴 RULE 9: GEOMETRIC OPERATIONS
+- ✅ **ALL ARITHMETIC** via CrystallineAbacus
+- ✅ **OPERATIONS** performed on clock lattice
+- ✅ **MAINTAIN** geometric structure
+- ✅ **PRESERVE** angular relationships
+- ✅ **TRIANGULATION** for all calculations (3 points: origin + 2 operands)
+- ✅ **CLOCK TRIANGLE** as 3D structure (not flat)
+
+**Rationale**: Geometric operations maintain the mathematical structure and enable O(1) complexity.
+
+### 🔴 RULE 10: INFINITE SCALABILITY
+- ✅ **GENERATE** Platonic solids in ANY dimension (3D, 4D, 5D, ..., nD)
+- ✅ **DYNAMIC** model creation based on requirements
+- ✅ **HIERARCHICAL** nesting (infinite depth)
+- ✅ **LIVE SCALING** during training (add capacity without restart)
+- ✅ **SCHLÄFLI SYMBOLS** {p,q,r,...} for solid specification
+- ✅ **EULER CHARACTERISTIC** for validation (V - E + F = 2 in 3D)
+
+**Rationale**: Infinite scalability enables models of any size without architectural limitations.
+
+### 🔴 RULE 11: GIT OPERATIONS
 **ALWAYS use correct authentication:**
 ```bash
 git add .
@@ -28,7 +127,7 @@ git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystallin
 
 **NEVER create branches - ALWAYS work on main and push directly!**
 
-### RULE 12: BUILD VERIFICATION
+### 🔴 RULE 12: BUILD VERIFICATION
 **MANDATORY after every change:**
 ```bash
 make clean && make 2>&1 | tee build.log
@@ -38,19 +137,16 @@ grep -c "warning:" build.log
 
 **NEVER commit without successful build verification.**
 
-### OTHER CRITICAL RULES
-- RULE 1: NO external math libraries (except in tests)
-- RULE 2: NO duplicate constants
-- RULE 3: Proper naming conventions (no "old", "new", "temp")
-- RULE 4: Babylonian mathematics foundation (base-60, 12-fold symmetry)
-- RULE 5: O(1) deterministic operations
-- RULE 6: 12-fold symmetry everywhere
-- RULE 7: Kissing spheres threading
-- RULE 8: Clock lattice validation
-- RULE 9: Geometric operations
-- RULE 10: Infinite scalability
+### 🔴 RULE 13: THIS FILE IS READ-ONLY
+- ❌ **DO NOT** add status updates or completion markers to MASTER_PLAN.md
+- ❌ **DO NOT** add progress percentages or tracking to MASTER_PLAN.md
+- ❌ **DO NOT** add "current focus" or ephemeral information to MASTER_PLAN.md
+- ❌ **DO NOT** add new objectives without explicit approval
+- ✅ **MASTER_PLAN.md** contains STATIC STRUCTURAL DESIGN only
+- ✅ **STATUS TRACKING** happens in todo.md ONLY
+- ✅ **ASK USER** before adding ANY new objectives
 
-**See MASTER_PLAN.md for complete rules.**
+**See MASTER_PLAN.md for complete architectural details.**
 
 ---
 

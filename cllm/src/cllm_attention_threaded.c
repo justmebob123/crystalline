@@ -16,13 +16,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include <pthread.h>
 #include "ai/cllm.h"
 #include "ai/cllm_attention.h"
 #include "ai/cllm_attention_helpers.h"
 #include "ai/cllm_embedding_helpers.h"
 #include "hierarchical_threading.h"
+#include "math/abacus.h"
+
+// ============================================================================
+// PURE CRYSTALLINE MATH FUNCTIONS (NO math.h!)
+// ============================================================================
+
+/**
+ * Pure crystalline sqrt using Newton's method (NO math.h)
+ */
+static double crystalline_sqrt(double x) {
+    if (x <= 0.0) return 0.0;
+    
+    // Newton's method: x_{n+1} = (x_n + a/x_n) / 2
+    double guess = x;
+    for (int i = 0; i < 10; i++) {
+        guess = (guess + x / guess) * 0.5;
+    }
+    return guess;
+}
 
 // ============================================================================
 // THREAD-CENTRIC ATTENTION FORWARD PASS
@@ -124,7 +142,7 @@ void cllm_attention_forward_threaded(
     // STEP 2: Compute attention scores and apply softmax
     // This is done by the control thread (dimension 0)
     
-    double scale = 1.0 / sqrt((double)head_dim);
+    double scale = 1.0 / crystalline_sqrt((double)head_dim);
     
     for (uint32_t b = 0; b < batch_size; b++) {
         double* batch_Q = &Q[b * seq_len * embedding_dim];

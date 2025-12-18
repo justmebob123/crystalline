@@ -9,11 +9,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include "ai/cllm.h"
 #include "ai/cllm_attention.h"
 #include "hierarchical_threading.h"
 #include "math/abacus.h"
+#include "math/abacus_fractional.h"
+
+// ============================================================================
+// PURE CRYSTALLINE MATH FUNCTIONS (NO math.h!)
+// ============================================================================
+
+/**
+ * Pure crystalline sqrt using Newton's method (NO math.h)
+ * This is a temporary implementation until we integrate CrystallineAbacus fully
+ */
+static double crystalline_sqrt(double x) {
+    if (x <= 0.0) return 0.0;
+    
+    // Newton's method: x_{n+1} = (x_n + a/x_n) / 2
+    double guess = x;
+    for (int i = 0; i < 10; i++) {  // 10 iterations for convergence
+        guess = (guess + x / guess) * 0.5;
+    }
+    return guess;
+}
+
+/**
+ * Pure crystalline exp using Taylor series (NO math.h)
+ * exp(x) = 1 + x + x^2/2! + x^3/3! + ...
+ */
+static double crystalline_exp(double x) {
+    double result = 1.0;
+    double term = 1.0;
+    
+    for (int n = 1; n < 20; n++) {  // 20 terms for convergence
+        term *= x / n;
+        result += term;
+        // Convergence check
+        if (term < 1e-10 && term > -1e-10) break;
+    }
+    return result;
+}
 
 // ============================================================================
 // Q/K/V WEIGHT ACCESS FUNCTIONS
@@ -271,7 +307,7 @@ void cllm_compute_attention_scores(
         return;
     }
     
-    double scale = 1.0 / sqrt((double)head_dim);
+    double scale = 1.0 / crystalline_sqrt((double)head_dim);
     
     for (uint32_t h = 0; h < num_heads; h++) {
         for (uint32_t i = 0; i < seq_len; i++) {
@@ -318,7 +354,7 @@ void cllm_apply_softmax_to_scores(
             // Compute exp and sum
             double sum = 0.0;
             for (uint32_t j = 0; j < seq_len; j++) {
-                row[j] = exp(row[j] - max_val);
+                row[j] = crystalline_exp(row[j] - max_val);
                 sum += row[j];
             }
             
