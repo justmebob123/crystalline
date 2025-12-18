@@ -6,6 +6,8 @@
 #define _USE_MATH_DEFINES
 #include "hierarchical_threading.h"
 #include "math/transcendental.h"
+#include "ai/cllm.h"
+#include "ai/cllm_transformer_layer.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -1439,22 +1441,66 @@ int hierarchical_thread_pool_get_88d_stats(
  * Process one work item in thread
  * This is where the actual computation happens
  */
+/**
+ * Process a single token through the transformer layer
+ * This is called by worker threads to perform actual computation
+ */
 static int worker_process_token(HierarchicalThread* thread) {
-    if (!thread || !thread->activation_buffer) {
+    if (!thread || !thread->activation_buffer || !thread->model) {
         return -1;
     }
     
-    // Get embedding from thread's CrystallineAbacus (thread->value)
-    // For now, this is a placeholder - actual computation will be added
-    // when we integrate with transformer layers
+    // Cast model pointer
+    CLLMModel* model = (CLLMModel*)thread->model;
     
-    // TODO: Implement actual token processing:
-    // 1. Get embedding from thread->value (CrystallineAbacus)
-    // 2. Copy to activation_buffer
-    // 3. Apply transformer operations (attention, FFN, layer norm)
-    // 4. Store result in activation_buffer
+    // Verify model has required components
+    if (!model->pool_88d || !model->token_assignments || !model->thread_params) {
+        return -1;
+    }
     
-    // For now, just mark as processed
+    // Get thread's layer
+    uint8_t layer_idx = thread->layer;
+    
+    // Check if this is a control thread or worker thread
+    if (thread->dimension == 0) {
+        // Control thread - coordinate layer processing
+        // For now, control threads don't do computation
+        // They just coordinate the workers
+        return 0;
+    }
+    
+    // Worker thread - process token through transformer layer
+    uint32_t dim = model->embedding_dim;
+    
+    // Allocate output buffer
+    double* output = (double*)malloc(dim * sizeof(double));
+    if (!output) {
+        return -1;
+    }
+    
+    // Get input from activation buffer
+    // (This was set by the previous layer or initial embedding)
+    double* input = thread->activation_buffer;
+    
+    // Apply transformer layer operations
+    // This calls the transformer layer forward function which handles:
+    // - Layer normalization
+    // - Multi-head attention
+    // - Residual connections
+    // - Feed-forward network
+    int result = cllm_transformer_layer_forward(
+        model, thread, layer_idx, input, output
+    );
+    
+    if (result != 0) {
+        free(output);
+        return -1;
+    }
+    
+    // Copy output back to activation buffer for next layer
+    memcpy(thread->activation_buffer, output, dim * sizeof(double));
+    
+    free(output);
     return 0;
 }
 

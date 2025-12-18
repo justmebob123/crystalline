@@ -5,7 +5,7 @@ AR = ar
 CFLAGS = -Wall -Wextra -O2 -fPIC -std=c11 -D_GNU_SOURCE
 LDFLAGS = -shared
 ARFLAGS = rcs
-INCLUDES = -I./include -I./include/blind_recovery -I../math/include
+INCLUDES = -I./include -I./include/blind_recovery -I../math/include -I../cllm/include
 
 # Source files
 SOURCES = src/abacus88d/abacus88d.c \

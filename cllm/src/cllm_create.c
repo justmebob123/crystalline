@@ -102,6 +102,14 @@ static bool allocate_model_parameters(CLLMModel* model) {
     
     printf("  ✓ Created 88D thread pool: 96 threads (8 layers × 12 threads per layer)\n");
     
+    // Set model pointer in all threads (for worker loop access)
+    for (uint32_t i = 0; i < 96; i++) {
+        HierarchicalThread* thread = model->pool_88d->threads[i];
+        if (thread) {
+            thread->model = model;
+        }
+    }
+    
     // ========================================================================
     // STEP 2: ALLOCATE TOKEN ASSIGNMENTS (PERMANENT)
     // ========================================================================

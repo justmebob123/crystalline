@@ -236,6 +236,9 @@ typedef struct HierarchicalThread {
     double* cached_qkv;                 // Cached Q, K, V for backward pass
     size_t cached_qkv_size;             // Cache size
     
+    // Model Reference (for accessing model parameters during computation)
+    void* model;                        // CLLMModel* (void* to avoid circular dependency)
+    
 } HierarchicalThread;
 
 // ============================================================================

@@ -94,12 +94,27 @@
 - [x] **Testing**: All 11 tests passing (100%)
 - [x] **Integration**: NO new files, integrated into existing code
 
-### [ ] Days 11-12: Update All Call Sites
-- [ ] Find all files calling old functions
-- [ ] Update each call site
-- [ ] Remove conditional checks
-- [ ] Remove fallback code
-- [ ] Test: Verify all call sites work
+### [x] Day 11: Connect Transformer Operations to Worker Loops ✅ COMPLETE
+- [x] **File**: `algorithms/include/hierarchical_threading.h`
+- [x] Added model pointer to HierarchicalThread structure
+- [x] **File**: `algorithms/Makefile`
+- [x] Added CLLM include path for compilation
+- [x] **File**: `algorithms/src/hierarchical_threading.c`
+- [x] Added includes for CLLM headers
+- [x] Implemented worker_process_token() with actual computation
+- [x] Calls cllm_transformer_layer_forward() for token processing
+- [x] **File**: `cllm/src/cllm_create.c`
+- [x] Set model pointer in all threads after pool creation
+- [x] Test: All 11 tests passing (5 + 3 + 3)
+- [x] **Integration**: Worker loops now perform actual transformer operations
+
+### [ ] Day 12: Connect Training Functions
+- [ ] Update cllm_forward_training() to signal worker threads
+- [ ] Update cllm_backward_training() to signal worker threads
+- [ ] Implement work signaling mechanism
+- [ ] Implement result aggregation
+- [ ] Create integration test for forward + backward
+- [ ] Test: Verify end-to-end training works
 
 ### [ ] Days 13-14: Testing and Validation
 - [ ] Create integration test
