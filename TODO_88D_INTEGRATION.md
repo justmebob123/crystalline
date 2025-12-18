@@ -42,19 +42,21 @@
 - [x] Updated all function calls to remove `_threaded` suffixes
 - [x] **Testing**: All 11 tests passing (5 + 3 + 3)
 
-### [ ] Days 4-5: Eliminate Global Buffers
-- [ ] **File**: `cllm/include/ai/cllm_inference.h`
-- [ ] DELETE `hidden_states` field from CLLMInference
-- [ ] DELETE `logits` field from CLLMInference
-- [ ] DELETE `key_cache` field from CLLMInference
-- [ ] DELETE `value_cache` field from CLLMInference
-- [ ] ADD generation state tracking fields
-- [ ] **File**: `cllm/src/cllm_inference.c`
-- [ ] REWRITE `cllm_inference_init()` - no buffer allocation
-- [ ] ADD 88D thread pool verification
-- [ ] REWRITE `cllm_generate()` - use thread-local storage
-- [ ] DELETE all global buffer access code
-- [ ] Test: Verify inference works without global buffers
+### [x] Days 4-5: Eliminate Global Buffers ✅ COMPLETE
+- [x] **File**: `cllm/include/ai/cllm_inference.h`
+- [x] DELETE `hidden_states` field from CLLMInference
+- [x] DELETE `logits` field from CLLMInference
+- [x] DELETE `key_cache` field from CLLMInference
+- [x] DELETE `value_cache` field from CLLMInference
+- [x] ADD generation state tracking fields
+- [x] **File**: `cllm/src/cllm_inference.c`
+- [x] REWRITE `cllm_inference_init()` - no buffer allocation
+- [x] ADD 88D thread pool verification
+- [x] REWRITE `cllm_forward()` - use thread-local storage
+- [x] REWRITE `cllm_generate()` - use thread-local storage
+- [x] DELETE all global buffer access code
+- [x] Test: Verify inference works without global buffers
+- [x] **Testing**: All 11 tests passing (100%)
 
 ### [ ] Days 6-7: Remove _threaded Suffixes
 - [ ] **File**: `cllm/src/cllm_transformer_layer.c`
