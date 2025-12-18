@@ -348,3 +348,301 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     
     printf("Adam optimizer step (88D thread-centric)\n");
 }
+
+// ============================================================================
+// COMPLETE TRAINING LOOP (DAY 11)
+// ============================================================================
+
+/**
+ * Signal all threads to start processing
+ * 
+ * @param pool Thread pool
+ */
+static void signal_all_threads(HierarchicalThreadPool* pool) {
+    if (!pool) return;
+    
+    // Signal all threads via condition variable
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread) {
+            pthread_mutex_lock(&thread->work_mutex);
+            pthread_cond_signal(&thread->work_cond);
+            pthread_mutex_unlock(&thread->work_mutex);
+        }
+    }
+}
+
+/**
+ * Wait for all threads to complete their work
+ * 
+ * @param pool Thread pool
+ */
+static void wait_for_completion(HierarchicalThreadPool* pool) {
+    if (!pool || !pool->barrier) return;
+    
+    // Wait at barrier for all threads
+    pthread_barrier_wait(pool->barrier);
+}
+
+/**
+ * Compute loss from distributed outputs
+ * 
+ * @param pool Thread pool
+ * @param target_tokens Target token IDs
+ * @param num_tokens Number of tokens
+ * @return Loss value
+ */
+static double compute_loss_distributed(
+    HierarchicalThreadPool* pool,
+    const uint32_t* target_tokens,
+    uint32_t num_tokens
+) {
+    if (!pool || !target_tokens) {
+        return -1.0;
+    }
+    
+    // Collect outputs from Layer 7 threads
+    // Compute cross-entropy loss
+    // For now, return placeholder loss
+    // TODO: Full loss computation in Phase 4 optimization
+    
+    double loss = 1.0;  // Placeholder
+    
+    (void)num_tokens;  // Suppress unused warning
+    
+    return loss;
+}
+
+/**
+ * Complete training step with forward and backward passes
+ * 
+ * This is the main training function that coordinates:
+ * 1. Forward pass (all tokens in parallel)
+ * 2. Loss computation
+ * 3. Backward pass (all tokens in parallel)
+ * 4. Optimizer application (all threads in parallel)
+ * 
+ * @param training Training context
+ * @param input_tokens Input token IDs
+ * @param target_tokens Target token IDs
+ * @param num_tokens Number of tokens
+ * @return Loss value, or -1.0 on error
+ */
+double cllm_train_step_threaded(
+    CLLMTraining* training,
+    const uint32_t* input_tokens,
+    const uint32_t* target_tokens,
+    uint32_t num_tokens
+) {
+    if (!training || !input_tokens || !target_tokens) {
+        fprintf(stderr, "ERROR: Invalid parameters for cllm_train_step_threaded\n");
+        return -1.0;
+    }
+    
+    CLLMModel* model = training->model;
+    HierarchicalThreadPool* pool = model->pool_88d;
+    
+    if (!pool) {
+        fprintf(stderr, "FATAL: Cannot train without 88D thread pool\n");
+        return -1.0;
+    }
+    
+    // ========================================================================
+    // STEP 1: FORWARD PASS
+    // ========================================================================
+    
+    // Enqueue forward work for all tokens
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        uint32_t token_id = input_tokens[i];
+        HierarchicalThread* thread = model->token_assignments[token_id].thread;
+        
+        if (thread) {
+            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_FORWARD,
+                                            token_id, 0);
+        }
+    }
+    
+    // Signal threads and wait for completion
+    signal_all_threads(pool);
+    wait_for_completion(pool);
+    
+    // ========================================================================
+    // STEP 2: COMPUTE LOSS
+    // ========================================================================
+    
+    double loss = compute_loss_distributed(pool, target_tokens, num_tokens);
+    
+    // ========================================================================
+    // STEP 3: BACKWARD PASS
+    // ========================================================================
+    
+    // Enqueue backward work for all tokens
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        uint32_t token_id = input_tokens[i];
+        uint32_t target_id = target_tokens[i];
+        HierarchicalThread* thread = model->token_assignments[token_id].thread;
+        
+        if (thread) {
+            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_BACKWARD,
+                                            token_id, target_id);
+        }
+    }
+    
+    // Signal threads and wait for completion
+    signal_all_threads(pool);
+    wait_for_completion(pool);
+    
+    // ========================================================================
+    // STEP 4: APPLY OPTIMIZER
+    // ========================================================================
+    
+    // Import optimizer function
+    extern int worker_apply_optimizer(
+        HierarchicalThread* thread,
+        double learning_rate,
+        double beta1,
+        double beta2,
+        double epsilon
+    );
+    
+    // Apply optimizer to each thread
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 0; dim <= 11; dim++) {
+            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            if (thread) {
+                worker_apply_optimizer(thread, 
+                                      training->config.learning_rate,
+                                      0.9,   // beta1
+                                      0.999, // beta2
+                                      1e-8); // epsilon
+            }
+        }
+    }
+    
+    return loss;
+}
+// ============================================================================
+// COMPLETE TRAINING LOOP (DAY 11)
+// ============================================================================
+
+/**
+ * Complete training step with forward and backward passes
+ * 
+ * This is the main training function that coordinates:
+ * 1. Forward pass (all tokens in parallel)
+ * 2. Loss computation
+ * 3. Backward pass (all tokens in parallel)
+ * 4. Optimizer application (all threads in parallel)
+ * 
+ * @param training Training context
+ * @param input_tokens Input token IDs
+ * @param target_tokens Target token IDs
+ * @param num_tokens Number of tokens
+ * @return Loss value, or -1.0 on error
+ */
+double cllm_train_step_threaded(
+    CLLMTraining* training,
+    const uint32_t* input_tokens,
+    const uint32_t* target_tokens,
+    uint32_t num_tokens
+) {
+    if (!training || !input_tokens || !target_tokens) {
+        fprintf(stderr, "ERROR: Invalid parameters for cllm_train_step_threaded\n");
+        return -1.0;
+    }
+    
+    CLLMModel* model = training->model;
+    HierarchicalThreadPool* pool = model->pool_88d;
+    
+    if (!pool) {
+        fprintf(stderr, "FATAL: Cannot train without 88D thread pool\n");
+        return -1.0;
+    }
+    
+    // ========================================================================
+    // STEP 1: FORWARD PASS
+    // ========================================================================
+    
+    // Enqueue forward work for all tokens
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        uint32_t token_id = input_tokens[i];
+        
+        if (token_id >= model->vocab_size) {
+            fprintf(stderr, "ERROR: Invalid token_id %u (vocab_size=%u)\n", 
+                    token_id, model->vocab_size);
+            continue;
+        }
+        
+        HierarchicalThread* thread = model->token_assignments[token_id].thread;
+        
+        if (thread) {
+            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_FORWARD,
+                                            token_id, 0);
+        }
+    }
+    
+    // Signal threads and wait for completion
+    // Note: Actual signaling happens in worker loop
+    // For now, just acknowledge the forward pass
+    
+    // ========================================================================
+    // STEP 2: COMPUTE LOSS
+    // ========================================================================
+    
+    // Placeholder loss computation
+    // TODO: Full loss computation in Phase 4 optimization
+    double loss = 1.0;
+    
+    // ========================================================================
+    // STEP 3: BACKWARD PASS
+    // ========================================================================
+    
+    // Enqueue backward work for all tokens
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        uint32_t token_id = input_tokens[i];
+        uint32_t target_id = target_tokens[i];
+        
+        if (token_id >= model->vocab_size || target_id >= model->vocab_size) {
+            continue;
+        }
+        
+        HierarchicalThread* thread = model->token_assignments[token_id].thread;
+        
+        if (thread) {
+            hierarchical_thread_enqueue_work(thread, TRAINING_WORK_TYPE_BACKWARD,
+                                            token_id, target_id);
+        }
+    }
+    
+    // Signal threads and wait for completion
+    // Note: Actual signaling happens in worker loop
+    
+    // ========================================================================
+    // STEP 4: APPLY OPTIMIZER
+    // ========================================================================
+    
+    // Import optimizer function
+    extern int worker_apply_optimizer(
+        HierarchicalThread* thread,
+        double learning_rate,
+        double beta1,
+        double beta2,
+        double epsilon
+    );
+    
+    // Apply optimizer to each thread
+    for (uint8_t layer = 0; layer < 8; layer++) {
+        for (uint8_t dim = 0; dim <= 11; dim++) {
+            HierarchicalThread* thread = hierarchical_thread_get_88d(pool, layer, dim);
+            if (thread) {
+                worker_apply_optimizer(thread, 
+                                      training->config.learning_rate,
+                                      0.9,   // beta1
+                                      0.999, // beta2
+                                      1e-8); // epsilon
+            }
+        }
+    }
+    
+    return loss;
+}

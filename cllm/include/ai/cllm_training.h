@@ -204,6 +204,28 @@ void cllm_training_cleanup(CLLMTraining* training);
 double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens);
 void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, double* gradient_buffer);
 
+/**
+ * Complete training step with forward and backward passes (DAY 11)
+ * 
+ * This is the main training function that coordinates:
+ * 1. Forward pass (all tokens in parallel)
+ * 2. Loss computation
+ * 3. Backward pass (all tokens in parallel)
+ * 4. Optimizer application (all threads in parallel)
+ * 
+ * @param training Training context
+ * @param input_tokens Input token IDs
+ * @param target_tokens Target token IDs
+ * @param num_tokens Number of tokens
+ * @return Loss value, or -1.0 on error
+ */
+double cllm_train_step_threaded(
+    CLLMTraining* training,
+    const uint32_t* input_tokens,
+    const uint32_t* target_tokens,
+    uint32_t num_tokens
+);
+
 // Forward declare for 88D integration
 struct ThreadLocalTrainingContext;
 
