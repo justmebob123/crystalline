@@ -123,19 +123,13 @@ This is a complete architectural redesign where:
 - [x] Update to Version 3 file format
 - [x] Commit: "Week 1 Day 6: Rewrite cllm_format.c for thread-centric serialization"
 
-### [ ] Day 7: Remove Legacy Arrays
-- [ ] Delete all flat array allocations in `cllm_create_model()`:
-  ```c
-  // DELETE THESE LINES:
-  // model->embeddings = calloc(vocab_size * embedding_dim, sizeof(double));
-  // model->query_weights = calloc(...);
-  // model->key_weights = calloc(...);
-  // etc.
-  ```
-- [ ] Update `cllm_free_model()` to not free these arrays
-- [ ] Test model creation/destruction
-- [ ] Verify no memory leaks
-- [ ] Commit: "Remove legacy flat parameter arrays"
+### [x] Day 7: Create embedding helpers and update cllm_embedding.c ✅
+- [x] Create cllm_embedding_helpers.c with thread-based access functions
+- [x] Create cllm_embedding_helpers.h header
+- [x] Update cllm_init_embeddings() to use threads
+- [x] Update cllm_embed_token() to use threads
+- [x] Update cllm_update_embedding() to use threads
+- [x] Commit: "Week 1 Day 7: Create embedding helpers and update cllm_embedding.c"
 
 ---
 
