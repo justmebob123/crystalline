@@ -351,13 +351,22 @@ This is a complete architectural redesign where:
   - [x] NO external math libraries in production code ✅
   - [x] Documented in RULE1_COMPLIANCE_FIXED.md
 
-### [ ] Day 11: Fix Embedding Helpers and Continue Testing ⏳ IN PROGRESS
-- [ ] Implement embedding helper functions:
-  - [ ] Fix cllm_set_embedding() to work with thread storage
-  - [ ] Fix cllm_get_embedding_from_model() to retrieve from threads
-  - [ ] Fix cllm_copy_embedding() to copy between threads
-- [ ] Re-run test suite and achieve 5/5 tests passing
-- [ ] Test embedding operations with thread-local storage
+### [x] Day 11: Fix Embedding Helpers - 5/5 TESTS PASSING! 🎉 ✅ COMPLETE
+- [x] Fixed embedding helper functions:
+  - [x] Fixed cllm_set_embedding() to work with thread storage
+  - [x] Fixed cllm_get_embedding_from_model() to retrieve from threads
+  - [x] Fixed cllm_copy_embedding() to copy between threads
+- [x] Changed return types from bool to int (0=success, -1=error)
+- [x] Removed thread->value NULL check (not needed for activation_buffer)
+- [x] Re-ran test suite: **5/5 TESTS PASSING!** ✅
+- [x] Test Results:
+  - [x] ✅ Model Creation with 88D Thread Pool
+  - [x] ✅ Token → Thread Assignment
+  - [x] ✅ Embedding Operations (FIXED!)
+  - [x] ✅ Thread Pool Structure
+  - [x] ✅ Model Persistence
+- [x] Validated thread-local storage operations
+- [x] Verified data integrity across all operations
 - [ ] In `cllm/src/cllm_thread_workers.c`, implement:
   ```c
   void thread_worker_forward(HierarchicalThread* thread, WorkItem* work) {
