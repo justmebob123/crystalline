@@ -84,6 +84,29 @@ int thread_allocate_geometric_parameter(
         thread->geometric_gradients = new_grads;
         thread->geometric_momentum = new_momentum;
         thread->geometric_velocity = new_velocity;
+        
+        // Also expand param_metadata
+        // Note: param_metadata is a struct with fields: name[64], shape*, num_dims, total_elements, requires_grad, is_initialized
+        typedef struct {
+            char name[64];
+            uint32_t* shape;
+            uint32_t num_dims;
+            size_t total_elements;
+            bool requires_grad;
+            bool is_initialized;
+        } ParamMetadata;
+        
+        ParamMetadata* new_metadata = (ParamMetadata*)realloc(
+            thread->param_metadata,
+            new_max * sizeof(ParamMetadata)
+        );
+        
+        if (!new_metadata) {
+            fprintf(stderr, "ERROR: Failed to expand param_metadata array\n");
+            return -1;
+        }
+        
+        thread->param_metadata = new_metadata;
     }
     
     // Create the geometric matrix
@@ -123,6 +146,20 @@ int thread_allocate_geometric_parameter(
     thread->geometric_gradients[idx] = grad;
     thread->geometric_momentum[idx] = momentum;
     thread->geometric_velocity[idx] = velocity;
+    
+    // Set metadata
+    strncpy(thread->param_metadata[idx].name, name, sizeof(thread->param_metadata[idx].name) - 1);
+    thread->param_metadata[idx].name[sizeof(thread->param_metadata[idx].name) - 1] = '\0';
+    thread->param_metadata[idx].num_dims = 2;
+    thread->param_metadata[idx].shape = (uint32_t*)malloc(2 * sizeof(uint32_t));
+    if (thread->param_metadata[idx].shape) {
+        thread->param_metadata[idx].shape[0] = rows;
+        thread->param_metadata[idx].shape[1] = cols;
+    }
+    thread->param_metadata[idx].total_elements = rows * cols;
+    thread->param_metadata[idx].requires_grad = true;
+    thread->param_metadata[idx].is_initialized = false;
+    
     thread->num_geometric_params++;
     
     printf("Thread %u: Allocated geometric parameter '%s' [%u×%u] (index %u)\n",
@@ -529,8 +566,21 @@ bool thread_is_using_geometric(const HierarchicalThread* thread) {
 // PARAMETER ACCESS BY NAME
 // ============================================================================
 
-// Import thread_get_parameter_index from thread_parameters.c
-extern int thread_get_parameter_index(const HierarchicalThread* thread, const char* name);
+/**
+ * Get geometric parameter index by name
+ */
+static int thread_get_geometric_parameter_index(const HierarchicalThread* thread, const char* name) {
+    if (!thread || !name) return -1;
+    
+    for (uint32_t i = 0; i < thread->num_geometric_params; i++) {
+        if (thread->param_metadata && 
+            strcmp(thread->param_metadata[i].name, name) == 0) {
+            return (int)i;
+        }
+    }
+    
+    return -1;
+}
 
 GeometricMatrix* thread_get_parameter_matrix(HierarchicalThread* thread,
                                              const char* name,
@@ -539,7 +589,7 @@ GeometricMatrix* thread_get_parameter_matrix(HierarchicalThread* thread,
     
     if (!thread || !name) return NULL;
     
-    int idx = thread_get_parameter_index(thread, name);
+    int idx = thread_get_geometric_parameter_index(thread, name);
     if (idx < 0) return NULL;
     
     return thread->geometric_params[idx];
@@ -552,7 +602,7 @@ GeometricMatrix* thread_get_gradient_matrix(HierarchicalThread* thread,
     
     if (!thread || !name) return NULL;
     
-    int idx = thread_get_parameter_index(thread, name);
+    int idx = thread_get_geometric_parameter_index(thread, name);
     if (idx < 0) return NULL;
     
     return thread->geometric_gradients[idx];
@@ -565,7 +615,7 @@ GeometricMatrix* thread_get_momentum_matrix(HierarchicalThread* thread,
     
     if (!thread || !name) return NULL;
     
-    int idx = thread_get_parameter_index(thread, name);
+    int idx = thread_get_geometric_parameter_index(thread, name);
     if (idx < 0) return NULL;
     
     return thread->geometric_momentum[idx];
@@ -578,7 +628,7 @@ GeometricMatrix* thread_get_velocity_matrix(HierarchicalThread* thread,
     
     if (!thread || !name) return NULL;
     
-    int idx = thread_get_parameter_index(thread, name);
+    int idx = thread_get_geometric_parameter_index(thread, name);
     if (idx < 0) return NULL;
     
     return thread->geometric_velocity[idx];

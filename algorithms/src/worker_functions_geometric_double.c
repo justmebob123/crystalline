@@ -1,9 +1,10 @@
 /**
- * @file worker_functions_geometric.c
- * @brief Worker functions using geometric matrix storage
+ * @file worker_functions_geometric_double.c
+ * @brief Worker functions using geometric matrix storage with double arrays
  * 
- * This file contains updated implementations of worker functions that use
- * geometric matrices instead of flat arrays or placeholders.
+ * This file contains refactored implementations that use:
+ * - Geometric matrices for parameter storage (memory efficient)
+ * - Double arrays for activations and gradients (computationally efficient)
  */
 
 #include <stdio.h>
@@ -13,38 +14,6 @@
 #include "hierarchical_threading.h"
 #include "thread_parameters_geometric.h"
 #include "geometric_matrix.h"
-#include "math.h"
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Get double value from CrystallineAbacus
- */
-static double get_abacus_value(const CrystallineAbacus* abacus, uint32_t index) {
-    (void)index; // For now, we only use index 0
-    double value = 0.0;
-    abacus_to_double(abacus, &value);
-    return value;
-}
-
-/**
- * Set double value in CrystallineAbacus
- */
-static void set_abacus_value(CrystallineAbacus* abacus, uint32_t index, double value) {
-    (void)index; // For now, we only use index 0
-    CrystallineAbacus* temp = abacus_from_double(value, 60, 10);
-    if (temp) {
-        // Copy beads
-        abacus->num_beads = temp->num_beads;
-        abacus->negative = temp->negative;
-        for (size_t i = 0; i < temp->num_beads && i < abacus->capacity; i++) {
-            abacus->beads[i] = temp->beads[i];
-        }
-        abacus_free(temp);
-    }
-}
 
 // ============================================================================
 // EMBEDDING OPERATIONS
@@ -55,13 +24,15 @@ static void set_abacus_value(CrystallineAbacus* abacus, uint32_t index, double v
  * 
  * @param thread Thread that owns the embedding
  * @param token_id Token ID
- * @param output Output abacus (pre-allocated)
+ * @param output Output array (pre-allocated, size: embedding_dim)
+ * @param embedding_dim Embedding dimension
  * @return 0 on success, -1 on error
  */
-int worker_get_embedding_geometric(
+int worker_get_embedding_double(
     HierarchicalThread* thread,
     uint32_t token_id,
-    CrystallineAbacus* output
+    double* output,
+    uint32_t embedding_dim
 ) {
     if (!thread || !output) {
         fprintf(stderr, "ERROR: Invalid thread or output buffer\n");
@@ -76,27 +47,28 @@ int worker_get_embedding_geometric(
         return -1;
     }
     
-    // Get embedding dimension
-    uint32_t embed_dim = embedding->cols;
-    
-    // Ensure output has correct capacity
-    if (output->capacity < embed_dim) {
-        fprintf(stderr, "ERROR: Output abacus capacity too small\n");
+    // Verify dimensions
+    if (embedding->cols != embedding_dim) {
+        fprintf(stderr, "ERROR: Embedding dimension mismatch\n");
         return -1;
     }
     
     // Extract embedding for this token using geometric interpolation
     CrystallineAbacus* temp = abacus_new(60);
-    for (uint32_t i = 0; i < embed_dim; i++) {
+    if (!temp) {
+        fprintf(stderr, "ERROR: Failed to allocate temporary abacus\n");
+        return -1;
+    }
+    
+    for (uint32_t i = 0; i < embedding_dim; i++) {
         if (geometric_matrix_get(embedding, token_id, i, temp) == 0) {
-            double value = get_abacus_value(temp, 0);
-            set_abacus_value(output, i, value);
+            abacus_to_double(temp, &output[i]);
+        } else {
+            output[i] = 0.0;
         }
     }
+    
     abacus_free(temp);
-    
-    output->num_beads = embed_dim;
-    
     return 0;
 }
 
@@ -116,16 +88,16 @@ int worker_get_embedding_geometric(
  *   output = attention × V
  * 
  * @param thread Thread that owns the computation
- * @param input Input abacus
+ * @param input Input array (size: embedding_dim)
  * @param embedding_dim Embedding dimension
- * @param output Output abacus (pre-allocated)
+ * @param output Output array (pre-allocated, size: embedding_dim)
  * @return 0 on success, -1 on error
  */
-int worker_compute_attention_geometric(
+int worker_compute_attention_double(
     HierarchicalThread* thread,
-    const CrystallineAbacus* input,
+    const double* input,
     uint32_t embedding_dim,
-    CrystallineAbacus* output
+    double* output
 ) {
     if (!thread || !input || !output) {
         fprintf(stderr, "ERROR: Invalid parameters for attention\n");
@@ -142,59 +114,66 @@ int worker_compute_attention_geometric(
         return -1;
     }
     
-    // Allocate temporary abacuses for Q, K, V
-    CrystallineAbacus* Q = abacus_new(embedding_dim);
-    CrystallineAbacus* K = abacus_new(embedding_dim);
-    CrystallineAbacus* V = abacus_new(embedding_dim);
+    // Allocate temporary arrays for Q, K, V
+    double* Q = (double*)calloc(embedding_dim, sizeof(double));
+    double* K = (double*)calloc(embedding_dim, sizeof(double));
+    double* V = (double*)calloc(embedding_dim, sizeof(double));
     
     if (!Q || !K || !V) {
-        fprintf(stderr, "ERROR: Failed to allocate Q, K, V abacuses\n");
-        if (Q) abacus_free(Q);
-        if (K) abacus_free(K);
-        if (V) abacus_free(V);
+        fprintf(stderr, "ERROR: Failed to allocate Q, K, V arrays\n");
+        free(Q);
+        free(K);
+        free(V);
         return -1;
     }
     
     // Temporary abacus for getting matrix values
     CrystallineAbacus* temp_weight = abacus_new(60);
+    if (!temp_weight) {
+        fprintf(stderr, "ERROR: Failed to allocate temporary abacus\n");
+        free(Q);
+        free(K);
+        free(V);
+        return -1;
+    }
     
     // Compute Q = input × W_q
     for (uint32_t i = 0; i < embedding_dim; i++) {
         double sum = 0.0;
         for (uint32_t j = 0; j < embedding_dim; j++) {
-            double input_val = get_abacus_value(input, j);
             if (geometric_matrix_get(W_q, j, i, temp_weight) == 0) {
-                double weight_val = get_abacus_value(temp_weight, 0);
-                sum += input_val * weight_val;
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += input[j] * weight_val;
             }
         }
-        set_abacus_value(Q, i, sum);
+        Q[i] = sum;
     }
     
     // Compute K = input × W_k
     for (uint32_t i = 0; i < embedding_dim; i++) {
         double sum = 0.0;
         for (uint32_t j = 0; j < embedding_dim; j++) {
-            double input_val = get_abacus_value(input, j);
             if (geometric_matrix_get(W_k, j, i, temp_weight) == 0) {
-                double weight_val = get_abacus_value(temp_weight, 0);
-                sum += input_val * weight_val;
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += input[j] * weight_val;
             }
         }
-        set_abacus_value(K, i, sum);
+        K[i] = sum;
     }
     
     // Compute V = input × W_v
     for (uint32_t i = 0; i < embedding_dim; i++) {
         double sum = 0.0;
         for (uint32_t j = 0; j < embedding_dim; j++) {
-            double input_val = get_abacus_value(input, j);
             if (geometric_matrix_get(W_v, j, i, temp_weight) == 0) {
-                double weight_val = get_abacus_value(temp_weight, 0);
-                sum += input_val * weight_val;
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += input[j] * weight_val;
             }
         }
-        set_abacus_value(V, i, sum);
+        V[i] = sum;
     }
     
     abacus_free(temp_weight);
@@ -202,9 +181,7 @@ int worker_compute_attention_geometric(
     // Compute attention score: Q · K^T
     double score = 0.0;
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        double q_val = get_abacus_value(Q, i);
-        double k_val = get_abacus_value(K, i);
-        score += q_val * k_val;
+        score += Q[i] * K[i];
     }
     
     // Scale by sqrt(embedding_dim)
@@ -217,16 +194,13 @@ int worker_compute_attention_geometric(
     
     // Compute output = attention_weight × V
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        double v_val = get_abacus_value(V, i);
-        set_abacus_value(output, i, attention_weight * v_val);
+        output[i] = attention_weight * V[i];
     }
     
-    output->num_beads = embedding_dim;
-    
     // Cleanup
-    abacus_free(Q);
-    abacus_free(K);
-    abacus_free(V);
+    free(Q);
+    free(K);
+    free(V);
     
     return 0;
 }
@@ -243,18 +217,18 @@ int worker_compute_attention_geometric(
  *   output = hidden × W_ffn2
  * 
  * @param thread Thread that owns the computation
- * @param input Input abacus
+ * @param input Input array (size: embedding_dim)
  * @param embedding_dim Embedding dimension
  * @param hidden_dim Hidden dimension
- * @param output Output abacus (pre-allocated)
+ * @param output Output array (pre-allocated, size: embedding_dim)
  * @return 0 on success, -1 on error
  */
-int worker_compute_ffn_geometric(
+int worker_compute_ffn_double(
     HierarchicalThread* thread,
-    const CrystallineAbacus* input,
+    const double* input,
     uint32_t embedding_dim,
     uint32_t hidden_dim,
-    CrystallineAbacus* output
+    double* output
 ) {
     if (!thread || !input || !output) {
         fprintf(stderr, "ERROR: Invalid parameters for FFN\n");
@@ -271,12 +245,12 @@ int worker_compute_ffn_geometric(
     }
     
     // Allocate temporary hidden layer and weight buffer
-    CrystallineAbacus* hidden = abacus_new(hidden_dim);
+    double* hidden = (double*)calloc(hidden_dim, sizeof(double));
     CrystallineAbacus* temp_weight = abacus_new(60);
     
     if (!hidden || !temp_weight) {
         fprintf(stderr, "ERROR: Failed to allocate temporary buffers\n");
-        if (hidden) abacus_free(hidden);
+        free(hidden);
         if (temp_weight) abacus_free(temp_weight);
         return -1;
     }
@@ -285,36 +259,32 @@ int worker_compute_ffn_geometric(
     for (uint32_t i = 0; i < hidden_dim; i++) {
         double sum = 0.0;
         for (uint32_t j = 0; j < embedding_dim; j++) {
-            double input_val = get_abacus_value(input, j);
             if (geometric_matrix_get(W_ffn1, j, i, temp_weight) == 0) {
-                double weight_val = get_abacus_value(temp_weight, 0);
-                sum += input_val * weight_val;
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += input[j] * weight_val;
             }
         }
         // Apply ReLU activation
-        sum = (sum > 0.0) ? sum : 0.0;
-        set_abacus_value(hidden, i, sum);
+        hidden[i] = (sum > 0.0) ? sum : 0.0;
     }
     
     // Compute output = hidden × W_ffn2
     for (uint32_t i = 0; i < embedding_dim; i++) {
         double sum = 0.0;
         for (uint32_t j = 0; j < hidden_dim; j++) {
-            double hidden_val = get_abacus_value(hidden, j);
             if (geometric_matrix_get(W_ffn2, j, i, temp_weight) == 0) {
-                double weight_val = get_abacus_value(temp_weight, 0);
-                sum += hidden_val * weight_val;
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += hidden[j] * weight_val;
             }
         }
-        set_abacus_value(output, i, sum);
+        output[i] = sum;
     }
     
-    abacus_free(temp_weight);
-    
-    output->num_beads = embedding_dim;
-    
     // Cleanup
-    abacus_free(hidden);
+    abacus_free(temp_weight);
+    free(hidden);
     
     return 0;
 }
@@ -326,19 +296,22 @@ int worker_compute_ffn_geometric(
 /**
  * Compute and accumulate gradients using geometric matrix storage
  * 
- * This is a simplified gradient computation that accumulates gradients
- * to the geometric matrix vertices.
+ * This computes gradients for attention weights:
+ *   ∂L/∂W_q = grad_output × input^T
+ * 
+ * Gradients are accumulated to geometric matrix vertices using
+ * barycentric interpolation.
  * 
  * @param thread Thread that owns the parameters
- * @param grad_output Gradient from next layer
- * @param input Input that was used in forward pass
+ * @param grad_output Gradient from next layer (size: embedding_dim)
+ * @param input Input that was used in forward pass (size: embedding_dim)
  * @param embedding_dim Embedding dimension
  * @return 0 on success, -1 on error
  */
-int worker_compute_gradients_geometric(
+int worker_compute_gradients_double(
     HierarchicalThread* thread,
-    const CrystallineAbacus* grad_output,
-    const CrystallineAbacus* input,
+    const double* grad_output,
+    const double* input,
     uint32_t embedding_dim
 ) {
     if (!thread || !grad_output || !input) {
@@ -346,29 +319,107 @@ int worker_compute_gradients_geometric(
         return -1;
     }
     
-    // Get parameter and gradient matrices
-    GeometricMatrix* W_q = thread_get_parameter_matrix(thread, "W_q", 0);
+    // Get gradient matrices
     GeometricMatrix* grad_W_q = thread_get_gradient_matrix(thread, "W_q", 0);
+    GeometricMatrix* grad_W_k = thread_get_gradient_matrix(thread, "W_k", 0);
+    GeometricMatrix* grad_W_v = thread_get_gradient_matrix(thread, "W_v", 0);
     
-    if (!W_q || !grad_W_q) {
-        fprintf(stderr, "ERROR: Weight or gradient matrix not found\n");
+    if (!grad_W_q || !grad_W_k || !grad_W_v) {
+        fprintf(stderr, "ERROR: Gradient matrices not found\n");
         return -1;
     }
     
-    // Compute gradient: ∂L/∂W_q = grad_output × input^T
+    // Compute gradient: ∂L/∂W = grad_output × input^T
     // Accumulate gradient at each position (will be distributed to vertices)
     for (uint32_t i = 0; i < embedding_dim; i++) {
         for (uint32_t j = 0; j < embedding_dim; j++) {
-            double grad_val = get_abacus_value(grad_output, i);
-            double input_val = get_abacus_value(input, j);
-            double gradient = grad_val * input_val;
+            double gradient = grad_output[i] * input[j];
             
             // Accumulate gradient (this will distribute to nearest vertices)
             geometric_matrix_accumulate_gradient_value(grad_W_q, i, j, gradient);
+            geometric_matrix_accumulate_gradient_value(grad_W_k, i, j, gradient);
+            geometric_matrix_accumulate_gradient_value(grad_W_v, i, j, gradient);
         }
     }
     
-    // TODO: Similar for W_k, W_v, W_ffn1, W_ffn2
+    return 0;
+}
+
+/**
+ * Compute gradients for FFN weights
+ * 
+ * @param thread Thread that owns the parameters
+ * @param grad_output Gradient from next layer (size: embedding_dim)
+ * @param input Input that was used in forward pass (size: embedding_dim)
+ * @param hidden Hidden layer activations (size: hidden_dim)
+ * @param embedding_dim Embedding dimension
+ * @param hidden_dim Hidden dimension
+ * @return 0 on success, -1 on error
+ */
+int worker_compute_ffn_gradients_double(
+    HierarchicalThread* thread,
+    const double* grad_output,
+    const double* input,
+    const double* hidden,
+    uint32_t embedding_dim,
+    uint32_t hidden_dim
+) {
+    if (!thread || !grad_output || !input || !hidden) {
+        fprintf(stderr, "ERROR: Invalid parameters for FFN gradient computation\n");
+        return -1;
+    }
     
+    // Get gradient matrices
+    GeometricMatrix* grad_W_ffn1 = thread_get_gradient_matrix(thread, "W_ffn1", 0);
+    GeometricMatrix* grad_W_ffn2 = thread_get_gradient_matrix(thread, "W_ffn2", 0);
+    
+    if (!grad_W_ffn1 || !grad_W_ffn2) {
+        fprintf(stderr, "ERROR: FFN gradient matrices not found\n");
+        return -1;
+    }
+    
+    // Compute gradient for W_ffn2: ∂L/∂W_ffn2 = grad_output × hidden^T
+    for (uint32_t i = 0; i < embedding_dim; i++) {
+        for (uint32_t j = 0; j < hidden_dim; j++) {
+            double gradient = grad_output[i] * hidden[j];
+            geometric_matrix_accumulate_gradient_value(grad_W_ffn2, j, i, gradient);
+        }
+    }
+    
+    // Compute gradient for hidden layer
+    double* grad_hidden = (double*)calloc(hidden_dim, sizeof(double));
+    if (!grad_hidden) {
+        fprintf(stderr, "ERROR: Failed to allocate grad_hidden\n");
+        return -1;
+    }
+    
+    // Backpropagate through W_ffn2
+    CrystallineAbacus* temp_weight = abacus_new(60);
+    GeometricMatrix* W_ffn2 = thread_get_parameter_matrix(thread, "W_ffn2", 0);
+    
+    for (uint32_t j = 0; j < hidden_dim; j++) {
+        double sum = 0.0;
+        for (uint32_t i = 0; i < embedding_dim; i++) {
+            if (geometric_matrix_get(W_ffn2, j, i, temp_weight) == 0) {
+                double weight_val;
+                abacus_to_double(temp_weight, &weight_val);
+                sum += grad_output[i] * weight_val;
+            }
+        }
+        // Apply ReLU derivative (gradient is 0 if hidden[j] <= 0)
+        grad_hidden[j] = (hidden[j] > 0.0) ? sum : 0.0;
+    }
+    
+    abacus_free(temp_weight);
+    
+    // Compute gradient for W_ffn1: ∂L/∂W_ffn1 = grad_hidden × input^T
+    for (uint32_t i = 0; i < hidden_dim; i++) {
+        for (uint32_t j = 0; j < embedding_dim; j++) {
+            double gradient = grad_hidden[i] * input[j];
+            geometric_matrix_accumulate_gradient_value(grad_W_ffn1, j, i, gradient);
+        }
+    }
+    
+    free(grad_hidden);
     return 0;
 }
