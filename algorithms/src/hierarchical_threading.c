@@ -1192,6 +1192,24 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     // Initialize 88D statistics
     atomic_init(&pool->total_boundary_crossings, 0);
     atomic_init(&pool->total_twin_primes, 0);
+    
+    // Start worker loops for all worker threads
+    for (uint32_t i = 0; i < HIERARCHICAL_88D_TOTAL_THREADS; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (thread && thread->role == THREAD_ROLE_WORKER) {
+            // Start worker loop
+            thread->running = true;
+            thread->batch_count = 0;
+            thread->work_completed = 0;
+            
+            int result = pthread_create(&thread->pthread, NULL, 
+                                       hierarchical_thread_worker_88d, thread);
+            if (result != 0) {
+                fprintf(stderr, "Failed to start worker thread %u\n", i);
+                // Continue with other threads
+            }
+        }
+    }
     atomic_init(&pool->total_operations, 0);
     
     // Initialize group nesting
@@ -1412,4 +1430,77 @@ int hierarchical_thread_pool_get_88d_stats(
     }
     
     return 0;
+}
+// ============================================================================
+// 88D WORKER LOOP IMPLEMENTATION
+// ============================================================================
+
+/**
+ * Process one work item in thread
+ * This is where the actual computation happens
+ */
+static int worker_process_token(HierarchicalThread* thread) {
+    if (!thread || !thread->activation_buffer) {
+        return -1;
+    }
+    
+    // Get embedding from thread's CrystallineAbacus (thread->value)
+    // For now, this is a placeholder - actual computation will be added
+    // when we integrate with transformer layers
+    
+    // TODO: Implement actual token processing:
+    // 1. Get embedding from thread->value (CrystallineAbacus)
+    // 2. Copy to activation_buffer
+    // 3. Apply transformer operations (attention, FFN, layer norm)
+    // 4. Store result in activation_buffer
+    
+    // For now, just mark as processed
+    return 0;
+}
+
+/**
+ * Main worker loop for 88D threads
+ * This runs continuously, processing work items as they arrive
+ */
+void* hierarchical_thread_worker_88d(void* arg) {
+    HierarchicalThread* thread = (HierarchicalThread*)arg;
+    
+    if (!thread) {
+        return NULL;
+    }
+    
+    // Change state to RUNNING
+    hierarchical_thread_change_state(thread, STATE_RUNNING);
+    
+    // Main worker loop
+    while (thread->running) {
+        // Wait for work
+        pthread_mutex_lock(&thread->control_mutex);
+        while (thread->batch_count == 0 && thread->running) {
+            pthread_cond_wait(&thread->control_cond, &thread->control_mutex);
+        }
+        
+        // Get work count and reset
+        uint32_t work_count = thread->batch_count;
+        thread->batch_count = 0;
+        pthread_mutex_unlock(&thread->control_mutex);
+        
+        if (!thread->running) break;
+        
+        // Process all work items
+        for (uint32_t i = 0; i < work_count; i++) {
+            worker_process_token(thread);
+        }
+        
+        // Mark work complete
+        __atomic_add_fetch(&thread->work_completed, work_count, __ATOMIC_SEQ_CST);
+        
+        // Update statistics
+        __atomic_add_fetch(&thread->work_completed, 0, __ATOMIC_SEQ_CST); // Just to ensure visibility
+    }
+    
+    // Change state to STOPPED
+    hierarchical_thread_change_state(thread, STATE_STOPPED);
+    
+    return NULL;
 }

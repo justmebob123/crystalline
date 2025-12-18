@@ -1015,6 +1015,15 @@ int hierarchical_thread_pool_get_88d_stats(
     uint64_t* out_operations
 );
 
+/**
+ * 88D Worker loop (internal)
+ * Main loop that processes work items in worker threads
+ * 
+ * @param arg HierarchicalThread pointer
+ * @return NULL
+ */
+void* hierarchical_thread_worker_88d(void* arg);
+
 #ifdef __cplusplus
 }
 #endif
