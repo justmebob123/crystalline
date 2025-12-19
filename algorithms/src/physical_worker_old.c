@@ -1,8 +1,10 @@
 /**
  * @file physical_worker.c
- * @brief Physical worker thread implementation - COMPLETE VERSION
+ * @brief Physical worker thread implementation for adaptive threading
  * 
- * NO PLACEHOLDERS - ALL FUNCTIONALITY IMPLEMENTED
+ * This implements the physical worker threads that process work items
+ * from logical threads. This allows N physical threads to handle 96
+ * logical threads, enabling the system to run on 2-16 core systems.
  */
 
 #include "hierarchical_threading.h"
@@ -12,69 +14,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
 
 // Forward declarations
 int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work);
 int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work);
 
-// Helper function to get current time in nanoseconds
-static uint64_t get_time_ns(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
-}
-
-// Helper function for cross-entropy loss
-static double compute_cross_entropy_loss(const double* logits, uint32_t target, uint32_t vocab_size) {
-    // Find max for numerical stability
-    double max_logit = logits[0];
-    for (uint32_t i = 1; i < vocab_size; i++) {
-        if (logits[i] > max_logit) {
-            max_logit = logits[i];
-        }
-    }
-    
-    // Compute log-sum-exp
-    double sum_exp = 0.0;
-    for (uint32_t i = 0; i < vocab_size; i++) {
-        sum_exp += exp(logits[i] - max_logit);
-    }
-    double log_sum_exp = max_logit + log(sum_exp);
-    
-    // Cross-entropy: -log(P(target))
-    return log_sum_exp - logits[target];
-}
-
-// Helper function for layer normalization
-static void layer_norm(double* input, double* output, uint32_t dim, double epsilon) {
-    // Compute mean
-    double mean = 0.0;
-    for (uint32_t i = 0; i < dim; i++) {
-        mean += input[i];
-    }
-    mean /= (double)dim;
-    
-    // Compute variance
-    double variance = 0.0;
-    for (uint32_t i = 0; i < dim; i++) {
-        double diff = input[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= (double)dim;
-    
-    // Normalize
-    double inv_std = 1.0 / sqrt(variance + epsilon);
-    for (uint32_t i = 0; i < dim; i++) {
-        output[i] = (input[i] - mean) * inv_std;
-    }
-}
-
 // ============================================================================
 // PHYSICAL WORKER THREAD FUNCTION
 // ============================================================================
 
+/**
+ * Physical worker thread main loop
+ * 
+ * This is the main loop for physical worker threads. Each physical thread:
+ * 1. Pulls work items from the shared work queue
+ * 2. Processes the work item using the logical thread's data
+ * 3. Repeats until shutdown signal
+ * 
+ * @param arg PhysicalWorker pointer
+ * @return NULL
+ */
 void* physical_worker_thread(void* arg) {
     PhysicalWorker* worker = (PhysicalWorker*)arg;
     
@@ -85,7 +44,7 @@ void* physical_worker_thread(void* arg) {
     
     printf("Physical worker %u started\n", worker->worker_id);
     
-    uint64_t start_time = get_time_ns();
+    uint64_t start_time = 0; // TODO: get_time_ns();
     worker->running = true;
     
     // Main worker loop
@@ -143,7 +102,7 @@ void* physical_worker_thread(void* arg) {
     }
     
     worker->running = false;
-    worker->total_runtime = get_time_ns() - start_time;
+    worker->total_runtime = 0; // TODO: get_time_ns() - start_time;
     
     printf("Physical worker %u stopped (processed %lu items)\n", 
            worker->worker_id, worker->work_items_processed);
@@ -155,6 +114,14 @@ void* physical_worker_thread(void* arg) {
 // PHYSICAL WORKER MANAGEMENT
 // ============================================================================
 
+/**
+ * Create physical worker
+ * 
+ * @param worker_id Worker ID
+ * @param pool Parent thread pool
+ * @param work_queue Shared work queue
+ * @return Allocated physical worker, or NULL on error
+ */
 PhysicalWorker* physical_worker_create(
     uint32_t worker_id,
     HierarchicalThreadPool* pool,
@@ -176,6 +143,12 @@ PhysicalWorker* physical_worker_create(
     return worker;
 }
 
+/**
+ * Start physical worker
+ * 
+ * @param worker Worker to start
+ * @return 0 on success, -1 on error
+ */
 int physical_worker_start(PhysicalWorker* worker) {
     if (!worker) {
         return -1;
@@ -191,6 +164,12 @@ int physical_worker_start(PhysicalWorker* worker) {
     return 0;
 }
 
+/**
+ * Stop physical worker
+ * 
+ * @param worker Worker to stop
+ * @return 0 on success, -1 on error
+ */
 int physical_worker_stop(PhysicalWorker* worker) {
     if (!worker) {
         return -1;
@@ -201,6 +180,12 @@ int physical_worker_stop(PhysicalWorker* worker) {
     return 0;
 }
 
+/**
+ * Wait for physical worker to finish
+ * 
+ * @param worker Worker to wait for
+ * @return 0 on success, -1 on error
+ */
 int physical_worker_join(PhysicalWorker* worker) {
     if (!worker) {
         return -1;
@@ -216,6 +201,11 @@ int physical_worker_join(PhysicalWorker* worker) {
     return 0;
 }
 
+/**
+ * Free physical worker
+ * 
+ * @param worker Worker to free
+ */
 void physical_worker_free(PhysicalWorker* worker) {
     if (worker) {
         free(worker);
@@ -223,9 +213,16 @@ void physical_worker_free(PhysicalWorker* worker) {
 }
 
 // ============================================================================
-// WORK PROCESSING FUNCTIONS - COMPLETE IMPLEMENTATION
+// WORK PROCESSING FUNCTIONS
 // ============================================================================
 
+/**
+ * Process forward pass work item
+ * 
+ * @param thread Logical thread to process
+ * @param work Work item
+ * @return 0 on success, -1 on error
+ */
 int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     if (!thread || !work) {
         return -1;
@@ -234,11 +231,11 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     // Extract work item data
     uint32_t token_id = work->token_id;
     
-    // Use fixed dimensions for now
-    // TODO: Pass dimensions through work->data
-    uint32_t embedding_dim = 64;
-    uint32_t hidden_dim = 128;
-    uint32_t num_layers = 2;
+    // For now, use fixed dimensions (these should come from model config)
+    // TODO: Get dimensions from model configuration
+    uint32_t embedding_dim = 64;  // TODO: Get from model config
+    uint32_t hidden_dim = 128;    // TODO: Get from model config
+    uint32_t num_layers = 2;      // TODO: Get from model config
     
     // Allocate activation buffers
     double* embedding = (double*)malloc(embedding_dim * sizeof(double));
@@ -246,16 +243,14 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     double* layer_output = (double*)malloc(embedding_dim * sizeof(double));
     double* attention_output = (double*)malloc(embedding_dim * sizeof(double));
     double* ffn_output = (double*)malloc(embedding_dim * sizeof(double));
-    double* norm_output = (double*)malloc(embedding_dim * sizeof(double));
     
-    if (!embedding || !layer_input || !layer_output || !attention_output || !ffn_output || !norm_output) {
+    if (!embedding || !layer_input || !layer_output || !attention_output || !ffn_output) {
         fprintf(stderr, "ERROR: Failed to allocate activation buffers\n");
         free(embedding);
         free(layer_input);
         free(layer_output);
         free(attention_output);
         free(ffn_output);
-        free(norm_output);
         return -1;
     }
     
@@ -273,7 +268,8 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     
     // 2. Process through transformer layers
     for (uint32_t layer = 0; layer < num_layers; layer++) {
-        // Get thread for this layer (use same thread for now)
+        // Get thread for this layer (for now, use same thread)
+        // TODO: Get proper layer thread from pool
         HierarchicalThread* layer_thread = thread;
         
         // Attention
@@ -290,8 +286,8 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
             attention_output[i] += layer_input[i];
         }
         
-        // Layer norm
-        layer_norm(attention_output, layer_output, embedding_dim, 1e-5);
+        // Layer norm (for now, just copy - TODO: implement proper layer norm)
+        memcpy(layer_output, attention_output, embedding_dim * sizeof(double));
         
         // FFN
         result = worker_compute_ffn_double(
@@ -307,21 +303,17 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
             ffn_output[i] += layer_output[i];
         }
         
-        // Layer norm
-        layer_norm(ffn_output, layer_input, embedding_dim, 1e-5);
+        // Layer norm (for now, just copy - TODO: implement proper layer norm)
+        memcpy(layer_input, ffn_output, embedding_dim * sizeof(double));
     }
     
-    // 3. Store final output for backward pass
-    // TODO: Implement activation storage
-    // For now, activations are not stored
+    // 3. Store final output for backward pass (TODO: implement activation storage)
+    // For now, we'll skip this and just mark as processed
     
-    // 4. Compute loss if target provided
+    // 4. Compute loss if target provided (TODO: implement loss computation)
     if (work->target_id != UINT32_MAX) {
-        double loss = compute_cross_entropy_loss(layer_input, work->target_id, embedding_dim);
-        
-        // TODO: Accumulate loss somewhere
-        // For now, just compute it
-        (void)loss;  // Suppress unused warning
+        // TODO: Compute cross-entropy loss
+        // For now, skip
     }
     
 cleanup:
@@ -330,11 +322,17 @@ cleanup:
     free(layer_output);
     free(attention_output);
     free(ffn_output);
-    free(norm_output);
     
     return result;
 }
 
+/**
+ * Process backward pass work item
+ * 
+ * @param thread Logical thread to process
+ * @param work Work item
+ * @return 0 on success, -1 on error
+ */
 int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     if (!thread || !work) {
         return -1;
@@ -344,62 +342,38 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     uint32_t token_id = work->token_id;
     uint32_t target_id = work->target_id;
     
-    // Use fixed dimensions for now
-    uint32_t embedding_dim = 64;
-    uint32_t num_layers = 2;
+    // Suppress unused variable warnings
+    (void)token_id;
+    (void)target_id;
+    
+    // For now, use fixed dimensions (these should come from model config)
+    // TODO: Get dimensions from model configuration
+    uint32_t embedding_dim = 64;  // TODO: Get from model config
+    uint32_t num_layers = 2;      // TODO: Get from model config
     
     // Allocate gradient buffers
     double* grad_output = (double*)malloc(embedding_dim * sizeof(double));
     double* grad_input = (double*)malloc(embedding_dim * sizeof(double));
-    double* softmax_probs = (double*)malloc(embedding_dim * sizeof(double));
     
-    if (!grad_output || !grad_input || !softmax_probs) {
+    if (!grad_output || !grad_input) {
         fprintf(stderr, "ERROR: Failed to allocate gradient buffers\n");
         free(grad_output);
         free(grad_input);
-        free(softmax_probs);
         return -1;
     }
     
     int result = 0;
     
-    // 1. Compute initial gradient from loss
-    // Get final activations (not stored, use dummy values)
-    if (0) {  // Disabled - no activation storage yet
-        memcpy(softmax_probs, softmax_probs,  // Dummy
-               embedding_dim * sizeof(double));
-        
-        // Compute softmax
-        double max_val = softmax_probs[0];
-        for (uint32_t i = 1; i < embedding_dim; i++) {
-            if (softmax_probs[i] > max_val) max_val = softmax_probs[i];
-        }
-        
-        double sum = 0.0;
-        for (uint32_t i = 0; i < embedding_dim; i++) {
-            softmax_probs[i] = exp(softmax_probs[i] - max_val);
-            sum += softmax_probs[i];
-        }
-        
-        for (uint32_t i = 0; i < embedding_dim; i++) {
-            softmax_probs[i] /= sum;
-        }
-        
-        // Gradient = softmax - one_hot(target)
-        memcpy(grad_output, softmax_probs, embedding_dim * sizeof(double));
-        if (target_id < embedding_dim) {
-            grad_output[target_id] -= 1.0;
-        }
-    } else {
-        // Fallback: uniform gradient
-        for (uint32_t i = 0; i < embedding_dim; i++) {
-            grad_output[i] = 0.01;
-        }
+    // 1. Compute initial gradient from loss (TODO: implement proper loss gradient)
+    // For now, use dummy gradient
+    for (uint32_t i = 0; i < embedding_dim; i++) {
+        grad_output[i] = 0.01;  // Dummy gradient
     }
     
     // 2. Backpropagate through layers (reverse order)
     for (int layer = num_layers - 1; layer >= 0; layer--) {
-        // Get thread for this layer
+        // Get thread for this layer (for now, use same thread)
+        // TODO: Get proper layer thread from pool
         HierarchicalThread* layer_thread = thread;
         
         // Compute gradients for this layer
@@ -411,15 +385,12 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
             fprintf(stderr, "ERROR: Failed to compute gradients for layer %d\n", layer);
             free(grad_output);
             free(grad_input);
-            free(softmax_probs);
             return -1;
         }
         
-        // Get gradient for previous layer
-        // For now, just scale the gradient
-        for (uint32_t i = 0; i < embedding_dim; i++) {
-            grad_input[i] = grad_output[i] * 0.9;  // Simple propagation
-        }
+        // Get gradient for previous layer (TODO: implement proper gradient propagation)
+        // For now, just copy the gradient
+        memcpy(grad_input, grad_output, embedding_dim * sizeof(double));
         
         // Copy for next iteration
         memcpy(grad_output, grad_input, embedding_dim * sizeof(double));
@@ -430,7 +401,6 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     
     free(grad_output);
     free(grad_input);
-    free(softmax_probs);
     
     return 0;
 }
