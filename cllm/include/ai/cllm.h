@@ -254,6 +254,11 @@ typedef struct {
     // This is THE core of the model - everything else is organized around it
     HierarchicalThreadPool* threads;  // 96 threads (8 layers × 12 threads per layer)
     
+    // Shared Geometric Matrix Pool (MEMORY OPTIMIZATION)
+    // All threads share matrices from this pool instead of creating their own
+    // Memory savings: O(threads × matrices) → O(unique_matrices)
+    void* matrix_pool;                // GeometricMatrixPool* (void* to avoid circular dependency)
+    
     // Token → Thread Assignment (PERMANENT)
     // Every token is permanently assigned to a specific thread
     // The thread owns the token's embedding in its CrystallineAbacus

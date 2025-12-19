@@ -32,6 +32,7 @@ SOURCES = src/abacus88d/abacus88d.c \
           src/hierarchical_threading.c \
           src/thread_parameters.c \
           src/geometric_matrix.c \
+          src/geometric_matrix_pool.c \
           src/thread_parameters_geometric.c \
           src/worker_functions_geometric_double.c \
           src/work_queue.c \
