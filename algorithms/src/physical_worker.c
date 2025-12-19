@@ -154,6 +154,12 @@ void* physical_worker_thread(void* arg) {
             __atomic_add_fetch(&worker->work_items_processed, 1, __ATOMIC_SEQ_CST);
             fprintf(stderr, "DEBUG: Worker %u incremented counter to %lu\n", 
                     worker->worker_id, worker->work_items_processed);
+            
+            // Increment work_completed counter for the logical thread
+            // This signals to the training loop that this work item is done
+            __atomic_add_fetch(&logical_thread->work_completed, 1, __ATOMIC_SEQ_CST);
+            fprintf(stderr, "DEBUG: Worker %u incremented thread %u work_completed to %lu\n",
+                    worker->worker_id, logical_thread->thread_id, logical_thread->work_completed);
         } else {
             fprintf(stderr, "DEBUG: Worker %u failed with result=%d\n", worker->worker_id, result);
         }

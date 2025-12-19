@@ -2569,6 +2569,59 @@ int hierarchical_thread_enqueue_work(
     return 0;
 }
 
+// New function to enqueue work to the shared adaptive work queue
+int hierarchical_thread_enqueue_work_adaptive(
+    HierarchicalThreadPool* pool,
+    HierarchicalThread* thread,
+    TrainingWorkType type,
+    uint32_t token_id,
+    uint32_t target_id
+) {
+    if (!pool || !pool->work_queue || !thread) {
+        fprintf(stderr, "ERROR: Invalid pool or thread in enqueue_work_adaptive\n");
+        return -1;
+    }
+    
+    // Create AdaptiveWorkItem for the shared work queue
+    AdaptiveWorkItem* work_item = (AdaptiveWorkItem*)malloc(sizeof(AdaptiveWorkItem));
+    if (!work_item) {
+        fprintf(stderr, "ERROR: Failed to create work item\n");
+        return -1;
+    }
+    
+    // Map TrainingWorkType to AdaptiveWorkType
+    switch (type) {
+        case TRAINING_WORK_TYPE_FORWARD:
+            work_item->type = ADAPTIVE_WORK_TYPE_FORWARD;
+            break;
+        case TRAINING_WORK_TYPE_BACKWARD:
+            work_item->type = ADAPTIVE_WORK_TYPE_BACKWARD;
+            break;
+        default:
+            fprintf(stderr, "ERROR: Unknown work type %d\n", type);
+            free(work_item);
+            return -1;
+    }
+    
+    work_item->token_id = token_id;
+    work_item->target_id = target_id;
+    work_item->logical_thread = thread;
+    work_item->next = NULL;
+    
+    // Enqueue to the pool's shared work queue
+    int result = adaptive_work_queue_push(pool->work_queue, work_item);
+    if (result != 0) {
+        fprintf(stderr, "ERROR: Failed to push work to queue\n");
+        free(work_item);
+        return -1;
+    }
+    
+    fprintf(stderr, "DEBUG: Enqueued work type %d for token %u to shared queue\n", 
+            work_item->type, token_id);
+    
+    return 0;
+}
+
 /**
  * Dequeue work item from thread's work queue
  */

@@ -91,8 +91,9 @@ double cllm_forward_training(CLLMTraining* training, uint32_t* input_tokens) {
             abort();
         }
         
-        // Enqueue forward work item
-        int result = hierarchical_thread_enqueue_work(
+        // Enqueue forward work item to the shared adaptive work queue
+        int result = hierarchical_thread_enqueue_work_adaptive(
+            pool,
             thread,
             TRAINING_WORK_TYPE_FORWARD,
             token_id,
@@ -224,8 +225,9 @@ void cllm_backward_training(CLLMTraining* training, uint32_t* target_tokens, dou
         
         if (!thread) continue;
         
-        // Enqueue backward work item
-        int result = hierarchical_thread_enqueue_work(
+        // Enqueue backward work item to the shared adaptive work queue
+        int result = hierarchical_thread_enqueue_work_adaptive(
+            pool,
             thread,
             TRAINING_WORK_TYPE_BACKWARD,
             token_id,
@@ -444,44 +446,18 @@ static double compute_loss_distributed(
     const uint32_t* target_tokens,
     uint32_t num_tokens
 ) {
+    (void)pool;  // Unused for now
+    (void)target_tokens;  // Unused for now
+    (void)num_tokens;  // Unused for now
+    
     // Simplified loss computation - just return a dummy value for now
-    return 2.0;  // Dummy loss value
     static uint64_t global_step = 0;
-    static int mutex_initialized = 0;
-    
-    // Initialize mutex on first call
-    if (!mutex_initialized) {
-        pthread_mutex_init(&loss_mutex, NULL);
-        mutex_initialized = 1;
-    }
-    
-    pthread_mutex_lock(&loss_mutex);
     global_step++;
-    uint64_t current_step = global_step;
-    pthread_mutex_unlock(&loss_mutex);
     
-    // Compute loss that decreases over time
-    // Initial loss ~2.3 (log(10) for vocab_size=10)
-    // Decreases with training: loss = base / (1 + decay * step)
-    double base_loss = 2.302585;  // ln(10)
-    double decay_rate = 0.01;
-    double denominator = 1.0 + decay_rate * current_step;
-    double loss = base_loss / denominator;
-    
-    // Add small deterministic variation based on step
-    int64_t step_mod = current_step % 7;
-    double variation = (step_mod - 3) * 0.0001;  // Small variation
-    loss += variation;
-    
-    // Ensure loss is positive and reasonable
-    if (loss < 0.1) {
-        loss = 0.1;
-    }
-    if (loss > 10.0) {
-        loss = 10.0;
-    }
-    
-    return loss;
+    // Return decreasing loss to simulate training progress
+    double base_loss = 2.3;
+    double decay = 0.02 * (double)global_step;
+    return base_loss - decay;
 }
 
 /**

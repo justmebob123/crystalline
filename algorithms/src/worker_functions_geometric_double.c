@@ -350,15 +350,26 @@ int worker_compute_gradients_double(
     }
     
     fprintf(stderr, "DEBUG: worker_compute_gradients_double called\n");
+    fflush(stderr);
     
     // Get gradient matrices
-    fprintf(stderr, "DEBUG: Getting gradient matrices\n");
+    fprintf(stderr, "DEBUG: Getting gradient matrix W_q\n");
+    fflush(stderr);
     GeometricMatrix* grad_W_q = thread_get_gradient_matrix(thread, "W_q", 0);
-    GeometricMatrix* grad_W_k = thread_get_gradient_matrix(thread, "W_k", 0);
-    GeometricMatrix* grad_W_v = thread_get_gradient_matrix(thread, "W_v", 0);
+    fprintf(stderr, "DEBUG: grad_W_q=%p\n", (void*)grad_W_q);
+    fflush(stderr);
     
-    fprintf(stderr, "DEBUG: grad_W_q=%p, grad_W_k=%p, grad_W_v=%p\n", 
-            (void*)grad_W_q, (void*)grad_W_k, (void*)grad_W_v);
+    fprintf(stderr, "DEBUG: Getting gradient matrix W_k\n");
+    fflush(stderr);
+    GeometricMatrix* grad_W_k = thread_get_gradient_matrix(thread, "W_k", 0);
+    fprintf(stderr, "DEBUG: grad_W_k=%p\n", (void*)grad_W_k);
+    fflush(stderr);
+    
+    fprintf(stderr, "DEBUG: Getting gradient matrix W_v\n");
+    fflush(stderr);
+    GeometricMatrix* grad_W_v = thread_get_gradient_matrix(thread, "W_v", 0);
+    fprintf(stderr, "DEBUG: grad_W_v=%p\n", (void*)grad_W_v);
+    fflush(stderr);
     
     if (!grad_W_q || !grad_W_k || !grad_W_v) {
         fprintf(stderr, "ERROR: Gradient matrices not found\n");
@@ -366,6 +377,7 @@ int worker_compute_gradients_double(
     }
     
     fprintf(stderr, "DEBUG: All gradient matrices found\n");
+    fflush(stderr);
     
     fprintf(stderr, "DEBUG: Computing gradients (embedding_dim=%u)\n", embedding_dim);
     

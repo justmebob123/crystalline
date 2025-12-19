@@ -134,6 +134,7 @@ int thread_allocate_parameter(
         uint32_t new_capacity = thread->max_geometric_params * 2;
         if (new_capacity == 0) new_capacity = 8;
         
+        // Expand parameters array
         GeometricMatrix** new_params = (GeometricMatrix**)realloc(
             thread->geometric_params, new_capacity * sizeof(GeometricMatrix*));
         
@@ -144,6 +145,51 @@ int thread_allocate_parameter(
         }
         
         thread->geometric_params = new_params;
+        
+        // Expand gradients array
+        GeometricMatrix** new_gradients = (GeometricMatrix**)realloc(
+            thread->geometric_gradients, new_capacity * sizeof(GeometricMatrix*));
+        
+        if (!new_gradients) {
+            fprintf(stderr, "ERROR: Failed to expand geometric_gradients array\n");
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        
+        thread->geometric_gradients = new_gradients;
+        
+        // Expand momentum array
+        GeometricMatrix** new_momentum = (GeometricMatrix**)realloc(
+            thread->geometric_momentum, new_capacity * sizeof(GeometricMatrix*));
+        
+        if (!new_momentum) {
+            fprintf(stderr, "ERROR: Failed to expand geometric_momentum array\n");
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        
+        thread->geometric_momentum = new_momentum;
+        
+        // Expand velocity array
+        GeometricMatrix** new_velocity = (GeometricMatrix**)realloc(
+            thread->geometric_velocity, new_capacity * sizeof(GeometricMatrix*));
+        
+        if (!new_velocity) {
+            fprintf(stderr, "ERROR: Failed to expand geometric_velocity array\n");
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        
+        thread->geometric_velocity = new_velocity;
+        
+        // Initialize new slots to NULL
+        for (uint32_t i = thread->max_geometric_params; i < new_capacity; i++) {
+            thread->geometric_params[i] = NULL;
+            thread->geometric_gradients[i] = NULL;
+            thread->geometric_momentum[i] = NULL;
+            thread->geometric_velocity[i] = NULL;
+        }
+        
         thread->max_geometric_params = new_capacity;
     }
     
@@ -180,6 +226,37 @@ int thread_allocate_parameter(
         
         // Store the matrix reference
         thread->geometric_params[thread->num_geometric_params] = matrix;
+        
+        // Allocate gradient matrix (same dimensions as parameter)
+        GeometricMatrix* grad_matrix = geometric_matrix_create_with_solid(
+            rows, cols, PLATONIC_TETRAHEDRON, name);
+        if (!grad_matrix) {
+            fprintf(stderr, "ERROR: Failed to create gradient matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_gradients[thread->num_geometric_params] = grad_matrix;
+        
+        // Allocate momentum matrix (same dimensions as parameter)
+        GeometricMatrix* momentum_matrix = geometric_matrix_create_with_solid(
+            rows, cols, PLATONIC_TETRAHEDRON, name);
+        if (!momentum_matrix) {
+            fprintf(stderr, "ERROR: Failed to create momentum matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_momentum[thread->num_geometric_params] = momentum_matrix;
+        
+        // Allocate velocity matrix (same dimensions as parameter)
+        GeometricMatrix* velocity_matrix = geometric_matrix_create_with_solid(
+            rows, cols, PLATONIC_TETRAHEDRON, name);
+        if (!velocity_matrix) {
+            fprintf(stderr, "ERROR: Failed to create velocity matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_velocity[thread->num_geometric_params] = velocity_matrix;
+        
         thread->num_geometric_params++;
         
     } else if (num_dims == 1) {
@@ -203,6 +280,37 @@ int thread_allocate_parameter(
         }
         
         thread->geometric_params[thread->num_geometric_params] = matrix;
+        
+        // Allocate gradient matrix (same dimensions as parameter)
+        GeometricMatrix* grad_matrix = geometric_matrix_create_with_solid(
+            size, 1, PLATONIC_TETRAHEDRON, name);
+        if (!grad_matrix) {
+            fprintf(stderr, "ERROR: Failed to create gradient matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_gradients[thread->num_geometric_params] = grad_matrix;
+        
+        // Allocate momentum matrix (same dimensions as parameter)
+        GeometricMatrix* momentum_matrix = geometric_matrix_create_with_solid(
+            size, 1, PLATONIC_TETRAHEDRON, name);
+        if (!momentum_matrix) {
+            fprintf(stderr, "ERROR: Failed to create momentum matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_momentum[thread->num_geometric_params] = momentum_matrix;
+        
+        // Allocate velocity matrix (same dimensions as parameter)
+        GeometricMatrix* velocity_matrix = geometric_matrix_create_with_solid(
+            size, 1, PLATONIC_TETRAHEDRON, name);
+        if (!velocity_matrix) {
+            fprintf(stderr, "ERROR: Failed to create velocity matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        thread->geometric_velocity[thread->num_geometric_params] = velocity_matrix;
+        
         thread->num_geometric_params++;
         
     } else {

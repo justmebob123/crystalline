@@ -1426,6 +1426,18 @@ int hierarchical_thread_enqueue_work(
 );
 
 /**
+ * Enqueue work item to the shared adaptive work queue
+ * This is the correct function to use for the 88D adaptive threading model
+ */
+int hierarchical_thread_enqueue_work_adaptive(
+    HierarchicalThreadPool* pool,
+    HierarchicalThread* thread,
+    TrainingWorkType type,
+    uint32_t token_id,
+    uint32_t target_id
+);
+
+/**
  * Dequeue work item from thread's work queue
  * 
  * @param thread Source thread
