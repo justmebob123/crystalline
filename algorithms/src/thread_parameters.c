@@ -338,7 +338,7 @@ int thread_allocate_all_parameters(
     
     // Determine thread role based on layer
     if (thread->layer == 0) {
-        // Layer 0: Embeddings
+        // Layer 0: Embeddings + ALL transformer parameters (consolidated)
         // Each thread stores embeddings for tokens assigned to it
         if (num_tokens_assigned > 0) {
             uint32_t shape[2] = {num_tokens_assigned, embedding_dim};
@@ -347,26 +347,35 @@ int thread_allocate_all_parameters(
             }
         }
         
-    } else if (thread->layer >= 1 && thread->layer <= 6) {
-        // Layer 1-6: Transformer layers
+        // CONSOLIDATED: All transformer parameters in layer 0 for simplified worker
+        // These will be shared across all layer 0 threads via matrix pool
         uint32_t shape_qkv[2] = {embedding_dim, embedding_dim};
         uint32_t shape_ffn1[2] = {embedding_dim, hidden_dim};
         uint32_t shape_ffn2[2] = {hidden_dim, embedding_dim};
         uint32_t shape_ln[1] = {embedding_dim};
         
-        // Allocate attention weights
+        // Allocate attention weights (shared via pool)
         if (thread_allocate_parameter(thread, "W_q", shape_qkv, 2) != 0) return -1;
         if (thread_allocate_parameter(thread, "W_k", shape_qkv, 2) != 0) return -1;
         if (thread_allocate_parameter(thread, "W_v", shape_qkv, 2) != 0) return -1;
         if (thread_allocate_parameter(thread, "W_o", shape_qkv, 2) != 0) return -1;
         
-        // Allocate FFN weights
+        // Allocate FFN weights (shared via pool)
         if (thread_allocate_parameter(thread, "W_ffn1", shape_ffn1, 2) != 0) return -1;
         if (thread_allocate_parameter(thread, "W_ffn2", shape_ffn2, 2) != 0) return -1;
         
-        // Allocate layer norm parameters
+        // Allocate layer norm parameters (shared via pool)
         if (thread_allocate_parameter(thread, "gamma", shape_ln, 1) != 0) return -1;
         if (thread_allocate_parameter(thread, "beta", shape_ln, 1) != 0) return -1;
+        
+    } else if (thread->layer >= 1 && thread->layer <= 6) {
+        // Layer 1-6: EMPTY - all parameters consolidated in layer 0
+        // This simplifies the worker implementation
+        fprintf(stderr, "  Thread %u (layer %u): Skipped (parameters in layer 0)\n", 
+                thread->thread_id, thread->layer);
+        thread->num_geometric_params = 0;
+        thread->geometric_params = NULL;
+        return 0;  // Success - just skipped allocation
         
     } else if (thread->layer == 7) {
         // Layer 7: Output layer

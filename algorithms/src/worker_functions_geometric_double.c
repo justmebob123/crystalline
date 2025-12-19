@@ -336,8 +336,16 @@ int worker_compute_gradients_double(
     const double* input,
     uint32_t embedding_dim
 ) {
-    if (!thread || !grad_output || !input) {
-        fprintf(stderr, "ERROR: Invalid parameters for gradient computation\n");
+    if (!thread) {
+        fprintf(stderr, "ERROR: thread is NULL in gradient computation\n");
+        return -1;
+    }
+    if (!grad_output) {
+        fprintf(stderr, "ERROR: grad_output is NULL in gradient computation\n");
+        return -1;
+    }
+    if (!input) {
+        fprintf(stderr, "ERROR: input is NULL in gradient computation\n");
         return -1;
     }
     

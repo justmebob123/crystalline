@@ -415,18 +415,39 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         }
     }
     
-    // 2. Backpropagate through layers (reverse order)
+    // 2. Get embedding for this token (needed for gradient computation)
+    double* embedding = (double*)malloc(embedding_dim * sizeof(double));
+    if (!embedding) {
+        fprintf(stderr, "ERROR: Failed to allocate embedding buffer\n");
+        free(grad_output);
+        free(grad_input);
+        free(softmax_probs);
+        return -1;
+    }
+    
+    result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
+    if (result != 0) {
+        fprintf(stderr, "ERROR: Failed to get embedding for backward pass\n");
+        free(embedding);
+        free(grad_output);
+        free(grad_input);
+        free(softmax_probs);
+        return -1;
+    }
+    
+    // 3. Backpropagate through layers (reverse order)
     for (int layer = num_layers - 1; layer >= 0; layer--) {
         // Get thread for this layer
         HierarchicalThread* layer_thread = thread;
         
         // Compute gradients for this layer
         result = worker_compute_gradients_double(
-            layer_thread, grad_output, NULL, embedding_dim
+            layer_thread, grad_output, embedding, embedding_dim
         );
         
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute gradients for layer %d\n", layer);
+            free(embedding);
             return -1;
         }
         
@@ -440,7 +461,9 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         memcpy(grad_output, grad_input, embedding_dim * sizeof(double));
     }
     
-    // 3. Gradients are accumulated in worker_compute_gradients_double()
+    free(embedding);
+    
+    // 4. Gradients are accumulated in worker_compute_gradients_double()
     // Optimizer will use these gradients to update parameters
     
     // Cleanup
