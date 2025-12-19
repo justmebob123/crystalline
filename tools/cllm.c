@@ -21,7 +21,6 @@
 #include <time.h>
 #include "cllm.h"
 #include "cllm_training.h"
-#include "cllm_training_threaded.h"
 #include "cllm_inference.h"
 #include "cllm_tokenizer.h"
 #include "cllm_vocab_builder.h"
@@ -29,18 +28,19 @@
 #include "cllm_data_loader.h"
 #include "cllm_format.h"
 #include "cllm_utils.h"
+#include "cllm_parameter_init.h"
 
 // ============================================================================
 // BANNER & VERSION
 // ============================================================================
 
-#define CLLM_VERSION "1.0.0"
+// CLLM_VERSION already defined in cllm.h
 
 void print_banner() {
     printf("\n");
     printf("╔════════════════════════════════════════════════════════════╗\n");
     printf("║         CLLM - Crystalline Lattice Language Model         ║\n");
-    printf("║                    Version %s                          ║\n", CLLM_VERSION);
+    printf("║                    Version %d                          ║\n", CLLM_VERSION);
     printf("╚════════════════════════════════════════════════════════════╝\n");
     printf("\n");
 }
@@ -196,21 +196,22 @@ int cmd_train(int argc, char** argv) {
     CLLMModel* model = NULL;
     if (model_file) {
         printf("Loading model from %s...\n", model_file);
-        model = cllm_read_model(model_file);
-        if (!model) {
+        if (cllm_read_model(&model, model_file) != 0 || !model) {
             fprintf(stderr, "Failed to load model\n");
             return 1;
         }
         printf("Model loaded\n\n");
     } else {
         printf("Creating new model...\n");
-        CLLMConfig* config = cllm_create_config(vocab_size, embed_dim, num_layers, num_heads, embed_dim * 4);
-        if (!config) {
-            fprintf(stderr, "Failed to create config\n");
-            return 1;
-        }
-        model = cllm_create_model(config);
-        cllm_free_config(config);
+        CLLMConfig config = {
+            .vocab_size = vocab_size,
+            .embedding_dim = embed_dim,
+            .hidden_dim = embed_dim * 4,
+            .num_layers = num_layers,
+            .num_heads = num_heads,
+            .max_seq_len = seq_len
+        };
+        model = cllm_create_model(&config);
         if (!model) {
             fprintf(stderr, "Failed to create model\n");
             return 1;
@@ -235,7 +236,7 @@ int cmd_train(int argc, char** argv) {
         return 1;
     }
     
-    if (cllm_data_loader_load_file(loader, data_file) != 0) {
+    if (cllm_data_loader_load_file(loader, data_file) == 0) {
         fprintf(stderr, "Failed to load data file\n");
         cllm_data_loader_free(loader);
         cllm_free_tokenizer(tokenizer);
@@ -408,8 +409,8 @@ int cmd_infer(int argc, char** argv) {
     
     // Load model
     printf("Loading model...\n");
-    CLLMModel* model = cllm_read_model(model_file);
-    if (!model) {
+    CLLMModel* model = NULL;
+    if (cllm_read_model(&model, model_file) != 0 || !model) {
         fprintf(stderr, "Failed to load model from %s\n", model_file);
         return 1;
     }

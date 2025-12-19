@@ -11,6 +11,7 @@
 
 #include "thread_parameters.h"
 #include "hierarchical_threading.h"
+#include "geometric_matrix.h"
 #include "math/abacus.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
@@ -126,23 +127,74 @@ int thread_allocate_parameter(
     // Lock parameter list
     pthread_mutex_lock(&thread->param_list_lock);
     
-    // Check if parameter already exists
-    for (uint32_t i = 0; i < thread->num_parameters; i++) {
-        if (strcmp(thread->param_metadata[i].name, name) == 0) {
-            fprintf(stderr, "ERROR: Parameter '%s' already exists in thread %u\n",
-                    name, thread->thread_id);
+    // Check if we need to expand geometric_params array
+    if (thread->num_geometric_params >= thread->max_geometric_params) {
+        uint32_t new_capacity = thread->max_geometric_params * 2;
+        if (new_capacity == 0) new_capacity = 8;
+        
+        GeometricMatrix** new_params = (GeometricMatrix**)realloc(
+            thread->geometric_params, new_capacity * sizeof(GeometricMatrix*));
+        
+        if (!new_params) {
+            fprintf(stderr, "ERROR: Failed to expand geometric_params array\n");
             pthread_mutex_unlock(&thread->param_list_lock);
             return -1;
         }
+        
+        thread->geometric_params = new_params;
+        thread->max_geometric_params = new_capacity;
     }
     
-    // Check capacity
+    // Create geometric matrix for this parameter
+    // For 2D matrices (most common case)
+    if (num_dims == 2) {
+        uint32_t rows = shape[0];
+        uint32_t cols = shape[1];
+        
+        // Create geometric matrix using tetrahedron (4 vertices)
+        // Grid size should accommodate the matrix dimensions
+        uint32_t grid_size = (rows > cols) ? rows : cols;
+        if (grid_size < 4) grid_size = 4;  // Minimum for tetrahedron
+        
+        GeometricMatrix* matrix = geometric_matrix_create_with_solid(
+            rows, cols, PLATONIC_TETRAHEDRON, name);
+        if (!matrix) {
+            fprintf(stderr, "ERROR: Failed to create geometric matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        
+        // Store the matrix
+        thread->geometric_params[thread->num_geometric_params] = matrix;
+        thread->num_geometric_params++;
+        
+    } else if (num_dims == 1) {
+        // For 1D parameters (biases, layer norm), use a simple geometric matrix
+        uint32_t size = shape[0];
+        
+        GeometricMatrix* matrix = geometric_matrix_create_with_solid(
+            size, 1, PLATONIC_TETRAHEDRON, name);
+        if (!matrix) {
+            fprintf(stderr, "ERROR: Failed to create geometric matrix for %s\n", name);
+            pthread_mutex_unlock(&thread->param_list_lock);
+            return -1;
+        }
+        
+        thread->geometric_params[thread->num_geometric_params] = matrix;
+        thread->num_geometric_params++;
+        
+    } else {
+        fprintf(stderr, "ERROR: Unsupported num_dims=%u for parameter %s\n", num_dims, name);
+        pthread_mutex_unlock(&thread->param_list_lock);
+        return -1;
+    }
+    
+    // Also maintain the old CrystallineAbacus arrays for backward compatibility
+    // These will be deprecated once geometric matrices are fully integrated
     if (thread->num_parameters >= thread->max_parameters) {
-        // Expand arrays
         uint32_t new_capacity = thread->max_parameters * 2;
         if (new_capacity == 0) new_capacity = 8;
         
-        // Reallocate arrays
         thread->parameters = (CrystallineAbacus**)realloc(
             thread->parameters, new_capacity * sizeof(CrystallineAbacus*));
         thread->gradients = (CrystallineAbacus**)realloc(
@@ -151,7 +203,7 @@ int thread_allocate_parameter(
             thread->momentum, new_capacity * sizeof(CrystallineAbacus*));
         thread->velocity = (CrystallineAbacus**)realloc(
             thread->velocity, new_capacity * sizeof(CrystallineAbacus*));
-        // Reallocate metadata array
+        
         void* new_metadata = realloc(thread->param_metadata, 
                                      new_capacity * sizeof(*thread->param_metadata));
         if (!new_metadata) {
@@ -163,14 +215,6 @@ int thread_allocate_parameter(
         thread->param_locks = (pthread_mutex_t*)realloc(
             thread->param_locks, new_capacity * sizeof(pthread_mutex_t));
         
-        if (!thread->parameters || !thread->gradients || !thread->momentum ||
-            !thread->velocity || !thread->param_metadata || !thread->param_locks) {
-            fprintf(stderr, "ERROR: Failed to expand parameter arrays\n");
-            pthread_mutex_unlock(&thread->param_list_lock);
-            return -1;
-        }
-        
-        // Initialize new locks
         for (uint32_t i = thread->max_parameters; i < new_capacity; i++) {
             pthread_mutex_init(&thread->param_locks[i], NULL);
         }
@@ -178,34 +222,19 @@ int thread_allocate_parameter(
         thread->max_parameters = new_capacity;
     }
     
-    // Calculate total elements
+    // Allocate placeholder CrystallineAbacus (will be deprecated)
     size_t total_elements = calculate_total_elements(shape, num_dims);
-    
-    // Allocate array of POINTERS to CrystallineAbacus (one per matrix element)
-    // This properly handles matrices by flattening them into 1D arrays
-    // CRITICAL: Store pointers, not structures, because CrystallineAbacus contains pointers
     thread->parameters[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus*));
     thread->gradients[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus*));
     thread->momentum[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus*));
     thread->velocity[thread->num_parameters] = (CrystallineAbacus*)calloc(total_elements, sizeof(CrystallineAbacus*));
     
-    if (!thread->parameters[thread->num_parameters] ||
-        !thread->gradients[thread->num_parameters] ||
-        !thread->momentum[thread->num_parameters] ||
-        !thread->velocity[thread->num_parameters]) {
-        fprintf(stderr, "ERROR: Failed to allocate parameter storage for %zu elements\n", total_elements);
-        pthread_mutex_unlock(&thread->param_list_lock);
-        return -1;
-    }
-    
-    // Initialize each CrystallineAbacus pointer in the arrays
     CrystallineAbacus** param_ptrs = (CrystallineAbacus**)thread->parameters[thread->num_parameters];
     CrystallineAbacus** grad_ptrs = (CrystallineAbacus**)thread->gradients[thread->num_parameters];
     CrystallineAbacus** mom_ptrs = (CrystallineAbacus**)thread->momentum[thread->num_parameters];
     CrystallineAbacus** vel_ptrs = (CrystallineAbacus**)thread->velocity[thread->num_parameters];
     
     for (size_t i = 0; i < total_elements; i++) {
-        // Create and store parameter abacus pointer
         param_ptrs[i] = abacus_new(60);
         if (!param_ptrs[i]) {
             fprintf(stderr, "ERROR: Failed to create abacus for parameter element %zu\n", i);

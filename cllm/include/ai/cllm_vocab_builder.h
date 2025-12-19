@@ -7,7 +7,7 @@
  * Build vocabulary from training file and store in model
  * Returns number of unique tokens found, or -1 on error
  */
-int cllm_build_vocabulary_from_file(CLLMModel* model, const char* filename);
+uint32_t cllm_build_vocabulary_from_file(CLLMModel* model, const char* filename);
 
 /**
  * Tokenize text using model's vocabulary
