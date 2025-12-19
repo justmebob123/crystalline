@@ -471,14 +471,31 @@ int thread_initialize_all_parameters(
     fprintf(stderr, "DEBUG: thread_initialize_all_parameters for thread %u (geometric_params=%p, num=%u)\n",
             thread->thread_id, (void*)thread->geometric_params, thread->num_geometric_params);
     
+    // Add timeout protection
+    time_t start_time = time(NULL);
+    const int TIMEOUT_SECONDS = 30;
+    
     // Initialize geometric matrices if they exist
     if (thread->geometric_params && thread->num_geometric_params > 0) {
         uint64_t seed = thread->thread_id + time(NULL);
         
         for (uint32_t i = 0; i < thread->num_geometric_params; i++) {
+            // Check timeout
+            if (time(NULL) - start_time > TIMEOUT_SECONDS) {
+                fprintf(stderr, "ERROR: Initialization timeout after %d seconds at param %u/%u for thread %u\n",
+                        TIMEOUT_SECONDS, i, thread->num_geometric_params, thread->thread_id);
+                return -1;
+            }
+            
             GeometricMatrix* matrix = thread->geometric_params[i];
             if (!matrix) {
                 continue;
+            }
+            
+            // Progress logging every 2 params (since we have 8 per thread)
+            if (i > 0 && i % 2 == 0) {
+                fprintf(stderr, "  Thread %u: Initialized %u/%u parameters\n", 
+                        thread->thread_id, i, thread->num_geometric_params);
             }
             
             // Calculate fan_in based on matrix dimensions

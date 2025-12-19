@@ -13,21 +13,14 @@
 #include <stdio.h>
 #include "geometric_matrix.h"
 #include "math/abacus.h"
+#include "math/platonic_generator.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-// Define PlatonicGeometry structure (simplified version)
-struct PlatonicGeometry {
-    uint32_t num_vertices;
-    double* vertices;  // [num_vertices * 3]
-    uint32_t num_edges;
-    uint32_t num_faces;
-};
-
-// Forward declare the function we'll use
-extern struct PlatonicGeometry* cllm_generate_platonic_solid(PlatonicSolidType solid);
+// Forward declare the function we'll use - returns PlatonicSolid* from math library
+extern PlatonicSolid* cllm_generate_platonic_solid(PlatonicSolidType solid);
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -161,30 +154,46 @@ static uint32_t get_num_vertices(PlatonicSolidType solid) {
  * Uses the existing Platonic solid generators from the codebase.
  */
 static int initialize_vertex_positions(GeometricMatrix* matrix) {
-    // Use existing Platonic solid generator
-    PlatonicGeometry* geom = cllm_generate_platonic_solid(matrix->solid);
-    if (!geom) {
+    // Use existing Platonic solid generator from math library
+    PlatonicSolid* solid = cllm_generate_platonic_solid(matrix->solid);
+    if (!solid) {
         fprintf(stderr, "ERROR: Failed to generate Platonic solid\n");
         return -1;
     }
     
-    // Allocate vertex positions
-    matrix->vertex_positions = (double*)calloc(matrix->num_vertices * 3, sizeof(double));
-    if (!matrix->vertex_positions) {
-        fprintf(stderr, "ERROR: Failed to allocate vertex positions\n");
+    // Verify we got the expected number of vertices
+    if (solid->num_vertices != matrix->num_vertices) {
+        fprintf(stderr, "ERROR: Vertex count mismatch: expected %u, got %llu\n",
+                matrix->num_vertices, (unsigned long long)solid->num_vertices);
+        platonic_free(solid);
         return -1;
     }
     
-    // Copy vertex positions from geometry
-    // Note: PlatonicGeometry stores vertices as array of 3D points
-    for (uint32_t i = 0; i < matrix->num_vertices && i < geom->num_vertices; i++) {
-        matrix->vertex_positions[i * 3 + 0] = geom->vertices[i * 3 + 0];
-        matrix->vertex_positions[i * 3 + 1] = geom->vertices[i * 3 + 1];
-        matrix->vertex_positions[i * 3 + 2] = geom->vertices[i * 3 + 2];
+    // Allocate vertex positions (always 3D for visualization)
+    matrix->vertex_positions = (double*)calloc(matrix->num_vertices * 3, sizeof(double));
+    if (!matrix->vertex_positions) {
+        fprintf(stderr, "ERROR: Failed to allocate vertex positions\n");
+        platonic_free(solid);
+        return -1;
     }
     
-    // Note: We don't free geom here as it might be managed by the generator
-    // TODO: Check if we need to free PlatonicGeometry
+    // Copy vertex positions from solid
+    // Note: PlatonicSolid stores vertex_coords as [num_vertices * dimension]
+    uint32_t dim = solid->dimension;
+    
+    for (uint32_t i = 0; i < matrix->num_vertices; i++) {
+        // Copy up to 3 dimensions (x, y, z)
+        for (uint32_t d = 0; d < 3 && d < dim; d++) {
+            matrix->vertex_positions[i * 3 + d] = solid->vertex_coords[i * dim + d];
+        }
+        // Zero-fill remaining dimensions if dim < 3
+        for (uint32_t d = dim; d < 3; d++) {
+            matrix->vertex_positions[i * 3 + d] = 0.0;
+        }
+    }
+    
+    // Free the solid (we copied what we need)
+    platonic_free(solid);
     
     return 0;
 }
@@ -305,6 +314,12 @@ GeometricMatrix* geometric_matrix_create_with_solid(
         mat[6] = 0.0; mat[7] = 0.0; mat[8] = 1.0;
     }
     
+    // Calculate and report memory usage
+    size_t vertex_values_mem = matrix->num_vertices * sizeof(CrystallineAbacus*);
+    size_t vertex_pos_mem = matrix->num_vertices * 3 * sizeof(double);
+    size_t symmetry_mem = matrix->num_symmetries * 9 * sizeof(double);
+    size_t total_mem = sizeof(GeometricMatrix) + vertex_values_mem + vertex_pos_mem + symmetry_mem;
+    
     printf("Created geometric matrix '%s' [%u×%u] with %u vertices (%s)\n",
            matrix->name, rows, cols, matrix->num_vertices,
            solid == PLATONIC_TETRAHEDRON ? "Tetrahedron" :
@@ -312,6 +327,9 @@ GeometricMatrix* geometric_matrix_create_with_solid(
            solid == PLATONIC_OCTAHEDRON ? "Octahedron" :
            solid == PLATONIC_DODECAHEDRON ? "Dodecahedron" :
            solid == PLATONIC_ICOSAHEDRON ? "Icosahedron" : "Unknown");
+    
+    printf("  Memory: struct=%zu, vertices=%zu, positions=%zu, symmetry=%zu, total=%zu bytes\n",
+           sizeof(GeometricMatrix), vertex_values_mem, vertex_pos_mem, symmetry_mem, total_mem);
     
     return matrix;
 }
