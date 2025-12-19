@@ -621,3 +621,10 @@ install-php-ubuntu: install-php
 
 install-php-centos: install-php
 	@./php/scripts/install_php_centos.sh
+# Simple training tool
+tools/cllm_train_simple: $(CLLM_LIB) $(MATH_LIB) $(ALGORITHMS_LIB)
+	@echo "Building simple training tool..."
+	$(CC) $(CFLAGS) -o tools/cllm_train_simple tools/cllm_train_simple.c \
+		-L. -lcllm -lalgorithms -Lmath/lib -lcrystallinemath -lm -lpthread \
+		-Wl,-rpath,'$$ORIGIN/..'
+	@echo "✓ Simple training tool built"

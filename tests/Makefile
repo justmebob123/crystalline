@@ -110,3 +110,9 @@ test_training_loop: test_training_loop.c
 	@echo "Building training loop test..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ test_training_loop built"
+
+# End-to-end integration test
+test_end_to_end_simple: test_end_to_end_simple.c
+	@echo "Building end-to-end integration test..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_end_to_end_simple built"
