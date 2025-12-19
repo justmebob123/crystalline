@@ -133,89 +133,89 @@ static void* physical_thread_worker(void* arg) {
     return NULL;
 }
 
-HierarchicalThreadPool* hierarchical_thread_pool_create_88d_adaptive(
-    uint32_t base,
-    uint32_t max_physical_threads
-) {
-    // Auto-detect if not specified
-    if (max_physical_threads == 0) {
-        max_physical_threads = adaptive_get_available_cores();
-    }
-    
-    // Clamp to reasonable range (1-96)
-    if (max_physical_threads < 1) max_physical_threads = 1;
-    if (max_physical_threads > 96) max_physical_threads = 96;
-    
-    printf("Creating adaptive 88D thread pool:\n");
-    printf("  Logical threads: 96 (88D structure)\n");
-    printf("  Physical threads: %u (available cores)\n", max_physical_threads);
-    printf("  Memory per thread: ~100 MB\n");
-    printf("  Total memory: ~%u MB\n", max_physical_threads * 100);
-    printf("  Memory reduction: %.1fx (from 9 GB)\n", 9216.0 / (max_physical_threads * 100));
-    
-    // Create base 88D pool structure
-    // This creates the logical thread structures but we'll control physical threads
-    HierarchicalThreadPool* pool = hierarchical_thread_pool_create_88d(base);
-    
-    if (!pool) {
-        fprintf(stderr, "Failed to create 88D thread pool\n");
-        return NULL;
-    }
-    
-    // Configure adaptive threading
-    pool->use_adaptive_threading = true;
-    pool->max_physical_threads = max_physical_threads;
-    pool->num_logical_threads = 96;
-    pool->work_stealing_enabled = true;
-    pool->total_work_stolen = 0;
-    
-    // Allocate physical thread array
-    pool->physical_threads = calloc(max_physical_threads, sizeof(pthread_t));
-    if (!pool->physical_threads) {
-        fprintf(stderr, "Failed to allocate physical thread array\n");
-        hierarchical_thread_pool_free(pool);
-        return NULL;
-    }
-    
-    // Allocate shared memory pools (one per physical thread)
-    pool->memory_pool_size = 100 * 1024 * 1024;  // 100 MB per thread
-    pool->shared_memory_pools = calloc(max_physical_threads, sizeof(void*));
-    if (!pool->shared_memory_pools) {
-        fprintf(stderr, "Failed to allocate shared memory pools\n");
-        free(pool->physical_threads);
-        hierarchical_thread_pool_free(pool);
-        return NULL;
-    }
-    
-    // Allocate each memory pool
-    for (uint32_t i = 0; i < max_physical_threads; i++) {
-        pool->shared_memory_pools[i] = malloc(pool->memory_pool_size);
-        if (!pool->shared_memory_pools[i]) {
-            fprintf(stderr, "Failed to allocate memory pool %u\n", i);
-            // Free previously allocated pools
-            for (uint32_t j = 0; j < i; j++) {
-                free(pool->shared_memory_pools[j]);
-            }
-            free(pool->shared_memory_pools);
-            free(pool->physical_threads);
-            hierarchical_thread_pool_free(pool);
-            return NULL;
-        }
-    }
-    
-    pool->num_physical_threads = max_physical_threads;
-    
-    printf("  ✓ Adaptive 88D thread pool created\n");
-    printf("  ✓ Physical threads: %u\n", max_physical_threads);
-    printf("  ✓ Shared memory pools: %u × 100 MB\n", max_physical_threads);
-    printf("  ✓ Work stealing: enabled\n");
-    printf("  ✓ Scalability: 4-128 cores\n");
-    
-    // Note: Physical threads will be started when pool is started
-    // This allows for lazy initialization
-    
-    return pool;
-}
+// HierarchicalThreadPool* hierarchical_thread_pool_create_88d_adaptive(
+//     uint32_t base,
+//     uint32_t max_physical_threads
+// ) {
+//     // Auto-detect if not specified
+//     if (max_physical_threads == 0) {
+//         max_physical_threads = adaptive_get_available_cores();
+//     }
+//     
+//     // Clamp to reasonable range (1-96)
+//     if (max_physical_threads < 1) max_physical_threads = 1;
+//     if (max_physical_threads > 96) max_physical_threads = 96;
+//     
+//     printf("Creating adaptive 88D thread pool:\n");
+//     printf("  Logical threads: 96 (88D structure)\n");
+//     printf("  Physical threads: %u (available cores)\n", max_physical_threads);
+//     printf("  Memory per thread: ~100 MB\n");
+//     printf("  Total memory: ~%u MB\n", max_physical_threads * 100);
+//     printf("  Memory reduction: %.1fx (from 9 GB)\n", 9216.0 / (max_physical_threads * 100));
+//     
+//     // Create base 88D pool structure
+//     // This creates the logical thread structures but we'll control physical threads
+//     HierarchicalThreadPool* pool = hierarchical_thread_pool_create_88d(base);
+//     
+//     if (!pool) {
+//         fprintf(stderr, "Failed to create 88D thread pool\n");
+//         return NULL;
+//     }
+//     
+//     // Configure adaptive threading
+//     pool->use_adaptive_threading = true;
+//     pool->max_physical_threads = max_physical_threads;
+//     pool->num_logical_threads = 96;
+//     pool->work_stealing_enabled = true;
+//     pool->total_work_stolen = 0;
+//     
+//     // Allocate physical thread array
+//     pool->physical_workers = calloc(max_physical_threads, sizeof(pthread_t));
+//     if (!pool->physical_workers) {
+//         fprintf(stderr, "Failed to allocate physical thread array\n");
+//         hierarchical_thread_pool_free(pool);
+//         return NULL;
+//     }
+//     
+//     // Allocate shared memory pools (one per physical thread)
+//     pool->memory_pool_size = 100 * 1024 * 1024;  // 100 MB per thread
+//     pool->shared_memory_pools = calloc(max_physical_threads, sizeof(void*));
+//     if (!pool->shared_memory_pools) {
+//         fprintf(stderr, "Failed to allocate shared memory pools\n");
+//         free(pool->physical_workers);
+//         hierarchical_thread_pool_free(pool);
+//         return NULL;
+//     }
+//     
+//     // Allocate each memory pool
+//     for (uint32_t i = 0; i < max_physical_threads; i++) {
+//         pool->shared_memory_pools[i] = malloc(pool->memory_pool_size);
+//         if (!pool->shared_memory_pools[i]) {
+//             fprintf(stderr, "Failed to allocate memory pool %u\n", i);
+//             // Free previously allocated pools
+//             for (uint32_t j = 0; j < i; j++) {
+//                 free(pool->shared_memory_pools[j]);
+//             }
+//             free(pool->shared_memory_pools);
+//             free(pool->physical_workers);
+//             hierarchical_thread_pool_free(pool);
+//             return NULL;
+//         }
+//     }
+//     
+//     pool->num_physical_workers = max_physical_threads;
+//     
+//     printf("  ✓ Adaptive 88D thread pool created\n");
+//     printf("  ✓ Physical threads: %u\n", max_physical_threads);
+//     printf("  ✓ Shared memory pools: %u × 100 MB\n", max_physical_threads);
+//     printf("  ✓ Work stealing: enabled\n");
+//     printf("  ✓ Scalability: 4-128 cores\n");
+//     
+//     // Note: Physical threads will be started when pool is started
+//     // This allows for lazy initialization
+//     
+//     return pool;
+// }
 
 int adaptive_get_statistics(
     HierarchicalThreadPool* pool,
@@ -327,12 +327,12 @@ int adaptive_start_physical_threads(HierarchicalThreadPool* pool) {
         return -1;
     }
     
-    if (!pool->physical_threads) {
+    if (!pool->physical_workers) {
         fprintf(stderr, "Physical threads not allocated\n");
         return -1;
     }
     
-    printf("Starting %u physical threads...\n", pool->num_physical_threads);
+    printf("Starting %u physical threads...\n", pool->num_physical_workers);
     
     typedef struct {
         HierarchicalThreadPool* pool;
@@ -340,7 +340,7 @@ int adaptive_start_physical_threads(HierarchicalThreadPool* pool) {
     } PhysicalThreadContext;
     
     // Start each physical thread
-    for (uint32_t i = 0; i < pool->num_physical_threads; i++) {
+    for (uint32_t i = 0; i < pool->num_physical_workers; i++) {
         PhysicalThreadContext* ctx = malloc(sizeof(PhysicalThreadContext));
         if (!ctx) {
             fprintf(stderr, "Failed to allocate context for physical thread %u\n", i);
@@ -350,7 +350,7 @@ int adaptive_start_physical_threads(HierarchicalThreadPool* pool) {
         ctx->pool = pool;
         ctx->physical_id = i;
         
-        int result = pthread_create(&pool->physical_threads[i], NULL, 
+        int result = pthread_create(&pool->physical_workers[i], NULL, 
                                     physical_thread_worker, ctx);
         if (result != 0) {
             fprintf(stderr, "Failed to create physical thread %u: %d\n", i, result);
@@ -359,7 +359,7 @@ int adaptive_start_physical_threads(HierarchicalThreadPool* pool) {
         }
     }
     
-    printf("  ✓ %u physical threads started\n", pool->num_physical_threads);
+    printf("  ✓ %u physical threads started\n", pool->num_physical_workers);
     return 0;
 }
 
@@ -368,20 +368,20 @@ int adaptive_stop_physical_threads(HierarchicalThreadPool* pool) {
         return -1;
     }
     
-    if (!pool->physical_threads) {
+    if (!pool->physical_workers) {
         return 0;  // Already stopped
     }
     
-    printf("Stopping %u physical threads...\n", pool->num_physical_threads);
+    printf("Stopping %u physical threads...\n", pool->num_physical_workers);
     
     // Signal pool to stop (physical threads check pool->running)
     pool->running = false;
     
     // Wait for all physical threads to finish
-    for (uint32_t i = 0; i < pool->num_physical_threads; i++) {
-        pthread_join(pool->physical_threads[i], NULL);
+    for (uint32_t i = 0; i < pool->num_physical_workers; i++) {
+        pthread_join(pool->physical_workers[i], NULL);
     }
     
-    printf("  ✓ %u physical threads stopped\n", pool->num_physical_threads);
+    printf("  ✓ %u physical threads stopped\n", pool->num_physical_workers);
     return 0;
 }

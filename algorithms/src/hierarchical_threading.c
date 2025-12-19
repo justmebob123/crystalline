@@ -7,12 +7,14 @@
 #include "hierarchical_threading.h"
 #include "generic_model.h"
 #include "math/transcendental.h"
+#include "work_queue.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -497,24 +499,33 @@ int hierarchical_thread_start(
         return -1;
     }
     
-    // Create work context
-    ThreadWorkContext* ctx = malloc(sizeof(ThreadWorkContext));
-    if (!ctx) {
-        return -1;
-    }
-    ctx->thread = thread;
-    ctx->work_fn = work_fn;
-    ctx->work_data = work_data;
+    // NOTE: This function is deprecated for adaptive threading
+    // With adaptive threading, logical threads don't have their own pthreads
+    // Work is processed by physical workers instead
     
-    // Create pthread
-    int result = pthread_create(&thread->pthread, NULL, thread_work_wrapper, ctx);
-    if (result != 0) {
-        free(ctx);
-        return -1;
-    }
+    // For backward compatibility with non-adaptive code, return error
+    fprintf(stderr, "ERROR: hierarchical_thread_start() is not supported with adaptive threading\n");
+    fprintf(stderr, "       Use physical workers instead\n");
+    return -1;
     
-    thread->running = true;
-    thread->start_time = get_time_ns();
+    // OLD CODE (kept for reference):
+    // ThreadWorkContext* ctx = malloc(sizeof(ThreadWorkContext));
+    // if (!ctx) {
+    //     return -1;
+    // }
+    // ctx->thread = thread;
+    // ctx->work_fn = work_fn;
+    // ctx->work_data = work_data;
+    // 
+    // // Create pthread
+    // int result = pthread_create(&thread->pthread, NULL, thread_work_wrapper, ctx);
+    // if (result != 0) {
+    //     free(ctx);
+    //     return -1;
+    // }
+    // 
+    // thread->running = true;
+    // thread->start_time = get_time_ns();
     
     return 0;
 }
@@ -537,14 +548,18 @@ int hierarchical_thread_join(HierarchicalThread* thread) {
         return -1;
     }
     
-    void* result;
-    int ret = pthread_join(thread->pthread, &result);
-    if (ret == 0) {
-        thread->running = false;
-        thread->total_runtime = get_time_ns() - thread->start_time;
-    }
+    // NOTE: This function is deprecated for adaptive threading
+    fprintf(stderr, "ERROR: hierarchical_thread_join() is not supported with adaptive threading\n");
+    return -1;
     
-    return ret;
+    // OLD CODE:
+    // void* result;
+    // int ret = pthread_join(thread->pthread, &result);
+    // if (ret == 0) {
+    //     thread->running = false;
+    //     thread->total_runtime = get_time_ns() - thread->start_time;
+    // }
+    // return ret;
 }
 
 // ============================================================================
@@ -1141,6 +1156,31 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
 // ============================================================================
 
 HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
+    // Determine number of physical cores
+    // Default to 8 physical workers (good for most systems)
+    uint32_t num_physical_workers = 8;
+    
+    // Try to get actual CPU count
+    #ifdef _SC_NPROCESSORS_ONLN
+    long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+    if (nprocs > 0) {
+        // Use half the available cores (leave room for other processes)
+        num_physical_workers = (uint32_t)(nprocs / 2);
+        if (num_physical_workers < 2) num_physical_workers = 2;
+        if (num_physical_workers > 16) num_physical_workers = 16;
+    }
+    #endif
+    
+    printf("Creating 88D pool with %u physical workers (auto-detected)\n", 
+           num_physical_workers);
+    
+    // Use the adaptive version
+    return hierarchical_thread_pool_create_88d_adaptive(base, num_physical_workers);
+}
+
+// OLD IMPLEMENTATION - KEPT FOR REFERENCE BUT NOT USED
+// This was the original 96-pthread implementation
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d_old(uint32_t base) {
     // Create pool with 88D configuration
     HierarchicalThreadPool* pool = hierarchical_thread_pool_create(
         HIERARCHICAL_88D_TOTAL_THREADS,   // 96 threads
@@ -1250,23 +1290,25 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     atomic_init(&pool->total_boundary_crossings, 0);
     atomic_init(&pool->total_twin_primes, 0);
     
-    // Start worker loops for all worker threads
-    for (uint32_t i = 0; i < HIERARCHICAL_88D_TOTAL_THREADS; i++) {
-        HierarchicalThread* thread = pool->threads[i];
-        if (thread && thread->role == THREAD_ROLE_WORKER) {
-            // Start worker loop
-            thread->running = true;
-            thread->batch_count = 0;
-            thread->work_completed = 0;
-            
-            int result = pthread_create(&thread->pthread, NULL, 
-                                       hierarchical_thread_worker, thread);
-            if (result != 0) {
-                fprintf(stderr, "Failed to start worker thread %u\n", i);
-                // Continue with other threads
-            }
-        }
-    }
+    // NOTE: Old code that created pthreads for each logical thread
+    // This is no longer used with adaptive threading
+    // Physical workers are created separately in the adaptive version
+    
+    // OLD CODE (commented out):
+    // for (uint32_t i = 0; i < HIERARCHICAL_88D_TOTAL_THREADS; i++) {
+    //     HierarchicalThread* thread = pool->threads[i];
+    //     if (thread && thread->role == THREAD_ROLE_WORKER) {
+    //         thread->running = true;
+    //         thread->batch_count = 0;
+    //         thread->work_completed = 0;
+    //         
+    //         int result = pthread_create(&thread->pthread, NULL, 
+    //                                    hierarchical_thread_worker, thread);
+    //         if (result != 0) {
+    //             fprintf(stderr, "Failed to start worker thread %u\n", i);
+    //         }
+    //     }
+    // }
     atomic_init(&pool->total_operations, 0);
     
     // Initialize group nesting
@@ -1281,6 +1323,202 @@ HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base) {
     fprintf(stderr, "DEBUG: 88D pool created with %u threads, pool->running=%d\n", 
             pool->num_threads, pool->running);
     fflush(stderr);
+    
+    return pool;
+}
+
+/**
+ * Create 88D thread pool with adaptive threading
+ * 
+ * This creates a thread pool with 96 logical threads but only
+ * num_physical_workers actual OS threads. This allows the system
+ * to run on 2-16 core systems.
+ */
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d_adaptive(
+    uint32_t base,
+    uint32_t num_physical_workers
+) {
+    // Validate physical worker count
+    if (num_physical_workers < 1 || num_physical_workers > 64) {
+        fprintf(stderr, "ERROR: Invalid physical worker count %u (must be 1-64)\n",
+                num_physical_workers);
+        return NULL;
+    }
+    
+    printf("Creating 88D pool with adaptive threading:\n");
+    printf("  - 96 logical threads\n");
+    printf("  - %u physical workers\n", num_physical_workers);
+    
+    // First create the pool with logical threads (but don't start pthreads)
+    HierarchicalThreadPool* pool = hierarchical_thread_pool_create(
+        HIERARCHICAL_88D_TOTAL_THREADS,   // 96 logical threads
+        HIERARCHICAL_88D_CLOCK_POSITIONS, // 12-fold symmetry
+        HIERARCHICAL_88D_TOTAL_DIMENSIONS, // 88 dimensions
+        true  // NUMA-aware
+    );
+    
+    if (!pool) {
+        return NULL;
+    }
+    
+    // Enable 88D structure
+    pool->use_88d_structure = true;
+    pool->num_levels = HIERARCHICAL_88D_NUM_LAYERS;
+    pool->threads_per_level = HIERARCHICAL_88D_THREADS_PER_LAYER;
+    
+    // Enable adaptive threading
+    pool->use_adaptive_threading = true;
+    pool->max_physical_threads = num_physical_workers;
+    pool->num_logical_threads = HIERARCHICAL_88D_TOTAL_THREADS;
+    
+    // Create work queue
+    pool->work_queue = adaptive_work_queue_create(0); // Unlimited capacity
+    if (!pool->work_queue) {
+        fprintf(stderr, "ERROR: Failed to create work queue\n");
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    // Create physical workers
+    pool->physical_workers = (PhysicalWorker**)calloc(num_physical_workers, 
+                                                       sizeof(PhysicalWorker*));
+    if (!pool->physical_workers) {
+        fprintf(stderr, "ERROR: Failed to allocate physical workers array\n");
+        adaptive_work_queue_free(pool->work_queue);
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    pool->num_physical_workers = num_physical_workers;
+    
+    // Create and start each physical worker
+    for (uint32_t i = 0; i < num_physical_workers; i++) {
+        pool->physical_workers[i] = physical_worker_create(i, pool, pool->work_queue);
+        if (!pool->physical_workers[i]) {
+            fprintf(stderr, "ERROR: Failed to create physical worker %u\n", i);
+            // Clean up already created workers
+            for (uint32_t j = 0; j < i; j++) {
+                physical_worker_stop(pool->physical_workers[j]);
+                physical_worker_join(pool->physical_workers[j]);
+                physical_worker_free(pool->physical_workers[j]);
+            }
+            free(pool->physical_workers);
+            adaptive_work_queue_free(pool->work_queue);
+            hierarchical_thread_pool_free(pool);
+            return NULL;
+        }
+        
+        // Start the physical worker
+        if (physical_worker_start(pool->physical_workers[i]) != 0) {
+            fprintf(stderr, "ERROR: Failed to start physical worker %u\n", i);
+            // Clean up
+            for (uint32_t j = 0; j <= i; j++) {
+                physical_worker_free(pool->physical_workers[j]);
+            }
+            free(pool->physical_workers);
+            adaptive_work_queue_free(pool->work_queue);
+            hierarchical_thread_pool_free(pool);
+            return NULL;
+        }
+    }
+    
+    // Create clock lattice
+    pool->clock_lattice = calloc(1, sizeof(ClockContext));
+    if (!pool->clock_lattice) {
+        // Clean up workers
+        for (uint32_t i = 0; i < num_physical_workers; i++) {
+            physical_worker_stop(pool->physical_workers[i]);
+            physical_worker_join(pool->physical_workers[i]);
+            physical_worker_free(pool->physical_workers[i]);
+        }
+        free(pool->physical_workers);
+        adaptive_work_queue_free(pool->work_queue);
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    MathError err = clock_init(pool->clock_lattice);
+    if (err != MATH_SUCCESS) {
+        free(pool->clock_lattice);
+        pool->clock_lattice = NULL;
+        // Clean up workers
+        for (uint32_t i = 0; i < num_physical_workers; i++) {
+            physical_worker_stop(pool->physical_workers[i]);
+            physical_worker_join(pool->physical_workers[i]);
+            physical_worker_free(pool->physical_workers[i]);
+        }
+        free(pool->physical_workers);
+        adaptive_work_queue_free(pool->work_queue);
+        hierarchical_thread_pool_free(pool);
+        return NULL;
+    }
+    
+    // Initialize layer barriers
+    for (int i = 0; i < HIERARCHICAL_88D_NUM_LAYERS; i++) {
+        pool->layer_frames[i] = NULL;
+        pthread_barrier_init(&pool->layer_barriers[i], NULL, HIERARCHICAL_88D_THREADS_PER_LAYER);
+    }
+    
+    // Initialize global barrier
+    pthread_barrier_init(&pool->global_barrier, NULL, HIERARCHICAL_88D_TOTAL_THREADS);
+    
+    // Create logical threads (no pthreads!)
+    for (uint32_t i = 0; i < HIERARCHICAL_88D_TOTAL_THREADS; i++) {
+        if (!pool->threads[i]) {
+            pool->threads[i] = hierarchical_thread_create(i, THREAD_ROLE_WORKER, NULL, pool);
+            if (!pool->threads[i]) {
+                fprintf(stderr, "ERROR: Failed to create logical thread %u\n", i);
+                // Clean up
+                for (uint32_t j = 0; j < num_physical_workers; j++) {
+                    physical_worker_stop(pool->physical_workers[j]);
+                    physical_worker_join(pool->physical_workers[j]);
+                    physical_worker_free(pool->physical_workers[j]);
+                }
+                free(pool->physical_workers);
+                adaptive_work_queue_free(pool->work_queue);
+                hierarchical_thread_pool_free(pool);
+                return NULL;
+            }
+            pool->num_threads++;
+        }
+        
+        HierarchicalThread* thread = pool->threads[i];
+        
+        // Set 88D position
+        uint8_t layer = i / HIERARCHICAL_88D_THREADS_PER_LAYER;
+        uint8_t dim = i % HIERARCHICAL_88D_THREADS_PER_LAYER;
+        uint8_t clock_pos = (dim == 0) ? 0 : dim;  // Control thread at 0, workers at 1-11
+        
+        thread->layer = layer;
+        thread->dimension = dim;
+        thread->clock_position = clock_pos;
+        
+        // Store in layer array
+        if (layer < HIERARCHICAL_88D_NUM_LAYERS && dim < HIERARCHICAL_88D_THREADS_PER_LAYER) {
+            pool->layers[layer][dim] = thread;
+            if (dim == 0) {
+                pool->control_threads[layer] = thread;
+            }
+        }
+    }
+    
+    // Initialize statistics
+    atomic_init(&pool->total_boundary_crossings, 0);
+    atomic_init(&pool->total_twin_primes, 0);
+    atomic_init(&pool->total_operations, 0);
+    
+    // Initialize group nesting
+    pool->parent_group = NULL;
+    pool->child_groups = NULL;
+    pool->num_child_groups = 0;
+    pool->max_child_groups = 0;
+    
+    pool->running = true;
+    
+    printf("Adaptive 88D pool created successfully:\n");
+    printf("  - %u logical threads\n", pool->num_threads);
+    printf("  - %u physical workers\n", pool->num_physical_workers);
+    printf("  - Work queue ready\n");
     
     return pool;
 }

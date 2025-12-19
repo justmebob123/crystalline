@@ -47,6 +47,10 @@
 #include "shared_memory_enhanced.h"
 #include "message_passing.h"
 #include "state_management.h"
+
+// Forward declarations for adaptive work queue (to avoid circular dependency)
+typedef struct AdaptiveWorkQueue AdaptiveWorkQueue;
+typedef struct AdaptiveWorkItem AdaptiveWorkItem;
 #include "work_distribution.h"
 #include "abacus88d.h"
 #include <math/types.h>
@@ -152,14 +156,34 @@ typedef struct TrainingWorkItem {
 } TrainingWorkItem;
 
 // ============================================================================
-// HIERARCHICAL THREAD STRUCTURE
+// PHYSICAL WORKER STRUCTURE (for adaptive threading)
+// ============================================================================
+
+typedef struct PhysicalWorker {
+    uint32_t worker_id;                 // Physical worker ID
+    pthread_t pthread;                  // POSIX thread handle
+    struct HierarchicalThreadPool* pool; // Parent pool
+    AdaptiveWorkQueue* work_queue;      // Shared work queue
+    
+    volatile bool running;              // Worker is running
+    volatile bool should_stop;          // Worker should stop
+    
+    // Statistics
+    uint64_t work_items_processed;      // Total work items processed
+    uint64_t total_runtime;             // Total runtime (nanoseconds)
+} PhysicalWorker;
+
+// ============================================================================
+// HIERARCHICAL THREAD STRUCTURE (LOGICAL THREAD)
 // ============================================================================
 
 typedef struct HierarchicalThread {
     // Identity
-    uint32_t thread_id;                 // Unique thread ID
-    pthread_t pthread;                  // POSIX thread handle
+    uint32_t thread_id;                 // Unique thread ID (logical)
     ThreadRole role;                    // Thread role
+    
+    // NOTE: No pthread_t here! This is a LOGICAL thread.
+    // Physical execution is handled by PhysicalWorker threads.
     
     // Hierarchy
     struct HierarchicalThread* parent;  // Parent thread
@@ -403,9 +427,10 @@ typedef struct {
     uint32_t max_physical_threads;      // Maximum physical OS threads
     uint32_t num_logical_threads;       // Number of logical threads (always 96)
     
-    // Physical Thread Pool
-    pthread_t* physical_threads;        // Physical OS threads
-    uint32_t num_physical_threads;      // Number of physical threads created
+    // Physical Worker Pool (NEW: replaces direct pthread array)
+    PhysicalWorker** physical_workers;  // Array of physical workers
+    uint32_t num_physical_workers;      // Number of physical workers created
+    AdaptiveWorkQueue* work_queue;      // Shared work queue
     
     // Work Stealing
     bool work_stealing_enabled;         // Enable work stealing
@@ -965,6 +990,21 @@ uint32_t hierarchical_thread_find_nearest_neighbors(
 HierarchicalThreadPool* hierarchical_thread_pool_create_88d(uint32_t base);
 
 /**
+ * Create 88D thread pool with adaptive threading
+ * 
+ * This creates a thread pool with 96 logical threads but only
+ * num_physical_workers actual OS threads.
+ * 
+ * @param base Abacus base (typically 60 for base-60)
+ * @param num_physical_workers Number of physical worker threads (2-16)
+ * @return Thread pool or NULL on error
+ */
+HierarchicalThreadPool* hierarchical_thread_pool_create_88d_adaptive(
+    uint32_t base,
+    uint32_t num_physical_workers
+);
+
+/**
  * Get thread by position
  * 
  * @param pool Thread pool
@@ -977,6 +1017,55 @@ HierarchicalThread* hierarchical_thread_get(
     uint8_t layer,
     uint8_t dimension
 );
+
+// ============================================================================
+// PHYSICAL WORKER OPERATIONS
+// ============================================================================
+
+/**
+ * Create physical worker
+ * 
+ * @param worker_id Worker ID
+ * @param pool Parent thread pool
+ * @param work_queue Shared work queue
+ * @return Allocated physical worker, or NULL on error
+ */
+PhysicalWorker* physical_worker_create(
+    uint32_t worker_id,
+    HierarchicalThreadPool* pool,
+    AdaptiveWorkQueue* work_queue
+);
+
+/**
+ * Start physical worker
+ * 
+ * @param worker Worker to start
+ * @return 0 on success, -1 on error
+ */
+int physical_worker_start(PhysicalWorker* worker);
+
+/**
+ * Stop physical worker
+ * 
+ * @param worker Worker to stop
+ * @return 0 on success, -1 on error
+ */
+int physical_worker_stop(PhysicalWorker* worker);
+
+/**
+ * Wait for physical worker to finish
+ * 
+ * @param worker Worker to wait for
+ * @return 0 on success, -1 on error
+ */
+int physical_worker_join(PhysicalWorker* worker);
+
+/**
+ * Free physical worker
+ * 
+ * @param worker Worker to free
+ */
+void physical_worker_free(PhysicalWorker* worker);
 
 /**
  * Synchronize layer
