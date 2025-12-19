@@ -303,6 +303,17 @@ int thread_allocate_all_parameters(
         return -1;
     }
     
+    // OPTIMIZATION: Skip allocation for threads in unused layers
+    // The system creates 96 threads (8 layers × 12) but models may use fewer layers
+    // Only allocate for threads in layers that will actually be used
+    if (thread->layer > 1) {  // For now, only support 1-2 layers to save memory
+        fprintf(stderr, "  Thread %u (layer %u): Skipped (unused layer)\n", 
+                thread->thread_id, thread->layer);
+        thread->num_geometric_params = 0;
+        thread->geometric_params = NULL;
+        return 0;  // Success - just skipped allocation
+    }
+    
     // Determine thread role based on layer
     if (thread->layer == 0) {
         // Layer 0: Embeddings
