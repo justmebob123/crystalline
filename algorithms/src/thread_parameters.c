@@ -11,7 +11,9 @@
 
 #include "thread_parameters.h"
 #include "hierarchical_threading.h"
+#include "generic_model.h"
 #include "geometric_matrix.h"
+#include "geometric_matrix_pool.h"
 #include "math/abacus.h"
 #include "math/arithmetic.h"
 #include "math/transcendental.h"
@@ -145,37 +147,57 @@ int thread_allocate_parameter(
         thread->max_geometric_params = new_capacity;
     }
     
-    // Create geometric matrix for this parameter
-    // For 2D matrices (most common case)
+    // Get matrix pool from model (passed via thread's model pointer)
+    // The model pointer should be set during thread creation
+    GeometricMatrixPool* pool = NULL;
+    if (thread->model) {
+        // Access matrix_pool from GenericModel
+        pool = (GeometricMatrixPool*)thread->model->matrix_pool;
+    }
+    
+    // Create or get shared geometric matrix for this parameter
+    GeometricMatrix* matrix = NULL;
+    
     if (num_dims == 2) {
         uint32_t rows = shape[0];
         uint32_t cols = shape[1];
         
-        // Create geometric matrix using tetrahedron (4 vertices)
-        // Grid size should accommodate the matrix dimensions
-        uint32_t grid_size = (rows > cols) ? rows : cols;
-        if (grid_size < 4) grid_size = 4;  // Minimum for tetrahedron
+        if (pool) {
+            // Use shared pool - this enables matrix sharing across threads!
+            matrix = geometric_matrix_pool_get_or_create(
+                pool, name, rows, cols, PLATONIC_TETRAHEDRON);
+        } else {
+            // Fallback: Create individual matrix (old behavior)
+            matrix = geometric_matrix_create_with_solid(
+                rows, cols, PLATONIC_TETRAHEDRON, name);
+        }
         
-        GeometricMatrix* matrix = geometric_matrix_create_with_solid(
-            rows, cols, PLATONIC_TETRAHEDRON, name);
         if (!matrix) {
-            fprintf(stderr, "ERROR: Failed to create geometric matrix for %s\n", name);
+            fprintf(stderr, "ERROR: Failed to create/get geometric matrix for %s\n", name);
             pthread_mutex_unlock(&thread->param_list_lock);
             return -1;
         }
         
-        // Store the matrix
+        // Store the matrix reference
         thread->geometric_params[thread->num_geometric_params] = matrix;
         thread->num_geometric_params++;
         
     } else if (num_dims == 1) {
-        // For 1D parameters (biases, layer norm), use a simple geometric matrix
+        // For 1D parameters (biases, layer norm)
         uint32_t size = shape[0];
         
-        GeometricMatrix* matrix = geometric_matrix_create_with_solid(
-            size, 1, PLATONIC_TETRAHEDRON, name);
+        if (pool) {
+            // Use shared pool
+            matrix = geometric_matrix_pool_get_or_create(
+                pool, name, size, 1, PLATONIC_TETRAHEDRON);
+        } else {
+            // Fallback: Create individual matrix
+            matrix = geometric_matrix_create_with_solid(
+                size, 1, PLATONIC_TETRAHEDRON, name);
+        }
+        
         if (!matrix) {
-            fprintf(stderr, "ERROR: Failed to create geometric matrix for %s\n", name);
+            fprintf(stderr, "ERROR: Failed to create/get geometric matrix for %s\n", name);
             pthread_mutex_unlock(&thread->param_list_lock);
             return -1;
         }

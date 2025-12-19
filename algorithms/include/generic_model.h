@@ -35,6 +35,9 @@ typedef struct GenericModel {
     // Opaque model data (specific to implementation)
     void* model_data;
     
+    // Shared resources
+    void* matrix_pool;           // GeometricMatrixPool* (void* to avoid circular dependency)
+    
     // Model dimensions
     uint32_t embedding_dim;      // Embedding dimension
     uint32_t num_layers;         // Number of layers

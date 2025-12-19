@@ -121,13 +121,19 @@ static bool allocate_model_parameters(CLLMModel* model) {
         return false;
     }
     
-    // Set generic interface in all threads (for worker loop access)
+    // Set matrix pool in generic interface so threads can access it
+    generic->matrix_pool = model->matrix_pool;
+    printf("  ✓ Set matrix pool in generic interface\n");
+    
+    // Set generic interface in all threads BEFORE parameter allocation
+    // This allows threads to access the matrix pool during allocation
     for (uint32_t i = 0; i < 96; i++) {
         HierarchicalThread* thread = model->threads->threads[i];
         if (thread) {
             thread->model = generic;  // Generic interface, not CLLMModel directly
         }
     }
+    printf("  ✓ Set generic interface in all threads\n");
     
     // Store generic interface in model for cleanup
     model->generic_interface = generic;
@@ -306,6 +312,10 @@ static bool allocate_model_parameters(CLLMModel* model) {
                 fprintf(stderr, "Failed to get thread [%d][%d]\n", layer, dim);
                 return false;
             }
+            
+            // Set model pointer so thread can access shared resources (matrix pool)
+            // Note: thread->model expects GenericModel*, which is set later
+            // We'll set it after creating the generic interface
             
             // Get number of tokens assigned to this thread
             uint32_t num_tokens = model->thread_params[thread_idx].num_tokens_assigned;
