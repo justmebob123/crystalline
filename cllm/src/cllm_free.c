@@ -13,6 +13,7 @@
 #include "ai/cllm.h"
 #include "ai/cllm_generic_interface.h"
 #include "hierarchical_threading.h"
+#include "geometric_matrix_pool.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -140,6 +141,17 @@ void cllm_free_model(CLLMModel* model) {
         model->threading.optimizer_barrier = NULL;
     }
     printf("  ✓ Freed threading barriers\n");
+    
+    // Free shared geometric matrix pool
+    printf("  → Freeing shared geometric matrix pool...\n");
+    fflush(stdout);
+    if (model->matrix_pool) {
+        geometric_matrix_pool_print_stats((GeometricMatrixPool*)model->matrix_pool);
+        geometric_matrix_pool_free((GeometricMatrixPool*)model->matrix_pool);
+        model->matrix_pool = NULL;
+        printf("  ✓ Freed shared geometric matrix pool\n");
+        fflush(stdout);
+    }
     
     // Free 88D thread pool (this frees all thread-local storage)
     // All parameters stored in thread CrystallineAbacus are freed here

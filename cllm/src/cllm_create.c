@@ -23,6 +23,7 @@
 #include "ai/cllm_generic_interface.h"
 #include "hierarchical_threading.h"
 #include "thread_parameters.h"
+#include "geometric_matrix_pool.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -103,6 +104,15 @@ static bool allocate_model_parameters(CLLMModel* model) {
     }
     
     printf("  ✓ Created 88D thread pool: 96 threads (8 layers × 12 threads per layer)\n");
+    
+    // Create shared geometric matrix pool
+    printf("  → Creating shared geometric matrix pool...\n");
+    model->matrix_pool = geometric_matrix_pool_create(32);  // Initial capacity: 32 matrices
+    if (!model->matrix_pool) {
+        fprintf(stderr, "FATAL: Failed to create geometric matrix pool\n");
+        return false;
+    }
+    printf("  ✓ Created shared geometric matrix pool\n");
     
     // Create generic model interface (NO circular dependency!)
     GenericModel* generic = cllm_create_generic_interface(model);
