@@ -1,5 +1,64 @@
 # CLLM Project TODO
 
+## ⚡ PERMANENT RULES - READ FIRST, ALWAYS
+
+### 🔴 RULE 0: MANDATORY READING SEQUENCE
+**BEFORE ANY ACTION, YOU MUST:**
+1. Read these PERMANENT RULES completely
+2. Read MASTER_PLAN.md for objectives
+3. Read SECONDARY_OBJECTIVES.md for detailed tasks
+4. Read TERTIARY_OBJECTIVES.md for implementation details
+5. Update todo.md with current progress
+
+### 🔴 RULE 1: NO EXTERNAL MATH LIBRARIES (EXCEPT IN TESTS)
+- ❌ **NEVER** use math.h, complex.h in **PRODUCTION CODE**
+- ✅ **ALL** operations must use CrystallineAbacus
+- ✅ **EXCEPTION**: Test files MAY use math.h for validation
+
+### 🔴 RULE 2: NO DUPLICATE CONSTANTS
+- ❌ **NO** multiple definitions of π, φ, infinity
+- ✅ **ALL** constants in `math/include/math/constants.h` ONLY
+
+### 🔴 RULE 3: PROPER NAMING CONVENTIONS
+- ❌ **NO** "bigfixed", "complete", "new", temporal suffixes
+- ✅ **CLEAR** names reflecting Babylonian/clock lattice design
+
+### 🔴 RULE 4: BABYLONIAN MATHEMATICS FOUNDATION
+- ✅ **BASE-60** (sexagesimal) system
+- ✅ **12-FOLD** clock symmetry
+- ✅ **4,320,000** = complete clock cycle
+
+### 🔴 RULE 5: O(1) DETERMINISTIC OPERATIONS
+- ✅ **PRIME GENERATION** via clock lattice
+- ❌ **NO** trial division where deterministic formula exists
+
+### 🔴 RULE 6: 12-FOLD SYMMETRY EVERYWHERE
+- ✅ **THREAD COUNT** must be 12n or 12n+1
+- ✅ **EMBEDDING DIMENSIONS** multiple of 12
+
+### 🔴 RULE 7: KISSING SPHERES THREADING
+- ✅ **EACH THREAD** maps to sphere vertex
+- ✅ **12 NEIGHBORS** per sphere
+
+### 🔴 RULE 11: GIT OPERATIONS
+**ALWAYS push directly to main:**
+```bash
+git add .
+git commit -m "descriptive message"
+git push https://x-access-token:$GITHUB_TOKEN@github.com/justmebob123/crystalline.git main
+```
+**NO BRANCHES - merge everything to main immediately!**
+
+### 🔴 RULE 12: BUILD VERIFICATION
+**MANDATORY after every change:**
+```bash
+make clean &amp;&amp; make 2>&amp;1 | tee build.log
+grep -c "warning:" build.log
+# VERIFY: Zero warnings, zero errors
+```
+
+---
+
 ## ✅ MAJOR PROGRESS: Critical Bugs Fixed!
 
 **Current Status**: 92% Complete - MINIMAL TEST PASSES!
