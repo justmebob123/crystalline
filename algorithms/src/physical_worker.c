@@ -240,22 +240,18 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     uint32_t hidden_dim = 128;
     uint32_t num_layers = 2;
     
-    // Allocate activation buffers
-    double* embedding = (double*)malloc(embedding_dim * sizeof(double));
-    double* layer_input = (double*)malloc(embedding_dim * sizeof(double));
-    double* layer_output = (double*)malloc(embedding_dim * sizeof(double));
-    double* attention_output = (double*)malloc(embedding_dim * sizeof(double));
-    double* ffn_output = (double*)malloc(embedding_dim * sizeof(double));
-    double* norm_output = (double*)malloc(embedding_dim * sizeof(double));
+    // Use stack allocation for small buffers (memory efficient)
+    // This avoids malloc overhead and is cache-friendly
+    double embedding[64];
+    double layer_input[64];
+    double layer_output[64];
+    double attention_output[64];
+    double ffn_output[64];
+    double norm_output[64];
     
-    if (!embedding || !layer_input || !layer_output || !attention_output || !ffn_output || !norm_output) {
-        fprintf(stderr, "ERROR: Failed to allocate activation buffers\n");
-        free(embedding);
-        free(layer_input);
-        free(layer_output);
-        free(attention_output);
-        free(ffn_output);
-        free(norm_output);
+    // Verify buffer sizes match
+    if (embedding_dim > 64) {
+        fprintf(stderr, "ERROR: embedding_dim %u exceeds buffer size 64\n", embedding_dim);
         return -1;
     }
     
@@ -265,7 +261,7 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
     if (result != 0) {
         fprintf(stderr, "ERROR: Failed to get embedding for token %u\n", token_id);
-        goto cleanup;
+        return -1;
     }
     
     // Copy embedding to layer input
@@ -282,7 +278,7 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
         );
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute attention for layer %u\n", layer);
-            goto cleanup;
+            return -1;
         }
         
         // Add residual connection
@@ -299,7 +295,7 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
         );
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute FFN for layer %u\n", layer);
-            goto cleanup;
+            return -1;
         }
         
         // Add residual connection
@@ -324,15 +320,7 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
         (void)loss;  // Suppress unused warning
     }
     
-cleanup:
-    free(embedding);
-    free(layer_input);
-    free(layer_output);
-    free(attention_output);
-    free(ffn_output);
-    free(norm_output);
-    
-    return result;
+return result;
 }
 
 int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
@@ -349,15 +337,14 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     uint32_t num_layers = 2;
     
     // Allocate gradient buffers
-    double* grad_output = (double*)malloc(embedding_dim * sizeof(double));
-    double* grad_input = (double*)malloc(embedding_dim * sizeof(double));
-    double* softmax_probs = (double*)malloc(embedding_dim * sizeof(double));
+    // Use stack allocation for gradient buffers (memory efficient)
+    double grad_output[64];
+    double grad_input[64];
+    double softmax_probs[64];
     
-    if (!grad_output || !grad_input || !softmax_probs) {
-        fprintf(stderr, "ERROR: Failed to allocate gradient buffers\n");
-        free(grad_output);
-        free(grad_input);
-        free(softmax_probs);
+    // Verify buffer sizes match
+    if (embedding_dim > 64) {
+        fprintf(stderr, "ERROR: embedding_dim %u exceeds buffer size 64\n", embedding_dim);
         return -1;
     }
     
@@ -409,9 +396,6 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute gradients for layer %d\n", layer);
-            free(grad_output);
-            free(grad_input);
-            free(softmax_probs);
             return -1;
         }
         
@@ -427,10 +411,6 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     
     // 3. Gradients are accumulated in worker_compute_gradients_double()
     // Optimizer will use these gradients to update parameters
-    
-    free(grad_output);
-    free(grad_input);
-    free(softmax_probs);
     
     return 0;
 }
