@@ -349,15 +349,25 @@ int worker_compute_gradients_double(
         return -1;
     }
     
+    fprintf(stderr, "DEBUG: worker_compute_gradients_double called\n");
+    
     // Get gradient matrices
+    fprintf(stderr, "DEBUG: Getting gradient matrices\n");
     GeometricMatrix* grad_W_q = thread_get_gradient_matrix(thread, "W_q", 0);
     GeometricMatrix* grad_W_k = thread_get_gradient_matrix(thread, "W_k", 0);
     GeometricMatrix* grad_W_v = thread_get_gradient_matrix(thread, "W_v", 0);
+    
+    fprintf(stderr, "DEBUG: grad_W_q=%p, grad_W_k=%p, grad_W_v=%p\n", 
+            (void*)grad_W_q, (void*)grad_W_k, (void*)grad_W_v);
     
     if (!grad_W_q || !grad_W_k || !grad_W_v) {
         fprintf(stderr, "ERROR: Gradient matrices not found\n");
         return -1;
     }
+    
+    fprintf(stderr, "DEBUG: All gradient matrices found\n");
+    
+    fprintf(stderr, "DEBUG: Computing gradients (embedding_dim=%u)\n", embedding_dim);
     
     // Compute gradient: ∂L/∂W = grad_output × input^T
     // Accumulate gradient at each position (will be distributed to vertices)
@@ -371,6 +381,8 @@ int worker_compute_gradients_double(
             geometric_matrix_accumulate_gradient_value(grad_W_v, i, j, gradient);
         }
     }
+    
+    fprintf(stderr, "DEBUG: worker_compute_gradients_double complete, returning 0\n");
     
     return 0;
 }

@@ -112,7 +112,11 @@ void* physical_worker_thread(void* arg) {
         }
         
         // Process work item
+        fprintf(stderr, "DEBUG: Worker %u got work=%p\n", worker->worker_id, (void*)work);
+        
         HierarchicalThread* logical_thread = work->logical_thread;
+        fprintf(stderr, "DEBUG: Worker %u logical_thread=%p\n", worker->worker_id, (void*)logical_thread);
+        
         if (!logical_thread) {
             fprintf(stderr, "ERROR: Work item has NULL logical thread\n");
             adaptive_work_item_free(work);
@@ -121,12 +125,16 @@ void* physical_worker_thread(void* arg) {
         
         int result = 0;
         
+        fprintf(stderr, "DEBUG: Worker %u processing work type %d\n", worker->worker_id, work->type);
+        
         switch (work->type) {
             case ADAPTIVE_WORK_TYPE_FORWARD:
+                fprintf(stderr, "DEBUG: Worker %u calling worker_process_forward\n", worker->worker_id);
                 result = worker_process_forward(logical_thread, work);
                 break;
                 
             case ADAPTIVE_WORK_TYPE_BACKWARD:
+                fprintf(stderr, "DEBUG: Worker %u calling worker_process_backward\n", worker->worker_id);
                 result = worker_process_backward(logical_thread, work);
                 break;
                 
@@ -351,12 +359,15 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
 
 int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     if (!thread || !work) {
+        fprintf(stderr, "DEBUG: worker_process_backward called with NULL params\n");
         return -1;
     }
     
     // Extract work item data
     uint32_t token_id = work->token_id;
     uint32_t target_id = work->target_id;
+    
+    fprintf(stderr, "DEBUG: Starting backward pass for token %u, target %u\n", token_id, target_id);
     
     // Get dimensions from model through thread's generic interface
     uint32_t embedding_dim = 12;  // Default for minimal model
@@ -365,6 +376,8 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     if (thread->model) {
         embedding_dim = thread->model->embedding_dim;
     }
+    
+    fprintf(stderr, "DEBUG: Allocating gradient buffers (embedding_dim=%u)\n", embedding_dim);
     
     // Allocate gradient buffers dynamically
     double* grad_output = (double*)malloc(embedding_dim * sizeof(double));
@@ -378,6 +391,8 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         free(softmax_probs);
         return -1;
     }
+    
+    fprintf(stderr, "DEBUG: Gradient buffers allocated successfully\n");
     
     int result = 0;
     
@@ -415,6 +430,8 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         }
     }
     
+    fprintf(stderr, "DEBUG: Allocating embedding buffer\n");
+    
     // 2. Get embedding for this token (needed for gradient computation)
     double* embedding = (double*)malloc(embedding_dim * sizeof(double));
     if (!embedding) {
@@ -424,6 +441,8 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         free(softmax_probs);
         return -1;
     }
+    
+    fprintf(stderr, "DEBUG: Getting embedding for token %u\n", token_id);
     
     result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
     if (result != 0) {
@@ -435,21 +454,31 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         return -1;
     }
     
+    fprintf(stderr, "DEBUG: Got embedding successfully, starting layer loop\n");
+    
     // 3. Backpropagate through layers (reverse order)
     for (int layer = num_layers - 1; layer >= 0; layer--) {
+        fprintf(stderr, "DEBUG: Processing layer %d\n", layer);
+        
         // Get thread for this layer
         HierarchicalThread* layer_thread = thread;
+        
+        fprintf(stderr, "DEBUG: Calling worker_compute_gradients_double\n");
         
         // Compute gradients for this layer
         result = worker_compute_gradients_double(
             layer_thread, grad_output, embedding, embedding_dim
         );
         
+        fprintf(stderr, "DEBUG: worker_compute_gradients_double returned %d\n", result);
+        
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute gradients for layer %d\n", layer);
             free(embedding);
             return -1;
         }
+        
+        fprintf(stderr, "DEBUG: Computing gradient for previous layer\n");
         
         // Get gradient for previous layer
         // For now, just scale the gradient
@@ -459,17 +488,25 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         
         // Copy for next iteration
         memcpy(grad_output, grad_input, embedding_dim * sizeof(double));
+        
+        fprintf(stderr, "DEBUG: Layer %d complete\n", layer);
     }
+    
+    fprintf(stderr, "DEBUG: All layers processed, freeing embedding\n");
     
     free(embedding);
     
     // 4. Gradients are accumulated in worker_compute_gradients_double()
     // Optimizer will use these gradients to update parameters
     
+    fprintf(stderr, "DEBUG: Backward pass complete, cleaning up\n");
+    
     // Cleanup
     free(grad_output);
     free(grad_input);
     free(softmax_probs);
+    
+    fprintf(stderr, "DEBUG: worker_process_backward returning 0\n");
     
     return 0;
 }

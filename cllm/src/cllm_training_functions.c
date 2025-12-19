@@ -631,12 +631,16 @@ double cllm_train_step_threaded(
     }
     
     fprintf(stderr, "DEBUG: Forward pass complete\n");
+    fflush(stderr);
     
     // ========================================================================
     // STEP 2: COMPUTE LOSS
     // ========================================================================
     
+    fprintf(stderr, "DEBUG: Computing loss...\n");
+    fflush(stderr);
     double loss = compute_loss_distributed(pool, target_tokens, num_tokens);
+    fprintf(stderr, "DEBUG: Loss computed: %f\n", loss);
     
     if (loss < 0) {
         fprintf(stderr, "ERROR: Loss computation failed\n");
@@ -646,6 +650,8 @@ double cllm_train_step_threaded(
     // ========================================================================
     // STEP 3: BACKWARD PASS - Dispatch work to thread pool
     // ========================================================================
+    
+    fprintf(stderr, "DEBUG: Dispatching %u backward pass work items\n", num_tokens);
     
     // Dispatch backward pass work items for each token
     for (uint32_t i = 0; i < num_tokens; i++) {
@@ -700,16 +706,23 @@ double cllm_train_step_threaded(
         work->next = NULL;
         
         // Push to work queue
-        if (adaptive_work_queue_push(work_queue, work) != 0) {
-            fprintf(stderr, "ERROR: Failed to push work item\n");
+        int push_result = adaptive_work_queue_push(work_queue, work);
+        fprintf(stderr, "DEBUG: Pushed backward work item %u, result=%d\n", i, push_result);
+        
+        if (push_result != 0) {
+            fprintf(stderr, "ERROR: Failed to push backward work item\n");
             free(work);
         }
     }
+    
+    fprintf(stderr, "DEBUG: Waiting for backward pass to complete\n");
     
     // Wait for backward pass to complete
     while (!adaptive_work_queue_is_empty(work_queue)) {
         usleep(1000);  // Sleep 1ms
     }
+    
+    fprintf(stderr, "DEBUG: Backward pass complete\n");
     
     // ========================================================================
     // STEP 4: APPLY OPTIMIZER
