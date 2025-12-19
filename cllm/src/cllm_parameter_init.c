@@ -263,24 +263,61 @@ int cllm_init_geometric_matrix(
 
 int cllm_init_thread_parameters(HierarchicalThread* thread, uint32_t embedding_dim, uint32_t hidden_dim) {
     if (!thread) {
+        fprintf(stderr, "DEBUG: cllm_init_thread_parameters - thread is NULL\n");
         return -1;
     }
     
     // Get thread's geometric matrices
     GeometricMatrix** params = thread->geometric_params;
-    if (!params) {
-        return -1;
+    if (!params || thread->num_geometric_params == 0) {
+        // Thread has no parameters (e.g., control thread or layer 0 with no tokens)
+        // This is not an error
+        fprintf(stderr, "DEBUG: Thread %u has no geometric params (params=%p, num=%u) - skipping\n",
+                thread->thread_id, (void*)params, thread->num_geometric_params);
+        return 0;
     }
     
-    // Initialize each parameter matrix
-    // Note: The actual matrices are created elsewhere, we just initialize values
+    fprintf(stderr, "DEBUG: Initializing thread %u with %u geometric params\n",
+            thread->thread_id, thread->num_geometric_params);
     
-    // For now, we'll use He initialization (good for ReLU)
-    // In a full implementation, we'd initialize specific matrices:
-    // - Embedding weights
-    // - Attention Q, K, V weights
-    // - FFN W1, W2 weights
-    // - Layer norm gamma, beta
+    // Initialize each geometric matrix with He initialization
+    // He initialization: std = sqrt(2 / fan_in)
+    // For geometric matrices, we initialize the vertices
+    
+    for (uint32_t i = 0; i < thread->num_geometric_params; i++) {
+        GeometricMatrix* matrix = params[i];
+        if (!matrix || !matrix->vertices) {
+            continue;
+        }
+        
+        // Calculate fan_in based on matrix dimensions
+        uint32_t fan_in = matrix->cols;
+        if (fan_in == 0) fan_in = 1;
+        
+        // He initialization: std = sqrt(2 / fan_in)
+        double std = math_sqrt(2.0 / (double)fan_in);
+        
+        // Initialize each vertex with random values
+        // Using a simple random number generator
+        static uint64_t seed = 12345;
+        
+        for (uint32_t v = 0; v < matrix->num_vertices; v++) {
+            // Box-Muller transform for Gaussian distribution
+            seed = seed * 1103515245 + 12345;
+            double u1 = (double)(seed % 10000) / 10000.0;
+            seed = seed * 1103515245 + 12345;
+            double u2 = (double)(seed % 10000) / 10000.0;
+            
+            double z = math_sqrt(-2.0 * math_log(u1 + 1e-10)) * math_cos(2.0 * 3.14159265358979323846 * u2);
+            double value = z * std;
+            
+            // Set the vertex value
+            MathError err = abacus_from_double(&amp;matrix->vertices[v], value);
+            if (err != MATH_SUCCESS) {
+                fprintf(stderr, "Warning: Failed to set vertex %u in matrix %u\n", v, i);
+            }
+        }
+    }
     
     // Suppress unused parameter warnings
     (void)embedding_dim;
@@ -290,12 +327,15 @@ int cllm_init_thread_parameters(HierarchicalThread* thread, uint32_t embedding_d
 }
 
 int cllm_init_all_parameters(void* model_ptr, uint32_t embedding_dim, uint32_t hidden_dim) {
+    fprintf(stderr, "DEBUG: cllm_init_all_parameters CALLED\n");
     CLLMModel* model = (CLLMModel*)model_ptr;
     if (!model || !model->threads) {
+        fprintf(stderr, "DEBUG: model or threads is NULL\n");
         return -1;
     }
     
     HierarchicalThreadPool* pool = model->threads;
+    fprintf(stderr, "DEBUG: pool has %u threads\n", pool->num_threads);
     
     // Initialize parameters for each thread
     for (uint32_t i = 0; i < pool->num_threads; i++) {
@@ -306,6 +346,12 @@ int cllm_init_all_parameters(void* model_ptr, uint32_t embedding_dim, uint32_t h
         
         // Skip control threads (they don't have parameters)
         if (thread->role == THREAD_ROLE_CONTROL) {
+            continue;
+        }
+        
+        // Skip threads with no parameters (e.g., layer 0 with no tokens)
+        if (!thread->geometric_params || thread->num_geometric_params == 0) {
+            // This is normal for threads with no assigned work
             continue;
         }
         

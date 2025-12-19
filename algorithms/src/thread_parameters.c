@@ -468,12 +468,83 @@ int thread_initialize_all_parameters(
         return -1;
     }
     
-    uint64_t seed = thread->thread_id + time(NULL);
+    fprintf(stderr, "DEBUG: thread_initialize_all_parameters for thread %u (geometric_params=%p, num=%u)\n",
+            thread->thread_id, (void*)thread->geometric_params, thread->num_geometric_params);
     
+    // Initialize geometric matrices if they exist
+    if (thread->geometric_params && thread->num_geometric_params > 0) {
+        uint64_t seed = thread->thread_id + time(NULL);
+        
+        for (uint32_t i = 0; i < thread->num_geometric_params; i++) {
+            GeometricMatrix* matrix = thread->geometric_params[i];
+            if (!matrix || !matrix->vertices) {
+                continue;
+            }
+            
+            // Calculate fan_in based on matrix dimensions
+            uint32_t fan_in = matrix->cols;
+            if (fan_in == 0) fan_in = 1;
+            
+            // Choose initialization based on method
+            double std;
+            switch (method) {
+                case PARAM_INIT_XAVIER:
+                    // Xavier: std = sqrt(2 / (fan_in + fan_out))
+                    std = math_sqrt(2.0 / (double)(fan_in + matrix->rows));
+                    break;
+                case PARAM_INIT_HE:
+                    // He: std = sqrt(2 / fan_in)
+                    std = math_sqrt(2.0 / (double)fan_in);
+                    break;
+                case PARAM_INIT_UNIFORM:
+                    std = 0.1;
+                    break;
+                case PARAM_INIT_ZERO:
+                    std = 0.0;
+                    break;
+                case PARAM_INIT_ONE:
+                    std = 0.0;  // Will set to 1.0 below
+                    break;
+                default:
+                    std = 0.01;
+            }
+            
+            // Initialize each vertex
+            for (uint32_t v = 0; v < matrix->num_vertices; v++) {
+                double value;
+                
+                if (method == PARAM_INIT_ONE) {
+                    value = 1.0;
+                } else if (method == PARAM_INIT_ZERO) {
+                    value = 0.0;
+                } else {
+                    // Box-Muller transform for Gaussian distribution
+                    seed = seed * 1103515245 + 12345;
+                    double u1 = (double)(seed % 10000) / 10000.0;
+                    seed = seed * 1103515245 + 12345;
+                    double u2 = (double)(seed % 10000) / 10000.0;
+                    
+                    double z = math_sqrt(-2.0 * math_log(u1 + 1e-10)) * 
+                              math_cos(2.0 * 3.14159265358979323846 * u2);
+                    value = z * std;
+                }
+                
+                // Set the vertex value
+                MathError err = abacus_from_double(&matrix->vertices[v], value);
+                if (err != MATH_SUCCESS) {
+                    fprintf(stderr, "Warning: Failed to set vertex %u in matrix %u\n", v, i);
+                }
+            }
+        }
+    }
+    
+    // Also initialize old CrystallineAbacus arrays for backward compatibility
+    uint64_t seed = thread->thread_id + time(NULL);
     for (uint32_t i = 0; i < thread->num_parameters; i++) {
         if (thread_initialize_parameter(thread, thread->param_metadata[i].name,
                                        method, seed) != 0) {
-            return -1;
+            // Don't fail if old system fails - geometric matrices are primary now
+            continue;
         }
     }
     
