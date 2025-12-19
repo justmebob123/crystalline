@@ -29,22 +29,30 @@
  * @return 0 on success, -1 on error
  */
 int worker_get_embedding_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     uint32_t token_id,
     double* output,
     uint32_t embedding_dim
 ) {
-    if (!thread || !output) {
-        fprintf(stderr, "ERROR: Invalid thread or output buffer\n");
+    if (!pool || !thread || !output) {
+        fprintf(stderr, "ERROR: Invalid pool, thread or output buffer\n");
         return -1;
     }
     
-    // Get embedding matrix (num_tokens_assigned × embed_dim)
-    // Each thread only stores embeddings for tokens assigned to it
-    GeometricMatrix* embedding = thread_get_parameter_matrix(thread, "embeddings", 0);
+    // Parameters are consolidated in layer 0 threads
+    // Find which layer 0 thread has this token's embedding
+    // For now, use dimension 1 as the primary embedding storage
+    HierarchicalThread* layer0_thread = hierarchical_thread_get(pool, 0, 1);
+    if (!layer0_thread) {
+        fprintf(stderr, "ERROR: Could not get layer 0 thread for embeddings\n");
+        return -1;
+    }
+    
+    // Get embedding matrix from layer 0 thread
+    GeometricMatrix* embedding = thread_get_parameter_matrix(layer0_thread, "embeddings", 0);
     if (!embedding) {
-        fprintf(stderr, "ERROR: Embedding matrix not found in thread [%d][%d]\n",
-                thread->layer, thread->dimension);
+        fprintf(stderr, "ERROR: Embedding matrix not found in layer 0 thread [0][1]\n");
         return -1;
     }
     

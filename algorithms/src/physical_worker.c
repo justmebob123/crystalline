@@ -17,8 +17,8 @@
 #include <sys/time.h>
 
 // Forward declarations
-int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work);
-int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work);
+int worker_process_forward(HierarchicalThreadPool* pool, HierarchicalThread* thread, AdaptiveWorkItem* work);
+int worker_process_backward(HierarchicalThreadPool* pool, HierarchicalThread* thread, AdaptiveWorkItem* work);
 
 // Helper function to get current time in nanoseconds
 static uint64_t get_time_ns(void) {
@@ -130,16 +130,16 @@ void* physical_worker_thread(void* arg) {
         switch (work->type) {
             case ADAPTIVE_WORK_TYPE_FORWARD:
                 fprintf(stderr, "DEBUG: Worker %u calling worker_process_forward\n", worker->worker_id);
-                result = worker_process_forward(logical_thread, work);
+                result = worker_process_forward(worker->pool, logical_thread, work);
                 break;
                 
             case ADAPTIVE_WORK_TYPE_BACKWARD:
                 fprintf(stderr, "DEBUG: Worker %u calling worker_process_backward\n", worker->worker_id);
-                result = worker_process_backward(logical_thread, work);
+                result = worker_process_backward(worker->pool, logical_thread, work);
                 break;
                 
             case ADAPTIVE_WORK_TYPE_INFERENCE:
-                result = worker_process_forward(logical_thread, work);
+                result = worker_process_forward(worker->pool, logical_thread, work);
                 break;
                 
             default:
@@ -252,8 +252,8 @@ void physical_worker_free(PhysicalWorker* worker) {
 // WORK PROCESSING FUNCTIONS - COMPLETE IMPLEMENTATION
 // ============================================================================
 
-int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
-    if (!thread || !work) {
+int worker_process_forward(HierarchicalThreadPool* pool, HierarchicalThread* thread, AdaptiveWorkItem* work) {
+    if (!pool || !thread || !work) {
         return -1;
     }
     
@@ -291,7 +291,7 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     int result = 0;
     
     // 1. Get embedding for this token
-    result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
+    result = worker_get_embedding_double(pool, thread, token_id, embedding, embedding_dim);
     if (result != 0) {
         fprintf(stderr, "ERROR: Failed to get embedding for token %u\n", token_id);
         return -1;
@@ -363,8 +363,8 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     return result;
 }
 
-int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
-    if (!thread || !work) {
+int worker_process_backward(HierarchicalThreadPool* pool, HierarchicalThread* thread, AdaptiveWorkItem* work) {
+    if (!pool || !thread || !work) {
         fprintf(stderr, "DEBUG: worker_process_backward called with NULL params\n");
         return -1;
     }
@@ -450,7 +450,7 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     
     fprintf(stderr, "DEBUG: Getting embedding for token %u\n", token_id);
     
-    result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
+    result = worker_get_embedding_double(pool, thread, token_id, embedding, embedding_dim);
     if (result != 0) {
         fprintf(stderr, "ERROR: Failed to get embedding for backward pass\n");
         free(embedding);

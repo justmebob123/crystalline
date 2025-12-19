@@ -30,6 +30,7 @@ extern "C" {
  * @return 0 on success, -1 on error
  */
 int worker_get_embedding_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     uint32_t token_id,
     double* output,
