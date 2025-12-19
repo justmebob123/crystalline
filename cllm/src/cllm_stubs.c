@@ -9,11 +9,7 @@
 #include "ai/cllm_training_system.h"
 #include "ai/phonetic_values.h"
 
-// Stub for cllm_train_epoch
-double cllm_train_epoch(CLLMTraining* training) {
-    (void)training;
-    return 0.0;
-}
+// cllm_train_epoch is now implemented in cllm_training_loop.c
 
 // Stub for cllm_training_system_create
 CLLMTrainingSystem* cllm_training_system_create(

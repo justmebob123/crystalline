@@ -104,3 +104,9 @@ test_parameter_init: test_parameter_init.c
 	@echo "Building parameter initialization test..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ test_parameter_init built"
+
+# Training loop test
+test_training_loop: test_training_loop.c
+	@echo "Building training loop test..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_training_loop built"
