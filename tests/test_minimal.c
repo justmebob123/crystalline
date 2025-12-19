@@ -114,29 +114,45 @@ int main(void) {
     }
     printf("  ✓ Training data created\n\n");
     
-    // Step 5: Run single training step
-    printf("Step 5: Running single training step...\n");
+    // Step 5: Run multiple training steps
+    printf("Step 5: Running 10 training steps...\n");
     
-    // Use the integrated training step function
-    printf("  5a. Running threaded training step...\n");
-    double loss = cllm_train_step_threaded(
-        training,
-        input_tokens,
-        target_tokens,
-        batch_size * seq_len  // Total number of tokens
-    );
+    int num_steps = 10;
+    double prev_loss = 0.0;
     
-    if (loss < 0) {
-        fprintf(stderr, "ERROR: Training step failed (loss=%.6f)\n", loss);
-        free(input_tokens);
-        free(target_tokens);
-        cllm_training_free(training);
-        cllm_free_model(model);
-        return 1;
+    for (int step = 0; step < num_steps; step++) {
+        printf("  Step %d/%d: ", step + 1, num_steps);
+        fflush(stdout);
+        
+        // Run training step
+        double loss = cllm_train_step_threaded(
+            training,
+            input_tokens,
+            target_tokens,
+            batch_size * seq_len
+        );
+        
+        if (loss < 0) {
+            fprintf(stderr, "\nERROR: Training step %d failed (loss=%.6f)\n", step + 1, loss);
+            free(input_tokens);
+            free(target_tokens);
+            cllm_training_free(training);
+            cllm_free_model(model);
+            return 1;
+        }
+        
+        // Check if loss changed
+        if (step > 0) {
+            double loss_change = loss - prev_loss;
+            printf("Loss=%.6f (change: %+.6f)\n", loss, loss_change);
+        } else {
+            printf("Loss=%.6f\n", loss);
+        }
+        
+        prev_loss = loss;
     }
     
-    printf("     Loss: %.6f\n", loss);
-    printf("     ✓ Training step completed\n\n");
+    printf("     ✓ All training steps completed\n\n");
     
     // Step 6: Cleanup
     printf("Step 6: Cleaning up...\n");
