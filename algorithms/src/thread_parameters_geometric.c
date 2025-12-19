@@ -608,6 +608,53 @@ GeometricMatrix* thread_get_gradient_matrix(HierarchicalThread* thread,
     return thread->geometric_gradients[idx];
 }
 
+GeometricMatrix* thread_get_gradient_matrix_with_pool(
+    HierarchicalThreadPool* pool,
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id) {
+    (void)token_id; // Token ID not used for now
+    
+    if (!thread || !name) {
+        fprintf(stderr, "DEBUG: thread_get_gradient_matrix_with_pool: thread=%p name=%s\n", 
+                (void*)thread, name ? name : "NULL");
+        return NULL;
+    }
+    
+    fprintf(stderr, "DEBUG: Searching for gradient '%s' in thread layer=%d\n", name, thread->layer);
+    
+    // First try current thread
+    int idx = thread_get_geometric_parameter_index(thread, name);
+    fprintf(stderr, "DEBUG: Current thread idx=%d\n", idx);
+    if (idx >= 0 && thread->geometric_gradients) {
+        fprintf(stderr, "DEBUG: Current thread gradient[%d]=%p\n", idx, (void*)thread->geometric_gradients[idx]);
+        if (thread->geometric_gradients[idx]) {
+            return thread->geometric_gradients[idx];
+        }
+    }
+    
+    // If not found and we're not in layer 0, search layer 0 threads
+    if (thread->layer != 0 && pool) {
+        fprintf(stderr, "DEBUG: Searching layer 0 threads (pool has %u threads)\n", pool->num_threads);
+        // Search through all layer 0 threads
+        for (uint32_t i = 0; i < pool->num_threads; i++) {
+            HierarchicalThread* layer0_thread = pool->threads[i];
+            if (layer0_thread && layer0_thread->layer == 0) {
+                fprintf(stderr, "DEBUG: Checking layer 0 thread %u\n", i);
+                idx = thread_get_geometric_parameter_index(layer0_thread, name);
+                fprintf(stderr, "DEBUG: Layer 0 thread %u idx=%d\n", i, idx);
+                if (idx >= 0 && layer0_thread->geometric_gradients && layer0_thread->geometric_gradients[idx]) {
+                    fprintf(stderr, "DEBUG: Found gradient in layer 0 thread %u\n", i);
+                    return layer0_thread->geometric_gradients[idx];
+                }
+            }
+        }
+    }
+    
+    fprintf(stderr, "DEBUG: Gradient '%s' not found anywhere\n", name);
+    return NULL;
+}
+
 GeometricMatrix* thread_get_momentum_matrix(HierarchicalThread* thread,
                                            const char* name,
                                            uint32_t token_id) {

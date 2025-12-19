@@ -260,6 +260,13 @@ GeometricMatrix* thread_get_gradient_matrix(
     uint32_t token_id
 );
 
+GeometricMatrix* thread_get_gradient_matrix_with_pool(
+    HierarchicalThreadPool* pool,
+    HierarchicalThread* thread,
+    const char* name,
+    uint32_t token_id
+);
+
 /**
  * @brief Get momentum matrix by name
  * 

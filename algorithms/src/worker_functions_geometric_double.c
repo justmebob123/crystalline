@@ -367,6 +367,7 @@ int worker_compute_ffn_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_gradients_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* grad_output,
     const double* input,
@@ -389,21 +390,22 @@ int worker_compute_gradients_double(
     fflush(stderr);
     
     // Get gradient matrices
-    fprintf(stderr, "DEBUG: Getting gradient matrix W_q\n");
+    fprintf(stderr, "DEBUG: Getting gradient matrix W_q (pool=%p, thread=%p, layer=%d)\n", 
+            (void*)pool, (void*)thread, thread ? thread->layer : -1);
     fflush(stderr);
-    GeometricMatrix* grad_W_q = thread_get_gradient_matrix(thread, "W_q", 0);
+    GeometricMatrix* grad_W_q = thread_get_gradient_matrix_with_pool(pool, thread, "W_q", 0);
     fprintf(stderr, "DEBUG: grad_W_q=%p\n", (void*)grad_W_q);
     fflush(stderr);
     
     fprintf(stderr, "DEBUG: Getting gradient matrix W_k\n");
     fflush(stderr);
-    GeometricMatrix* grad_W_k = thread_get_gradient_matrix(thread, "W_k", 0);
+    GeometricMatrix* grad_W_k = thread_get_gradient_matrix_with_pool(pool, thread, "W_k", 0);
     fprintf(stderr, "DEBUG: grad_W_k=%p\n", (void*)grad_W_k);
     fflush(stderr);
     
     fprintf(stderr, "DEBUG: Getting gradient matrix W_v\n");
     fflush(stderr);
-    GeometricMatrix* grad_W_v = thread_get_gradient_matrix(thread, "W_v", 0);
+    GeometricMatrix* grad_W_v = thread_get_gradient_matrix_with_pool(pool, thread, "W_v", 0);
     fprintf(stderr, "DEBUG: grad_W_v=%p\n", (void*)grad_W_v);
     fflush(stderr);
     
@@ -447,6 +449,7 @@ int worker_compute_gradients_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_ffn_gradients_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* grad_output,
     const double* input,
@@ -460,8 +463,8 @@ int worker_compute_ffn_gradients_double(
     }
     
     // Get gradient matrices
-    GeometricMatrix* grad_W_ffn1 = thread_get_gradient_matrix(thread, "W_ffn1", 0);
-    GeometricMatrix* grad_W_ffn2 = thread_get_gradient_matrix(thread, "W_ffn2", 0);
+    GeometricMatrix* grad_W_ffn1 = thread_get_gradient_matrix_with_pool(pool, thread, "W_ffn1", 0);
+    GeometricMatrix* grad_W_ffn2 = thread_get_gradient_matrix_with_pool(pool, thread, "W_ffn2", 0);
     
     if (!grad_W_ffn1 || !grad_W_ffn2) {
         fprintf(stderr, "ERROR: FFN gradient matrices not found\n");

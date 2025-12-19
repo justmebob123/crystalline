@@ -95,6 +95,7 @@ int worker_compute_ffn_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_gradients_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* grad_output,
     const double* input,
@@ -113,6 +114,7 @@ int worker_compute_gradients_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_ffn_gradients_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* grad_output,
     const double* input,

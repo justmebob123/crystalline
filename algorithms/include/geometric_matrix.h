@@ -86,6 +86,9 @@ typedef struct GeometricMatrix {
     // Thread safety
     pthread_mutex_t lock;           // Lock for thread-safe access
     
+    // Simple gradient accumulation buffer (rows * cols)
+    double* gradient_buffer;        // Direct gradient storage for efficiency
+    
 } GeometricMatrix;
 
 /**

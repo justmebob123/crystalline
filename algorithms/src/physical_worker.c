@@ -474,7 +474,7 @@ int worker_process_backward(HierarchicalThreadPool* pool, HierarchicalThread* th
         
         // Compute gradients for this layer
         result = worker_compute_gradients_double(
-            layer_thread, grad_output, embedding, embedding_dim
+            pool, layer_thread, grad_output, embedding, embedding_dim
         );
         
         fprintf(stderr, "DEBUG: worker_compute_gradients_double returned %d\n", result);

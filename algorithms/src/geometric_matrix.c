@@ -328,8 +328,26 @@ GeometricMatrix* geometric_matrix_create_with_solid(
            solid == PLATONIC_DODECAHEDRON ? "Dodecahedron" :
            solid == PLATONIC_ICOSAHEDRON ? "Icosahedron" : "Unknown");
     
-    printf("  Memory: struct=%zu, vertices=%zu, positions=%zu, symmetry=%zu, total=%zu bytes\n",
-           sizeof(GeometricMatrix), vertex_values_mem, vertex_pos_mem, symmetry_mem, total_mem);
+    // Allocate gradient buffer for efficient gradient accumulation
+    size_t gradient_buffer_size = rows * cols * sizeof(double);
+    matrix->gradient_buffer = (double*)calloc(rows * cols, sizeof(double));
+    if (!matrix->gradient_buffer) {
+        fprintf(stderr, "ERROR: Failed to allocate gradient buffer\n");
+        for (uint32_t i = 0; i < matrix->num_vertices; i++) {
+            abacus_free(matrix->vertex_values[i]);
+        }
+        free(matrix->vertex_values);
+        free(matrix->vertex_positions);
+        free(matrix->symmetry_ops);
+        pthread_mutex_destroy(&matrix->lock);
+        free(matrix);
+        return NULL;
+    }
+    
+    total_mem += gradient_buffer_size;
+    
+    printf("  Memory: struct=%zu, vertices=%zu, positions=%zu, symmetry=%zu, gradient=%zu, total=%zu bytes\n",
+           sizeof(GeometricMatrix), vertex_values_mem, vertex_pos_mem, symmetry_mem, gradient_buffer_size, total_mem);
     
     return matrix;
 }
@@ -345,6 +363,11 @@ void geometric_matrix_free(GeometricMatrix* matrix) {
             }
         }
         free(matrix->vertex_values);
+    }
+    
+    // Free gradient buffer
+    if (matrix->gradient_buffer) {
+        free(matrix->gradient_buffer);
     }
     
     // Free vertex positions
@@ -714,6 +737,19 @@ int geometric_matrix_accumulate_gradient_value(
         return -1;
     }
     
+    // Fast path: accumulate directly to gradient buffer
+    if (matrix->gradient_buffer) {
+        uint32_t idx = row * matrix->cols + col;
+        
+        // Use atomic add for thread safety (simple approach)
+        pthread_mutex_lock(&matrix->lock);
+        matrix->gradient_buffer[idx] += gradient_value;
+        pthread_mutex_unlock(&matrix->lock);
+        
+        return 0;
+    }
+    
+    // Fallback to barycentric distribution (slower)
     pthread_mutex_lock(&matrix->lock);
     
     // Distribute gradient to vertices using barycentric weights
