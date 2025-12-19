@@ -21,6 +21,8 @@
 #include "cllm_batch.h"
 #include "ai/cllm_training_system.h"
 #include "hierarchical_threading.h"
+#include "geometric_matrix.h"
+#include "thread_parameters_geometric.h"
 
 // ============================================================================
 // FORWARD PASS - 88D THREAD-CENTRIC (THE ONLY IMPLEMENTATION)
@@ -343,10 +345,27 @@ void cllm_optimizer_step_adam(CLLMTraining* training) {
     double beta2_t = math_pow(model->optimizer.beta2, model->optimizer.t);
     double lr_t = model->optimizer.learning_rate * math_sqrt(1.0 - beta2_t) / (1.0 - beta1_t);
     
-    // TODO: Distribute optimizer updates to threads
-    (void)lr_t;
+    // Apply optimizer updates to all threads using the geometric optimizer function
+    HierarchicalThreadPool* pool = model->threads;
+    if (!pool) return;
     
-    printf("Adam optimizer step (88D thread-centric)\n");
+    for (uint32_t i = 0; i < pool->num_threads; i++) {
+        HierarchicalThread* thread = pool->threads[i];
+        if (!thread) continue;
+        
+        // Apply Adam optimizer to this thread's parameters
+        int result = thread_apply_geometric_optimizer(
+            thread,
+            lr_t,
+            model->optimizer.beta1,
+            model->optimizer.beta2,
+            model->optimizer.epsilon
+        );
+        
+        if (result != 0) {
+            fprintf(stderr, "WARNING: Optimizer failed for thread %u\n", thread->thread_id);
+        }
+    }
 }
 
 // ============================================================================
