@@ -149,6 +149,52 @@ void hierarchical_thread_pool_free(HierarchicalThreadPool* pool) {
         fflush(stderr);
     }
     
+    // ========================================================================
+    // STOP AND FREE PHYSICAL WORKERS (ADAPTIVE THREADING)
+    // ========================================================================
+    
+    if (pool->use_adaptive_threading && pool->physical_workers) {
+        fprintf(stderr, "DEBUG: Stopping %u physical workers...\n", pool->num_physical_workers);
+        fflush(stderr);
+        
+        // First, shutdown the work queue to signal workers
+        if (pool->work_queue) {
+            fprintf(stderr, "DEBUG: Shutting down work queue...\n");
+            fflush(stderr);
+            adaptive_work_queue_shutdown(pool->work_queue);
+        }
+        
+        // Stop and join all physical workers
+        for (uint32_t i = 0; i < pool->num_physical_workers; i++) {
+            if (pool->physical_workers[i]) {
+                fprintf(stderr, "DEBUG: Stopping physical worker %u...\n", i);
+                fflush(stderr);
+                physical_worker_stop(pool->physical_workers[i]);
+                
+                fprintf(stderr, "DEBUG: Joining physical worker %u...\n", i);
+                fflush(stderr);
+                physical_worker_join(pool->physical_workers[i]);
+                
+                fprintf(stderr, "DEBUG: Freeing physical worker %u...\n", i);
+                fflush(stderr);
+                physical_worker_free(pool->physical_workers[i]);
+            }
+        }
+        
+        free(pool->physical_workers);
+        pool->physical_workers = NULL;
+        fprintf(stderr, "DEBUG: All physical workers stopped and freed\n");
+        fflush(stderr);
+    }
+    
+    // Free work queue
+    if (pool->work_queue) {
+        fprintf(stderr, "DEBUG: Freeing work queue...\n");
+        fflush(stderr);
+        adaptive_work_queue_free(pool->work_queue);
+        pool->work_queue = NULL;
+    }
+    
     // Free all threads
     for (uint32_t i = 0; i < pool->num_threads; i++) {
         if (pool->threads[i]) {
