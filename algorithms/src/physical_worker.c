@@ -228,11 +228,102 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
         return -1;
     }
     
-    // TODO: Implement forward pass using worker functions
-    // This should call worker_get_embedding_double(), worker_compute_attention_double(), etc.
+    // Extract work item data
+    uint32_t token_id = work->token_id;
     
-    // For now, just mark as processed
-    return 0;
+    // For now, use fixed dimensions (these should come from model config)
+    // TODO: Get dimensions from model configuration
+    uint32_t embedding_dim = 64;  // TODO: Get from model config
+    uint32_t hidden_dim = 128;    // TODO: Get from model config
+    uint32_t num_layers = 2;      // TODO: Get from model config
+    
+    // Allocate activation buffers
+    double* embedding = (double*)malloc(embedding_dim * sizeof(double));
+    double* layer_input = (double*)malloc(embedding_dim * sizeof(double));
+    double* layer_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* attention_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* ffn_output = (double*)malloc(embedding_dim * sizeof(double));
+    
+    if (!embedding || !layer_input || !layer_output || !attention_output || !ffn_output) {
+        fprintf(stderr, "ERROR: Failed to allocate activation buffers\n");
+        free(embedding);
+        free(layer_input);
+        free(layer_output);
+        free(attention_output);
+        free(ffn_output);
+        return -1;
+    }
+    
+    int result = 0;
+    
+    // 1. Get embedding for this token
+    result = worker_get_embedding_double(thread, token_id, embedding, embedding_dim);
+    if (result != 0) {
+        fprintf(stderr, "ERROR: Failed to get embedding for token %u\n", token_id);
+        goto cleanup;
+    }
+    
+    // Copy embedding to layer input
+    memcpy(layer_input, embedding, embedding_dim * sizeof(double));
+    
+    // 2. Process through transformer layers
+    for (uint32_t layer = 0; layer < num_layers; layer++) {
+        // Get thread for this layer (for now, use same thread)
+        // TODO: Get proper layer thread from pool
+        HierarchicalThread* layer_thread = thread;
+        
+        // Attention
+        result = worker_compute_attention_double(
+            layer_thread, layer_input, embedding_dim, attention_output
+        );
+        if (result != 0) {
+            fprintf(stderr, "ERROR: Failed to compute attention for layer %u\n", layer);
+            goto cleanup;
+        }
+        
+        // Add residual connection
+        for (uint32_t i = 0; i < embedding_dim; i++) {
+            attention_output[i] += layer_input[i];
+        }
+        
+        // Layer norm (for now, just copy - TODO: implement proper layer norm)
+        memcpy(layer_output, attention_output, embedding_dim * sizeof(double));
+        
+        // FFN
+        result = worker_compute_ffn_double(
+            layer_thread, layer_output, embedding_dim, hidden_dim, ffn_output
+        );
+        if (result != 0) {
+            fprintf(stderr, "ERROR: Failed to compute FFN for layer %u\n", layer);
+            goto cleanup;
+        }
+        
+        // Add residual connection
+        for (uint32_t i = 0; i < embedding_dim; i++) {
+            ffn_output[i] += layer_output[i];
+        }
+        
+        // Layer norm (for now, just copy - TODO: implement proper layer norm)
+        memcpy(layer_input, ffn_output, embedding_dim * sizeof(double));
+    }
+    
+    // 3. Store final output for backward pass (TODO: implement activation storage)
+    // For now, we'll skip this and just mark as processed
+    
+    // 4. Compute loss if target provided (TODO: implement loss computation)
+    if (work->target_id != UINT32_MAX) {
+        // TODO: Compute cross-entropy loss
+        // For now, skip
+    }
+    
+cleanup:
+    free(embedding);
+    free(layer_input);
+    free(layer_output);
+    free(attention_output);
+    free(ffn_output);
+    
+    return result;
 }
 
 /**
@@ -247,9 +338,69 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
         return -1;
     }
     
-    // TODO: Implement backward pass using worker functions
-    // This should call worker_compute_gradients_double(), etc.
+    // Extract work item data
+    uint32_t token_id = work->token_id;
+    uint32_t target_id = work->target_id;
     
-    // For now, just mark as processed
+    // Suppress unused variable warnings
+    (void)token_id;
+    (void)target_id;
+    
+    // For now, use fixed dimensions (these should come from model config)
+    // TODO: Get dimensions from model configuration
+    uint32_t embedding_dim = 64;  // TODO: Get from model config
+    uint32_t num_layers = 2;      // TODO: Get from model config
+    
+    // Allocate gradient buffers
+    double* grad_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* grad_input = (double*)malloc(embedding_dim * sizeof(double));
+    
+    if (!grad_output || !grad_input) {
+        fprintf(stderr, "ERROR: Failed to allocate gradient buffers\n");
+        free(grad_output);
+        free(grad_input);
+        return -1;
+    }
+    
+    int result = 0;
+    
+    // 1. Compute initial gradient from loss (TODO: implement proper loss gradient)
+    // For now, use dummy gradient
+    for (uint32_t i = 0; i < embedding_dim; i++) {
+        grad_output[i] = 0.01;  // Dummy gradient
+    }
+    
+    // 2. Backpropagate through layers (reverse order)
+    for (int layer = num_layers - 1; layer >= 0; layer--) {
+        // Get thread for this layer (for now, use same thread)
+        // TODO: Get proper layer thread from pool
+        HierarchicalThread* layer_thread = thread;
+        
+        // Compute gradients for this layer
+        result = worker_compute_gradients_double(
+            layer_thread, grad_output, NULL, embedding_dim
+        );
+        
+        if (result != 0) {
+            fprintf(stderr, "ERROR: Failed to compute gradients for layer %d\n", layer);
+            free(grad_output);
+            free(grad_input);
+            return -1;
+        }
+        
+        // Get gradient for previous layer (TODO: implement proper gradient propagation)
+        // For now, just copy the gradient
+        memcpy(grad_input, grad_output, embedding_dim * sizeof(double));
+        
+        // Copy for next iteration
+        memcpy(grad_output, grad_input, embedding_dim * sizeof(double));
+    }
+    
+    // 3. Gradients are accumulated in worker_compute_gradients_double()
+    // Optimizer will use these gradients to update parameters
+    
+    free(grad_output);
+    free(grad_input);
+    
     return 0;
 }
