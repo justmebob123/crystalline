@@ -6,6 +6,7 @@
  */
 
 #include "hierarchical_threading.h"
+#include "generic_model.h"
 #include "work_queue.h"
 #include "worker_functions_geometric.h"
 #include <stdio.h>
@@ -89,17 +90,23 @@ void* physical_worker_thread(void* arg) {
     worker->running = true;
     
     // Main worker loop
+    fprintf(stderr, "DEBUG: Worker %u entering main loop\n", worker->worker_id);
+    
     while (!worker->should_stop) {
         // Pull work item from queue (blocking)
         AdaptiveWorkItem* work = adaptive_work_queue_pop(worker->work_queue);
         
+        fprintf(stderr, "DEBUG: Worker %u got work item: %p\n", worker->worker_id, (void*)work);
+        
         // If NULL, queue is shutdown
         if (!work) {
+            fprintf(stderr, "DEBUG: Worker %u got NULL work, exiting\n", worker->worker_id);
             break;
         }
         
         // Check for shutdown signal
         if (work->type == ADAPTIVE_WORK_TYPE_SHUTDOWN) {
+            fprintf(stderr, "DEBUG: Worker %u got shutdown signal\n", worker->worker_id);
             adaptive_work_item_free(work);
             break;
         }
@@ -134,8 +141,13 @@ void* physical_worker_thread(void* arg) {
         }
         
         // Update statistics
+        fprintf(stderr, "DEBUG: Worker %u processed work, result=%d\n", worker->worker_id, result);
         if (result == 0) {
             __atomic_add_fetch(&worker->work_items_processed, 1, __ATOMIC_SEQ_CST);
+            fprintf(stderr, "DEBUG: Worker %u incremented counter to %lu\n", 
+                    worker->worker_id, worker->work_items_processed);
+        } else {
+            fprintf(stderr, "DEBUG: Worker %u failed with result=%d\n", worker->worker_id, result);
         }
         
         // Free work item
@@ -234,24 +246,31 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
     // Extract work item data
     uint32_t token_id = work->token_id;
     
-    // Use fixed dimensions for now
-    // TODO: Pass dimensions through work->data
-    uint32_t embedding_dim = 64;
-    uint32_t hidden_dim = 128;
-    uint32_t num_layers = 2;
+    // Get dimensions from model through thread's generic interface
+    uint32_t embedding_dim = 12;  // Default for minimal model
+    uint32_t hidden_dim = 24;
+    uint32_t num_layers = 1;
     
-    // Use stack allocation for small buffers (memory efficient)
-    // This avoids malloc overhead and is cache-friendly
-    double embedding[64];
-    double layer_input[64];
-    double layer_output[64];
-    double attention_output[64];
-    double ffn_output[64];
-    double norm_output[64];
+    if (thread->model) {
+        embedding_dim = thread->model->embedding_dim;
+        // hidden_dim and num_layers would need to be added to GenericModel
+        // For now, use defaults
+    }
     
-    // Verify buffer sizes match
-    if (embedding_dim > 64) {
-        fprintf(stderr, "ERROR: embedding_dim %u exceeds buffer size 64\n", embedding_dim);
+    // Allocate buffers dynamically based on actual dimensions
+    double* embedding = (double*)malloc(embedding_dim * sizeof(double));
+    double* layer_input = (double*)malloc(embedding_dim * sizeof(double));
+    double* layer_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* attention_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* ffn_output = (double*)malloc(embedding_dim * sizeof(double));
+    
+    if (!embedding || !layer_input || !layer_output || !attention_output || !ffn_output) {
+        fprintf(stderr, "ERROR: Failed to allocate buffers\n");
+        free(embedding);
+        free(layer_input);
+        free(layer_output);
+        free(attention_output);
+        free(ffn_output);
         return -1;
     }
     
@@ -320,7 +339,14 @@ int worker_process_forward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
         (void)loss;  // Suppress unused warning
     }
     
-return result;
+// Cleanup
+    free(embedding);
+    free(layer_input);
+    free(layer_output);
+    free(attention_output);
+    free(ffn_output);
+    
+    return result;
 }
 
 int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) {
@@ -332,19 +358,24 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     uint32_t token_id = work->token_id;
     uint32_t target_id = work->target_id;
     
-    // Use fixed dimensions for now
-    uint32_t embedding_dim = 64;
-    uint32_t num_layers = 2;
+    // Get dimensions from model through thread's generic interface
+    uint32_t embedding_dim = 12;  // Default for minimal model
+    uint32_t num_layers = 1;
     
-    // Allocate gradient buffers
-    // Use stack allocation for gradient buffers (memory efficient)
-    double grad_output[64];
-    double grad_input[64];
-    double softmax_probs[64];
+    if (thread->model) {
+        embedding_dim = thread->model->embedding_dim;
+    }
     
-    // Verify buffer sizes match
-    if (embedding_dim > 64) {
-        fprintf(stderr, "ERROR: embedding_dim %u exceeds buffer size 64\n", embedding_dim);
+    // Allocate gradient buffers dynamically
+    double* grad_output = (double*)malloc(embedding_dim * sizeof(double));
+    double* grad_input = (double*)malloc(embedding_dim * sizeof(double));
+    double* softmax_probs = (double*)malloc(embedding_dim * sizeof(double));
+    
+    if (!grad_output || !grad_input || !softmax_probs) {
+        fprintf(stderr, "ERROR: Failed to allocate gradient buffers\n");
+        free(grad_output);
+        free(grad_input);
+        free(softmax_probs);
         return -1;
     }
     
@@ -411,6 +442,11 @@ int worker_process_backward(HierarchicalThread* thread, AdaptiveWorkItem* work) 
     
     // 3. Gradients are accumulated in worker_compute_gradients_double()
     // Optimizer will use these gradients to update parameters
+    
+    // Cleanup
+    free(grad_output);
+    free(grad_input);
+    free(softmax_probs);
     
     return 0;
 }

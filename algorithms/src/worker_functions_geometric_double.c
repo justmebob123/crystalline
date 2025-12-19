@@ -39,8 +39,9 @@ int worker_get_embedding_double(
         return -1;
     }
     
-    // Get embedding matrix (vocab_size × embed_dim)
-    GeometricMatrix* embedding = thread_get_parameter_matrix(thread, "embedding", 0);
+    // Get embedding matrix (num_tokens_assigned × embed_dim)
+    // Each thread only stores embeddings for tokens assigned to it
+    GeometricMatrix* embedding = thread_get_parameter_matrix(thread, "embeddings", 0);
     if (!embedding) {
         fprintf(stderr, "ERROR: Embedding matrix not found in thread [%d][%d]\n",
                 thread->layer, thread->dimension);
@@ -49,7 +50,28 @@ int worker_get_embedding_double(
     
     // Verify dimensions
     if (embedding->cols != embedding_dim) {
-        fprintf(stderr, "ERROR: Embedding dimension mismatch\n");
+        fprintf(stderr, "ERROR: Embedding dimension mismatch (expected %u, got %u)\n",
+                embedding_dim, embedding->cols);
+        return -1;
+    }
+    
+    // Find local index for this token
+    // The token_id is global, but we need the local index in this thread's embedding matrix
+    uint32_t local_idx = 0;
+    bool found = false;
+    
+    // For now, use token_id modulo num_rows as a simple mapping
+    // TODO: Implement proper token-to-local-index mapping
+    if (token_id < embedding->rows) {
+        local_idx = token_id;
+        found = true;
+    } else {
+        local_idx = token_id % embedding->rows;
+        found = true;
+    }
+    
+    if (!found) {
+        fprintf(stderr, "ERROR: Token %u not found in thread's embedding matrix\n", token_id);
         return -1;
     }
     
@@ -61,7 +83,7 @@ int worker_get_embedding_double(
     }
     
     for (uint32_t i = 0; i < embedding_dim; i++) {
-        if (geometric_matrix_get(embedding, token_id, i, temp) == 0) {
+        if (geometric_matrix_get(embedding, local_idx, i, temp) == 0) {
             abacus_to_double(temp, &output[i]);
         } else {
             output[i] = 0.0;

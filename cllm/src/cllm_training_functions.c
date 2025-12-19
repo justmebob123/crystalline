@@ -23,6 +23,7 @@
 #include "hierarchical_threading.h"
 #include "geometric_matrix.h"
 #include "thread_parameters_geometric.h"
+#include "work_queue.h"
 
 // ============================================================================
 // FORWARD PASS - 88D THREAD-CENTRIC (THE ONLY IMPLEMENTATION)
@@ -540,15 +541,96 @@ double cllm_train_step_threaded(
     }
     
     // ========================================================================
-    // STEP 1: FORWARD PASS
+    // STEP 1: FORWARD PASS - Dispatch work to thread pool
     // ========================================================================
     
-    // SIMPLIFIED: For now, just simulate forward pass
-    // The full threading implementation needs more work
-    // This allows training to proceed and loss to be computed
+    // Get work queue from pool
+    AdaptiveWorkQueue* work_queue = pool->work_queue;
+    if (!work_queue) {
+        fprintf(stderr, "ERROR: Work queue not available\n");
+        return -1.0;
+    }
     
-    // TODO: Implement actual forward pass through thread pool
-    // For now, we're just testing the training loop structure
+    // Dispatch forward pass work items for each token
+    fprintf(stderr, "DEBUG: Dispatching %u forward pass work items\n", num_tokens);
+    
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        // Get the thread assigned to this token
+        uint32_t token_id = input_tokens[i];
+        uint32_t target_id = target_tokens[i];
+        
+        // Find which thread owns this token
+        // Tokens are assigned to threads in layer 0
+        HierarchicalThread* thread = NULL;
+        
+        // Search through layer 0 threads (threads 0-11)
+        for (uint32_t t = 0; t < 12; t++) {
+            if (!pool->threads[t]) continue;
+            
+            // Check if this thread owns the token
+            for (uint32_t tok = 0; tok < training->model->thread_params[t].num_tokens_assigned; tok++) {
+                if (training->model->thread_params[t].token_ids[tok] == token_id) {
+                    thread = pool->threads[t];
+                    break;
+                }
+            }
+            
+            if (thread) break;
+        }
+        
+        // Fallback: if token not found, use first thread with embeddings
+        if (!thread) {
+            for (uint32_t t = 0; t < 12; t++) {
+                if (pool->threads[t] && training->model->thread_params[t].num_tokens_assigned > 0) {
+                    thread = pool->threads[t];
+                    fprintf(stderr, "WARNING: Token %u not assigned, using thread %u\n", token_id, t);
+                    break;
+                }
+            }
+        }
+        
+        if (!thread) {
+            fprintf(stderr, "ERROR: No thread available for token %u\n", token_id);
+            continue;
+        }
+        
+        // Create work item
+        AdaptiveWorkItem* work = (AdaptiveWorkItem*)malloc(sizeof(AdaptiveWorkItem));
+        if (!work) {
+            fprintf(stderr, "ERROR: Failed to allocate work item\n");
+            continue;
+        }
+        
+        work->type = ADAPTIVE_WORK_TYPE_FORWARD;
+        work->logical_thread = thread;
+        work->token_id = token_id;
+        work->target_id = target_id;
+        work->data = NULL;
+        work->next = NULL;
+        
+        // Push to work queue
+        int push_result = adaptive_work_queue_push(work_queue, work);
+        fprintf(stderr, "DEBUG: Pushed work item %u, result=%d\n", i, push_result);
+        
+        if (push_result != 0) {
+            fprintf(stderr, "ERROR: Failed to push work item\n");
+            free(work);
+        }
+    }
+    
+    fprintf(stderr, "DEBUG: Waiting for forward pass to complete\n");
+    
+    // Wait for forward pass to complete
+    int wait_count = 0;
+    while (!adaptive_work_queue_is_empty(work_queue)) {
+        usleep(1000);  // Sleep 1ms
+        wait_count++;
+        if (wait_count % 1000 == 0) {
+            fprintf(stderr, "DEBUG: Still waiting... (%d ms)\n", wait_count);
+        }
+    }
+    
+    fprintf(stderr, "DEBUG: Forward pass complete\n");
     
     // ========================================================================
     // STEP 2: COMPUTE LOSS
@@ -562,11 +644,72 @@ double cllm_train_step_threaded(
     }
     
     // ========================================================================
-    // STEP 3: BACKWARD PASS
+    // STEP 3: BACKWARD PASS - Dispatch work to thread pool
     // ========================================================================
     
-    // SIMPLIFIED: For now, just simulate backward pass
-    // TODO: Implement actual backward pass through thread pool
+    // Dispatch backward pass work items for each token
+    for (uint32_t i = 0; i < num_tokens; i++) {
+        uint32_t token_id = input_tokens[i];
+        uint32_t target_id = target_tokens[i];
+        
+        // Find which thread owns this token
+        HierarchicalThread* thread = NULL;
+        
+        // Search through layer 0 threads (threads 0-11)
+        for (uint32_t t = 0; t < 12; t++) {
+            if (!pool->threads[t]) continue;
+            
+            // Check if this thread owns the token
+            for (uint32_t tok = 0; tok < training->model->thread_params[t].num_tokens_assigned; tok++) {
+                if (training->model->thread_params[t].token_ids[tok] == token_id) {
+                    thread = pool->threads[t];
+                    break;
+                }
+            }
+            
+            if (thread) break;
+        }
+        
+        // Fallback: if token not found, use first thread with embeddings
+        if (!thread) {
+            for (uint32_t t = 0; t < 12; t++) {
+                if (pool->threads[t] && training->model->thread_params[t].num_tokens_assigned > 0) {
+                    thread = pool->threads[t];
+                    break;
+                }
+            }
+        }
+        
+        if (!thread) {
+            fprintf(stderr, "ERROR: No thread available for token %u\n", token_id);
+            continue;
+        }
+        
+        // Create work item
+        AdaptiveWorkItem* work = (AdaptiveWorkItem*)malloc(sizeof(AdaptiveWorkItem));
+        if (!work) {
+            fprintf(stderr, "ERROR: Failed to allocate work item\n");
+            continue;
+        }
+        
+        work->type = ADAPTIVE_WORK_TYPE_BACKWARD;
+        work->logical_thread = thread;
+        work->token_id = token_id;
+        work->target_id = target_id;
+        work->data = NULL;
+        work->next = NULL;
+        
+        // Push to work queue
+        if (adaptive_work_queue_push(work_queue, work) != 0) {
+            fprintf(stderr, "ERROR: Failed to push work item\n");
+            free(work);
+        }
+    }
+    
+    // Wait for backward pass to complete
+    while (!adaptive_work_queue_is_empty(work_queue)) {
+        usleep(1000);  // Sleep 1ms
+    }
     
     // ========================================================================
     // STEP 4: APPLY OPTIMIZER
