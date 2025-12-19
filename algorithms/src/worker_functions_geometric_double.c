@@ -40,19 +40,18 @@ int worker_get_embedding_double(
         return -1;
     }
     
-    // Parameters are consolidated in layer 0 threads
-    // Find which layer 0 thread has this token's embedding
-    // For now, use dimension 1 as the primary embedding storage
-    HierarchicalThread* layer0_thread = hierarchical_thread_get(pool, 0, 1);
-    if (!layer0_thread) {
-        fprintf(stderr, "ERROR: Could not get layer 0 thread for embeddings\n");
-        return -1;
+    // Parameters are consolidated in layer 0 threads (dimensions 0-11)
+    // Search through layer 0 threads to find the embeddings
+    GeometricMatrix* embedding = NULL;
+    for (uint8_t dim = 0; dim < 12 && !embedding; dim++) {
+        HierarchicalThread* layer0_thread = hierarchical_thread_get(pool, 0, dim);
+        if (layer0_thread) {
+            embedding = thread_get_parameter_matrix(layer0_thread, "embeddings", 0);
+        }
     }
     
-    // Get embedding matrix from layer 0 thread
-    GeometricMatrix* embedding = thread_get_parameter_matrix(layer0_thread, "embeddings", 0);
     if (!embedding) {
-        fprintf(stderr, "ERROR: Embedding matrix not found in layer 0 thread [0][1]\n");
+        fprintf(stderr, "ERROR: Embedding matrix not found in any layer 0 thread\n");
         return -1;
     }
     
@@ -124,23 +123,38 @@ int worker_get_embedding_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_attention_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* input,
     uint32_t embedding_dim,
     double* output
 ) {
-    if (!thread || !input || !output) {
+    if (!pool || !thread || !input || !output) {
         fprintf(stderr, "ERROR: Invalid parameters for attention\n");
         return -1;
     }
     
-    // Get Q, K, V weight matrices
-    GeometricMatrix* W_q = thread_get_parameter_matrix(thread, "W_q", 0);
-    GeometricMatrix* W_k = thread_get_parameter_matrix(thread, "W_k", 0);
-    GeometricMatrix* W_v = thread_get_parameter_matrix(thread, "W_v", 0);
+    // Parameters are consolidated in layer 0 threads (dimensions 0-11)
+    // Search through layer 0 threads to find attention weights
+    GeometricMatrix* W_q = NULL;
+    GeometricMatrix* W_k = NULL;
+    GeometricMatrix* W_v = NULL;
+    
+    for (uint8_t dim = 0; dim < 12; dim++) {
+        HierarchicalThread* layer0_thread = hierarchical_thread_get(pool, 0, dim);
+        if (layer0_thread) {
+            if (!W_q) W_q = thread_get_parameter_matrix(layer0_thread, "W_q", 0);
+            if (!W_k) W_k = thread_get_parameter_matrix(layer0_thread, "W_k", 0);
+            if (!W_v) W_v = thread_get_parameter_matrix(layer0_thread, "W_v", 0);
+            
+            // Stop if we found all three
+            if (W_q && W_k && W_v) break;
+        }
+    }
     
     if (!W_q || !W_k || !W_v) {
-        fprintf(stderr, "ERROR: Attention weight matrices not found\n");
+        fprintf(stderr, "ERROR: Attention weight matrices not found in layer 0 (found: W_q=%p, W_k=%p, W_v=%p)\n",
+                (void*)W_q, (void*)W_k, (void*)W_v);
         return -1;
     }
     
@@ -254,23 +268,37 @@ int worker_compute_attention_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_ffn_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* input,
     uint32_t embedding_dim,
     uint32_t hidden_dim,
     double* output
 ) {
-    if (!thread || !input || !output) {
+    if (!pool || !thread || !input || !output) {
         fprintf(stderr, "ERROR: Invalid parameters for FFN\n");
         return -1;
     }
     
-    // Get FFN weight matrices
-    GeometricMatrix* W_ffn1 = thread_get_parameter_matrix(thread, "W_ffn1", 0);
-    GeometricMatrix* W_ffn2 = thread_get_parameter_matrix(thread, "W_ffn2", 0);
+    // Parameters are consolidated in layer 0 threads (dimensions 0-11)
+    // Search through layer 0 threads to find FFN weights
+    GeometricMatrix* W_ffn1 = NULL;
+    GeometricMatrix* W_ffn2 = NULL;
+    
+    for (uint8_t dim = 0; dim < 12; dim++) {
+        HierarchicalThread* layer0_thread = hierarchical_thread_get(pool, 0, dim);
+        if (layer0_thread) {
+            if (!W_ffn1) W_ffn1 = thread_get_parameter_matrix(layer0_thread, "W_ffn1", 0);
+            if (!W_ffn2) W_ffn2 = thread_get_parameter_matrix(layer0_thread, "W_ffn2", 0);
+            
+            // Stop if we found both
+            if (W_ffn1 && W_ffn2) break;
+        }
+    }
     
     if (!W_ffn1 || !W_ffn2) {
-        fprintf(stderr, "ERROR: FFN weight matrices not found\n");
+        fprintf(stderr, "ERROR: FFN weight matrices not found in layer 0 (found: W_ffn1=%p, W_ffn2=%p)\n",
+                (void*)W_ffn1, (void*)W_ffn2);
         return -1;
     }
     

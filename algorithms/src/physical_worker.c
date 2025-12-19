@@ -307,7 +307,7 @@ int worker_process_forward(HierarchicalThreadPool* pool, HierarchicalThread* thr
         
         // Attention
         result = worker_compute_attention_double(
-            layer_thread, layer_input, embedding_dim, attention_output
+            pool, layer_thread, layer_input, embedding_dim, attention_output
         );
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute attention for layer %u\n", layer);
@@ -324,7 +324,7 @@ int worker_process_forward(HierarchicalThreadPool* pool, HierarchicalThread* thr
         
         // FFN
         result = worker_compute_ffn_double(
-            layer_thread, layer_output, embedding_dim, hidden_dim, ffn_output
+            pool, layer_thread, layer_output, embedding_dim, hidden_dim, ffn_output
         );
         if (result != 0) {
             fprintf(stderr, "ERROR: Failed to compute FFN for layer %u\n", layer);

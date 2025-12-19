@@ -51,6 +51,7 @@ int worker_get_embedding_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_attention_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* input,
     uint32_t embedding_dim,
@@ -72,6 +73,7 @@ int worker_compute_attention_double(
  * @return 0 on success, -1 on error
  */
 int worker_compute_ffn_double(
+    HierarchicalThreadPool* pool,
     HierarchicalThread* thread,
     const double* input,
     uint32_t embedding_dim,
