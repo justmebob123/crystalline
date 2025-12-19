@@ -17,17 +17,17 @@
 #include <time.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include "cllm.h"
-#include "cllm_batch.h"
-#include "cllm_training.h"
+#include "ai/cllm.h"
+#include "ai/cllm_batch.h"
+#include "ai/cllm_training.h"
 #include "ai/cllm_training_system.h"
 #include "ai/cllm_hierarchical_training.h"
-#include "cllm_inference.h"
-#include "cllm_tokenizer.h"
-#include "cllm_data_loader.h"
-#include "cllm_format.h"
-#include "cllm_utils.h"
-#include "cllm_global_progress.h"
+#include "ai/cllm_inference.h"
+#include "ai/cllm_tokenizer.h"
+#include "ai/cllm_data_loader.h"
+#include "ai/cllm_format.h"
+#include "ai/cllm_utils.h"
+#include "ai/cllm_global_progress.h"
 
 // ============================================================================
 // BANNER & VERSION
@@ -605,8 +605,8 @@ int cmd_infer(int argc, char** argv) {
     // Load model
     printf("\n=== CLLM Inference ===\n\n");
     printf("Loading model from: %s\n", model_file);
-    CLLMModel* model = cllm_read_model(model_file);
-    if (!model) {
+    CLLMModel* model = NULL;
+    if (cllm_read_model(&model, model_file) != 0 || !model) {
         fprintf(stderr, "Error: Failed to load model\n");
         return 1;
     }
