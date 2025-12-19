@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "hierarchical_threading.h"
 #include "thread_parameters_geometric.h"
 #include "geometric_matrix.h"
+#include "math/transcendental.h"  // Custom math functions - NO math.h!
 
 // ============================================================================
 // EMBEDDING OPERATIONS
@@ -228,13 +228,13 @@ int worker_compute_attention_double(
         score += Q[i] * K[i];
     }
     
-    // Scale by sqrt(embedding_dim)
-    double scale = 1.0 / sqrt((double)embedding_dim);
+    // Scale by sqrt(embedding_dim) using custom math
+    double scale = 1.0 / math_sqrt((double)embedding_dim);
     score *= scale;
     
     // Apply softmax (simplified for single token)
     // In full implementation, this would be over all tokens
-    double attention_weight = exp(score);
+    double attention_weight = math_exp(score);
     
     // Compute output = attention_weight × V
     for (uint32_t i = 0; i < embedding_dim; i++) {

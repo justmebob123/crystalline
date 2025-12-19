@@ -17,7 +17,7 @@
 #include "ntt_attention.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "math/transcendental.h"  // Custom math - NO math.h!
 #include <stdio.h>
 
 // ============================================================================

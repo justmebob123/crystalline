@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
+// NO math.h - using custom math/transcendental.h functions
 
 // ============================================================================
 // RANDOM NUMBER GENERATION

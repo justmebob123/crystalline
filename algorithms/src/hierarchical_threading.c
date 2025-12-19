@@ -3,22 +3,19 @@
  * @brief Unified Hierarchical Threading System Implementation
  */
 
-#define _USE_MATH_DEFINES
 #include "hierarchical_threading.h"
 #include "generic_model.h"
 #include "math/transcendental.h"
+#include "math/constants.h"  // Use centralized constants
 #include "work_queue.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
-#include <math.h>
 #include <unistd.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+// NO math.h in production code!
 
 // ============================================================================
 // INTERNAL HELPERS
@@ -373,8 +370,8 @@ HierarchicalThread* hierarchical_thread_create(
     thread->symmetry_group = thread_id % pool->symmetry_fold;
     for (uint32_t i = 0; i < thread->num_dimensions; i++) {
         // Simple geometric distribution
-        double angle = 2.0 * M_PI * thread->symmetry_group / pool->symmetry_fold;
-        thread->position[i] = math_cos(angle + i * M_PI / thread->num_dimensions);
+        double angle = MATH_TWO_PI * thread->symmetry_group / pool->symmetry_fold;
+        thread->position[i] = math_cos(angle + i * MATH_PI / thread->num_dimensions);
     }
     
     // Create hierarchical memory segment
@@ -2845,7 +2842,7 @@ int apply_softmax_to_logits(double* logits, uint32_t vocab_size) {
     // Compute exp(logit - max_logit) and sum
     double sum = 0.0;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        double exp_value = exp(logits[i] - max_logit);
+        double exp_value = math_exp(logits[i] - max_logit);
         logits[i] = exp_value;
         sum += exp_value;
     }

@@ -9,6 +9,7 @@
 #include "generic_model.h"
 #include "work_queue.h"
 #include "worker_functions_geometric.h"
+#include "math/transcendental.h"  // Custom math functions - NO math.h!
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,12 +38,12 @@ static double compute_cross_entropy_loss(const double* logits, uint32_t target, 
         }
     }
     
-    // Compute log-sum-exp
+    // Compute log-sum-exp using custom math
     double sum_exp = 0.0;
     for (uint32_t i = 0; i < vocab_size; i++) {
-        sum_exp += exp(logits[i] - max_logit);
+        sum_exp += math_exp(logits[i] - max_logit);
     }
-    double log_sum_exp = max_logit + log(sum_exp);
+    double log_sum_exp = max_logit + math_log(sum_exp);
     
     // Cross-entropy: -log(P(target))
     return log_sum_exp - logits[target];
@@ -65,8 +66,8 @@ static void layer_norm(double* input, double* output, uint32_t dim, double epsil
     }
     variance /= (double)dim;
     
-    // Normalize
-    double inv_std = 1.0 / sqrt(variance + epsilon);
+    // Normalize using custom math
+    double inv_std = 1.0 / math_sqrt(variance + epsilon);
     for (uint32_t i = 0; i < dim; i++) {
         output[i] = (input[i] - mean) * inv_std;
     }
@@ -416,7 +417,7 @@ int worker_process_backward(HierarchicalThreadPool* pool, HierarchicalThread* th
         
         double sum = 0.0;
         for (uint32_t i = 0; i < embedding_dim; i++) {
-            softmax_probs[i] = exp(softmax_probs[i] - max_val);
+            softmax_probs[i] = math_exp(softmax_probs[i] - max_val);
             sum += softmax_probs[i];
         }
         

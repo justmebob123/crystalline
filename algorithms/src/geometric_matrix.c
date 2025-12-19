@@ -7,7 +7,7 @@
  */
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include "math/transcendental.h"  // Custom math - NO math.h!
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -97,9 +97,9 @@ static void map_to_sphere(double u, double v, double* x, double* y, double* z) {
     double theta = 2.0 * M_PI * u;
     double phi = M_PI * v;
     
-    *x = sin(phi) * cos(theta);
-    *y = sin(phi) * sin(theta);
-    *z = cos(phi);
+    *x = math_sin(phi) * math_cos(theta);
+    *y = math_sin(phi) * math_sin(theta);
+    *z = math_cos(phi);
 }
 
 /**
@@ -109,7 +109,7 @@ static double distance_3d(double x1, double y1, double z1, double x2, double y2,
     double dx = x2 - x1;
     double dy = y2 - y1;
     double dz = z2 - z1;
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return math_sqrt(dx*dx + dy*dy + dz*dz);
 }
 
 // ============================================================================
@@ -452,7 +452,7 @@ int geometric_matrix_init_xavier(
     if (!matrix) return -1;
     
     // Xavier: U(-√(6/(fan_in + fan_out)), √(6/(fan_in + fan_out)))
-    double limit = sqrt(6.0 / (double)(fan_in + fan_out));
+    double limit = math_sqrt(6.0 / (double)(fan_in + fan_out));
     
     return geometric_matrix_init_uniform(matrix, -limit, limit, seed);
 }
@@ -465,7 +465,7 @@ int geometric_matrix_init_he(
     if (!matrix) return -1;
     
     // He: U(-√(6/fan_in), √(6/fan_in))
-    double limit = sqrt(6.0 / (double)fan_in);
+    double limit = math_sqrt(6.0 / (double)fan_in);
     
     return geometric_matrix_init_uniform(matrix, -limit, limit, seed);
 }

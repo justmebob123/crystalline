@@ -97,7 +97,7 @@ int cllm_transformer_layer_forward(
     cllm_layernorm_forward_thread(thread, attn_input, attn_input, dim, 1e-5);
 
     // Step 2: Multi-head self-attention using geometric matrices
-    int attn_result = worker_compute_attention_double(thread, attn_input, dim, attn_output);
+    int attn_result = worker_compute_attention_double(model->threads, thread, attn_input, dim, attn_output);
     if (attn_result != 0) {
         free(attn_input);
         free(attn_output);
@@ -116,7 +116,7 @@ int cllm_transformer_layer_forward(
 
     // Step 5: Feed-forward network using geometric matrices
     uint32_t hidden_dim = dim * 4; // Standard transformer uses 4x expansion
-    int ffn_result = worker_compute_ffn_double(thread, ffn_input, dim, hidden_dim, ffn_output);
+    int ffn_result = worker_compute_ffn_double(model->threads, thread, ffn_input, dim, hidden_dim, ffn_output);
     if (ffn_result != 0) {
         free(attn_input);
         free(attn_output);

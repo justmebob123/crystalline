@@ -4,7 +4,7 @@
  */
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include "math/transcendental.h"  // Custom math - NO math.h!
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -472,7 +472,7 @@ int thread_apply_geometric_optimizer(
             
             // Update parameter
             // param -= lr * m_hat / (√v_hat + ε)
-            p_double -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
+            p_double -= learning_rate * m_hat / (math_sqrt(v_hat) + epsilon);
             
             // Convert back to abacus
             CrystallineAbacus* new_p = abacus_from_double(p_double, 60, 10);
