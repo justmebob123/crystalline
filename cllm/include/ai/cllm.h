@@ -78,6 +78,8 @@ typedef struct Sphere SphereThread;
  * The five Platonic solids
  * Each defines a complete model architecture
  */
+#ifndef PLATONIC_SOLID_TYPE_DEFINED
+#define PLATONIC_SOLID_TYPE_DEFINED
 typedef enum {
     PLATONIC_TETRAHEDRON = 0,   // 4V, 6E, 4F  - Small, fast (48-dim)
     PLATONIC_CUBE = 1,          // 8V, 12E, 6F - Balanced (96-dim)
@@ -85,12 +87,15 @@ typedef enum {
     PLATONIC_DODECAHEDRON = 3,  // 20V, 30E, 12F - Large, powerful (240-dim)
     PLATONIC_ICOSAHEDRON = 4    // 12V, 30E, 20F - Maximum symmetry (144-dim)
 } PlatonicSolidType;
+#endif
 
 /**
  * Geometric properties of a Platonic solid
  * Satisfies Euler's formula: V - E + F = 2
  */
-typedef struct {
+#ifndef PLATONIC_GEOMETRY_DEFINED
+#define PLATONIC_GEOMETRY_DEFINED
+typedef struct PlatonicGeometry {
     uint32_t vertices;          // Number of vertices (V)
     uint32_t edges;             // Number of edges (E)
     uint32_t faces;             // Number of faces (F)
@@ -98,6 +103,7 @@ typedef struct {
     double edge_length;         // Normalized edge length
     bool has_golden_ratio;      // True for dodecahedron/icosahedron
 } PlatonicGeometry;
+#endif
 
 // ============================================================================
 // LAYER NORMALIZATION

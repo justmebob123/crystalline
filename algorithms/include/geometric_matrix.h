@@ -6,7 +6,10 @@
 #include <pthread.h>
 #include "math/abacus.h"
 
-// Forward declare PlatonicSolidType to avoid circular dependency
+// Forward declarations to avoid circular dependency
+// Only define if not already defined (e.g., by ai/cllm.h)
+#ifndef PLATONIC_SOLID_TYPE_DEFINED
+#define PLATONIC_SOLID_TYPE_DEFINED
 typedef enum {
     PLATONIC_TETRAHEDRON = 0,
     PLATONIC_CUBE = 1,
@@ -14,9 +17,13 @@ typedef enum {
     PLATONIC_DODECAHEDRON = 3,
     PLATONIC_ICOSAHEDRON = 4
 } PlatonicSolidType;
+#endif
 
 // Forward declare PlatonicGeometry
+#ifndef PLATONIC_GEOMETRY_DEFINED
+#define PLATONIC_GEOMETRY_DEFINED
 typedef struct PlatonicGeometry PlatonicGeometry;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

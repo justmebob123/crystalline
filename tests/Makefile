@@ -98,3 +98,9 @@ test_88d_thread_pool: test_88d_thread_pool.c
 	@echo "Building 88D thread pool test..."
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@echo "✓ test_88d_thread_pool built"
+
+# Parameter initialization test
+test_parameter_init: test_parameter_init.c
+	@echo "Building parameter initialization test..."
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@echo "✓ test_parameter_init built"
